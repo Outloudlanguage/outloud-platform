@@ -209,7 +209,6 @@ const LevelsPage = ({ onReturnHome }) => {
               />
             </div>
 
-            {/* Restored the wider padding to give the axis labels room */}
             <div className="relative w-full h-full flex flex-col pl-[110px] md:pl-[130px] lg:pl-[160px] pb-10 lg:pb-14 pt-4 z-10">
               <p className="text-[10px] lg:text-xs xl:text-[13px] font-bold text-outloud-blue font-montserrat text-center mb-6 lg:mb-8 leading-snug shrink-0">
                 En este gráfico puede ver cada nivel, su duración en meses y el
@@ -218,12 +217,11 @@ const LevelsPage = ({ onReturnHome }) => {
 
               {/* Main Graph Area */}
               <div className="relative w-full flex-grow border-b-[2px] border-outloud-blue/30 flex items-end gap-1.5 md:gap-2 lg:gap-3 z-10">
-                {/* Restored exact coordinates: DOMINIO DEL IDIOMA */}
+                
                 <div className="absolute -left-[100px] md:-left-[120px] lg:-left-[145px] top-1/2 -rotate-90 -translate-y-1/2 text-[9px] md:text-[10px] lg:text-[11px] font-black text-outloud-blue tracking-widest whitespace-nowrap z-20">
                   DOMINIO DEL IDIOMA
                 </div>
 
-                {/* Restored exact coordinates: DURACIÓN */}
                 <div className="absolute -left-[65px] md:-left-[75px] lg:-left-[90px] -bottom-[28px] lg:-bottom-[34px] h-6 flex items-center text-[9px] md:text-[10px] lg:text-[11px] font-black text-outloud-blue tracking-widest whitespace-nowrap">
                   DURACIÓN
                 </div>
@@ -251,8 +249,9 @@ const LevelsPage = ({ onReturnHome }) => {
                     onMouseEnter={() => setHoveredLevel(bar.id)}
                     onMouseLeave={() => setHoveredLevel(null)}
                   >
+                    {/* FIXED: Reduced padding-top to pt-0.5 lg:pt-1.5 */}
                     <div
-                      className={`relative w-full rounded-t-md md:rounded-t-lg flex flex-col items-center justify-start pt-1 lg:pt-2 text-center shadow-md transition-all duration-300 animate-chart-grow overflow-hidden ${
+                      className={`relative w-full rounded-t-md md:rounded-t-lg flex flex-col items-center justify-start pt-0.5 lg:pt-1.5 text-center shadow-md transition-all duration-300 animate-chart-grow overflow-hidden ${
                         bar.color
                       } ${
                         hoveredLevel === bar.id
@@ -264,7 +263,6 @@ const LevelsPage = ({ onReturnHome }) => {
                         animationDelay: `${idx * 0.1}s`,
                       }}
                     >
-                      {/* Hover Blink Overlay for Chart Bars */}
                       <div
                         className={`absolute inset-0 bg-[#fef08a] pointer-events-none transition-opacity duration-300 ${
                           hoveredLevel === bar.id
@@ -273,18 +271,19 @@ const LevelsPage = ({ onReturnHome }) => {
                         }`}
                       ></div>
 
+                      {/* FIXED: Scaled down text sizing and forced leading-none for maximum space efficiency */}
                       <span
-                        className={`relative z-10 text-[10px] lg:text-sm xl:text-lg font-black leading-none ${bar.textColor}`}
+                        className={`relative z-10 text-[9px] md:text-[11px] lg:text-xs xl:text-sm font-black leading-none ${bar.textColor}`}
                       >
                         {bar.id}
                       </span>
                       <span
-                        className={`relative z-10 text-[5px] lg:text-[6px] xl:text-[8px] font-bold leading-tight mt-0.5 px-0.5 ${bar.textColor}`}
+                        className={`relative z-10 text-[5px] lg:text-[6.5px] xl:text-[7.5px] font-bold leading-none mt-0.5 px-0.5 ${bar.textColor}`}
                       >
                         {bar.title}
                       </span>
                       <span
-                        className={`relative z-10 text-[5px] lg:text-[6px] xl:text-[8px] font-medium leading-tight mt-0.5 px-0.5 ${bar.textColor}`}
+                        className={`relative z-10 text-[4.5px] lg:text-[5.5px] xl:text-[6.5px] font-medium leading-none mt-0.5 px-0.5 ${bar.textColor}`}
                       >
                         {bar.score}
                       </span>
