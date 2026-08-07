@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Outloud Language Academy</title>
+
+    <!-- Google Fonts Import (Swapped to Jost for the light Uni Sans look) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400&family=Montserrat:wght@300;400;700&family=Nunito:wght@700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Tailwind CSS Engine -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Our Custom Theme Configurations -->
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'outloud-blue': '#0d2a59',
+              'focus-white': '#f4f7fb',
+              'student-yellow': '#ffca28',
+            },
+            fontFamily: {
+              montserrat: ['Montserrat', 'sans-serif'],
+              'uni-sans': ['Jost', 'sans-serif'],
+              tabarra: ['Nunito', 'sans-serif'],
+            },
+            backgroundImage: {
+              'decimal-grid':
+                'linear-gradient(to right, rgba(13, 42, 89, 0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(13, 42, 89, 0.05) 1px, transparent 1px), linear-gradient(to right, rgba(13, 42, 89, 0.1) 2px, transparent 2px), linear-gradient(to bottom, rgba(13, 42, 89, 0.1) 2px, transparent 2px)',
+            },
+            backgroundSize: {
+              'decimal-grid': '10px 10px, 10px 10px, 100px 100px, 100px 100px',
+            },
+          },
+        },
+      };
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
