@@ -17,53 +17,46 @@ const CourseInfoPage = ({
       </div>
 
       <div className="relative z-10 flex flex-col h-full px-6 py-3 md:px-10 md:py-4 max-w-[90rem] mx-auto w-full">
-        <div className="flex flex-row justify-between items-center w-full mb-3 lg:mb-4 shrink-0">
-          <div className="flex items-center shrink-0">
-            <img
-              src="https://i.postimg.cc/fyvnv4XT/Diseno-sin-titulo-(14).png"
-              alt="Outloud Logo"
-              className="h-10 lg:h-12 xl:h-14 object-contain shrink-0"
-            />
-            <div className="mx-4 lg:mx-6 h-8 lg:h-10 w-[2px] min-w-[2px] bg-outloud-blue opacity-40 shrink-0"></div>
-            <span className="text-base lg:text-xl font-light text-outloud-blue font-montserrat whitespace-nowrap shrink-0">
+        
+        {/* Top Header */}
+        <div className="relative z-10 flex flex-row justify-between items-center w-full mb-3 lg:mb-4 shrink-0">
+          
+          <div className="flex items-center space-x-2 md:space-x-4">
+            <div className="flex-none flex items-center">
+              <img 
+                src="https://i.postimg.cc/fyvnv4XT/Diseno-sin-titulo-(14).png" 
+                alt="Outloud Logo" 
+                className="h-8 md:h-10 lg:h-11 object-contain" 
+              />
+            </div>
+            
+            <div className="flex-none h-6 md:h-8 w-[2px] bg-outloud-blue opacity-40"></div>
+            
+            <span className="flex-none hidden md:block text-xs lg:text-sm font-light text-outloud-blue font-montserrat whitespace-nowrap">
               Online Platform
             </span>
-          </div>
-
-          <div className="flex items-center shrink-0 pl-4 space-x-4 lg:space-x-6">
-            <h2 className="text-outloud-blue text-lg lg:text-3xl xl:text-[2rem] font-black tracking-wide font-montserrat uppercase whitespace-nowrap shrink-0">
+            
+            {/* FIXED: Bumped text sizes to hit exactly where your cursor highlight ended */}
+            <h1 className="flex-none text-[14px] sm:text-[15px] md:text-lg lg:text-[22px] xl:text-[28px] font-black text-outloud-blue font-montserrat tracking-wide uppercase whitespace-nowrap">
               INFORMACIÓN ACERCA DE LOS CURSOS
-            </h2>
-
-            <button
-              onClick={onReturnHome}
-              className="flex items-center space-x-2 text-outloud-blue font-bold font-montserrat hover:text-blue-900 transition shrink-0"
-            >
-              <svg
-                className="w-5 h-5 lg:w-6 lg:h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2.5"
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-              <span className="text-sm lg:text-base whitespace-nowrap">
-                Return Home
-              </span>
-              <svg
-                className="w-5 h-5 lg:w-6 lg:h-6"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
-              </svg>
-            </button>
+            </h1>
           </div>
+
+          <button 
+            onClick={onReturnHome} 
+            className="flex-none flex items-center space-x-1.5 md:space-x-2 text-outloud-blue font-bold font-montserrat hover:text-blue-900 transition ml-2"
+          >
+            <svg className="flex-none w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+            <span className="flex-none text-[11px] md:text-xs lg:text-sm whitespace-nowrap">Return Home</span>
+            
+            <svg className="flex-none w-4 h-4 md:w-5 md:h-5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M11.47 3.84a.75.75 0 011.06 0l8.69 8.69a.75.75 0 101.06-1.06l-8.689-8.69a2.25 2.25 0 00-3.182 0l-8.69 8.69a.75.75 0 001.061 1.06l8.69-8.69z" />
+              <path d="M12 5.432l8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 01-.75-.75v-4.5a.75.75 0 00-.75-.75h-3a.75.75 0 00-.75.75V21a.75.75 0 01-.75.75H5.625a1.875 1.875 0 01-1.875-1.875v-6.198a2.29 2.29 0 00.091-.086L12 5.43z" />
+            </svg>
+          </button>
+          
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-8 flex-grow min-h-0 pb-1">
@@ -80,10 +73,12 @@ const CourseInfoPage = ({
               <p className="text-[10px] lg:text-[11px] xl:text-xs font-bold text-outloud-blue font-montserrat mb-0.5 lg:mb-1 shrink-0">
                 ¿CÓMO FUNCIONA EL CURSO?
               </p>
-              <h3 className="text-xl lg:text-3xl xl:text-[2rem] font-black text-outloud-blue font-tabarra mb-0.5 lg:mb-1 leading-none shrink-0">
+              
+              <h3 className="min-h-[3rem] lg:min-h-[4rem] xl:min-h-[4.5rem] text-xl lg:text-3xl xl:text-[2rem] font-black text-outloud-blue font-tabarra mb-0.5 lg:mb-1 leading-none shrink-0">
                 INMERSIÓN TOTAL
               </h3>
-              <p className="text-[11px] lg:text-[12px] xl:text-[13px] text-outloud-blue font-montserrat text-justify leading-[1.35] flex-grow mt-1">
+              
+              <p className="text-[11px] lg:text-[12px] xl:text-[13.5px] text-outloud-blue font-montserrat text-justify leading-[1.5] flex-grow mt-2">
                 Olvídate de la teoría rígida. Hemos diseñado un aprendizaje
                 libre de distracciones, interactivo y directo, basado en{' '}
                 <strong className="font-extrabold">
@@ -94,6 +89,7 @@ const CourseInfoPage = ({
                 <strong className="font-extrabold">sin traducir</strong> y sin
                 pasar horas estudiando listas de vocabulario o gramática.
               </p>
+              
               <p className="text-[9px] lg:text-[10px] xl:text-[11px] font-extrabold text-outloud-blue font-montserrat mt-2 tracking-wider uppercase shrink-0">
                 ¿CÓMO FUNCIONA? SIGUE LEYENDO.
               </p>
@@ -120,10 +116,12 @@ const CourseInfoPage = ({
               <p className="text-[10px] lg:text-[11px] xl:text-xs font-bold text-outloud-blue font-montserrat mb-0.5 lg:mb-1 shrink-0">
                 ESTUDIA A TU RITMO
               </p>
-              <h3 className="text-xl lg:text-3xl xl:text-[2rem] font-black text-outloud-blue font-tabarra mb-0.5 lg:mb-1 leading-none shrink-0">
+              
+              <h3 className="min-h-[3rem] lg:min-h-[4rem] xl:min-h-[4.5rem] text-xl lg:text-3xl xl:text-[2rem] font-black text-outloud-blue font-tabarra mb-0.5 lg:mb-1 leading-none shrink-0">
                 ACCESO 24/7
               </h3>
-              <p className="text-[11px] lg:text-[12px] xl:text-[13px] text-outloud-blue font-montserrat text-justify leading-[1.35] flex-grow mt-1">
+              
+              <p className="text-[11px] lg:text-[12px] xl:text-[13.5px] text-outloud-blue font-montserrat text-justify leading-[1.5] flex-grow mt-2">
                 Accede cuando y donde quieras a lecciones dinámicas, audios,
                 chats, foros,{' '}
                 <strong className="font-extrabold">club de conversación</strong>
@@ -136,7 +134,6 @@ const CourseInfoPage = ({
               </p>
             </div>
 
-            {/* UPDATED MIDDLE BUTTON */}
             <button
               onClick={onLevelsClick}
               className="mt-3 lg:mt-4 w-full rounded-full border-[2.5px] border-dashed border-outloud-blue px-4 py-2 lg:py-3 text-[10px] lg:text-xs xl:text-sm font-extrabold text-outloud-blue transition-all duration-300 hover:bg-student-yellow hover:border-solid hover:border-student-yellow shadow-sm hover:shadow-md uppercase shrink-0"
@@ -158,10 +155,12 @@ const CourseInfoPage = ({
               <p className="text-[10px] lg:text-[11px] xl:text-xs font-bold text-outloud-blue font-montserrat mb-0.5 lg:mb-1 shrink-0">
                 INTERACCIÓN REAL
               </p>
-              <h3 className="text-xl lg:text-3xl xl:text-[2rem] font-black text-outloud-blue font-tabarra mb-0.5 lg:mb-1 leading-none whitespace-pre-line shrink-0">
+              
+              <h3 className="min-h-[3rem] lg:min-h-[4rem] xl:min-h-[4.5rem] text-xl lg:text-3xl xl:text-[2rem] font-black text-outloud-blue font-tabarra mb-0.5 lg:mb-1 leading-none whitespace-pre-line shrink-0">
                 CLASES 100%{'\n'}EN VIVO
               </h3>
-              <p className="text-[11px] lg:text-[12px] xl:text-[13px] text-outloud-blue font-montserrat text-justify leading-[1.35] flex-grow mt-1">
+              
+              <p className="text-[11px] lg:text-[12px] xl:text-[13.5px] text-outloud-blue font-montserrat text-justify leading-[1.5] flex-grow mt-2">
                 Agenda sesiones individuales o grupales con un{' '}
                 <strong className="font-extrabold">profesor en vivo</strong>{' '}
                 según tu disponibilidad. Recibe tutoría{' '}
@@ -173,6 +172,7 @@ const CourseInfoPage = ({
                 al hablar y permitirán evaluar tu propio progreso.
               </p>
             </div>
+            
             <button
               onClick={onRegister}
               className="mt-3 lg:mt-4 w-full rounded-full border-[2.5px] border-dashed border-outloud-blue px-4 py-2 lg:py-3 text-[10px] lg:text-xs xl:text-sm font-extrabold text-outloud-blue transition-all duration-300 hover:bg-student-yellow hover:border-solid hover:border-student-yellow shadow-sm hover:shadow-md uppercase shrink-0"
