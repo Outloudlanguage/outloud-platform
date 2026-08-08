@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { supabase } from './SupabaseClient'; 
 
 const FreeLesson = ({ onReturnHome, onReturnToRegister }) => {
   // Navigation & Video States
-  const [step, setStep] = useState('welcome'); // 'welcome' -> 'popup' -> 'video' -> 'exercise1' -> 'exercise2' -> 'exercise3' -> 'exercises4_and_5' -> 'results'
+  const [step, setStep] = useState('welcome'); 
   const [replayCount, setReplayCount] = useState(0);
   const [isEnded, setIsEnded] = useState(false);
 
@@ -32,7 +33,7 @@ const FreeLesson = ({ onReturnHome, onReturnToRegister }) => {
   ];
   const [availableOptions, setAvailableOptions] = useState([...allOptions]);
 
-  // Exercise 2 & 3 States (Audio Recording & Playback)
+  // Exercise 2 & 3 States 
   const originalAudioUrl = "https://Outloud.b-cdn.net/ElevenLabs_2026-07-16T17_24_13_Jason%20-%20Persuasive%20and%20Engaging_pvc_sp100_s50_sb75_v3-%5BAudioTrimmer.com%5D.mp3";
   const [isRecording, setIsRecording] = useState(false);
   const [hasRecorded, setHasRecorded] = useState(false);
@@ -92,7 +93,52 @@ const FreeLesson = ({ onReturnHome, onReturnToRegister }) => {
   }, []);
 
   const handleStart = () => setStep('popup');
-  const handleContinueToVideo = () => setStep('video');
+  
+  // --- DIRECT DISCORD WEBHOOK + SUPABASE COUNTER LOGIC ---
+  const handleContinueToVideo = async () => {
+    setStep('video'); // Move UI immediately so the user isn't waiting
+
+    const webhookUrl = "https://discordapp.com/api/webhooks/1534265478179196928/8R96hVzk1NqYi_F-dAzTpeUjnJa5DyXSFWQ338FQGwnKK9FztZt5l7ECE2bZcqhS0fwb"; 
+
+    try {
+      // 1. Fetch the Global ID from the free_lessons table in Supabase
+      const { data: supabaseData, error: supabaseError } = await supabase
+        .from('free_lessons')
+        .insert([{}]) 
+        .select('id')
+        .single();
+
+      if (supabaseError) throw supabaseError;
+
+      // 2. Format the retrieved ID
+      const currentCount = supabaseData.id;
+      const formattedClickId = `Click #${String(currentCount).padStart(3, '0')}`;
+
+      // 3. Construct Discord Payload
+      const payload = {
+        embeds: [
+          {
+            title: `📘 Free Lesson Started! | ${formattedClickId}`,
+            color: 23455, // Outloud Blue Hex #005b9f
+            description: "A prospective student just clicked 'CONTINUAR' on the popup and started the video.",
+            timestamp: new Date().toISOString()
+          }
+        ]
+      };
+
+      // 4. Send to Discord
+      await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+    } catch (err) {
+      // We catch the error silently so it doesn't break the student's lesson experience
+      console.error("Tracking ping failed:", err);
+    }
+  };
+  
   const handleContinueToEx1 = () => setStep('exercise1');
 
   const getIframeUrl = () => {

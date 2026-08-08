@@ -1,4 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { supabase } from './SupabaseClient';
+import PhoneInput from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
 
 // Custom Dropdown Component (Accordion Style)
 const CustomDropdown = ({
@@ -97,16 +100,14 @@ const CustomDropdown = ({
   );
 };
 
-// ACCEPTING THE NEW onFreeTrialClick PROP HERE
 const RegistrationPage = ({ onReturnHome, onFreeTrialClick }) => {
-  // PASTE YOUR DISCORD WEBHOOK URL HERE
   const DISCORD_WEBHOOK_URL =
     'https://discordapp.com/api/webhooks/1534265478179196928/8R96hVzk1NqYi_F-dAzTpeUjnJa5DyXSFWQ338FQGwnKK9FztZt5l7ECE2bZcqhS0fwb';
 
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
-    phone: '',
+    phone: '', 
     reason: '',
     fluentTime: '',
     interest: '',
@@ -119,11 +120,9 @@ const RegistrationPage = ({ onReturnHome, onFreeTrialClick }) => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // State and Timer Ref for the temporary under development message
   const [devMessage, setDevMessage] = useState('');
   const devTimerRef = useRef(null);
 
-  // Effect to clear the dev message if the user clicks anywhere else
   useEffect(() => {
     if (!devMessage) return;
 
@@ -132,7 +131,6 @@ const RegistrationPage = ({ onReturnHome, onFreeTrialClick }) => {
       if (devTimerRef.current) clearTimeout(devTimerRef.current);
     };
 
-    // Small delay ensures the button click itself doesn't immediately close the message
     const delayTimer = setTimeout(() => {
       window.addEventListener('click', handleGlobalClick);
     }, 50);
@@ -175,18 +173,6 @@ const RegistrationPage = ({ onReturnHome, onFreeTrialClick }) => {
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: false }));
   };
 
-  // Handler for any remaining buttons currently under development
-  const handleDevButtonClick = (e) => {
-    e.preventDefault();
-    setDevMessage('Esta función se encuentra en desarrollo y estará lista en los próximos días');
-    
-    if (devTimerRef.current) clearTimeout(devTimerRef.current);
-    
-    devTimerRef.current = setTimeout(() => {
-      setDevMessage('');
-    }, 3000);
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -213,67 +199,63 @@ const RegistrationPage = ({ onReturnHome, onFreeTrialClick }) => {
 
     setIsSubmitting(true);
 
-    // Submission Counter Logic
-    let currentCount = parseInt(
-      localStorage.getItem('ola_submission_count') || '0',
-      10
-    );
-    currentCount += 1;
-    localStorage.setItem('ola_submission_count', currentCount.toString());
-    const formattedSubmissionId = `Submission #${String(currentCount).padStart(
-      3,
-      '0'
-    )}`;
-
-    // Discord Rich Embed Payload
-    const discordPayload = {
-      username: 'OLA Registry Hub',
-      avatar_url: 'https://i.postimg.cc/fyvnv4XT/Diseno-sin-titulo-(14).png',
-      embeds: [
-        {
-          title: `🎓 Nuevo Estudiante Registrado | ${formattedSubmissionId}`,
-          description: `Se ha recibido una nueva planilla de inscripción de **${formData.fullName}**.`,
-          color: 1461973, // Outloud Academy Blue (Decimal)
-          fields: [
-            {
-              name: '👤 SECTION 1: PERSONAL INFO',
-              value: `**Email:** ${formData.email}\n**WhatsApp:** ${formData.phone}`,
-              inline: false,
-            },
-            {
-              name: '🎯 SECTION 2: COURSE GOALS',
-              value: `**Motivo:** ${formData.reason.substring(
-                3
-              )}\n**Meta de fluidez:** ${formData.fluentTime.substring(
-                3
-              )}\n**Interés principal:** ${formData.interest.substring(
-                3
-              )}\n**Tiempo disponible:** ${formData.investTime.substring(3)}`,
-              inline: false,
-            },
-          ],
-          footer: {
-            text: 'Outloud Language Academy • Official Registry',
-            icon_url:
-              'https://i.postimg.cc/fyvnv4XT/Diseno-sin-titulo-(14).png',
-          },
-          timestamp: new Date().toISOString(),
-        },
-      ],
-    };
-
-    // Conditionally inject Referral Data if toggled
-    if (formData.referralToggle && (formData.refName || formData.refPhone)) {
-      discordPayload.embeds[0].fields.push({
-        name: '🤝 REFERRAL INFO',
-        value: `**Refirió a:** ${
-          formData.refName || 'N/A'
-        }\n**Teléfono del referido:** ${formData.refPhone || 'N/A'}`,
-        inline: false,
-      });
-    }
-
     try {
+      const { data: supabaseData, error: supabaseError } = await supabase
+        .from('registrations')
+        .insert([{}]) 
+        .select('id')
+        .single();
+
+      if (supabaseError) throw supabaseError;
+
+      const currentCount = supabaseData.id;
+      const formattedSubmissionId = `Submission #${String(currentCount).padStart(3, '0')}`;
+
+      const discordPayload = {
+        username: 'OLA Registry Hub',
+        avatar_url: 'https://i.postimg.cc/fyvnv4XT/Diseno-sin-titulo-(14).png',
+        embeds: [
+          {
+            title: `🎓 Nuevo Estudiante Registrado | ${formattedSubmissionId}`,
+            description: `Se ha recibido una nueva planilla de inscripción de **${formData.fullName}**.`,
+            color: 1461973, 
+            fields: [
+              {
+                name: '👤 SECTION 1: PERSONAL INFO',
+                value: `**Email:** ${formData.email}\n**WhatsApp:** ${formData.phone}`,
+                inline: false,
+              },
+              {
+                name: '🎯 SECTION 2: COURSE GOALS',
+                value: `**Motivo:** ${formData.reason.substring(
+                  3
+                )}\n**Meta de fluidez:** ${formData.fluentTime.substring(
+                  3
+                )}\n**Interés principal:** ${formData.interest.substring(
+                  3
+                )}\n**Tiempo disponible:** ${formData.investTime.substring(3)}`,
+                inline: false,
+              },
+            ],
+            footer: {
+              text: 'Outloud Language Academy • Official Registry',
+              icon_url: 'https://i.postimg.cc/fyvnv4XT/Diseno-sin-titulo-(14).png',
+            },
+            timestamp: new Date().toISOString(),
+          },
+        ],
+      };
+
+      if (formData.referralToggle && (formData.refName || formData.refPhone)) {
+        discordPayload.embeds[0].fields.push({
+          name: '🤝 REFERRAL INFO',
+          value: `**Refirió a:** ${
+            formData.refName || 'N/A'
+          }\n**Teléfono del referido:** ${formData.refPhone || 'N/A'}`,
+          inline: false,
+        });
+      }
+
       await fetch(DISCORD_WEBHOOK_URL, {
         method: 'POST',
         headers: {
@@ -282,13 +264,11 @@ const RegistrationPage = ({ onReturnHome, onFreeTrialClick }) => {
         body: JSON.stringify(discordPayload),
       });
 
-      alert(
-        '¡Inscripción enviada con éxito! / Registration submitted successfully!'
-      );
+      alert('¡Inscripción enviada con éxito! / Registration submitted successfully!');
       onReturnHome();
     } catch (error) {
-      console.error('Error sending to Discord:', error);
-      alert('Hubo un error al enviar la inscripción. Intente de nuevo.');
+      console.error('Database or Discord Pipeline Error:', error);
+      alert('Hubo un error al procesar la inscripción. Intente de nuevo.');
     } finally {
       setIsSubmitting(false);
     }
@@ -307,6 +287,42 @@ const RegistrationPage = ({ onReturnHome, onFreeTrialClick }) => {
         }
         .animate-error-blink { animation: blink-bg 1s infinite; }
         .animate-text-blink { animation: blink-text 1s infinite; }
+        
+        /* Custom CSS overrides for the intelligent Phone Input */
+        .PhoneInput {
+          display: flex;
+          align-items: center;
+          width: 100%;
+        }
+        .PhoneInputInput {
+          flex: 1;
+          background: transparent;
+          border: none;
+          outline: none;
+          font-family: 'Montserrat', sans-serif;
+          font-size: inherit;
+          color: #08203e;
+          min-width: 0; /* Prevents overflow issues */
+        }
+        .PhoneInputCountry {
+          margin-right: 12px;
+          flex-shrink: 0;
+        }
+        .PhoneInputCountryIcon {
+          width: 24px;
+          height: 16px;
+          border: 1px solid rgba(8, 32, 62, 0.2);
+          border-radius: 2px;
+          overflow: hidden;
+        }
+        .PhoneInputCountrySelectArrow {
+          width: 0.4em;
+          height: 0.4em;
+          margin-left: 6px;
+          border-right: 1.5px solid #08203e;
+          border-bottom: 1.5px solid #08203e;
+          opacity: 0.7;
+        }
       `}</style>
 
       <div className="fixed inset-0 z-0 pointer-events-none">
@@ -429,16 +445,21 @@ const RegistrationPage = ({ onReturnHome, onFreeTrialClick }) => {
                   (Número de teléfono/Whatsapp:)
                 </span>
               </label>
-              <input
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => handleInputChange('phone', e.target.value)}
-                className={`w-full rounded-full px-4 py-2.5 text-[11px] lg:text-xs font-montserrat text-outloud-blue outline-none transition-all ${
+              {/* SMART PHONE INPUT INSTEAD OF BASIC TEXT INPUT */}
+              <div
+                className={`w-full rounded-full px-4 py-2 text-[11px] lg:text-xs font-montserrat text-outloud-blue transition-all ${
                   errors.phone
                     ? 'animate-error-blink text-red-700'
-                    : 'bg-[#e6f0f9] focus:bg-[#d6e6f5]'
+                    : 'bg-[#e6f0f9] focus-within:bg-[#d6e6f5]'
                 }`}
-              />
+              >
+                <PhoneInput
+                  defaultCountry="VE"
+                  international
+                  value={formData.phone}
+                  onChange={(value) => handleInputChange('phone', value)}
+                />
+              </div>
               {errors.phone && (
                 <p className="absolute -bottom-4 left-4 text-[9px] font-bold text-red-600 animate-text-blink">
                   Debe completar este campo
@@ -533,15 +554,16 @@ const RegistrationPage = ({ onReturnHome, onFreeTrialClick }) => {
                     }
                     className="w-full rounded-full bg-[#e6f0f9] px-4 py-2.5 text-[10px] lg:text-[11px] font-montserrat text-outloud-blue outline-none"
                   />
-                  <input
-                    type="tel"
-                    placeholder="Teléfono del referido"
-                    value={formData.refPhone}
-                    onChange={(e) =>
-                      handleInputChange('refPhone', e.target.value)
-                    }
-                    className="w-full rounded-full bg-[#e6f0f9] px-4 py-2.5 text-[10px] lg:text-[11px] font-montserrat text-outloud-blue outline-none"
-                  />
+                  {/* SMART PHONE INPUT FOR REFERRALS */}
+                  <div className="w-full rounded-full bg-[#e6f0f9] px-4 py-2 text-[10px] lg:text-[11px] font-montserrat text-outloud-blue focus-within:bg-[#d6e6f5] transition-all">
+                    <PhoneInput
+                      defaultCountry="VE"
+                      international
+                      placeholder="Teléfono del referido"
+                      value={formData.refPhone}
+                      onChange={(value) => handleInputChange('refPhone', value)}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -560,14 +582,12 @@ const RegistrationPage = ({ onReturnHome, onFreeTrialClick }) => {
 
             <div className="flex flex-col space-y-3 mt-10 lg:mt-auto relative">
               
-              {/* Dynamic Under Development Alert */}
               {devMessage && (
                 <div className="absolute -top-12 w-full text-center bg-red-100 border border-red-200 text-red-700 text-[10px] lg:text-[11px] font-bold p-2 rounded-lg font-montserrat shadow-sm z-20">
                   {devMessage}
                 </div>
               )}
 
-              {/* WIRED TO NAVIGATE TO THE FREE LESSON */}
               <button
                 type="button"
                 onClick={onFreeTrialClick}
