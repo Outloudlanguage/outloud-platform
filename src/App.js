@@ -4,12 +4,11 @@ import CourseInfoPage from './CourseInfoPage';
 import RegistrationPage from './RegistrationPage';
 import CyclePage from './CyclePage';
 import LevelsPage from './LevelsPage';
-import FreeLesson from './FreeLesson'; // <-- NEW IMPORT
+import FreeLesson from './FreeLesson';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState('login');
 
-  // Set up the history listener when the app loads
   useEffect(() => {
     window.history.replaceState({ page: 'login' }, '', '#login');
 
@@ -23,7 +22,6 @@ export default function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // Custom navigation function to update React state AND browser history simultaneously
   const navigate = useCallback((page) => {
     setCurrentPage(page);
     window.history.pushState({ page }, '', `#${page}`);
@@ -61,13 +59,15 @@ export default function App() {
       {currentPage === 'register' && (
         <RegistrationPage 
           onReturnHome={() => navigate('login')} 
-          onFreeTrialClick={() => navigate('free-lesson')} // <-- NEW PROP PASSED HERE
+          onFreeTrialClick={() => navigate('free-lesson')}
         />
       )}
 
-      {/* NEW ROUTE FOR THE FREE LESSON */}
       {currentPage === 'free-lesson' && (
-        <FreeLesson onReturnHome={() => navigate('login')} />
+        <FreeLesson 
+          onReturnHome={() => navigate('login')} 
+          onReturnToRegister={() => navigate('register')} // <-- ROUTED BACK TO REGISTRATION
+        />
       )}
     </>
   );

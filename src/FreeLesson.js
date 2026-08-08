@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-const FreeLesson = ({ onReturnHome }) => {
+const FreeLesson = ({ onReturnHome, onReturnToRegister }) => {
   // Navigation & Video States
   const [step, setStep] = useState('welcome'); // 'welcome' -> 'popup' -> 'video' -> 'exercise1' -> 'exercise2' -> 'exercise3' -> 'next_placeholder'
   const [replayCount, setReplayCount] = useState(0);
@@ -16,7 +16,6 @@ const FreeLesson = ({ onReturnHome }) => {
     slot4: null,
   });
   
-  // Static array to keep the grid aligned even when items are removed
   const allOptions = [
     'PLAZA HOTEL',
     'RECEPTION/\nFRONT DESK',
@@ -31,7 +30,6 @@ const FreeLesson = ({ onReturnHome }) => {
   const [hasRecorded, setHasRecorded] = useState(false);
   const [hasCompared, setHasCompared] = useState(false);
   const [activeAudio, setActiveAudio] = useState(null);
-  const [audioProgress, setAudioProgress] = useState(0);
   
   const originalAudioRef = useRef(null);
   const recordedAudioRef = useRef(null);
@@ -41,14 +39,8 @@ const FreeLesson = ({ onReturnHome }) => {
   // Setup Original Audio
   useEffect(() => {
     originalAudioRef.current = new Audio(originalAudioUrl);
-    originalAudioRef.current.addEventListener('timeupdate', () => {
-      if (originalAudioRef.current.duration) {
-        setAudioProgress((originalAudioRef.current.currentTime / originalAudioRef.current.duration) * 100);
-      }
-    });
     originalAudioRef.current.addEventListener('ended', () => {
       setActiveAudio(null);
-      setAudioProgress(0);
     });
 
     return () => {
@@ -139,7 +131,7 @@ const FreeLesson = ({ onReturnHome }) => {
   };
   const isEx1Complete = Object.values(dragSlots).every(v => v !== null);
 
-  // --- EXERCISE 2 & 3 LOGIC (AUDIO & RECORDING) ---
+  // --- EXERCISE 2 & 3 LOGIC ---
   const playOriginalAudio = () => {
     if (activeAudio === 'user' && recordedAudioRef.current) {
       recordedAudioRef.current.pause(); recordedAudioRef.current.currentTime = 0;
@@ -164,7 +156,6 @@ const FreeLesson = ({ onReturnHome }) => {
     if (activeAudio === 'original') originalAudioRef.current.pause();
     if (activeAudio === 'user') recordedAudioRef.current.pause();
     setActiveAudio(null);
-    setAudioProgress(0);
 
     if (isRecording) {
       mediaRecorderRef.current.stop();
@@ -180,10 +171,7 @@ const FreeLesson = ({ onReturnHome }) => {
           const audioUrl = URL.createObjectURL(blob);
           if (recordedAudioRef.current) { recordedAudioRef.current.pause(); recordedAudioRef.current.src = ''; }
           recordedAudioRef.current = new Audio(audioUrl);
-          recordedAudioRef.current.addEventListener('timeupdate', () => {
-            if (recordedAudioRef.current.duration) setAudioProgress((recordedAudioRef.current.currentTime / recordedAudioRef.current.duration) * 100);
-          });
-          recordedAudioRef.current.addEventListener('ended', () => { setActiveAudio(null); setAudioProgress(0); });
+          recordedAudioRef.current.addEventListener('ended', () => { setActiveAudio(null); });
           setHasRecorded(true);
           stream.getTracks().forEach(track => track.stop());
         };
@@ -195,40 +183,40 @@ const FreeLesson = ({ onReturnHome }) => {
     }
   };
 
-  const handleContinueToEx3 = () => { setStep('exercise3'); setAudioProgress(0); setActiveAudio(null); };
-  const handleRetryEx2 = () => { setStep('exercise2'); setHasRecorded(false); setHasCompared(false); setAudioProgress(0); setActiveAudio(null); };
+  const handleContinueToEx3 = () => { setStep('exercise3'); setActiveAudio(null); };
+  const handleRetryEx2 = () => { setStep('exercise2'); setHasRecorded(false); setHasCompared(false); setActiveAudio(null); };
   const handleContinueToEx4 = () => { setStep('next_placeholder'); };
 
   return (
-    <div className="relative h-screen w-full font-sans bg-[#eef5fc] overflow-hidden flex flex-col items-center">
+    <div className="relative min-h-screen w-full font-sans bg-[#eef5fc] overflow-x-hidden flex flex-col items-center">
       
       <div className="fixed inset-0 z-0 pointer-events-none">
         <img src="https://i.postimg.cc/PJbrcZdF/Agregar-un-subtitulo-(5).png" alt="Bubble Background" className="w-full h-full object-cover" />
       </div>
 
       {/* TOP HEADER */}
-      <div className="relative z-50 w-full max-w-[90rem] flex justify-between items-center px-4 py-3 md:py-4 shrink-0">
-        <div className="flex items-center space-x-2 md:space-x-4 w-1/3">
-          <img src="https://i.postimg.cc/fyvnv4XT/Diseno-sin-titulo-(14).png" alt="Outloud Logo" className="h-8 md:h-10 object-contain" />
-          <div className="h-6 md:h-8 w-[2px] bg-outloud-blue opacity-40"></div>
-          <span className="hidden md:block text-xs lg:text-sm font-light text-outloud-blue font-montserrat whitespace-nowrap">Online Platform</span>
+      <div className="relative z-50 w-full max-w-[90rem] flex justify-between items-center px-4 py-2 md:py-3 shrink-0">
+        <div className="flex items-center space-x-2 md:space-x-3 w-1/3">
+          <img src="https://i.postimg.cc/fyvnv4XT/Diseno-sin-titulo-(14).png" alt="Outloud Logo" className="h-7 md:h-9 object-contain" />
+          <div className="h-5 md:h-7 w-[2px] bg-outloud-blue opacity-40"></div>
+          <span className="hidden md:block text-xs font-light text-outloud-blue font-montserrat whitespace-nowrap">Online Platform</span>
         </div>
         <div className="w-1/3 flex justify-center">
           {['welcome', 'popup', 'video'].includes(step) && (
-            <h1 className="text-sm md:text-xl lg:text-2xl font-black text-outloud-blue font-montserrat uppercase tracking-wide whitespace-nowrap">A1: UNIT 1 - LESSON 1</h1>
+            <h1 className="text-xs md:text-base lg:text-lg font-black text-outloud-blue font-montserrat uppercase tracking-wide whitespace-nowrap">A1: UNIT 1 - LESSON 1</h1>
           )}
         </div>
         <div className="flex items-center justify-end w-1/3">
-          <button onClick={onReturnHome} className="flex items-center space-x-1.5 md:space-x-2 text-outloud-blue font-bold font-montserrat hover:text-blue-900 transition">
-            <svg className="w-4 h-4 md:w-5 md:h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
-            <span className="text-xs md:text-sm whitespace-nowrap">Regresar a planilla</span>
+          <button onClick={onReturnToRegister || onReturnHome} className="flex items-center space-x-1.5 text-outloud-blue font-bold font-montserrat hover:text-blue-900 transition">
+            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+            <span className="text-[11px] md:text-xs whitespace-nowrap">Regresar a planilla</span>
           </button>
         </div>
       </div>
 
       {/* STEP 1: WELCOME */}
       {step === 'welcome' && (
-        <div className="relative z-10 flex flex-col items-center justify-center flex-grow w-full max-w-2xl px-4 animate-fade-in-up">
+        <div className="relative z-10 flex flex-col items-center justify-center flex-grow w-full max-w-2xl px-4 animate-fade-in-up pb-10">
           <div className="bg-white/90 backdrop-blur-md rounded-[2.5rem] shadow-[0_15px_40px_rgba(0,0,0,0.1)] p-8 md:p-12 text-center border border-white/60">
             <h1 className="text-2xl md:text-4xl font-black text-outloud-blue font-montserrat mb-4 tracking-wide uppercase">¡Bienvenido a tu clase de prueba!</h1>
             <p className="text-sm md:text-base text-outloud-blue/80 font-montserrat leading-relaxed">Prepárate para experimentar nuestro método inmersivo. Olvídate de la teoría rígida y de traducir en tu cabeza. Estás a un paso de comenzar a pensar en inglés de forma natural y fluida.</p>
@@ -239,7 +227,7 @@ const FreeLesson = ({ onReturnHome }) => {
 
       {/* STEP 2 & 3: VIDEO */}
       {(step === 'popup' || step === 'video') && (
-        <div className="relative z-10 w-full flex-grow flex items-center justify-center min-h-0 pb-6 px-4">
+        <div className="relative z-10 w-full flex-grow flex items-center justify-center min-h-0 pb-10 px-4">
           <div className="flex flex-row items-center justify-center w-full max-w-6xl gap-4 md:gap-8 h-full">
             <div className="relative flex-grow aspect-video max-h-[80vh] rounded-[2rem] border-4 border-[#3b434b] shadow-[0_25px_50px_rgba(0,0,0,0.3)] bg-black overflow-hidden flex flex-col justify-center">
               <iframe key={`bunny-player-${replayCount}`} src={getIframeUrl()} loading="lazy" className="absolute inset-0 w-full h-full border-none" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;fullscreen;" allowFullScreen={true}></iframe>
@@ -280,41 +268,37 @@ const FreeLesson = ({ onReturnHome }) => {
 
       {/* STEP 4: EXERCISE 1 (DRAG AND DROP) */}
       {step === 'exercise1' && (
-        <div className="relative z-10 w-full max-w-[80rem] mx-auto px-4 md:px-8 flex flex-col justify-center h-full flex-grow min-h-0 animate-fade-in pb-8">
+        <div className="relative z-10 w-full max-w-[62rem] mx-auto px-6 md:px-16 lg:px-24 xl:px-32 flex flex-col flex-grow animate-fade-in pb-12">
           
-          <div className="mb-4 shrink-0 w-full text-center md:text-left">
-            <h2 className="text-base md:text-xl lg:text-2xl text-outloud-blue font-montserrat">
+          <div className="mb-2 md:mb-4 shrink-0 w-full text-center md:text-left">
+            <h2 className="text-sm md:text-lg lg:text-xl text-outloud-blue font-montserrat">
               <span className="font-black uppercase">LESSON 1: ACTIVITY 1</span> - <span className="font-bold">Comprehension exercise.</span>
             </h2>
-            <p className="text-xs md:text-sm lg:text-base font-bold text-outloud-blue font-montserrat uppercase tracking-wide mt-1">
+            <p className="text-[10px] md:text-[11px] lg:text-xs font-bold text-outloud-blue font-montserrat uppercase tracking-wide mt-0.5">
               DRAG AND DROP: <span className="font-normal">Match the text to the location.</span>
             </p>
           </div>
 
-          {/* DYNAMIC HEIGHT GRID: Forces identical sizing mathematically */}
-          <div className="grid grid-cols-4 gap-4 md:gap-6 lg:gap-8 w-full shrink-0">
+          <div className="grid grid-cols-4 gap-2 md:gap-4 lg:gap-5 w-full shrink-0">
             {[
               { id: 'slot1', img: 'https://i.postimg.cc/CLmdVSQX/1(3).png' },
               { id: 'slot2', img: 'https://i.postimg.cc/Hx9d4tGZ/2(4).png' },
               { id: 'slot3', img: 'https://i.postimg.cc/8P0DH5Y3/3(3).png' },
               { id: 'slot4', img: 'https://i.postimg.cc/tTpHTV1S/4(3).png' },
             ].map((col) => (
-              <div key={col.id} className="flex flex-col items-center w-full space-y-4">
-                
-                {/* STRICT TALL ASPECT RATIO: 4/5 forces the portrait layout. w-full fits it to the column. */}
-                <div className="w-full aspect-[4/5] rounded-[1rem] lg:rounded-[1.5rem] border-[3px] md:border-4 border-[#08203e] overflow-hidden shadow-lg bg-white shrink-0">
-                  <img src={col.img} alt={`Location ${col.id}`} className="w-full h-full object-cover" />
+              <div key={col.id} className="flex flex-col items-center w-full space-y-2 md:space-y-3">
+                <div className="w-full aspect-[4/5] rounded-[1rem] lg:rounded-[1.5rem] border-[3px] md:border-4 border-[#08203e] overflow-hidden shadow-lg bg-white relative shrink-0">
+                  <img src={col.img} alt={`Location ${col.id}`} className="absolute inset-0 w-full h-full object-cover" />
                 </div>
                 
-                {/* WIDE DROP SLOT: Automatically matches the exact width of the image above it */}
                 <div onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDropOnSlot(e, col.id)} onClick={() => handleSlotClick(col.id)}
-                  className={`w-full h-10 md:h-12 lg:h-14 shrink-0 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer ${
+                  className={`w-full h-8 md:h-10 lg:h-12 shrink-0 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer overflow-hidden ${
                     dragSlots[col.id] ? 'bg-transparent border-none' : 'bg-[#eef5fc]/50 border-2 border-dashed border-[#08203e]'
-                  } ${selectedPill ? 'ring-4 ring-student-yellow/50' : ''}`}
+                  } ${selectedPill ? 'ring-2 ring-student-yellow' : ''}`}
                 >
                   {dragSlots[col.id] && (
                     <div draggable onDragStart={(e) => handleDragStart(e, dragSlots[col.id], col.id)} 
-                      className="w-full h-full bg-[#08203e] text-white rounded-full flex items-center justify-center text-[9px] md:text-xs lg:text-sm font-bold font-montserrat text-center px-2 cursor-grab shadow-lg whitespace-pre-line leading-tight"
+                      className="w-full h-full bg-[#08203e] text-white rounded-full flex items-center justify-center text-[9px] md:text-[10px] lg:text-[11px] font-bold font-montserrat text-center px-1 cursor-grab shadow-sm whitespace-pre-line leading-tight"
                     >
                       {dragSlots[col.id]}
                     </div>
@@ -324,18 +308,18 @@ const FreeLesson = ({ onReturnHome }) => {
             ))}
           </div>
 
-          <div className="shrink-0 flex flex-col items-center w-full">
-            {/* EXACT MATCH PILL BANK: Shares the identical grid layout as the slots above */}
-            <div onDragOver={(e) => e.preventDefault()} onDrop={handleDropOnBank} className="w-full grid grid-cols-4 gap-4 md:gap-6 lg:gap-8 mt-6 lg:mt-8">
+          <div className="shrink-0 flex flex-col items-center w-full mt-4 md:mt-6">
+            
+            {/* FIXED: Hides the pill bank entirely when complete to immediately show the Continue button right below the slots */}
+            <div onDragOver={(e) => e.preventDefault()} onDrop={handleDropOnBank} className={`w-full grid grid-cols-4 gap-2 md:gap-4 lg:gap-5 ${isEx1Complete ? 'hidden' : ''}`}>
               {allOptions.map((opt) => {
-                // Renders an invisible shell if the pill is placed, preventing layout collapse
                 if (!availableOptions.includes(opt)) {
-                  return <div key={`empty-${opt}`} className="w-full h-10 md:h-12 lg:h-14"></div>;
+                  return <div key={`empty-${opt}`} className="w-full h-8 md:h-10 lg:h-12"></div>;
                 }
                 return (
                   <div key={opt} draggable onClick={() => handlePillClick(opt, 'bank')} onDragStart={(e) => handleDragStart(e, opt, 'bank')}
-                    className={`w-full h-10 md:h-12 lg:h-14 rounded-full font-bold font-montserrat text-[9px] md:text-xs lg:text-sm text-center shadow-lg cursor-grab hover:-translate-y-1 transition-all flex items-center justify-center whitespace-pre-line leading-tight select-none px-2 ${
-                      selectedPill === opt ? 'bg-student-yellow text-outloud-blue ring-4 ring-student-yellow/50 scale-110 z-10' : 'bg-[#08203e] text-white hover:bg-blue-900'
+                    className={`w-full h-8 md:h-10 lg:h-12 rounded-full font-bold font-montserrat text-[8px] md:text-[10px] lg:text-[11px] text-center shadow-md cursor-grab hover:-translate-y-1 transition-all flex items-center justify-center whitespace-pre-line leading-tight select-none px-1 ${
+                      selectedPill === opt ? 'bg-student-yellow text-outloud-blue ring-2 ring-student-yellow/50 scale-105 z-10' : 'bg-[#08203e] text-white hover:bg-blue-900'
                     }`}
                   >
                     {opt}
@@ -344,22 +328,28 @@ const FreeLesson = ({ onReturnHome }) => {
               })}
             </div>
 
-            <div className="h-16 flex items-end justify-center mt-6 lg:mt-8 w-full">
-              {isEx1Complete && (
-                <button onClick={handleCheckExercise1} className="bg-student-yellow text-outloud-blue font-black px-12 lg:px-16 py-3 rounded-full shadow-xl transition-transform hover:scale-105 uppercase tracking-widest text-sm lg:text-base animate-fade-in-up">
+            {isEx1Complete && (
+              <div className="w-full flex justify-center mt-2 animate-fade-in-up">
+                <button onClick={handleCheckExercise1} className="bg-student-yellow text-outloud-blue font-black px-10 md:px-14 py-2.5 md:py-3 rounded-full shadow-lg transition-transform hover:scale-105 uppercase tracking-widest text-xs md:text-sm">
                   CONTINUAR
                 </button>
-              )}
-            </div>
+              </div>
+            )}
+
+            {/* Invisible safety zone to catch dropped pills if user changes their mind after completion */}
+            {isEx1Complete && (
+              <div onDragOver={(e) => e.preventDefault()} onDrop={handleDropOnBank} className="w-full h-32 flex-grow mt-4"></div>
+            )}
+            
           </div>
         </div>
       )}
 
-      {/* STEP 5 & 6: EXERCISE 2 (Listen/Record) & EXERCISE 3 (Compare) */}
+      {/* STEP 5 & 6: EXERCISE 2 & 3 */}
       {(step === 'exercise2' || step === 'exercise3') && (
-        <div className="relative z-10 w-full max-w-[90rem] mx-auto px-4 flex flex-col h-full flex-grow min-h-0 animate-fade-in pb-4">
+        <div className="relative z-10 w-full max-w-[90rem] mx-auto px-4 flex flex-col flex-grow animate-fade-in pb-12">
           
-          <div className="mb-2 shrink-0 w-full text-center md:text-left">
+          <div className="mb-4 shrink-0 w-full text-center md:text-left">
             <h2 className="text-base md:text-xl lg:text-2xl text-outloud-blue font-montserrat">
               <span className="font-black uppercase">LESSON 1: ACTIVITY {step === 'exercise2' ? '2' : '3'}</span> - <span className="font-bold">{step === 'exercise2' ? 'Listen and repeat.' : 'Compare.'}</span>
             </h2>
@@ -376,70 +366,73 @@ const FreeLesson = ({ onReturnHome }) => {
             </p>
           </div>
 
-          <div className="relative w-full flex-grow min-h-0 max-w-4xl mx-auto bg-[#2a3036] rounded-[2rem] border-4 border-[#3b434b] shadow-[0_20px_50px_rgba(0,0,0,0.3)] p-4 md:p-8 flex flex-col items-center justify-center">
+          <div className="relative w-full max-w-4xl mx-auto bg-[#2a3036] rounded-[2rem] border-4 border-[#3b434b] shadow-[0_20px_50px_rgba(0,0,0,0.3)] p-4 md:p-8 flex flex-col items-center justify-center overflow-hidden">
             
-            <div className="flex flex-row items-center justify-center gap-6 md:gap-12 w-full h-[50vh]">
-              <div className="h-full aspect-[4/5] rounded-xl overflow-hidden shadow-2xl border border-gray-600 bg-black shrink-0">
+            <div className="flex flex-row items-center justify-center gap-6 md:gap-12 w-full flex-grow min-h-0">
+              
+              {/* FIXED: Removed progress bar and explicitly made the image taller using max-h-[65vh] */}
+              <div className="h-full max-h-[65vh] aspect-[4/5] rounded-xl overflow-hidden shadow-2xl border border-gray-600 bg-black shrink-0 relative">
                 <img src="https://i.postimg.cc/CLmdVSQX/1(3).png" alt="Reception Scene" className="w-full h-full object-cover" />
+                
+                <div className="absolute bottom-0 left-0 right-0 bg-black/70 backdrop-blur-sm px-2 py-3 md:py-4 text-center text-white font-montserrat text-xs md:text-sm lg:text-base font-medium tracking-wide border-t border-white/10">
+                  Alan: The <span className="underline decoration-2 underline-offset-4 font-bold">bill</span>, please!
+                </div>
               </div>
 
-              <div className="flex flex-col justify-center space-y-6">
-                <div className="flex flex-col items-center">
-                  <span className="text-white text-[10px] md:text-xs font-bold font-montserrat mb-1">Listen</span>
-                  <button onClick={playOriginalAudio} className={`w-12 h-12 md:w-16 md:h-16 flex items-center justify-center rounded-xl transition-all duration-300 ${activeAudio === 'original' ? 'bg-[#5b9bd5] scale-110' : 'bg-transparent hover:bg-white/10'} ${step === 'exercise2' && !hasRecorded ? 'ring-2 ring-green-500 ring-offset-4 ring-offset-[#2a3036]' : ''}`}>
-                    <svg className="w-8 h-8 md:w-10 md:h-10 text-white" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clipRule="evenodd"></path></svg>
-                  </button>
-                </div>
-                <div className="flex flex-col items-center">
-                  <span className="text-white text-[10px] md:text-xs font-bold font-montserrat mb-1">{step === 'exercise2' ? 'Record' : 'Compare'}</span>
-                  {step === 'exercise2' ? (
-                    <button onClick={toggleRecording} className={`w-12 h-12 md:w-16 md:h-16 flex items-center justify-center rounded-xl transition-all duration-300 ${isRecording ? 'bg-red-500 animate-pulse scale-110' : 'bg-transparent hover:bg-white/10'}`}>
-                      <svg className="w-6 h-6 md:w-8 md:h-8 text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+              <div className="flex flex-col justify-center items-center space-y-8">
+                
+                {/* Center Audio Controls */}
+                <div className="flex flex-col items-center space-y-6">
+                  <div className="flex flex-col items-center">
+                    <span className="text-white text-[10px] md:text-xs font-bold font-montserrat mb-1">Listen</span>
+                    <button onClick={playOriginalAudio} className={`w-12 h-12 md:w-16 md:h-16 flex items-center justify-center rounded-xl transition-all duration-300 ${activeAudio === 'original' ? 'bg-[#5b9bd5] scale-110' : 'bg-transparent hover:bg-white/10'} ${step === 'exercise2' && !hasRecorded ? 'ring-2 ring-green-500 ring-offset-4 ring-offset-[#2a3036]' : ''}`}>
+                      <svg className="w-8 h-8 md:w-10 md:h-10 text-white" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clipRule="evenodd"></path></svg>
                     </button>
-                  ) : (
-                    <button onClick={playRecordedAudio} className={`w-12 h-12 md:w-16 md:h-16 flex items-center justify-center rounded-xl transition-all duration-300 ${activeAudio === 'user' ? 'bg-[#5b9bd5] scale-110' : 'bg-transparent hover:bg-white/10'} ${step === 'exercise3' && !hasCompared ? 'ring-2 ring-green-500 ring-offset-4 ring-offset-[#2a3036]' : ''}`}>
-                      <svg className="w-8 h-8 md:w-10 md:h-10 text-white" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <span className="text-white text-[10px] md:text-xs font-bold font-montserrat mb-1">{step === 'exercise2' ? 'Record' : 'Compare'}</span>
+                    {step === 'exercise2' ? (
+                      <button onClick={toggleRecording} className={`w-12 h-12 md:w-16 md:h-16 flex items-center justify-center rounded-xl transition-all duration-300 ${isRecording ? 'bg-red-500 animate-pulse scale-110' : 'bg-transparent hover:bg-white/10'}`}>
+                        <svg className="w-6 h-6 md:w-8 md:h-8 text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                      </button>
+                    ) : (
+                      <button onClick={playRecordedAudio} className={`w-12 h-12 md:w-16 md:h-16 flex items-center justify-center rounded-xl transition-all duration-300 ${activeAudio === 'user' ? 'bg-[#5b9bd5] scale-110' : 'bg-transparent hover:bg-white/10'} ${step === 'exercise3' && !hasCompared ? 'ring-2 ring-green-500 ring-offset-4 ring-offset-[#2a3036]' : ''}`}>
+                        <svg className="w-8 h-8 md:w-10 md:h-10 text-white" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* FIXED: Continue/Retry Buttons nested INSIDE the dark box directly below the controls */}
+                <div className="flex flex-col items-center justify-center min-h-[4rem] pt-2">
+                  {step === 'exercise2' && hasRecorded && !isRecording && (
+                    <button onClick={handleContinueToEx3} className="bg-student-yellow text-outloud-blue font-black px-6 md:px-8 py-2 md:py-3 rounded-full shadow-xl transition-transform hover:scale-105 animate-pulse uppercase tracking-widest text-[10px] md:text-xs">
+                      CONTINUAR
                     </button>
                   )}
+                  
+                  {step === 'exercise3' && hasCompared && (
+                    <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-3 animate-fade-in-up">
+                      <button 
+                        onClick={handleRetryEx2} 
+                        title="Retry Exercise"
+                        className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center bg-white border-2 border-outloud-blue text-outloud-blue hover:bg-blue-50 rounded-full shadow-md transition-transform hover:scale-105 shrink-0"
+                      >
+                        <svg className="w-5 h-5 md:w-6 md:h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 3.16L3 8" />
+                          <path d="M3 3v5h5" />
+                        </svg>
+                      </button>
+                      <button onClick={handleContinueToEx4} className="bg-student-yellow text-outloud-blue font-black px-6 md:px-8 py-2 md:py-3 rounded-full shadow-xl transition-transform hover:scale-105 animate-pulse uppercase tracking-widest text-[10px] md:text-xs">
+                        CONTINUAR
+                      </button>
+                    </div>
+                  )}
                 </div>
+
               </div>
             </div>
 
-            <div className="mt-6 text-center text-white font-montserrat text-base md:text-xl font-medium tracking-wide">
-              Alan: The <span className="underline decoration-2 underline-offset-4 font-bold">bill</span>, please!
-            </div>
-
-            <div className="w-full h-1.5 md:h-2 bg-[#4a5561] rounded-full mt-6 overflow-visible relative z-20">
-              <div className="h-full bg-[#5b9bd5] rounded-full relative transition-all duration-100 ease-linear" style={{ width: `${audioProgress}%` }}>
-                <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-4 h-4 bg-white border-[3px] border-[#5b9bd5] rounded-full shadow-md"></div>
-              </div>
-            </div>
-
-          </div>
-
-          <div className="mt-4 flex justify-center space-x-4 shrink-0 h-[4rem]">
-            {step === 'exercise2' && hasRecorded && !isRecording && (
-              <button onClick={handleContinueToEx3} className="bg-student-yellow text-outloud-blue font-black px-12 py-2.5 md:py-3 rounded-full shadow-xl transition-transform hover:scale-105 animate-pulse uppercase tracking-widest text-xs md:text-sm">
-                CONTINUAR
-              </button>
-            )}
-            {step === 'exercise3' && hasCompared && (
-              <div className="flex items-center space-x-4 animate-fade-in-up">
-                <button 
-                  onClick={handleRetryEx2} 
-                  title="Retry Exercise"
-                  className="w-12 h-12 md:w-14 md:h-14 flex items-center justify-center bg-white border-2 border-outloud-blue text-outloud-blue hover:bg-blue-50 rounded-full shadow-md transition-transform hover:scale-105 shrink-0"
-                >
-                  <svg className="w-6 h-6 md:w-7 md:h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 3.16L3 8" />
-                    <path d="M3 3v5h5" />
-                  </svg>
-                </button>
-                <button onClick={handleContinueToEx4} className="bg-student-yellow text-outloud-blue font-black px-12 py-2.5 md:py-3 rounded-full shadow-xl transition-transform hover:scale-105 animate-pulse uppercase tracking-widest text-xs md:text-sm">
-                  CONTINUAR
-                </button>
-              </div>
-            )}
           </div>
         </div>
       )}
