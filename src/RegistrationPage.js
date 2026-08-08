@@ -113,12 +113,34 @@ const RegistrationPage = ({ onReturnHome }) => {
     referralToggle: false,
     refName: '',
     refPhone: '',
-    planType: '',
-    planSelect: '',
   });
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // State and Timer Ref for the temporary under development message
+  const [devMessage, setDevMessage] = useState('');
+  const devTimerRef = useRef(null);
+
+  // Effect to clear the dev message if the user clicks anywhere else
+  useEffect(() => {
+    if (!devMessage) return;
+
+    const handleGlobalClick = () => {
+      setDevMessage('');
+      if (devTimerRef.current) clearTimeout(devTimerRef.current);
+    };
+
+    // Small delay ensures the button click itself doesn't immediately close the message
+    const delayTimer = setTimeout(() => {
+      window.addEventListener('click', handleGlobalClick);
+    }, 50);
+
+    return () => {
+      clearTimeout(delayTimer);
+      window.removeEventListener('click', handleGlobalClick);
+    };
+  }, [devMessage]);
 
   const reasonOptions = [
     'A) Para viajar',
@@ -146,33 +168,24 @@ const RegistrationPage = ({ onReturnHome }) => {
     'B) 6 meses',
     'C) 9 meses o más',
   ];
-  const planTypeOptions = ['A) Plan mensual', 'B) Plan a tu ritmo'];
-
-  const monthlyPlans = [
-    'A) Plan básico: 3 meses $50',
-    'B) Plan eficiente: 6 meses $85',
-    'C) Plan óptimo: 9 meses $120',
-    'D) Plan Nativo: 12 meses $160',
-  ];
-  const rhythmPlans = [
-    'A) Plan básico: 8 créditos $20',
-    'B) Plan eficiente: 12 créditos $30',
-    'C) Plan óptimo: 24 créditos $50',
-    'D) Plan ideal: 36 créditos $70',
-  ];
-
-  const currentPlanOptions =
-    formData.planType === 'A) Plan mensual'
-      ? monthlyPlans
-      : formData.planType === 'B) Plan a tu ritmo'
-      ? rhythmPlans
-      : [];
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: false }));
-    if (field === 'planType')
-      setFormData((prev) => ({ ...prev, planSelect: '' }));
+  };
+
+  // Handler for buttons currently under development
+  const handleDevButtonClick = (e) => {
+    e.preventDefault();
+    setDevMessage('Esta función se encuentra en desarrollo y estará lista en los próximos días');
+    
+    // Clear any existing timer so they don't overlap
+    if (devTimerRef.current) clearTimeout(devTimerRef.current);
+    
+    // Clear the message automatically after 3 seconds
+    devTimerRef.current = setTimeout(() => {
+      setDevMessage('');
+    }, 3000);
   };
 
   const handleSubmit = async (e) => {
@@ -188,8 +201,6 @@ const RegistrationPage = ({ onReturnHome }) => {
       'fluentTime',
       'interest',
       'investTime',
-      'planType',
-      'planSelect',
     ];
 
     requiredFields.forEach((field) => {
@@ -262,15 +273,6 @@ const RegistrationPage = ({ onReturnHome }) => {
         inline: false,
       });
     }
-
-    // Always inject Payment Plan last
-    discordPayload.embeds[0].fields.push({
-      name: '💳 SECTION 3: PAYMENT PLANS',
-      value: `**Modalidad:** ${formData.planType.substring(
-        3
-      )}\n**Plan Seleccionado:** ${formData.planSelect.substring(3)}`,
-      inline: false,
-    });
 
     try {
       await fetch(DISCORD_WEBHOOK_URL, {
@@ -352,7 +354,7 @@ const RegistrationPage = ({ onReturnHome }) => {
             fill="currentColor"
             viewBox="0 0 20 20"
           >
-            <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+            <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
           </svg>
         </button>
       </div>
@@ -546,36 +548,29 @@ const RegistrationPage = ({ onReturnHome }) => {
             </div>
           </div>
 
-          {/* COLUMN 3 */}
+          {/* COLUMN 3: INFORMATION & BUTTONS */}
           <div className="flex flex-col flex-grow justify-between">
-            <div>
-              <h3 className="text-xs lg:text-sm font-black text-outloud-blue font-montserrat tracking-wide mb-6 whitespace-nowrap">
-                SECTION 3: PAYMENT PLANS
-                <br />
-                <span className="font-normal">(PLANES DE PAGO)</span>
-              </h3>
-
-              <CustomDropdown
-                titleEng="Plan type"
-                titleSpan="Tipo de plan"
-                options={planTypeOptions}
-                value={formData.planType}
-                onChange={(val) => handleInputChange('planType', val)}
-                hasError={errors.planType}
-              />
-              <CustomDropdown
-                titleEng="Select plan"
-                titleSpan="Seleccione su plan"
-                options={currentPlanOptions}
-                value={formData.planSelect}
-                onChange={(val) => handleInputChange('planSelect', val)}
-                hasError={errors.planSelect}
-              />
+            <div className="flex flex-col space-y-4 pt-4 md:pt-10">
+              <p className="text-[12px] lg:text-[13px] text-outloud-blue font-montserrat text-justify leading-relaxed">
+                Al hacer click en <strong className="font-black">ENVIAR</strong>, tu planilla ingresará en el sistema, y un <strong className="font-black">agente se pondrá en contacto contigo</strong> a través de Whatsapp, te explicará los planes y costos y te ayudará a formalizar tu inscripción.
+              </p>
+              <p className="text-[12px] lg:text-[13px] text-outloud-blue font-montserrat text-justify leading-relaxed">
+                Asegúrate de que todos tus datos de contacto sean correctos.
+              </p>
             </div>
 
-            <div className="flex flex-col space-y-3 mt-10 lg:mt-auto">
+            <div className="flex flex-col space-y-3 mt-10 lg:mt-auto relative">
+              
+              {/* Dynamic Under Development Alert (No blinking, clears on outside click) */}
+              {devMessage && (
+                <div className="absolute -top-12 w-full text-center bg-red-100 border border-red-200 text-red-700 text-[10px] lg:text-[11px] font-bold p-2 rounded-lg font-montserrat shadow-sm z-20">
+                  {devMessage}
+                </div>
+              )}
+
               <button
                 type="button"
+                onClick={handleDevButtonClick}
                 className="w-full bg-student-yellow hover:bg-yellow-500 text-outloud-blue font-black font-montserrat py-3 lg:py-4 rounded-xl shadow-md transition-colors text-sm lg:text-base border-2 border-transparent"
               >
                 FREE TRIAL /<br />

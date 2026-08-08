@@ -1,6 +1,44 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 const LoginPage = ({ onLogin, onInfoClick }) => {
+  // State and Timer Ref for the temporary under development message
+  const [devMessage, setDevMessage] = useState('');
+  const devTimerRef = useRef(null);
+
+  // Effect to clear the dev message if the user clicks anywhere else
+  useEffect(() => {
+    if (!devMessage) return;
+
+    const handleGlobalClick = () => {
+      setDevMessage('');
+      if (devTimerRef.current) clearTimeout(devTimerRef.current);
+    };
+
+    // Small delay ensures the button click itself doesn't immediately close the message
+    const delayTimer = setTimeout(() => {
+      window.addEventListener('click', handleGlobalClick);
+    }, 50);
+
+    return () => {
+      clearTimeout(delayTimer);
+      window.removeEventListener('click', handleGlobalClick);
+    };
+  }, [devMessage]);
+
+  // Handler for buttons currently under development
+  const handleDevClick = (e) => {
+    e.preventDefault();
+    setDevMessage('Esta función se encuentra en desarrollo y estará lista en los próximos días');
+    
+    // Clear any existing timer so they don't overlap
+    if (devTimerRef.current) clearTimeout(devTimerRef.current);
+    
+    // Clear the message automatically after 3 seconds
+    devTimerRef.current = setTimeout(() => {
+      setDevMessage('');
+    }, 3000);
+  };
+
   return (
     <div className="flex h-screen w-full font-sans overflow-hidden bg-student-yellow">
       
@@ -55,6 +93,13 @@ const LoginPage = ({ onLogin, onInfoClick }) => {
                 Enter your credentials to continue
               </p>
               
+              {/* Dynamic Under Development Alert */}
+              {devMessage && (
+                <div className="w-full text-center bg-red-100 border border-red-200 text-red-700 text-[10px] md:text-[11px] font-bold p-2 rounded-lg font-montserrat shadow-sm mb-4">
+                  {devMessage}
+                </div>
+              )}
+              
               <div className="flex w-full flex-col space-y-3 font-montserrat">
                 
                 <div className="w-full text-left">
@@ -75,9 +120,9 @@ const LoginPage = ({ onLogin, onInfoClick }) => {
                   />
                 </div>
                 
-                {/* Centered Pill Button */}
+                {/* Centered Pill Button (Wired to Dev Alert) */}
                 <button 
-                  onClick={onLogin}
+                  onClick={handleDevClick}
                   className="mt-3 mx-auto w-[85%] rounded-full bg-outloud-blue p-2.5 text-sm font-bold text-white shadow-md transition hover:bg-blue-900"
                 >
                   Login
@@ -96,7 +141,7 @@ const LoginPage = ({ onLogin, onInfoClick }) => {
                     Obtener información
                   </a>
                   <p className="mt-1">
-                    Take a placement test <a href="#" className="font-bold underline">here</a>.
+                    Take a placement test <a href="#" onClick={handleDevClick} className="font-bold underline">here</a>.
                   </p>
                 </div>
                 
