@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 
 const FreeLesson = ({ onReturnHome }) => {
   // Navigation & Video States
-  const [step, setStep] = useState('welcome'); // 'welcome' -> 'popup' -> 'video' -> 'exercise1' -> 'exercise2' -> 'exercise3' -> 'exercise4'
+  const [step, setStep] = useState('welcome'); // 'welcome' -> 'popup' -> 'video' -> 'exercise1' -> 'exercise2' -> 'exercise3' -> 'next_placeholder'
   const [replayCount, setReplayCount] = useState(0);
   const [isEnded, setIsEnded] = useState(false);
 
@@ -56,19 +56,28 @@ const FreeLesson = ({ onReturnHome }) => {
     };
   }, []);
 
-  // Background listener for Bunny.net video
+  // FIXED: Bulletproof Background listener for Bunny.net video
   useEffect(() => {
     const handleMessage = (e) => {
-      if (e.origin !== "https://player.mediadelivery.net") return;
+      // Broadened origin check: Bunny uses player., iframe., and video. subdomains dynamically
+      if (!e.origin.includes('mediadelivery.net') && !e.origin.includes('bunnycdn.com')) return;
+      
       try {
-        const data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
-        if (data.event === 'ended' || data.event === 'videoEnded') {
+        // Normalize payload: Bunny sometimes sends stringified JSON, sometimes objects
+        let data = e.data;
+        if (typeof data === 'string') {
+          try { data = JSON.parse(data); } catch(err) {}
+        }
+        
+        // Catch the ended event reliably
+        if (data && (data.event === 'ended' || data.type === 'ended' || data.event === 'videoEnded')) {
           setIsEnded(true);
         }
       } catch (err) {
         console.error("Error parsing iframe message:", err);
       }
     };
+    
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
   }, []);
@@ -86,7 +95,7 @@ const FreeLesson = ({ onReturnHome }) => {
 
   const getIframeUrl = () => {
     const isAutoplay = step === 'video' ? 'true' : 'false';
-    return `https://player.mediadelivery.net/embed/723066/49a5d762-d35f-4b6f-ab7b-6565e06371b1?autoplay=${isAutoplay}&loop=false&muted=false&preload=true&responsive=true`;
+    return `https://player.mediadelivery.net/embed/723066/49a5d762-d35f-4b6f-ab7b-6565e06371b1?autoplay=${isAutoplay}&loop=false&muted=false&preload=true&responsive=true&primaryColor=005b9f`;
   };
 
   // --- EXERCISE 1 LOGIC ---
@@ -168,18 +177,15 @@ const FreeLesson = ({ onReturnHome }) => {
   };
 
   const toggleRecording = async () => {
-    // If currently playing anything, stop it
     if (activeAudio === 'original') originalAudioRef.current.pause();
     if (activeAudio === 'user') recordedAudioRef.current.pause();
     setActiveAudio(null);
     setAudioProgress(0);
 
     if (isRecording) {
-      // Stop recording
       mediaRecorderRef.current.stop();
       setIsRecording(false);
     } else {
-      // Start recording
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         mediaRecorderRef.current = new MediaRecorder(stream);
@@ -210,7 +216,6 @@ const FreeLesson = ({ onReturnHome }) => {
           });
           
           setHasRecorded(true);
-          // Stop all microphone tracks to release the mic icon in the browser tab
           stream.getTracks().forEach(track => track.stop());
         };
 
@@ -290,8 +295,9 @@ const FreeLesson = ({ onReturnHome }) => {
 
       {/* STEP 2 & 3: VIDEO */}
       {(step === 'popup' || step === 'video') && (
-        <div className="relative z-10 w-full flex-grow flex items-center justify-center min-h-0 pb-4 px-4">
+        <div className="relative z-10 w-full flex-grow flex flex-col items-center justify-center min-h-0 pb-4 px-4">
           <div className="relative w-full max-w-5xl mx-auto aspect-video max-h-[75vh] rounded-[2rem] border-4 border-[#3b434b] shadow-[0_25px_50px_rgba(0,0,0,0.3)] bg-black overflow-hidden flex flex-col justify-center">
+            
             <iframe key={`bunny-player-${replayCount}`} src={getIframeUrl()} loading="lazy" className="absolute inset-0 w-full h-full border-none" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;fullscreen;" allowFullScreen={true}></iframe>
             
             {step === 'popup' && (
@@ -384,7 +390,6 @@ const FreeLesson = ({ onReturnHome }) => {
       {(step === 'exercise2' || step === 'exercise3') && (
         <div className="relative z-10 w-full max-w-[90rem] mx-auto px-4 md:px-8 pb-10 flex flex-col animate-fade-in">
           
-          {/* Dynamic Header Texts */}
           <div className="mb-6 md:mb-10 w-full">
             <h2 className="text-lg md:text-2xl lg:text-3xl text-outloud-blue font-montserrat">
               <span className="font-black uppercase">
@@ -406,19 +411,15 @@ const FreeLesson = ({ onReturnHome }) => {
             </p>
           </div>
 
-          {/* Main Interactive Dark Container */}
           <div className="relative w-full max-w-4xl mx-auto bg-[#2a3036] rounded-[2rem] border-4 border-[#3b434b] shadow-[0_20px_50px_rgba(0,0,0,0.3)] p-6 md:p-10 flex flex-col items-center">
             
             <div className="flex flex-row items-center justify-center gap-6 md:gap-12 w-full">
-              {/* Scene Image */}
               <div className="h-[250px] md:h-[350px] aspect-[4/5] rounded-xl overflow-hidden shadow-2xl border border-gray-600 bg-black shrink-0">
                 <img src="https://i.postimg.cc/CLmdVSQX/1(3).png" alt="Reception Scene" className="w-full h-full object-cover" />
               </div>
 
-              {/* Action Buttons (Right side) */}
               <div className="flex flex-col justify-center space-y-8">
                 
-                {/* LISTEN BUTTON (Original) */}
                 <div className="flex flex-col items-center">
                   <span className="text-white text-xs md:text-sm font-bold font-montserrat mb-2">Listen</span>
                   <button 
@@ -431,7 +432,6 @@ const FreeLesson = ({ onReturnHome }) => {
                   </button>
                 </div>
 
-                {/* RECORD / COMPARE BUTTON */}
                 <div className="flex flex-col items-center">
                   <span className="text-white text-xs md:text-sm font-bold font-montserrat mb-2">
                     {step === 'exercise2' ? 'Record' : 'Compare'}
@@ -461,12 +461,10 @@ const FreeLesson = ({ onReturnHome }) => {
               </div>
             </div>
 
-            {/* Subtitles */}
             <div className="mt-8 text-center text-white font-montserrat text-lg md:text-xl font-medium tracking-wide">
               Alan: The <span className="underline decoration-2 underline-offset-4 font-bold">bill</span>, please!
             </div>
 
-            {/* Audio Progress Bar (Simulates playback) */}
             <div className="w-full h-1.5 md:h-2 bg-[#4a5561] rounded-full mt-8 overflow-visible relative z-20">
               <div className="h-full bg-[#5b9bd5] rounded-full relative transition-all duration-100 ease-linear" style={{ width: `${audioProgress}%` }}>
                 <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-4 h-4 bg-white border-[3px] border-[#5b9bd5] rounded-full shadow-md"></div>
@@ -475,9 +473,7 @@ const FreeLesson = ({ onReturnHome }) => {
 
           </div>
 
-          {/* Navigation Buttons (Bottom) */}
           <div className="mt-8 flex justify-center space-x-4 h-[5rem]">
-            {/* Act 2: Continue to Compare */}
             {step === 'exercise2' && hasRecorded && !isRecording && (
               <button 
                 onClick={handleContinueToEx3}
@@ -487,7 +483,6 @@ const FreeLesson = ({ onReturnHome }) => {
               </button>
             )}
 
-            {/* Act 3: Retry or Continue */}
             {step === 'exercise3' && hasCompared && (
               <div className="flex space-x-4 animate-fade-in-up">
                 <button 
