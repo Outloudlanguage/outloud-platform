@@ -15,12 +15,15 @@ const FreeLesson = ({ onReturnHome }) => {
     slot3: null,
     slot4: null,
   });
-  const [availableOptions, setAvailableOptions] = useState([
+  
+  // Static array to keep the grid aligned even when items are removed
+  const allOptions = [
     'PLAZA HOTEL',
     'RECEPTION/\nFRONT DESK',
     'INTERNATIONAL\nAIRPORT',
-    'BEDROOM',
-  ]);
+    'BEDROOM'
+  ];
+  const [availableOptions, setAvailableOptions] = useState([...allOptions]);
 
   // Exercise 2 & 3 States (Audio Recording & Playback)
   const originalAudioUrl = "https://Outloud.b-cdn.net/ElevenLabs_2026-07-16T17_24_13_Jason%20-%20Persuasive%20and%20Engaging_pvc_sp100_s50_sb75_v3-%5BAudioTrimmer.com%5D.mp3";
@@ -237,12 +240,16 @@ const FreeLesson = ({ onReturnHome }) => {
       {/* STEP 2 & 3: VIDEO */}
       {(step === 'popup' || step === 'video') && (
         <div className="relative z-10 w-full flex-grow flex items-center justify-center min-h-0 pb-6 px-4">
-          
           <div className="flex flex-row items-center justify-center w-full max-w-6xl gap-4 md:gap-8 h-full">
-            
             <div className="relative flex-grow aspect-video max-h-[80vh] rounded-[2rem] border-4 border-[#3b434b] shadow-[0_25px_50px_rgba(0,0,0,0.3)] bg-black overflow-hidden flex flex-col justify-center">
               <iframe key={`bunny-player-${replayCount}`} src={getIframeUrl()} loading="lazy" className="absolute inset-0 w-full h-full border-none" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;fullscreen;" allowFullScreen={true}></iframe>
               
+              {step === 'video' && !isEnded && (
+                <button onClick={() => setIsEnded(true)} className="absolute top-4 right-4 z-50 bg-red-600 text-white font-black font-montserrat px-6 py-2 rounded-xl shadow-2xl hover:bg-red-700 animate-pulse border-2 border-white uppercase tracking-widest text-xs">
+                  DEV: SKIP VIDEO
+                </button>
+              )}
+
               {step === 'popup' && (
                 <div className="absolute inset-0 flex items-center justify-center p-4 sm:p-6 z-30 bg-black/60 backdrop-blur-sm">
                   <div className="bg-white/95 backdrop-blur-md rounded-[2rem] shadow-2xl p-6 sm:p-8 md:p-10 max-w-lg text-center border border-white/60 animate-fade-in-up">
@@ -263,9 +270,7 @@ const FreeLesson = ({ onReturnHome }) => {
                   }`}
                   title="Continuar"
                 >
-                  <svg className="w-8 h-8 md:w-10 md:h-10 ml-1" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                  </svg>
+                  <svg className="w-8 h-8 md:w-10 md:h-10 ml-1" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
                 </button>
               </div>
             )}
@@ -275,69 +280,73 @@ const FreeLesson = ({ onReturnHome }) => {
 
       {/* STEP 4: EXERCISE 1 (DRAG AND DROP) */}
       {step === 'exercise1' && (
-        <div className="relative z-10 w-full max-w-[95rem] mx-auto px-4 lg:px-8 flex flex-col h-full flex-grow min-h-0 animate-fade-in pb-6">
+        <div className="relative z-10 w-full max-w-[80rem] mx-auto px-4 md:px-8 flex flex-col justify-center h-full flex-grow min-h-0 animate-fade-in pb-8">
           
-          <div className="mb-4 md:mb-6 shrink-0 w-full text-center md:text-left">
+          <div className="mb-4 shrink-0 w-full text-center md:text-left">
             <h2 className="text-base md:text-xl lg:text-2xl text-outloud-blue font-montserrat">
               <span className="font-black uppercase">LESSON 1: ACTIVITY 1</span> - <span className="font-bold">Comprehension exercise.</span>
             </h2>
-            <p className="text-xs md:text-sm lg:text-base font-bold text-outloud-blue font-montserrat uppercase tracking-wide">
+            <p className="text-xs md:text-sm lg:text-base font-bold text-outloud-blue font-montserrat uppercase tracking-wide mt-1">
               DRAG AND DROP: <span className="font-normal">Match the text to the location.</span>
             </p>
           </div>
 
-          <div className="grid grid-cols-4 gap-4 lg:gap-6 w-full flex-grow min-h-0 items-start">
+          {/* DYNAMIC HEIGHT GRID: Forces identical sizing mathematically */}
+          <div className="grid grid-cols-4 gap-4 md:gap-6 lg:gap-8 w-full shrink-0">
             {[
               { id: 'slot1', img: 'https://i.postimg.cc/CLmdVSQX/1(3).png' },
               { id: 'slot2', img: 'https://i.postimg.cc/Hx9d4tGZ/2(4).png' },
               { id: 'slot3', img: 'https://i.postimg.cc/8P0DH5Y3/3(3).png' },
               { id: 'slot4', img: 'https://i.postimg.cc/tTpHTV1S/4(3).png' },
             ].map((col) => (
-              <div key={col.id} className="flex flex-col items-center w-full space-y-4 lg:space-y-6">
+              <div key={col.id} className="flex flex-col items-center w-full space-y-4">
                 
-                {/* FIXED: Un-warped images. aspect-[3/4] forces them to be taller, max-h-[55vh] gives them room to grow. */}
-                <img 
-                  src={col.img} 
-                  alt={`Location ${col.id}`} 
-                  className="w-full max-h-[50vh] lg:max-h-[55vh] aspect-[3/4] object-cover rounded-[1.5rem] lg:rounded-[2rem] border-4 border-[#08203e] shadow-lg bg-white" 
-                />
+                {/* STRICT TALL ASPECT RATIO: 4/5 forces the portrait layout. w-full fits it to the column. */}
+                <div className="w-full aspect-[4/5] rounded-[1rem] lg:rounded-[1.5rem] border-[3px] md:border-4 border-[#08203e] overflow-hidden shadow-lg bg-white shrink-0">
+                  <img src={col.img} alt={`Location ${col.id}`} className="w-full h-full object-cover" />
+                </div>
                 
-                {/* FIXED: Much wider container to match the new pills perfectly */}
+                {/* WIDE DROP SLOT: Automatically matches the exact width of the image above it */}
                 <div onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDropOnSlot(e, col.id)} onClick={() => handleSlotClick(col.id)}
-                  className={`w-[160px] md:w-[200px] lg:w-[250px] h-12 lg:h-16 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer ${
-                    dragSlots[col.id] ? 'bg-transparent border-none' : `bg-[#eef5fc]/50 border-2 border-dashed border-[#08203e] ${selectedPill ? 'ring-4 ring-student-yellow/50' : ''}`
-                  }`}
+                  className={`w-full h-10 md:h-12 lg:h-14 shrink-0 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer ${
+                    dragSlots[col.id] ? 'bg-transparent border-none' : 'bg-[#eef5fc]/50 border-2 border-dashed border-[#08203e]'
+                  } ${selectedPill ? 'ring-4 ring-student-yellow/50' : ''}`}
                 >
                   {dragSlots[col.id] && (
                     <div draggable onDragStart={(e) => handleDragStart(e, dragSlots[col.id], col.id)} 
-                      className="w-full h-full bg-[#08203e] text-white rounded-full flex items-center justify-center text-[10px] md:text-xs lg:text-sm font-bold font-montserrat text-center px-4 cursor-grab shadow-lg whitespace-pre-line leading-tight"
+                      className="w-full h-full bg-[#08203e] text-white rounded-full flex items-center justify-center text-[9px] md:text-xs lg:text-sm font-bold font-montserrat text-center px-2 cursor-grab shadow-lg whitespace-pre-line leading-tight"
                     >
                       {dragSlots[col.id]}
                     </div>
                   )}
                 </div>
-
               </div>
             ))}
           </div>
 
-          <div className="shrink-0 flex flex-col items-center mt-6 lg:mt-10 justify-between">
-            {/* FIXED: Draggable pills now exactly match the dimensions of the slots above them */}
-            <div onDragOver={(e) => e.preventDefault()} onDrop={handleDropOnBank} className="w-full flex flex-wrap justify-center gap-4 lg:gap-6 p-2">
-              {availableOptions.map((opt) => (
-                <div key={opt} draggable onClick={() => handlePillClick(opt, 'bank')} onDragStart={(e) => handleDragStart(e, opt, 'bank')}
-                  className={`w-[160px] md:w-[200px] lg:w-[250px] h-12 lg:h-16 rounded-full font-bold font-montserrat text-[10px] md:text-xs lg:text-sm text-center shadow-lg cursor-grab hover:-translate-y-1 transition-all flex items-center justify-center whitespace-pre-line leading-tight select-none px-4 ${
-                    selectedPill === opt ? 'bg-student-yellow text-outloud-blue ring-4 ring-student-yellow/50 scale-110' : 'bg-[#08203e] text-white hover:bg-blue-900'
-                  }`}
-                >
-                  {opt}
-                </div>
-              ))}
+          <div className="shrink-0 flex flex-col items-center w-full">
+            {/* EXACT MATCH PILL BANK: Shares the identical grid layout as the slots above */}
+            <div onDragOver={(e) => e.preventDefault()} onDrop={handleDropOnBank} className="w-full grid grid-cols-4 gap-4 md:gap-6 lg:gap-8 mt-6 lg:mt-8">
+              {allOptions.map((opt) => {
+                // Renders an invisible shell if the pill is placed, preventing layout collapse
+                if (!availableOptions.includes(opt)) {
+                  return <div key={`empty-${opt}`} className="w-full h-10 md:h-12 lg:h-14"></div>;
+                }
+                return (
+                  <div key={opt} draggable onClick={() => handlePillClick(opt, 'bank')} onDragStart={(e) => handleDragStart(e, opt, 'bank')}
+                    className={`w-full h-10 md:h-12 lg:h-14 rounded-full font-bold font-montserrat text-[9px] md:text-xs lg:text-sm text-center shadow-lg cursor-grab hover:-translate-y-1 transition-all flex items-center justify-center whitespace-pre-line leading-tight select-none px-2 ${
+                      selectedPill === opt ? 'bg-student-yellow text-outloud-blue ring-4 ring-student-yellow/50 scale-110 z-10' : 'bg-[#08203e] text-white hover:bg-blue-900'
+                    }`}
+                  >
+                    {opt}
+                  </div>
+                );
+              })}
             </div>
 
-            <div className="h-16 flex items-end justify-center mt-4">
+            <div className="h-16 flex items-end justify-center mt-6 lg:mt-8 w-full">
               {isEx1Complete && (
-                <button onClick={handleCheckExercise1} className="bg-student-yellow text-outloud-blue font-black px-16 py-3 lg:py-4 rounded-full shadow-xl transition-transform hover:scale-105 uppercase tracking-widest text-sm md:text-base animate-fade-in-up">
+                <button onClick={handleCheckExercise1} className="bg-student-yellow text-outloud-blue font-black px-12 lg:px-16 py-3 rounded-full shadow-xl transition-transform hover:scale-105 uppercase tracking-widest text-sm lg:text-base animate-fade-in-up">
                   CONTINUAR
                 </button>
               )}
@@ -354,14 +363,14 @@ const FreeLesson = ({ onReturnHome }) => {
             <h2 className="text-base md:text-xl lg:text-2xl text-outloud-blue font-montserrat">
               <span className="font-black uppercase">LESSON 1: ACTIVITY {step === 'exercise2' ? '2' : '3'}</span> - <span className="font-bold">{step === 'exercise2' ? 'Listen and repeat.' : 'Compare.'}</span>
             </h2>
-            <p className="text-xs md:text-sm lg:text-base font-medium text-outloud-blue font-montserrat flex items-center flex-wrap justify-center md:justify-start">
+            <p className="text-xs md:text-sm lg:text-base font-medium text-outloud-blue font-montserrat flex items-center flex-wrap justify-center md:justify-start mt-2">
               {step === 'exercise2' ? (
                 <>
-                  Press the <svg className="w-4 h-4 mx-1 inline text-outloud-blue" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clipRule="evenodd"></path></svg> icon to listen to the original audio... then, press the <svg className="w-4 h-4 mx-1 inline text-outloud-blue" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg> icon to repeat and record your version.
+                  Press the <svg className="w-5 h-5 mx-1 inline text-outloud-blue" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clipRule="evenodd"></path></svg> icon to listen to the original audio... then, press the <svg className="w-5 h-5 mx-1 inline text-outloud-blue" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg> icon to repeat and record your version.
                 </>
               ) : (
                 <>
-                  Press the <svg className="w-4 h-4 mx-1 inline text-outloud-blue" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clipRule="evenodd"></path></svg> icon to listen... then, press the <svg className="w-4 h-4 mx-1 inline text-outloud-blue" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg> icon to compare your version to the original.
+                  Press the <svg className="w-5 h-5 mx-1 inline text-outloud-blue" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clipRule="evenodd"></path></svg> icon to listen... then, press the <svg className="w-5 h-5 mx-1 inline text-outloud-blue" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg> icon to compare your version to the original.
                 </>
               )}
             </p>
@@ -414,7 +423,6 @@ const FreeLesson = ({ onReturnHome }) => {
                 CONTINUAR
               </button>
             )}
-            
             {step === 'exercise3' && hasCompared && (
               <div className="flex items-center space-x-4 animate-fade-in-up">
                 <button 
