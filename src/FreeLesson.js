@@ -2,12 +2,20 @@ import React, { useState, useEffect, useRef } from 'react';
 
 const FreeLesson = ({ onReturnHome, onReturnToRegister }) => {
   // Navigation & Video States
-  const [step, setStep] = useState('welcome'); // 'welcome' -> 'popup' -> 'video' -> 'exercise1' -> 'exercise2' -> 'exercise3' -> 'next_placeholder'
+  const [step, setStep] = useState('welcome'); // 'welcome' -> 'popup' -> 'video' -> 'exercise1' -> 'exercise2' -> 'exercise3' -> 'exercises4_and_5' -> 'results'
   const [replayCount, setReplayCount] = useState(0);
   const [isEnded, setIsEnded] = useState(false);
 
-  // Exercise 1 States & Scoring
-  const [scores, setScores] = useState({ correct: 0, incorrect: 0 });
+  // Performance Metrics State
+  const [metrics, setMetrics] = useState({
+    ex1Correct: 0,
+    ex4Correct: 0,
+    ex5Correct: 0,
+    audioRetries: 0,
+    missedOriginalBeforeCompare: false 
+  });
+
+  // Exercise 1 States 
   const [selectedPill, setSelectedPill] = useState(null);
   const [dragSlots, setDragSlots] = useState({
     slot1: null,
@@ -29,18 +37,33 @@ const FreeLesson = ({ onReturnHome, onReturnToRegister }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [hasRecorded, setHasRecorded] = useState(false);
   const [hasCompared, setHasCompared] = useState(false);
+  const [hasListenedOriginal, setHasListenedOriginal] = useState(false); 
   const [activeAudio, setActiveAudio] = useState(null);
+  const [audioProgress, setAudioProgress] = useState(0);
   
   const originalAudioRef = useRef(null);
   const recordedAudioRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
 
+  // Exercise 4 & 5 States
+  const [act4Input1, setAct4Input1] = useState('');
+  const [act4Input2, setAct4Input2] = useState('');
+  const [act4Touched1, setAct4Touched1] = useState(false);
+  const [act4Touched2, setAct4Touched2] = useState(false);
+  const [act5Selection, setAct5Selection] = useState(null);
+
   // Setup Original Audio
   useEffect(() => {
     originalAudioRef.current = new Audio(originalAudioUrl);
+    originalAudioRef.current.addEventListener('timeupdate', () => {
+      if (originalAudioRef.current.duration) {
+        setAudioProgress((originalAudioRef.current.currentTime / originalAudioRef.current.duration) * 100);
+      }
+    });
     originalAudioRef.current.addEventListener('ended', () => {
       setActiveAudio(null);
+      setAudioProgress(0);
     });
 
     return () => {
@@ -121,18 +144,20 @@ const FreeLesson = ({ onReturnHome, onReturnToRegister }) => {
   };
 
   const handleCheckExercise1 = () => {
-    let currentCorrect = 0; let currentIncorrect = 0;
-    if (dragSlots.slot1 === 'RECEPTION/\nFRONT DESK') currentCorrect++; else currentIncorrect++;
-    if (dragSlots.slot2 === 'INTERNATIONAL\nAIRPORT') currentCorrect++; else currentIncorrect++;
-    if (dragSlots.slot3 === 'PLAZA HOTEL') currentCorrect++; else currentIncorrect++;
-    if (dragSlots.slot4 === 'BEDROOM') currentCorrect++; else currentIncorrect++;
-    setScores(prev => ({ correct: prev.correct + currentCorrect, incorrect: prev.incorrect + currentIncorrect }));
+    let currentCorrect = 0;
+    if (dragSlots.slot1 === 'RECEPTION/\nFRONT DESK') currentCorrect++; 
+    if (dragSlots.slot2 === 'INTERNATIONAL\nAIRPORT') currentCorrect++; 
+    if (dragSlots.slot3 === 'PLAZA HOTEL') currentCorrect++; 
+    if (dragSlots.slot4 === 'BEDROOM') currentCorrect++; 
+    
+    setMetrics(prev => ({ ...prev, ex1Correct: currentCorrect }));
     setStep('exercise2');
   };
   const isEx1Complete = Object.values(dragSlots).every(v => v !== null);
 
   // --- EXERCISE 2 & 3 LOGIC ---
   const playOriginalAudio = () => {
+    setHasListenedOriginal(true); 
     if (activeAudio === 'user' && recordedAudioRef.current) {
       recordedAudioRef.current.pause(); recordedAudioRef.current.currentTime = 0;
     }
@@ -143,6 +168,11 @@ const FreeLesson = ({ onReturnHome, onReturnToRegister }) => {
 
   const playRecordedAudio = () => {
     if (!recordedAudioRef.current) return;
+    
+    if (!hasListenedOriginal && !hasCompared) {
+      setMetrics(prev => ({ ...prev, missedOriginalBeforeCompare: true }));
+    }
+
     if (activeAudio === 'original' && originalAudioRef.current) {
       originalAudioRef.current.pause(); originalAudioRef.current.currentTime = 0;
     }
@@ -156,6 +186,7 @@ const FreeLesson = ({ onReturnHome, onReturnToRegister }) => {
     if (activeAudio === 'original') originalAudioRef.current.pause();
     if (activeAudio === 'user') recordedAudioRef.current.pause();
     setActiveAudio(null);
+    setAudioProgress(0);
 
     if (isRecording) {
       mediaRecorderRef.current.stop();
@@ -171,7 +202,10 @@ const FreeLesson = ({ onReturnHome, onReturnToRegister }) => {
           const audioUrl = URL.createObjectURL(blob);
           if (recordedAudioRef.current) { recordedAudioRef.current.pause(); recordedAudioRef.current.src = ''; }
           recordedAudioRef.current = new Audio(audioUrl);
-          recordedAudioRef.current.addEventListener('ended', () => { setActiveAudio(null); });
+          recordedAudioRef.current.addEventListener('timeupdate', () => {
+            if (recordedAudioRef.current.duration) setAudioProgress((recordedAudioRef.current.currentTime / recordedAudioRef.current.duration) * 100);
+          });
+          recordedAudioRef.current.addEventListener('ended', () => { setActiveAudio(null); setAudioProgress(0); });
           setHasRecorded(true);
           stream.getTracks().forEach(track => track.stop());
         };
@@ -183,9 +217,58 @@ const FreeLesson = ({ onReturnHome, onReturnToRegister }) => {
     }
   };
 
-  const handleContinueToEx3 = () => { setStep('exercise3'); setActiveAudio(null); };
-  const handleRetryEx2 = () => { setStep('exercise2'); setHasRecorded(false); setHasCompared(false); setActiveAudio(null); };
-  const handleContinueToEx4 = () => { setStep('next_placeholder'); };
+  const handleContinueToEx3 = () => { setStep('exercise3'); setAudioProgress(0); setActiveAudio(null); };
+  
+  const handleRetryEx2 = () => { 
+    setMetrics(prev => ({
+      ...prev,
+      audioRetries: prev.audioRetries + 1
+    }));
+    
+    setHasListenedOriginal(false); 
+    setStep('exercise2'); 
+    setHasRecorded(false); 
+    setHasCompared(false); 
+    setAudioProgress(0); 
+    setActiveAudio(null); 
+  };
+  
+  const handleContinueToEx4 = () => { setStep('exercises4_and_5'); };
+
+  // --- EXERCISE 4 & 5 LOGIC ---
+  const isEx45Complete = act4Input1.trim() !== '' && act4Input2.trim() !== '' && act5Selection !== null;
+
+  const handleCheckExercises45 = () => {
+    let ex4C = 0; 
+    let ex5C = 0;
+
+    if (act4Input1.trim().toLowerCase() === 'is') ex4C++;
+    if (act4Input2.trim().toLowerCase() === 'is') ex4C++;
+    if (act5Selection === 'Recepcionist') ex5C++;
+
+    setMetrics(prev => ({ ...prev, ex4Correct: ex4C, ex5Correct: ex5C }));
+    setStep('results');
+  };
+
+  // --- RESULTS CALCULATION ---
+  const listeningScore = Math.round((metrics.ex1Correct / 4) * 100);
+  const comprehensionScore = listeningScore;
+  const grammarScore = Math.round((metrics.ex4Correct / 2) * 100);
+  const readingScore = Math.round(((metrics.ex4Correct + metrics.ex5Correct) / 3) * 100);
+  
+  let speakingRaw = 100 - (metrics.audioRetries * 20) - (metrics.missedOriginalBeforeCompare ? 10 : 0);
+  const speakingScore = Math.max(0, Math.min(100, speakingRaw)); 
+  
+  const overallScore = Math.round((listeningScore + comprehensionScore + grammarScore + readingScore + speakingScore) / 5);
+
+  const ProgressBar = ({ label, percent }) => (
+    <div className="flex items-center w-full justify-end">
+      <span className="text-[#08203e] font-montserrat text-sm md:text-lg mr-4 text-right flex-shrink-0">{label}</span>
+      <div className="w-40 md:w-56 h-3 md:h-4 bg-[#eef5fc] rounded-full overflow-hidden border border-[#08203e]/20 shrink-0 shadow-inner">
+        <div className="h-full bg-[#08203e] rounded-full transition-all duration-1000 ease-out" style={{ width: `${percent}%` }}></div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="relative min-h-screen w-full font-sans bg-[#eef5fc] overflow-x-hidden flex flex-col items-center">
@@ -231,12 +314,6 @@ const FreeLesson = ({ onReturnHome, onReturnToRegister }) => {
           <div className="flex flex-row items-center justify-center w-full max-w-6xl gap-4 md:gap-8 h-full">
             <div className="relative flex-grow aspect-video max-h-[80vh] rounded-[2rem] border-4 border-[#3b434b] shadow-[0_25px_50px_rgba(0,0,0,0.3)] bg-black overflow-hidden flex flex-col justify-center">
               <iframe key={`bunny-player-${replayCount}`} src={getIframeUrl()} loading="lazy" className="absolute inset-0 w-full h-full border-none" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;fullscreen;" allowFullScreen={true}></iframe>
-              
-              {step === 'video' && !isEnded && (
-                <button onClick={() => setIsEnded(true)} className="absolute top-4 right-4 z-50 bg-red-600 text-white font-black font-montserrat px-6 py-2 rounded-xl shadow-2xl hover:bg-red-700 animate-pulse border-2 border-white uppercase tracking-widest text-xs">
-                  DEV: SKIP VIDEO
-                </button>
-              )}
 
               {step === 'popup' && (
                 <div className="absolute inset-0 flex items-center justify-center p-4 sm:p-6 z-30 bg-black/60 backdrop-blur-sm">
@@ -271,7 +348,7 @@ const FreeLesson = ({ onReturnHome, onReturnToRegister }) => {
         <div className="relative z-10 w-full max-w-[62rem] mx-auto px-6 md:px-16 lg:px-24 xl:px-32 flex flex-col flex-grow animate-fade-in pb-12">
           
           <div className="mb-2 md:mb-4 shrink-0 w-full text-center md:text-left">
-            <h2 className="text-sm md:text-lg lg:text-xl text-outloud-blue font-montserrat">
+            <h2 className="text-sm md:text-base lg:text-lg text-outloud-blue font-montserrat">
               <span className="font-black uppercase">LESSON 1: ACTIVITY 1</span> - <span className="font-bold">Comprehension exercise.</span>
             </h2>
             <p className="text-[10px] md:text-[11px] lg:text-xs font-bold text-outloud-blue font-montserrat uppercase tracking-wide mt-0.5">
@@ -298,7 +375,7 @@ const FreeLesson = ({ onReturnHome, onReturnToRegister }) => {
                 >
                   {dragSlots[col.id] && (
                     <div draggable onDragStart={(e) => handleDragStart(e, dragSlots[col.id], col.id)} 
-                      className="w-full h-full bg-[#08203e] text-white rounded-full flex items-center justify-center text-[9px] md:text-[10px] lg:text-[11px] font-bold font-montserrat text-center px-1 cursor-grab shadow-sm whitespace-pre-line leading-tight"
+                      className="w-full h-full bg-[#08203e] text-white rounded-full flex items-center justify-center text-[8px] md:text-[10px] lg:text-[11px] font-bold font-montserrat text-center px-1 cursor-grab shadow-sm whitespace-pre-line leading-tight"
                     >
                       {dragSlots[col.id]}
                     </div>
@@ -309,8 +386,6 @@ const FreeLesson = ({ onReturnHome, onReturnToRegister }) => {
           </div>
 
           <div className="shrink-0 flex flex-col items-center w-full mt-4 md:mt-6">
-            
-            {/* FIXED: Hides the pill bank entirely when complete to immediately show the Continue button right below the slots */}
             <div onDragOver={(e) => e.preventDefault()} onDrop={handleDropOnBank} className={`w-full grid grid-cols-4 gap-2 md:gap-4 lg:gap-5 ${isEx1Complete ? 'hidden' : ''}`}>
               {allOptions.map((opt) => {
                 if (!availableOptions.includes(opt)) {
@@ -336,11 +411,9 @@ const FreeLesson = ({ onReturnHome, onReturnToRegister }) => {
               </div>
             )}
 
-            {/* Invisible safety zone to catch dropped pills if user changes their mind after completion */}
             {isEx1Complete && (
               <div onDragOver={(e) => e.preventDefault()} onDrop={handleDropOnBank} className="w-full h-32 flex-grow mt-4"></div>
             )}
-            
           </div>
         </div>
       )}
@@ -370,7 +443,6 @@ const FreeLesson = ({ onReturnHome, onReturnToRegister }) => {
             
             <div className="flex flex-row items-center justify-center gap-6 md:gap-12 w-full flex-grow min-h-0">
               
-              {/* FIXED: Removed progress bar and explicitly made the image taller using max-h-[65vh] */}
               <div className="h-full max-h-[65vh] aspect-[4/5] rounded-xl overflow-hidden shadow-2xl border border-gray-600 bg-black shrink-0 relative">
                 <img src="https://i.postimg.cc/CLmdVSQX/1(3).png" alt="Reception Scene" className="w-full h-full object-cover" />
                 
@@ -380,8 +452,6 @@ const FreeLesson = ({ onReturnHome, onReturnToRegister }) => {
               </div>
 
               <div className="flex flex-col justify-center items-center space-y-8">
-                
-                {/* Center Audio Controls */}
                 <div className="flex flex-col items-center space-y-6">
                   <div className="flex flex-col items-center">
                     <span className="text-white text-[10px] md:text-xs font-bold font-montserrat mb-1">Listen</span>
@@ -403,7 +473,6 @@ const FreeLesson = ({ onReturnHome, onReturnToRegister }) => {
                   </div>
                 </div>
 
-                {/* FIXED: Continue/Retry Buttons nested INSIDE the dark box directly below the controls */}
                 <div className="flex flex-col items-center justify-center min-h-[4rem] pt-2">
                   {step === 'exercise2' && hasRecorded && !isRecording && (
                     <button onClick={handleContinueToEx3} className="bg-student-yellow text-outloud-blue font-black px-6 md:px-8 py-2 md:py-3 rounded-full shadow-xl transition-transform hover:scale-105 animate-pulse uppercase tracking-widest text-[10px] md:text-xs">
@@ -437,9 +506,126 @@ const FreeLesson = ({ onReturnHome, onReturnToRegister }) => {
         </div>
       )}
 
-      {step === 'next_placeholder' && (
-        <div className="relative z-10 flex-grow flex items-center justify-center text-outloud-blue font-black text-2xl font-montserrat animate-fade-in">
-          READY FOR NEXT EXERCISE...
+      {/* STEP 7: EXERCISES 4 & 5 (Grammar and Vocabulary) */}
+      {step === 'exercises4_and_5' && (
+        <div className="relative z-10 w-full max-w-[50rem] mx-auto px-6 md:px-12 flex flex-col flex-grow animate-fade-in pb-12 pt-4">
+          
+          {/* ACTIVITY 4: GRAMMAR */}
+          <div className="mb-10 w-full">
+            <h2 className="text-sm md:text-lg lg:text-xl text-outloud-blue font-montserrat">
+              <span className="font-black uppercase">LESSON 1: ACTIVITY 4</span> - <span className="font-bold">Grammar exercise.</span>
+            </h2>
+            <p className="text-[10px] md:text-xs lg:text-sm font-bold text-outloud-blue font-montserrat uppercase tracking-wide mt-2 mb-6">
+              FILL IN THE BLANK: <span className="font-normal">Complete the text with the correct word from the lesson.</span>
+            </p>
+
+            <ul className="space-y-6 text-sm md:text-lg text-outloud-blue font-montserrat font-medium ml-2 md:ml-4">
+              <li className="flex items-center flex-wrap gap-y-2">
+                <span className="font-bold mr-2">• Alan:</span> 
+                How much
+                <input
+                  type="text"
+                  maxLength={6}
+                  value={act4Input1}
+                  onFocus={() => setAct4Touched1(true)}
+                  onChange={(e) => setAct4Input1(e.target.value)}
+                  className={`inline-block w-20 md:w-24 mx-2 md:mx-3 border-b-2 bg-transparent text-center font-bold text-outloud-blue outline-none transition-all ${
+                    !act4Touched1 && act4Input1 === '' ? 'border-outloud-blue animate-pulse' : 'border-outloud-blue focus:border-student-yellow'
+                  }`}
+                />
+                a room?
+              </li>
+              <li className="flex items-center flex-wrap gap-y-2">
+                <span className="font-bold mr-2">• Alan:</span> 
+                The WiFi
+                <input
+                  type="text"
+                  maxLength={6}
+                  value={act4Input2}
+                  onFocus={() => setAct4Touched2(true)}
+                  onChange={(e) => setAct4Input2(e.target.value)}
+                  className={`inline-block w-20 md:w-24 mx-2 md:mx-3 border-b-2 bg-transparent text-center font-bold text-outloud-blue outline-none transition-all ${
+                    !act4Touched2 && act4Input2 === '' ? 'border-outloud-blue animate-pulse' : 'border-outloud-blue focus:border-student-yellow'
+                  }`}
+                />
+                free.
+              </li>
+            </ul>
+          </div>
+
+          {/* ACTIVITY 5: VOCABULARY */}
+          <div className="mb-10 w-full mt-4 md:mt-8">
+            <h2 className="text-sm md:text-lg lg:text-xl text-outloud-blue font-montserrat">
+              <span className="font-black uppercase">LESSON 1: ACTIVITY 5</span> - <span className="font-bold">Vocabulary exercise.</span>
+            </h2>
+            <p className="text-[10px] md:text-xs lg:text-sm font-bold text-outloud-blue font-montserrat uppercase tracking-wide mt-2 mb-6">
+              CHOOSE THE RIGHT OPTION: <span className="font-normal">Click on the correct button.</span>
+            </p>
+
+            <p className="text-base md:text-xl font-bold text-outloud-blue font-montserrat mb-6 ml-2 md:ml-4">
+              Dennis is a...
+            </p>
+
+            <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-8 md:space-x-12 ml-2 md:ml-4 space-y-4 sm:space-y-0">
+              {['Taxi driver', 'Recepcionist', 'Pilot'].map((opt) => (
+                <div key={opt} onClick={() => setAct5Selection(opt)} className="flex items-center space-x-3 cursor-pointer group">
+                  <div className={`w-5 h-5 md:w-6 md:h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                    act5Selection === opt ? 'border-student-yellow' : 'border-outloud-blue/40 group-hover:border-outloud-blue'
+                  }`}>
+                    {act5Selection === opt && <div className="w-2.5 h-2.5 md:w-3 md:h-3 bg-student-yellow rounded-full"></div>}
+                  </div>
+                  <span className="text-sm md:text-lg text-outloud-blue font-montserrat">{opt}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* CONTINUE BUTTON */}
+          <div className="mt-auto h-16 flex items-center justify-center">
+            {isEx45Complete && (
+              <button 
+                onClick={handleCheckExercises45} 
+                className="bg-student-yellow text-outloud-blue font-black px-12 md:px-16 py-3 rounded-full shadow-lg transition-transform hover:scale-105 animate-pulse uppercase tracking-widest text-sm md:text-base animate-fade-in-up"
+              >
+                CONTINUAR
+              </button>
+            )}
+          </div>
+
+        </div>
+      )}
+
+      {/* STEP 8: FINAL RESULTS GRAPH */}
+      {step === 'results' && (
+        <div className="relative z-10 w-full max-w-[70rem] mx-auto px-6 md:px-12 flex flex-col md:flex-row items-center justify-between flex-grow animate-fade-in pb-12 pt-12 md:pt-24 gap-12">
+          
+          {/* Left Text Block */}
+          <div className="flex flex-col items-center md:items-start text-center md:text-left space-y-2 md:space-y-4 w-full md:w-1/2">
+            <h1 className="text-5xl md:text-7xl lg:text-[5rem] font-black text-[#08203e] font-montserrat uppercase tracking-tight leading-none">A1: UNIT 1</h1>
+            <h1 className="text-5xl md:text-7xl lg:text-[5rem] font-black text-[#08203e] font-montserrat uppercase tracking-tight leading-none">LESSON 1</h1>
+            <h1 className="text-5xl md:text-7xl lg:text-[5rem] font-black text-[#08203e] font-montserrat uppercase tracking-tight leading-none mt-4 md:mt-8">COMPLETED</h1>
+          </div>
+
+          {/* Right Graph Block */}
+          <div className="flex flex-col items-end w-full md:w-1/2">
+            <div className="w-full max-w-[24rem] space-y-3 mb-8">
+              <ProgressBar label="Listening:" percent={listeningScore} />
+              <ProgressBar label="Reading:" percent={readingScore} />
+              <ProgressBar label="Grammar:" percent={grammarScore} />
+              <ProgressBar label="Comprehension:" percent={comprehensionScore} />
+              <ProgressBar label="Speaking:" percent={speakingScore} />
+            </div>
+            
+            <div className="w-full max-w-[24rem] flex flex-col items-center justify-center">
+              <span className="text-7xl md:text-[7rem] font-black text-[#08203e] font-montserrat leading-none mb-4">{overallScore}%</span>
+              
+              <button onClick={onReturnToRegister} className="bg-student-yellow text-outloud-blue font-black px-8 py-3 rounded-2xl shadow-xl transition-transform hover:scale-105 flex flex-col items-center text-sm md:text-base leading-tight animate-pulse tracking-wide">
+                <span>RESERVAR CLASE</span>
+                <span>EN VIVO</span>
+              </button>
+            </div>
+          </div>
+
         </div>
       )}
 
