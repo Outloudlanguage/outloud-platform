@@ -56,25 +56,21 @@ const FreeLesson = ({ onReturnHome }) => {
     };
   }, []);
 
-  // FIXED: Bulletproof Background listener for Bunny.net video
+  // Bulletproof Background listener for Bunny.net video
   useEffect(() => {
     const handleMessage = (e) => {
-      // Broadened origin check: Bunny uses player., iframe., and video. subdomains dynamically
-      if (!e.origin.includes('mediadelivery.net') && !e.origin.includes('bunnycdn.com')) return;
-      
       try {
-        // Normalize payload: Bunny sometimes sends stringified JSON, sometimes objects
         let data = e.data;
         if (typeof data === 'string') {
           try { data = JSON.parse(data); } catch(err) {}
         }
         
-        // Catch the ended event reliably
+        // Catch ANY ended event from the iframe
         if (data && (data.event === 'ended' || data.type === 'ended' || data.event === 'videoEnded')) {
           setIsEnded(true);
         }
       } catch (err) {
-        console.error("Error parsing iframe message:", err);
+        // Ignore errors from browser extensions sending weird postMessages
       }
     };
     
@@ -93,9 +89,10 @@ const FreeLesson = ({ onReturnHome }) => {
   };
   const handleContinueToEx1 = () => setStep('exercise1');
 
+  // FIXED: Using URL encoded hex (%23) for the color
   const getIframeUrl = () => {
     const isAutoplay = step === 'video' ? 'true' : 'false';
-    return `https://player.mediadelivery.net/embed/723066/49a5d762-d35f-4b6f-ab7b-6565e06371b1?autoplay=${isAutoplay}&loop=false&muted=false&preload=true&responsive=true&primaryColor=005b9f`;
+    return `https://player.mediadelivery.net/embed/723066/49a5d762-d35f-4b6f-ab7b-6565e06371b1?autoplay=${isAutoplay}&loop=false&muted=false&preload=true&responsive=true&primaryColor=%23005b9f`;
   };
 
   // --- EXERCISE 1 LOGIC ---
@@ -300,6 +297,16 @@ const FreeLesson = ({ onReturnHome }) => {
             
             <iframe key={`bunny-player-${replayCount}`} src={getIframeUrl()} loading="lazy" className="absolute inset-0 w-full h-full border-none" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;fullscreen;" allowFullScreen={true}></iframe>
             
+            {/* BIG RED DEV SKIP BUTTON - So you never get stuck testing */}
+            {step === 'video' && !isEnded && (
+              <button 
+                onClick={() => setIsEnded(true)}
+                className="absolute top-4 right-4 z-50 bg-red-600 text-white font-black font-montserrat px-6 py-3 rounded-xl shadow-2xl hover:bg-red-700 animate-pulse border-2 border-white uppercase tracking-widest text-sm"
+              >
+                DEV: SKIP VIDEO
+              </button>
+            )}
+
             {step === 'popup' && (
               <div className="absolute inset-0 flex items-center justify-center p-4 sm:p-6 z-30 bg-black/60 backdrop-blur-sm">
                 <div className="bg-white/95 backdrop-blur-md rounded-[2rem] shadow-2xl p-6 sm:p-8 md:p-10 max-w-lg text-center border border-white/60 animate-fade-in-up">
