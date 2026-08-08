@@ -77,7 +77,6 @@ const FreeLesson = ({ onReturnHome }) => {
   const handleContinueToVideo = () => setStep('video');
   const handleContinueToEx1 = () => setStep('exercise1');
 
-  // FIXED: Removed the %23 so Bunny registers the exact hex code
   const getIframeUrl = () => {
     const isAutoplay = step === 'video' ? 'true' : 'false';
     return `https://player.mediadelivery.net/embed/723066/49a5d762-d35f-4b6f-ab7b-6565e06371b1?autoplay=${isAutoplay}&loop=false&muted=false&preload=true&responsive=true&primaryColor=005b9f`;
@@ -198,7 +197,6 @@ const FreeLesson = ({ onReturnHome }) => {
   const handleContinueToEx4 = () => { setStep('next_placeholder'); };
 
   return (
-    // FIXED: Strict h-screen and overflow-hidden to absolutely prevent scrolling
     <div className="relative h-screen w-full font-sans bg-[#eef5fc] overflow-hidden flex flex-col items-center">
       
       <div className="fixed inset-0 z-0 pointer-events-none">
@@ -256,7 +254,6 @@ const FreeLesson = ({ onReturnHome }) => {
               )}
             </div>
 
-            {/* FIXED: The ALWAYS VISIBLE Continue Button outside the video player */}
             {step === 'video' && (
               <div className="flex flex-col items-center justify-center shrink-0">
                 <button 
@@ -272,16 +269,15 @@ const FreeLesson = ({ onReturnHome }) => {
                 </button>
               </div>
             )}
-
           </div>
         </div>
       )}
 
       {/* STEP 4: EXERCISE 1 (DRAG AND DROP) */}
       {step === 'exercise1' && (
-        <div className="relative z-10 w-full max-w-[80rem] mx-auto px-4 flex flex-col h-full flex-grow min-h-0 animate-fade-in pb-4">
+        <div className="relative z-10 w-full max-w-[95rem] mx-auto px-4 lg:px-8 flex flex-col h-full flex-grow min-h-0 animate-fade-in pb-6">
           
-          <div className="mb-2 shrink-0 w-full text-center md:text-left">
+          <div className="mb-4 md:mb-6 shrink-0 w-full text-center md:text-left">
             <h2 className="text-base md:text-xl lg:text-2xl text-outloud-blue font-montserrat">
               <span className="font-black uppercase">LESSON 1: ACTIVITY 1</span> - <span className="font-bold">Comprehension exercise.</span>
             </h2>
@@ -290,41 +286,47 @@ const FreeLesson = ({ onReturnHome }) => {
             </p>
           </div>
 
-          <div className="grid grid-cols-4 gap-2 md:gap-4 w-full flex-grow min-h-0 items-center">
+          <div className="grid grid-cols-4 gap-4 lg:gap-6 w-full flex-grow min-h-0 items-start">
             {[
               { id: 'slot1', img: 'https://i.postimg.cc/CLmdVSQX/1(3).png' },
               { id: 'slot2', img: 'https://i.postimg.cc/Hx9d4tGZ/2(4).png' },
               { id: 'slot3', img: 'https://i.postimg.cc/8P0DH5Y3/3(3).png' },
               { id: 'slot4', img: 'https://i.postimg.cc/tTpHTV1S/4(3).png' },
             ].map((col) => (
-              <div key={col.id} className="flex flex-col items-center justify-center w-full h-full space-y-2 md:space-y-4">
-                {/* FIXED: Strict max-heights on the images using vh to prevent scrolling */}
-                <img src={col.img} alt={`Location ${col.id}`} className="w-full max-h-[35vh] aspect-[4/5] object-cover rounded-[1rem] md:rounded-[1.5rem] border-4 border-[#08203e] shadow-lg bg-white" />
+              <div key={col.id} className="flex flex-col items-center w-full space-y-4 lg:space-y-6">
                 
-                {/* FIXED: The exact same dimensions for the Drop Slot */}
+                {/* FIXED: Un-warped images. aspect-[3/4] forces them to be taller, max-h-[55vh] gives them room to grow. */}
+                <img 
+                  src={col.img} 
+                  alt={`Location ${col.id}`} 
+                  className="w-full max-h-[50vh] lg:max-h-[55vh] aspect-[3/4] object-cover rounded-[1.5rem] lg:rounded-[2rem] border-4 border-[#08203e] shadow-lg bg-white" 
+                />
+                
+                {/* FIXED: Much wider container to match the new pills perfectly */}
                 <div onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDropOnSlot(e, col.id)} onClick={() => handleSlotClick(col.id)}
-                  className={`w-full max-w-[140px] md:max-w-[160px] h-10 md:h-12 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer ${
+                  className={`w-[160px] md:w-[200px] lg:w-[250px] h-12 lg:h-16 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer ${
                     dragSlots[col.id] ? 'bg-transparent border-none' : `bg-[#eef5fc]/50 border-2 border-dashed border-[#08203e] ${selectedPill ? 'ring-4 ring-student-yellow/50' : ''}`
                   }`}
                 >
                   {dragSlots[col.id] && (
                     <div draggable onDragStart={(e) => handleDragStart(e, dragSlots[col.id], col.id)} 
-                      className="w-full h-full bg-[#08203e] text-white rounded-full flex items-center justify-center text-[9px] md:text-[11px] font-bold font-montserrat text-center px-2 cursor-grab shadow-lg whitespace-pre-line leading-tight"
+                      className="w-full h-full bg-[#08203e] text-white rounded-full flex items-center justify-center text-[10px] md:text-xs lg:text-sm font-bold font-montserrat text-center px-4 cursor-grab shadow-lg whitespace-pre-line leading-tight"
                     >
                       {dragSlots[col.id]}
                     </div>
                   )}
                 </div>
+
               </div>
             ))}
           </div>
 
-          <div className="shrink-0 flex flex-col items-center mt-4">
-            {/* FIXED: The exact same dimensions for the Bank Pills */}
-            <div onDragOver={(e) => e.preventDefault()} onDrop={handleDropOnBank} className="w-full flex flex-wrap justify-center gap-2 md:gap-4 p-2">
+          <div className="shrink-0 flex flex-col items-center mt-6 lg:mt-10 justify-between">
+            {/* FIXED: Draggable pills now exactly match the dimensions of the slots above them */}
+            <div onDragOver={(e) => e.preventDefault()} onDrop={handleDropOnBank} className="w-full flex flex-wrap justify-center gap-4 lg:gap-6 p-2">
               {availableOptions.map((opt) => (
                 <div key={opt} draggable onClick={() => handlePillClick(opt, 'bank')} onDragStart={(e) => handleDragStart(e, opt, 'bank')}
-                  className={`w-[140px] md:w-[160px] h-10 md:h-12 rounded-full font-bold font-montserrat text-[9px] md:text-[11px] text-center shadow-lg cursor-grab hover:-translate-y-1 transition-all flex items-center justify-center whitespace-pre-line leading-tight select-none px-2 ${
+                  className={`w-[160px] md:w-[200px] lg:w-[250px] h-12 lg:h-16 rounded-full font-bold font-montserrat text-[10px] md:text-xs lg:text-sm text-center shadow-lg cursor-grab hover:-translate-y-1 transition-all flex items-center justify-center whitespace-pre-line leading-tight select-none px-4 ${
                     selectedPill === opt ? 'bg-student-yellow text-outloud-blue ring-4 ring-student-yellow/50 scale-110' : 'bg-[#08203e] text-white hover:bg-blue-900'
                   }`}
                 >
@@ -333,9 +335,9 @@ const FreeLesson = ({ onReturnHome }) => {
               ))}
             </div>
 
-            <div className="h-14 flex items-end justify-center">
+            <div className="h-16 flex items-end justify-center mt-4">
               {isEx1Complete && (
-                <button onClick={handleCheckExercise1} className="bg-student-yellow text-outloud-blue font-black px-12 md:px-16 py-2.5 md:py-3 rounded-full shadow-xl transition-transform hover:scale-105 uppercase tracking-widest text-xs md:text-sm animate-fade-in-up">
+                <button onClick={handleCheckExercise1} className="bg-student-yellow text-outloud-blue font-black px-16 py-3 lg:py-4 rounded-full shadow-xl transition-transform hover:scale-105 uppercase tracking-widest text-sm md:text-base animate-fade-in-up">
                   CONTINUAR
                 </button>
               )}
@@ -412,10 +414,18 @@ const FreeLesson = ({ onReturnHome }) => {
                 CONTINUAR
               </button>
             )}
+            
             {step === 'exercise3' && hasCompared && (
-              <div className="flex space-x-4 animate-fade-in-up">
-                <button onClick={handleRetryEx2} className="bg-white border-2 border-outloud-blue text-outloud-blue hover:bg-gray-50 font-black px-8 py-2.5 md:py-3 rounded-full shadow-md transition-transform hover:scale-105 uppercase tracking-widest text-xs md:text-sm">
-                  RETRY
+              <div className="flex items-center space-x-4 animate-fade-in-up">
+                <button 
+                  onClick={handleRetryEx2} 
+                  title="Retry Exercise"
+                  className="w-12 h-12 md:w-14 md:h-14 flex items-center justify-center bg-white border-2 border-outloud-blue text-outloud-blue hover:bg-blue-50 rounded-full shadow-md transition-transform hover:scale-105 shrink-0"
+                >
+                  <svg className="w-6 h-6 md:w-7 md:h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 3.16L3 8" />
+                    <path d="M3 3v5h5" />
+                  </svg>
                 </button>
                 <button onClick={handleContinueToEx4} className="bg-student-yellow text-outloud-blue font-black px-12 py-2.5 md:py-3 rounded-full shadow-xl transition-transform hover:scale-105 animate-pulse uppercase tracking-widest text-xs md:text-sm">
                   CONTINUAR
