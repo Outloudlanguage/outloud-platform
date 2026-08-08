@@ -97,7 +97,8 @@ const CustomDropdown = ({
   );
 };
 
-const RegistrationPage = ({ onReturnHome }) => {
+// ACCEPTING THE NEW onFreeTrialClick PROP HERE
+const RegistrationPage = ({ onReturnHome, onFreeTrialClick }) => {
   // PASTE YOUR DISCORD WEBHOOK URL HERE
   const DISCORD_WEBHOOK_URL =
     'https://discordapp.com/api/webhooks/1534265478179196928/8R96hVzk1NqYi_F-dAzTpeUjnJa5DyXSFWQ338FQGwnKK9FztZt5l7ECE2bZcqhS0fwb';
@@ -174,15 +175,13 @@ const RegistrationPage = ({ onReturnHome }) => {
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: false }));
   };
 
-  // Handler for buttons currently under development
+  // Handler for any remaining buttons currently under development
   const handleDevButtonClick = (e) => {
     e.preventDefault();
     setDevMessage('Esta función se encuentra en desarrollo y estará lista en los próximos días');
     
-    // Clear any existing timer so they don't overlap
     if (devTimerRef.current) clearTimeout(devTimerRef.current);
     
-    // Clear the message automatically after 3 seconds
     devTimerRef.current = setTimeout(() => {
       setDevMessage('');
     }, 3000);
@@ -354,7 +353,7 @@ const RegistrationPage = ({ onReturnHome }) => {
             fill="currentColor"
             viewBox="0 0 20 20"
           >
-            <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+            <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
           </svg>
         </button>
       </div>
@@ -561,16 +560,17 @@ const RegistrationPage = ({ onReturnHome }) => {
 
             <div className="flex flex-col space-y-3 mt-10 lg:mt-auto relative">
               
-              {/* Dynamic Under Development Alert (No blinking, clears on outside click) */}
+              {/* Dynamic Under Development Alert */}
               {devMessage && (
                 <div className="absolute -top-12 w-full text-center bg-red-100 border border-red-200 text-red-700 text-[10px] lg:text-[11px] font-bold p-2 rounded-lg font-montserrat shadow-sm z-20">
                   {devMessage}
                 </div>
               )}
 
+              {/* WIRED TO NAVIGATE TO THE FREE LESSON */}
               <button
                 type="button"
-                onClick={handleDevButtonClick}
+                onClick={onFreeTrialClick}
                 className="w-full bg-student-yellow hover:bg-yellow-500 text-outloud-blue font-black font-montserrat py-3 lg:py-4 rounded-xl shadow-md transition-colors text-sm lg:text-base border-2 border-transparent"
               >
                 FREE TRIAL /<br />
