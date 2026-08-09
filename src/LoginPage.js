@@ -21,7 +21,7 @@ const MobileLogin = ({ onLogin, onInfoClick }) => {
       <div className="absolute inset-0 z-0">
         <div 
           className="absolute inset-0 bg-cover bg-center scale-105 filter blur-[3px]"
-          style={{ backgroundImage: "url('https://i.postimg.cc/vZ248B1P/IMG-20260809-082702-056.png')" }}
+          style={{ backgroundImage: "url('https://i.postimg.cc/QtmtPdr7/Diseno-sin-titulo-(16).png')" }}
         ></div>
         <div className="absolute inset-0 bg-white/20"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-[#08203e]/80 via-transparent to-white/40"></div>
