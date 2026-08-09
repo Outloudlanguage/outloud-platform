@@ -1,6 +1,196 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
-const CourseInfoPage = ({
+// =========================================
+// 1. MOBILE & TABLET PORTRAIT UI
+// =========================================
+const MobileCourseInfo = ({
+  onReturnHome,
+  onRegister,
+  onCycleClick,
+  onLevelsClick,
+}) => {
+  return (
+    <div className="relative min-h-screen w-full font-sans bg-[#eef5fc] flex flex-col overflow-y-auto overflow-x-hidden">
+      
+      {/* Background Bubbles */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <img
+          src="https://i.postimg.cc/PJbrcZdF/Agregar-un-subtitulo-(5).png"
+          alt="Outloud Bubble Background"
+          className="w-full h-full object-cover opacity-60"
+        />
+      </div>
+
+      <div className="relative z-10 flex flex-col w-full px-5 py-6">
+        
+        {/* Top Header */}
+        <div className="flex flex-row justify-between items-center w-full mb-6">
+          <div className="flex items-center space-x-2">
+            <img 
+              src="https://i.postimg.cc/fyvnv4XT/Diseno-sin-titulo-(14).png" 
+              alt="Outloud Logo" 
+              className="h-6 object-contain" 
+            />
+            <div className="h-5 w-[1px] bg-outloud-blue opacity-40"></div>
+            <span className="text-[10px] font-light text-outloud-blue font-montserrat whitespace-nowrap">
+              Online Platform
+            </span>
+          </div>
+
+          <button 
+            onClick={onReturnHome} 
+            className="flex items-center space-x-1 text-outloud-blue font-bold font-montserrat hover:text-blue-900 transition"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+            <span className="text-[11px] whitespace-nowrap">Return Home</span>
+            <svg className="w-4 h-4 ml-0.5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M11.47 3.84a.75.75 0 011.06 0l8.69 8.69a.75.75 0 101.06-1.06l-8.689-8.69a2.25 2.25 0 00-3.182 0l-8.69 8.69a.75.75 0 001.061 1.06l8.69-8.69z" />
+              <path d="M12 5.432l8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 01-.75-.75v-4.5a.75.75 0 00-.75-.75h-3a.75.75 0 00-.75.75V21a.75.75 0 01-.75.75H5.625a1.875 1.875 0 01-1.875-1.875v-6.198a2.29 2.29 0 00.091-.086L12 5.43z" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Title */}
+        <h1 className="text-center text-[22px] font-black text-outloud-blue font-montserrat tracking-wide uppercase leading-tight mb-6">
+          INFORMACIÓN ACERCA<br/>DE LOS CURSOS
+        </h1>
+
+        <div className="flex flex-col space-y-4">
+          
+          {/* CARD 1: INMERSIÓN TOTAL */}
+          <div className="flex flex-row bg-student-yellow rounded-3xl p-4 shadow-[0_8px_20px_rgba(0,0,0,0.1)] w-full items-stretch">
+            {/* Left Col */}
+            <div className="w-[42%] flex flex-col items-center justify-center text-center pr-2 shrink-0">
+              <img
+                src="https://i.postimg.cc/LssD8BWw/Agregar-algo-de-texto-(14).png"
+                alt="Inmersión Total Icon"
+                className="h-14 w-auto object-contain mb-2"
+              />
+              <p className="text-[7px] font-bold text-outloud-blue font-montserrat uppercase leading-tight mb-0.5">
+                ¿CÓMO FUNCIONA EL CURSO?
+              </p>
+              <h3 className="text-[13px] font-black text-outloud-blue font-tabarra leading-none uppercase">
+                INMERSIÓN TOTAL
+              </h3>
+            </div>
+            {/* Right Col */}
+            <div className="w-[58%] flex flex-col justify-center pl-3">
+              <p className="text-[9px] text-outloud-blue font-montserrat text-justify leading-[1.4]">
+                Olvídate de la teoría rígida. Hemos diseñado un aprendizaje
+                libre de distracciones, interactivo y directo, basado en{' '}
+                <strong className="font-extrabold">
+                  situaciones de la vida real
+                </strong>{' '}
+                que te servirá de guía para adquirir un nuevo idioma de forma
+                natural y fluida,{' '}
+                <strong className="font-extrabold">sin traducir</strong> y sin
+                pasar horas estudiando listas de vocabulario o gramática.
+              </p>
+              <p className="text-[8px] font-extrabold text-outloud-blue font-montserrat mt-2 tracking-wider uppercase">
+                ¿CÓMO FUNCIONA? SIGUE LEYENDO.
+              </p>
+            </div>
+          </div>
+
+          {/* BUTTON 1 */}
+          <button
+            onClick={onCycleClick}
+            className="mx-auto w-[80%] rounded-full border-[1.5px] border-dashed border-outloud-blue py-2.5 text-[11px] font-extrabold text-outloud-blue transition-colors hover:bg-outloud-blue/5 uppercase tracking-wide"
+          >
+            VER EL CICLO DE ESTUDIO
+          </button>
+
+          {/* CARD 2: ACCESO 24/7 */}
+          <div className="flex flex-row bg-white rounded-3xl p-4 shadow-[0_8px_20px_rgba(0,0,0,0.06)] w-full items-stretch">
+            {/* Left Col */}
+            <div className="w-[42%] flex flex-col items-center justify-center text-center pr-2 shrink-0 border-r border-gray-100">
+              <img
+                src="https://i.postimg.cc/mDJHRQff/6(2).png"
+                alt="Acceso 24/7 Icon"
+                className="h-14 w-auto object-contain mb-2"
+              />
+              <p className="text-[7px] font-bold text-outloud-blue font-montserrat uppercase leading-tight mb-0.5">
+                ESTUDIA A TU RITMO
+              </p>
+              <h3 className="text-[13px] font-black text-outloud-blue font-tabarra leading-none uppercase">
+                ACCESO 24/7
+              </h3>
+            </div>
+            {/* Right Col */}
+            <div className="w-[58%] flex flex-col justify-center pl-3">
+              <p className="text-[9px] text-outloud-blue font-montserrat text-justify leading-[1.4]">
+                Accede cuando y donde quieras a lecciones dinámicas, audios,
+                chats, foros,{' '}
+                <strong className="font-extrabold">club de conversación</strong>
+                , clases complementarias, libros de actividades y demás
+                funciones de la app o el sitio web.
+                <br /><br />
+                En ellas encontrarás contenido dinámico e interactivo que te
+                preparará para tu clase en vivo.
+              </p>
+            </div>
+          </div>
+
+          {/* BUTTON 2 */}
+          <button
+            onClick={onLevelsClick}
+            className="mx-auto w-[80%] rounded-full border-[1.5px] border-dashed border-outloud-blue py-2.5 text-[11px] font-extrabold text-outloud-blue transition-colors hover:bg-outloud-blue/5 uppercase tracking-wide"
+          >
+            NIVELES Y MÓDULOS
+          </button>
+
+          {/* CARD 3: CLASES 100% EN VIVO */}
+          <div className="flex flex-row bg-white rounded-3xl p-4 shadow-[0_8px_20px_rgba(0,0,0,0.06)] w-full items-stretch">
+            {/* Left Col */}
+            <div className="w-[42%] flex flex-col items-center justify-center text-center pr-2 shrink-0 border-r border-gray-100">
+              <img
+                src="https://i.postimg.cc/LXn1rxWs/7(3).png"
+                alt="Clases En Vivo Icon"
+                className="h-14 w-auto object-contain mb-2"
+              />
+              <p className="text-[7px] font-bold text-outloud-blue font-montserrat uppercase leading-tight mb-0.5">
+                INTERACCIÓN REAL
+              </p>
+              <h3 className="text-[13px] font-black text-outloud-blue font-tabarra leading-none uppercase whitespace-pre-line">
+                CLASES 100%{'\n'}EN VIVO
+              </h3>
+            </div>
+            {/* Right Col */}
+            <div className="w-[58%] flex flex-col justify-center pl-3">
+              <p className="text-[9px] text-outloud-blue font-montserrat text-justify leading-[1.4]">
+                Agenda sesiones individuales o grupales con un{' '}
+                <strong className="font-extrabold">profesor en vivo</strong>{' '}
+                según tu disponibilidad. Recibe tutoría{' '}
+                <strong className="font-extrabold">personalizada</strong>,
+                feedback instantáneo y corrección en pronunciación, vocabulario
+                y más. <strong className="font-extrabold">Participa</strong> en
+                escenificaciones, debates, dinámicas y actividades que{' '}
+                <strong className="font-extrabold">te darán confianza</strong>{' '}
+                al hablar y permitirán evaluar tu propio progreso.
+              </p>
+            </div>
+          </div>
+
+          {/* BUTTON 3 */}
+          <button
+            onClick={onRegister}
+            className="mx-auto w-[80%] rounded-full border-[1.5px] border-dashed border-outloud-blue py-2.5 text-[11px] font-extrabold text-outloud-blue transition-colors hover:bg-outloud-blue/5 uppercase tracking-wide mb-8"
+          >
+            INSCRIBIRSE
+          </button>
+
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// =========================================
+// 2. DESKTOP & PC UI (Untouched Original)
+// =========================================
+const DesktopCourseInfo = ({
   onReturnHome,
   onRegister,
   onCycleClick,
@@ -184,6 +374,31 @@ const CourseInfoPage = ({
       </div>
     </div>
   );
+};
+
+
+// =========================================
+// 3. THE INDEPENDENT ROUTER
+// =========================================
+const CourseInfoPage = (props) => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      // Determines if the device screen is mobile/tablet portrait width
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    // Set initial value
+    handleResize();
+
+    // Listen for window resize
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Serves completely isolated components based on device type
+  return isMobile ? <MobileCourseInfo {...props} /> : <DesktopCourseInfo {...props} />;
 };
 
 export default CourseInfoPage;
