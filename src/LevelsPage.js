@@ -154,23 +154,19 @@ const MobileLevelsPage = ({ onReturnHome }) => {
           En este gráfico puede ver cada nivel, su duración en meses y el porcentaje de dominio del idioma que alcanzará al completarlo.
         </p>
         
-        {/* NEW MOBILE INSTRUCTION */}
         <p className="text-[11px] font-black text-student-yellow font-montserrat text-center mb-6 px-4 py-1.5 bg-outloud-blue rounded-full shadow-md self-center uppercase tracking-wide">
           <span className="animate-pulse">👆 Toque la barra para leer la descripción</span>
         </p>
 
-        {/* Mobile Bar Chart - PERFECTED LABEL ALIGNMENT */}
-        {/* pl-[60px] reserves exactly enough space for the Y-axis label without overlapping the numbers */}
+        {/* Mobile Bar Chart */}
         <div className="relative w-full h-[15rem] flex flex-col pl-[60px] pr-2 pb-8 pt-2 mt-2">
           
-          {/* Y-Axis Label: Bound to a fixed flex container on the absolute left to prevent rotation overlap */}
           <div className="absolute left-0 top-2 bottom-8 w-[24px] flex items-center justify-center pointer-events-none z-20">
             <span className="-rotate-90 text-[8px] font-black text-outloud-blue tracking-widest whitespace-nowrap opacity-70">
               DOMINIO DEL IDIOMA
             </span>
           </div>
 
-          {/* X-Axis Label: Bound to the empty bottom-left corner explicitly */}
           <div className="absolute left-0 bottom-2 h-6 w-[60px] flex items-center justify-center pointer-events-none z-20">
             <span className="text-[8px] font-black text-outloud-blue tracking-widest whitespace-nowrap opacity-70">
               DURACIÓN
@@ -200,6 +196,8 @@ const MobileLevelsPage = ({ onReturnHome }) => {
                 >
                   <span className={`relative z-10 text-[9px] font-black leading-none ${bar.textColor}`}>{bar.id}</span>
                   <span className={`relative z-10 text-[4px] font-bold leading-none mt-0.5 px-0.5 ${bar.textColor}`}>{bar.title}</span>
+                  {/* ADDED: IELTS Score / Equivalent */}
+                  <span className={`relative z-10 text-[4px] font-medium leading-none mt-0.5 px-0.5 ${bar.textColor}`}>{bar.score}</span>
                 </div>
                 <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 h-6 flex items-center text-[7px] font-black text-outloud-blue whitespace-nowrap">
                   {bar.duration}
@@ -431,7 +429,6 @@ const DesktopLevelsPage = ({ onReturnHome }) => {
                     onMouseEnter={() => setHoveredLevel(bar.id)}
                     onMouseLeave={() => setHoveredLevel(null)}
                   >
-                    {/* FIXED: Reduced padding-top to pt-0.5 lg:pt-1.5 */}
                     <div
                       className={`relative w-full rounded-t-md md:rounded-t-lg flex flex-col items-center justify-start pt-0.5 lg:pt-1.5 text-center shadow-md transition-all duration-300 animate-chart-grow overflow-hidden ${
                         bar.color
@@ -453,7 +450,6 @@ const DesktopLevelsPage = ({ onReturnHome }) => {
                         }`}
                       ></div>
 
-                      {/* FIXED: Scaled down text sizing and forced leading-none for maximum space efficiency */}
                       <span
                         className={`relative z-10 text-[9px] md:text-[11px] lg:text-xs xl:text-sm font-black leading-none ${bar.textColor}`}
                       >
