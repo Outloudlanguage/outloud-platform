@@ -163,15 +163,19 @@ const MobileLevelsPage = ({ onReturnHome }) => {
         </p>
 
         {/* Mobile Bar Chart */}
-        <div className="relative w-full h-52 flex flex-col pl-12 pr-2 pb-8 pt-2">
-          <div className="absolute left-0 top-1/2 -rotate-90 -translate-y-1/2 text-[8px] font-black text-outloud-blue tracking-widest whitespace-nowrap opacity-70">
-            DOMINIO DEL IDIOMA
-          </div>
-          <div className="absolute left-10 -bottom-6 h-6 flex items-center text-[8px] font-black text-outloud-blue tracking-widest whitespace-nowrap opacity-70">
-            DURACIÓN
-          </div>
-
+        <div className="relative w-full h-[15rem] flex flex-col pl-[48px] pr-2 pb-8 pt-2 mt-2">
           <div className="relative w-full flex-grow border-b-[2px] border-outloud-blue/30 flex items-end gap-1 z-10">
+            
+            {/* FIXED: Y-Axis Label pushed left relative to inner container */}
+            <div className="absolute -left-[40px] top-1/2 -rotate-90 -translate-y-1/2 text-[8px] font-black text-outloud-blue tracking-widest whitespace-nowrap opacity-70">
+              DOMINIO DEL IDIOMA
+            </div>
+            
+            {/* FIXED: X-Axis Label pushed left relative to inner container */}
+            <div className="absolute -left-[30px] -bottom-[26px] h-6 flex items-center text-[8px] font-black text-outloud-blue tracking-widest whitespace-nowrap opacity-70">
+              DURACIÓN
+            </div>
+
             {/* Percentages */}
             <div className="absolute inset-0 pointer-events-none">
               {[100, 80, 60, 40, 20].map((val) => (
@@ -316,7 +320,7 @@ const DesktopLevelsPage = ({ onReturnHome }) => {
             fill="currentColor"
             viewBox="0 0 20 20"
           >
-            <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+            <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
           </svg>
         </button>
       </div>
