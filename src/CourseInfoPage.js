@@ -60,13 +60,13 @@ const MobileCourseInfo = ({
         <div className="flex flex-col space-y-4">
           
           {/* CARD 1: INMERSIÓN TOTAL */}
-          <div className="flex flex-row bg-student-yellow rounded-3xl p-4 shadow-[0_8px_20px_rgba(0,0,0,0.1)] w-full items-stretch">
+          <div className="flex flex-row bg-white rounded-3xl p-4 shadow-[0_8px_20px_rgba(0,0,0,0.06)] w-full items-stretch">
             {/* Left Col */}
-            <div className="w-[42%] flex flex-col items-center justify-center text-center pr-2 shrink-0">
+            <div className="w-[42%] flex flex-col items-center justify-center text-center pr-2 shrink-0 border-r border-gray-100">
               <img
                 src="https://i.postimg.cc/LssD8BWw/Agregar-algo-de-texto-(14).png"
                 alt="Inmersión Total Icon"
-                className="h-14 w-auto object-contain mb-2"
+                className="h-20 w-auto object-contain mb-2"
               />
               <p className="text-[7px] font-bold text-outloud-blue font-montserrat uppercase leading-tight mb-0.5">
                 ¿CÓMO FUNCIONA EL CURSO?
@@ -97,7 +97,7 @@ const MobileCourseInfo = ({
           {/* BUTTON 1 */}
           <button
             onClick={onCycleClick}
-            className="mx-auto w-[80%] rounded-full border-[1.5px] border-dashed border-outloud-blue py-2.5 text-[11px] font-extrabold text-outloud-blue transition-colors hover:bg-outloud-blue/5 uppercase tracking-wide"
+            className="mx-auto w-[80%] rounded-full border-[1.5px] border-dashed border-outloud-blue py-2.5 text-[11px] font-extrabold text-outloud-blue transition-all duration-200 active:bg-student-yellow active:border-student-yellow active:border-solid uppercase tracking-wide"
           >
             VER EL CICLO DE ESTUDIO
           </button>
@@ -109,7 +109,7 @@ const MobileCourseInfo = ({
               <img
                 src="https://i.postimg.cc/mDJHRQff/6(2).png"
                 alt="Acceso 24/7 Icon"
-                className="h-14 w-auto object-contain mb-2"
+                className="h-20 w-auto object-contain mb-2"
               />
               <p className="text-[7px] font-bold text-outloud-blue font-montserrat uppercase leading-tight mb-0.5">
                 ESTUDIA A TU RITMO
@@ -136,7 +136,7 @@ const MobileCourseInfo = ({
           {/* BUTTON 2 */}
           <button
             onClick={onLevelsClick}
-            className="mx-auto w-[80%] rounded-full border-[1.5px] border-dashed border-outloud-blue py-2.5 text-[11px] font-extrabold text-outloud-blue transition-colors hover:bg-outloud-blue/5 uppercase tracking-wide"
+            className="mx-auto w-[80%] rounded-full border-[1.5px] border-dashed border-outloud-blue py-2.5 text-[11px] font-extrabold text-outloud-blue transition-all duration-200 active:bg-student-yellow active:border-student-yellow active:border-solid uppercase tracking-wide"
           >
             NIVELES Y MÓDULOS
           </button>
@@ -148,7 +148,7 @@ const MobileCourseInfo = ({
               <img
                 src="https://i.postimg.cc/LXn1rxWs/7(3).png"
                 alt="Clases En Vivo Icon"
-                className="h-14 w-auto object-contain mb-2"
+                className="h-20 w-auto object-contain mb-2"
               />
               <p className="text-[7px] font-bold text-outloud-blue font-montserrat uppercase leading-tight mb-0.5">
                 INTERACCIÓN REAL
@@ -176,7 +176,7 @@ const MobileCourseInfo = ({
           {/* BUTTON 3 */}
           <button
             onClick={onRegister}
-            className="mx-auto w-[80%] rounded-full border-[1.5px] border-dashed border-outloud-blue py-2.5 text-[11px] font-extrabold text-outloud-blue transition-colors hover:bg-outloud-blue/5 uppercase tracking-wide mb-8"
+            className="mx-auto w-[80%] rounded-full border-[1.5px] border-dashed border-outloud-blue py-2.5 text-[11px] font-extrabold text-outloud-blue transition-all duration-200 active:bg-student-yellow active:border-student-yellow active:border-solid uppercase tracking-wide mb-8"
           >
             INSCRIBIRSE
           </button>
