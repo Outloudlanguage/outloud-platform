@@ -5,6 +5,7 @@ import RegistrationPage from './RegistrationPage';
 import CyclePage from './CyclePage';
 import LevelsPage from './LevelsPage';
 import FreeLesson from './FreeLesson';
+import AdminHub from './AdminHub';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState('login');
@@ -76,7 +77,7 @@ export default function App() {
     <>
       {currentPage === 'login' && (
         <LoginPage
-          onLogin={() => console.log('Login button clicked')}
+          onLogin={() => navigate('admin')}
           onInfoClick={() => navigate('info')}
         />
       )}
@@ -113,6 +114,12 @@ export default function App() {
         <FreeLesson 
           onReturnHome={() => navigate('login')} 
           onReturnToRegister={() => navigate('register')} 
+        />
+      )}
+
+      {currentPage === 'admin' && (
+        <AdminHub 
+          onReturnHome={() => navigate('login')} 
         />
       )}
     </>

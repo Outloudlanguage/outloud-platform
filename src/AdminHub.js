@@ -1,92 +1,2498 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { supabase } from './SupabaseClient'; 
 
-const AdminHub = ({ onLogout }) => {
-  const [contentType, setContentType] = useState('Lesson');
-  const [showGrid, setShowGrid] = useState(true);
+// =========================================
+// CONSTANTS FOR MAPPING
+// =========================================
+const LEVEL_UNIT_MAP = {
+  'A1: Básico 1': { start: 1, end: 12 },
+  'A2: Básico 2': { start: 13, end: 25 },
+  'B1: Inter. 1': { start: 26, end: 38 },
+  'B2: Inter. 2': { start: 39, end: 51 },
+  'C1: Avanz. 1': { start: 52, end: 72 },
+  'C2: Avanz. 2': { start: 73, end: 93 },
+};
+
+const LEVEL_OPTIONS = Object.keys(LEVEL_UNIT_MAP);
+
+const LESSON_TOOLS = [
+  'Text', 'Shape', 'Video', 'Audio', 'Image', 'Record & Compare', 
+  'Fill in the blank', 'Drag and drop', 'Short answer', 'Multiple selection', 'Slider bar'
+];
+
+const WORKBOOK_TOOLS = [
+  'Text', 'Shape', 'Image', 'Record & Compare', 
+  'Fill in the blank', 'Drag and drop', 'Short answer', 'Multiple selection', 'Slider bar',
+  'Crossword', 'Word search'
+];
+
+const RESIZE_HANDLES = [
+  { id: 'nw', classes: '-top-3 -left-3 cursor-nw-resize' },
+  { id: 'n', classes: '-top-3 left-1/2 -translate-x-1/2 cursor-n-resize' },
+  { id: 'ne', classes: '-top-3 -right-3 cursor-ne-resize' },
+  { id: 'w', classes: 'top-1/2 -left-3 -translate-y-1/2 cursor-w-resize' },
+  { id: 'e', classes: 'top-1/2 -right-3 -translate-y-1/2 cursor-e-resize' },
+  { id: 'sw', classes: '-bottom-3 -left-3 cursor-sw-resize' },
+  { id: 's', classes: '-bottom-3 left-1/2 -translate-x-1/2 cursor-s-resize' },
+  { id: 'se', classes: '-bottom-3 -right-3 cursor-se-resize' },
+];
+
+// =========================================
+// 1. REUSABLE ADMIN DROPDOWN
+// =========================================
+const AdminDropdown = ({ placeholder, options, value, onChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
-    <div className="flex min-h-screen flex-col bg-focus-white font-sans">
+    <div className="relative w-full z-30" ref={dropdownRef}>
+      <div 
+        onClick={() => setIsOpen(!isOpen)} 
+        className="bg-[#e6f0f9] text-outloud-blue px-4 py-3 rounded-xl text-xs md:text-sm font-montserrat font-semibold flex justify-between items-center cursor-pointer hover:bg-[#d6e6f5] transition-colors shadow-sm"
+      >
+        <span>{value || placeholder}</span>
+        <svg className={`w-4 h-4 shrink-0 ml-2 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+        </svg>
+      </div>
       
-      {/* Top Header */}
-      <div className="flex items-center justify-between bg-white p-6 shadow-sm z-10">
-        <div className="flex items-center space-x-4">
-           <div className="text-3xl text-outloud-blue">🎓</div>
-           <div>
-             <h1 className="text-xl font-bold text-outloud-blue">Outloud | <span className="font-light">Online Platform</span></h1>
-             <p className="text-xs font-semibold tracking-widest text-outloud-blue">LANGUAGE ACADEMY</p>
-           </div>
-        </div>
-        <button onClick={onLogout} className="flex items-center space-x-2 font-bold text-outloud-blue hover:text-blue-800">
-          <span>&lt; Return Home</span>
-          <span className="text-xl">🏠</span>
-        </button>
-      </div>
-
-      {/* Admin Navigation */}
-      <div className="p-8 pb-4">
-        <h2 className="mb-6 text-center text-2xl font-bold text-outloud-blue">ADMIN EDITING HUB</h2>
-        <div className="mx-auto flex w-full max-w-4xl justify-center gap-4">
-          <button className="flex-1 rounded-md bg-outloud-blue px-4 py-3 text-sm font-bold text-white shadow-md">
-            CONTENT EDITING TOOLS
-          </button>
-          <button className="flex-1 rounded-md bg-white px-4 py-3 text-sm font-bold text-gray-500 shadow-sm transition hover:bg-gray-50">
-            DESIGN EDITING TOOLS
-          </button>
-          <button className="flex-1 rounded-md bg-white px-4 py-3 text-sm font-bold text-gray-500 shadow-sm transition hover:bg-gray-50">
-            CUSTOMER MANAGEMENT
-          </button>
-        </div>
-      </div>
-
-      {/* Tool Filters */}
-      <div className="mx-auto flex w-full max-w-5xl justify-between gap-4 p-4 z-10">
-        {['Select Level', 'Select Unit'].map((placeholder, idx) => (
-          <select key={idx} className="w-1/4 cursor-pointer appearance-none rounded-md bg-student-yellow p-3 text-sm font-bold text-outloud-blue shadow-sm outline-none">
-            <option>{placeholder}</option>
-            <option>Option 1</option>
-            <option>Option 2</option>
-          </select>
-        ))}
-        
-        <select 
-          value={contentType}
-          onChange={(e) => setContentType(e.target.value)}
-          className="w-1/4 cursor-pointer appearance-none rounded-md bg-student-yellow p-3 text-sm font-bold text-outloud-blue shadow-sm outline-none"
-        >
-          <option value="Lesson">Lesson</option>
-          <option value="Workbook">Workbook</option>
-        </select>
-
-        <select className="w-1/4 cursor-pointer appearance-none rounded-md bg-student-yellow p-3 text-sm font-bold text-outloud-blue shadow-sm outline-none">
-          <option>Tools</option>
-          <option>Fill in blank</option>
-          <option>Multiple selection</option>
-          {contentType !== 'Workbook' && <option>Video Upload</option>}
-          {contentType !== 'Workbook' && <option>Audio Upload</option>}
-        </select>
-      </div>
-
-      {/* Infinite Editing Canvas with Decimal Grid */}
-      <div className="flex-grow p-8">
-        <div className="mb-4 flex justify-end">
-           <button 
-             onClick={() => setShowGrid(!showGrid)}
-             className="rounded border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50"
-           >
-             {showGrid ? 'Hide Grid' : 'Show Grid'}
-           </button>
-        </div>
-        
-        {/* The Actual Canvas Area */}
-        <div 
-          className={`relative mx-auto min-h-[800px] w-full max-w-5xl rounded-lg border-2 border-dashed border-gray-300 bg-white shadow-inner ${showGrid ? 'bg-decimal-grid bg-decimal-grid-size' : ''}`}
-        >
-          {/* Placeholder for draggable Lego blocks */}
-          <div className="absolute top-10 left-10 p-4 border border-blue-400 bg-blue-50 text-outloud-blue shadow cursor-move rounded">
-            Drag me (Future Module)
+      {isOpen && (
+        <div className="absolute top-full left-0 mt-2 w-full bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+          <div className="max-h-48 overflow-y-auto custom-scrollbar">
+            {options.length > 0 ? (
+              options.map((opt) => (
+                <div 
+                  key={opt} 
+                  onClick={() => { onChange(opt); setIsOpen(false); }} 
+                  className="px-4 py-3 text-xs md:text-sm font-montserrat text-outloud-blue hover:bg-student-yellow hover:font-bold cursor-pointer transition-colors border-b border-gray-50 last:border-none"
+                >
+                  {opt}
+                </div>
+              ))
+            ) : (
+              <div className="px-4 py-3 text-xs md:text-sm font-montserrat text-gray-400 italic">
+                No options available
+              </div>
+            )}
           </div>
         </div>
+      )}
+    </div>
+  );
+};
+
+// =========================================
+// 2. MODALS (ALL TOOLS)
+// =========================================
+const FillInTheBlankModal = ({ isOpen, initialData = {}, onSave, onCancel }) => {
+  const [templateText, setTemplateText] = useState(initialData.templateText || 'I _____ need your help. I ___ do it alone.');
+  const [answerText, setAnswerText] = useState(initialData.answerText || '"don\'t", "can"');
+  const [editTarget, setEditTarget] = useState('template'); 
+  const [t_textColor, setT_textColor] = useState(initialData.t_textColor || '#08203e');
+  const [t_boxColor, setT_boxColor] = useState(initialData.t_boxColor || 'transparent');
+  const [t_lineColor, setT_lineColor] = useState(initialData.t_lineColor || 'transparent');
+  const [t_fontSize, setT_fontSize] = useState(initialData.t_fontSize || '16');
+  const [t_fontFamily, setT_fontFamily] = useState(initialData.t_fontFamily || 'Montserrat');
+  const [t_borderRadius, setT_borderRadius] = useState(initialData.t_borderRadius || '12');
+  const [t_isBold, setT_isBold] = useState(initialData.t_isBold || false);
+  const [t_isItalic, setT_isItalic] = useState(initialData.t_isItalic || false);
+  const [t_isUnderline, setT_isUnderline] = useState(initialData.t_isUnderline || false);
+  const [a_textColor, setA_textColor] = useState(initialData.a_textColor || '#08203e');
+  const [a_boxColor, setA_boxColor] = useState(initialData.a_boxColor || 'transparent');
+  const [a_lineColor, setA_lineColor] = useState(initialData.a_lineColor || '#08203e');
+  const [a_fontSize, setA_fontSize] = useState(initialData.a_fontSize || '16');
+  const [a_fontFamily, setA_fontFamily] = useState(initialData.a_fontFamily || 'Montserrat');
+  const [a_borderRadius, setA_borderRadius] = useState(initialData.a_borderRadius || '4');
+  const [a_isBold, setA_isBold] = useState(initialData.a_isBold || true);
+  const [a_isItalic, setA_isItalic] = useState(initialData.a_isItalic || false);
+  const [a_isUnderline, setA_isUnderline] = useState(initialData.a_isUnderline || false);
+
+  useEffect(() => {
+    if (initialData && isOpen) {
+      setTemplateText(initialData.templateText || 'I _____ need your help. I ___ do it alone.');
+      setAnswerText(initialData.answerText || '"don\'t", "can"');
+      setT_textColor(initialData.t_textColor || '#08203e'); setT_boxColor(initialData.t_boxColor || 'transparent'); setT_lineColor(initialData.t_lineColor || 'transparent'); setT_fontSize(initialData.t_fontSize || '16'); setT_fontFamily(initialData.t_fontFamily || 'Montserrat'); setT_borderRadius(initialData.t_borderRadius || '12'); setT_isBold(initialData.t_isBold || false); setT_isItalic(initialData.t_isItalic || false); setT_isUnderline(initialData.t_isUnderline || false);
+      setA_textColor(initialData.a_textColor || '#08203e'); setA_boxColor(initialData.a_boxColor || 'transparent'); setA_lineColor(initialData.a_lineColor || '#08203e'); setA_fontSize(initialData.a_fontSize || '16'); setA_fontFamily(initialData.a_fontFamily || 'Montserrat'); setA_borderRadius(initialData.a_borderRadius || '4'); setA_isBold(initialData.a_isBold || true); setA_isItalic(initialData.a_isItalic || false); setA_isUnderline(initialData.a_isUnderline || false);
+      setEditTarget('template');
+    }
+  }, [initialData, isOpen]);
+
+  if (!isOpen) return null;
+
+  const activeTextColor = editTarget === 'template' ? t_textColor : a_textColor;
+  const activeBoxColor = editTarget === 'template' ? t_boxColor : a_boxColor;
+  const activeLineColor = editTarget === 'template' ? t_lineColor : a_lineColor;
+  const activeFontSize = editTarget === 'template' ? t_fontSize : a_fontSize;
+  const activeFontFamily = editTarget === 'template' ? t_fontFamily : a_fontFamily;
+  const activeBorderRadius = editTarget === 'template' ? t_borderRadius : a_borderRadius;
+  const activeIsBold = editTarget === 'template' ? t_isBold : a_isBold;
+  const activeIsItalic = editTarget === 'template' ? t_isItalic : a_isItalic;
+  const activeIsUnderline = editTarget === 'template' ? t_isUnderline : a_isUnderline;
+
+  const setActiveTextColor = (v) => editTarget === 'template' ? setT_textColor(v) : setA_textColor(v);
+  const setActiveBoxColor = (v) => editTarget === 'template' ? setT_boxColor(v) : setA_boxColor(v);
+  const setActiveLineColor = (v) => editTarget === 'template' ? setT_lineColor(v) : setA_lineColor(v);
+  const setActiveFontSize = (v) => editTarget === 'template' ? setT_fontSize(v) : setA_fontSize(v);
+  const setActiveFontFamily = (v) => editTarget === 'template' ? setT_fontFamily(v) : setA_fontFamily(v);
+  const setActiveBorderRadius = (v) => editTarget === 'template' ? setT_borderRadius(v) : setA_borderRadius(v);
+  const setActiveIsBold = (v) => editTarget === 'template' ? setT_isBold(v) : setA_isBold(v);
+  const setActiveIsItalic = (v) => editTarget === 'template' ? setT_isItalic(v) : setA_isItalic(v);
+  const setActiveIsUnderline = (v) => editTarget === 'template' ? setT_isUnderline(v) : setA_isUnderline(v);
+
+  return (
+    <div className="fixed inset-0 z-[250] flex items-center justify-center bg-outloud-blue/40 backdrop-blur-sm p-4">
+      <div className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/60 animate-fade-in flex flex-col max-h-[90vh]">
+        <div className="bg-[#eef5fc] p-5 border-b border-gray-200 shrink-0">
+          <h2 className="text-outloud-blue font-black text-lg uppercase tracking-wider font-montserrat">FILL IN THE BLANK</h2>
+          <p className="text-gray-600 text-xs mt-1">Type in the text, using "<span className="font-bold text-outloud-blue">_</span>" to replace the letters of the key words.</p>
+        </div>
+        <div className="p-5 space-y-4 overflow-y-auto custom-scrollbar">
+          <div className="flex flex-col space-y-1.5">
+            <label className="text-[10px] font-bold uppercase text-gray-500">Sentence Template</label>
+            <textarea rows={3} value={templateText} onChange={(e) => setTemplateText(e.target.value)} className="w-full p-3 bg-gray-50 border border-gray-300 rounded-xl font-montserrat text-sm focus:outline-none focus:ring-2 focus:ring-student-yellow transition" />
+          </div>
+          <div className="flex flex-col space-y-1.5">
+            <label className="text-[10px] font-bold uppercase text-gray-500">Correct Answer(s)</label>
+            <p className="text-[10px] text-gray-400 leading-tight">Type the exact words inside quotation marks, separated by commas (e.g. "is", "Lucas'").</p>
+            <input type="text" value={answerText} onChange={(e) => setAnswerText(e.target.value)} placeholder='"is", "is"' className="w-full p-3 bg-gray-50 border border-gray-300 rounded-xl font-montserrat text-sm focus:outline-none focus:ring-2 focus:ring-student-yellow transition" />
+          </div>
+          <div className="bg-gray-50 p-4 rounded-2xl border border-gray-200 flex flex-col space-y-4">
+            <div className="flex bg-gray-200/70 p-1 rounded-xl">
+              <button type="button" className={`flex-1 text-[11px] font-bold py-2.5 rounded-lg transition-all uppercase tracking-wide ${editTarget === 'template' ? 'bg-white shadow-sm text-outloud-blue' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'}`} onClick={() => setEditTarget('template')}>Edit Sentence Template</button>
+              <button type="button" className={`flex-1 text-[11px] font-bold py-2.5 rounded-lg transition-all uppercase tracking-wide ${editTarget === 'answer' ? 'bg-white shadow-sm text-outloud-blue' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'}`} onClick={() => setEditTarget('answer')}>Edit Correct Answer(s)</button>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end">
+              <div className="flex flex-col space-y-1.5">
+                <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Text Color</span>
+                <input type="color" value={activeTextColor} onChange={(e) => setActiveTextColor(e.target.value)} className="w-full h-9 rounded cursor-pointer border border-gray-300" />
+              </div>
+              <div className="flex flex-col space-y-1.5">
+                <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Box Color</span>
+                <div className="flex gap-1 items-center">
+                  <input type="color" value={activeBoxColor === 'transparent' ? '#ffffff' : activeBoxColor} onChange={(e) => setActiveBoxColor(e.target.value)} disabled={activeBoxColor === 'transparent'} className={`flex-grow h-9 rounded cursor-pointer border border-gray-300 ${activeBoxColor === 'transparent' ? 'opacity-40' : ''}`} />
+                  <button type="button" onClick={() => setActiveBoxColor(activeBoxColor === 'transparent' ? '#ffffff' : 'transparent')} className={`w-9 h-9 flex items-center justify-center rounded border ${activeBoxColor === 'transparent' ? 'bg-red-50 border-red-200 text-red-500 shadow-inner' : 'bg-white border-gray-300 text-gray-400 hover:bg-gray-100'}`} title="Toggle Transparent">🚫</button>
+                </div>
+              </div>
+              <div className="flex flex-col space-y-1.5">
+                <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Line Color</span>
+                <div className="flex gap-1 items-center">
+                  <input type="color" value={activeLineColor === 'transparent' ? '#ffffff' : activeLineColor} onChange={(e) => setActiveLineColor(e.target.value)} disabled={activeLineColor === 'transparent'} className={`flex-grow h-9 rounded cursor-pointer border border-gray-300 ${activeLineColor === 'transparent' ? 'opacity-40' : ''}`} />
+                  <button type="button" onClick={() => setActiveLineColor(activeLineColor === 'transparent' ? '#ffffff' : 'transparent')} className={`w-9 h-9 flex items-center justify-center rounded border ${activeLineColor === 'transparent' ? 'bg-red-50 border-red-200 text-red-500 shadow-inner' : 'bg-white border-gray-300 text-gray-400 hover:bg-gray-100'}`} title="Toggle Transparent">🚫</button>
+                </div>
+              </div>
+              <div className="flex flex-col space-y-1.5">
+                <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Style</span>
+                <div className="flex border border-gray-300 rounded overflow-hidden bg-white h-9">
+                  <button type="button" onClick={() => setActiveIsBold(!activeIsBold)} className={`flex-1 font-bold text-sm ${activeIsBold ? 'bg-outloud-blue text-white' : 'text-gray-700 hover:bg-gray-100'}`}>B</button>
+                  <button type="button" onClick={() => setActiveIsItalic(!activeIsItalic)} className={`flex-1 italic text-sm border-x border-gray-300 ${activeIsItalic ? 'bg-outloud-blue text-white' : 'text-gray-700 hover:bg-gray-100'}`}>I</button>
+                  <button type="button" onClick={() => setActiveIsUnderline(!activeIsUnderline)} className={`flex-1 underline text-sm ${activeIsUnderline ? 'bg-outloud-blue text-white' : 'text-gray-700 hover:bg-gray-100'}`}>U</button>
+                </div>
+              </div>
+              <div className="flex flex-col space-y-1.5">
+                <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Font Size</span>
+                <select value={activeFontSize} onChange={(e) => setActiveFontSize(e.target.value)} className="w-full p-2 bg-white border border-gray-300 rounded text-xs font-semibold focus:outline-none">
+                  {['12', '14', '16', '18', '20', '24', '28', '32', '36', '42'].map((sz) => <option key={sz} value={sz}>{sz}px</option>)}
+                </select>
+              </div>
+              <div className="flex flex-col space-y-1.5 col-span-2">
+                <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Font</span>
+                <select value={activeFontFamily} onChange={(e) => setActiveFontFamily(e.target.value)} className="w-full p-2 bg-white border border-gray-300 rounded text-xs font-semibold focus:outline-none">
+                  <option value="Montserrat">Montserrat</option>
+                  <option value="Tabarra">Tabarra</option>
+                  <option value="Arial">Arial</option>
+                </select>
+              </div>
+              <div className="flex flex-col space-y-1.5">
+                <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Corners</span>
+                <input type="number" min="0" value={activeBorderRadius} onChange={(e) => setActiveBorderRadius(e.target.value)} className="w-full p-2 bg-white border border-gray-300 rounded text-xs font-semibold focus:outline-none text-center" />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="p-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-4 shrink-0">
+          <button type="button" onClick={onCancel} className="px-6 py-2.5 rounded-full font-bold text-xs uppercase tracking-wide text-gray-600 bg-transparent border-2 border-gray-300 hover:bg-gray-200 transition">CANCEL</button>
+          <button type="button" onClick={() => onSave({ templateText, answerText, t_textColor, t_boxColor, t_lineColor, t_fontSize, t_fontFamily, t_borderRadius, t_isBold, t_isItalic, t_isUnderline, a_textColor, a_boxColor, a_lineColor, a_fontSize, a_fontFamily, a_borderRadius, a_isBold, a_isItalic, a_isUnderline })} className="px-8 py-2.5 rounded-full font-black text-xs uppercase tracking-wide text-outloud-blue bg-student-yellow hover:scale-105 active:scale-95 transition shadow-md">SAVE</button>
+        </div>
       </div>
+    </div>
+  );
+};
+
+const ShapeConfigModal = ({ isOpen, initialData = {}, onSave, onCancel }) => {
+  const [shapeType, setShapeType] = useState(initialData.shapeType || 'rect');
+  const [fillColor, setFillColor] = useState(initialData.fillColor || '#eab308');
+  const [strokeColor, setStrokeColor] = useState(initialData.strokeColor || '#08203e');
+  const [strokeWidth, setStrokeWidth] = useState(initialData.strokeWidth || '4');
+  const [roundness, setRoundness] = useState(initialData.roundness || '0');
+  const [opacity, setOpacity] = useState(initialData.opacity || '100');
+
+  useEffect(() => {
+    if (initialData && isOpen) {
+      setShapeType(initialData.shapeType || 'rect');
+      setFillColor(initialData.fillColor || '#eab308');
+      setStrokeColor(initialData.strokeColor || '#08203e');
+      setStrokeWidth(initialData.strokeWidth || '4');
+      setRoundness(initialData.roundness || '0');
+      setOpacity(initialData.opacity || '100');
+    }
+  }, [initialData, isOpen]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[250] flex items-center justify-center bg-outloud-blue/40 backdrop-blur-sm p-4">
+      <div className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/60 animate-fade-in flex flex-col max-h-[90vh]">
+        <div className="bg-[#eef5fc] p-5 border-b border-gray-200 shrink-0">
+          <h2 className="text-outloud-blue font-black text-lg uppercase tracking-wider font-montserrat">SHAPE GENERATOR</h2>
+          <p className="text-gray-600 text-xs mt-1">Configure your custom vector shape below.</p>
+        </div>
+        <div className="p-6 bg-gray-50 flex flex-col space-y-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-6 items-end">
+            <div className="flex flex-col space-y-1.5 col-span-2 md:col-span-1">
+              <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Shape Type</span>
+              <select value={shapeType} onChange={(e) => setShapeType(e.target.value)} className="w-full p-2.5 bg-white border border-gray-300 rounded text-sm font-semibold focus:outline-none">
+                <option value="rect">Square / Rectangle</option>
+                <option value="circle">Circle / Ellipse</option>
+                <option value="triangle">Triangle</option>
+                <option value="arrow">Arrow</option>
+                <option value="line">Line</option>
+              </select>
+            </div>
+            <div className="flex flex-col space-y-1.5">
+              <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Fill Color</span>
+              <div className="flex gap-1 items-center">
+                <input type="color" value={fillColor === 'transparent' ? '#ffffff' : fillColor} onChange={(e) => setFillColor(e.target.value)} disabled={fillColor === 'transparent' || shapeType === 'line'} className={`flex-grow h-10 rounded cursor-pointer border border-gray-300 ${fillColor === 'transparent' || shapeType === 'line' ? 'opacity-40' : ''}`} />
+                <button type="button" onClick={() => setFillColor(fillColor === 'transparent' ? '#eab308' : 'transparent')} disabled={shapeType === 'line'} className={`w-10 h-10 flex items-center justify-center rounded border ${fillColor === 'transparent' ? 'bg-red-50 border-red-200 text-red-500 shadow-inner' : 'bg-white border-gray-300 text-gray-400 hover:bg-gray-100'} disabled:opacity-50`} title="Toggle Transparent">🚫</button>
+              </div>
+            </div>
+            <div className="flex flex-col space-y-1.5">
+              <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Outline Color</span>
+              <div className="flex gap-1 items-center">
+                <input type="color" value={strokeColor === 'transparent' ? '#ffffff' : strokeColor} onChange={(e) => setStrokeColor(e.target.value)} disabled={strokeColor === 'transparent'} className={`flex-grow h-10 rounded cursor-pointer border border-gray-300 ${strokeColor === 'transparent' ? 'opacity-40' : ''}`} />
+                <button type="button" onClick={() => setStrokeColor(strokeColor === 'transparent' ? '#08203e' : 'transparent')} className={`w-10 h-10 flex items-center justify-center rounded border ${strokeColor === 'transparent' ? 'bg-red-50 border-red-200 text-red-500 shadow-inner' : 'bg-white border-gray-300 text-gray-400 hover:bg-gray-100'}`} title="Toggle Transparent">🚫</button>
+              </div>
+            </div>
+            <div className="flex flex-col space-y-1.5">
+              <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Line Thickness</span>
+              <input type="number" min="0" max="50" value={strokeWidth} onChange={(e) => setStrokeWidth(e.target.value)} disabled={strokeColor === 'transparent'} className={`w-full p-2.5 bg-white border border-gray-300 rounded text-sm font-semibold focus:outline-none text-center ${strokeColor === 'transparent' ? 'opacity-50' : ''}`} />
+            </div>
+            <div className="flex flex-col space-y-1.5">
+              <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Roundness (px)</span>
+              <input type="number" min="0" max="200" value={roundness} onChange={(e) => setRoundness(e.target.value)} disabled={shapeType === 'circle' || shapeType === 'line'} className={`w-full p-2.5 bg-white border border-gray-300 rounded text-sm font-semibold focus:outline-none text-center ${shapeType === 'circle' || shapeType === 'line' ? 'opacity-50' : ''}`} />
+            </div>
+            <div className="flex flex-col space-y-1.5">
+              <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Opacity (%)</span>
+              <input type="number" min="10" max="100" value={opacity} onChange={(e) => setOpacity(e.target.value)} className="w-full p-2.5 bg-white border border-gray-300 rounded text-sm font-semibold focus:outline-none text-center" />
+            </div>
+          </div>
+        </div>
+        <div className="p-4 bg-gray-100 border-t border-gray-200 flex justify-end gap-4 shrink-0">
+          <button type="button" onClick={onCancel} className="px-6 py-2.5 rounded-full font-bold text-xs uppercase tracking-wide text-gray-600 bg-transparent border-2 border-gray-300 hover:bg-gray-200 transition">CANCEL</button>
+          <button type="button" onClick={() => onSave({ shapeType, fillColor, strokeColor, strokeWidth, roundness, opacity })} className="px-8 py-2.5 rounded-full font-black text-xs uppercase tracking-wide text-outloud-blue bg-student-yellow hover:scale-105 active:scale-95 transition shadow-md">SAVE</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const DragAndDropModal = ({ isOpen, initialData = {}, onSave, onCancel }) => {
+  const [items, setItems] = useState(initialData.items || [
+    { imageUrl: '', targetText: '', studentViewText: '' },
+    { imageUrl: '', targetText: '', studentViewText: '' },
+    { imageUrl: '', targetText: '', studentViewText: '' }
+  ]);
+  const [textColor, setTextColor] = useState(initialData.textColor || '#08203e');
+  const [boxColor, setBoxColor] = useState(initialData.boxColor || '#ffffff');
+  const [lineColor, setLineColor] = useState(initialData.lineColor || '#08203e');
+  const [fontSize, setFontSize] = useState(initialData.fontSize || '14');
+  const [fontFamily, setFontFamily] = useState(initialData.fontFamily || 'Montserrat');
+  const [borderRadius, setBorderRadius] = useState(initialData.borderRadius || '8');
+  const [isBold, setIsBold] = useState(initialData.isBold || true);
+  const [isItalic, setIsItalic] = useState(initialData.isItalic || false);
+  const [isUnderline, setIsUnderline] = useState(initialData.isUnderline || false);
+
+  useEffect(() => {
+    if (initialData && isOpen) {
+      setItems(initialData.items || [
+        { imageUrl: '', targetText: '', studentViewText: '' },
+        { imageUrl: '', targetText: '', studentViewText: '' },
+        { imageUrl: '', targetText: '', studentViewText: '' }
+      ]);
+      setTextColor(initialData.textColor || '#08203e'); setBoxColor(initialData.boxColor || '#ffffff'); setLineColor(initialData.lineColor || '#08203e'); setFontSize(initialData.fontSize || '14'); setFontFamily(initialData.fontFamily || 'Montserrat'); setBorderRadius(initialData.borderRadius || '8'); setIsBold(initialData.isBold || true); setIsItalic(initialData.isItalic || false); setIsUnderline(initialData.isUnderline || false);
+    }
+  }, [initialData, isOpen]);
+
+  const handleItemChange = (index, field, value) => {
+    const newItems = [...items];
+    newItems[index][field] = value;
+    setItems(newItems);
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[250] flex items-center justify-center bg-outloud-blue/40 backdrop-blur-sm p-4">
+      <div className="w-full max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/60 animate-fade-in flex flex-col max-h-[90vh]">
+        <div className="bg-[#eef5fc] p-5 border-b border-gray-200 shrink-0">
+          <h2 className="text-outloud-blue font-black text-lg uppercase tracking-wider font-montserrat flex items-center gap-2">DRAG AND DROP</h2>
+          <p className="text-gray-600 text-xs mt-1 leading-relaxed">Upload your image URLs, type the target text (the correct answer) in the cell underneath, and type the "Student view" (the draggable option text) in the bottom cell. Leave a column blank if you only need 2 items.</p>
+        </div>
+        <div className="p-6 overflow-y-auto custom-scrollbar flex flex-col lg:flex-row gap-8">
+          <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {items.map((item, index) => (
+              <div key={index} className="flex flex-col gap-3 bg-gray-50 p-4 rounded-2xl border border-gray-200">
+                <div className="text-center font-bold text-gray-400 text-[10px] uppercase tracking-widest border-b border-gray-200 pb-2">Item {index + 1}</div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-bold text-gray-500 uppercase">Image URL</label>
+                  <input type="text" value={item.imageUrl} onChange={(e) => handleItemChange(index, 'imageUrl', e.target.value)} placeholder="https://..." className="w-full p-2 bg-white border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-student-yellow" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-bold text-gray-500 uppercase">Target Text (Correct)</label>
+                  <input type="text" value={item.targetText} onChange={(e) => handleItemChange(index, 'targetText', e.target.value)} placeholder="e.g. Airport" className="w-full p-2 bg-white border border-gray-300 rounded border-dashed text-xs focus:outline-none focus:ring-2 focus:ring-student-yellow" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-bold text-gray-500 uppercase">Student View (Option)</label>
+                  <input type="text" value={item.studentViewText} onChange={(e) => handleItemChange(index, 'studentViewText', e.target.value)} placeholder="e.g. Airport" className="w-full p-2 bg-white border border-gray-300 rounded border-dashed text-xs focus:outline-none focus:ring-2 focus:ring-student-yellow" />
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="w-full lg:w-72 shrink-0 bg-gray-50 p-5 rounded-2xl border border-gray-200 flex flex-col gap-4">
+            <h3 className="font-bold text-gray-400 text-[10px] uppercase tracking-widest border-b border-gray-200 pb-2 mb-2">Pill Styling</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Text</span>
+                <input type="color" value={textColor} onChange={(e) => setTextColor(e.target.value)} className="w-full h-8 rounded cursor-pointer border border-gray-300" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Box</span>
+                <input type="color" value={boxColor} onChange={(e) => setBoxColor(e.target.value)} className="w-full h-8 rounded cursor-pointer border border-gray-300" />
+              </div>
+              <div className="flex flex-col gap-1 col-span-2">
+                <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Outline</span>
+                <input type="color" value={lineColor} onChange={(e) => setLineColor(e.target.value)} className="w-full h-8 rounded cursor-pointer border border-gray-300" />
+              </div>
+              <div className="flex flex-col gap-1 col-span-2">
+                <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Style</span>
+                <div className="flex border border-gray-300 rounded overflow-hidden bg-white h-8">
+                  <button type="button" onClick={() => setIsBold(!isBold)} className={`flex-1 font-bold text-sm ${isBold ? 'bg-outloud-blue text-white' : 'text-gray-700 hover:bg-gray-100'}`}>B</button>
+                  <button type="button" onClick={() => setIsItalic(!isItalic)} className={`flex-1 italic text-sm border-x border-gray-300 ${isItalic ? 'bg-outloud-blue text-white' : 'text-gray-700 hover:bg-gray-100'}`}>I</button>
+                  <button type="button" onClick={() => setIsUnderline(!isUnderline)} className={`flex-1 underline text-sm ${isUnderline ? 'bg-outloud-blue text-white' : 'text-gray-700 hover:bg-gray-100'}`}>U</button>
+                </div>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Size</span>
+                <select value={fontSize} onChange={(e) => setFontSize(e.target.value)} className="w-full p-1.5 bg-white border border-gray-300 rounded text-xs font-semibold focus:outline-none">
+                  {['10', '12', '14', '16', '18', '20', '24'].map(sz => <option key={sz} value={sz}>{sz}px</option>)}
+                </select>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Corners</span>
+                <input type="number" min="0" value={borderRadius} onChange={(e) => setBorderRadius(e.target.value)} className="w-full p-1.5 bg-white border border-gray-300 rounded text-xs font-semibold focus:outline-none text-center" />
+              </div>
+              <div className="flex flex-col gap-1 col-span-2">
+                <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Font</span>
+                <select value={fontFamily} onChange={(e) => setFontFamily(e.target.value)} className="w-full p-1.5 bg-white border border-gray-300 rounded text-xs font-semibold focus:outline-none">
+                  <option value="Montserrat">Montserrat</option>
+                  <option value="Tabarra">Tabarra</option>
+                  <option value="Arial">Arial</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="p-4 bg-gray-100 border-t border-gray-200 flex justify-end gap-4 shrink-0">
+          <button type="button" onClick={onCancel} className="px-6 py-2.5 rounded-full font-bold text-xs uppercase tracking-wide text-gray-600 bg-transparent border-2 border-gray-300 hover:bg-gray-200 transition">CANCEL</button>
+          <button type="button" onClick={() => onSave({ items, textColor, boxColor, lineColor, fontSize, fontFamily, borderRadius, isBold, isItalic, isUnderline })} className="px-8 py-2.5 rounded-full font-black text-xs uppercase tracking-wide text-outloud-blue bg-student-yellow hover:scale-105 active:scale-95 transition shadow-md">SAVE</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const ShortAnswerModal = ({ isOpen, initialData = {}, onSave, onCancel }) => {
+  const [questionHtml, setQuestionHtml] = useState(initialData.questionHtml || '<span style="font-family: Montserrat; font-size: 16px; color: #08203e;">Type your question here...</span>');
+  const [targetAnswer, setTargetAnswer] = useState(initialData.targetAnswer || '');
+  const [boxColor, setBoxColor] = useState(initialData.boxColor || 'transparent');
+  const [lineColor, setLineColor] = useState(initialData.lineColor || '#08203e');
+  const [textColor, setTextColor] = useState(initialData.textColor || '#08203e');
+  const [borderRadius, setBorderRadius] = useState(initialData.borderRadius || '8');
+  const [fontSize, setFontSize] = useState(initialData.fontSize || '16');
+  const [fontFamily, setFontFamily] = useState(initialData.fontFamily || 'Montserrat');
+  const [textDropdown, setTextDropdown] = useState(null);
+  const editorRef = useRef(null);
+
+  useEffect(() => {
+    if (isOpen && editorRef.current) {
+       editorRef.current.innerHTML = questionHtml;
+    }
+  }, [isOpen, questionHtml]);
+
+  const handleFormat = (command, value = null) => {
+    if (command === 'fontSizePx') {
+      document.execCommand('fontSize', false, '7');
+      const fonts = document.querySelectorAll('font[size="7"]');
+      fonts.forEach(f => {
+        f.removeAttribute('size');
+        f.style.fontSize = `${value}px`;
+      });
+    } else {
+      document.execCommand(command, false, value);
+    }
+  };
+
+  const handleSave = () => {
+     const finalHtml = editorRef.current ? editorRef.current.innerHTML : questionHtml;
+     onSave({ questionHtml: finalHtml, targetAnswer, boxColor, lineColor, textColor, borderRadius, fontSize, fontFamily });
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[250] flex items-center justify-center bg-outloud-blue/40 backdrop-blur-sm p-4">
+      <div className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/60 animate-fade-in flex flex-col max-h-[90vh]">
+        <div className="bg-[#eef5fc] p-5 border-b border-gray-200 shrink-0">
+          <h2 className="text-outloud-blue font-black text-lg uppercase tracking-wider font-montserrat">SHORT ANSWER</h2>
+          <p className="text-gray-600 text-xs mt-1">Design the question text and define the hidden target answer for grading.</p>
+        </div>
+        <div className="p-5 space-y-6 overflow-y-auto custom-scrollbar">
+          <div className="flex flex-col space-y-2">
+             <label className="text-[10px] font-bold uppercase text-gray-500">Question Text</label>
+             <div className="flex flex-wrap gap-2 items-center bg-gray-50 p-2 rounded-t-xl border border-gray-300 border-b-0">
+                <div className="flex border border-gray-300 rounded overflow-hidden bg-white">
+                  <button onMouseDown={(e)=>{e.preventDefault(); handleFormat('bold');}} className="w-8 h-8 font-bold text-gray-700 hover:bg-gray-100">B</button>
+                  <button onMouseDown={(e)=>{e.preventDefault(); handleFormat('italic');}} className="w-8 h-8 italic text-gray-700 hover:bg-gray-100 border-l border-gray-300">I</button>
+                  <button onMouseDown={(e)=>{e.preventDefault(); handleFormat('underline');}} className="w-8 h-8 underline text-gray-700 hover:bg-gray-100 border-l border-gray-300">U</button>
+                </div>
+                <input type="color" onMouseDown={(e)=>e.preventDefault()} onChange={(e) => handleFormat('foreColor', e.target.value)} className="w-8 h-8 rounded cursor-pointer border border-gray-300" title="Text Color" />
+                <div className="relative">
+                  <button onMouseDown={(e)=>e.preventDefault()} onClick={() => setTextDropdown(textDropdown === 'size' ? null : 'size')} className="p-1.5 px-2 border border-gray-300 rounded text-xs font-semibold focus:outline-none cursor-pointer flex items-center gap-1 bg-white">
+                    Size... <span className="text-[10px]">▼</span>
+                  </button>
+                  {textDropdown === 'size' && (
+                    <div className="absolute top-full left-0 mt-1 w-16 max-h-40 overflow-y-auto bg-white border border-gray-200 rounded shadow-lg z-[200] custom-scrollbar">
+                      {[12,14,16,18,20,24,28,32,36,42,48].map(sz => (
+                        <div key={sz} onMouseDown={(e) => e.preventDefault()} onClick={() => { handleFormat('fontSizePx', sz); setTextDropdown(null); }} className="px-2 py-1 hover:bg-gray-100 cursor-pointer text-xs">{sz}px</div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="relative">
+                  <button onMouseDown={(e)=>e.preventDefault()} onClick={() => setTextDropdown(textDropdown === 'font' ? null : 'font')} className="p-1.5 px-2 border border-gray-300 rounded text-xs font-semibold focus:outline-none cursor-pointer flex items-center gap-1 bg-white w-28 justify-between">
+                    Font... <span className="text-[10px]">▼</span>
+                  </button>
+                  {textDropdown === 'font' && (
+                    <div className="absolute top-full left-0 mt-1 w-36 max-h-40 overflow-y-auto bg-white border border-gray-200 rounded shadow-lg z-[200] custom-scrollbar">
+                      {[
+                        { name: 'Montserrat', family: 'Montserrat, sans-serif' },
+                        { name: 'Tabarra', family: 'Tabarra, sans-serif' },
+                        { name: 'Arial', family: 'Arial, sans-serif' },
+                        { name: 'Times New Roman', family: '"Times New Roman", serif' },
+                        { name: 'Courier New', family: '"Courier New", monospace' }
+                      ].map(f => (
+                        <div key={f.name} onMouseDown={(e) => e.preventDefault()} onClick={() => { handleFormat('fontName', f.family); setTextDropdown(null); }} className="px-2 py-1.5 hover:bg-gray-100 cursor-pointer text-xs" style={{fontFamily: f.family}}>{f.name}</div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+             </div>
+             <div ref={editorRef} contentEditable suppressContentEditableWarning className="w-full p-3 bg-white border border-gray-300 rounded-b-xl focus:outline-none focus:ring-2 focus:ring-student-yellow transition overflow-y-auto max-h-32 rich-text-content" />
+          </div>
+
+          <div className="flex flex-col space-y-1.5">
+            <label className="text-[10px] font-bold uppercase text-gray-500">Target Answer (Hidden from Student)</label>
+            <input type="text" value={targetAnswer} onChange={(e) => setTargetAnswer(e.target.value)} placeholder="Type the exact expected answer here..." className="w-full p-3 bg-gray-50 border border-gray-300 rounded-xl font-montserrat text-sm focus:outline-none focus:ring-2 focus:ring-student-yellow transition" />
+          </div>
+
+          <div className="bg-gray-50 p-4 rounded-2xl border border-gray-200 flex flex-col space-y-4">
+             <h3 className="font-bold text-gray-400 text-[10px] uppercase tracking-widest border-b border-gray-200 pb-2">Student Input Box Styling</h3>
+             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 items-end">
+                <div className="flex flex-col space-y-1.5">
+                  <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Text</span>
+                  <input type="color" value={textColor} onChange={(e) => setTextColor(e.target.value)} className="w-full h-8 rounded cursor-pointer border border-gray-300" />
+                </div>
+                <div className="flex flex-col space-y-1.5">
+                  <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Box</span>
+                  <div className="flex gap-1 items-center">
+                    <input type="color" value={boxColor === 'transparent' ? '#ffffff' : boxColor} onChange={(e) => setBoxColor(e.target.value)} disabled={boxColor === 'transparent'} className={`flex-grow h-8 rounded cursor-pointer border border-gray-300 ${boxColor === 'transparent' ? 'opacity-40' : ''}`} />
+                    <button type="button" onClick={() => setBoxColor(boxColor === 'transparent' ? '#ffffff' : 'transparent')} className={`w-8 h-8 flex items-center justify-center rounded border ${boxColor === 'transparent' ? 'bg-red-50 border-red-200 text-red-500 shadow-inner' : 'bg-white border-gray-300 text-gray-400 hover:bg-gray-100'}`} title="Toggle Transparent">🚫</button>
+                  </div>
+                </div>
+                <div className="flex flex-col space-y-1.5">
+                  <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Line</span>
+                  <div className="flex gap-1 items-center">
+                    <input type="color" value={lineColor === 'transparent' ? '#ffffff' : lineColor} onChange={(e) => setLineColor(e.target.value)} disabled={lineColor === 'transparent'} className={`flex-grow h-8 rounded cursor-pointer border border-gray-300 ${lineColor === 'transparent' ? 'opacity-40' : ''}`} />
+                    <button type="button" onClick={() => setLineColor(lineColor === 'transparent' ? '#ffffff' : 'transparent')} className={`w-8 h-8 flex items-center justify-center rounded border ${lineColor === 'transparent' ? 'bg-red-50 border-red-200 text-red-500 shadow-inner' : 'bg-white border-gray-300 text-gray-400 hover:bg-gray-100'}`} title="Toggle Transparent">🚫</button>
+                  </div>
+                </div>
+                <div className="flex flex-col space-y-1.5">
+                  <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Size</span>
+                  <select value={fontSize} onChange={(e) => setFontSize(e.target.value)} className="w-full p-1.5 bg-white border border-gray-300 rounded text-xs font-semibold focus:outline-none">
+                    {['12', '14', '16', '18', '20', '24'].map(sz => <option key={sz} value={sz}>{sz}px</option>)}
+                  </select>
+                </div>
+                <div className="flex flex-col space-y-1.5">
+                  <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Corners</span>
+                  <input type="number" min="0" value={borderRadius} onChange={(e) => setBorderRadius(e.target.value)} className="w-full p-1.5 bg-white border border-gray-300 rounded text-xs font-semibold focus:outline-none text-center" />
+                </div>
+             </div>
+          </div>
+        </div>
+
+        <div className="p-4 bg-gray-100 border-t border-gray-200 flex justify-end gap-4 shrink-0">
+          <button type="button" onClick={onCancel} className="px-6 py-2.5 rounded-full font-bold text-xs uppercase tracking-wide text-gray-600 bg-transparent border-2 border-gray-300 hover:bg-gray-200 transition">CANCEL</button>
+          <button type="button" onClick={handleSave} className="px-8 py-2.5 rounded-full font-black text-xs uppercase tracking-wide text-outloud-blue bg-student-yellow hover:scale-105 active:scale-95 transition shadow-md">SAVE</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const MultipleSelectionModal = ({ isOpen, initialData = {}, onSave, onCancel }) => {
+  const [promptType, setPromptType] = useState(initialData.promptType || 'text');
+  const [promptUrl, setPromptUrl] = useState(initialData.promptUrl || '');
+  const [promptHtml, setPromptHtml] = useState(initialData.promptHtml || '<span style="font-family: Montserrat; font-size: 18px; font-weight: bold; color: #08203e;">Type your prompt here...</span>');
+  const [options, setOptions] = useState(initialData.options || [
+    { id: 1, html: 'Option A', isCorrect: false },
+    { id: 2, html: 'Option B', isCorrect: false },
+    { id: 3, html: 'Option C', isCorrect: true },
+    { id: 4, html: 'Option D', isCorrect: false }
+  ]);
+  const [optBoxColor, setOptBoxColor] = useState(initialData.optBoxColor || '#ffffff');
+  const [optLineColor, setOptLineColor] = useState(initialData.optLineColor || '#08203e');
+  const [optBorderRadius, setOptBorderRadius] = useState(initialData.optBorderRadius || '12');
+  const [textDropdown, setTextDropdown] = useState(null);
+  const promptRef = useRef(null);
+  const optionsRefs = useRef({});
+
+  useEffect(() => {
+    if (isOpen) {
+      if (promptType === 'text' && promptRef.current) promptRef.current.innerHTML = promptHtml;
+      options.forEach(opt => { if (optionsRefs.current[opt.id]) optionsRefs.current[opt.id].innerHTML = opt.html; });
+    }
+  }, [isOpen, promptType, options.length]); 
+
+  const handleFormat = (command, value = null) => {
+    if (command === 'fontSizePx') {
+      document.execCommand('fontSize', false, '7');
+      const fonts = document.querySelectorAll('font[size="7"]');
+      fonts.forEach(f => { f.removeAttribute('size'); f.style.fontSize = `${value}px`; });
+    } else {
+      document.execCommand(command, false, value);
+    }
+  };
+
+  const addOption = () => { if (options.length < 6) setOptions([...options, { id: Date.now(), html: `Option ${options.length + 1}`, isCorrect: false }]); };
+  const removeOption = (id) => { if (options.length > 2) { setOptions(options.filter(o => o.id !== id)); delete optionsRefs.current[id]; } };
+  const toggleCorrect = (id) => { setOptions(options.map(o => o.id === id ? { ...o, isCorrect: !o.isCorrect } : o)); };
+
+  const handleSave = () => {
+    const finalPromptHtml = promptType === 'text' && promptRef.current ? promptRef.current.innerHTML : promptHtml;
+    const finalOptions = options.map(opt => ({ ...opt, html: optionsRefs.current[opt.id] ? optionsRefs.current[opt.id].innerHTML : opt.html }));
+    onSave({ promptType, promptUrl, promptHtml: finalPromptHtml, options: finalOptions, optBoxColor, optLineColor, optBorderRadius });
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[250] flex items-center justify-center bg-outloud-blue/40 backdrop-blur-sm p-4">
+      <div className="w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/60 animate-fade-in flex flex-col max-h-[90vh]">
+        <div className="bg-[#eef5fc] p-5 border-b border-gray-200 shrink-0">
+          <h2 className="text-outloud-blue font-black text-lg uppercase tracking-wider font-montserrat">MULTIPLE SELECTION</h2>
+          <p className="text-gray-600 text-xs mt-1">Create a prompt and up to 6 rich-text answers. Students will lose points for selecting incorrect answers.</p>
+        </div>
+        <div className="sticky top-0 z-50 flex flex-wrap gap-2 items-center bg-gray-100 p-3 border-b border-gray-300 shadow-sm">
+           <span className="text-[10px] font-bold uppercase text-gray-500 mr-2">Universal Text Formatting:</span>
+           <div className="flex border border-gray-300 rounded overflow-hidden bg-white">
+             <button onMouseDown={(e)=>{e.preventDefault(); handleFormat('bold');}} className="w-8 h-8 font-bold text-gray-700 hover:bg-gray-200">B</button>
+             <button onMouseDown={(e)=>{e.preventDefault(); handleFormat('italic');}} className="w-8 h-8 italic text-gray-700 hover:bg-gray-200 border-l border-gray-300">I</button>
+             <button onMouseDown={(e)=>{e.preventDefault(); handleFormat('underline');}} className="w-8 h-8 underline text-gray-700 hover:bg-gray-200 border-l border-gray-300">U</button>
+           </div>
+           <input type="color" onMouseDown={(e)=>e.preventDefault()} onChange={(e) => handleFormat('foreColor', e.target.value)} className="w-8 h-8 rounded cursor-pointer border border-gray-300" title="Text Color" />
+           <div className="relative">
+             <button onMouseDown={(e)=>e.preventDefault()} onClick={() => setTextDropdown(textDropdown === 'size' ? null : 'size')} className="p-1.5 px-2 border border-gray-300 rounded text-xs font-semibold focus:outline-none cursor-pointer flex items-center gap-1 bg-white">Size... <span className="text-[10px]">▼</span></button>
+             {textDropdown === 'size' && (
+               <div className="absolute top-full left-0 mt-1 w-16 max-h-40 overflow-y-auto bg-white border border-gray-200 rounded shadow-lg z-[200] custom-scrollbar">
+                 {[12,14,16,18,20,24,28,32,36,42,48].map(sz => <div key={sz} onMouseDown={(e) => e.preventDefault()} onClick={() => { handleFormat('fontSizePx', sz); setTextDropdown(null); }} className="px-2 py-1 hover:bg-gray-100 cursor-pointer text-xs">{sz}px</div>)}
+               </div>
+             )}
+           </div>
+           <div className="relative">
+             <button onMouseDown={(e)=>e.preventDefault()} onClick={() => setTextDropdown(textDropdown === 'font' ? null : 'font')} className="p-1.5 px-2 border border-gray-300 rounded text-xs font-semibold focus:outline-none cursor-pointer flex items-center gap-1 bg-white w-28 justify-between">Font... <span className="text-[10px]">▼</span></button>
+             {textDropdown === 'font' && (
+               <div className="absolute top-full left-0 mt-1 w-36 max-h-40 overflow-y-auto bg-white border border-gray-200 rounded shadow-lg z-[200] custom-scrollbar">
+                 {[{ name: 'Montserrat', family: 'Montserrat, sans-serif' }, { name: 'Tabarra', family: 'Tabarra, sans-serif' }, { name: 'Arial', family: 'Arial, sans-serif' }, { name: 'Times New Roman', family: '"Times New Roman", serif' }, { name: 'Courier New', family: '"Courier New", monospace' }].map(f => <div key={f.name} onMouseDown={(e) => e.preventDefault()} onClick={() => { handleFormat('fontName', f.family); setTextDropdown(null); }} className="px-2 py-1.5 hover:bg-gray-100 cursor-pointer text-xs" style={{fontFamily: f.family}}>{f.name}</div>)}
+               </div>
+             )}
+           </div>
+           <span className="text-[10px] text-gray-400 italic ml-2">(Highlight any text below and click tools to format)</span>
+        </div>
+        <div className="p-6 overflow-y-auto custom-scrollbar flex flex-col gap-6">
+          <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 flex flex-col gap-3">
+             <div className="flex justify-between items-center border-b border-gray-200 pb-2">
+                <span className="text-xs font-bold uppercase tracking-widest text-outloud-blue">Prompt Type</span>
+                <div className="flex gap-2">
+                  <button onClick={() => setPromptType('text')} className={`px-4 py-1.5 rounded text-xs font-bold uppercase ${promptType === 'text' ? 'bg-outloud-blue text-white' : 'bg-gray-200 text-gray-500'}`}>Text</button>
+                  <button onClick={() => setPromptType('image')} className={`px-4 py-1.5 rounded text-xs font-bold uppercase ${promptType === 'image' ? 'bg-outloud-blue text-white' : 'bg-gray-200 text-gray-500'}`}>Image URL</button>
+                </div>
+             </div>
+             {promptType === 'image' ? <input type="text" value={promptUrl} onChange={(e) => setPromptUrl(e.target.value)} placeholder="https://..." className="w-full p-3 bg-white border border-gray-300 rounded-xl font-montserrat text-sm focus:outline-none focus:ring-2 focus:ring-student-yellow transition" /> : <div ref={promptRef} contentEditable suppressContentEditableWarning className="w-full p-4 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-student-yellow transition min-h-[80px] rich-text-content" />}
+          </div>
+          <div className="flex flex-col gap-3">
+             <div className="flex justify-between items-end">
+               <h3 className="text-xs font-bold uppercase tracking-widest text-outloud-blue">Possible Answers</h3>
+               <button onClick={addOption} disabled={options.length >= 6} className="text-[10px] font-bold uppercase bg-student-yellow text-outloud-blue px-3 py-1.5 rounded shadow-sm hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 transition">+ Add Option ({options.length}/6)</button>
+             </div>
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {options.map((opt, index) => (
+                   <div key={opt.id} className="relative bg-white border-2 border-gray-200 rounded-xl p-3 flex flex-col gap-2 shadow-sm focus-within:border-student-yellow transition">
+                      <div className="flex justify-between items-center">
+                         <span className="text-[10px] font-bold text-gray-400">OPTION {index + 1}</span>
+                         <label className="flex items-center gap-2 cursor-pointer group">
+                           <input type="checkbox" checked={opt.isCorrect} onChange={() => toggleCorrect(opt.id)} className="w-4 h-4 text-student-yellow rounded focus:ring-student-yellow cursor-pointer" />
+                           <span className={`text-[10px] font-bold uppercase transition-colors ${opt.isCorrect ? 'text-green-600' : 'text-gray-400 group-hover:text-gray-600'}`}>{opt.isCorrect ? 'Correct Answer' : 'Mark Correct'}</span>
+                         </label>
+                      </div>
+                      <div ref={(el) => optionsRefs.current[opt.id] = el} contentEditable suppressContentEditableWarning className="w-full p-2 bg-gray-50 border border-transparent rounded focus:outline-none focus:bg-white focus:border-gray-300 transition min-h-[50px] rich-text-content" />
+                      {options.length > 2 && <button onClick={() => removeOption(opt.id)} className="absolute -top-2 -right-2 w-6 h-6 bg-red-100 text-red-500 rounded-full border border-red-200 flex items-center justify-center hover:bg-red-500 hover:text-white transition shadow-sm" title="Remove Option">×</button>}
+                   </div>
+                ))}
+             </div>
+          </div>
+          <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 flex gap-6 items-center">
+             <span className="text-xs font-bold uppercase tracking-widest text-outloud-blue whitespace-nowrap">Pill Style:</span>
+             <div className="flex gap-4 items-end flex-wrap">
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] font-bold uppercase text-gray-500">Box</span>
+                  <div className="flex gap-1 items-center">
+                    <input type="color" value={optBoxColor === 'transparent' ? '#ffffff' : optBoxColor} onChange={(e) => setOptBoxColor(e.target.value)} disabled={optBoxColor === 'transparent'} className={`w-10 h-8 rounded cursor-pointer border border-gray-300 ${optBoxColor === 'transparent' ? 'opacity-40' : ''}`} />
+                    <button type="button" onClick={() => setOptBoxColor(optBoxColor === 'transparent' ? '#ffffff' : 'transparent')} className={`w-8 h-8 flex items-center justify-center rounded border ${optBoxColor === 'transparent' ? 'bg-red-50 border-red-200 text-red-500 shadow-inner' : 'bg-white border-gray-300 text-gray-400 hover:bg-gray-100'}`} title="Toggle Transparent">🚫</button>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] font-bold uppercase text-gray-500">Outline</span>
+                  <div className="flex gap-1 items-center">
+                    <input type="color" value={optLineColor === 'transparent' ? '#ffffff' : optLineColor} onChange={(e) => setOptLineColor(e.target.value)} disabled={optLineColor === 'transparent'} className={`w-10 h-8 rounded cursor-pointer border border-gray-300 ${optLineColor === 'transparent' ? 'opacity-40' : ''}`} />
+                    <button type="button" onClick={() => setOptLineColor(optLineColor === 'transparent' ? '#ffffff' : 'transparent')} className={`w-8 h-8 flex items-center justify-center rounded border ${optLineColor === 'transparent' ? 'bg-red-50 border-red-200 text-red-500 shadow-inner' : 'bg-white border-gray-300 text-gray-400 hover:bg-gray-100'}`} title="Toggle Transparent">🚫</button>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] font-bold uppercase text-gray-500">Corners (px)</span>
+                  <input type="number" min="0" value={optBorderRadius} onChange={(e) => setOptBorderRadius(e.target.value)} className="w-16 h-8 p-1.5 bg-white border border-gray-300 rounded text-xs font-semibold focus:outline-none text-center" />
+                </div>
+             </div>
+          </div>
+        </div>
+        <div className="p-4 bg-gray-100 border-t border-gray-200 flex justify-end gap-4 shrink-0">
+          <button type="button" onClick={onCancel} className="px-6 py-2.5 rounded-full font-bold text-xs uppercase tracking-wide text-gray-600 bg-transparent border-2 border-gray-300 hover:bg-gray-200 transition">CANCEL</button>
+          <button type="button" onClick={handleSave} className="px-8 py-2.5 rounded-full font-black text-xs uppercase tracking-wide text-outloud-blue bg-student-yellow hover:scale-105 active:scale-95 transition shadow-md">SAVE</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const SliderBarModal = ({ isOpen, initialData = {}, onSave, onCancel }) => {
+  const [options, setOptions] = useState(initialData.options || [
+    { id: 1, text: 'Pretty', isCorrect: false },
+    { id: 2, text: 'Beautiful', isCorrect: true },
+    { id: 3, text: 'Gorgeous', isCorrect: false },
+  ]);
+  const [orientation, setOrientation] = useState(initialData.orientation || 'horizontal');
+  const [barColor, setBarColor] = useState(initialData.barColor || '#cbd5e1'); 
+  const [barThickness, setBarThickness] = useState(initialData.barThickness || '12');
+  const [handleColor, setHandleColor] = useState(initialData.handleColor || '#eab308');
+  const [barText, setBarText] = useState(initialData.barText || '');
+  const [barTextColor, setBarTextColor] = useState(initialData.barTextColor || '#08203e');
+  const [fontSize, setFontSize] = useState(initialData.fontSize || '16');
+  const [fontFamily, setFontFamily] = useState(initialData.fontFamily || 'Montserrat');
+  const [textColor, setTextColor] = useState(initialData.textColor || '#08203e');
+
+  const addOption = () => { if (options.length < 10) setOptions([...options, { id: Date.now(), text: `Option ${options.length + 1}`, isCorrect: false }]); };
+  const removeOption = (id) => { if (options.length > 2) setOptions(options.filter(o => o.id !== id)); };
+  const updateOptionText = (id, text) => { setOptions(options.map(o => o.id === id ? { ...o, text } : o)); };
+  const toggleCorrect = (id) => { setOptions(options.map(o => o.id === id ? { ...o, isCorrect: !o.isCorrect } : o)); };
+
+  const handleSave = () => { onSave({ options, orientation, barColor, barThickness, handleColor, barText, barTextColor, fontSize, fontFamily, textColor }); };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[250] flex items-center justify-center bg-outloud-blue/40 backdrop-blur-sm p-4">
+      <div className="w-full max-w-3xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/60 animate-fade-in flex flex-col max-h-[90vh]">
+        <div className="bg-[#eef5fc] p-5 border-b border-gray-200 shrink-0">
+          <h2 className="text-outloud-blue font-black text-lg uppercase tracking-wider font-montserrat">SLIDER BAR</h2>
+          <p className="text-gray-600 text-xs mt-1">Create up to 10 nuanced options. Students lose 20% comprehension for resting on an incorrect answer.</p>
+        </div>
+        <div className="p-6 overflow-y-auto custom-scrollbar flex flex-col gap-6">
+          <div className="flex flex-col gap-3">
+             <div className="flex justify-between items-end">
+               <h3 className="text-xs font-bold uppercase tracking-widest text-outloud-blue">Nuance Options (Min 2, Max 10)</h3>
+               <button onClick={addOption} disabled={options.length >= 10} className="text-[10px] font-bold uppercase bg-student-yellow text-outloud-blue px-3 py-1.5 rounded shadow-sm hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 transition">+ Add Option ({options.length}/10)</button>
+             </div>
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {options.map((opt, index) => (
+                   <div key={opt.id} className="relative bg-gray-50 border border-gray-200 rounded-xl p-3 flex flex-col gap-2 shadow-sm focus-within:border-student-yellow transition">
+                      <div className="flex justify-between items-center">
+                         <span className="text-[10px] font-bold text-gray-400">POSITION {index + 1}</span>
+                         <label className="flex items-center gap-2 cursor-pointer group">
+                           <input type="checkbox" checked={opt.isCorrect} onChange={() => toggleCorrect(opt.id)} className="w-4 h-4 text-student-yellow rounded focus:ring-student-yellow cursor-pointer" />
+                           <span className={`text-[10px] font-bold uppercase transition-colors ${opt.isCorrect ? 'text-green-600' : 'text-gray-400 group-hover:text-gray-600'}`}>{opt.isCorrect ? 'Correct Answer' : 'Mark Correct'}</span>
+                         </label>
+                      </div>
+                      <input type="text" value={opt.text} onChange={(e) => updateOptionText(opt.id, e.target.value)} placeholder="Option Text..." className="w-full p-2 bg-white border border-gray-300 rounded text-sm focus:outline-none focus:border-student-yellow" />
+                      {options.length > 2 && <button onClick={() => removeOption(opt.id)} className="absolute -top-2 -right-2 w-5 h-5 bg-red-100 text-red-500 rounded-full border border-red-200 flex items-center justify-center hover:bg-red-500 hover:text-white transition shadow-sm text-xs" title="Remove Option">×</button>}
+                   </div>
+                ))}
+             </div>
+          </div>
+          <div className="flex flex-col lg:flex-row gap-4">
+             <div className="flex-1 bg-gray-50 p-4 rounded-xl border border-gray-200 flex flex-col gap-4">
+               <h3 className="font-bold text-gray-400 text-[10px] uppercase tracking-widest border-b border-gray-200 pb-2">Slider Track Styling</h3>
+               <div className="grid grid-cols-2 gap-4 items-end">
+                  <div className="flex flex-col gap-1 col-span-2">
+                    <span className="text-[10px] font-bold uppercase text-gray-500">Orientation</span>
+                    <select value={orientation} onChange={(e) => setOrientation(e.target.value)} className="w-full p-2 bg-white border border-gray-300 rounded text-xs font-semibold focus:outline-none"><option value="horizontal">Horizontal ↔</option><option value="vertical">Vertical ↕</option></select>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Track Color</span>
+                    <input type="color" value={barColor} onChange={(e) => setBarColor(e.target.value)} className="w-full h-8 rounded cursor-pointer border border-gray-300" />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Handle Color</span>
+                    <input type="color" value={handleColor} onChange={(e) => setHandleColor(e.target.value)} className="w-full h-8 rounded cursor-pointer border border-gray-300" />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Thickness (px)</span>
+                    <input type="number" min="4" max="100" value={barThickness} onChange={(e) => setBarThickness(e.target.value)} className="w-full p-1.5 bg-white border border-gray-300 rounded text-xs font-semibold focus:outline-none text-center" />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Inner Text Color</span>
+                    <input type="color" value={barTextColor} onChange={(e) => setBarTextColor(e.target.value)} className="w-full h-8 rounded cursor-pointer border border-gray-300" />
+                  </div>
+                  <div className="flex flex-col gap-1 col-span-2">
+                    <span className="text-[10px] font-bold uppercase text-gray-500">Inner Bar Text (Optional)</span>
+                    <input type="text" value={barText} onChange={(e) => setBarText(e.target.value)} placeholder="e.g. Intensity ->" className="w-full p-2 bg-white border border-gray-300 rounded text-xs focus:outline-none focus:border-student-yellow" />
+                  </div>
+               </div>
+             </div>
+             <div className="w-full lg:w-64 bg-gray-50 p-4 rounded-xl border border-gray-200 flex flex-col gap-4">
+               <h3 className="font-bold text-gray-400 text-[10px] uppercase tracking-widest border-b border-gray-200 pb-2">Floating Text Styling</h3>
+               <div className="grid grid-cols-1 gap-4 items-end">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Text Color</span>
+                    <input type="color" value={textColor} onChange={(e) => setTextColor(e.target.value)} className="w-full h-8 rounded cursor-pointer border border-gray-300" />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Size</span>
+                    <select value={fontSize} onChange={(e) => setFontSize(e.target.value)} className="w-full p-1.5 bg-white border border-gray-300 rounded text-xs font-semibold focus:outline-none">
+                      {['12', '14', '16', '18', '20', '24', '28'].map(sz => <option key={sz} value={sz}>{sz}px</option>)}
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Font</span>
+                    <select value={fontFamily} onChange={(e) => setFontFamily(e.target.value)} className="w-full p-1.5 bg-white border border-gray-300 rounded text-xs font-semibold focus:outline-none">
+                      <option value="Montserrat">Montserrat</option><option value="Tabarra">Tabarra</option><option value="Arial">Arial</option>
+                    </select>
+                  </div>
+               </div>
+             </div>
+          </div>
+        </div>
+        <div className="p-4 bg-gray-100 border-t border-gray-200 flex justify-end gap-4 shrink-0">
+          <button type="button" onClick={onCancel} className="px-6 py-2.5 rounded-full font-bold text-xs uppercase tracking-wide text-gray-600 bg-transparent border-2 border-gray-300 hover:bg-gray-200 transition">CANCEL</button>
+          <button type="button" onClick={handleSave} className="px-8 py-2.5 rounded-full font-black text-xs uppercase tracking-wide text-outloud-blue bg-student-yellow hover:scale-105 active:scale-95 transition shadow-md">SAVE</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- NEW CROSSWORD MODAL ---
+const CrosswordModal = ({ isOpen, initialData = {}, onSave, onCancel }) => {
+  const [items, setItems] = useState(initialData.items || [
+    { id: 1, word: 'JUSTICE', prompt: 'Fairness in the way people are dealt with' },
+    { id: 2, word: 'CAR', prompt: 'A four-wheeled road vehicle' },
+    { id: 3, word: 'CAMERA', prompt: 'Device for recording visual images' }
+  ]);
+  const [textColor, setTextColor] = useState(initialData.textColor || '#08203e');
+  const [cellColor, setCellColor] = useState(initialData.cellColor || '#ffffff');
+  const [lineColor, setLineColor] = useState(initialData.lineColor || '#08203e');
+  const [fontSize, setFontSize] = useState(initialData.fontSize || '16');
+  const [fontFamily, setFontFamily] = useState(initialData.fontFamily || 'Montserrat');
+  const [isBold, setIsBold] = useState(initialData.isBold || true);
+
+  const addItem = () => setItems([...items, { id: Date.now(), word: '', prompt: '' }]);
+  const removeItem = (id) => { if(items.length > 2) setItems(items.filter(i => i.id !== id)); };
+  const updateItem = (index, field, value) => {
+    const newItems = [...items];
+    newItems[index][field] = field === 'word' ? value.toUpperCase().replace(/[^A-Z]/g, '') : value;
+    setItems(newItems);
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[250] flex items-center justify-center bg-outloud-blue/40 backdrop-blur-sm p-4">
+      <div className="w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/60 animate-fade-in flex flex-col max-h-[90vh]">
+        <div className="bg-[#eef5fc] p-5 border-b border-gray-200 shrink-0">
+          <h2 className="text-outloud-blue font-black text-lg uppercase tracking-wider font-montserrat">CROSSWORD GENERATOR</h2>
+          <p className="text-gray-600 text-xs mt-1">Fill in the target words and prompts. The engine will automatically generate an intersecting grid.</p>
+        </div>
+        <div className="p-6 overflow-y-auto custom-scrollbar flex flex-col lg:flex-row gap-6">
+          <div className="flex-1 flex flex-col gap-3">
+             <div className="flex justify-between items-end mb-2">
+               <div className="flex w-full gap-4 px-2">
+                 <span className="flex-1 text-[10px] font-bold uppercase tracking-widest text-outloud-blue">WORD</span>
+                 <span className="flex-[2] text-[10px] font-bold uppercase tracking-widest text-outloud-blue">PROMPT</span>
+               </div>
+             </div>
+             {items.map((item, index) => (
+                <div key={item.id} className="flex gap-2 items-start relative">
+                  <input type="text" value={item.word} onChange={(e) => updateItem(index, 'word', e.target.value)} placeholder="WORD" className="flex-1 p-2 bg-gray-50 border border-gray-300 rounded text-xs font-bold uppercase focus:outline-none focus:border-student-yellow" />
+                  <input type="text" value={item.prompt} onChange={(e) => updateItem(index, 'prompt', e.target.value)} placeholder="Hint for the student..." className="flex-[2] p-2 bg-gray-50 border border-gray-300 rounded text-xs focus:outline-none focus:border-student-yellow" />
+                  {items.length > 2 && (
+                    <button onClick={() => removeItem(item.id)} className="w-6 h-8 text-red-400 hover:text-red-600 font-bold">×</button>
+                  )}
+                </div>
+             ))}
+             <button onClick={addItem} className="mt-2 w-full py-2 bg-student-yellow text-outloud-blue font-bold text-xs rounded shadow-sm hover:opacity-80 transition">+ ADD ROW</button>
+          </div>
+          <div className="w-full lg:w-64 bg-gray-50 p-4 rounded-xl border border-gray-200 flex flex-col gap-4">
+             <h3 className="font-bold text-gray-400 text-[10px] uppercase tracking-widest border-b border-gray-200 pb-2">Cell Styling</h3>
+             <div className="grid grid-cols-2 gap-4 items-end">
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Text</span>
+                  <input type="color" value={textColor} onChange={(e) => setTextColor(e.target.value)} className="w-full h-8 rounded cursor-pointer border border-gray-300" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Cell</span>
+                  <input type="color" value={cellColor} onChange={(e) => setCellColor(e.target.value)} className="w-full h-8 rounded cursor-pointer border border-gray-300" />
+                </div>
+                <div className="flex flex-col gap-1 col-span-2">
+                  <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Line Color</span>
+                  <input type="color" value={lineColor} onChange={(e) => setLineColor(e.target.value)} className="w-full h-8 rounded cursor-pointer border border-gray-300" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Size</span>
+                  <select value={fontSize} onChange={(e) => setFontSize(e.target.value)} className="w-full p-1.5 bg-white border border-gray-300 rounded text-xs font-semibold focus:outline-none">
+                    {['12', '14', '16', '18', '20', '24'].map(sz => <option key={sz} value={sz}>{sz}px</option>)}
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Style</span>
+                  <button type="button" onClick={() => setIsBold(!isBold)} className={`w-full h-8 rounded font-bold text-sm border ${isBold ? 'bg-outloud-blue text-white border-outloud-blue' : 'bg-white text-gray-700 border-gray-300'}`}>B</button>
+                </div>
+                <div className="flex flex-col gap-1 col-span-2">
+                  <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Font</span>
+                  <select value={fontFamily} onChange={(e) => setFontFamily(e.target.value)} className="w-full p-1.5 bg-white border border-gray-300 rounded text-xs font-semibold focus:outline-none">
+                    <option value="Montserrat">Montserrat</option><option value="Tabarra">Tabarra</option><option value="Arial">Arial</option>
+                  </select>
+                </div>
+             </div>
+          </div>
+        </div>
+        <div className="p-4 bg-gray-100 border-t border-gray-200 flex justify-end gap-4 shrink-0">
+          <button type="button" onClick={onCancel} className="px-6 py-2.5 rounded-full font-bold text-xs uppercase tracking-wide text-gray-600 bg-transparent border-2 border-gray-300 hover:bg-gray-200 transition">CANCEL</button>
+          <button type="button" onClick={() => onSave({ items, textColor, cellColor, lineColor, fontSize, fontFamily, isBold })} className="px-8 py-2.5 rounded-full font-black text-xs uppercase tracking-wide text-outloud-blue bg-student-yellow hover:scale-105 active:scale-95 transition shadow-md">GENERATE</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- NEW WORD SEARCH MODAL ---
+const WordSearchModal = ({ isOpen, initialData = {}, onSave, onCancel }) => {
+  const [promptHtml, setPromptHtml] = useState(initialData.promptHtml || '<span style="font-family: Montserrat; font-size: 18px; font-weight: bold; color: #08203e;">WORD SEARCH: Find all the words.</span>');
+  const [words, setWords] = useState(initialData.words || ['POLICEMAN', 'BARBER', 'CHEF']);
+  
+  const [textColor, setTextColor] = useState(initialData.textColor || '#08203e');
+  const [cellColor, setCellColor] = useState(initialData.cellColor || '#ffffff');
+  const [lineColor, setLineColor] = useState(initialData.lineColor || '#08203e');
+  const [fontSize, setFontSize] = useState(initialData.fontSize || '16');
+  const [fontFamily, setFontFamily] = useState(initialData.fontFamily || 'Montserrat');
+  const [isBold, setIsBold] = useState(initialData.isBold || true);
+
+  const [textDropdown, setTextDropdown] = useState(null);
+  const promptRef = useRef(null);
+
+  useEffect(() => {
+    if (isOpen && promptRef.current) {
+      promptRef.current.innerHTML = promptHtml;
+    }
+  }, [isOpen]);
+
+  const handleFormat = (command, value = null) => {
+    if (command === 'fontSizePx') {
+      document.execCommand('fontSize', false, '7');
+      const fonts = document.querySelectorAll('font[size="7"]');
+      fonts.forEach(f => { f.removeAttribute('size'); f.style.fontSize = `${value}px`; });
+    } else {
+      document.execCommand(command, false, value);
+    }
+  };
+
+  const addWord = () => setWords([...words, '']);
+  const removeWord = (index) => { if(words.length > 2) setWords(words.filter((_, i) => i !== index)); };
+  const updateWord = (index, val) => {
+    const newWords = [...words];
+    newWords[index] = val.toUpperCase().replace(/[^A-Z]/g, '');
+    setWords(newWords);
+  };
+
+  const handleSave = () => {
+    const finalPrompt = promptRef.current ? promptRef.current.innerHTML : promptHtml;
+    const cleanWords = words.filter(w => w.trim() !== '');
+    if (cleanWords.length < 2) return alert('Please enter at least 2 words.');
+    onSave({ promptHtml: finalPrompt, words: cleanWords, textColor, cellColor, lineColor, fontSize, fontFamily, isBold });
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[250] flex items-center justify-center bg-outloud-blue/40 backdrop-blur-sm p-4">
+      <div className="w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/60 animate-fade-in flex flex-col max-h-[90vh]">
+        <div className="bg-[#eef5fc] p-5 border-b border-gray-200 shrink-0">
+          <h2 className="text-outloud-blue font-black text-lg uppercase tracking-wider font-montserrat">WORD SEARCH GENERATOR</h2>
+          <p className="text-gray-600 text-xs mt-1">Design your prompt and add target words. The engine will randomly hide them in a letter grid.</p>
+        </div>
+        
+        {/* Sticky Toolbar */}
+        <div className="sticky top-0 z-50 flex flex-wrap gap-2 items-center bg-gray-100 p-3 border-b border-gray-300 shadow-sm">
+           <span className="text-[10px] font-bold uppercase text-gray-500 mr-2">Prompt Formatting:</span>
+           <div className="flex border border-gray-300 rounded overflow-hidden bg-white">
+             <button onMouseDown={(e)=>{e.preventDefault(); handleFormat('bold');}} className="w-8 h-8 font-bold text-gray-700 hover:bg-gray-200">B</button>
+             <button onMouseDown={(e)=>{e.preventDefault(); handleFormat('italic');}} className="w-8 h-8 italic text-gray-700 hover:bg-gray-200 border-l border-gray-300">I</button>
+             <button onMouseDown={(e)=>{e.preventDefault(); handleFormat('underline');}} className="w-8 h-8 underline text-gray-700 hover:bg-gray-200 border-l border-gray-300">U</button>
+           </div>
+           <input type="color" onMouseDown={(e)=>e.preventDefault()} onChange={(e) => handleFormat('foreColor', e.target.value)} className="w-8 h-8 rounded cursor-pointer border border-gray-300" title="Text Color" />
+           <div className="relative">
+             <button onMouseDown={(e)=>e.preventDefault()} onClick={() => setTextDropdown(textDropdown === 'size' ? null : 'size')} className="p-1.5 px-2 border border-gray-300 rounded text-xs font-semibold focus:outline-none cursor-pointer flex items-center gap-1 bg-white">Size... <span className="text-[10px]">▼</span></button>
+             {textDropdown === 'size' && (
+               <div className="absolute top-full left-0 mt-1 w-16 max-h-40 overflow-y-auto bg-white border border-gray-200 rounded shadow-lg z-[200] custom-scrollbar">
+                 {[12,14,16,18,20,24,28,32,36,42,48].map(sz => <div key={sz} onMouseDown={(e) => e.preventDefault()} onClick={() => { handleFormat('fontSizePx', sz); setTextDropdown(null); }} className="px-2 py-1 hover:bg-gray-100 cursor-pointer text-xs">{sz}px</div>)}
+               </div>
+             )}
+           </div>
+           <div className="relative">
+             <button onMouseDown={(e)=>e.preventDefault()} onClick={() => setTextDropdown(textDropdown === 'font' ? null : 'font')} className="p-1.5 px-2 border border-gray-300 rounded text-xs font-semibold focus:outline-none cursor-pointer flex items-center gap-1 bg-white w-28 justify-between">Font... <span className="text-[10px]">▼</span></button>
+             {textDropdown === 'font' && (
+               <div className="absolute top-full left-0 mt-1 w-36 max-h-40 overflow-y-auto bg-white border border-gray-200 rounded shadow-lg z-[200] custom-scrollbar">
+                 {[{ name: 'Montserrat', family: 'Montserrat, sans-serif' }, { name: 'Tabarra', family: 'Tabarra, sans-serif' }, { name: 'Arial', family: 'Arial, sans-serif' }].map(f => <div key={f.name} onMouseDown={(e) => e.preventDefault()} onClick={() => { handleFormat('fontName', f.family); setTextDropdown(null); }} className="px-2 py-1.5 hover:bg-gray-100 cursor-pointer text-xs" style={{fontFamily: f.family}}>{f.name}</div>)}
+               </div>
+             )}
+           </div>
+        </div>
+
+        <div className="p-6 overflow-y-auto custom-scrollbar flex flex-col lg:flex-row gap-6">
+          <div className="flex-1 flex flex-col gap-4">
+             <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-bold uppercase text-gray-500">Prompt Title</label>
+                <div ref={promptRef} contentEditable suppressContentEditableWarning className="w-full p-4 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-student-yellow transition min-h-[60px] rich-text-content" />
+             </div>
+             
+             <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-bold uppercase text-gray-500">Target Words</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {words.map((w, index) => (
+                    <div key={index} className="flex gap-1 relative">
+                       <input type="text" value={w} onChange={(e) => updateWord(index, e.target.value)} placeholder="WORD" className="w-full p-2 bg-gray-50 border border-gray-300 rounded text-xs font-bold uppercase tracking-wider focus:outline-none focus:border-student-yellow" />
+                       {words.length > 2 && <button onClick={() => removeWord(index)} className="w-6 flex items-center justify-center text-red-400 hover:text-red-600 font-bold">×</button>}
+                    </div>
+                  ))}
+                </div>
+                <button onClick={addWord} className="mt-2 w-full py-2 bg-student-yellow text-outloud-blue font-bold text-xs rounded shadow-sm hover:opacity-80 transition">+ ADD WORD</button>
+             </div>
+          </div>
+          <div className="w-full lg:w-64 bg-gray-50 p-4 rounded-xl border border-gray-200 flex flex-col gap-4">
+             <h3 className="font-bold text-gray-400 text-[10px] uppercase tracking-widest border-b border-gray-200 pb-2">Grid Styling</h3>
+             <div className="grid grid-cols-2 gap-4 items-end">
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Text</span>
+                  <input type="color" value={textColor} onChange={(e) => setTextColor(e.target.value)} className="w-full h-8 rounded cursor-pointer border border-gray-300" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Cell</span>
+                  <input type="color" value={cellColor} onChange={(e) => setCellColor(e.target.value)} className="w-full h-8 rounded cursor-pointer border border-gray-300" />
+                </div>
+                <div className="flex flex-col gap-1 col-span-2">
+                  <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Line Color</span>
+                  <input type="color" value={lineColor} onChange={(e) => setLineColor(e.target.value)} className="w-full h-8 rounded cursor-pointer border border-gray-300" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Size</span>
+                  <select value={fontSize} onChange={(e) => setFontSize(e.target.value)} className="w-full p-1.5 bg-white border border-gray-300 rounded text-xs font-semibold focus:outline-none">
+                    {['12', '14', '16', '18', '20', '24'].map(sz => <option key={sz} value={sz}>{sz}px</option>)}
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Style</span>
+                  <button type="button" onClick={() => setIsBold(!isBold)} className={`w-full h-8 rounded font-bold text-sm border ${isBold ? 'bg-outloud-blue text-white border-outloud-blue' : 'bg-white text-gray-700 border-gray-300'}`}>B</button>
+                </div>
+                <div className="flex flex-col gap-1 col-span-2">
+                  <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Font</span>
+                  <select value={fontFamily} onChange={(e) => setFontFamily(e.target.value)} className="w-full p-1.5 bg-white border border-gray-300 rounded text-xs font-semibold focus:outline-none">
+                    <option value="Montserrat">Montserrat</option><option value="Tabarra">Tabarra</option><option value="Arial">Arial</option>
+                  </select>
+                </div>
+             </div>
+          </div>
+        </div>
+        <div className="p-4 bg-gray-100 border-t border-gray-200 flex justify-end gap-4 shrink-0">
+          <button type="button" onClick={onCancel} className="px-6 py-2.5 rounded-full font-bold text-xs uppercase tracking-wide text-gray-600 bg-transparent border-2 border-gray-300 hover:bg-gray-200 transition">CANCEL</button>
+          <button type="button" onClick={handleSave} className="px-8 py-2.5 rounded-full font-black text-xs uppercase tracking-wide text-outloud-blue bg-student-yellow hover:scale-105 active:scale-95 transition shadow-md">GENERATE</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+// =========================================
+// 3. MAIN ADMIN HUB
+// =========================================
+const AdminHub = () => {
+  // Application State
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [contentType, setContentType] = useState('Lesson');
+  
+  // Dropdown States
+  const [selectedLevel, setSelectedLevel] = useState('');
+  const [selectedUnit, setSelectedUnit] = useState('');
+  
+  // Canvas & Blueprint State
+  const [lessonScreens, setLessonScreens] = useState([1]); 
+  const [workbookScreens, setWorkbookScreens] = useState(1); 
+  const [canvasElements, setCanvasElements] = useState([]); 
+
+  // Tool Modals State
+  const [activeModal, setActiveModal] = useState(null); 
+  const [editingElementId, setEditingElementId] = useState(null);
+  const [mediaUrlInput, setMediaUrlInput] = useState('');
+
+  // Universal Selection State
+  const [selectedElementId, setSelectedElementId] = useState(null);
+
+  // Drag, Resize, and ROTATE Engine State
+  const [draggingId, setDraggingId] = useState(null);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  
+  const [resizingId, setResizingId] = useState(null);
+  const [resizeStart, setResizeStart] = useState({ mouseX: 0, mouseY: 0, elX: 0, elY: 0, elW: 0, elH: 0, elImgX: 0, elImgY: 0, elImgW: 0, elImgH: 0, handle: '' });
+
+  const [rotatingId, setRotatingId] = useState(null);
+  const [rotationStart, setRotationStart] = useState({ centerX: 0, centerY: 0, initialMouseAngle: 0, initialRotation: 0 });
+
+  // Inline Editing Engine State
+  const [editingTextId, setEditingTextId] = useState(null);
+  const [textDropdown, setTextDropdown] = useState(null); 
+
+  // --- SMART SCORING & INTERACTION STATE ENGINE ---
+  const [rcStates, setRcStates] = useState({}); 
+  const [rcCycles, setRcCycles] = useState({}); 
+  const rcRecorders = useRef({}); 
+  const rcChunks = useRef({});    
+  const rcPlayers = useRef({});   
+
+  // Shared Input Tracking
+  const [studentAnswers, setStudentAnswers] = useState({});
+  const [totalLessonBlanks, setTotalLessonBlanks] = useState(0);
+
+  // Drag & Drop tracking
+  const [totalDndItems, setTotalDndItems] = useState(0); 
+  const [dndAnswers, setDndAnswers] = useState({}); 
+  const [draggedItem, setDraggedItem] = useState(null);
+  const [touchDragState, setTouchDragState] = useState({ isDragging: false, text: '', x: 0, y: 0, sourceElId: null });
+
+  const [screensPassed, setScreensPassed] = useState(new Set()); 
+
+  // Global Preview Scores
+  const [previewScores, setPreviewScores] = useState({
+    listeningSpeaking: 100,
+    grammar: 100,
+    comprehension: 100,
+    reading: 100
+  });
+
+  // Height Synchronization for Drag and Drop Grids
+  useEffect(() => {
+    const syncAllDnd = () => {
+      canvasElements.filter(e => e.type === 'drag_and_drop').forEach(el => {
+        const nodes = Array.from(document.querySelectorAll(`.dnd-sync-${el.id}`));
+        if (!nodes.length) return;
+        nodes.forEach(n => { n.style.height = 'auto'; n.style.minHeight = '48px'; });
+        let maxH = 48;
+        nodes.forEach(n => { if (n.offsetHeight > maxH) maxH = n.offsetHeight; });
+        nodes.forEach(n => { n.style.height = `${maxH}px`; });
+      });
+    };
+    syncAllDnd();
+    window.addEventListener('resize', syncAllDnd);
+    return () => window.removeEventListener('resize', syncAllDnd);
+  }, [canvasElements, dndAnswers, isPreviewMode]);
+
+
+  // Reset selected unit if the level changes
+  useEffect(() => {
+    setSelectedUnit('');
+  }, [selectedLevel]);
+
+  // Handle Preview Mode Toggling (Calculate Proportions & Reset Memory)
+  useEffect(() => {
+    if (!isPreviewMode) {
+      Object.values(rcRecorders.current).forEach(rec => {
+        if (rec && rec.state !== 'inactive') rec.stop();
+      });
+      Object.values(rcPlayers.current).forEach(player => {
+        if (player) {
+          player.pause();
+          player.currentTime = 0;
+        }
+      });
+      setRcStates({});
+      setEditingTextId(null);
+    } else {
+      setPreviewScores({ listeningSpeaking: 100, grammar: 100, comprehension: 100, reading: 100 });
+      setRcCycles({});
+      setStudentAnswers({});
+      setDndAnswers({});
+      setDraggedItem(null);
+      setTouchDragState({ isDragging: false, text: '', x: 0, y: 0, sourceElId: null });
+      setScreensPassed(new Set());
+      setEditingTextId(null);
+      setSelectedElementId(null);
+      
+      let countedBlanks = 0;
+      let countedDnd = 0;
+      
+      canvasElements.forEach(el => {
+        if (el.type === 'fill_in_the_blank' && el.data?.templateText) {
+          const lines = el.data.templateText.split('\n');
+          lines.forEach(line => {
+            const parts = line.split(/(_+)/);
+            parts.forEach(part => {
+              if (part.startsWith('_')) countedBlanks++;
+            });
+          });
+        }
+        if (el.type === 'short_answer' && el.data?.targetAnswer) countedBlanks++;
+        if (el.type === 'crossword' && el.data?.grid) {
+           el.data.grid.forEach(row => {
+             row.forEach(cell => { if(cell && cell.char) countedBlanks++; });
+           });
+        }
+        
+        if (el.type === 'drag_and_drop' && el.data?.items) {
+          el.data.items.forEach(item => { if (item.imageUrl && item.targetText) countedDnd++; });
+        }
+      });
+      setTotalLessonBlanks(countedBlanks);
+      setTotalDndItems(countedDnd);
+    }
+  }, [isPreviewMode, canvasElements]);
+
+  useEffect(() => {
+    if (!editingTextId) setTextDropdown(null);
+  }, [editingTextId]);
+
+  const unitOptions = selectedLevel && LEVEL_UNIT_MAP[selectedLevel] 
+    ? Array.from({ length: LEVEL_UNIT_MAP[selectedLevel].end - LEVEL_UNIT_MAP[selectedLevel].start + 1 }, (_, i) => `Unit ${LEVEL_UNIT_MAP[selectedLevel].start + i}`)
+    : [];
+
+  const toolOptions = contentType === 'Lesson' ? LESSON_TOOLS : WORKBOOK_TOOLS;
+
+  const handleToolSelect = (tool) => {
+    if (tool === 'Video') setActiveModal('video');
+    else if (tool === 'Image') setActiveModal('image');
+    else if (tool === 'Audio') setActiveModal('audio');
+    else if (tool === 'Record & Compare') spawnInteractiveElement('record_compare');
+    else if (tool === 'Text') spawnInteractiveElement('text');
+    else if (tool === 'Fill in the blank') { setEditingElementId(null); setActiveModal('fill_in_the_blank'); }
+    else if (tool === 'Shape') { setEditingElementId(null); setActiveModal('shape'); }
+    else if (tool === 'Drag and drop') { setEditingElementId(null); setActiveModal('drag_and_drop'); }
+    else if (tool === 'Short answer') { setEditingElementId(null); setActiveModal('short_answer'); }
+    else if (tool === 'Multiple selection') { setEditingElementId(null); setActiveModal('multiple_selection'); }
+    else if (tool === 'Slider bar') { setEditingElementId(null); setActiveModal('slider_bar'); }
+    else if (tool === 'Crossword') { setEditingElementId(null); setActiveModal('crossword'); }
+    else if (tool === 'Word search') { setEditingElementId(null); setActiveModal('word_search'); }
+    else console.log(`Tool selected: ${tool}`); 
+  };
+
+  const spawnInteractiveElement = (type) => {
+    let newElement = {
+      id: `${type}_${Date.now()}`, type: type, screenId: contentType === 'Lesson' ? lessonScreens[0] : workbookScreens, 
+      x: 50, y: 50, width: 200, height: 100, rotation: 0, layer: 10 
+    };
+
+    if (type === 'record_compare') {
+      newElement.width = 100; newElement.height = 100; newElement.url = '';
+    } else if (type === 'text') {
+      newElement.width = 350; newElement.height = 80;
+      newElement.htmlContent = `<span style="font-family: Montserrat; font-size: 24px; color: #08203e;">Type your text here...</span>`;
+    }
+
+    setCanvasElements([...canvasElements, newElement]);
+    if (type === 'text') setTimeout(() => setEditingTextId(newElement.id), 50);
+  };
+
+  const handleDuplicateElement = (id) => {
+    const elementToDuplicate = canvasElements.find(el => el.id === id);
+    if (!elementToDuplicate) return;
+    const newElement = JSON.parse(JSON.stringify(elementToDuplicate));
+    newElement.id = `${newElement.type}_${Date.now()}`;
+    newElement.x = newElement.x + 30; 
+    newElement.y = newElement.y + 30;
+    newElement.layer = (newElement.layer || 10) + 1;
+    setCanvasElements(prev => [...prev, newElement]);
+  };
+
+  const handleAddMedia = () => {
+    if (!mediaUrlInput) return;
+    let defaultWidth = 640; let defaultHeight = 360;
+    if (activeModal === 'image') { defaultWidth = 400; defaultHeight = 400; } 
+    else if (activeModal === 'audio') { defaultWidth = 350; defaultHeight = 80; }
+
+    const newElement = {
+      id: `${activeModal}_${Date.now()}`, type: activeModal, url: mediaUrlInput,
+      screenId: contentType === 'Lesson' ? lessonScreens[0] : workbookScreens, 
+      x: 50, y: 50, width: defaultWidth, height: defaultHeight, rotation: 0, layer: 10,
+      imgX: 0, imgY: 0, imgW: defaultWidth, imgH: defaultHeight
+    };
+
+    setCanvasElements([...canvasElements, newElement]);
+    setActiveModal(null); setMediaUrlInput(''); 
+  };
+
+  const handleSaveFillInTheBlank = (data) => {
+    if (editingElementId) { setCanvasElements(prev => prev.map(el => el.id === editingElementId ? { ...el, data } : el)); } 
+    else {
+      const newElement = { id: `fill_in_the_blank_${Date.now()}`, type: 'fill_in_the_blank', screenId: contentType === 'Lesson' ? lessonScreens[0] : workbookScreens, x: 50, y: 50, width: 500, height: 150, rotation: 0, layer: 10, data: data };
+      setCanvasElements([...canvasElements, newElement]);
+    }
+    setActiveModal(null); setEditingElementId(null);
+  };
+
+  const handleSaveShape = (data) => {
+    if (editingElementId) { setCanvasElements(prev => prev.map(el => el.id === editingElementId ? { ...el, data } : el)); } 
+    else {
+      const newElement = { id: `shape_${Date.now()}`, type: 'shape', screenId: contentType === 'Lesson' ? lessonScreens[0] : workbookScreens, x: 50, y: 50, width: data.shapeType === 'line' ? 300 : 150, height: data.shapeType === 'line' ? 20 : 150, rotation: 0, layer: 10, data: data };
+      setCanvasElements([...canvasElements, newElement]);
+    }
+    setActiveModal(null); setEditingElementId(null);
+  };
+
+  const handleSaveDragAndDrop = (data) => {
+    if (editingElementId) { setCanvasElements(prev => prev.map(el => el.id === editingElementId ? { ...el, data } : el)); } 
+    else {
+      const validItems = data.items.filter(i => i.imageUrl).length || 1;
+      const newElement = { id: `drag_and_drop_${Date.now()}`, type: 'drag_and_drop', screenId: contentType === 'Lesson' ? lessonScreens[0] : workbookScreens, x: 50, y: 50, width: Math.max(300, validItems * 200 + 40), height: 380, rotation: 0, layer: 10, data: data };
+      setCanvasElements([...canvasElements, newElement]);
+    }
+    setActiveModal(null); setEditingElementId(null);
+  };
+
+  const handleSaveShortAnswer = (data) => {
+    if (editingElementId) { setCanvasElements(prev => prev.map(el => el.id === editingElementId ? { ...el, data } : el)); } 
+    else {
+      const newElement = { id: `short_answer_${Date.now()}`, type: 'short_answer', screenId: contentType === 'Lesson' ? lessonScreens[0] : workbookScreens, x: 50, y: 50, width: 400, height: 120, rotation: 0, layer: 10, data: data };
+      setCanvasElements([...canvasElements, newElement]);
+    }
+    setActiveModal(null); setEditingElementId(null);
+  };
+
+  const handleSaveMultipleSelection = (data) => {
+    if (editingElementId) { setCanvasElements(prev => prev.map(el => el.id === editingElementId ? { ...el, data } : el)); } 
+    else {
+      const newElement = { id: `multiple_selection_${Date.now()}`, type: 'multiple_selection', screenId: contentType === 'Lesson' ? lessonScreens[0] : workbookScreens, x: 50, y: 50, width: 450, height: 250, rotation: 0, layer: 10, data: data };
+      setCanvasElements([...canvasElements, newElement]);
+    }
+    setActiveModal(null); setEditingElementId(null);
+  };
+
+  const handleSaveSliderBar = (data) => {
+    if (editingElementId) { setCanvasElements(prev => prev.map(el => el.id === editingElementId ? { ...el, data } : el)); } 
+    else {
+      const isVert = data.orientation === 'vertical';
+      const newElement = { id: `slider_bar_${Date.now()}`, type: 'slider_bar', screenId: contentType === 'Lesson' ? lessonScreens[0] : workbookScreens, x: 50, y: 50, width: isVert ? 100 : 300, height: isVert ? 300 : 100, rotation: 0, layer: 10, data: data };
+      setCanvasElements([...canvasElements, newElement]);
+    }
+    setActiveModal(null); setEditingElementId(null);
+  };
+
+
+  // --- CROSSWORD ALGORITHM ---
+  const generateCrosswordLayout = (wordsInput) => {
+     // Standard greedy intersecting algorithm
+     const sorted = [...wordsInput].filter(w => w.word).sort((a, b) => b.word.length - a.word.length);
+     if (sorted.length === 0) return { grid: [], across: [], down: [] };
+
+     let VIRTUAL_SIZE = 30; // Max reasonable grid bounds
+     let grid = Array(VIRTUAL_SIZE).fill(null).map(() => Array(VIRTUAL_SIZE).fill(null));
+     let placedWords = []; // { wordObj, x, y, isHoriz }
+
+     const canPlace = (wordStr, startX, startY, isHoriz) => {
+       if (startX < 0 || startY < 0) return false;
+       if (isHoriz && startX + wordStr.length >= VIRTUAL_SIZE) return false;
+       if (!isHoriz && startY + wordStr.length >= VIRTUAL_SIZE) return false;
+
+       for (let i = 0; i < wordStr.length; i++) {
+         const cx = isHoriz ? startX + i : startX;
+         const cy = isHoriz ? startY : startY + i;
+         
+         // If cell occupied, must match letter
+         if (grid[cy][cx] !== null && grid[cy][cx].char !== wordStr[i]) return false;
+         
+         // Check adjacent cells to prevent touching in parallel
+         const cellIsIntersection = grid[cy][cx] !== null;
+         if (!cellIsIntersection) {
+            if (isHoriz) {
+               if (cy > 0 && grid[cy-1][cx] !== null) return false;
+               if (cy < VIRTUAL_SIZE-1 && grid[cy+1][cx] !== null) return false;
+            } else {
+               if (cx > 0 && grid[cy][cx-1] !== null) return false;
+               if (cx < VIRTUAL_SIZE-1 && grid[cy][cx+1] !== null) return false;
+            }
+         }
+       }
+       // Check start/end bounds
+       if (isHoriz) {
+         if (startX > 0 && grid[startY][startX-1] !== null) return false;
+         if (startX + wordStr.length < VIRTUAL_SIZE && grid[startY][startX + wordStr.length] !== null) return false;
+       } else {
+         if (startY > 0 && grid[startY-1][startX] !== null) return false;
+         if (startY + wordStr.length < VIRTUAL_SIZE && grid[startY + wordStr.length][startX] !== null) return false;
+       }
+       return true;
+     };
+
+     // 1. Place first word horizontally in middle
+     const first = sorted.shift();
+     const sX = Math.floor(VIRTUAL_SIZE/2 - first.word.length/2);
+     const sY = Math.floor(VIRTUAL_SIZE/2);
+     for(let i=0; i<first.word.length; i++) {
+       grid[sY][sX + i] = { char: first.word[i] };
+     }
+     placedWords.push({ ...first, x: sX, y: sY, isHoriz: true });
+
+     // 2. Greedy search for intersections for remaining words
+     sorted.forEach(wordObj => {
+        const wStr = wordObj.word;
+        let placed = false;
+        
+        for (let i = 0; i < wStr.length && !placed; i++) {
+           const charToMatch = wStr[i];
+           // Find this char in already placed words
+           for (let r = 0; r < VIRTUAL_SIZE && !placed; r++) {
+             for (let c = 0; c < VIRTUAL_SIZE && !placed; c++) {
+               if (grid[r][c] && grid[r][c].char === charToMatch) {
+                  // Try Horizontal
+                  if (canPlace(wStr, c - i, r, true)) {
+                     for(let j=0; j<wStr.length; j++) {
+                       if(!grid[r][c-i+j]) grid[r][c-i+j] = { char: wStr[j] };
+                     }
+                     placedWords.push({ ...wordObj, x: c - i, y: r, isHoriz: true });
+                     placed = true;
+                  }
+                  // Try Vertical
+                  else if (canPlace(wStr, c, r - i, false)) {
+                     for(let j=0; j<wStr.length; j++) {
+                       if(!grid[r-i+j][c]) grid[r-i+j][c] = { char: wStr[j] };
+                     }
+                     placedWords.push({ ...wordObj, x: c, y: r - i, isHoriz: false });
+                     placed = true;
+                  }
+               }
+             }
+           }
+        }
+        // If it couldn't intersect, place it blindly at the bottom
+        if (!placed) {
+          let bottomY = 0;
+          placedWords.forEach(pw => { if (pw.y + (pw.isHoriz?0:pw.word.length) > bottomY) bottomY = pw.y + (pw.isHoriz?0:pw.word.length); });
+          const newY = bottomY + 2;
+          if (canPlace(wStr, 2, newY, true)) {
+             for(let j=0; j<wStr.length; j++) grid[newY][2+j] = { char: wStr[j] };
+             placedWords.push({ ...wordObj, x: 2, y: newY, isHoriz: true });
+          }
+        }
+     });
+
+     // 3. Crop Bounding Box & Assign Numbers
+     let minX = VIRTUAL_SIZE, maxX = 0, minY = VIRTUAL_SIZE, maxY = 0;
+     for (let r=0; r<VIRTUAL_SIZE; r++) {
+       for (let c=0; c<VIRTUAL_SIZE; c++) {
+         if (grid[r][c]) {
+           if(c < minX) minX = c; if(c > maxX) maxX = c;
+           if(r < minY) minY = r; if(r > maxY) maxY = r;
+         }
+       }
+     }
+     
+     let finalGrid = [];
+     let num = 1;
+     let across = [];
+     let down = [];
+
+     for (let r = minY; r <= maxY; r++) {
+       let row = [];
+       for (let c = minX; c <= maxX; c++) {
+         if (grid[r][c]) {
+            let cellObj = { char: grid[r][c].char, num: null };
+            // Check if this cell is the start of a word
+            const startsHoriz = placedWords.find(pw => pw.x === c && pw.y === r && pw.isHoriz);
+            const startsVert = placedWords.find(pw => pw.x === c && pw.y === r && !pw.isHoriz);
+            
+            if (startsHoriz || startsVert) {
+               cellObj.num = num;
+               if (startsHoriz) across.push({ num, prompt: startsHoriz.prompt });
+               if (startsVert) down.push({ num, prompt: startsVert.prompt });
+               num++;
+            }
+            row.push(cellObj);
+         } else {
+            row.push(null);
+         }
+       }
+       finalGrid.push(row);
+     }
+
+     return { grid: finalGrid, across, down };
+  };
+
+  const handleSaveCrossword = (data) => {
+     const generatedData = { ...data, ...generateCrosswordLayout(data.items) };
+     if (editingElementId) {
+        setCanvasElements(prev => prev.map(el => el.id === editingElementId ? { ...el, data: generatedData } : el));
+     } else {
+        const newElement = { 
+           id: `crossword_${Date.now()}`, type: 'crossword', screenId: contentType === 'Lesson' ? lessonScreens[0] : workbookScreens, 
+           x: 50, y: 50, width: 600, height: 400, rotation: 0, layer: 10, data: generatedData 
+        };
+        setCanvasElements([...canvasElements, newElement]);
+     }
+     setActiveModal(null); setEditingElementId(null);
+  };
+
+  // --- WORD SEARCH ALGORITHM ---
+  const generateWordSearchGrid = (wordsInput) => {
+     const cleanWords = wordsInput.map(w => w.toUpperCase().replace(/[^A-Z]/g, '')).filter(w => w.length > 0);
+     if (cleanWords.length === 0) return { grid: [], targetWords: [] };
+
+     const maxLen = Math.max(...cleanWords.map(w => w.length));
+     const size = Math.max(12, maxLen + 2); // Dynamic grid sizing
+     
+     let grid = Array(size).fill(null).map(() => Array(size).fill(''));
+     const dirs = [[1,0], [0,1], [1,1], [-1,1]]; // Horizontal, Vertical, Diagonal Down, Diagonal Up
+
+     cleanWords.forEach(word => {
+        let placed = false;
+        let attempts = 0;
+        while (!placed && attempts < 200) {
+           const dir = dirs[Math.floor(Math.random() * dirs.length)];
+           const r = Math.floor(Math.random() * size);
+           const c = Math.floor(Math.random() * size);
+           
+           const endR = r + dir[0] * (word.length - 1);
+           const endC = c + dir[1] * (word.length - 1);
+
+           if (endR >= 0 && endR < size && endC >= 0 && endC < size) {
+              let canPlace = true;
+              for (let i = 0; i < word.length; i++) {
+                 const charAt = grid[r + dir[0]*i][c + dir[1]*i];
+                 if (charAt !== '' && charAt !== word[i]) { canPlace = false; break; }
+              }
+              if (canPlace) {
+                 for (let i = 0; i < word.length; i++) {
+                    grid[r + dir[0]*i][c + dir[1]*i] = word[i];
+                 }
+                 placed = true;
+              }
+           }
+           attempts++;
+        }
+     });
+
+     // Fill remaining cells with random letters
+     const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+     for (let r=0; r<size; r++) {
+        for (let c=0; c<size; c++) {
+           if (grid[r][c] === '') grid[r][c] = alphabet[Math.floor(Math.random() * alphabet.length)];
+        }
+     }
+
+     return { grid, size, targetWords: cleanWords };
+  };
+
+  const handleSaveWordSearch = (data) => {
+     const generatedData = { ...data, ...generateWordSearchGrid(data.words) };
+     if (editingElementId) {
+        setCanvasElements(prev => prev.map(el => el.id === editingElementId ? { ...el, data: generatedData } : el));
+     } else {
+        const newElement = { 
+           id: `word_search_${Date.now()}`, type: 'word_search', screenId: contentType === 'Lesson' ? lessonScreens[0] : workbookScreens, 
+           x: 50, y: 50, width: 600, height: 400, rotation: 0, layer: 10, data: generatedData 
+        };
+        setCanvasElements([...canvasElements, newElement]);
+     }
+     setActiveModal(null); setEditingElementId(null);
+  };
+
+  const handleDeleteElement = (id) => {
+    setCanvasElements(canvasElements.filter(el => el.id !== id));
+  };
+
+  // --- PROPORTIONAL BATCH EVALUATION (TRIGGERED ON CONTINUE) ---
+  const handlePreviewContinue = (currentScreenId, nextScreenId) => {
+    if (!screensPassed.has(currentScreenId)) {
+      let newLsScore = previewScores.listeningSpeaking;
+      let newGrammarScore = previewScores.grammar;
+      let newComprehensionScore = previewScores.comprehension;
+      let newReadingScore = previewScores.reading;
+
+      const blankPointWeight = totalLessonBlanks > 0 ? (100 / totalLessonBlanks) : 0;
+      const dndPointWeight = totalDndItems > 0 ? (100 / totalDndItems) : 0;
+
+      // 1. Evaluate Record & Compare
+      const rcElementsOnScreen = canvasElements.filter(e => e.screenId === currentScreenId && e.type === 'record_compare');
+      rcElementsOnScreen.forEach(rc => {
+        if (!rcCycles[rc.id] || rcCycles[rc.id] === 0) {
+          newLsScore = Math.max(0, newLsScore - 30); 
+        }
+      });
+
+      // 2. Evaluate Fill in the Blank & Crossword (Grammar)
+      const fitbElementsOnScreen = canvasElements.filter(e => e.screenId === currentScreenId && e.type === 'fill_in_the_blank');
+      fitbElementsOnScreen.forEach(el => {
+        const expectedAnswers = el.data?.answerText ? el.data.answerText.match(/"([^"]*)"/g)?.map(m => m.replace(/"/g, '')) || [] : [];
+        let globalBlankIndex = 0; 
+        
+        const lines = el.data?.templateText?.split('\n') || [];
+        lines.forEach(line => {
+          const parts = line.split(/(_+)/);
+          parts.forEach(part => {
+            if (part.startsWith('_')) {
+               const studentAns = studentAnswers[`${el.id}_${globalBlankIndex}`] || '';
+               const expectedAns = expectedAnswers[globalBlankIndex] || '';
+               if (studentAns !== expectedAns) newGrammarScore = Math.max(0, newGrammarScore - blankPointWeight);
+               globalBlankIndex++;
+            }
+          });
+        });
+      });
+
+      const cwElementsOnScreen = canvasElements.filter(e => e.screenId === currentScreenId && e.type === 'crossword');
+      cwElementsOnScreen.forEach(el => {
+         if (el.data?.grid) {
+            el.data.grid.forEach((row, rIdx) => {
+               row.forEach((cell, cIdx) => {
+                  if (cell && cell.char) {
+                     const studentAns = studentAnswers[`${el.id}_${rIdx}_${cIdx}`] || '';
+                     if (studentAns.toUpperCase() !== cell.char.toUpperCase()) {
+                        newGrammarScore = Math.max(0, newGrammarScore - blankPointWeight);
+                     }
+                  }
+               });
+            });
+         }
+      });
+
+      // 3. Evaluate Short Answer (Grammar)
+      const saElementsOnScreen = canvasElements.filter(e => e.screenId === currentScreenId && e.type === 'short_answer');
+      saElementsOnScreen.forEach(el => {
+        if (el.data?.targetAnswer) {
+           const studentAns = studentAnswers[el.id] || '';
+           const expectedAns = el.data.targetAnswer;
+           if (studentAns.replace(/,/g, '').trim() !== expectedAns.replace(/,/g, '').trim()) {
+              newGrammarScore = Math.max(0, newGrammarScore - blankPointWeight);
+           }
+        }
+      });
+
+      // 4. Evaluate Drag and Drop (Comprehension)
+      const dndElementsOnScreen = canvasElements.filter(e => e.screenId === currentScreenId && e.type === 'drag_and_drop');
+      dndElementsOnScreen.forEach(el => {
+        el.data.items.forEach((item, index) => {
+           if (item.imageUrl && item.targetText) {
+             const studentAns = dndAnswers[`${el.id}_${index}`] || '';
+             if (studentAns.trim() !== item.targetText.trim()) {
+                newComprehensionScore = Math.max(0, newComprehensionScore - dndPointWeight);
+             }
+           }
+        });
+      });
+
+      // 5. Evaluate Multiple Selection & Word Search (Reading)
+      const msElementsOnScreen = canvasElements.filter(e => e.screenId === currentScreenId && e.type === 'multiple_selection');
+      msElementsOnScreen.forEach(el => {
+        if (el.data?.options) {
+           el.data.options.forEach(opt => {
+              const isSelected = studentAnswers[`${el.id}_${opt.id}`] || false;
+              if (isSelected && !opt.isCorrect) {
+                 newReadingScore = Math.max(0, newReadingScore - 10);
+                 newComprehensionScore = Math.max(0, newComprehensionScore - 10);
+              }
+           });
+        }
+      });
+
+      const wsElementsOnScreen = canvasElements.filter(e => e.screenId === currentScreenId && e.type === 'word_search');
+      wsElementsOnScreen.forEach(el => {
+         const selectedCells = studentAnswers[`${el.id}_cells`] || [];
+         if (selectedCells.length === 0) {
+            newReadingScore = Math.max(0, newReadingScore - 20); // Penalty for skipping word search
+         }
+      });
+
+      // 6. Evaluate Slider Bar (Comprehension)
+      const sbElementsOnScreen = canvasElements.filter(e => e.screenId === currentScreenId && e.type === 'slider_bar');
+      sbElementsOnScreen.forEach(el => {
+         if (el.data?.options) {
+            const defaultIndex = Math.floor((el.data.options.length - 1) / 2);
+            const selectedIdx = studentAnswers[el.id] !== undefined ? parseInt(studentAnswers[el.id]) : defaultIndex;
+            if (!el.data.options[selectedIdx]?.isCorrect) {
+               newComprehensionScore = Math.max(0, newComprehensionScore - 20);
+            }
+         }
+      });
+
+      setPreviewScores({
+        listeningSpeaking: newLsScore,
+        grammar: Math.round(newGrammarScore),
+        comprehension: Math.round(newComprehensionScore),
+        reading: Math.round(newReadingScore)
+      });
+      
+      setScreensPassed(new Set([...screensPassed, currentScreenId]));
+    }
+
+    if (nextScreenId) {
+      document.getElementById(`preview-screen-${nextScreenId}`)?.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+
+  // --- RECORD & COMPARE CLICK HANDLER ---
+  const handleRcClick = async (id) => {
+    const currentState = rcStates[id]?.phase || 'IDLE';
+
+    if (currentState === 'IDLE' || currentState === 'RETRY') {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const recorder = new MediaRecorder(stream);
+        rcRecorders.current[id] = recorder;
+        rcChunks.current[id] = [];
+        recorder.ondataavailable = (e) => { if (e.data.size > 0) rcChunks.current[id].push(e.data); };
+        recorder.onstop = () => {
+          const audioBlob = new Blob(rcChunks.current[id], { type: 'audio/webm' });
+          setRcStates(prev => ({ ...prev, [id]: { phase: 'HAS_RECORDING', url: URL.createObjectURL(audioBlob) } }));
+          stream.getTracks().forEach(track => track.stop());
+        };
+        recorder.start();
+        setRcStates(prev => ({ ...prev, [id]: { phase: 'RECORDING', url: null } }));
+      } catch (err) { alert("Microphone access is required to use this tool."); }
+    } 
+    else if (currentState === 'RECORDING') {
+      if (rcRecorders.current[id] && rcRecorders.current[id].state !== 'inactive') rcRecorders.current[id].stop();
+    } 
+    else if (currentState === 'HAS_RECORDING') {
+      const audio = new Audio(rcStates[id].url);
+      rcPlayers.current[id] = audio;
+      audio.onended = () => {
+        setRcStates(prev => ({ ...prev, [id]: { ...prev[id], phase: 'RETRY' } }));
+        setRcCycles(prev => {
+          const newCount = (prev[id] || 0) + 1;
+          if (newCount > 2) setPreviewScores(s => ({ ...s, listeningSpeaking: Math.max(0, s.listeningSpeaking - 20) }));
+          return { ...prev, [id]: newCount };
+        });
+      };
+      audio.play();
+      setRcStates(prev => ({ ...prev, [id]: { ...prev[id], phase: 'PLAYING' } }));
+    }
+    else if (currentState === 'PLAYING') {
+      if (rcPlayers.current[id]) rcPlayers.current[id].pause();
+      setRcStates(prev => ({ ...prev, [id]: { ...prev[id], phase: 'RETRY' } }));
+      setRcCycles(prev => {
+        const newCount = (prev[id] || 0) + 1;
+        if (newCount > 2) setPreviewScores(s => ({ ...s, listeningSpeaking: Math.max(0, s.listeningSpeaking - 20) }));
+        return { ...prev, [id]: newCount };
+      });
+    }
+  };
+
+  // --- RICH TEXT INLINE FORMATTER ENGINE ---
+  const handleTextFormat = (command, value = null) => {
+    if (command === 'fontSizePx') {
+      document.execCommand('fontSize', false, '7');
+      const fonts = document.querySelectorAll('font[size="7"]');
+      fonts.forEach(f => { f.removeAttribute('size'); f.style.fontSize = `${value}px`; });
+    } else {
+      document.execCommand(command, false, value);
+    }
+  };
+
+  const handleTextBlurSave = (id, newHtml) => {
+    setCanvasElements(prev => prev.map(el => el.id === id ? { ...el, htmlContent: newHtml } : el));
+  };
+
+  // --- DRAG, RESIZE, AND ROTATE INIT ---
+  const handleDragStart = (e, id, currentX, currentY) => {
+    if (isPreviewMode || editingTextId) return;
+    e.stopPropagation();
+    setSelectedElementId(id);
+    setDraggingId(id);
+    setDragOffset({ x: e.clientX - currentX, y: e.clientY - currentY });
+  };
+
+  const handleResizeStart = (e, el, handleDirection) => {
+    if (isPreviewMode || editingTextId) return;
+    e.stopPropagation();
+    setSelectedElementId(el.id);
+    setResizingId(el.id);
+    setResizeStart({ 
+      mouseX: e.clientX, mouseY: e.clientY, elX: el.x, elY: el.y, elW: el.width, elH: el.height, elImgX: el.imgX ?? 0, elImgY: el.imgY ?? 0, elImgW: el.imgW ?? el.width, elImgH: el.imgH ?? el.height, handle: handleDirection 
+    });
+  };
+
+  const handleRotateStart = (e, el) => {
+    if (isPreviewMode || editingTextId) return;
+    e.stopPropagation();
+    setSelectedElementId(el.id);
+    const rect = document.getElementById(`element-${el.id}`).getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const initialMouseAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX);
+    setRotatingId(el.id);
+    setRotationStart({ centerX, centerY, initialMouseAngle, initialRotation: el.rotation || 0 });
+  };
+
+  // --- GLOBAL MATH ENGINE ---
+  useEffect(() => {
+    const handleGlobalMouseMove = (e) => {
+      if (isPreviewMode) return;
+      
+      if (draggingId) {
+        let newX = e.clientX - dragOffset.x;
+        let newY = e.clientY - dragOffset.y;
+        setCanvasElements(prev => prev.map(el => el.id === draggingId ? { ...el, x: Math.max(0, newX), y: Math.max(0, newY) } : el));
+      } 
+      else if (resizingId) {
+        const deltaX = e.clientX - resizeStart.mouseX;
+        const deltaY = e.clientY - resizeStart.mouseY;
+        
+        setCanvasElements(prev => prev.map(el => {
+          if (el.id === resizingId) {
+            let { elX, elY, elW, elH, elImgX, elImgY, elImgW, elImgH, handle } = resizeStart;
+            let newX = elX; let newY = elY; let newW = elW; let newH = elH; let newImgX = elImgX; let newImgY = elImgY; let newImgW = elImgW; let newImgH = elImgH;
+
+            if (handle === 'e') { newW = elW + deltaX; } 
+            else if (handle === 'w') { newW = elW - deltaX; newX = elX + deltaX; newImgX = elImgX - deltaX; } 
+            else if (handle === 's') { newH = elH + deltaY; } 
+            else if (handle === 'n') { newH = elH - deltaY; newY = elY + deltaY; newImgY = elImgY - deltaY; } 
+            else {
+              if (handle.includes('e')) newW = elW + deltaX;
+              if (handle.includes('w')) { newW = elW - deltaX; newX = elX + deltaX; }
+              if (handle.includes('s')) newH = elH + deltaY;
+              if (handle.includes('n')) { newH = elH - deltaY; newY = elY + deltaY; }
+              const scaleX = newW / elW; const scaleY = newH / elH;
+              newImgW = elImgW * scaleX; newImgH = elImgH * scaleY; newImgX = elImgX * scaleX; newImgY = elImgY * scaleY;
+            }
+
+            if (el.type === 'record_compare') { newH = newW; }
+            if (el.type === 'shape' && el.data?.shapeType === 'circle') { if (e.shiftKey) { const minMax = Math.max(newW, newH); newW = minMax; newH = minMax; } }
+
+            const minW = el.type === 'audio' ? 250 : (el.type === 'record_compare' ? 80 : (el.type === 'fill_in_the_blank' ? 200 : (el.type === 'drag_and_drop' ? 300 : (el.type === 'short_answer' ? 250 : (el.type === 'multiple_selection' ? 300 : (el.type === 'slider_bar' ? 100 : (el.type === 'crossword' ? 300 : (el.type === 'word_search' ? 300 : 20))))))));
+            const minH = el.type === 'audio' ? 80 : (el.type === 'record_compare' ? 80 : (el.type === 'fill_in_the_blank' ? 80 : (el.type === 'drag_and_drop' ? 150 : (el.type === 'short_answer' ? 80 : (el.type === 'multiple_selection' ? 150 : (el.type === 'slider_bar' ? 100 : (el.type === 'crossword' ? 300 : (el.type === 'word_search' ? 300 : 20))))))));
+
+            if (newW < minW) { 
+              if (handle.includes('w')) { const diff = elW - minW; newX = elX + diff; if (handle === 'w') newImgX = elImgX - diff; }
+              newW = minW; 
+              if (['nw', 'ne', 'sw', 'se'].includes(handle)) { const correctedScaleX = newW / elW; newImgW = elImgW * correctedScaleX; newImgX = elImgX * correctedScaleX; }
+            }
+            if (newH < minH) { 
+              if (handle.includes('n')) { const diff = elH - minH; newY = elY + diff; if (handle === 'n') newImgY = elImgY - diff; }
+              newH = minH; 
+              if (['nw', 'ne', 'sw', 'se'].includes(handle)) { const correctedScaleY = newH / elH; newImgH = elImgH * correctedScaleY; newImgY = elImgY * correctedScaleY; }
+            }
+
+            return { ...el, x: newX, y: newY, width: newW, height: newH, imgX: newImgX, imgY: newImgY, imgW: newImgW, imgH: newImgH };
+          }
+          return el;
+        }));
+      }
+      else if (rotatingId) {
+        const { centerX, centerY, initialMouseAngle, initialRotation } = rotationStart;
+        const currentMouseAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX);
+        let angleDiff = currentMouseAngle - initialMouseAngle;
+        let newRotation = initialRotation + (angleDiff * (180 / Math.PI));
+        if (e.shiftKey) { newRotation = Math.round(newRotation / 45) * 45; }
+        setCanvasElements(prev => prev.map(el => el.id === rotatingId ? { ...el, rotation: newRotation } : el));
+      }
+    };
+
+    const handleGlobalMouseUp = () => { setDraggingId(null); setResizingId(null); setRotatingId(null); };
+
+    if (draggingId || resizingId || rotatingId) {
+      window.addEventListener('mousemove', handleGlobalMouseMove);
+      window.addEventListener('mouseup', handleGlobalMouseUp);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleGlobalMouseMove);
+      window.removeEventListener('mouseup', handleGlobalMouseUp);
+    };
+  }, [draggingId, resizingId, rotatingId, dragOffset, resizeStart, rotationStart, isPreviewMode]);
+
+  // --- MOBILE TOUCH DRAG ENGINE ---
+  useEffect(() => {
+    const handleTouchMove = (e) => {
+      if (!touchDragState.isDragging) return;
+      e.preventDefault(); 
+      const touch = e.touches[0];
+      setTouchDragState(prev => ({ ...prev, x: touch.clientX, y: touch.clientY }));
+    };
+    
+    const handleTouchEnd = (e) => {
+      if (!touchDragState.isDragging) return;
+      const touch = e.changedTouches[0];
+      const dropTarget = document.elementFromPoint(touch.clientX, touch.clientY);
+      const zone = dropTarget?.closest('[data-dnd-zone]');
+      
+      if (zone) {
+        const zoneId = zone.getAttribute('data-dnd-zone');
+        setDndAnswers(prev => ({...prev, [zoneId]: touchDragState.text}));
+      }
+      setTouchDragState({ isDragging: false, text: '', x: 0, y: 0, sourceElId: null });
+      document.body.style.overflow = ''; 
+    };
+
+    if (touchDragState.isDragging) {
+      window.addEventListener('touchmove', handleTouchMove, { passive: false });
+      window.addEventListener('touchend', handleTouchEnd);
+    }
+    return () => {
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [touchDragState.isDragging, touchDragState.text]);
+
+  const handleExpandWorkspace = () => {
+    if (contentType === 'Lesson') setLessonScreens(prev => [...prev, prev.length + 1]);
+    else setWorkbookScreens(prev => prev + 1);
+  };
+
+  const handleUndoWorkspace = () => {
+    if (contentType === 'Lesson' && lessonScreens.length > 1) setLessonScreens(prev => prev.slice(0, -1));
+    else if (workbookScreens > 1) setWorkbookScreens(prev => prev - 1);
+  };
+
+  useEffect(() => {
+    setLessonScreens([1]);
+    setWorkbookScreens(1);
+    setCanvasElements([]); 
+  }, [contentType]);
+
+  const handleConfirmSave = async () => {
+    if (!selectedLevel || !selectedUnit || !contentType) return alert("Please select a Level, Unit, and Content Type before saving.");
+    setIsSaving(true);
+    const payload = { level: selectedLevel, unit: selectedUnit, content_type: contentType, screens: contentType === 'Lesson' ? lessonScreens : workbookScreens, blueprint_data: { elements: canvasElements }, updated_at: new Date().toISOString() };
+    try {
+      const { data, error } = await supabase.from('content_blueprints').upsert(payload, { onConflict: 'level,unit,content_type' });
+      if (error) { alert("Failed to push changes. Check the console for details."); } 
+      else { alert("Changes saved and pushed live successfully!"); }
+    } catch (err) {} finally { setIsSaving(false); setIsSaveModalOpen(false); }
+  };
+
+  // Helper for rendering Fill in the Blank parsed text
+  const renderFormattedText = (el, isPreview) => {
+    const data = el.data;
+    if (!data || !data.templateText) return null;
+    let globalBlankIndex = 0; 
+    const lines = data.templateText.split('\n');
+
+    return lines.map((line, lineIdx) => {
+      const parts = line.split(/(_+)/);
+      return (
+        <div key={lineIdx} className="flex items-center flex-wrap gap-1 mb-2" style={{ minHeight: `${data.t_fontSize || 16}px` }}>
+          {parts.map((part, partIdx) => {
+            if (part.startsWith('_')) {
+              const currentBlankIndex = globalBlankIndex++;
+              return (
+                <input key={partIdx} type="text" disabled={!isPreview} value={isPreview ? (studentAnswers[`${el.id}_${currentBlankIndex}`] || '') : ''} onChange={(e) => isPreview && setStudentAnswers(prev => ({...prev, [`${el.id}_${currentBlankIndex}`]: e.target.value}))} className="inline-block text-center focus:outline-none focus:ring-2 focus:ring-student-yellow transition mx-1" style={{ backgroundColor: data.a_boxColor, borderColor: data.a_lineColor, borderWidth: '2px', borderStyle: 'solid', borderRadius: `${data.a_borderRadius}px`, width: `${Math.max(part.length * 20, 40)}px`, fontSize: `${data.a_fontSize}px`, color: data.a_textColor, fontWeight: data.a_isBold ? 'bold' : 'normal', fontStyle: data.a_isItalic ? 'italic' : 'normal', textDecoration: data.a_isUnderline ? 'underline' : 'none', fontFamily: data.a_fontFamily }} />
+              );
+            }
+            return <span key={partIdx} style={{ fontSize: `${data.t_fontSize}px`, color: data.t_textColor, fontWeight: data.t_isBold ? 'bold' : 'normal', fontStyle: data.t_isItalic ? 'italic' : 'normal', textDecoration: data.t_isUnderline ? 'underline' : 'none', fontFamily: data.t_fontFamily }}>{part}</span>;
+          })}
+        </div>
+      );
+    });
+  };
+
+  // Helper for generating custom Canvas shapes without SVG scaling distortion
+  const renderShapeSVG = (data, width, height) => {
+    const sw = parseInt(data.strokeWidth) || 0;
+    const rd = parseInt(data.roundness) || 0;
+    const w = Math.max(1, width); const h = Math.max(1, height);
+    const effectiveStroke = data.strokeColor === 'transparent' && rd > 0 ? data.fillColor : data.strokeColor;
+    const effectiveSW = data.strokeColor === 'transparent' && rd > 0 ? rd : sw;
+    const commonProps = { fill: data.fillColor === 'transparent' ? 'none' : data.fillColor, stroke: effectiveStroke === 'transparent' ? 'none' : effectiveStroke, strokeWidth: effectiveSW, strokeLinejoin: rd > 0 ? 'round' : 'miter' };
+
+    switch(data.shapeType) {
+      case 'rect': return <rect x={sw/2} y={sw/2} width={Math.max(0, w - sw)} height={Math.max(0, h - sw)} rx={rd} {...commonProps} />;
+      case 'circle': return <ellipse cx={w/2} cy={h/2} rx={Math.max(0, w/2 - sw/2)} ry={Math.max(0, h/2 - sw/2)} {...commonProps} />;
+      case 'triangle': {
+        const p = sw/2;
+        if (rd > 0) {
+           const r = Math.min(rd, w/3, h/3); const topX = w/2; const topY = p; const brX = w-p; const brY = h-p; const blX = p; const blY = h-p;
+           const dx = w/2 - p; const dy = h - 2*p; const hyp = Math.sqrt(dx*dx + dy*dy); const prop = hyp > 0 ? r / hyp : 0;
+           const A1x = topX - dx * prop; const A1y = topY + dy * prop; const A2x = topX + dx * prop; const A2y = topY + dy * prop; const B1x = brX - dx * prop; const B1y = brY - dy * prop; const B2x = brX - r; const B2y = brY; const C1x = blX + r; const C1y = blY; const C2x = blX + dx * prop; const C2y = blY - dy * prop;
+           return ( <path d={`M ${A1x},${A1y} Q ${topX},${topY} ${A2x},${A2y} L ${B1x},${B1y} Q ${brX},${brY} ${B2x},${B2y} L ${C1x},${C1y} Q ${blX},${blY} ${C2x},${C2y} Z`} {...commonProps} /> );
+        } else { return <polygon points={`${w/2},${p} ${w-p},${h-p} ${p},${h-p}`} {...commonProps} />; }
+      }
+      case 'arrow': return <polygon points={`${sw/2},${h*0.35} ${w*0.6},${h*0.35} ${w*0.6},${sw/2} ${w-sw/2},${h/2} ${w*0.6},${h-sw/2} ${w*0.6},${h*0.65} ${sw/2},${h*0.65}`} {...commonProps} />;
+      case 'line': return <line x1={0} y1={h/2} x2={w} y2={h/2} stroke={data.strokeColor === 'transparent' ? data.fillColor : data.strokeColor} strokeWidth={sw} strokeLinecap={rd > 0 ? 'round' : 'square'} />;
+      default: return null;
+    }
+  };
+
+  const renderDndPillStyle = (data) => ({ backgroundColor: data.boxColor, borderColor: data.lineColor, borderWidth: '2px', borderStyle: 'solid', borderRadius: `${data.borderRadius}px`, fontSize: `${data.fontSize}px`, color: data.textColor, fontWeight: data.isBold ? 'bold' : 'normal', fontStyle: data.isItalic ? 'italic' : 'normal', textDecoration: data.isUnderline ? 'underline' : 'none', fontFamily: data.fontFamily, padding: '8px 12px', cursor: isPreviewMode ? 'grab' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', userSelect: 'none', touchAction: 'none', wordBreak: 'break-word', whiteSpace: 'normal', lineHeight: '1.2' });
+
+  return (
+    <div className={`relative min-h-screen w-full font-sans bg-[#eef5fc] overflow-y-auto overflow-x-hidden flex flex-col ${draggingId || resizingId || rotatingId ? 'select-none' : ''}`}>
+      
+      <style>{`
+        .workspace-grid { background-image: linear-gradient(to right, rgba(8, 32, 62, 0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(8, 32, 62, 0.08) 1px, transparent 1px); background-size: 30px 30px; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; } .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; } .custom-scrollbar::-webkit-scrollbar-thumb { background: #08203e; border-radius: 10px; } .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #eab308; }
+        .element-drag-handle { cursor: grab; } .element-drag-handle:active { cursor: grabbing; }
+        @keyframes subtle-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } } .animate-recording-blink { animation: subtle-blink 1.5s infinite ease-in-out; }
+        .rich-text-content:focus { outline: 2px dashed rgba(234, 179, 8, 0.6); outline-offset: 4px; }
+        input[type=range].custom-slider::-webkit-slider-thumb { -webkit-appearance: none; height: 24px; width: 24px; border-radius: 50%; background: var(--thumb-color); cursor: pointer; margin-top: -12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2); border: 2px solid white; }
+        input[type=range].custom-slider::-moz-range-thumb { height: 24px; width: 24px; border-radius: 50%; background: var(--thumb-color); cursor: pointer; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2); border: 2px solid white; }
+      `}</style>
+
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <img src="https://i.postimg.cc/PJbrcZdF/Agregar-un-subtitulo-(5).png" alt="Bubble Background" className="w-full h-full object-cover opacity-80" />
+      </div>
+
+      <FillInTheBlankModal isOpen={activeModal === 'fill_in_the_blank'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={handleSaveFillInTheBlank} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
+      <ShapeConfigModal isOpen={activeModal === 'shape'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={handleSaveShape} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
+      <DragAndDropModal isOpen={activeModal === 'drag_and_drop'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={handleSaveDragAndDrop} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
+      <ShortAnswerModal isOpen={activeModal === 'short_answer'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={handleSaveShortAnswer} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
+      <MultipleSelectionModal isOpen={activeModal === 'multiple_selection'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={handleSaveMultipleSelection} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
+      <SliderBarModal isOpen={activeModal === 'slider_bar'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={handleSaveSliderBar} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
+      <CrosswordModal isOpen={activeModal === 'crossword'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={handleSaveCrossword} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
+      <WordSearchModal isOpen={activeModal === 'word_search'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={handleSaveWordSearch} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
+
+      {isSaveModalOpen && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-outloud-blue/20 backdrop-blur-sm px-4">
+          <div className="bg-white/95 backdrop-blur-md rounded-[2rem] p-8 md:p-12 max-w-md w-full shadow-2xl border border-white/60 flex flex-col items-center text-center animate-fade-in">
+            <h2 className="text-3xl md:text-4xl font-black text-outloud-blue font-montserrat uppercase tracking-wide mb-4">COMMIT?</h2>
+            <p className="text-gray-700 font-sans mb-8">Are you sure you want to save these changes and push this version live?</p>
+            <div className="flex flex-row space-x-4 w-full justify-center">
+              <button onClick={() => !isSaving && setIsSaveModalOpen(false)} disabled={isSaving} className="bg-transparent border-2 border-gray-300 text-gray-500 font-bold px-6 py-3 rounded-full text-xs md:text-sm uppercase tracking-wide transition-colors w-1/2 hover:border-gray-400 hover:text-gray-600 disabled:opacity-50">CANCEL</button>
+              <button onClick={handleConfirmSave} disabled={isSaving} className="bg-outloud-blue text-white font-black px-6 py-3 rounded-full shadow-md text-xs md:text-sm uppercase tracking-wide transition-colors w-1/2 flex justify-center items-center hover:bg-[#06182e] disabled:opacity-70">{isSaving ? 'SAVING...' : 'PUSH LIVE'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {(activeModal === 'video' || activeModal === 'image' || activeModal === 'audio') && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-outloud-blue/30 backdrop-blur-md px-4">
+          <div className="bg-white rounded-[2rem] p-8 max-w-lg w-full shadow-2xl border border-white/60 flex flex-col items-center animate-fade-in">
+            <h2 className="text-2xl font-black text-outloud-blue font-montserrat uppercase tracking-wide mb-2">ADD {activeModal.toUpperCase()}</h2>
+            <p className="text-sm text-gray-500 font-sans mb-6 text-center">Paste the secure URL below to generate the {activeModal} player/container on the canvas.</p>
+            <input type="text" placeholder={`https://example.com/your-${activeModal}-file...`} value={mediaUrlInput} onChange={(e) => setMediaUrlInput(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-outloud-blue font-semibold focus:outline-none focus:ring-2 focus:ring-student-yellow transition-all mb-8" />
+            <div className="flex flex-row space-x-4 w-full justify-center">
+              <button onClick={() => { setActiveModal(null); setMediaUrlInput(''); }} className="bg-transparent border-2 border-gray-300 text-gray-500 font-bold px-6 py-3 rounded-full text-xs uppercase tracking-wide transition-colors w-1/2 hover:border-gray-400 hover:text-gray-600">CANCEL</button>
+              <button onClick={handleAddMedia} className="bg-student-yellow text-outloud-blue font-black px-6 py-3 rounded-full shadow-md text-xs uppercase tracking-wide transition-colors w-1/2 hover:scale-105 active:scale-95">ADD TO CANVAS</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isPreviewMode && (
+        <>
+          <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] bg-white/95 backdrop-blur-md px-6 py-3 rounded-full shadow-2xl border border-gray-200 flex items-center gap-4 md:gap-6 animate-fade-in">
+            <div className="flex flex-col items-center">
+              <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">List/Speak</span>
+              <span className={`text-lg font-black font-montserrat ${previewScores.listeningSpeaking === 100 ? 'text-green-500' : previewScores.listeningSpeaking < 50 ? 'text-red-500' : 'text-student-yellow'}`}>{previewScores.listeningSpeaking}%</span>
+            </div>
+            <div className="w-[1px] h-8 bg-gray-300"></div>
+            <div className="flex flex-col items-center">
+              <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Grammar</span>
+              <span className={`text-lg font-black font-montserrat ${previewScores.grammar === 100 ? 'text-green-500' : previewScores.grammar < 50 ? 'text-red-500' : 'text-student-yellow'}`}>{previewScores.grammar}%</span>
+            </div>
+            <div className="w-[1px] h-8 bg-gray-300"></div>
+            <div className="flex flex-col items-center">
+              <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Comp.</span>
+              <span className={`text-lg font-black font-montserrat ${previewScores.comprehension === 100 ? 'text-green-500' : previewScores.comprehension < 50 ? 'text-red-500' : 'text-student-yellow'}`}>{previewScores.comprehension}%</span>
+            </div>
+            <div className="w-[1px] h-8 bg-gray-300"></div>
+            <div className="flex flex-col items-center">
+              <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Reading</span>
+              <span className={`text-lg font-black font-montserrat ${previewScores.reading === 100 ? 'text-green-500' : previewScores.reading < 50 ? 'text-red-500' : 'text-student-yellow'}`}>{previewScores.reading}%</span>
+            </div>
+          </div>
+          <button onClick={() => setIsPreviewMode(false)} className="fixed top-6 right-6 z-[100] bg-red-600 text-white font-black font-montserrat px-6 py-3 rounded-full shadow-2xl hover:bg-red-700 transition-transform hover:scale-105 uppercase tracking-widest text-xs animate-fade-in">EXIT PREVIEW</button>
+        </>
+      )}
+
+      {/* MOBILE GHOST DRAG ELEMENT */}
+      {touchDragState.isDragging && (
+         <div className="fixed z-[9999] pointer-events-none transform -translate-x-1/2 -translate-y-1/2 opacity-90 scale-105" style={{ left: touchDragState.x, top: touchDragState.y }}>
+            <div style={renderDndPillStyle(canvasElements.find(c => c.id === touchDragState.sourceElId)?.data || {})}>{touchDragState.text}</div>
+         </div>
+      )}
+
+      {!isPreviewMode && (
+        <div className="relative z-20 w-full flex flex-col items-center pt-4 md:pt-8 px-4 md:px-8 bg-white/50 backdrop-blur-md border-b border-white/50 pb-8 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
+          <div className="flex flex-row justify-between items-center w-full max-w-[90rem] mb-8">
+            <div className="flex items-center">
+              <img src="https://i.postimg.cc/fyvnv4XT/Diseno-sin-titulo-(14).png" alt="Outloud Logo" className="h-10 lg:h-12 object-contain" />
+              <div className="mx-4 h-8 w-[2px] bg-outloud-blue opacity-40"></div>
+              <span className="text-base lg:text-xl font-light text-outloud-blue font-montserrat whitespace-nowrap">Online Platform</span>
+            </div>
+          </div>
+
+          <div className="w-full max-w-6xl flex flex-col space-y-10">
+            <div className="bg-white/95 rounded-[2rem] shadow-[0_15px_40px_rgba(0,0,0,0.05)] p-6 md:p-8 flex flex-col items-center w-full border border-white/60">
+              <h2 className="text-2xl md:text-3xl lg:text-4xl font-black text-outloud-blue font-montserrat uppercase tracking-wide mb-8 text-center">ADMIN EDITING HUB</h2>
+              <div className="flex flex-col md:flex-row items-center justify-center w-full gap-4 md:gap-6">
+                <button className="flex-1 max-w-[280px] w-full bg-student-yellow text-outloud-blue font-black py-3 px-2 rounded-full shadow-md text-xs md:text-sm uppercase tracking-wide transition-transform active:scale-95 text-center truncate">CONTENT EDITING TOOLS</button>
+                <button className="flex-1 max-w-[280px] w-full bg-transparent border-[1.5px] border-dashed border-outloud-blue text-outloud-blue font-bold py-3 px-2 rounded-full text-xs md:text-sm uppercase tracking-wide hover:bg-[#e6f0f9] transition-colors text-center truncate">CUSTOMER MANAGEMENT</button>
+                <button className="flex-1 max-w-[280px] w-full bg-transparent border-[1.5px] border-dashed border-outloud-blue text-outloud-blue font-bold py-3 px-2 rounded-full text-xs md:text-sm uppercase tracking-wide hover:bg-[#e6f0f9] transition-colors text-center truncate">MASTER SETTINGS</button>
+              </div>
+            </div>
+
+            <div className="flex flex-col w-full px-2 lg:px-8">
+              <h3 className="text-lg md:text-xl font-black text-outloud-blue font-montserrat uppercase mb-6 tracking-wide">CONTENT MANAGEMENT</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
+                <AdminDropdown placeholder="Select Level" options={LEVEL_OPTIONS} value={selectedLevel} onChange={setSelectedLevel} />
+                <AdminDropdown placeholder={selectedLevel ? "Select Unit" : "Select Level First"} options={unitOptions} value={selectedUnit} onChange={setSelectedUnit} />
+                <AdminDropdown placeholder="Content type" options={['Lesson', 'Workbook']} value={contentType} onChange={setContentType} />
+                <AdminDropdown placeholder="Tools" options={toolOptions} value="" onChange={handleToolSelect} />
+              </div>
+
+              <div className="flex flex-row justify-center items-center w-full mt-8 gap-8 md:gap-12">
+                <div className="flex items-center gap-8 md:gap-16">
+                  <button onClick={() => setIsSaveModalOpen(true)} className="text-outloud-blue font-black tracking-widest uppercase hover:opacity-70 transition-opacity">SAVE</button>
+                  <button onClick={handleUndoWorkspace} className="text-outloud-blue font-black tracking-widest uppercase hover:opacity-70 transition-opacity">UNDO</button>
+                  <button onClick={() => setIsPreviewMode(true)} className="text-outloud-blue font-black tracking-widest uppercase hover:opacity-70 transition-opacity">PREVIEW</button>
+                </div>
+                <div className="h-6 w-[2px] bg-outloud-blue opacity-20"></div>
+                <div className="flex items-center gap-3">
+                  <button onClick={() => { if(selectedElementId) setCanvasElements(prev => prev.map(el => el.id === selectedElementId ? {...el, layer: (el.layer || 10) + 1} : el)); }} disabled={!selectedElementId} className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center text-outloud-blue hover:bg-student-yellow transition disabled:opacity-50 disabled:shadow-none" title="Bring Forward">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" /></svg>
+                  </button>
+                  <button onClick={() => { if(selectedElementId) setCanvasElements(prev => prev.map(el => el.id === selectedElementId ? {...el, layer: (el.layer || 10) - 1} : el)); }} disabled={!selectedElementId} className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center text-outloud-blue hover:bg-student-yellow transition disabled:opacity-50 disabled:shadow-none" title="Send Backward">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="relative z-10 flex flex-col items-center w-full flex-grow">
+        {(contentType === 'Lesson' ? lessonScreens : workbookScreens > 0 ? Array.from({length: workbookScreens}, (_, i) => i + 1) : []).map((screenId, index) => (
+          <React.Fragment key={screenId}>
+            {index > 0 && !isPreviewMode && (
+              <div className="w-full flex items-center justify-center py-6 bg-[#eef5fc] z-20 relative shadow-inner">
+                <div className="px-8 py-2 bg-outloud-blue/10 border border-outloud-blue/20 rounded-xl text-outloud-blue font-black tracking-widest uppercase text-sm">
+                  --- SCREEN {screenId} ---
+                </div>
+              </div>
+            )}
+
+            <div 
+              id={`preview-screen-${screenId}`}
+              onPointerDown={(e) => { if (e.target.id === `preview-screen-${screenId}`) setSelectedElementId(null); }}
+              className={`w-full relative overflow-hidden flex flex-col ${isPreviewMode ? '' : 'workspace-grid border-b-2 border-outloud-blue/20'}`}
+              style={{ minHeight: '100vh' }}
+            >
+              <div className="flex-grow relative pointer-events-none" style={{ pointerEvents: 'auto' }}>
+                {canvasElements.filter(el => el.screenId === screenId).map(el => {
+                  
+                  const rcPhase = rcStates[el.id]?.phase || 'IDLE';
+                  let rcText = 'RECORD'; let rcTextColor = 'text-outloud-blue'; let rcAnimation = '';
+                  if (rcPhase === 'RECORDING') { rcText = 'RECORDING'; rcTextColor = 'text-red-600'; rcAnimation = 'animate-recording-blink'; } 
+                  else if (rcPhase === 'HAS_RECORDING') { rcText = 'COMPARE'; } 
+                  else if (rcPhase === 'PLAYING') { rcText = 'COMPARING'; rcTextColor = 'text-green-500'; } 
+                  else if (rcPhase === 'RETRY') { rcText = 'RETRY'; }
+
+                  const isTool = !['fill_in_the_blank', 'shape', 'text', 'drag_and_drop', 'short_answer', 'multiple_selection', 'slider_bar', 'crossword', 'word_search'].includes(el.type);
+
+                  return (
+                    <div 
+                      id={`element-${el.id}`} key={el.id}
+                      onMouseDown={() => !isPreviewMode && setSelectedElementId(el.id)}
+                      style={{ position: 'absolute', left: `${el.x}px`, top: `${el.y}px`, width: `${el.width}px`, height: `${el.height}px`, transform: `rotate(${el.rotation || 0}deg)`, zIndex: (editingTextId === el.id || draggingId === el.id || resizingId === el.id || rotatingId === el.id) ? 999 : (el.layer || 10) }}
+                      className={`group ${!isPreviewMode && isTool ? (selectedElementId === el.id ? 'ring-4 ring-student-yellow shadow-xl rounded-2xl' : 'hover:ring-4 ring-student-yellow ring-opacity-50 rounded-2xl transition-shadow') : ''}`}
+                    >
+                      {/* Standard Drag Handle */}
+                      {!isPreviewMode && isTool && (
+                        <div className={`absolute top-0 left-0 w-full bg-outloud-blue/90 backdrop-blur-sm text-white rounded-t-xl h-10 flex justify-between items-center px-4 element-drag-handle ${selectedElementId === el.id ? 'opacity-100' : 'group-hover:opacity-100 opacity-0'} transition-opacity shadow-lg z-[60]`} onPointerDown={(e) => handleDragStart(e, el.id, el.x, el.y)}>
+                          <span className="text-[10px] font-bold font-montserrat tracking-widest">DRAG TO MOVE</span>
+                          <div className="flex items-center gap-2">
+                             {!['video', 'audio'].includes(el.type) && <button onPointerDown={(e) => { e.stopPropagation(); handleDuplicateElement(el.id); }} className="bg-white/20 hover:bg-white/30 p-1.5 rounded-md transition-colors cursor-pointer" title="Duplicate"><span role="img" aria-label="duplicate" className="text-xs pointer-events-none">📋</span></button>}
+                             <button onPointerDown={(e) => { e.stopPropagation(); handleDeleteElement(el.id); }} className="bg-red-500 hover:bg-red-600 p-1.5 rounded-md transition-colors cursor-pointer" title="Delete"><svg className="w-3 h-3 text-white pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {el.type === 'video' && <div className={`w-full h-full bg-black rounded-2xl overflow-hidden shadow-2xl border-4 ${!isPreviewMode ? 'border-outloud-blue/20' : 'border-transparent'}`}><video src={el.url} controls className="w-full h-full object-cover" preload="metadata" /></div>}
+                      {el.type === 'image' && <div className={`w-full h-full bg-transparent overflow-hidden ${!isPreviewMode ? 'border-4 border-outloud-blue/20' : ''}`} style={{ borderRadius: '1rem', position: 'relative' }}><img src={el.url} alt="Canvas element" draggable={false} style={{ position: 'absolute', left: `${el.imgX ?? 0}px`, top: `${el.imgY ?? 0}px`, width: `${el.imgW ?? el.width}px`, height: `${el.imgH ?? el.height}px`, maxWidth: 'none', maxHeight: 'none' }} /></div>}
+                      {el.type === 'audio' && <div className={`w-full h-full bg-white/80 backdrop-blur-md rounded-2xl shadow-xl flex items-center justify-center px-4 border-4 ${!isPreviewMode ? 'border-outloud-blue/20' : 'border-white/50'}`}><audio src={el.url} controls className="w-full" preload="metadata" /></div>}
+
+                      {el.type === 'record_compare' && (
+                        <div className={`w-full h-full flex flex-col items-center justify-center transition-all ${isPreviewMode ? 'cursor-pointer hover:scale-105 active:scale-95' : 'opacity-80'}`} onClick={() => isPreviewMode && handleRcClick(el.id)}>
+                          <div className={`w-full h-full rounded-full shadow-2xl flex items-center justify-center transition-colors duration-300 border-4 ${rcPhase === 'RECORDING' ? 'bg-red-600 border-red-300' : rcPhase === 'PLAYING' ? 'bg-green-500 border-green-300' : 'bg-outloud-blue border-transparent'}`}>
+                            {(rcPhase === 'IDLE' || rcPhase === 'RECORDING') && (<svg className="w-1/2 h-1/2 text-white pointer-events-none" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>)}
+                            {(rcPhase === 'HAS_RECORDING' || rcPhase === 'PLAYING') && (<svg className="w-1/2 h-1/2 text-white pointer-events-none" fill="currentColor" viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>)}
+                            {rcPhase === 'RETRY' && (<svg className="w-1/2 h-1/2 text-white pointer-events-none" fill="currentColor" viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>)}
+                          </div>
+                          <span className={`absolute -bottom-8 font-montserrat font-black tracking-widest text-xs whitespace-nowrap ${rcTextColor} ${rcAnimation}`}>{rcText}</span>
+                        </div>
+                      )}
+
+                      {el.type === 'shape' && (
+                        <div className={`w-full h-full relative ${selectedElementId === el.id && !isPreviewMode ? 'ring-2 ring-student-yellow' : ''}`} style={{ opacity: (el.data.opacity || 100) / 100 }}>
+                          <svg width={el.width} height={el.height} style={{overflow: 'visible'}}>
+                            {renderShapeSVG(el.data, el.width, el.height)}
+                          </svg>
+                        </div>
+                      )}
+
+                      {el.type === 'fill_in_the_blank' && (
+                        <div className={`w-full h-full p-4 relative ${selectedElementId === el.id && !isPreviewMode ? 'ring-2 ring-student-yellow rounded-xl' : ''}`} style={{ backgroundColor: el.data.t_boxColor, borderColor: el.data.t_lineColor, borderWidth: '2px', borderStyle: 'solid', borderRadius: `${el.data.t_borderRadius}px` }}>
+                          {renderFormattedText(el, isPreviewMode)}
+                        </div>
+                      )}
+
+                      {el.type === 'short_answer' && el.data && (
+                        <div className={`w-full h-full p-4 flex flex-col gap-3 relative ${selectedElementId === el.id && !isPreviewMode ? 'ring-2 ring-student-yellow rounded-xl' : ''}`}>
+                           <div dangerouslySetInnerHTML={{ __html: el.data.questionHtml }} className="w-full whitespace-pre-wrap word-break" />
+                           <input type="text" disabled={!isPreviewMode} placeholder={isPreviewMode ? "" : "Student answer box..."} value={isPreviewMode ? (studentAnswers[el.id] || '') : ''} onChange={(e) => isPreviewMode && setStudentAnswers(prev => ({...prev, [el.id]: e.target.value}))} style={{ backgroundColor: el.data.boxColor === 'transparent' ? 'transparent' : el.data.boxColor, borderColor: el.data.lineColor === 'transparent' ? 'transparent' : el.data.lineColor, borderWidth: el.data.lineColor === 'transparent' ? '0px' : '2px', borderStyle: 'solid', borderRadius: `${el.data.borderRadius}px`, color: el.data.textColor, fontSize: `${el.data.fontSize}px`, fontFamily: el.data.fontFamily, padding: '8px 12px', width: '100%', outline: 'none' }} className={!isPreviewMode ? 'pointer-events-none' : 'focus:ring-2 focus:ring-student-yellow transition'} />
+                        </div>
+                      )}
+
+                      {el.type === 'multiple_selection' && el.data && (
+                        <div className={`w-full h-full flex flex-col p-4 relative ${selectedElementId === el.id && !isPreviewMode ? 'ring-2 ring-student-yellow rounded-xl' : ''}`} style={{ backgroundColor: 'transparent' }}>
+                           <div className="mb-6 flex-shrink-0 flex justify-center items-center w-full">
+                              {el.data.promptType === 'image' && el.data.promptUrl ? (
+                                 <div className="w-full max-h-48 overflow-hidden flex justify-center rounded-xl shadow-sm border border-gray-200"><img src={el.data.promptUrl} alt="Prompt" className="w-full h-full object-contain bg-white" /></div>
+                              ) : <div dangerouslySetInnerHTML={{ __html: el.data.promptHtml }} className="w-full whitespace-pre-wrap break-words text-center" />}
+                           </div>
+                           <div className="flex-grow grid grid-cols-2 gap-4 auto-rows-fr">
+                              {el.data.options.map((opt) => {
+                                 const isSelected = isPreviewMode && (studentAnswers[`${el.id}_${opt.id}`] === true);
+                                 return (
+                                    <div key={opt.id} onClick={() => { if (isPreviewMode) { setStudentAnswers(prev => ({ ...prev, [`${el.id}_${opt.id}`]: !prev[`${el.id}_${opt.id}`] })); } }} style={{ backgroundColor: isSelected ? '#eab308' : (el.data.optBoxColor === 'transparent' ? 'transparent' : el.data.optBoxColor), borderColor: isSelected ? '#ca8a04' : (el.data.optLineColor === 'transparent' ? 'transparent' : el.data.optLineColor), borderWidth: (el.data.optLineColor === 'transparent' && !isSelected) ? '0px' : '2px', borderStyle: 'solid', borderRadius: `${el.data.optBorderRadius}px`, cursor: isPreviewMode ? 'pointer' : 'default', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }} className={`transition-all ${isPreviewMode ? 'hover:scale-[1.02] active:scale-95 shadow-sm' : ''}`}>
+                                       <div dangerouslySetInnerHTML={{ __html: opt.html }} className="pointer-events-none w-full whitespace-pre-wrap break-words" />
+                                    </div>
+                                 )
+                              })}
+                           </div>
+                        </div>
+                      )}
+
+                      {el.type === 'slider_bar' && el.data && (() => {
+                         const isVert = el.data.orientation === 'vertical';
+                         const opts = el.data.options || [];
+                         const maxIdx = Math.max(0, opts.length - 1);
+                         const defaultIdx = Math.floor(maxIdx / 2);
+                         const currentIdx = studentAnswers[el.id] !== undefined ? parseInt(studentAnswers[el.id]) : defaultIdx;
+                         const activeOpt = opts[currentIdx] || {};
+                         const pct = maxIdx === 0 ? 50 : (currentIdx / maxIdx) * 100;
+
+                         return (
+                           <div className={`w-full h-full relative flex items-center justify-center pointer-events-none ${selectedElementId === el.id && !isPreviewMode ? 'ring-2 ring-student-yellow rounded-xl' : ''}`}>
+                              <div className="absolute flex items-center justify-center rounded-full shadow-inner overflow-hidden" style={{ backgroundColor: el.data.barColor, width: isVert ? `${el.data.barThickness}px` : '100%', height: isVert ? '100%' : `${el.data.barThickness}px`, opacity: 1 }}>
+                                 {el.data.barText && <span className="absolute font-bold text-xs uppercase tracking-widest whitespace-nowrap opacity-100" style={{ color: el.data.barTextColor, transform: isVert ? 'rotate(-90deg)' : 'none' }}>{el.data.barText}</span>}
+                              </div>
+                              <input type="range" min="0" max={maxIdx} step="1" disabled={!isPreviewMode} value={currentIdx} onChange={(e) => isPreviewMode && setStudentAnswers(prev => ({...prev, [el.id]: e.target.value}))} className="absolute custom-slider w-full h-full pointer-events-auto" style={{ '--thumb-color': el.data.handleColor, transform: isVert ? 'rotate(-90deg)' : 'none', WebkitAppearance: 'none', background: 'transparent' }} />
+                              { !isVert && (
+                                 <div className="absolute flex flex-col items-center transition-all duration-200 pointer-events-none z-50" style={{ left: `${pct}%`, bottom: 'calc(50% + 18px)', transform: 'translateX(-50%)' }}>
+                                    <div className="bg-white/95 backdrop-blur px-4 py-2 rounded-xl shadow-lg border border-gray-200 whitespace-nowrap animate-fade-in" style={{ color: el.data.textColor, fontSize: `${el.data.fontSize}px`, fontFamily: el.data.fontFamily, fontWeight: 'bold' }}>{activeOpt.text}</div>
+                                    <div className="w-0 h-0 border-solid" style={{ borderWidth: '8px 6px 0 6px', borderColor: 'rgba(255,255,255,0.95) transparent transparent transparent' }} />
+                                 </div>
+                              )}
+                              { isVert && (
+                                 <div className="absolute flex items-center transition-all duration-200 pointer-events-none z-50" style={{ bottom: `${pct}%`, right: 'calc(50% + 18px)', transform: 'translateY(50%)' }}>
+                                    <div className="bg-white/95 backdrop-blur px-4 py-2 rounded-xl shadow-lg border border-gray-200 whitespace-nowrap animate-fade-in" style={{ color: el.data.textColor, fontSize: `${el.data.fontSize}px`, fontFamily: el.data.fontFamily, fontWeight: 'bold' }}>{activeOpt.text}</div>
+                                    <div className="w-0 h-0 border-solid" style={{ borderWidth: '6px 0 6px 8px', borderColor: 'transparent transparent transparent rgba(255,255,255,0.95)' }} />
+                                 </div>
+                              )}
+                           </div>
+                         );
+                      })()}
+
+                      {/* --- CROSSWORD RENDERER --- */}
+                      {el.type === 'crossword' && el.data && (
+                        <div className={`w-full h-full p-4 flex flex-row gap-6 relative bg-white/80 backdrop-blur rounded-2xl shadow-sm border border-gray-200 ${selectedElementId === el.id && !isPreviewMode ? 'ring-2 ring-student-yellow' : ''}`}>
+                           <div className="flex-1 flex flex-col gap-4 overflow-y-auto pr-2 custom-scrollbar">
+                              <h3 className="font-bold text-outloud-blue text-sm uppercase">Prompts</h3>
+                              <div className="flex gap-4">
+                                <div className="flex-1 flex flex-col gap-2">
+                                  <h4 className="text-xs font-bold text-gray-500 uppercase border-b border-gray-200 pb-1">Across</h4>
+                                  {el.data.across?.map((a) => (
+                                    <div key={`a-${a.num}`} className="text-xs text-gray-700 flex gap-2"><span className="font-bold">{a.num}.</span><span>{a.prompt}</span></div>
+                                  ))}
+                                </div>
+                                <div className="flex-1 flex flex-col gap-2">
+                                  <h4 className="text-xs font-bold text-gray-500 uppercase border-b border-gray-200 pb-1">Down</h4>
+                                  {el.data.down?.map((d) => (
+                                    <div key={`d-${d.num}`} className="text-xs text-gray-700 flex gap-2"><span className="font-bold">{d.num}.</span><span>{d.prompt}</span></div>
+                                  ))}
+                                </div>
+                              </div>
+                           </div>
+
+                           <div className="flex-[2] flex items-center justify-center bg-gray-50 rounded-xl border border-gray-200 p-2 overflow-auto custom-scrollbar">
+                              <div 
+                                style={{
+                                  display: 'grid',
+                                  gridTemplateColumns: `repeat(${el.data.grid[0]?.length || 1}, minmax(30px, 1fr))`,
+                                  gap: '2px',
+                                  width: 'fit-content'
+                                }}
+                              >
+                                {el.data.grid.map((row, rIdx) => 
+                                  row.map((cell, cIdx) => (
+                                    <div key={`${rIdx}-${cIdx}`} className="relative aspect-square w-8 md:w-10">
+                                      {cell ? (
+                                        <div className="w-full h-full relative">
+                                          {cell.num && <span className="absolute top-0.5 left-1 text-[8px] font-bold text-gray-400 z-10 pointer-events-none">{cell.num}</span>}
+                                          <input 
+                                            type="text" 
+                                            maxLength={1}
+                                            disabled={!isPreviewMode}
+                                            value={isPreviewMode ? (studentAnswers[`${el.id}_${rIdx}_${cIdx}`] || '') : cell.char}
+                                            onChange={(e) => {
+                                              if(isPreviewMode) {
+                                                const val = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
+                                                setStudentAnswers(prev => ({...prev, [`${el.id}_${rIdx}_${cIdx}`]: val}));
+                                              }
+                                            }}
+                                            style={{
+                                              backgroundColor: el.data.cellColor, borderColor: el.data.lineColor, color: el.data.textColor, fontSize: `${el.data.fontSize}px`, fontFamily: el.data.fontFamily, fontWeight: el.data.isBold ? 'bold' : 'normal'
+                                            }}
+                                            className="w-full h-full text-center uppercase border focus:outline-none focus:ring-2 focus:ring-student-yellow transition"
+                                          />
+                                        </div>
+                                      ) : (
+                                        <div className="w-full h-full bg-transparent" />
+                                      )}
+                                    </div>
+                                  ))
+                                )}
+                              </div>
+                           </div>
+                        </div>
+                      )}
+
+                      {/* --- WORD SEARCH RENDERER --- */}
+                      {el.type === 'word_search' && el.data && (() => {
+                         const targetWords = el.data.targetWords || [];
+                         const half = Math.ceil(targetWords.length / 2);
+                         const col1 = targetWords.slice(0, half);
+                         const col2 = targetWords.slice(half);
+
+                         return (
+                           <div className={`w-full h-full p-4 flex flex-row gap-6 relative bg-white/80 backdrop-blur rounded-2xl shadow-sm border border-gray-200 ${selectedElementId === el.id && !isPreviewMode ? 'ring-2 ring-student-yellow' : ''}`}>
+                              <div className="flex-[1.5] flex flex-col gap-4 overflow-y-auto pr-2 custom-scrollbar">
+                                 <div dangerouslySetInnerHTML={{ __html: el.data.promptHtml }} className="w-full whitespace-pre-wrap break-words border-b border-gray-200 pb-2 mb-2" />
+                                 <div className="flex gap-4">
+                                   <ul className="flex-1 flex flex-col gap-1 list-disc pl-4">
+                                     {col1.map((w, i) => <li key={`w1-${i}`} className="text-xs font-bold text-gray-700 tracking-wider">{w}</li>)}
+                                   </ul>
+                                   <ul className="flex-1 flex flex-col gap-1 list-disc pl-4">
+                                     {col2.map((w, i) => <li key={`w2-${i}`} className="text-xs font-bold text-gray-700 tracking-wider">{w}</li>)}
+                                   </ul>
+                                 </div>
+                              </div>
+
+                              <div className="flex-[2] flex items-center justify-center p-2">
+                                 <div 
+                                   style={{
+                                     display: 'grid',
+                                     gridTemplateColumns: `repeat(${el.data.size || 10}, 1fr)`,
+                                     borderWidth: '2px', borderStyle: 'solid', borderColor: el.data.lineColor, backgroundColor: el.data.cellColor
+                                   }}
+                                   className="shadow-sm max-w-full max-h-full aspect-square w-full"
+                                 >
+                                   {el.data.grid?.map((row, rIdx) => 
+                                     row.map((char, cIdx) => {
+                                        const cellId = `${el.id}_${rIdx}_${cIdx}`;
+                                        const isSelected = isPreviewMode && (studentAnswers[`${el.id}_cells`] || []).includes(cellId);
+                                        return (
+                                          <div 
+                                            key={cellId} 
+                                            onClick={() => {
+                                              if (isPreviewMode) {
+                                                 setStudentAnswers(prev => {
+                                                   const currentCells = prev[`${el.id}_cells`] || [];
+                                                   const newCells = currentCells.includes(cellId) ? currentCells.filter(c => c !== cellId) : [...currentCells, cellId];
+                                                   return { ...prev, [`${el.id}_cells`]: newCells };
+                                                 });
+                                              }
+                                            }}
+                                            style={{
+                                              color: el.data.textColor, fontSize: `${el.data.fontSize}px`, fontFamily: el.data.fontFamily, fontWeight: el.data.isBold ? 'bold' : 'normal',
+                                              borderRight: cIdx < (el.data.size - 1) ? `1px solid ${el.data.lineColor}` : 'none',
+                                              borderBottom: rIdx < (el.data.size - 1) ? `1px solid ${el.data.lineColor}` : 'none',
+                                              backgroundColor: isSelected ? 'rgba(234, 179, 8, 0.4)' : 'transparent',
+                                              cursor: isPreviewMode ? 'pointer' : 'default'
+                                            }}
+                                            className={`flex items-center justify-center transition-colors ${isPreviewMode ? 'hover:bg-yellow-500/20' : ''}`}
+                                          >
+                                            {char}
+                                          </div>
+                                        )
+                                     })
+                                   )}
+                                 </div>
+                              </div>
+                           </div>
+                         );
+                      })()}
+
+                      {el.type === 'text' && (
+                        <div className={`w-full h-full relative ${editingTextId === el.id || (selectedElementId === el.id && !isPreviewMode) ? 'ring-2 ring-student-yellow rounded bg-white shadow-xl' : ''}`}>
+                          {editingTextId === el.id && (
+                            <div className="absolute -top-14 left-0 bg-white shadow-xl rounded-xl border border-gray-200 p-1.5 flex gap-2 z-[100] items-center animate-fade-in">
+                              <div className="flex border border-gray-200 rounded overflow-hidden">
+                                <button onMouseDown={(e)=>{e.preventDefault(); handleTextFormat('bold');}} className="w-8 h-8 font-bold text-gray-700 hover:bg-gray-100 hover:text-outloud-blue">B</button>
+                                <button onMouseDown={(e)=>{e.preventDefault(); handleTextFormat('italic');}} className="w-8 h-8 italic text-gray-700 hover:bg-gray-100 hover:text-outloud-blue border-l border-gray-200">I</button>
+                                <button onMouseDown={(e)=>{e.preventDefault(); handleTextFormat('underline');}} className="w-8 h-8 underline text-gray-700 hover:bg-gray-100 hover:text-outloud-blue border-l border-gray-200">U</button>
+                              </div>
+                              <input type="color" onMouseDown={(e)=>e.preventDefault()} onChange={(e) => handleTextFormat('foreColor', e.target.value)} className="w-8 h-8 rounded cursor-pointer border border-gray-200" title="Text Color" />
+                              <div className="relative">
+                                <button onMouseDown={(e)=>e.preventDefault()} onClick={() => setTextDropdown(textDropdown === 'size' ? null : 'size')} className="p-1.5 px-2 border border-gray-200 rounded text-xs font-semibold focus:outline-none cursor-pointer flex items-center gap-1 bg-white hover:bg-gray-50">Size... <span className="text-[10px]">▼</span></button>
+                                {textDropdown === 'size' && (
+                                  <div className="absolute top-full left-0 mt-1 w-16 max-h-40 overflow-y-auto bg-white border border-gray-200 rounded shadow-lg z-[200] custom-scrollbar">
+                                    {[8,10,12,14,16,18,20,24,28,32,36,42,48,60,72].map(sz => <div key={sz} onMouseDown={(e) => e.preventDefault()} onClick={() => { handleTextFormat('fontSizePx', sz); setTextDropdown(null); }} className="px-2 py-1 hover:bg-gray-100 cursor-pointer text-xs text-center">{sz}px</div>)}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="relative">
+                                <button onMouseDown={(e)=>e.preventDefault()} onClick={() => setTextDropdown(textDropdown === 'font' ? null : 'font')} className="p-1.5 px-2 border border-gray-200 rounded text-xs font-semibold focus:outline-none cursor-pointer flex items-center gap-1 bg-white w-24 justify-between hover:bg-gray-50">Font... <span className="text-[10px]">▼</span></button>
+                                {textDropdown === 'font' && (
+                                  <div className="absolute top-full left-0 mt-1 w-36 max-h-40 overflow-y-auto bg-white border border-gray-200 rounded shadow-lg z-[200] custom-scrollbar">
+                                    {[{ name: 'Montserrat', family: 'Montserrat, sans-serif' }, { name: 'Tabarra', family: 'Tabarra, sans-serif' }, { name: 'Arial', family: 'Arial, sans-serif' }, { name: 'Times New Roman', family: '"Times New Roman", serif' }, { name: 'Courier New', family: '"Courier New", monospace' }, { name: 'Comic Sans MS', family: '"Comic Sans MS", cursive, sans-serif' }, { name: 'Impact', family: 'Impact, sans-serif' }].map(f => <div key={f.name} onMouseDown={(e) => e.preventDefault()} onClick={() => { handleTextFormat('fontName', f.family); setTextDropdown(null); }} className="px-2 py-1.5 hover:bg-gray-100 cursor-pointer text-xs" style={{fontFamily: f.family}}>{f.name}</div>)}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="w-[1px] h-6 bg-gray-200 mx-1"></div>
+                              <button onMouseDown={(e)=>{e.preventDefault(); setEditingTextId(null);}} className="text-[10px] font-bold uppercase tracking-wider bg-student-yellow text-outloud-blue px-3 py-1.5 rounded shadow-sm hover:scale-105 active:scale-95">DONE</button>
+                            </div>
+                          )}
+                          <div contentEditable={editingTextId === el.id} dangerouslySetInnerHTML={{__html: el.htmlContent}} onDoubleClick={() => !isPreviewMode && setEditingTextId(el.id)} onBlur={(e) => handleTextBlurSave(el.id, e.target.innerHTML)} suppressContentEditableWarning className={`w-full h-full rich-text-content ${editingTextId === el.id ? 'cursor-text p-2' : 'cursor-default pointer-events-none'}`} style={{ minHeight: '40px', overflowWrap: 'break-word' }} />
+                        </div>
+                      )}
+
+                      {/* --- DRAG AND DROP RENDERER WITH TOUCH SUPPORT AND SYNCED GRID --- */}
+                      {el.type === 'drag_and_drop' && el.data && (() => {
+                         const validItemsCount = el.data.items.filter(i => i.imageUrl).length || 1;
+                         const gridStyle = { display: 'grid', gridTemplateColumns: `repeat(${validItemsCount}, 1fr)`, gap: '1.5rem', width: '100%', justifyItems: 'stretch' };
+
+                         return (
+                          <div className={`w-full h-full flex flex-col justify-between p-4 bg-white/60 backdrop-blur rounded-2xl border-4 border-dashed border-gray-300 ${selectedElementId === el.id && !isPreviewMode ? 'ring-2 ring-student-yellow' : ''}`}>
+                             <div style={gridStyle}>
+                               {el.data.items.map((item, idx) => item.imageUrl ? (
+                                 <div key={idx} className="flex flex-col items-center gap-4 w-full">
+                                   <div className="w-full aspect-square bg-gray-100 rounded-xl overflow-hidden shadow-sm border border-gray-200"><img src={item.imageUrl} alt={`Target ${idx}`} className="w-full h-full object-cover" draggable={false} /></div>
+                                   <div data-dnd-zone={`${el.id}_${idx}`} className={`dnd-sync-${el.id} w-full flex items-center justify-center transition-colors relative`} onDragOver={(e) => isPreviewMode && e.preventDefault()} onDrop={(e) => { if (isPreviewMode) { e.preventDefault(); const droppedText = e.dataTransfer.getData('text/plain'); setDndAnswers(prev => ({...prev, [`${el.id}_${idx}`]: droppedText})); } }}>
+                                      {dndAnswers[`${el.id}_${idx}`] ? (
+                                         <div style={{...renderDndPillStyle(el.data), width: '100%', height: '100%'}} className="flex items-center justify-center shadow-sm">{dndAnswers[`${el.id}_${idx}`]}</div>
+                                      ) : (
+                                         <div className="w-full h-full rounded-xl border-2 border-dashed border-gray-400 flex items-center justify-center bg-white/50 absolute inset-0"><span className="text-gray-300 text-[10px] font-bold uppercase tracking-widest pointer-events-none p-2 text-center break-words leading-tight">Drop Here</span></div>
+                                      )}
+                                   </div>
+                                 </div>
+                               ) : null)}
+                             </div>
+                             <div className="w-full bg-white p-4 rounded-xl shadow-inner border border-gray-200 mt-4">
+                               <div className="text-center font-bold text-gray-400 text-[10px] uppercase tracking-widest mb-3">Word Bank</div>
+                               <div style={gridStyle}>
+                                 {el.data.items.map((item, idx) => {
+                                    if (!item.studentViewText) return null;
+                                    const isDropped = Object.values(dndAnswers).includes(item.studentViewText);
+                                    return (
+                                      <div key={`pill-${idx}`} className={`dnd-sync-${el.id} w-full flex items-center justify-center ${isDropped && isPreviewMode ? 'opacity-0 pointer-events-none' : ''}`}>
+                                        <div draggable={isPreviewMode} onDragStart={(e) => { if (isPreviewMode) { e.dataTransfer.setData('text/plain', item.studentViewText); setDraggedItem(item.studentViewText); } }} onDragEnd={() => setDraggedItem(null)} onTouchStart={(e) => { if (isPreviewMode) { const touch = e.touches[0]; setTouchDragState({ isDragging: true, text: item.studentViewText, x: touch.clientX, y: touch.clientY, sourceElId: el.id }); document.body.style.overflow = 'hidden'; } }} style={{...renderDndPillStyle(el.data), width: '100%', height: '100%'}} className={`flex items-center justify-center shadow-sm hover:scale-[1.02] active:scale-95 transition-transform ${draggedItem === item.studentViewText || touchDragState.text === item.studentViewText ? 'opacity-50' : 'opacity-100'}`}>{item.studentViewText}</div>
+                                      </div>
+                                    );
+                                 })}
+                               </div>
+                             </div>
+                          </div>
+                         );
+                      })()}
+
+                      {/* --- SHARED ADVANCED UI EDITING OVERLAYS --- */}
+                      {!isPreviewMode && !isTool && editingTextId !== el.id && (
+                        <div className={`absolute inset-0 pointer-events-none ${el.type === 'text' ? 'hover:ring-2 hover:ring-student-yellow hover:bg-yellow-50/10' : ''}`} style={{ pointerEvents: editingTextId === el.id ? 'none' : 'auto' }}>
+                          <div className="absolute -left-1.5 -top-1.5 w-3 h-3 bg-student-yellow border-2 border-outloud-blue rounded-sm cursor-nw-resize z-50" onPointerDown={(e) => handleResizeStart(e, el, 'nw')} />
+                          <div className="absolute -right-1.5 -top-1.5 w-3 h-3 bg-student-yellow border-2 border-outloud-blue rounded-sm cursor-ne-resize z-50" onPointerDown={(e) => handleResizeStart(e, el, 'ne')} />
+                          <div className="absolute -left-1.5 -bottom-1.5 w-3 h-3 bg-student-yellow border-2 border-outloud-blue rounded-sm cursor-sw-resize z-50" onPointerDown={(e) => handleResizeStart(e, el, 'sw')} />
+                          <div className="absolute -right-1.5 -bottom-1.5 w-3 h-3 bg-student-yellow border-2 border-outloud-blue rounded-sm cursor-se-resize z-50" onPointerDown={(e) => handleResizeStart(e, el, 'se')} />
+                          <div className="absolute -left-1.5 top-1/2 -translate-y-1/2 w-3 h-5 bg-student-yellow border-2 border-outloud-blue rounded-sm cursor-w-resize z-50" onPointerDown={(e) => handleResizeStart(e, el, 'w')} />
+                          <div className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-3 h-5 bg-student-yellow border-2 border-outloud-blue rounded-sm cursor-e-resize z-50" onPointerDown={(e) => handleResizeStart(e, el, 'e')} />
+
+                          <div className={`absolute -right-10 top-0 flex flex-col gap-1.5 z-50 ${selectedElementId === el.id ? 'opacity-100' : 'group-hover:opacity-100 opacity-0'} transition-opacity`}>
+                            {el.type !== 'text' && <button onPointerDown={(e) => { e.stopPropagation(); setEditingElementId(el.id); setActiveModal(el.type); }} className="w-7 h-7 bg-white rounded-full shadow flex items-center justify-center hover:bg-gray-100 transition border border-gray-200" title="Edit"><span role="img" aria-label="edit" className="text-sm pointer-events-none">✏️</span></button>}
+                            {el.type === 'text' && <button onPointerDown={(e) => { e.stopPropagation(); setEditingTextId(el.id); }} className="w-7 h-7 bg-white rounded-full shadow flex items-center justify-center hover:bg-gray-100 transition border border-gray-200" title="Edit Text"><span role="img" aria-label="edit" className="text-sm pointer-events-none">✏️</span></button>}
+                            <button onPointerDown={(e) => { e.stopPropagation(); handleDuplicateElement(el.id); }} className="w-7 h-7 bg-white rounded-full shadow flex items-center justify-center hover:bg-gray-100 transition border border-gray-200" title="Duplicate"><span role="img" aria-label="duplicate" className="text-sm pointer-events-none">📋</span></button>
+                            <button onPointerDown={(e) => handleRotateStart(e, el)} className="w-7 h-7 bg-white rounded-full shadow flex items-center justify-center cursor-alias hover:bg-gray-100 transition border border-gray-200" title="Rotate"><span role="img" aria-label="rotate" className="text-sm pointer-events-none">🔄</span></button>
+                            <button onPointerDown={(e) => handleDragStart(e, el.id, el.x, el.y)} className="w-7 h-7 bg-white rounded-full shadow flex items-center justify-center cursor-grab active:cursor-grabbing hover:bg-gray-100 transition border border-gray-200" title="Move"><span role="img" aria-label="move" className="text-sm pointer-events-none">🖐️</span></button>
+                            <button onPointerDown={(e) => { e.stopPropagation(); handleDeleteElement(el.id); }} className="w-7 h-7 bg-white rounded-full shadow flex items-center justify-center hover:bg-red-50 transition border border-gray-200" title="Delete"><span role="img" aria-label="delete" className="text-sm pointer-events-none">🗑️</span></button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Standard Resize Handles for Image */}
+                      {!isPreviewMode && isTool && (
+                        <>
+                          {el.type === 'image' && <div className={`absolute -top-10 left-1/2 -translate-x-1/2 w-8 h-8 bg-white rounded-full shadow-lg border border-gray-200 ${selectedElementId === el.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-all z-[70] flex items-center justify-center cursor-alias hover:scale-110 hover:bg-gray-50`} onPointerDown={(e) => handleRotateStart(e, el)} title="Hold Shift to snap to 45° increments"><span role="img" aria-label="rotate" className="text-xs pointer-events-none">🔄</span></div>}
+                          {el.type === 'image' && RESIZE_HANDLES.map(handle => <div key={handle.id} className={`absolute w-6 h-6 bg-student-yellow rounded-full shadow-lg border-4 border-white ${selectedElementId === el.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity z-[70] hover:scale-110 flex items-center justify-center ${handle.classes}`} onPointerDown={(e) => handleResizeStart(e, el, handle.id)}><div className="w-1.5 h-1.5 bg-outloud-blue rounded-full opacity-50 pointer-events-none"></div></div>)}
+                          {el.type !== 'image' && <div className={`absolute -bottom-3 -right-3 w-6 h-6 bg-student-yellow rounded-full cursor-se-resize shadow-lg border-4 border-white ${selectedElementId === el.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity z-[70] flex items-center justify-center hover:scale-110`} onPointerDown={(e) => handleResizeStart(e, el, 'se')}><svg className="w-3 h-3 text-outloud-blue opacity-50 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg></div>}
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {isPreviewMode && (
+                <div className="w-full flex justify-center pb-8 pt-4 shrink-0 z-40 relative">
+                  <button onClick={() => handlePreviewContinue(screenId, (contentType === 'Lesson' ? lessonScreens : Array.from({length: workbookScreens}, (_, i) => i + 1))[index + 1])} className="bg-outloud-blue text-white font-black px-12 py-4 rounded-full shadow-lg text-sm uppercase tracking-widest hover:scale-105 active:scale-95 transition-transform animate-fade-in">
+                    {index === (contentType === 'Lesson' ? lessonScreens.length : workbookScreens) - 1 ? 'FINISH' : 'CONTINUE ⬇'}
+                  </button>
+                </div>
+              )}
+            </div>
+          </React.Fragment>
+        ))}
+      </div>
+
+      {!isPreviewMode && (
+        <div className="w-full flex flex-col items-center py-12 bg-[#eef5fc] z-20 border-t border-white/50 shadow-[0_-15px_30px_rgba(0,0,0,0.03)]">
+          <svg onClick={handleExpandWorkspace} className="w-12 h-12 text-outloud-blue cursor-pointer hover:scale-110 transition-transform animate-bounce" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+          <span className="text-[10px] font-bold text-outloud-blue font-montserrat uppercase tracking-widest mt-2">ADD NEW SCREEN</span>
+        </div>
+      )}
 
     </div>
   );

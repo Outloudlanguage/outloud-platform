@@ -5,14 +5,25 @@ import React, { useState, useEffect, useRef } from 'react';
 // =========================================
 const MobileLogin = ({ onLogin, onInfoClick }) => {
   const [credentials, setCredentials] = useState({ username: '', password: '' });
+  const [authError, setAuthError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleInputChange = (field, value) => {
     setCredentials(prev => ({ ...prev, [field]: value }));
+    // Clear error message when user starts typing again
+    if (authError) setAuthError('');
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (onLogin) onLogin();
+    
+    // Hardcoded Admin Authentication Check
+    if (credentials.username === 'admin@outloudlanguage.com' && credentials.password === 'OlaAdmin_2026!') {
+      if (onLogin) onLogin();
+    } else {
+      setAuthError('Credenciales inválidas. Por favor, intente de nuevo.');
+      setTimeout(() => setAuthError(''), 3000);
+    }
   };
 
   return (
@@ -52,6 +63,13 @@ const MobileLogin = ({ onLogin, onInfoClick }) => {
               Enter your credentials to continue
             </p>
 
+            {/* Authentication Error Alert */}
+            {authError && (
+              <div className="w-full text-center bg-red-100 border border-red-200 text-red-700 text-[11px] font-bold p-2 rounded-lg font-montserrat shadow-sm mb-4">
+                {authError}
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="flex flex-col space-y-4">
               <div>
                 <label className="block text-[11px] font-black text-outloud-blue mb-1.5">Username or Email</label>
@@ -66,13 +84,31 @@ const MobileLogin = ({ onLogin, onInfoClick }) => {
 
               <div>
                 <label className="block text-[11px] font-black text-outloud-blue mb-1.5">Password</label>
-                <input
-                  type="password"
-                  value={credentials.password}
-                  onChange={(e) => handleInputChange('password', e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full h-10 rounded-lg px-3 text-[13px] text-outloud-blue outline-none border border-transparent focus:border-outloud-blue transition-colors shadow-inner"
-                />
+                <div className="relative w-full">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={credentials.password}
+                    onChange={(e) => handleInputChange('password', e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full h-10 rounded-lg pl-3 pr-10 text-[13px] text-outloud-blue outline-none border border-transparent focus:border-outloud-blue transition-colors shadow-inner"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-3 flex items-center justify-center text-outloud-blue/60 hover:text-outloud-blue transition-colors"
+                  >
+                    {showPassword ? (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
               </div>
 
               <button
@@ -111,9 +147,35 @@ const MobileLogin = ({ onLogin, onInfoClick }) => {
 // 2. DESKTOP & PC UI
 // =========================================
 const DesktopLogin = ({ onLogin, onInfoClick }) => {
-  // State and Timer Ref for the temporary under development message
+  // State for Credentials, Errors & Password Visibility
+  const [credentials, setCredentials] = useState({ username: '', password: '' });
+  const [authError, setAuthError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const authTimerRef = useRef(null);
+
+  // State and Timer Ref for the temporary under development message (kept for the "here" link)
   const [devMessage, setDevMessage] = useState('');
   const devTimerRef = useRef(null);
+
+  const handleInputChange = (field, value) => {
+    setCredentials(prev => ({ ...prev, [field]: value }));
+    if (authError) setAuthError('');
+  };
+
+  // Auth Submit Logic
+  const handleLoginSubmit = (e) => {
+    e.preventDefault(); // Prevents page reload
+    
+    if (credentials.username === 'admin@outloudlanguage.com' && credentials.password === 'OlaAdmin_2026!') {
+      if (onLogin) onLogin();
+    } else {
+      setAuthError('Credenciales inválidas. Por favor, intente de nuevo.');
+      if (authTimerRef.current) clearTimeout(authTimerRef.current);
+      authTimerRef.current = setTimeout(() => {
+        setAuthError('');
+      }, 3000);
+    }
+  };
 
   // Effect to clear the dev message if the user clicks anywhere else
   useEffect(() => {
@@ -124,7 +186,6 @@ const DesktopLogin = ({ onLogin, onInfoClick }) => {
       if (devTimerRef.current) clearTimeout(devTimerRef.current);
     };
 
-    // Small delay ensures the button click itself doesn't immediately close the message
     const delayTimer = setTimeout(() => {
       window.addEventListener('click', handleGlobalClick);
     }, 50);
@@ -135,15 +196,20 @@ const DesktopLogin = ({ onLogin, onInfoClick }) => {
     };
   }, [devMessage]);
 
-  // Handler for buttons currently under development
+  // Clean up auth error timer on unmount
+  useEffect(() => {
+    return () => {
+      if (authTimerRef.current) clearTimeout(authTimerRef.current);
+    }
+  }, []);
+
+  // Handler for links currently under development
   const handleDevClick = (e) => {
     e.preventDefault();
     setDevMessage('Esta función se encuentra en desarrollo y estará lista en los próximos días');
     
-    // Clear any existing timer so they don't overlap
     if (devTimerRef.current) clearTimeout(devTimerRef.current);
     
-    // Clear the message automatically after 3 seconds
     devTimerRef.current = setTimeout(() => {
       setDevMessage('');
     }, 3000);
@@ -203,19 +269,22 @@ const DesktopLogin = ({ onLogin, onInfoClick }) => {
                 Enter your credentials to continue
               </p>
               
-              {/* Dynamic Under Development Alert */}
-              {devMessage && (
+              {/* Dynamic Alert Box (Shared for both Dev Message and Auth Errors) */}
+              {(devMessage || authError) && (
                 <div className="w-full text-center bg-red-100 border border-red-200 text-red-700 text-[10px] md:text-[11px] font-bold p-2 rounded-lg font-montserrat shadow-sm mb-4">
-                  {devMessage}
+                  {devMessage || authError}
                 </div>
               )}
               
-              <div className="flex w-full flex-col space-y-3 font-montserrat">
+              {/* Wrapped in a form so "Enter" key works */}
+              <form onSubmit={handleLoginSubmit} className="flex w-full flex-col space-y-3 font-montserrat">
                 
                 <div className="w-full text-left">
                   <label className="mb-1 block text-xs md:text-sm font-bold text-outloud-blue">Username or Email</label>
                   <input 
                     type="text" 
+                    value={credentials.username}
+                    onChange={(e) => handleInputChange('username', e.target.value)}
                     placeholder="Student_Example" 
                     className="w-full rounded-lg border-none bg-white p-2.5 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-outloud-blue shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)]"
                   />
@@ -223,16 +292,36 @@ const DesktopLogin = ({ onLogin, onInfoClick }) => {
                 
                 <div className="w-full text-left">
                   <label className="mb-1 block text-xs md:text-sm font-bold text-outloud-blue">Password</label>
-                  <input 
-                    type="password" 
-                    placeholder="••••••••" 
-                    className="w-full rounded-lg border-none bg-white p-2.5 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-outloud-blue shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)]"
-                  />
+                  <div className="relative w-full">
+                    <input 
+                      type={showPassword ? "text" : "password"}
+                      value={credentials.password}
+                      onChange={(e) => handleInputChange('password', e.target.value)}
+                      placeholder="••••••••" 
+                      className="w-full rounded-lg border-none bg-white p-2.5 pr-10 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-outloud-blue shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-3 flex items-center justify-center text-outloud-blue/60 hover:text-outloud-blue transition-colors"
+                    >
+                      {showPassword ? (
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                        </svg>
+                      ) : (
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                 </div>
                 
-                {/* Centered Pill Button (Wired to Dev Alert) */}
+                {/* Changed to type="submit" and pointing to auth function */}
                 <button 
-                  onClick={handleDevClick}
+                  type="submit"
                   className="mt-3 mx-auto w-[85%] rounded-full bg-outloud-blue p-2.5 text-sm font-bold text-white shadow-md transition hover:bg-blue-900"
                 >
                   Login
@@ -255,7 +344,7 @@ const DesktopLogin = ({ onLogin, onInfoClick }) => {
                   </p>
                 </div>
                 
-              </div>
+              </form>
             </div>
           </div>
 
