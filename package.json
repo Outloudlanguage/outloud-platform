@@ -6,7 +6,8 @@
     "@supabase/supabase-js": "^2.112.2",
     "react": "^18.1.0",
     "react-dom": "^18.1.0",
-    "react-phone-number-input": "^3.4.17"
+    "react-phone-number-input": "^3.4.17",
+    "swiper": "^14.1.0"
   },
   "scripts": {
     "start": "react-scripts start",

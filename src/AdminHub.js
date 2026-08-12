@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { supabase } from './SupabaseClient'; 
+import { supabase, supabaseAdmin } from './SupabaseClient';
+import PhoneInput from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
 
 // =========================================
 // CONSTANTS FOR MAPPING
@@ -1063,6 +1065,7 @@ const WordSearchModal = ({ isOpen, initialData = {}, onSave, onCancel }) => {
 // =========================================
 const AdminHub = () => {
   // Application State
+  const [activeTab, setActiveTab] = useState('CONTENT_EDITING');
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -2067,433 +2070,893 @@ const AdminHub = () => {
           <div className="w-full max-w-6xl flex flex-col space-y-10">
             <div className="bg-white/95 rounded-[2rem] shadow-[0_15px_40px_rgba(0,0,0,0.05)] p-6 md:p-8 flex flex-col items-center w-full border border-white/60">
               <h2 className="text-2xl md:text-3xl lg:text-4xl font-black text-outloud-blue font-montserrat uppercase tracking-wide mb-8 text-center">ADMIN EDITING HUB</h2>
+              
               <div className="flex flex-col md:flex-row items-center justify-center w-full gap-4 md:gap-6">
-                <button className="flex-1 max-w-[280px] w-full bg-student-yellow text-outloud-blue font-black py-3 px-2 rounded-full shadow-md text-xs md:text-sm uppercase tracking-wide transition-transform active:scale-95 text-center truncate">CONTENT EDITING TOOLS</button>
-                <button className="flex-1 max-w-[280px] w-full bg-transparent border-[1.5px] border-dashed border-outloud-blue text-outloud-blue font-bold py-3 px-2 rounded-full text-xs md:text-sm uppercase tracking-wide hover:bg-[#e6f0f9] transition-colors text-center truncate">CUSTOMER MANAGEMENT</button>
-                <button className="flex-1 max-w-[280px] w-full bg-transparent border-[1.5px] border-dashed border-outloud-blue text-outloud-blue font-bold py-3 px-2 rounded-full text-xs md:text-sm uppercase tracking-wide hover:bg-[#e6f0f9] transition-colors text-center truncate">MASTER SETTINGS</button>
+                <button 
+                  onClick={() => setActiveTab('CONTENT_EDITING')}
+                  className={`flex-1 max-w-[280px] w-full py-3 px-2 rounded-full text-xs md:text-sm uppercase tracking-wide transition-all text-center truncate ${activeTab === 'CONTENT_EDITING' ? 'bg-student-yellow text-outloud-blue font-black border-none shadow-md active:scale-95' : 'bg-transparent border-[1.5px] border-dashed border-outloud-blue text-outloud-blue font-bold hover:bg-[#e6f0f9]'}`}
+                >
+                  CONTENT EDITING TOOLS
+                </button>
+                <button 
+                  onClick={() => setActiveTab('CUSTOMER_MANAGEMENT')}
+                  className={`flex-1 max-w-[280px] w-full py-3 px-2 rounded-full text-xs md:text-sm uppercase tracking-wide transition-all text-center truncate ${activeTab === 'CUSTOMER_MANAGEMENT' ? 'bg-student-yellow text-outloud-blue font-black border-none shadow-md active:scale-95' : 'bg-transparent border-[1.5px] border-dashed border-outloud-blue text-outloud-blue font-bold hover:bg-[#e6f0f9]'}`}
+                >
+                  CUSTOMER MANAGEMENT
+                </button>
+                <button 
+                  onClick={() => setActiveTab('MASTER_SETTINGS')}
+                  className={`flex-1 max-w-[280px] w-full py-3 px-2 rounded-full text-xs md:text-sm uppercase tracking-wide transition-all text-center truncate ${activeTab === 'MASTER_SETTINGS' ? 'bg-student-yellow text-outloud-blue font-black border-none shadow-md active:scale-95' : 'bg-transparent border-[1.5px] border-dashed border-outloud-blue text-outloud-blue font-bold hover:bg-[#e6f0f9]'}`}
+                >
+                  MASTER SETTINGS
+                </button>
               </div>
             </div>
 
-            <div className="flex flex-col w-full px-2 lg:px-8">
-              <h3 className="text-lg md:text-xl font-black text-outloud-blue font-montserrat uppercase mb-6 tracking-wide">CONTENT MANAGEMENT</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
-                <AdminDropdown placeholder="Select Level" options={LEVEL_OPTIONS} value={selectedLevel} onChange={setSelectedLevel} />
-                <AdminDropdown placeholder={selectedLevel ? "Select Unit" : "Select Level First"} options={unitOptions} value={selectedUnit} onChange={setSelectedUnit} />
-                <AdminDropdown placeholder="Content type" options={['Lesson', 'Workbook']} value={contentType} onChange={setContentType} />
-                <AdminDropdown placeholder="Tools" options={toolOptions} value="" onChange={handleToolSelect} />
-              </div>
+            {activeTab === 'CONTENT_EDITING' && (
+              <div className="flex flex-col w-full px-2 lg:px-8">
+                <h3 className="text-lg md:text-xl font-black text-outloud-blue font-montserrat uppercase mb-6 tracking-wide">CONTENT MANAGEMENT</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
+                  <AdminDropdown placeholder="Select Level" options={LEVEL_OPTIONS} value={selectedLevel} onChange={setSelectedLevel} />
+                  <AdminDropdown placeholder={selectedLevel ? "Select Unit" : "Select Level First"} options={unitOptions} value={selectedUnit} onChange={setSelectedUnit} />
+                  <AdminDropdown placeholder="Content type" options={['Lesson', 'Workbook']} value={contentType} onChange={setContentType} />
+                  <AdminDropdown placeholder="Tools" options={toolOptions} value="" onChange={handleToolSelect} />
+                </div>
 
-              <div className="flex flex-row justify-center items-center w-full mt-8 gap-8 md:gap-12">
-                <div className="flex items-center gap-8 md:gap-16">
-                  <button onClick={() => setIsSaveModalOpen(true)} className="text-outloud-blue font-black tracking-widest uppercase hover:opacity-70 transition-opacity">SAVE</button>
-                  <button onClick={handleUndoWorkspace} className="text-outloud-blue font-black tracking-widest uppercase hover:opacity-70 transition-opacity">UNDO</button>
-                  <button onClick={() => setIsPreviewMode(true)} className="text-outloud-blue font-black tracking-widest uppercase hover:opacity-70 transition-opacity">PREVIEW</button>
-                </div>
-                <div className="h-6 w-[2px] bg-outloud-blue opacity-20"></div>
-                <div className="flex items-center gap-3">
-                  <button onClick={() => { if(selectedElementId) setCanvasElements(prev => prev.map(el => el.id === selectedElementId ? {...el, layer: (el.layer || 10) + 1} : el)); }} disabled={!selectedElementId} className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center text-outloud-blue hover:bg-student-yellow transition disabled:opacity-50 disabled:shadow-none" title="Bring Forward">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" /></svg>
-                  </button>
-                  <button onClick={() => { if(selectedElementId) setCanvasElements(prev => prev.map(el => el.id === selectedElementId ? {...el, layer: (el.layer || 10) - 1} : el)); }} disabled={!selectedElementId} className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center text-outloud-blue hover:bg-student-yellow transition disabled:opacity-50 disabled:shadow-none" title="Send Backward">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
-                  </button>
+                <div className="flex flex-row justify-center items-center w-full mt-8 gap-8 md:gap-12">
+                  <div className="flex items-center gap-8 md:gap-16">
+                    <button onClick={() => setIsSaveModalOpen(true)} className="text-outloud-blue font-black tracking-widest uppercase hover:opacity-70 transition-opacity">SAVE</button>
+                    <button onClick={handleUndoWorkspace} className="text-outloud-blue font-black tracking-widest uppercase hover:opacity-70 transition-opacity">UNDO</button>
+                    <button onClick={() => setIsPreviewMode(true)} className="text-outloud-blue font-black tracking-widest uppercase hover:opacity-70 transition-opacity">PREVIEW</button>
+                  </div>
+                  <div className="h-6 w-[2px] bg-outloud-blue opacity-20"></div>
+                  <div className="flex items-center gap-3">
+                    <button onClick={() => { if(selectedElementId) setCanvasElements(prev => prev.map(el => el.id === selectedElementId ? {...el, layer: (el.layer || 10) + 1} : el)); }} disabled={!selectedElementId} className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center text-outloud-blue hover:bg-student-yellow transition disabled:opacity-50 disabled:shadow-none" title="Bring Forward">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" /></svg>
+                    </button>
+                    <button onClick={() => { if(selectedElementId) setCanvasElements(prev => prev.map(el => el.id === selectedElementId ? {...el, layer: (el.layer || 10) - 1} : el)); }} disabled={!selectedElementId} className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center text-outloud-blue hover:bg-student-yellow transition disabled:opacity-50 disabled:shadow-none" title="Send Backward">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
+            
+            {activeTab === 'CUSTOMER_MANAGEMENT' && <CustomerManagement supabase={supabase} />}
+            {activeTab === 'MASTER_SETTINGS' && <MasterSettings supabase={supabase} />}
           </div>
         </div>
       )}
 
-      <div className="relative z-10 flex flex-col items-center w-full flex-grow">
-        {(contentType === 'Lesson' ? lessonScreens : workbookScreens > 0 ? Array.from({length: workbookScreens}, (_, i) => i + 1) : []).map((screenId, index) => (
-          <React.Fragment key={screenId}>
-            {index > 0 && !isPreviewMode && (
-              <div className="w-full flex items-center justify-center py-6 bg-[#eef5fc] z-20 relative shadow-inner">
-                <div className="px-8 py-2 bg-outloud-blue/10 border border-outloud-blue/20 rounded-xl text-outloud-blue font-black tracking-widest uppercase text-sm">
-                  --- SCREEN {screenId} ---
-                </div>
-              </div>
-            )}
+      {activeTab === 'CONTENT_EDITING' && (
+        <>
+          <div className="relative z-10 flex flex-col items-center w-full flex-grow">
+            {(contentType === 'Lesson' ? lessonScreens : workbookScreens > 0 ? Array.from({length: workbookScreens}, (_, i) => i + 1) : []).map((screenId, index) => (
+              <React.Fragment key={screenId}>
+                {index > 0 && !isPreviewMode && (
+                  <div className="w-full flex items-center justify-center py-6 bg-[#eef5fc] z-20 relative shadow-inner">
+                    <div className="px-8 py-2 bg-outloud-blue/10 border border-outloud-blue/20 rounded-xl text-outloud-blue font-black tracking-widest uppercase text-sm">
+                      --- SCREEN {screenId} ---
+                    </div>
+                  </div>
+                )}
 
-            <div 
-              id={`preview-screen-${screenId}`}
-              onPointerDown={(e) => { if (e.target.id === `preview-screen-${screenId}`) setSelectedElementId(null); }}
-              className={`w-full relative overflow-hidden flex flex-col ${isPreviewMode ? '' : 'workspace-grid border-b-2 border-outloud-blue/20'}`}
-              style={{ minHeight: '100vh' }}
-            >
-              <div className="flex-grow relative pointer-events-none" style={{ pointerEvents: 'auto' }}>
-                {canvasElements.filter(el => el.screenId === screenId).map(el => {
-                  
-                  const rcPhase = rcStates[el.id]?.phase || 'IDLE';
-                  let rcText = 'RECORD'; let rcTextColor = 'text-outloud-blue'; let rcAnimation = '';
-                  if (rcPhase === 'RECORDING') { rcText = 'RECORDING'; rcTextColor = 'text-red-600'; rcAnimation = 'animate-recording-blink'; } 
-                  else if (rcPhase === 'HAS_RECORDING') { rcText = 'COMPARE'; } 
-                  else if (rcPhase === 'PLAYING') { rcText = 'COMPARING'; rcTextColor = 'text-green-500'; } 
-                  else if (rcPhase === 'RETRY') { rcText = 'RETRY'; }
-
-                  const isTool = !['fill_in_the_blank', 'shape', 'text', 'drag_and_drop', 'short_answer', 'multiple_selection', 'slider_bar', 'crossword', 'word_search'].includes(el.type);
-
-                  return (
-                    <div 
-                      id={`element-${el.id}`} key={el.id}
-                      onMouseDown={() => !isPreviewMode && setSelectedElementId(el.id)}
-                      style={{ position: 'absolute', left: `${el.x}px`, top: `${el.y}px`, width: `${el.width}px`, height: `${el.height}px`, transform: `rotate(${el.rotation || 0}deg)`, zIndex: (editingTextId === el.id || draggingId === el.id || resizingId === el.id || rotatingId === el.id) ? 999 : (el.layer || 10) }}
-                      className={`group ${!isPreviewMode && isTool ? (selectedElementId === el.id ? 'ring-4 ring-student-yellow shadow-xl rounded-2xl' : 'hover:ring-4 ring-student-yellow ring-opacity-50 rounded-2xl transition-shadow') : ''}`}
-                    >
-                      {/* Standard Drag Handle */}
-                      {!isPreviewMode && isTool && (
-                        <div className={`absolute top-0 left-0 w-full bg-outloud-blue/90 backdrop-blur-sm text-white rounded-t-xl h-10 flex justify-between items-center px-4 element-drag-handle ${selectedElementId === el.id ? 'opacity-100' : 'group-hover:opacity-100 opacity-0'} transition-opacity shadow-lg z-[60]`} onPointerDown={(e) => handleDragStart(e, el.id, el.x, el.y)}>
-                          <span className="text-[10px] font-bold font-montserrat tracking-widest">DRAG TO MOVE</span>
-                          <div className="flex items-center gap-2">
-                             {!['video', 'audio'].includes(el.type) && <button onPointerDown={(e) => { e.stopPropagation(); handleDuplicateElement(el.id); }} className="bg-white/20 hover:bg-white/30 p-1.5 rounded-md transition-colors cursor-pointer" title="Duplicate"><span role="img" aria-label="duplicate" className="text-xs pointer-events-none">📋</span></button>}
-                             <button onPointerDown={(e) => { e.stopPropagation(); handleDeleteElement(el.id); }} className="bg-red-500 hover:bg-red-600 p-1.5 rounded-md transition-colors cursor-pointer" title="Delete"><svg className="w-3 h-3 text-white pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12"></path></svg></button>
-                          </div>
-                        </div>
-                      )}
+                <div 
+                  id={`preview-screen-${screenId}`}
+                  onPointerDown={(e) => { if (e.target.id === `preview-screen-${screenId}`) setSelectedElementId(null); }}
+                  className={`w-full relative overflow-hidden flex flex-col ${isPreviewMode ? '' : 'workspace-grid border-b-2 border-outloud-blue/20'}`}
+                  style={{ minHeight: '100vh' }}
+                >
+                  <div className="flex-grow relative pointer-events-none" style={{ pointerEvents: 'auto' }}>
+                    {canvasElements.filter(el => el.screenId === screenId).map(el => {
                       
-                      {el.type === 'video' && <div className={`w-full h-full bg-black rounded-2xl overflow-hidden shadow-2xl border-4 ${!isPreviewMode ? 'border-outloud-blue/20' : 'border-transparent'}`}><video src={el.url} controls className="w-full h-full object-cover" preload="metadata" /></div>}
-                      {el.type === 'image' && <div className={`w-full h-full bg-transparent overflow-hidden ${!isPreviewMode ? 'border-4 border-outloud-blue/20' : ''}`} style={{ borderRadius: '1rem', position: 'relative' }}><img src={el.url} alt="Canvas element" draggable={false} style={{ position: 'absolute', left: `${el.imgX ?? 0}px`, top: `${el.imgY ?? 0}px`, width: `${el.imgW ?? el.width}px`, height: `${el.imgH ?? el.height}px`, maxWidth: 'none', maxHeight: 'none' }} /></div>}
-                      {el.type === 'audio' && <div className={`w-full h-full bg-white/80 backdrop-blur-md rounded-2xl shadow-xl flex items-center justify-center px-4 border-4 ${!isPreviewMode ? 'border-outloud-blue/20' : 'border-white/50'}`}><audio src={el.url} controls className="w-full" preload="metadata" /></div>}
+                      const rcPhase = rcStates[el.id]?.phase || 'IDLE';
+                      let rcText = 'RECORD'; let rcTextColor = 'text-outloud-blue'; let rcAnimation = '';
+                      if (rcPhase === 'RECORDING') { rcText = 'RECORDING'; rcTextColor = 'text-red-600'; rcAnimation = 'animate-recording-blink'; } 
+                      else if (rcPhase === 'HAS_RECORDING') { rcText = 'COMPARE'; } 
+                      else if (rcPhase === 'PLAYING') { rcText = 'COMPARING'; rcTextColor = 'text-green-500'; } 
+                      else if (rcPhase === 'RETRY') { rcText = 'RETRY'; }
 
-                      {el.type === 'record_compare' && (
-                        <div className={`w-full h-full flex flex-col items-center justify-center transition-all ${isPreviewMode ? 'cursor-pointer hover:scale-105 active:scale-95' : 'opacity-80'}`} onClick={() => isPreviewMode && handleRcClick(el.id)}>
-                          <div className={`w-full h-full rounded-full shadow-2xl flex items-center justify-center transition-colors duration-300 border-4 ${rcPhase === 'RECORDING' ? 'bg-red-600 border-red-300' : rcPhase === 'PLAYING' ? 'bg-green-500 border-green-300' : 'bg-outloud-blue border-transparent'}`}>
-                            {(rcPhase === 'IDLE' || rcPhase === 'RECORDING') && (<svg className="w-1/2 h-1/2 text-white pointer-events-none" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>)}
-                            {(rcPhase === 'HAS_RECORDING' || rcPhase === 'PLAYING') && (<svg className="w-1/2 h-1/2 text-white pointer-events-none" fill="currentColor" viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>)}
-                            {rcPhase === 'RETRY' && (<svg className="w-1/2 h-1/2 text-white pointer-events-none" fill="currentColor" viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>)}
-                          </div>
-                          <span className={`absolute -bottom-8 font-montserrat font-black tracking-widest text-xs whitespace-nowrap ${rcTextColor} ${rcAnimation}`}>{rcText}</span>
-                        </div>
-                      )}
+                      const isTool = !['fill_in_the_blank', 'shape', 'text', 'drag_and_drop', 'short_answer', 'multiple_selection', 'slider_bar', 'crossword', 'word_search'].includes(el.type);
 
-                      {el.type === 'shape' && (
-                        <div className={`w-full h-full relative ${selectedElementId === el.id && !isPreviewMode ? 'ring-2 ring-student-yellow' : ''}`} style={{ opacity: (el.data.opacity || 100) / 100 }}>
-                          <svg width={el.width} height={el.height} style={{overflow: 'visible'}}>
-                            {renderShapeSVG(el.data, el.width, el.height)}
-                          </svg>
-                        </div>
-                      )}
-
-                      {el.type === 'fill_in_the_blank' && (
-                        <div className={`w-full h-full p-4 relative ${selectedElementId === el.id && !isPreviewMode ? 'ring-2 ring-student-yellow rounded-xl' : ''}`} style={{ backgroundColor: el.data.t_boxColor, borderColor: el.data.t_lineColor, borderWidth: '2px', borderStyle: 'solid', borderRadius: `${el.data.t_borderRadius}px` }}>
-                          {renderFormattedText(el, isPreviewMode)}
-                        </div>
-                      )}
-
-                      {el.type === 'short_answer' && el.data && (
-                        <div className={`w-full h-full p-4 flex flex-col gap-3 relative ${selectedElementId === el.id && !isPreviewMode ? 'ring-2 ring-student-yellow rounded-xl' : ''}`}>
-                           <div dangerouslySetInnerHTML={{ __html: el.data.questionHtml }} className="w-full whitespace-pre-wrap word-break" />
-                           <input type="text" disabled={!isPreviewMode} placeholder={isPreviewMode ? "" : "Student answer box..."} value={isPreviewMode ? (studentAnswers[el.id] || '') : ''} onChange={(e) => isPreviewMode && setStudentAnswers(prev => ({...prev, [el.id]: e.target.value}))} style={{ backgroundColor: el.data.boxColor === 'transparent' ? 'transparent' : el.data.boxColor, borderColor: el.data.lineColor === 'transparent' ? 'transparent' : el.data.lineColor, borderWidth: el.data.lineColor === 'transparent' ? '0px' : '2px', borderStyle: 'solid', borderRadius: `${el.data.borderRadius}px`, color: el.data.textColor, fontSize: `${el.data.fontSize}px`, fontFamily: el.data.fontFamily, padding: '8px 12px', width: '100%', outline: 'none' }} className={!isPreviewMode ? 'pointer-events-none' : 'focus:ring-2 focus:ring-student-yellow transition'} />
-                        </div>
-                      )}
-
-                      {el.type === 'multiple_selection' && el.data && (
-                        <div className={`w-full h-full flex flex-col p-4 relative ${selectedElementId === el.id && !isPreviewMode ? 'ring-2 ring-student-yellow rounded-xl' : ''}`} style={{ backgroundColor: 'transparent' }}>
-                           <div className="mb-6 flex-shrink-0 flex justify-center items-center w-full">
-                              {el.data.promptType === 'image' && el.data.promptUrl ? (
-                                 <div className="w-full max-h-48 overflow-hidden flex justify-center rounded-xl shadow-sm border border-gray-200"><img src={el.data.promptUrl} alt="Prompt" className="w-full h-full object-contain bg-white" /></div>
-                              ) : <div dangerouslySetInnerHTML={{ __html: el.data.promptHtml }} className="w-full whitespace-pre-wrap break-words text-center" />}
-                           </div>
-                           <div className="flex-grow grid grid-cols-2 gap-4 auto-rows-fr">
-                              {el.data.options.map((opt) => {
-                                 const isSelected = isPreviewMode && (studentAnswers[`${el.id}_${opt.id}`] === true);
-                                 return (
-                                    <div key={opt.id} onClick={() => { if (isPreviewMode) { setStudentAnswers(prev => ({ ...prev, [`${el.id}_${opt.id}`]: !prev[`${el.id}_${opt.id}`] })); } }} style={{ backgroundColor: isSelected ? '#eab308' : (el.data.optBoxColor === 'transparent' ? 'transparent' : el.data.optBoxColor), borderColor: isSelected ? '#ca8a04' : (el.data.optLineColor === 'transparent' ? 'transparent' : el.data.optLineColor), borderWidth: (el.data.optLineColor === 'transparent' && !isSelected) ? '0px' : '2px', borderStyle: 'solid', borderRadius: `${el.data.optBorderRadius}px`, cursor: isPreviewMode ? 'pointer' : 'default', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }} className={`transition-all ${isPreviewMode ? 'hover:scale-[1.02] active:scale-95 shadow-sm' : ''}`}>
-                                       <div dangerouslySetInnerHTML={{ __html: opt.html }} className="pointer-events-none w-full whitespace-pre-wrap break-words" />
-                                    </div>
-                                 )
-                              })}
-                           </div>
-                        </div>
-                      )}
-
-                      {el.type === 'slider_bar' && el.data && (() => {
-                         const isVert = el.data.orientation === 'vertical';
-                         const opts = el.data.options || [];
-                         const maxIdx = Math.max(0, opts.length - 1);
-                         const defaultIdx = Math.floor(maxIdx / 2);
-                         const currentIdx = studentAnswers[el.id] !== undefined ? parseInt(studentAnswers[el.id]) : defaultIdx;
-                         const activeOpt = opts[currentIdx] || {};
-                         const pct = maxIdx === 0 ? 50 : (currentIdx / maxIdx) * 100;
-
-                         return (
-                           <div className={`w-full h-full relative flex items-center justify-center pointer-events-none ${selectedElementId === el.id && !isPreviewMode ? 'ring-2 ring-student-yellow rounded-xl' : ''}`}>
-                              <div className="absolute flex items-center justify-center rounded-full shadow-inner overflow-hidden" style={{ backgroundColor: el.data.barColor, width: isVert ? `${el.data.barThickness}px` : '100%', height: isVert ? '100%' : `${el.data.barThickness}px`, opacity: 1 }}>
-                                 {el.data.barText && <span className="absolute font-bold text-xs uppercase tracking-widest whitespace-nowrap opacity-100" style={{ color: el.data.barTextColor, transform: isVert ? 'rotate(-90deg)' : 'none' }}>{el.data.barText}</span>}
+                      return (
+                        <div 
+                          id={`element-${el.id}`} key={el.id}
+                          onMouseDown={() => !isPreviewMode && setSelectedElementId(el.id)}
+                          style={{ position: 'absolute', left: `${el.x}px`, top: `${el.y}px`, width: `${el.width}px`, height: `${el.height}px`, transform: `rotate(${el.rotation || 0}deg)`, zIndex: (editingTextId === el.id || draggingId === el.id || resizingId === el.id || rotatingId === el.id) ? 999 : (el.layer || 10) }}
+                          className={`group ${!isPreviewMode && isTool ? (selectedElementId === el.id ? 'ring-4 ring-student-yellow shadow-xl rounded-2xl' : 'hover:ring-4 ring-student-yellow ring-opacity-50 rounded-2xl transition-shadow') : ''}`}
+                        >
+                          {/* Standard Drag Handle */}
+                          {!isPreviewMode && isTool && (
+                            <div className={`absolute top-0 left-0 w-full bg-outloud-blue/90 backdrop-blur-sm text-white rounded-t-xl h-10 flex justify-between items-center px-4 element-drag-handle ${selectedElementId === el.id ? 'opacity-100' : 'group-hover:opacity-100 opacity-0'} transition-opacity shadow-lg z-[60]`} onPointerDown={(e) => handleDragStart(e, el.id, el.x, el.y)}>
+                              <span className="text-[10px] font-bold font-montserrat tracking-widest">DRAG TO MOVE</span>
+                              <div className="flex items-center gap-2">
+                                 {!['video', 'audio'].includes(el.type) && <button onPointerDown={(e) => { e.stopPropagation(); handleDuplicateElement(el.id); }} className="bg-white/20 hover:bg-white/30 p-1.5 rounded-md transition-colors cursor-pointer" title="Duplicate"><span role="img" aria-label="duplicate" className="text-xs pointer-events-none">📋</span></button>}
+                                 <button onPointerDown={(e) => { e.stopPropagation(); handleDeleteElement(el.id); }} className="bg-red-500 hover:bg-red-600 p-1.5 rounded-md transition-colors cursor-pointer" title="Delete"><svg className="w-3 h-3 text-white pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12"></path></svg></button>
                               </div>
-                              <input type="range" min="0" max={maxIdx} step="1" disabled={!isPreviewMode} value={currentIdx} onChange={(e) => isPreviewMode && setStudentAnswers(prev => ({...prev, [el.id]: e.target.value}))} className="absolute custom-slider w-full h-full pointer-events-auto" style={{ '--thumb-color': el.data.handleColor, transform: isVert ? 'rotate(-90deg)' : 'none', WebkitAppearance: 'none', background: 'transparent' }} />
-                              { !isVert && (
-                                 <div className="absolute flex flex-col items-center transition-all duration-200 pointer-events-none z-50" style={{ left: `${pct}%`, bottom: 'calc(50% + 18px)', transform: 'translateX(-50%)' }}>
-                                    <div className="bg-white/95 backdrop-blur px-4 py-2 rounded-xl shadow-lg border border-gray-200 whitespace-nowrap animate-fade-in" style={{ color: el.data.textColor, fontSize: `${el.data.fontSize}px`, fontFamily: el.data.fontFamily, fontWeight: 'bold' }}>{activeOpt.text}</div>
-                                    <div className="w-0 h-0 border-solid" style={{ borderWidth: '8px 6px 0 6px', borderColor: 'rgba(255,255,255,0.95) transparent transparent transparent' }} />
-                                 </div>
-                              )}
-                              { isVert && (
-                                 <div className="absolute flex items-center transition-all duration-200 pointer-events-none z-50" style={{ bottom: `${pct}%`, right: 'calc(50% + 18px)', transform: 'translateY(50%)' }}>
-                                    <div className="bg-white/95 backdrop-blur px-4 py-2 rounded-xl shadow-lg border border-gray-200 whitespace-nowrap animate-fade-in" style={{ color: el.data.textColor, fontSize: `${el.data.fontSize}px`, fontFamily: el.data.fontFamily, fontWeight: 'bold' }}>{activeOpt.text}</div>
-                                    <div className="w-0 h-0 border-solid" style={{ borderWidth: '6px 0 6px 8px', borderColor: 'transparent transparent transparent rgba(255,255,255,0.95)' }} />
-                                 </div>
-                              )}
-                           </div>
-                         );
-                      })()}
-
-                      {/* --- CROSSWORD RENDERER --- */}
-                      {el.type === 'crossword' && el.data && (
-                        <div className={`w-full h-full p-4 flex flex-row gap-6 relative bg-white/80 backdrop-blur rounded-2xl shadow-sm border border-gray-200 ${selectedElementId === el.id && !isPreviewMode ? 'ring-2 ring-student-yellow' : ''}`}>
-                           <div className="flex-1 flex flex-col gap-4 overflow-y-auto pr-2 custom-scrollbar">
-                              <h3 className="font-bold text-outloud-blue text-sm uppercase">Prompts</h3>
-                              <div className="flex gap-4">
-                                <div className="flex-1 flex flex-col gap-2">
-                                  <h4 className="text-xs font-bold text-gray-500 uppercase border-b border-gray-200 pb-1">Across</h4>
-                                  {el.data.across?.map((a) => (
-                                    <div key={`a-${a.num}`} className="text-xs text-gray-700 flex gap-2"><span className="font-bold">{a.num}.</span><span>{a.prompt}</span></div>
-                                  ))}
-                                </div>
-                                <div className="flex-1 flex flex-col gap-2">
-                                  <h4 className="text-xs font-bold text-gray-500 uppercase border-b border-gray-200 pb-1">Down</h4>
-                                  {el.data.down?.map((d) => (
-                                    <div key={`d-${d.num}`} className="text-xs text-gray-700 flex gap-2"><span className="font-bold">{d.num}.</span><span>{d.prompt}</span></div>
-                                  ))}
-                                </div>
-                              </div>
-                           </div>
-
-                           <div className="flex-[2] flex items-center justify-center bg-gray-50 rounded-xl border border-gray-200 p-2 overflow-auto custom-scrollbar">
-                              <div 
-                                style={{
-                                  display: 'grid',
-                                  gridTemplateColumns: `repeat(${el.data.grid[0]?.length || 1}, minmax(30px, 1fr))`,
-                                  gap: '2px',
-                                  width: 'fit-content'
-                                }}
-                              >
-                                {el.data.grid.map((row, rIdx) => 
-                                  row.map((cell, cIdx) => (
-                                    <div key={`${rIdx}-${cIdx}`} className="relative aspect-square w-8 md:w-10">
-                                      {cell ? (
-                                        <div className="w-full h-full relative">
-                                          {cell.num && <span className="absolute top-0.5 left-1 text-[8px] font-bold text-gray-400 z-10 pointer-events-none">{cell.num}</span>}
-                                          <input 
-                                            type="text" 
-                                            maxLength={1}
-                                            disabled={!isPreviewMode}
-                                            value={isPreviewMode ? (studentAnswers[`${el.id}_${rIdx}_${cIdx}`] || '') : cell.char}
-                                            onChange={(e) => {
-                                              if(isPreviewMode) {
-                                                const val = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
-                                                setStudentAnswers(prev => ({...prev, [`${el.id}_${rIdx}_${cIdx}`]: val}));
-                                              }
-                                            }}
-                                            style={{
-                                              backgroundColor: el.data.cellColor, borderColor: el.data.lineColor, color: el.data.textColor, fontSize: `${el.data.fontSize}px`, fontFamily: el.data.fontFamily, fontWeight: el.data.isBold ? 'bold' : 'normal'
-                                            }}
-                                            className="w-full h-full text-center uppercase border focus:outline-none focus:ring-2 focus:ring-student-yellow transition"
-                                          />
-                                        </div>
-                                      ) : (
-                                        <div className="w-full h-full bg-transparent" />
-                                      )}
-                                    </div>
-                                  ))
-                                )}
-                              </div>
-                           </div>
-                        </div>
-                      )}
-
-                      {/* --- WORD SEARCH RENDERER --- */}
-                      {el.type === 'word_search' && el.data && (() => {
-                         const targetWords = el.data.targetWords || [];
-                         const half = Math.ceil(targetWords.length / 2);
-                         const col1 = targetWords.slice(0, half);
-                         const col2 = targetWords.slice(half);
-
-                         return (
-                           <div className={`w-full h-full p-4 flex flex-row gap-6 relative bg-white/80 backdrop-blur rounded-2xl shadow-sm border border-gray-200 ${selectedElementId === el.id && !isPreviewMode ? 'ring-2 ring-student-yellow' : ''}`}>
-                              <div className="flex-[1.5] flex flex-col gap-4 overflow-y-auto pr-2 custom-scrollbar">
-                                 <div dangerouslySetInnerHTML={{ __html: el.data.promptHtml }} className="w-full whitespace-pre-wrap break-words border-b border-gray-200 pb-2 mb-2" />
-                                 <div className="flex gap-4">
-                                   <ul className="flex-1 flex flex-col gap-1 list-disc pl-4">
-                                     {col1.map((w, i) => <li key={`w1-${i}`} className="text-xs font-bold text-gray-700 tracking-wider">{w}</li>)}
-                                   </ul>
-                                   <ul className="flex-1 flex flex-col gap-1 list-disc pl-4">
-                                     {col2.map((w, i) => <li key={`w2-${i}`} className="text-xs font-bold text-gray-700 tracking-wider">{w}</li>)}
-                                   </ul>
-                                 </div>
-                              </div>
-
-                              <div className="flex-[2] flex items-center justify-center p-2">
-                                 <div 
-                                   style={{
-                                     display: 'grid',
-                                     gridTemplateColumns: `repeat(${el.data.size || 10}, 1fr)`,
-                                     borderWidth: '2px', borderStyle: 'solid', borderColor: el.data.lineColor, backgroundColor: el.data.cellColor
-                                   }}
-                                   className="shadow-sm max-w-full max-h-full aspect-square w-full"
-                                 >
-                                   {el.data.grid?.map((row, rIdx) => 
-                                     row.map((char, cIdx) => {
-                                        const cellId = `${el.id}_${rIdx}_${cIdx}`;
-                                        const isSelected = isPreviewMode && (studentAnswers[`${el.id}_cells`] || []).includes(cellId);
-                                        return (
-                                          <div 
-                                            key={cellId} 
-                                            onClick={() => {
-                                              if (isPreviewMode) {
-                                                 setStudentAnswers(prev => {
-                                                   const currentCells = prev[`${el.id}_cells`] || [];
-                                                   const newCells = currentCells.includes(cellId) ? currentCells.filter(c => c !== cellId) : [...currentCells, cellId];
-                                                   return { ...prev, [`${el.id}_cells`]: newCells };
-                                                 });
-                                              }
-                                            }}
-                                            style={{
-                                              color: el.data.textColor, fontSize: `${el.data.fontSize}px`, fontFamily: el.data.fontFamily, fontWeight: el.data.isBold ? 'bold' : 'normal',
-                                              borderRight: cIdx < (el.data.size - 1) ? `1px solid ${el.data.lineColor}` : 'none',
-                                              borderBottom: rIdx < (el.data.size - 1) ? `1px solid ${el.data.lineColor}` : 'none',
-                                              backgroundColor: isSelected ? 'rgba(234, 179, 8, 0.4)' : 'transparent',
-                                              cursor: isPreviewMode ? 'pointer' : 'default'
-                                            }}
-                                            className={`flex items-center justify-center transition-colors ${isPreviewMode ? 'hover:bg-yellow-500/20' : ''}`}
-                                          >
-                                            {char}
-                                          </div>
-                                        )
-                                     })
-                                   )}
-                                 </div>
-                              </div>
-                           </div>
-                         );
-                      })()}
-
-                      {el.type === 'text' && (
-                        <div className={`w-full h-full relative ${editingTextId === el.id || (selectedElementId === el.id && !isPreviewMode) ? 'ring-2 ring-student-yellow rounded bg-white shadow-xl' : ''}`}>
-                          {editingTextId === el.id && (
-                            <div className="absolute -top-14 left-0 bg-white shadow-xl rounded-xl border border-gray-200 p-1.5 flex gap-2 z-[100] items-center animate-fade-in">
-                              <div className="flex border border-gray-200 rounded overflow-hidden">
-                                <button onMouseDown={(e)=>{e.preventDefault(); handleTextFormat('bold');}} className="w-8 h-8 font-bold text-gray-700 hover:bg-gray-100 hover:text-outloud-blue">B</button>
-                                <button onMouseDown={(e)=>{e.preventDefault(); handleTextFormat('italic');}} className="w-8 h-8 italic text-gray-700 hover:bg-gray-100 hover:text-outloud-blue border-l border-gray-200">I</button>
-                                <button onMouseDown={(e)=>{e.preventDefault(); handleTextFormat('underline');}} className="w-8 h-8 underline text-gray-700 hover:bg-gray-100 hover:text-outloud-blue border-l border-gray-200">U</button>
-                              </div>
-                              <input type="color" onMouseDown={(e)=>e.preventDefault()} onChange={(e) => handleTextFormat('foreColor', e.target.value)} className="w-8 h-8 rounded cursor-pointer border border-gray-200" title="Text Color" />
-                              <div className="relative">
-                                <button onMouseDown={(e)=>e.preventDefault()} onClick={() => setTextDropdown(textDropdown === 'size' ? null : 'size')} className="p-1.5 px-2 border border-gray-200 rounded text-xs font-semibold focus:outline-none cursor-pointer flex items-center gap-1 bg-white hover:bg-gray-50">Size... <span className="text-[10px]">▼</span></button>
-                                {textDropdown === 'size' && (
-                                  <div className="absolute top-full left-0 mt-1 w-16 max-h-40 overflow-y-auto bg-white border border-gray-200 rounded shadow-lg z-[200] custom-scrollbar">
-                                    {[8,10,12,14,16,18,20,24,28,32,36,42,48,60,72].map(sz => <div key={sz} onMouseDown={(e) => e.preventDefault()} onClick={() => { handleTextFormat('fontSizePx', sz); setTextDropdown(null); }} className="px-2 py-1 hover:bg-gray-100 cursor-pointer text-xs text-center">{sz}px</div>)}
-                                  </div>
-                                )}
-                              </div>
-                              <div className="relative">
-                                <button onMouseDown={(e)=>e.preventDefault()} onClick={() => setTextDropdown(textDropdown === 'font' ? null : 'font')} className="p-1.5 px-2 border border-gray-200 rounded text-xs font-semibold focus:outline-none cursor-pointer flex items-center gap-1 bg-white w-24 justify-between hover:bg-gray-50">Font... <span className="text-[10px]">▼</span></button>
-                                {textDropdown === 'font' && (
-                                  <div className="absolute top-full left-0 mt-1 w-36 max-h-40 overflow-y-auto bg-white border border-gray-200 rounded shadow-lg z-[200] custom-scrollbar">
-                                    {[{ name: 'Montserrat', family: 'Montserrat, sans-serif' }, { name: 'Tabarra', family: 'Tabarra, sans-serif' }, { name: 'Arial', family: 'Arial, sans-serif' }, { name: 'Times New Roman', family: '"Times New Roman", serif' }, { name: 'Courier New', family: '"Courier New", monospace' }, { name: 'Comic Sans MS', family: '"Comic Sans MS", cursive, sans-serif' }, { name: 'Impact', family: 'Impact, sans-serif' }].map(f => <div key={f.name} onMouseDown={(e) => e.preventDefault()} onClick={() => { handleTextFormat('fontName', f.family); setTextDropdown(null); }} className="px-2 py-1.5 hover:bg-gray-100 cursor-pointer text-xs" style={{fontFamily: f.family}}>{f.name}</div>)}
-                                  </div>
-                                )}
-                              </div>
-                              <div className="w-[1px] h-6 bg-gray-200 mx-1"></div>
-                              <button onMouseDown={(e)=>{e.preventDefault(); setEditingTextId(null);}} className="text-[10px] font-bold uppercase tracking-wider bg-student-yellow text-outloud-blue px-3 py-1.5 rounded shadow-sm hover:scale-105 active:scale-95">DONE</button>
                             </div>
                           )}
-                          <div contentEditable={editingTextId === el.id} dangerouslySetInnerHTML={{__html: el.htmlContent}} onDoubleClick={() => !isPreviewMode && setEditingTextId(el.id)} onBlur={(e) => handleTextBlurSave(el.id, e.target.innerHTML)} suppressContentEditableWarning className={`w-full h-full rich-text-content ${editingTextId === el.id ? 'cursor-text p-2' : 'cursor-default pointer-events-none'}`} style={{ minHeight: '40px', overflowWrap: 'break-word' }} />
-                        </div>
-                      )}
+                          
+                          {el.type === 'video' && <div className={`w-full h-full bg-black rounded-2xl overflow-hidden shadow-2xl border-4 ${!isPreviewMode ? 'border-outloud-blue/20' : 'border-transparent'}`}><video src={el.url} controls className="w-full h-full object-cover" preload="metadata" /></div>}
+                          {el.type === 'image' && <div className={`w-full h-full bg-transparent overflow-hidden ${!isPreviewMode ? 'border-4 border-outloud-blue/20' : ''}`} style={{ borderRadius: '1rem', position: 'relative' }}><img src={el.url} alt="Canvas element" draggable={false} style={{ position: 'absolute', left: `${el.imgX ?? 0}px`, top: `${el.imgY ?? 0}px`, width: `${el.imgW ?? el.width}px`, height: `${el.imgH ?? el.height}px`, maxWidth: 'none', maxHeight: 'none' }} /></div>}
+                          {el.type === 'audio' && <div className={`w-full h-full bg-white/80 backdrop-blur-md rounded-2xl shadow-xl flex items-center justify-center px-4 border-4 ${!isPreviewMode ? 'border-outloud-blue/20' : 'border-white/50'}`}><audio src={el.url} controls className="w-full" preload="metadata" /></div>}
 
-                      {/* --- DRAG AND DROP RENDERER WITH TOUCH SUPPORT AND SYNCED GRID --- */}
-                      {el.type === 'drag_and_drop' && el.data && (() => {
-                         const validItemsCount = el.data.items.filter(i => i.imageUrl).length || 1;
-                         const gridStyle = { display: 'grid', gridTemplateColumns: `repeat(${validItemsCount}, 1fr)`, gap: '1.5rem', width: '100%', justifyItems: 'stretch' };
+                          {el.type === 'record_compare' && (
+                            <div className={`w-full h-full flex flex-col items-center justify-center transition-all ${isPreviewMode ? 'cursor-pointer hover:scale-105 active:scale-95' : 'opacity-80'}`} onClick={() => isPreviewMode && handleRcClick(el.id)}>
+                              <div className={`w-full h-full rounded-full shadow-2xl flex items-center justify-center transition-colors duration-300 border-4 ${rcPhase === 'RECORDING' ? 'bg-red-600 border-red-300' : rcPhase === 'PLAYING' ? 'bg-green-500 border-green-300' : 'bg-outloud-blue border-transparent'}`}>
+                                {(rcPhase === 'IDLE' || rcPhase === 'RECORDING') && (<svg className="w-1/2 h-1/2 text-white pointer-events-none" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>)}
+                                {(rcPhase === 'HAS_RECORDING' || rcPhase === 'PLAYING') && (<svg className="w-1/2 h-1/2 text-white pointer-events-none" fill="currentColor" viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>)}
+                                {rcPhase === 'RETRY' && (<svg className="w-1/2 h-1/2 text-white pointer-events-none" fill="currentColor" viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>)}
+                              </div>
+                              <span className={`absolute -bottom-8 font-montserrat font-black tracking-widest text-xs whitespace-nowrap ${rcTextColor} ${rcAnimation}`}>{rcText}</span>
+                            </div>
+                          )}
 
-                         return (
-                          <div className={`w-full h-full flex flex-col justify-between p-4 bg-white/60 backdrop-blur rounded-2xl border-4 border-dashed border-gray-300 ${selectedElementId === el.id && !isPreviewMode ? 'ring-2 ring-student-yellow' : ''}`}>
-                             <div style={gridStyle}>
-                               {el.data.items.map((item, idx) => item.imageUrl ? (
-                                 <div key={idx} className="flex flex-col items-center gap-4 w-full">
-                                   <div className="w-full aspect-square bg-gray-100 rounded-xl overflow-hidden shadow-sm border border-gray-200"><img src={item.imageUrl} alt={`Target ${idx}`} className="w-full h-full object-cover" draggable={false} /></div>
-                                   <div data-dnd-zone={`${el.id}_${idx}`} className={`dnd-sync-${el.id} w-full flex items-center justify-center transition-colors relative`} onDragOver={(e) => isPreviewMode && e.preventDefault()} onDrop={(e) => { if (isPreviewMode) { e.preventDefault(); const droppedText = e.dataTransfer.getData('text/plain'); setDndAnswers(prev => ({...prev, [`${el.id}_${idx}`]: droppedText})); } }}>
-                                      {dndAnswers[`${el.id}_${idx}`] ? (
-                                         <div style={{...renderDndPillStyle(el.data), width: '100%', height: '100%'}} className="flex items-center justify-center shadow-sm">{dndAnswers[`${el.id}_${idx}`]}</div>
-                                      ) : (
-                                         <div className="w-full h-full rounded-xl border-2 border-dashed border-gray-400 flex items-center justify-center bg-white/50 absolute inset-0"><span className="text-gray-300 text-[10px] font-bold uppercase tracking-widest pointer-events-none p-2 text-center break-words leading-tight">Drop Here</span></div>
-                                      )}
+                          {el.type === 'shape' && (
+                            <div className={`w-full h-full relative ${selectedElementId === el.id && !isPreviewMode ? 'ring-2 ring-student-yellow' : ''}`} style={{ opacity: (el.data.opacity || 100) / 100 }}>
+                              <svg width={el.width} height={el.height} style={{overflow: 'visible'}}>
+                                {renderShapeSVG(el.data, el.width, el.height)}
+                              </svg>
+                            </div>
+                          )}
+
+                          {el.type === 'fill_in_the_blank' && (
+                            <div className={`w-full h-full p-4 relative ${selectedElementId === el.id && !isPreviewMode ? 'ring-2 ring-student-yellow rounded-xl' : ''}`} style={{ backgroundColor: el.data.t_boxColor, borderColor: el.data.t_lineColor, borderWidth: '2px', borderStyle: 'solid', borderRadius: `${el.data.t_borderRadius}px` }}>
+                              {renderFormattedText(el, isPreviewMode)}
+                            </div>
+                          )}
+
+                          {el.type === 'short_answer' && el.data && (
+                            <div className={`w-full h-full p-4 flex flex-col gap-3 relative ${selectedElementId === el.id && !isPreviewMode ? 'ring-2 ring-student-yellow rounded-xl' : ''}`}>
+                               <div dangerouslySetInnerHTML={{ __html: el.data.questionHtml }} className="w-full whitespace-pre-wrap word-break" />
+                               <input type="text" disabled={!isPreviewMode} placeholder={isPreviewMode ? "" : "Student answer box..."} value={isPreviewMode ? (studentAnswers[el.id] || '') : ''} onChange={(e) => isPreviewMode && setStudentAnswers(prev => ({...prev, [el.id]: e.target.value}))} style={{ backgroundColor: el.data.boxColor === 'transparent' ? 'transparent' : el.data.boxColor, borderColor: el.data.lineColor === 'transparent' ? 'transparent' : el.data.lineColor, borderWidth: el.data.lineColor === 'transparent' ? '0px' : '2px', borderStyle: 'solid', borderRadius: `${el.data.borderRadius}px`, color: el.data.textColor, fontSize: `${el.data.fontSize}px`, fontFamily: el.data.fontFamily, padding: '8px 12px', width: '100%', outline: 'none' }} className={!isPreviewMode ? 'pointer-events-none' : 'focus:ring-2 focus:ring-student-yellow transition'} />
+                            </div>
+                          )}
+
+                          {el.type === 'multiple_selection' && el.data && (
+                            <div className={`w-full h-full flex flex-col p-4 relative ${selectedElementId === el.id && !isPreviewMode ? 'ring-2 ring-student-yellow rounded-xl' : ''}`} style={{ backgroundColor: 'transparent' }}>
+                               <div className="mb-6 flex-shrink-0 flex justify-center items-center w-full">
+                                  {el.data.promptType === 'image' && el.data.promptUrl ? (
+                                     <div className="w-full max-h-48 overflow-hidden flex justify-center rounded-xl shadow-sm border border-gray-200"><img src={el.data.promptUrl} alt="Prompt" className="w-full h-full object-contain bg-white" /></div>
+                                  ) : <div dangerouslySetInnerHTML={{ __html: el.data.promptHtml }} className="w-full whitespace-pre-wrap break-words text-center" />}
+                               </div>
+                               <div className="flex-grow grid grid-cols-2 gap-4 auto-rows-fr">
+                                  {el.data.options.map((opt) => {
+                                     const isSelected = isPreviewMode && (studentAnswers[`${el.id}_${opt.id}`] === true);
+                                     return (
+                                        <div key={opt.id} onClick={() => { if (isPreviewMode) { setStudentAnswers(prev => ({ ...prev, [`${el.id}_${opt.id}`]: !prev[`${el.id}_${opt.id}`] })); } }} style={{ backgroundColor: isSelected ? '#eab308' : (el.data.optBoxColor === 'transparent' ? 'transparent' : el.data.optBoxColor), borderColor: isSelected ? '#ca8a04' : (el.data.optLineColor === 'transparent' ? 'transparent' : el.data.optLineColor), borderWidth: (el.data.optLineColor === 'transparent' && !isSelected) ? '0px' : '2px', borderStyle: 'solid', borderRadius: `${el.data.optBorderRadius}px`, cursor: isPreviewMode ? 'pointer' : 'default', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }} className={`transition-all ${isPreviewMode ? 'hover:scale-[1.02] active:scale-95 shadow-sm' : ''}`}>
+                                           <div dangerouslySetInnerHTML={{ __html: opt.html }} className="pointer-events-none w-full whitespace-pre-wrap break-words" />
+                                        </div>
+                                     )
+                                  })}
+                               </div>
+                            </div>
+                          )}
+
+                          {el.type === 'slider_bar' && el.data && (() => {
+                             const isVert = el.data.orientation === 'vertical';
+                             const opts = el.data.options || [];
+                             const maxIdx = Math.max(0, opts.length - 1);
+                             const defaultIdx = Math.floor(maxIdx / 2);
+                             const currentIdx = studentAnswers[el.id] !== undefined ? parseInt(studentAnswers[el.id]) : defaultIdx;
+                             const activeOpt = opts[currentIdx] || {};
+                             const pct = maxIdx === 0 ? 50 : (currentIdx / maxIdx) * 100;
+
+                             return (
+                               <div className={`w-full h-full relative flex items-center justify-center pointer-events-none ${selectedElementId === el.id && !isPreviewMode ? 'ring-2 ring-student-yellow rounded-xl' : ''}`}>
+                                  <div className="absolute flex items-center justify-center rounded-full shadow-inner overflow-hidden" style={{ backgroundColor: el.data.barColor, width: isVert ? `${el.data.barThickness}px` : '100%', height: isVert ? '100%' : `${el.data.barThickness}px`, opacity: 1 }}>
+                                     {el.data.barText && <span className="absolute font-bold text-xs uppercase tracking-widest whitespace-nowrap opacity-100" style={{ color: el.data.barTextColor, transform: isVert ? 'rotate(-90deg)' : 'none' }}>{el.data.barText}</span>}
+                                  </div>
+                                  <input type="range" min="0" max={maxIdx} step="1" disabled={!isPreviewMode} value={currentIdx} onChange={(e) => isPreviewMode && setStudentAnswers(prev => ({...prev, [el.id]: e.target.value}))} className="absolute custom-slider w-full h-full pointer-events-auto" style={{ '--thumb-color': el.data.handleColor, transform: isVert ? 'rotate(-90deg)' : 'none', WebkitAppearance: 'none', background: 'transparent' }} />
+                                  { !isVert && (
+                                     <div className="absolute flex flex-col items-center transition-all duration-200 pointer-events-none z-50" style={{ left: `${pct}%`, bottom: 'calc(50% + 18px)', transform: 'translateX(-50%)' }}>
+                                        <div className="bg-white/95 backdrop-blur px-4 py-2 rounded-xl shadow-lg border border-gray-200 whitespace-nowrap animate-fade-in" style={{ color: el.data.textColor, fontSize: `${el.data.fontSize}px`, fontFamily: el.data.fontFamily, fontWeight: 'bold' }}>{activeOpt.text}</div>
+                                        <div className="w-0 h-0 border-solid" style={{ borderWidth: '8px 6px 0 6px', borderColor: 'rgba(255,255,255,0.95) transparent transparent transparent' }} />
+                                     </div>
+                                  )}
+                                  { isVert && (
+                                     <div className="absolute flex items-center transition-all duration-200 pointer-events-none z-50" style={{ bottom: `${pct}%`, right: 'calc(50% + 18px)', transform: 'translateY(50%)' }}>
+                                        <div className="bg-white/95 backdrop-blur px-4 py-2 rounded-xl shadow-lg border border-gray-200 whitespace-nowrap animate-fade-in" style={{ color: el.data.textColor, fontSize: `${el.data.fontSize}px`, fontFamily: el.data.fontFamily, fontWeight: 'bold' }}>{activeOpt.text}</div>
+                                        <div className="w-0 h-0 border-solid" style={{ borderWidth: '6px 0 6px 8px', borderColor: 'transparent transparent transparent rgba(255,255,255,0.95)' }} />
+                                     </div>
+                                  )}
+                               </div>
+                             );
+                          })()}
+
+                          {/* --- CROSSWORD RENDERER --- */}
+                          {el.type === 'crossword' && el.data && (
+                            <div className={`w-full h-full p-4 flex flex-row gap-6 relative bg-white/80 backdrop-blur rounded-2xl shadow-sm border border-gray-200 ${selectedElementId === el.id && !isPreviewMode ? 'ring-2 ring-student-yellow' : ''}`}>
+                               <div className="flex-1 flex flex-col gap-4 overflow-y-auto pr-2 custom-scrollbar">
+                                  <h3 className="font-bold text-outloud-blue text-sm uppercase">Prompts</h3>
+                                  <div className="flex gap-4">
+                                    <div className="flex-1 flex flex-col gap-2">
+                                      <h4 className="text-xs font-bold text-gray-500 uppercase border-b border-gray-200 pb-1">Across</h4>
+                                      {el.data.across?.map((a) => (
+                                        <div key={`a-${a.num}`} className="text-xs text-gray-700 flex gap-2"><span className="font-bold">{a.num}.</span><span>{a.prompt}</span></div>
+                                      ))}
+                                    </div>
+                                    <div className="flex-1 flex flex-col gap-2">
+                                      <h4 className="text-xs font-bold text-gray-500 uppercase border-b border-gray-200 pb-1">Down</h4>
+                                      {el.data.down?.map((d) => (
+                                        <div key={`d-${d.num}`} className="text-xs text-gray-700 flex gap-2"><span className="font-bold">{d.num}.</span><span>{d.prompt}</span></div>
+                                      ))}
+                                    </div>
+                                  </div>
+                               </div>
+
+                               <div className="flex-[2] flex items-center justify-center bg-gray-50 rounded-xl border border-gray-200 p-2 overflow-auto custom-scrollbar">
+                                  <div 
+                                    style={{
+                                      display: 'grid',
+                                      gridTemplateColumns: `repeat(${el.data.grid[0]?.length || 1}, minmax(30px, 1fr))`,
+                                      gap: '2px',
+                                      width: 'fit-content'
+                                    }}
+                                  >
+                                    {el.data.grid.map((row, rIdx) => 
+                                      row.map((cell, cIdx) => (
+                                        <div key={`${rIdx}-${cIdx}`} className="relative aspect-square w-8 md:w-10">
+                                          {cell ? (
+                                            <div className="w-full h-full relative">
+                                              {cell.num && <span className="absolute top-0.5 left-1 text-[8px] font-bold text-gray-400 z-10 pointer-events-none">{cell.num}</span>}
+                                              <input 
+                                                type="text" 
+                                                maxLength={1}
+                                                disabled={!isPreviewMode}
+                                                value={isPreviewMode ? (studentAnswers[`${el.id}_${rIdx}_${cIdx}`] || '') : cell.char}
+                                                onChange={(e) => {
+                                                  if(isPreviewMode) {
+                                                    const val = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
+                                                    setStudentAnswers(prev => ({...prev, [`${el.id}_${rIdx}_${cIdx}`]: val}));
+                                                  }
+                                                }}
+                                                style={{
+                                                  backgroundColor: el.data.cellColor, borderColor: el.data.lineColor, color: el.data.textColor, fontSize: `${el.data.fontSize}px`, fontFamily: el.data.fontFamily, fontWeight: el.data.isBold ? 'bold' : 'normal'
+                                                }}
+                                                className="w-full h-full text-center uppercase border focus:outline-none focus:ring-2 focus:ring-student-yellow transition"
+                                              />
+                                            </div>
+                                          ) : (
+                                            <div className="w-full h-full bg-transparent" />
+                                          )}
+                                        </div>
+                                      ))
+                                    )}
+                                  </div>
+                               </div>
+                            </div>
+                          )}
+
+                          {/* --- WORD SEARCH RENDERER --- */}
+                          {el.type === 'word_search' && el.data && (() => {
+                             const targetWords = el.data.targetWords || [];
+                             const half = Math.ceil(targetWords.length / 2);
+                             const col1 = targetWords.slice(0, half);
+                             const col2 = targetWords.slice(half);
+
+                             return (
+                               <div className={`w-full h-full p-4 flex flex-row gap-6 relative bg-white/80 backdrop-blur rounded-2xl shadow-sm border border-gray-200 ${selectedElementId === el.id && !isPreviewMode ? 'ring-2 ring-student-yellow' : ''}`}>
+                                  <div className="flex-[1.5] flex flex-col gap-4 overflow-y-auto pr-2 custom-scrollbar">
+                                     <div dangerouslySetInnerHTML={{ __html: el.data.promptHtml }} className="w-full whitespace-pre-wrap break-words border-b border-gray-200 pb-2 mb-2" />
+                                     <div className="flex gap-4">
+                                       <ul className="flex-1 flex flex-col gap-1 list-disc pl-4">
+                                         {col1.map((w, i) => <li key={`w1-${i}`} className="text-xs font-bold text-gray-700 tracking-wider">{w}</li>)}
+                                       </ul>
+                                       <ul className="flex-1 flex flex-col gap-1 list-disc pl-4">
+                                         {col2.map((w, i) => <li key={`w2-${i}`} className="text-xs font-bold text-gray-700 tracking-wider">{w}</li>)}
+                                       </ul>
+                                     </div>
+                                  </div>
+
+                                  <div className="flex-[2] flex items-center justify-center p-2">
+                                     <div 
+                                       style={{
+                                         display: 'grid',
+                                         gridTemplateColumns: `repeat(${el.data.size || 10}, 1fr)`,
+                                         borderWidth: '2px', borderStyle: 'solid', borderColor: el.data.lineColor, backgroundColor: el.data.cellColor
+                                       }}
+                                       className="shadow-sm max-w-full max-h-full aspect-square w-full"
+                                     >
+                                       {el.data.grid?.map((row, rIdx) => 
+                                         row.map((char, cIdx) => {
+                                            const cellId = `${el.id}_${rIdx}_${cIdx}`;
+                                            const isSelected = isPreviewMode && (studentAnswers[`${el.id}_cells`] || []).includes(cellId);
+                                            return (
+                                              <div 
+                                                key={cellId} 
+                                                onClick={() => {
+                                                  if (isPreviewMode) {
+                                                     setStudentAnswers(prev => {
+                                                       const currentCells = prev[`${el.id}_cells`] || [];
+                                                       const newCells = currentCells.includes(cellId) ? currentCells.filter(c => c !== cellId) : [...currentCells, cellId];
+                                                       return { ...prev, [`${el.id}_cells`]: newCells };
+                                                     });
+                                                  }
+                                                }}
+                                                style={{
+                                                  color: el.data.textColor, fontSize: `${el.data.fontSize}px`, fontFamily: el.data.fontFamily, fontWeight: el.data.isBold ? 'bold' : 'normal',
+                                                  borderRight: cIdx < (el.data.size - 1) ? `1px solid ${el.data.lineColor}` : 'none',
+                                                  borderBottom: rIdx < (el.data.size - 1) ? `1px solid ${el.data.lineColor}` : 'none',
+                                                  backgroundColor: isSelected ? 'rgba(234, 179, 8, 0.4)' : 'transparent',
+                                                  cursor: isPreviewMode ? 'pointer' : 'default'
+                                                }}
+                                                className={`flex items-center justify-center transition-colors ${isPreviewMode ? 'hover:bg-yellow-500/20' : ''}`}
+                                              >
+                                                {char}
+                                              </div>
+                                            )
+                                         })
+                                       )}
+                                     </div>
+                                  </div>
+                               </div>
+                             );
+                          })()}
+
+                          {el.type === 'text' && (
+                            <div className={`w-full h-full relative ${editingTextId === el.id || (selectedElementId === el.id && !isPreviewMode) ? 'ring-2 ring-student-yellow rounded bg-white shadow-xl' : ''}`}>
+                              {editingTextId === el.id && (
+                                <div className="absolute -top-14 left-0 bg-white shadow-xl rounded-xl border border-gray-200 p-1.5 flex gap-2 z-[100] items-center animate-fade-in">
+                                  <div className="flex border border-gray-200 rounded overflow-hidden">
+                                    <button onMouseDown={(e)=>{e.preventDefault(); handleTextFormat('bold');}} className="w-8 h-8 font-bold text-gray-700 hover:bg-gray-100 hover:text-outloud-blue">B</button>
+                                    <button onMouseDown={(e)=>{e.preventDefault(); handleTextFormat('italic');}} className="w-8 h-8 italic text-gray-700 hover:bg-gray-100 hover:text-outloud-blue border-l border-gray-200">I</button>
+                                    <button onMouseDown={(e)=>{e.preventDefault(); handleTextFormat('underline');}} className="w-8 h-8 underline text-gray-700 hover:bg-gray-100 hover:text-outloud-blue border-l border-gray-200">U</button>
+                                  </div>
+                                  <input type="color" onMouseDown={(e)=>e.preventDefault()} onChange={(e) => handleTextFormat('foreColor', e.target.value)} className="w-8 h-8 rounded cursor-pointer border border-gray-200" title="Text Color" />
+                                  <div className="relative">
+                                    <button onMouseDown={(e)=>e.preventDefault()} onClick={() => setTextDropdown(textDropdown === 'size' ? null : 'size')} className="p-1.5 px-2 border border-gray-200 rounded text-xs font-semibold focus:outline-none cursor-pointer flex items-center gap-1 bg-white hover:bg-gray-50">Size... <span className="text-[10px]">▼</span></button>
+                                    {textDropdown === 'size' && (
+                                      <div className="absolute top-full left-0 mt-1 w-16 max-h-40 overflow-y-auto bg-white border border-gray-200 rounded shadow-lg z-[200] custom-scrollbar">
+                                        {[8,10,12,14,16,18,20,24,28,32,36,42,48,60,72].map(sz => <div key={sz} onMouseDown={(e) => e.preventDefault()} onClick={() => { handleTextFormat('fontSizePx', sz); setTextDropdown(null); }} className="px-2 py-1 hover:bg-gray-100 cursor-pointer text-xs text-center">{sz}px</div>)}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="relative">
+                                    <button onMouseDown={(e)=>e.preventDefault()} onClick={() => setTextDropdown(textDropdown === 'font' ? null : 'font')} className="p-1.5 px-2 border border-gray-200 rounded text-xs font-semibold focus:outline-none cursor-pointer flex items-center gap-1 bg-white w-24 justify-between hover:bg-gray-50">Font... <span className="text-[10px]">▼</span></button>
+                                    {textDropdown === 'font' && (
+                                      <div className="absolute top-full left-0 mt-1 w-36 max-h-40 overflow-y-auto bg-white border border-gray-200 rounded shadow-lg z-[200] custom-scrollbar">
+                                        {[{ name: 'Montserrat', family: 'Montserrat, sans-serif' }, { name: 'Tabarra', family: 'Tabarra, sans-serif' }, { name: 'Arial', family: 'Arial, sans-serif' }, { name: 'Times New Roman', family: '"Times New Roman", serif' }, { name: 'Courier New', family: '"Courier New", monospace' }, { name: 'Comic Sans MS', family: '"Comic Sans MS", cursive, sans-serif' }, { name: 'Impact', family: 'Impact, sans-serif' }].map(f => <div key={f.name} onMouseDown={(e) => e.preventDefault()} onClick={() => { handleTextFormat('fontName', f.family); setTextDropdown(null); }} className="px-2 py-1.5 hover:bg-gray-100 cursor-pointer text-xs" style={{fontFamily: f.family}}>{f.name}</div>)}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="w-[1px] h-6 bg-gray-200 mx-1"></div>
+                                  <button onMouseDown={(e)=>{e.preventDefault(); setEditingTextId(null);}} className="text-[10px] font-bold uppercase tracking-wider bg-student-yellow text-outloud-blue px-3 py-1.5 rounded shadow-sm hover:scale-105 active:scale-95">DONE</button>
+                                </div>
+                              )}
+                              <div contentEditable={editingTextId === el.id} dangerouslySetInnerHTML={{__html: el.htmlContent}} onDoubleClick={() => !isPreviewMode && setEditingTextId(el.id)} onBlur={(e) => handleTextBlurSave(el.id, e.target.innerHTML)} suppressContentEditableWarning className={`w-full h-full rich-text-content ${editingTextId === el.id ? 'cursor-text p-2' : 'cursor-default pointer-events-none'}`} style={{ minHeight: '40px', overflowWrap: 'break-word' }} />
+                            </div>
+                          )}
+
+                          {/* --- DRAG AND DROP RENDERER WITH TOUCH SUPPORT AND SYNCED GRID --- */}
+                          {el.type === 'drag_and_drop' && el.data && (() => {
+                             const validItemsCount = el.data.items.filter(i => i.imageUrl).length || 1;
+                             const gridStyle = { display: 'grid', gridTemplateColumns: `repeat(${validItemsCount}, 1fr)`, gap: '1.5rem', width: '100%', justifyItems: 'stretch' };
+
+                             return (
+                              <div className={`w-full h-full flex flex-col justify-between p-4 bg-white/60 backdrop-blur rounded-2xl border-4 border-dashed border-gray-300 ${selectedElementId === el.id && !isPreviewMode ? 'ring-2 ring-student-yellow' : ''}`}>
+                                 <div style={gridStyle}>
+                                   {el.data.items.map((item, idx) => item.imageUrl ? (
+                                     <div key={idx} className="flex flex-col items-center gap-4 w-full">
+                                       <div className="w-full aspect-square bg-gray-100 rounded-xl overflow-hidden shadow-sm border border-gray-200"><img src={item.imageUrl} alt={`Target ${idx}`} className="w-full h-full object-cover" draggable={false} /></div>
+                                       <div data-dnd-zone={`${el.id}_${idx}`} className={`dnd-sync-${el.id} w-full flex items-center justify-center transition-colors relative`} onDragOver={(e) => isPreviewMode && e.preventDefault()} onDrop={(e) => { if (isPreviewMode) { e.preventDefault(); const droppedText = e.dataTransfer.getData('text/plain'); setDndAnswers(prev => ({...prev, [`${el.id}_${idx}`]: droppedText})); } }}>
+                                          {dndAnswers[`${el.id}_${idx}`] ? (
+                                             <div style={{...renderDndPillStyle(el.data), width: '100%', height: '100%'}} className="flex items-center justify-center shadow-sm">{dndAnswers[`${el.id}_${idx}`]}</div>
+                                          ) : (
+                                             <div className="w-full h-full rounded-xl border-2 border-dashed border-gray-400 flex items-center justify-center bg-white/50 absolute inset-0"><span className="text-gray-300 text-[10px] font-bold uppercase tracking-widest pointer-events-none p-2 text-center break-words leading-tight">Drop Here</span></div>
+                                          )}
+                                       </div>
+                                     </div>
+                                   ) : null)}
+                                 </div>
+                                 <div className="w-full bg-white p-4 rounded-xl shadow-inner border border-gray-200 mt-4">
+                                   <div className="text-center font-bold text-gray-400 text-[10px] uppercase tracking-widest mb-3">Word Bank</div>
+                                   <div style={gridStyle}>
+                                     {el.data.items.map((item, idx) => {
+                                        if (!item.studentViewText) return null;
+                                        const isDropped = Object.values(dndAnswers).includes(item.studentViewText);
+                                        return (
+                                          <div key={`pill-${idx}`} className={`dnd-sync-${el.id} w-full flex items-center justify-center ${isDropped && isPreviewMode ? 'opacity-0 pointer-events-none' : ''}`}>
+                                            <div draggable={isPreviewMode} onDragStart={(e) => { if (isPreviewMode) { e.dataTransfer.setData('text/plain', item.studentViewText); setDraggedItem(item.studentViewText); } }} onDragEnd={() => setDraggedItem(null)} onTouchStart={(e) => { if (isPreviewMode) { const touch = e.touches[0]; setTouchDragState({ isDragging: true, text: item.studentViewText, x: touch.clientX, y: touch.clientY, sourceElId: el.id }); document.body.style.overflow = 'hidden'; } }} style={{...renderDndPillStyle(el.data), width: '100%', height: '100%'}} className={`flex items-center justify-center shadow-sm hover:scale-[1.02] active:scale-95 transition-transform ${draggedItem === item.studentViewText || touchDragState.text === item.studentViewText ? 'opacity-50' : 'opacity-100'}`}>{item.studentViewText}</div>
+                                          </div>
+                                        );
+                                     })}
                                    </div>
                                  </div>
-                               ) : null)}
-                             </div>
-                             <div className="w-full bg-white p-4 rounded-xl shadow-inner border border-gray-200 mt-4">
-                               <div className="text-center font-bold text-gray-400 text-[10px] uppercase tracking-widest mb-3">Word Bank</div>
-                               <div style={gridStyle}>
-                                 {el.data.items.map((item, idx) => {
-                                    if (!item.studentViewText) return null;
-                                    const isDropped = Object.values(dndAnswers).includes(item.studentViewText);
-                                    return (
-                                      <div key={`pill-${idx}`} className={`dnd-sync-${el.id} w-full flex items-center justify-center ${isDropped && isPreviewMode ? 'opacity-0 pointer-events-none' : ''}`}>
-                                        <div draggable={isPreviewMode} onDragStart={(e) => { if (isPreviewMode) { e.dataTransfer.setData('text/plain', item.studentViewText); setDraggedItem(item.studentViewText); } }} onDragEnd={() => setDraggedItem(null)} onTouchStart={(e) => { if (isPreviewMode) { const touch = e.touches[0]; setTouchDragState({ isDragging: true, text: item.studentViewText, x: touch.clientX, y: touch.clientY, sourceElId: el.id }); document.body.style.overflow = 'hidden'; } }} style={{...renderDndPillStyle(el.data), width: '100%', height: '100%'}} className={`flex items-center justify-center shadow-sm hover:scale-[1.02] active:scale-95 transition-transform ${draggedItem === item.studentViewText || touchDragState.text === item.studentViewText ? 'opacity-50' : 'opacity-100'}`}>{item.studentViewText}</div>
-                                      </div>
-                                    );
-                                 })}
-                               </div>
-                             </div>
-                          </div>
-                         );
-                      })()}
+                              </div>
+                             );
+                          })()}
 
-                      {/* --- SHARED ADVANCED UI EDITING OVERLAYS --- */}
-                      {!isPreviewMode && !isTool && editingTextId !== el.id && (
-                        <div className={`absolute inset-0 pointer-events-none ${el.type === 'text' ? 'hover:ring-2 hover:ring-student-yellow hover:bg-yellow-50/10' : ''}`} style={{ pointerEvents: editingTextId === el.id ? 'none' : 'auto' }}>
-                          <div className="absolute -left-1.5 -top-1.5 w-3 h-3 bg-student-yellow border-2 border-outloud-blue rounded-sm cursor-nw-resize z-50" onPointerDown={(e) => handleResizeStart(e, el, 'nw')} />
-                          <div className="absolute -right-1.5 -top-1.5 w-3 h-3 bg-student-yellow border-2 border-outloud-blue rounded-sm cursor-ne-resize z-50" onPointerDown={(e) => handleResizeStart(e, el, 'ne')} />
-                          <div className="absolute -left-1.5 -bottom-1.5 w-3 h-3 bg-student-yellow border-2 border-outloud-blue rounded-sm cursor-sw-resize z-50" onPointerDown={(e) => handleResizeStart(e, el, 'sw')} />
-                          <div className="absolute -right-1.5 -bottom-1.5 w-3 h-3 bg-student-yellow border-2 border-outloud-blue rounded-sm cursor-se-resize z-50" onPointerDown={(e) => handleResizeStart(e, el, 'se')} />
-                          <div className="absolute -left-1.5 top-1/2 -translate-y-1/2 w-3 h-5 bg-student-yellow border-2 border-outloud-blue rounded-sm cursor-w-resize z-50" onPointerDown={(e) => handleResizeStart(e, el, 'w')} />
-                          <div className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-3 h-5 bg-student-yellow border-2 border-outloud-blue rounded-sm cursor-e-resize z-50" onPointerDown={(e) => handleResizeStart(e, el, 'e')} />
+                          {/* --- SHARED ADVANCED UI EDITING OVERLAYS --- */}
+                          {!isPreviewMode && !isTool && editingTextId !== el.id && (
+                            <div className={`absolute inset-0 pointer-events-none ${el.type === 'text' ? 'hover:ring-2 hover:ring-student-yellow hover:bg-yellow-50/10' : ''}`} style={{ pointerEvents: editingTextId === el.id ? 'none' : 'auto' }}>
+                              <div className="absolute -left-1.5 -top-1.5 w-3 h-3 bg-student-yellow border-2 border-outloud-blue rounded-sm cursor-nw-resize z-50" onPointerDown={(e) => handleResizeStart(e, el, 'nw')} />
+                              <div className="absolute -right-1.5 -top-1.5 w-3 h-3 bg-student-yellow border-2 border-outloud-blue rounded-sm cursor-ne-resize z-50" onPointerDown={(e) => handleResizeStart(e, el, 'ne')} />
+                              <div className="absolute -left-1.5 -bottom-1.5 w-3 h-3 bg-student-yellow border-2 border-outloud-blue rounded-sm cursor-sw-resize z-50" onPointerDown={(e) => handleResizeStart(e, el, 'sw')} />
+                              <div className="absolute -right-1.5 -bottom-1.5 w-3 h-3 bg-student-yellow border-2 border-outloud-blue rounded-sm cursor-se-resize z-50" onPointerDown={(e) => handleResizeStart(e, el, 'se')} />
+                              <div className="absolute -left-1.5 top-1/2 -translate-y-1/2 w-3 h-5 bg-student-yellow border-2 border-outloud-blue rounded-sm cursor-w-resize z-50" onPointerDown={(e) => handleResizeStart(e, el, 'w')} />
+                              <div className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-3 h-5 bg-student-yellow border-2 border-outloud-blue rounded-sm cursor-e-resize z-50" onPointerDown={(e) => handleResizeStart(e, el, 'e')} />
 
-                          <div className={`absolute -right-10 top-0 flex flex-col gap-1.5 z-50 ${selectedElementId === el.id ? 'opacity-100' : 'group-hover:opacity-100 opacity-0'} transition-opacity`}>
-                            {el.type !== 'text' && <button onPointerDown={(e) => { e.stopPropagation(); setEditingElementId(el.id); setActiveModal(el.type); }} className="w-7 h-7 bg-white rounded-full shadow flex items-center justify-center hover:bg-gray-100 transition border border-gray-200" title="Edit"><span role="img" aria-label="edit" className="text-sm pointer-events-none">✏️</span></button>}
-                            {el.type === 'text' && <button onPointerDown={(e) => { e.stopPropagation(); setEditingTextId(el.id); }} className="w-7 h-7 bg-white rounded-full shadow flex items-center justify-center hover:bg-gray-100 transition border border-gray-200" title="Edit Text"><span role="img" aria-label="edit" className="text-sm pointer-events-none">✏️</span></button>}
-                            <button onPointerDown={(e) => { e.stopPropagation(); handleDuplicateElement(el.id); }} className="w-7 h-7 bg-white rounded-full shadow flex items-center justify-center hover:bg-gray-100 transition border border-gray-200" title="Duplicate"><span role="img" aria-label="duplicate" className="text-sm pointer-events-none">📋</span></button>
-                            <button onPointerDown={(e) => handleRotateStart(e, el)} className="w-7 h-7 bg-white rounded-full shadow flex items-center justify-center cursor-alias hover:bg-gray-100 transition border border-gray-200" title="Rotate"><span role="img" aria-label="rotate" className="text-sm pointer-events-none">🔄</span></button>
-                            <button onPointerDown={(e) => handleDragStart(e, el.id, el.x, el.y)} className="w-7 h-7 bg-white rounded-full shadow flex items-center justify-center cursor-grab active:cursor-grabbing hover:bg-gray-100 transition border border-gray-200" title="Move"><span role="img" aria-label="move" className="text-sm pointer-events-none">🖐️</span></button>
-                            <button onPointerDown={(e) => { e.stopPropagation(); handleDeleteElement(el.id); }} className="w-7 h-7 bg-white rounded-full shadow flex items-center justify-center hover:bg-red-50 transition border border-gray-200" title="Delete"><span role="img" aria-label="delete" className="text-sm pointer-events-none">🗑️</span></button>
-                          </div>
+                              <div className={`absolute -right-10 top-0 flex flex-col gap-1.5 z-50 ${selectedElementId === el.id ? 'opacity-100' : 'group-hover:opacity-100 opacity-0'} transition-opacity`}>
+                                {el.type !== 'text' && <button onPointerDown={(e) => { e.stopPropagation(); setEditingElementId(el.id); setActiveModal(el.type); }} className="w-7 h-7 bg-white rounded-full shadow flex items-center justify-center hover:bg-gray-100 transition border border-gray-200" title="Edit"><span role="img" aria-label="edit" className="text-sm pointer-events-none">✏️</span></button>}
+                                {el.type === 'text' && <button onPointerDown={(e) => { e.stopPropagation(); setEditingTextId(el.id); }} className="w-7 h-7 bg-white rounded-full shadow flex items-center justify-center hover:bg-gray-100 transition border border-gray-200" title="Edit Text"><span role="img" aria-label="edit" className="text-sm pointer-events-none">✏️</span></button>}
+                                <button onPointerDown={(e) => { e.stopPropagation(); handleDuplicateElement(el.id); }} className="w-7 h-7 bg-white rounded-full shadow flex items-center justify-center hover:bg-gray-100 transition border border-gray-200" title="Duplicate"><span role="img" aria-label="duplicate" className="text-sm pointer-events-none">📋</span></button>
+                                <button onPointerDown={(e) => handleRotateStart(e, el)} className="w-7 h-7 bg-white rounded-full shadow flex items-center justify-center cursor-alias hover:bg-gray-100 transition border border-gray-200" title="Rotate"><span role="img" aria-label="rotate" className="text-sm pointer-events-none">🔄</span></button>
+                                <button onPointerDown={(e) => handleDragStart(e, el.id, el.x, el.y)} className="w-7 h-7 bg-white rounded-full shadow flex items-center justify-center cursor-grab active:cursor-grabbing hover:bg-gray-100 transition border border-gray-200" title="Move"><span role="img" aria-label="move" className="text-sm pointer-events-none">🖐️</span></button>
+                                <button onPointerDown={(e) => { e.stopPropagation(); handleDeleteElement(el.id); }} className="w-7 h-7 bg-white rounded-full shadow flex items-center justify-center hover:bg-red-50 transition border border-gray-200" title="Delete"><span role="img" aria-label="delete" className="text-sm pointer-events-none">🗑️</span></button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Standard Resize Handles for Image */}
+                          {!isPreviewMode && isTool && (
+                            <>
+                              {el.type === 'image' && <div className={`absolute -top-10 left-1/2 -translate-x-1/2 w-8 h-8 bg-white rounded-full shadow-lg border border-gray-200 ${selectedElementId === el.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-all z-[70] flex items-center justify-center cursor-alias hover:scale-110 hover:bg-gray-50`} onPointerDown={(e) => handleRotateStart(e, el)} title="Hold Shift to snap to 45° increments"><span role="img" aria-label="rotate" className="text-xs pointer-events-none">🔄</span></div>}
+                              {el.type === 'image' && RESIZE_HANDLES.map(handle => <div key={handle.id} className={`absolute w-6 h-6 bg-student-yellow rounded-full shadow-lg border-4 border-white ${selectedElementId === el.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity z-[70] hover:scale-110 flex items-center justify-center ${handle.classes}`} onPointerDown={(e) => handleResizeStart(e, el, handle.id)}><div className="w-1.5 h-1.5 bg-outloud-blue rounded-full opacity-50 pointer-events-none"></div></div>)}
+                              {el.type !== 'image' && <div className={`absolute -bottom-3 -right-3 w-6 h-6 bg-student-yellow rounded-full cursor-se-resize shadow-lg border-4 border-white ${selectedElementId === el.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity z-[70] flex items-center justify-center hover:scale-110`} onPointerDown={(e) => handleResizeStart(e, el, 'se')}><svg className="w-3 h-3 text-outloud-blue opacity-50 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg></div>}
+                            </>
+                          )}
                         </div>
-                      )}
+                      );
+                    })}
+                  </div>
 
-                      {/* Standard Resize Handles for Image */}
-                      {!isPreviewMode && isTool && (
-                        <>
-                          {el.type === 'image' && <div className={`absolute -top-10 left-1/2 -translate-x-1/2 w-8 h-8 bg-white rounded-full shadow-lg border border-gray-200 ${selectedElementId === el.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-all z-[70] flex items-center justify-center cursor-alias hover:scale-110 hover:bg-gray-50`} onPointerDown={(e) => handleRotateStart(e, el)} title="Hold Shift to snap to 45° increments"><span role="img" aria-label="rotate" className="text-xs pointer-events-none">🔄</span></div>}
-                          {el.type === 'image' && RESIZE_HANDLES.map(handle => <div key={handle.id} className={`absolute w-6 h-6 bg-student-yellow rounded-full shadow-lg border-4 border-white ${selectedElementId === el.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity z-[70] hover:scale-110 flex items-center justify-center ${handle.classes}`} onPointerDown={(e) => handleResizeStart(e, el, handle.id)}><div className="w-1.5 h-1.5 bg-outloud-blue rounded-full opacity-50 pointer-events-none"></div></div>)}
-                          {el.type !== 'image' && <div className={`absolute -bottom-3 -right-3 w-6 h-6 bg-student-yellow rounded-full cursor-se-resize shadow-lg border-4 border-white ${selectedElementId === el.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity z-[70] flex items-center justify-center hover:scale-110`} onPointerDown={(e) => handleResizeStart(e, el, 'se')}><svg className="w-3 h-3 text-outloud-blue opacity-50 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg></div>}
-                        </>
-                      )}
+                  {isPreviewMode && (
+                    <div className="w-full flex justify-center pb-8 pt-4 shrink-0 z-40 relative">
+                      <button onClick={() => handlePreviewContinue(screenId, (contentType === 'Lesson' ? lessonScreens : Array.from({length: workbookScreens}, (_, i) => i + 1))[index + 1])} className="bg-outloud-blue text-white font-black px-12 py-4 rounded-full shadow-lg text-sm uppercase tracking-widest hover:scale-105 active:scale-95 transition-transform animate-fade-in">
+                        {index === (contentType === 'Lesson' ? lessonScreens.length : workbookScreens) - 1 ? 'FINISH' : 'CONTINUE ⬇'}
+                      </button>
                     </div>
-                  );
-                })}
-              </div>
-
-              {isPreviewMode && (
-                <div className="w-full flex justify-center pb-8 pt-4 shrink-0 z-40 relative">
-                  <button onClick={() => handlePreviewContinue(screenId, (contentType === 'Lesson' ? lessonScreens : Array.from({length: workbookScreens}, (_, i) => i + 1))[index + 1])} className="bg-outloud-blue text-white font-black px-12 py-4 rounded-full shadow-lg text-sm uppercase tracking-widest hover:scale-105 active:scale-95 transition-transform animate-fade-in">
-                    {index === (contentType === 'Lesson' ? lessonScreens.length : workbookScreens) - 1 ? 'FINISH' : 'CONTINUE ⬇'}
-                  </button>
+                  )}
                 </div>
-              )}
+              </React.Fragment>
+            ))}
+          </div>
+
+          {!isPreviewMode && (
+            <div className="w-full flex flex-col items-center py-12 bg-[#eef5fc] z-20 border-t border-white/50 shadow-[0_-15px_30px_rgba(0,0,0,0.03)]">
+              <svg onClick={handleExpandWorkspace} className="w-12 h-12 text-outloud-blue cursor-pointer hover:scale-110 transition-transform animate-bounce" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+              <span className="text-[10px] font-bold text-outloud-blue font-montserrat uppercase tracking-widest mt-2">ADD NEW SCREEN</span>
             </div>
-          </React.Fragment>
+          )}
+        </>
+      )}
+
+    </div>
+  );
+};
+
+// =========================================
+// 4. NEW TAB COMPONENTS
+// =========================================
+
+const ComprobanteModal = ({ isOpen, imageUrl, onClose }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-[250] flex items-center justify-center bg-outloud-blue/40 backdrop-blur-sm p-4">
+      <div className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/60 animate-fade-in flex flex-col max-h-[90vh]">
+        <div className="bg-[#eef5fc] p-5 border-b border-gray-200 shrink-0">
+          <h2 className="text-outloud-blue font-black text-lg uppercase tracking-wider font-montserrat">COMPROBANTE DE PAGO</h2>
+        </div>
+        <div className="p-5 overflow-y-auto custom-scrollbar flex justify-center bg-gray-50">
+          {imageUrl ? <img src={imageUrl} alt="Comprobante" className="max-w-full h-auto rounded-xl shadow-sm border border-gray-200" /> : <p className="text-gray-500 font-bold uppercase text-xs tracking-widest py-10">Imagen no disponible</p>}
+        </div>
+        <div className="p-4 bg-gray-100 border-t border-gray-200 flex justify-end shrink-0">
+          <button type="button" onClick={onClose} className="px-6 py-2.5 rounded-full font-bold text-xs uppercase tracking-wide text-gray-600 bg-transparent border-2 border-gray-300 hover:bg-gray-200 transition">CERRAR</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const EditarReglasModal = ({ isOpen, initialHtml = '<span style="font-family: Montserrat; font-size: 16px; color: #08203e;">Escribe las reglas de la comunidad aquí...</span>', onSave, onClose }) => {
+  const [htmlContent, setHtmlContent] = useState(initialHtml);
+  const [textDropdown, setTextDropdown] = useState(null);
+  const editorRef = useRef(null);
+
+  useEffect(() => { if (isOpen && editorRef.current) { editorRef.current.innerHTML = htmlContent; } }, [isOpen]);
+
+  const handleFormat = (command, value = null) => {
+    if (command === 'fontSizePx') { document.execCommand('fontSize', false, '7'); document.querySelectorAll('font[size="7"]').forEach(f => { f.removeAttribute('size'); f.style.fontSize = `${value}px`; }); } 
+    else { document.execCommand(command, false, value); }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[250] flex items-center justify-center bg-outloud-blue/40 backdrop-blur-sm p-4">
+      <div className="w-full max-w-3xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/60 animate-fade-in flex flex-col max-h-[90vh]">
+        <div className="bg-[#eef5fc] p-5 border-b border-gray-200 shrink-0">
+          <h2 className="text-outloud-blue font-black text-lg uppercase tracking-wider font-montserrat">EDITAR REGLAS DE LA COMUNIDAD</h2>
+        </div>
+        <div className="p-5 overflow-y-auto custom-scrollbar flex flex-col gap-4">
+           <div className="flex flex-wrap gap-2 items-center bg-gray-50 p-2 rounded-t-xl border border-gray-300 border-b-0">
+              <div className="flex border border-gray-300 rounded overflow-hidden bg-white">
+                <button onMouseDown={(e)=>{e.preventDefault(); handleFormat('bold');}} className="w-8 h-8 font-bold text-gray-700 hover:bg-gray-100">B</button>
+                <button onMouseDown={(e)=>{e.preventDefault(); handleFormat('italic');}} className="w-8 h-8 italic text-gray-700 hover:bg-gray-100 border-l border-gray-300">I</button>
+                <button onMouseDown={(e)=>{e.preventDefault(); handleFormat('underline');}} className="w-8 h-8 underline text-gray-700 hover:bg-gray-100 border-l border-gray-300">U</button>
+              </div>
+              <input type="color" onMouseDown={(e)=>e.preventDefault()} onChange={(e) => handleFormat('foreColor', e.target.value)} className="w-8 h-8 rounded cursor-pointer border border-gray-300" title="Color de Texto" />
+              <div className="relative">
+                <button onMouseDown={(e)=>e.preventDefault()} onClick={() => setTextDropdown(textDropdown === 'size' ? null : 'size')} className="p-1.5 px-2 border border-gray-300 rounded text-xs font-semibold focus:outline-none bg-white">Tamaño...</button>
+                {textDropdown === 'size' && (<div className="absolute top-full left-0 mt-1 w-16 max-h-40 overflow-y-auto bg-white border border-gray-200 rounded shadow-lg z-[200]">{[12,14,16,18,20,24,28,32].map(sz => (<div key={sz} onMouseDown={(e) => e.preventDefault()} onClick={() => { handleFormat('fontSizePx', sz); setTextDropdown(null); }} className="px-2 py-1 hover:bg-gray-100 cursor-pointer text-xs">{sz}px</div>))}</div>)}
+              </div>
+           </div>
+           <div ref={editorRef} contentEditable suppressContentEditableWarning className="w-full p-4 bg-white border border-gray-300 rounded-b-xl focus:outline-none focus:ring-2 focus:ring-student-yellow transition overflow-y-auto min-h-[200px] rich-text-content" />
+        </div>
+        <div className="p-4 bg-gray-100 border-t border-gray-200 flex justify-end gap-4 shrink-0">
+          <button type="button" onClick={onClose} className="px-6 py-2.5 rounded-full font-bold text-xs uppercase tracking-wide text-gray-600 bg-transparent border-2 border-gray-300">CANCELAR</button>
+          <button type="button" onClick={() => { onSave(editorRef.current ? editorRef.current.innerHTML : htmlContent); onClose(); }} className="px-8 py-2.5 rounded-full font-black text-xs uppercase tracking-wide text-outloud-blue bg-student-yellow shadow-md">GUARDAR REGLAS</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const CustomerManagement = ({ supabase }) => {
+  const [activeSubTab, setActiveSubTab] = useState('Estudiantes');
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  // Real Database State (No Mocks!)
+  const [students, setStudents] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Empty states for unbuilt features
+  const [payments, setPayments] = useState([]);
+  const [inactiveStudents, setInactiveStudents] = useState([]);
+  const [chatMessages, setChatMessages] = useState([]);
+  
+  const [selectedReceipt, setSelectedReceipt] = useState(null);
+  const [activeChannel, setActiveChannel] = useState('#chat-general');
+  const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
+  const channels = ['#anuncios', '#reglas', '#chat-general', '#foro-gramatica'];
+
+  // Fetch REAL Students from Supabase
+  useEffect(() => {
+    const fetchStudents = async () => {
+      setIsLoading(true);
+      const { data, error } = await supabase.from('profiles').select('*').eq('role', 'Student');
+      if (!error && data) {
+        setStudents(data);
+      } else {
+        console.error("Error fetching students:", error);
+      }
+      setIsLoading(false);
+    };
+    fetchStudents();
+  }, [supabase, activeSubTab]); // Re-fetch when clicking tabs to ensure fresh data
+
+  const filteredStudents = students.filter(student => 
+    `${student.first_name} ${student.last_name}`.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  return (
+    <div className="w-full flex flex-col items-center">
+      <div className="flex flex-wrap justify-center gap-4 mb-8 w-full">
+        {['Pagos', 'Estudiantes', 'Inactividad', 'Comunidad'].map((tab) => (
+          <button key={tab} onClick={() => setActiveSubTab(tab)} className={`px-6 py-3 rounded-xl text-xs md:text-sm font-montserrat font-bold uppercase tracking-wide transition-all shadow-sm ${activeSubTab === tab ? 'bg-outloud-blue text-white' : 'bg-[#e6f0f9] text-outloud-blue hover:bg-[#d6e6f5]'}`}>{tab}</button>
         ))}
       </div>
 
-      {!isPreviewMode && (
-        <div className="w-full flex flex-col items-center py-12 bg-[#eef5fc] z-20 border-t border-white/50 shadow-[0_-15px_30px_rgba(0,0,0,0.03)]">
-          <svg onClick={handleExpandWorkspace} className="w-12 h-12 text-outloud-blue cursor-pointer hover:scale-110 transition-transform animate-bounce" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
-          <span className="text-[10px] font-bold text-outloud-blue font-montserrat uppercase tracking-widest mt-2">ADD NEW SCREEN</span>
+      {activeSubTab === 'Estudiantes' && (
+        <div className="bg-white/95 rounded-[2rem] shadow-[0_15px_40px_rgba(0,0,0,0.05)] border border-white/60 p-6 md:p-8 w-full animate-fade-in">
+          <h2 className="text-2xl md:text-3xl font-black text-outloud-blue font-montserrat uppercase tracking-wide mb-6">DIRECTORIO DE ESTUDIANTES</h2>
+          <input type="text" placeholder="Buscar estudiante..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-outloud-blue font-semibold focus:outline-none focus:ring-2 focus:ring-student-yellow transition mb-6 shadow-inner" />
+          
+          <div className="flex flex-col gap-3 max-h-[600px] overflow-y-auto custom-scrollbar pr-2">
+            {isLoading ? (
+              <div className="py-8 text-center text-sm font-bold text-gray-400 uppercase tracking-widest">Cargando base de datos...</div>
+            ) : filteredStudents.length > 0 ? (
+              filteredStudents.map((student) => (
+                <div key={student.id} className="flex items-center p-3 bg-white rounded-xl border border-gray-200 shadow-sm hover:border-student-yellow transition-colors">
+                  <img src={student.avatar_url || 'https://i.pravatar.cc/150'} alt="Avatar" className="w-12 h-12 rounded-full object-cover border-2 border-gray-100 mr-4 shrink-0" />
+                  <span className="font-bold text-outloud-blue text-base md:text-lg mr-3 truncate">{student.first_name} {student.last_name}</span>
+                  <span className="bg-outloud-blue text-white rounded text-[10px] px-2 py-1 font-bold tracking-widest mr-2 shrink-0">{student.level?.split(':')[0] || 'A1'}</span>
+                  <span className="text-xs md:text-sm text-gray-400 italic font-semibold shrink-0">({student.role})</span>
+                </div>
+              ))
+            ) : (
+              <div className="py-8 text-center text-sm font-bold text-gray-400 uppercase tracking-widest bg-gray-50 rounded-xl border border-gray-200">No se encontraron estudiantes en la base de datos</div>
+            )}
+          </div>
         </div>
       )}
 
+      {/* Emptied views until we build their tables */}
+      {activeSubTab === 'Pagos' && (
+        <div className="bg-white/95 rounded-[2rem] shadow-[0_15px_40px_rgba(0,0,0,0.05)] border border-white/60 p-6 md:p-8 w-full animate-fade-in">
+          <h2 className="text-2xl md:text-3xl font-black text-outloud-blue font-montserrat uppercase tracking-wide mb-8">VERIFICACIÓN DE PAGOS</h2>
+          <div className="py-12 text-center text-sm font-bold text-gray-400 uppercase tracking-widest bg-gray-50 rounded-xl border border-gray-200">No hay transacciones registradas</div>
+        </div>
+      )}
+
+      {activeSubTab === 'Inactividad' && (
+        <div className="bg-white/95 rounded-[2rem] shadow-[0_15px_40px_rgba(0,0,0,0.05)] border border-white/60 p-6 md:p-8 w-full animate-fade-in">
+          <h2 className="text-2xl md:text-3xl font-black text-outloud-blue font-montserrat uppercase tracking-wide mb-6">ALERTAS DE INACTIVIDAD</h2>
+          <div className="py-12 text-center text-sm font-bold text-gray-400 uppercase tracking-widest bg-gray-50 rounded-xl border border-gray-200">Sin datos de actividad reciente</div>
+        </div>
+      )}
+
+      {activeSubTab === 'Comunidad' && (
+        <div className="bg-white/95 rounded-[2rem] shadow-[0_15px_40px_rgba(0,0,0,0.05)] border border-white/60 p-6 md:p-8 w-full animate-fade-in">
+          <h2 className="text-2xl md:text-3xl font-black text-outloud-blue font-montserrat uppercase tracking-wide mb-6">MODERACIÓN DE COMUNIDAD</h2>
+          <div className="py-12 text-center text-sm font-bold text-gray-400 uppercase tracking-widest bg-gray-50 rounded-xl border border-gray-200">El chat está vacío</div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// =========================================
+// 5. MASTER SETTINGS COMPONENTS
+// =========================================
+
+const AccountCreationModal = ({ isOpen, onClose, onSave }) => {
+  const [role, setRole] = useState('Student');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    firstName: '', lastName: '', email: '', whatsapp: '', avatarUrl: '', username: '', password: '',
+    level: 'A1: Básico 1', unit: 'Unit 1', discount: '0', credits: '0', cefr: 'C1', rate: '15.00', bioUrl: '', adminLevel: 'Admin (Content)',
+  });
+
+  if (!isOpen) return null;
+
+  const handleInputChange = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
+
+  const handleSubmit = async () => {
+    if (!formData.firstName || !formData.email || !formData.whatsapp || !formData.username || !formData.password) {
+      return alert('Please fill in all required universal fields (Name, Email, Phone, Username, Password).');
+    }
+    setIsSubmitting(true);
+    await onSave({ ...formData, role });
+    setIsSubmitting(false);
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-[400] flex items-center justify-center bg-outloud-blue/40 backdrop-blur-sm p-4">
+      <style>{`.custom-phone-input .PhoneInputInput { border: none; background: transparent; outline: none; width: 100%; font-size: 0.875rem; color: #08203e; } .custom-phone-input .PhoneInputCountryIcon { box-shadow: none; border: none; }`}</style>
+      <div className="w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/60 animate-fade-in flex flex-col max-h-[90vh]">
+        
+        <div className="bg-[#eef5fc] p-6 border-b border-gray-200 shrink-0 flex justify-between items-center">
+          <div>
+            <h2 className="text-outloud-blue font-black text-xl uppercase tracking-wider font-montserrat">CREATE NEW ACCOUNT</h2>
+          </div>
+          <div className="flex gap-2 bg-white p-1 rounded-xl shadow-sm border border-gray-200">
+            {['Student', 'Teacher', 'Admin'].map(r => (
+              <button key={r} onClick={() => setRole(r)} className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide transition-colors ${role === r ? 'bg-outloud-blue text-white' : 'text-gray-500 hover:bg-gray-100'}`}>{r === 'Admin' ? 'Admin / Super' : r}</button>
+            ))}
+          </div>
+        </div>
+        
+        <div className="p-6 overflow-y-auto custom-scrollbar flex flex-col md:flex-row gap-8 bg-gray-50 flex-grow">
+          <div className="flex-1 flex flex-col gap-5">
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-200 pb-2">Universal Profile Details</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-gray-500 uppercase">First Name *</label><input type="text" value={formData.firstName} onChange={(e) => handleInputChange('firstName', e.target.value)} className="w-full p-2.5 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-student-yellow" /></div>
+              <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-gray-500 uppercase">Last Name *</label><input type="text" value={formData.lastName} onChange={(e) => handleInputChange('lastName', e.target.value)} className="w-full p-2.5 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-student-yellow" /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-gray-500 uppercase">Username *</label><input type="text" value={formData.username} onChange={(e) => handleInputChange('username', e.target.value)} className="w-full p-2.5 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-student-yellow" /></div>
+              <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-gray-500 uppercase">Password *</label><input type="text" value={formData.password} onChange={(e) => handleInputChange('password', e.target.value)} className="w-full p-2.5 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-student-yellow" /></div>
+            </div>
+            <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-gray-500 uppercase">Email Address *</label><input type="email" value={formData.email} onChange={(e) => handleInputChange('email', e.target.value)} className="w-full p-2.5 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-student-yellow" /></div>
+            <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-gray-500 uppercase">WhatsApp Number *</label><PhoneInput international defaultCountry="US" value={formData.whatsapp} onChange={(value) => handleInputChange('whatsapp', value)} className="custom-phone-input w-full p-2.5 bg-white border border-gray-300 rounded-xl text-sm focus-within:ring-2 focus-within:ring-student-yellow transition flex items-center gap-3" /></div>
+            <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-gray-500 uppercase">Profile Picture URL</label><input type="url" value={formData.avatarUrl} onChange={(e) => handleInputChange('avatarUrl', e.target.value)} className="w-full p-2.5 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-student-yellow" /></div>
+          </div>
+
+          <div className="flex-1 flex flex-col gap-5">
+            <h3 className="text-xs font-bold text-outloud-blue uppercase tracking-widest border-b border-outloud-blue/20 pb-2 flex items-center justify-between">
+              {role} Configuration
+            </h3>
+            {role === 'Student' && (
+              <div className="grid grid-cols-2 gap-4">
+                 <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-gray-500 uppercase">Initial Level</label><select value={formData.level} onChange={(e) => handleInputChange('level', e.target.value)} className="w-full p-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none"><option>A1: Básico 1</option><option>A2: Básico 2</option><option>B1: Inter. 1</option></select></div>
+                 <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-gray-500 uppercase">Initial Unit</label><select value={formData.unit} onChange={(e) => handleInputChange('unit', e.target.value)} className="w-full p-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none"><option>Unit 1</option><option>Unit 2</option><option>Unit 3</option></select></div>
+                 <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-gray-500 uppercase">Discount Applied (%)</label><input type="number" min="0" max="100" value={formData.discount} onChange={(e) => handleInputChange('discount', e.target.value)} className="w-full p-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none text-center" /></div>
+                 <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-gray-500 uppercase">Starting Credits</label><input type="number" min="0" value={formData.credits} onChange={(e) => handleInputChange('credits', e.target.value)} className="w-full p-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none text-center" /></div>
+              </div>
+            )}
+            {role === 'Teacher' && (
+              <div className="grid grid-cols-2 gap-4">
+                 <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-gray-500 uppercase">CEFR Certification</label><select value={formData.cefr} onChange={(e) => handleInputChange('cefr', e.target.value)} className="w-full p-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none font-bold"><option>B2</option><option>C1</option><option>C2</option><option>Native</option></select></div>
+                 <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-gray-500 uppercase">Hourly Rate (USD)</label><input type="number" step="0.50" value={formData.rate} onChange={(e) => handleInputChange('rate', e.target.value)} className="w-full p-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none" /></div>
+                 <div className="flex flex-col gap-1.5 col-span-2"><label className="text-[10px] font-bold text-gray-500 uppercase">Resume / Bio PDF URL</label><input type="url" value={formData.bioUrl} onChange={(e) => handleInputChange('bioUrl', e.target.value)} className="w-full p-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none" /></div>
+              </div>
+            )}
+            {role === 'Admin' && (
+              <div className="flex flex-col gap-1.5">
+                 <label className="text-[10px] font-bold text-gray-500 uppercase">Admin Tier</label>
+                 <select value={formData.adminLevel} onChange={(e) => handleInputChange('adminLevel', e.target.value)} className="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none font-bold text-outloud-blue"><option>Admin (Content & Teachers)</option><option>Admin (Financials & Students)</option><option>Super Admin (General Manager)</option></select>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="p-4 bg-white border-t border-gray-200 flex justify-end gap-4 shrink-0">
+          <button type="button" onClick={onClose} className="px-6 py-3 rounded-full font-bold text-xs uppercase tracking-wide text-gray-600 bg-transparent border-2 border-gray-300 hover:bg-gray-200 transition">CANCEL</button>
+          <button type="button" onClick={handleSubmit} disabled={isSubmitting} className="px-8 py-3 rounded-full font-black text-xs uppercase tracking-wide text-outloud-blue bg-student-yellow hover:scale-105 active:scale-95 disabled:opacity-50">{isSubmitting ? 'PROVISIONING...' : `PROVISION ${role.toUpperCase()} ACCOUNT`}</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const UserManagementDrawer = ({ user, onClose }) => {
+  const [showPassword, setShowPassword] = useState(false);
+  const [editableWhatsApp, setEditableWhatsApp] = useState('');
+
+  useEffect(() => { if (user) setEditableWhatsApp(user.whatsapp || ''); }, [user]);
+
+  if (!user) return null;
+
+  return (
+    <>
+      <div className="fixed inset-0 bg-outloud-blue/20 backdrop-blur-sm z-[299] transition-opacity animate-fade-in" onClick={onClose} />
+      
+      <div className="fixed inset-y-0 right-0 w-full max-w-md bg-white shadow-2xl z-[300] flex flex-col transform transition-transform duration-300 ease-in-out border-l border-white/60 animate-fade-in overflow-hidden">
+        <div className="bg-[#eef5fc] p-6 border-b border-gray-200 flex justify-between items-start shrink-0">
+          <div className="flex flex-col">
+            <h3 className="text-lg font-black text-outloud-blue font-montserrat uppercase tracking-wide">{user.role} Profile Management</h3>
+            <span className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-1">ID: {user.id.substring(0,8)}...</span>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-red-50 hover:text-red-500 transition shadow-sm">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+        </div>
+
+        <div className="p-6 overflow-y-auto custom-scrollbar flex flex-col gap-6 flex-grow bg-gray-50">
+          <div className="flex flex-col items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+            <img src={user.avatar_url || 'https://i.pravatar.cc/150'} alt="Avatar" className="w-24 h-24 rounded-full object-cover border-4 border-gray-50 shadow-sm mb-4" />
+            <h4 className="text-xl font-bold text-outloud-blue mb-1">{user.first_name} {user.last_name}</h4>
+            <div className="flex gap-2 mt-2">
+              <span className={`text-white rounded text-[10px] px-3 py-1 font-bold uppercase tracking-widest ${user.role === 'Student' ? 'bg-blue-500' : user.role === 'Teacher' ? 'bg-purple-500' : 'bg-red-500'}`}>{user.role}</span>
+              {user.cefr && <span className="bg-outloud-blue text-white rounded text-[10px] px-3 py-1 font-bold tracking-widest">{user.cefr}</span>}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3">
+             <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-200 pb-1">Contact Information</h4>
+             <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex flex-col gap-2 text-sm">
+               <div className="flex justify-between items-center"><span className="font-semibold text-gray-500">Email:</span><input type="email" defaultValue={user.email} className="w-48 bg-gray-50 border border-gray-200 rounded p-1.5 text-xs font-bold text-outloud-blue focus:outline-none focus:border-student-yellow" /></div>
+               <div className="flex justify-between items-center"><span className="font-semibold text-gray-500">WhatsApp:</span><PhoneInput international defaultCountry="US" value={editableWhatsApp} onChange={setEditableWhatsApp} className="custom-phone-input w-48 bg-gray-50 border border-gray-200 rounded p-1.5 text-xs font-bold focus-within:border-student-yellow flex items-center gap-2" /></div>
+             </div>
+          </div>
+
+          {user.role === 'Student' && (
+             <div className="flex flex-col gap-3">
+               <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-200 pb-1">Academic & Financial</h4>
+               <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex flex-col gap-3 text-sm">
+                 <div className="flex justify-between items-center"><span className="font-semibold text-gray-500">Current Level:</span><select defaultValue={user.level} className="bg-gray-50 border border-gray-200 rounded p-1 text-xs font-bold text-outloud-blue focus:outline-none"><option>A1: Básico 1</option><option>A2: Básico 2</option></select></div>
+                 <div className="flex justify-between items-center"><span className="font-semibold text-gray-500">Discounts (%):</span><input type="number" defaultValue={user.discount || 0} className="w-16 bg-gray-50 border border-gray-200 rounded p-1 text-xs font-bold text-center focus:outline-none" /></div>
+                 <div className="flex justify-between items-center"><span className="font-semibold text-gray-500">Available Credits:</span><input type="number" defaultValue={user.credits || 0} className="w-16 bg-gray-50 border border-gray-200 rounded p-1 text-xs font-bold text-center focus:outline-none" /></div>
+               </div>
+             </div>
+          )}
+          
+          {/* Real Authentication credentials cannot be fetched backwards from Supabase Auth for security, we only show the username from the profile table */}
+          <div className="flex flex-col gap-3">
+             <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-200 pb-1">System Security</h4>
+             <div className="bg-red-50 p-3 rounded-xl border border-red-100 shadow-sm flex flex-col gap-2 text-sm">
+               <div className="flex justify-between items-center"><span className="font-semibold text-red-800">Username:</span><input type="text" defaultValue={user.username} className="w-48 bg-white border border-red-200 rounded p-1.5 text-xs font-bold text-gray-700 focus:outline-none focus:ring-1 focus:ring-red-400" /></div>
+             </div>
+          </div>
+        </div>
+
+        <div className="p-4 bg-white border-t border-gray-200 shrink-0 flex flex-col gap-2">
+          <button className="w-full bg-student-yellow text-outloud-blue font-black rounded-xl py-3 shadow-md uppercase tracking-wide hover:opacity-90 transition-opacity text-xs">SAVE CHANGES</button>
+        </div>
+      </div>
+    </>
+  );
+};
+
+const MasterSettings = ({ supabase }) => {
+  const [activeSubTab, setActiveSubTab] = useState('User Provisioning');
+  const [isCreationModalOpen, setIsCreationModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [usersList, setUsersList] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchUsers = async () => {
+    setIsLoading(true);
+    const { data, error } = await supabase.from('profiles').select('*');
+    if (!error && data) setUsersList(data);
+    setIsLoading(false);
+  };
+
+  useEffect(() => { fetchUsers(); }, [supabase, activeSubTab]);
+
+ // REAL SUPABASE ADMIN CREATION LOGIC (BYPASSING THE BROWSER ALARM)
+ // SECURE EDGE FUNCTION CREATION LOGIC
+  const handleSaveNewAccount = async (data) => {
+    try {
+      // We ask the secure vault to do the heavy lifting
+      const { data: responseData, error } = await supabase.functions.invoke('provision-user', {
+        body: data
+      });
+
+      if (error) throw error;
+
+      alert(`${data.role} account securely provisioned!`);
+      fetchUsers(); // Refresh the directory list
+      
+    } catch (error) {
+      console.error("Error creating user:", error);
+      alert(`Failed to create user: ${error.message || 'Unknown error'}`);
+    }
+  };
+
+  return (
+    <div className="w-full flex flex-col items-center">
+      <div className="flex flex-wrap justify-center gap-4 mb-8 w-full">
+        {['Analytics', 'Teacher Directory', 'Candidate Evaluator', 'System Logs', 'User Provisioning'].map((tab) => (
+          <button key={tab} onClick={() => setActiveSubTab(tab)} className={`px-6 py-3 rounded-xl text-xs md:text-sm font-montserrat font-bold uppercase tracking-wide transition-all shadow-sm ${activeSubTab === tab ? 'bg-outloud-blue text-white' : 'bg-[#e6f0f9] text-outloud-blue hover:bg-[#d6e6f5]'}`}>{tab}</button>
+        ))}
+      </div>
+
+      {activeSubTab === 'User Provisioning' && (
+        <div className="bg-white/95 rounded-[2rem] shadow-[0_15px_40px_rgba(0,0,0,0.05)] border border-white/60 p-6 md:p-8 w-full animate-fade-in relative overflow-hidden">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
+            <h2 className="text-2xl md:text-3xl font-black text-outloud-blue font-montserrat uppercase tracking-wide">USER PROVISIONING & ACCESS</h2>
+            <button onClick={() => setIsCreationModalOpen(true)} className="bg-student-yellow text-outloud-blue font-black rounded-full px-6 py-3 shadow-md uppercase tracking-wide hover:scale-105 transition-transform text-xs">+ CREATE NEW ACCOUNT</button>
+          </div>
+          
+          <div className="flex flex-col gap-3 max-h-[600px] overflow-y-auto custom-scrollbar pr-2">
+            {isLoading ? (
+              <div className="py-8 text-center text-sm font-bold text-gray-400 uppercase tracking-widest">Cargando base de datos...</div>
+            ) : usersList.length > 0 ? usersList.map((u) => (
+              <div key={u.id} onClick={() => setSelectedUser(u)} className="flex items-center p-3 bg-white rounded-xl border border-gray-200 shadow-sm hover:border-student-yellow hover:shadow-md cursor-pointer transition-all">
+                <img src={u.avatar_url || 'https://i.pravatar.cc/150'} alt="Avatar" className="w-12 h-12 rounded-full object-cover border-2 border-gray-100 mr-4 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <span className="font-bold text-outloud-blue text-base md:text-lg mr-3 truncate block md:inline">{u.first_name} {u.last_name}</span>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  <span className={`text-white rounded text-[10px] px-2 py-1 font-bold tracking-widest ${u.role === 'Student' ? 'bg-blue-500' : u.role === 'Teacher' ? 'bg-purple-500' : 'bg-red-500'}`}>{u.role}</span>
+                </div>
+              </div>
+            )) : <p className="text-center text-gray-400 font-bold uppercase tracking-widest text-xs py-10">No users found in database.</p>}
+          </div>
+
+          <AccountCreationModal isOpen={isCreationModalOpen} onClose={() => setIsCreationModalOpen(false)} onSave={handleSaveNewAccount} />
+          <UserManagementDrawer user={selectedUser} onClose={() => setSelectedUser(null)} />
+        </div>
+      )}
+
+      {/* Emptied views until built */}
+      {activeSubTab === 'Analytics' && (
+        <div className="bg-white/95 rounded-[2rem] shadow-[0_15px_40px_rgba(0,0,0,0.05)] border border-white/60 p-6 md:p-8 w-full animate-fade-in">
+          <h2 className="text-2xl md:text-3xl font-black text-outloud-blue font-montserrat uppercase tracking-wide mb-8">PLATFORM ANALYTICS</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 flex flex-col items-center justify-center"><span className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Monthly Recurring Revenue</span><span className="text-3xl font-black text-outloud-blue">$0.00</span></div>
+            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 flex flex-col items-center justify-center"><span className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Active Cohort Split</span><span className="text-3xl font-black text-outloud-blue">0% / 0%</span></div>
+            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 flex flex-col items-center justify-center"><span className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Class Utilization Rate</span><span className="text-3xl font-black text-outloud-blue">0%</span></div>
+            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 flex flex-col items-center justify-center"><span className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Student Churn</span><span className="text-3xl font-black text-outloud-blue">0%</span></div>
+          </div>
+        </div>
+      )}
+
+      {activeSubTab === 'Teacher Directory' && (
+        <div className="bg-white/95 rounded-[2rem] shadow-[0_15px_40px_rgba(0,0,0,0.05)] border border-white/60 p-6 md:p-8 w-full animate-fade-in">
+          <h2 className="text-2xl md:text-3xl font-black text-outloud-blue font-montserrat uppercase tracking-wide mb-6">TEACHER MANAGEMENT</h2>
+          <div className="flex flex-col gap-3 max-h-[600px] overflow-y-auto custom-scrollbar pr-2">
+            {isLoading ? <div className="py-8 text-center text-sm font-bold text-gray-400 uppercase tracking-widest">Cargando base de datos...</div> : usersList.filter(u => u.role === 'Teacher').length > 0 ? usersList.filter(u => u.role === 'Teacher').map((teacher) => (
+              <div key={teacher.id} onClick={() => setSelectedUser(teacher)} className="flex items-center p-3 bg-white rounded-xl border border-gray-200 shadow-sm hover:border-student-yellow cursor-pointer transition-all">
+                <img src={teacher.avatar_url || 'https://i.pravatar.cc/150'} alt="Avatar" className="w-12 h-12 rounded-full object-cover border-2 border-gray-100 mr-4 shrink-0" />
+                <span className="font-bold text-outloud-blue text-base md:text-lg mr-3 truncate">{teacher.first_name} {teacher.last_name}</span>
+                <span className="bg-outloud-blue text-white rounded text-[10px] px-2 py-1 font-bold tracking-widest mr-2 shrink-0">{teacher.cefr}</span>
+              </div>
+            )) : <p className="text-center text-gray-400 font-bold uppercase tracking-widest text-xs py-10">No teachers found in database.</p>}
+          </div>
+          <UserManagementDrawer user={selectedUser} onClose={() => setSelectedUser(null)} />
+        </div>
+      )}
+
+      {(activeSubTab === 'Candidate Evaluator' || activeSubTab === 'System Logs') && (
+        <div className="bg-white/95 rounded-[2rem] shadow-[0_15px_40px_rgba(0,0,0,0.05)] border border-white/60 p-12 w-full flex items-center justify-center">
+           <p className="text-gray-400 font-bold uppercase tracking-widest text-sm text-center">Module {activeSubTab} empty pending data insertion.</p>
+        </div>
+      )}
     </div>
   );
 };
