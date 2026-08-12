@@ -1,16 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
-const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
-const supabaseServiceKey = process.env.REACT_APP_SUPABASE_SERVICE_KEY;
+const supabaseUrl = 
+  process.env.REACT_APP_SUPABASE_URL || 
+  process.env.VITE_SUPABASE_URL || 
+  'https://kuvsmrheywhzxfiyivtg.supabase.co';
 
-// Standard Client (For normal users)
+const supabaseAnonKey = 
+  process.env.REACT_APP_SUPABASE_ANON_KEY || 
+  process.env.VITE_SUPABASE_ANON_KEY || 
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt1dnNtcmhleXdoenhmaXlpdnRnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyMTc4MzYsImV4cCI6MjEwMTc5MzgzNn0.upJqo4zdmO3xj4KN7zUURDTI0ZY2RNWqgvLbSSCu3BA';
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-// Super Admin Client (Bypasses security rules to create accounts quietly)
-export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false
-  }
-});
