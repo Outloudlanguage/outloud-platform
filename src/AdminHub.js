@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { supabase } from './SupabaseClient'; 
-import { createClient } from '@supabase/supabase-js';
+import { supabase, supabaseAdmin } from './SupabaseClient';
+import PhoneInput from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
 
 // =========================================
 // CONSTANTS FOR MAPPING
@@ -1967,7 +1968,7 @@ const AdminHub = () => {
     }
   };
 
-  const renderDndPillStyle = (data) => ({ backgroundColor: data.boxColor, borderColor: data.lineColor, borderWidth: '2px', borderStyle: 'solid', borderRadius: `${data.borderRadius}px`, fontSize: `${data.fontSize}px`, color: data.textColor, fontWeight: data.isBold ? 'bold' : 'normal', fontStyle: data.isItalic ? 'italic' : 'normal', textDecoration: data.isUnderline ? 'underline' : 'none', fontFamily: data.fontFamily, padding: '8px 12px', cursor: isPreviewMode ? 'grab' : 'default', display: 'flex', items: 'center', justifyContent: 'center', textAlign: 'center', userSelect: 'none', touchAction: 'none', wordBreak: 'break-word', whiteSpace: 'normal', lineHeight: '1.2' });
+  const renderDndPillStyle = (data) => ({ backgroundColor: data.boxColor, borderColor: data.lineColor, borderWidth: '2px', borderStyle: 'solid', borderRadius: `${data.borderRadius}px`, fontSize: `${data.fontSize}px`, color: data.textColor, fontWeight: data.isBold ? 'bold' : 'normal', fontStyle: data.isItalic ? 'italic' : 'normal', textDecoration: data.isUnderline ? 'underline' : 'none', fontFamily: data.fontFamily, padding: '8px 12px', cursor: isPreviewMode ? 'grab' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', userSelect: 'none', touchAction: 'none', wordBreak: 'break-word', whiteSpace: 'normal', lineHeight: '1.2' });
 
   return (
     <div className={`relative min-h-screen w-full font-sans bg-[#eef5fc] overflow-y-auto overflow-x-hidden flex flex-col ${draggingId || resizingId || rotatingId ? 'select-none' : ''}`}>
@@ -2528,99 +2529,434 @@ const AdminHub = () => {
 // =========================================
 // 4. NEW TAB COMPONENTS
 // =========================================
-const CustomerManagement = ({ supabase }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [statusMessage, setStatusMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
 
-  const handleCreateStudent = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setStatusMessage('Registering student in Auth Vault...');
-
-    try {
-      const ghostClient = createClient(
-        'https://kuvsmrheywhzxfiyivtg.supabase.co',
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt1dnNtcmhleXdoenhmaXlpdnRnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyMTc4MzYsImV4cCI6MjEwMTc5MzgzNn0.upJqo4zdmO3xj4KN7zUURDTI0ZY2RNWqgvLbSSCu3BA',
-        { auth: { persistSession: false, autoRefreshToken: false } }
-      );
-
-      const { data, error } = await ghostClient.auth.signUp({
-        email: email,
-        password: password,
-      });
-
-      if (error) throw error;
-
-      setStatusMessage(`Success! ${email} can now log into the Student Portal.`);
-      setEmail('');
-      setPassword('');
-    } catch (error) {
-      setStatusMessage(`Error: ${error.message}`);
-    } fontally {
-      setIsLoading(false);
-    }
-  };
-
+const ComprobanteModal = ({ isOpen, imageUrl, onClose }) => {
+  if (!isOpen) return null;
   return (
-    <div className="w-full max-w-2xl flex flex-col items-center justify-center py-12 mx-auto">
-      <div className="bg-white p-8 rounded-3xl shadow-lg border border-gray-200 w-full">
-        <h2 className="text-2xl font-black text-outloud-blue font-montserrat uppercase tracking-wide text-center mb-6">
-          Register New Student
-        </h2>
-        
-        <form onSubmit={handleCreateStudent} className="flex flex-col space-y-4">
-          <div className="flex flex-col space-y-1">
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">Student Email</label>
-            <input 
-              type="email" 
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="student@example.com"
-              className="p-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-student-yellow transition"
-            />
-          </div>
-
-          <div className="flex flex-col space-y-1">
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">Temporary Password</label>
-            <input 
-              type="text" 
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="e.g. OLA_2026!"
-              className="p-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-student-yellow transition"
-            />
-          </div>
-
-          <button 
-            type="submit" 
-            disabled={isLoading}
-            className="mt-4 w-full bg-student-yellow text-outloud-blue font-black py-4 rounded-xl shadow-md uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-transform disabled:opacity-50"
-          >
-            {isLoading ? 'Registering...' : 'Create Account'}
-          </button>
-        </form>
-
-        {statusMessage && (
-          <div className={`mt-6 p-4 rounded-xl text-sm font-bold text-center ${statusMessage.includes('Error') ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-green-50 text-green-600 border border-green-200'}`}>
-            {statusMessage}
-          </div>
-        )}
+    <div className="fixed inset-0 z-[250] flex items-center justify-center bg-outloud-blue/40 backdrop-blur-sm p-4">
+      <div className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/60 animate-fade-in flex flex-col max-h-[90vh]">
+        <div className="bg-[#eef5fc] p-5 border-b border-gray-200 shrink-0">
+          <h2 className="text-outloud-blue font-black text-lg uppercase tracking-wider font-montserrat">COMPROBANTE DE PAGO</h2>
+        </div>
+        <div className="p-5 overflow-y-auto custom-scrollbar flex justify-center bg-gray-50">
+          {imageUrl ? <img src={imageUrl} alt="Comprobante" className="max-w-full h-auto rounded-xl shadow-sm border border-gray-200" /> : <p className="text-gray-500 font-bold uppercase text-xs tracking-widest py-10">Imagen no disponible</p>}
+        </div>
+        <div className="p-4 bg-gray-100 border-t border-gray-200 flex justify-end shrink-0">
+          <button type="button" onClick={onClose} className="px-6 py-2.5 rounded-full font-bold text-xs uppercase tracking-wide text-gray-600 bg-transparent border-2 border-gray-300 hover:bg-gray-200 transition">CERRAR</button>
+        </div>
       </div>
     </div>
   );
 };
 
-const MasterSettings = ({ supabase }) => {
+const EditarReglasModal = ({ isOpen, initialHtml = '<span style="font-family: Montserrat; font-size: 16px; color: #08203e;">Escribe las reglas de la comunidad aquí...</span>', onSave, onClose }) => {
+  const [htmlContent, setHtmlContent] = useState(initialHtml);
+  const [textDropdown, setTextDropdown] = useState(null);
+  const editorRef = useRef(null);
+
+  useEffect(() => { if (isOpen && editorRef.current) { editorRef.current.innerHTML = htmlContent; } }, [isOpen]);
+
+  const handleFormat = (command, value = null) => {
+    if (command === 'fontSizePx') { document.execCommand('fontSize', false, '7'); document.querySelectorAll('font[size="7"]').forEach(f => { f.removeAttribute('size'); f.style.fontSize = `${value}px`; }); } 
+    else { document.execCommand(command, false, value); }
+  };
+
+  if (!isOpen) return null;
+
   return (
-    <div className="w-full max-w-6xl flex flex-col space-y-10 items-center justify-center py-12">
-      <h2 className="text-2xl font-black text-outloud-blue font-montserrat uppercase tracking-wide text-center">
-        Master Settings
-      </h2>
-      <p className="text-gray-500 font-sans text-center">Module in development...</p>
+    <div className="fixed inset-0 z-[250] flex items-center justify-center bg-outloud-blue/40 backdrop-blur-sm p-4">
+      <div className="w-full max-w-3xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/60 animate-fade-in flex flex-col max-h-[90vh]">
+        <div className="bg-[#eef5fc] p-5 border-b border-gray-200 shrink-0">
+          <h2 className="text-outloud-blue font-black text-lg uppercase tracking-wider font-montserrat">EDITAR REGLAS DE LA COMUNIDAD</h2>
+        </div>
+        <div className="p-5 overflow-y-auto custom-scrollbar flex flex-col gap-4">
+           <div className="flex flex-wrap gap-2 items-center bg-gray-50 p-2 rounded-t-xl border border-gray-300 border-b-0">
+              <div className="flex border border-gray-300 rounded overflow-hidden bg-white">
+                <button onMouseDown={(e)=>{e.preventDefault(); handleFormat('bold');}} className="w-8 h-8 font-bold text-gray-700 hover:bg-gray-100">B</button>
+                <button onMouseDown={(e)=>{e.preventDefault(); handleFormat('italic');}} className="w-8 h-8 italic text-gray-700 hover:bg-gray-100 border-l border-gray-300">I</button>
+                <button onMouseDown={(e)=>{e.preventDefault(); handleFormat('underline');}} className="w-8 h-8 underline text-gray-700 hover:bg-gray-100 border-l border-gray-300">U</button>
+              </div>
+              <input type="color" onMouseDown={(e)=>e.preventDefault()} onChange={(e) => handleFormat('foreColor', e.target.value)} className="w-8 h-8 rounded cursor-pointer border border-gray-300" title="Color de Texto" />
+              <div className="relative">
+                <button onMouseDown={(e)=>e.preventDefault()} onClick={() => setTextDropdown(textDropdown === 'size' ? null : 'size')} className="p-1.5 px-2 border border-gray-300 rounded text-xs font-semibold focus:outline-none bg-white">Tamaño...</button>
+                {textDropdown === 'size' && (<div className="absolute top-full left-0 mt-1 w-16 max-h-40 overflow-y-auto bg-white border border-gray-200 rounded shadow-lg z-[200]">{[12,14,16,18,20,24,28,32].map(sz => (<div key={sz} onMouseDown={(e) => e.preventDefault()} onClick={() => { handleFormat('fontSizePx', sz); setTextDropdown(null); }} className="px-2 py-1 hover:bg-gray-100 cursor-pointer text-xs">{sz}px</div>))}</div>)}
+              </div>
+           </div>
+           <div ref={editorRef} contentEditable suppressContentEditableWarning className="w-full p-4 bg-white border border-gray-300 rounded-b-xl focus:outline-none focus:ring-2 focus:ring-student-yellow transition overflow-y-auto min-h-[200px] rich-text-content" />
+        </div>
+        <div className="p-4 bg-gray-100 border-t border-gray-200 flex justify-end gap-4 shrink-0">
+          <button type="button" onClick={onClose} className="px-6 py-2.5 rounded-full font-bold text-xs uppercase tracking-wide text-gray-600 bg-transparent border-2 border-gray-300">CANCELAR</button>
+          <button type="button" onClick={() => { onSave(editorRef.current ? editorRef.current.innerHTML : htmlContent); onClose(); }} className="px-8 py-2.5 rounded-full font-black text-xs uppercase tracking-wide text-outloud-blue bg-student-yellow shadow-md">GUARDAR REGLAS</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const CustomerManagement = ({ supabase }) => {
+  const [activeSubTab, setActiveSubTab] = useState('Estudiantes');
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  // Real Database State (No Mocks!)
+  const [students, setStudents] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Empty states for unbuilt features
+  const [payments, setPayments] = useState([]);
+  const [inactiveStudents, setInactiveStudents] = useState([]);
+  const [chatMessages, setChatMessages] = useState([]);
+  
+  const [selectedReceipt, setSelectedReceipt] = useState(null);
+  const [activeChannel, setActiveChannel] = useState('#chat-general');
+  const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
+  const channels = ['#anuncios', '#reglas', '#chat-general', '#foro-gramatica'];
+
+  // Fetch REAL Students from Supabase
+  useEffect(() => {
+    const fetchStudents = async () => {
+      setIsLoading(true);
+      const { data, error } = await supabase.from('profiles').select('*').eq('role', 'Student');
+      if (!error && data) {
+        setStudents(data);
+      } else {
+        console.error("Error fetching students:", error);
+      }
+      setIsLoading(false);
+    };
+    fetchStudents();
+  }, [supabase, activeSubTab]); // Re-fetch when clicking tabs to ensure fresh data
+
+  const filteredStudents = students.filter(student => 
+    `${student.first_name} ${student.last_name}`.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  return (
+    <div className="w-full flex flex-col items-center">
+      <div className="flex flex-wrap justify-center gap-4 mb-8 w-full">
+        {['Pagos', 'Estudiantes', 'Inactividad', 'Comunidad'].map((tab) => (
+          <button key={tab} onClick={() => setActiveSubTab(tab)} className={`px-6 py-3 rounded-xl text-xs md:text-sm font-montserrat font-bold uppercase tracking-wide transition-all shadow-sm ${activeSubTab === tab ? 'bg-outloud-blue text-white' : 'bg-[#e6f0f9] text-outloud-blue hover:bg-[#d6e6f5]'}`}>{tab}</button>
+        ))}
+      </div>
+
+      {activeSubTab === 'Estudiantes' && (
+        <div className="bg-white/95 rounded-[2rem] shadow-[0_15px_40px_rgba(0,0,0,0.05)] border border-white/60 p-6 md:p-8 w-full animate-fade-in">
+          <h2 className="text-2xl md:text-3xl font-black text-outloud-blue font-montserrat uppercase tracking-wide mb-6">DIRECTORIO DE ESTUDIANTES</h2>
+          <input type="text" placeholder="Buscar estudiante..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-outloud-blue font-semibold focus:outline-none focus:ring-2 focus:ring-student-yellow transition mb-6 shadow-inner" />
+          
+          <div className="flex flex-col gap-3 max-h-[600px] overflow-y-auto custom-scrollbar pr-2">
+            {isLoading ? (
+              <div className="py-8 text-center text-sm font-bold text-gray-400 uppercase tracking-widest">Cargando base de datos...</div>
+            ) : filteredStudents.length > 0 ? (
+              filteredStudents.map((student) => (
+                <div key={student.id} className="flex items-center p-3 bg-white rounded-xl border border-gray-200 shadow-sm hover:border-student-yellow transition-colors">
+                  <img src={student.avatar_url || 'https://i.pravatar.cc/150'} alt="Avatar" className="w-12 h-12 rounded-full object-cover border-2 border-gray-100 mr-4 shrink-0" />
+                  <span className="font-bold text-outloud-blue text-base md:text-lg mr-3 truncate">{student.first_name} {student.last_name}</span>
+                  <span className="bg-outloud-blue text-white rounded text-[10px] px-2 py-1 font-bold tracking-widest mr-2 shrink-0">{student.level?.split(':')[0] || 'A1'}</span>
+                  <span className="text-xs md:text-sm text-gray-400 italic font-semibold shrink-0">({student.role})</span>
+                </div>
+              ))
+            ) : (
+              <div className="py-8 text-center text-sm font-bold text-gray-400 uppercase tracking-widest bg-gray-50 rounded-xl border border-gray-200">No se encontraron estudiantes en la base de datos</div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Emptied views until we build their tables */}
+      {activeSubTab === 'Pagos' && (
+        <div className="bg-white/95 rounded-[2rem] shadow-[0_15px_40px_rgba(0,0,0,0.05)] border border-white/60 p-6 md:p-8 w-full animate-fade-in">
+          <h2 className="text-2xl md:text-3xl font-black text-outloud-blue font-montserrat uppercase tracking-wide mb-8">VERIFICACIÓN DE PAGOS</h2>
+          <div className="py-12 text-center text-sm font-bold text-gray-400 uppercase tracking-widest bg-gray-50 rounded-xl border border-gray-200">No hay transacciones registradas</div>
+        </div>
+      )}
+
+      {activeSubTab === 'Inactividad' && (
+        <div className="bg-white/95 rounded-[2rem] shadow-[0_15px_40px_rgba(0,0,0,0.05)] border border-white/60 p-6 md:p-8 w-full animate-fade-in">
+          <h2 className="text-2xl md:text-3xl font-black text-outloud-blue font-montserrat uppercase tracking-wide mb-6">ALERTAS DE INACTIVIDAD</h2>
+          <div className="py-12 text-center text-sm font-bold text-gray-400 uppercase tracking-widest bg-gray-50 rounded-xl border border-gray-200">Sin datos de actividad reciente</div>
+        </div>
+      )}
+
+      {activeSubTab === 'Comunidad' && (
+        <div className="bg-white/95 rounded-[2rem] shadow-[0_15px_40px_rgba(0,0,0,0.05)] border border-white/60 p-6 md:p-8 w-full animate-fade-in">
+          <h2 className="text-2xl md:text-3xl font-black text-outloud-blue font-montserrat uppercase tracking-wide mb-6">MODERACIÓN DE COMUNIDAD</h2>
+          <div className="py-12 text-center text-sm font-bold text-gray-400 uppercase tracking-widest bg-gray-50 rounded-xl border border-gray-200">El chat está vacío</div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// =========================================
+// 5. MASTER SETTINGS COMPONENTS
+// =========================================
+
+const AccountCreationModal = ({ isOpen, onClose, onSave }) => {
+  const [role, setRole] = useState('Student');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    firstName: '', lastName: '', email: '', whatsapp: '', avatarUrl: '', username: '', password: '',
+    level: 'A1: Básico 1', unit: 'Unit 1', discount: '0', credits: '0', cefr: 'C1', rate: '15.00', bioUrl: '', adminLevel: 'Admin (Content)',
+  });
+
+  if (!isOpen) return null;
+
+  const handleInputChange = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
+
+  const handleSubmit = async () => {
+    if (!formData.firstName || !formData.email || !formData.whatsapp || !formData.username || !formData.password) {
+      return alert('Please fill in all required universal fields (Name, Email, Phone, Username, Password).');
+    }
+    setIsSubmitting(true);
+    await onSave({ ...formData, role });
+    setIsSubmitting(false);
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-[400] flex items-center justify-center bg-outloud-blue/40 backdrop-blur-sm p-4">
+      <style>{`.custom-phone-input .PhoneInputInput { border: none; background: transparent; outline: none; width: 100%; font-size: 0.875rem; color: #08203e; } .custom-phone-input .PhoneInputCountryIcon { box-shadow: none; border: none; }`}</style>
+      <div className="w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/60 animate-fade-in flex flex-col max-h-[90vh]">
+        
+        <div className="bg-[#eef5fc] p-6 border-b border-gray-200 shrink-0 flex justify-between items-center">
+          <div>
+            <h2 className="text-outloud-blue font-black text-xl uppercase tracking-wider font-montserrat">CREATE NEW ACCOUNT</h2>
+          </div>
+          <div className="flex gap-2 bg-white p-1 rounded-xl shadow-sm border border-gray-200">
+            {['Student', 'Teacher', 'Admin'].map(r => (
+              <button key={r} onClick={() => setRole(r)} className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide transition-colors ${role === r ? 'bg-outloud-blue text-white' : 'text-gray-500 hover:bg-gray-100'}`}>{r === 'Admin' ? 'Admin / Super' : r}</button>
+            ))}
+          </div>
+        </div>
+        
+        <div className="p-6 overflow-y-auto custom-scrollbar flex flex-col md:flex-row gap-8 bg-gray-50 flex-grow">
+          <div className="flex-1 flex flex-col gap-5">
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-200 pb-2">Universal Profile Details</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-gray-500 uppercase">First Name *</label><input type="text" value={formData.firstName} onChange={(e) => handleInputChange('firstName', e.target.value)} className="w-full p-2.5 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-student-yellow" /></div>
+              <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-gray-500 uppercase">Last Name *</label><input type="text" value={formData.lastName} onChange={(e) => handleInputChange('lastName', e.target.value)} className="w-full p-2.5 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-student-yellow" /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-gray-500 uppercase">Username *</label><input type="text" value={formData.username} onChange={(e) => handleInputChange('username', e.target.value)} className="w-full p-2.5 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-student-yellow" /></div>
+              <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-gray-500 uppercase">Password *</label><input type="text" value={formData.password} onChange={(e) => handleInputChange('password', e.target.value)} className="w-full p-2.5 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-student-yellow" /></div>
+            </div>
+            <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-gray-500 uppercase">Email Address *</label><input type="email" value={formData.email} onChange={(e) => handleInputChange('email', e.target.value)} className="w-full p-2.5 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-student-yellow" /></div>
+            <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-gray-500 uppercase">WhatsApp Number *</label><PhoneInput international defaultCountry="US" value={formData.whatsapp} onChange={(value) => handleInputChange('whatsapp', value)} className="custom-phone-input w-full p-2.5 bg-white border border-gray-300 rounded-xl text-sm focus-within:ring-2 focus-within:ring-student-yellow transition flex items-center gap-3" /></div>
+            <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-gray-500 uppercase">Profile Picture URL</label><input type="url" value={formData.avatarUrl} onChange={(e) => handleInputChange('avatarUrl', e.target.value)} className="w-full p-2.5 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-student-yellow" /></div>
+          </div>
+
+          <div className="flex-1 flex flex-col gap-5">
+            <h3 className="text-xs font-bold text-outloud-blue uppercase tracking-widest border-b border-outloud-blue/20 pb-2 flex items-center justify-between">
+              {role} Configuration
+            </h3>
+            {role === 'Student' && (
+              <div className="grid grid-cols-2 gap-4">
+                 <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-gray-500 uppercase">Initial Level</label><select value={formData.level} onChange={(e) => handleInputChange('level', e.target.value)} className="w-full p-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none"><option>A1: Básico 1</option><option>A2: Básico 2</option><option>B1: Inter. 1</option></select></div>
+                 <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-gray-500 uppercase">Initial Unit</label><select value={formData.unit} onChange={(e) => handleInputChange('unit', e.target.value)} className="w-full p-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none"><option>Unit 1</option><option>Unit 2</option><option>Unit 3</option></select></div>
+                 <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-gray-500 uppercase">Discount Applied (%)</label><input type="number" min="0" max="100" value={formData.discount} onChange={(e) => handleInputChange('discount', e.target.value)} className="w-full p-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none text-center" /></div>
+                 <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-gray-500 uppercase">Starting Credits</label><input type="number" min="0" value={formData.credits} onChange={(e) => handleInputChange('credits', e.target.value)} className="w-full p-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none text-center" /></div>
+              </div>
+            )}
+            {role === 'Teacher' && (
+              <div className="grid grid-cols-2 gap-4">
+                 <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-gray-500 uppercase">CEFR Certification</label><select value={formData.cefr} onChange={(e) => handleInputChange('cefr', e.target.value)} className="w-full p-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none font-bold"><option>B2</option><option>C1</option><option>C2</option><option>Native</option></select></div>
+                 <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-gray-500 uppercase">Hourly Rate (USD)</label><input type="number" step="0.50" value={formData.rate} onChange={(e) => handleInputChange('rate', e.target.value)} className="w-full p-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none" /></div>
+                 <div className="flex flex-col gap-1.5 col-span-2"><label className="text-[10px] font-bold text-gray-500 uppercase">Resume / Bio PDF URL</label><input type="url" value={formData.bioUrl} onChange={(e) => handleInputChange('bioUrl', e.target.value)} className="w-full p-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none" /></div>
+              </div>
+            )}
+            {role === 'Admin' && (
+              <div className="flex flex-col gap-1.5">
+                 <label className="text-[10px] font-bold text-gray-500 uppercase">Admin Tier</label>
+                 <select value={formData.adminLevel} onChange={(e) => handleInputChange('adminLevel', e.target.value)} className="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none font-bold text-outloud-blue"><option>Admin (Content & Teachers)</option><option>Admin (Financials & Students)</option><option>Super Admin (General Manager)</option></select>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="p-4 bg-white border-t border-gray-200 flex justify-end gap-4 shrink-0">
+          <button type="button" onClick={onClose} className="px-6 py-3 rounded-full font-bold text-xs uppercase tracking-wide text-gray-600 bg-transparent border-2 border-gray-300 hover:bg-gray-200 transition">CANCEL</button>
+          <button type="button" onClick={handleSubmit} disabled={isSubmitting} className="px-8 py-3 rounded-full font-black text-xs uppercase tracking-wide text-outloud-blue bg-student-yellow hover:scale-105 active:scale-95 disabled:opacity-50">{isSubmitting ? 'PROVISIONING...' : `PROVISION ${role.toUpperCase()} ACCOUNT`}</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const UserManagementDrawer = ({ user, onClose }) => {
+  const [showPassword, setShowPassword] = useState(false);
+  const [editableWhatsApp, setEditableWhatsApp] = useState('');
+
+  useEffect(() => { if (user) setEditableWhatsApp(user.whatsapp || ''); }, [user]);
+
+  if (!user) return null;
+
+  return (
+    <>
+      <div className="fixed inset-0 bg-outloud-blue/20 backdrop-blur-sm z-[299] transition-opacity animate-fade-in" onClick={onClose} />
+      
+      <div className="fixed inset-y-0 right-0 w-full max-w-md bg-white shadow-2xl z-[300] flex flex-col transform transition-transform duration-300 ease-in-out border-l border-white/60 animate-fade-in overflow-hidden">
+        <div className="bg-[#eef5fc] p-6 border-b border-gray-200 flex justify-between items-start shrink-0">
+          <div className="flex flex-col">
+            <h3 className="text-lg font-black text-outloud-blue font-montserrat uppercase tracking-wide">{user.role} Profile Management</h3>
+            <span className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-1">ID: {user.id.substring(0,8)}...</span>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-red-50 hover:text-red-500 transition shadow-sm">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+        </div>
+
+        <div className="p-6 overflow-y-auto custom-scrollbar flex flex-col gap-6 flex-grow bg-gray-50">
+          <div className="flex flex-col items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+            <img src={user.avatar_url || 'https://i.pravatar.cc/150'} alt="Avatar" className="w-24 h-24 rounded-full object-cover border-4 border-gray-50 shadow-sm mb-4" />
+            <h4 className="text-xl font-bold text-outloud-blue mb-1">{user.first_name} {user.last_name}</h4>
+            <div className="flex gap-2 mt-2">
+              <span className={`text-white rounded text-[10px] px-3 py-1 font-bold uppercase tracking-widest ${user.role === 'Student' ? 'bg-blue-500' : user.role === 'Teacher' ? 'bg-purple-500' : 'bg-red-500'}`}>{user.role}</span>
+              {user.cefr && <span className="bg-outloud-blue text-white rounded text-[10px] px-3 py-1 font-bold tracking-widest">{user.cefr}</span>}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3">
+             <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-200 pb-1">Contact Information</h4>
+             <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex flex-col gap-2 text-sm">
+               <div className="flex justify-between items-center"><span className="font-semibold text-gray-500">Email:</span><input type="email" defaultValue={user.email} className="w-48 bg-gray-50 border border-gray-200 rounded p-1.5 text-xs font-bold text-outloud-blue focus:outline-none focus:border-student-yellow" /></div>
+               <div className="flex justify-between items-center"><span className="font-semibold text-gray-500">WhatsApp:</span><PhoneInput international defaultCountry="US" value={editableWhatsApp} onChange={setEditableWhatsApp} className="custom-phone-input w-48 bg-gray-50 border border-gray-200 rounded p-1.5 text-xs font-bold focus-within:border-student-yellow flex items-center gap-2" /></div>
+             </div>
+          </div>
+
+          {user.role === 'Student' && (
+             <div className="flex flex-col gap-3">
+               <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-200 pb-1">Academic & Financial</h4>
+               <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex flex-col gap-3 text-sm">
+                 <div className="flex justify-between items-center"><span className="font-semibold text-gray-500">Current Level:</span><select defaultValue={user.level} className="bg-gray-50 border border-gray-200 rounded p-1 text-xs font-bold text-outloud-blue focus:outline-none"><option>A1: Básico 1</option><option>A2: Básico 2</option></select></div>
+                 <div className="flex justify-between items-center"><span className="font-semibold text-gray-500">Discounts (%):</span><input type="number" defaultValue={user.discount || 0} className="w-16 bg-gray-50 border border-gray-200 rounded p-1 text-xs font-bold text-center focus:outline-none" /></div>
+                 <div className="flex justify-between items-center"><span className="font-semibold text-gray-500">Available Credits:</span><input type="number" defaultValue={user.credits || 0} className="w-16 bg-gray-50 border border-gray-200 rounded p-1 text-xs font-bold text-center focus:outline-none" /></div>
+               </div>
+             </div>
+          )}
+          
+          {/* Real Authentication credentials cannot be fetched backwards from Supabase Auth for security, we only show the username from the profile table */}
+          <div className="flex flex-col gap-3">
+             <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-200 pb-1">System Security</h4>
+             <div className="bg-red-50 p-3 rounded-xl border border-red-100 shadow-sm flex flex-col gap-2 text-sm">
+               <div className="flex justify-between items-center"><span className="font-semibold text-red-800">Username:</span><input type="text" defaultValue={user.username} className="w-48 bg-white border border-red-200 rounded p-1.5 text-xs font-bold text-gray-700 focus:outline-none focus:ring-1 focus:ring-red-400" /></div>
+             </div>
+          </div>
+        </div>
+
+        <div className="p-4 bg-white border-t border-gray-200 shrink-0 flex flex-col gap-2">
+          <button className="w-full bg-student-yellow text-outloud-blue font-black rounded-xl py-3 shadow-md uppercase tracking-wide hover:opacity-90 transition-opacity text-xs">SAVE CHANGES</button>
+        </div>
+      </div>
+    </>
+  );
+};
+
+const MasterSettings = ({ supabase }) => {
+  const [activeSubTab, setActiveSubTab] = useState('User Provisioning');
+  const [isCreationModalOpen, setIsCreationModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [usersList, setUsersList] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchUsers = async () => {
+    setIsLoading(true);
+    const { data, error } = await supabase.from('profiles').select('*');
+    if (!error && data) setUsersList(data);
+    setIsLoading(false);
+  };
+
+  useEffect(() => { fetchUsers(); }, [supabase, activeSubTab]);
+
+ // REAL SUPABASE ADMIN CREATION LOGIC (BYPASSING THE BROWSER ALARM)
+ // SECURE EDGE FUNCTION CREATION LOGIC
+  const handleSaveNewAccount = async (data) => {
+    try {
+      // We ask the secure vault to do the heavy lifting
+      const { data: responseData, error } = await supabase.functions.invoke('provision-user', {
+        body: data
+      });
+
+      if (error) throw error;
+
+      alert(`${data.role} account securely provisioned!`);
+      fetchUsers(); // Refresh the directory list
+      
+    } catch (error) {
+      console.error("Error creating user:", error);
+      alert(`Failed to create user: ${error.message || 'Unknown error'}`);
+    }
+  };
+
+  return (
+    <div className="w-full flex flex-col items-center">
+      <div className="flex flex-wrap justify-center gap-4 mb-8 w-full">
+        {['Analytics', 'Teacher Directory', 'Candidate Evaluator', 'System Logs', 'User Provisioning'].map((tab) => (
+          <button key={tab} onClick={() => setActiveSubTab(tab)} className={`px-6 py-3 rounded-xl text-xs md:text-sm font-montserrat font-bold uppercase tracking-wide transition-all shadow-sm ${activeSubTab === tab ? 'bg-outloud-blue text-white' : 'bg-[#e6f0f9] text-outloud-blue hover:bg-[#d6e6f5]'}`}>{tab}</button>
+        ))}
+      </div>
+
+      {activeSubTab === 'User Provisioning' && (
+        <div className="bg-white/95 rounded-[2rem] shadow-[0_15px_40px_rgba(0,0,0,0.05)] border border-white/60 p-6 md:p-8 w-full animate-fade-in relative overflow-hidden">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
+            <h2 className="text-2xl md:text-3xl font-black text-outloud-blue font-montserrat uppercase tracking-wide">USER PROVISIONING & ACCESS</h2>
+            <button onClick={() => setIsCreationModalOpen(true)} className="bg-student-yellow text-outloud-blue font-black rounded-full px-6 py-3 shadow-md uppercase tracking-wide hover:scale-105 transition-transform text-xs">+ CREATE NEW ACCOUNT</button>
+          </div>
+          
+          <div className="flex flex-col gap-3 max-h-[600px] overflow-y-auto custom-scrollbar pr-2">
+            {isLoading ? (
+              <div className="py-8 text-center text-sm font-bold text-gray-400 uppercase tracking-widest">Cargando base de datos...</div>
+            ) : usersList.length > 0 ? usersList.map((u) => (
+              <div key={u.id} onClick={() => setSelectedUser(u)} className="flex items-center p-3 bg-white rounded-xl border border-gray-200 shadow-sm hover:border-student-yellow hover:shadow-md cursor-pointer transition-all">
+                <img src={u.avatar_url || 'https://i.pravatar.cc/150'} alt="Avatar" className="w-12 h-12 rounded-full object-cover border-2 border-gray-100 mr-4 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <span className="font-bold text-outloud-blue text-base md:text-lg mr-3 truncate block md:inline">{u.first_name} {u.last_name}</span>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  <span className={`text-white rounded text-[10px] px-2 py-1 font-bold tracking-widest ${u.role === 'Student' ? 'bg-blue-500' : u.role === 'Teacher' ? 'bg-purple-500' : 'bg-red-500'}`}>{u.role}</span>
+                </div>
+              </div>
+            )) : <p className="text-center text-gray-400 font-bold uppercase tracking-widest text-xs py-10">No users found in database.</p>}
+          </div>
+
+          <AccountCreationModal isOpen={isCreationModalOpen} onClose={() => setIsCreationModalOpen(false)} onSave={handleSaveNewAccount} />
+          <UserManagementDrawer user={selectedUser} onClose={() => setSelectedUser(null)} />
+        </div>
+      )}
+
+      {/* Emptied views until built */}
+      {activeSubTab === 'Analytics' && (
+        <div className="bg-white/95 rounded-[2rem] shadow-[0_15px_40px_rgba(0,0,0,0.05)] border border-white/60 p-6 md:p-8 w-full animate-fade-in">
+          <h2 className="text-2xl md:text-3xl font-black text-outloud-blue font-montserrat uppercase tracking-wide mb-8">PLATFORM ANALYTICS</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 flex flex-col items-center justify-center"><span className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Monthly Recurring Revenue</span><span className="text-3xl font-black text-outloud-blue">$0.00</span></div>
+            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 flex flex-col items-center justify-center"><span className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Active Cohort Split</span><span className="text-3xl font-black text-outloud-blue">0% / 0%</span></div>
+            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 flex flex-col items-center justify-center"><span className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Class Utilization Rate</span><span className="text-3xl font-black text-outloud-blue">0%</span></div>
+            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 flex flex-col items-center justify-center"><span className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Student Churn</span><span className="text-3xl font-black text-outloud-blue">0%</span></div>
+          </div>
+        </div>
+      )}
+
+      {activeSubTab === 'Teacher Directory' && (
+        <div className="bg-white/95 rounded-[2rem] shadow-[0_15px_40px_rgba(0,0,0,0.05)] border border-white/60 p-6 md:p-8 w-full animate-fade-in">
+          <h2 className="text-2xl md:text-3xl font-black text-outloud-blue font-montserrat uppercase tracking-wide mb-6">TEACHER MANAGEMENT</h2>
+          <div className="flex flex-col gap-3 max-h-[600px] overflow-y-auto custom-scrollbar pr-2">
+            {isLoading ? <div className="py-8 text-center text-sm font-bold text-gray-400 uppercase tracking-widest">Cargando base de datos...</div> : usersList.filter(u => u.role === 'Teacher').length > 0 ? usersList.filter(u => u.role === 'Teacher').map((teacher) => (
+              <div key={teacher.id} onClick={() => setSelectedUser(teacher)} className="flex items-center p-3 bg-white rounded-xl border border-gray-200 shadow-sm hover:border-student-yellow cursor-pointer transition-all">
+                <img src={teacher.avatar_url || 'https://i.pravatar.cc/150'} alt="Avatar" className="w-12 h-12 rounded-full object-cover border-2 border-gray-100 mr-4 shrink-0" />
+                <span className="font-bold text-outloud-blue text-base md:text-lg mr-3 truncate">{teacher.first_name} {teacher.last_name}</span>
+                <span className="bg-outloud-blue text-white rounded text-[10px] px-2 py-1 font-bold tracking-widest mr-2 shrink-0">{teacher.cefr}</span>
+              </div>
+            )) : <p className="text-center text-gray-400 font-bold uppercase tracking-widest text-xs py-10">No teachers found in database.</p>}
+          </div>
+          <UserManagementDrawer user={selectedUser} onClose={() => setSelectedUser(null)} />
+        </div>
+      )}
+
+      {(activeSubTab === 'Candidate Evaluator' || activeSubTab === 'System Logs') && (
+        <div className="bg-white/95 rounded-[2rem] shadow-[0_15px_40px_rgba(0,0,0,0.05)] border border-white/60 p-12 w-full flex items-center justify-center">
+           <p className="text-gray-400 font-bold uppercase tracking-widest text-sm text-center">Module {activeSubTab} empty pending data insertion.</p>
+        </div>
+      )}
     </div>
   );
 };
