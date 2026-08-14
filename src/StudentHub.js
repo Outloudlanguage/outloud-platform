@@ -230,19 +230,24 @@ const MobileView = ({ student, onReturnHome }) => {
 // ==========================================
 // 3. MAIN ROUTER COMPONENT (Traffic Cop)
 // ==========================================
-const StudentHub = ({ onReturnHome }) => {
+const StudentHub = ({ onReturnHome, preloadedStudent }) => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [studentData, setStudentData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', handleResize);
-    
-    fetchStudentProfile();
+  const handleResize = () => setIsMobile(window.innerWidth < 768);
+  window.addEventListener('resize', handleResize);
 
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  if (preloadedStudent) {
+    setStudentData(preloadedStudent);
+    setLoading(false);
+  } else {
+    fetchStudentProfile();
+  }
+
+  return () => window.removeEventListener('resize', handleResize);
+}, [preloadedStudent]);
 
   const fetchStudentProfile = async () => {
     try {

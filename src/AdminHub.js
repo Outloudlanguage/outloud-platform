@@ -3,6 +3,7 @@ import { supabase, supabaseAdmin } from './SupabaseClient';
 import { createClient } from '@supabase/supabase-js';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
+import StudentHub from './StudentHub';
 
 // =========================================
 // CONSTANTS FOR MAPPING
@@ -2633,6 +2634,7 @@ const CustomerManagement = ({ supabase }) => {
 
   return (
     <div className="w-full flex flex-col items-center">
+
       <StudentRegistrationForm />
       <div className="flex flex-wrap justify-center gap-4 mb-8 w-full">
         {['Pagos', 'Estudiantes', 'Inactividad', 'Comunidad'].map((tab) => (
@@ -2857,6 +2859,7 @@ const MasterSettings = ({ supabase }) => {
   const [activeSubTab, setActiveSubTab] = useState('User Provisioning');
   const [isCreationModalOpen, setIsCreationModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [impersonatedStudent, setImpersonatedStudent] = useState(null);
   const [usersList, setUsersList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -2891,6 +2894,24 @@ const MasterSettings = ({ supabase }) => {
 
   return (
     <div className="w-full flex flex-col items-center">
+      {impersonatedStudent && (
+  <div className="fixed inset-0 z-[9999] bg-gray-50 flex flex-col h-screen overflow-hidden">
+    <div className="w-full bg-red-600 text-white px-6 py-3 flex justify-between items-center shadow-lg z-[10000]">
+      <span className="font-bold uppercase tracking-widest text-xs md:text-sm flex items-center gap-2">
+        <span className="animate-pulse">🔴</span> VIEWING AS: {impersonatedStudent.first_name} {impersonatedStudent.last_name}
+      </span>
+      <button 
+        onClick={() => setImpersonatedStudent(null)} 
+        className="bg-white text-red-600 px-4 py-2 rounded-lg font-black text-xs uppercase tracking-widest hover:scale-105 active:scale-95 transition-transform shadow-md"
+      >
+        EXIT IMPERSONATION
+      </button>
+    </div>
+    <div className="flex-1 overflow-y-auto relative">
+      <StudentHub preloadedStudent={impersonatedStudent} /> 
+    </div>
+  </div>
+)}
       <div className="flex flex-wrap justify-center gap-4 mb-8 w-full">
         {['Analytics', 'Teacher Directory', 'Candidate Evaluator', 'System Logs', 'User Provisioning'].map((tab) => (
           <button key={tab} onClick={() => setActiveSubTab(tab)} className={`px-6 py-3 rounded-xl text-xs md:text-sm font-montserrat font-bold uppercase tracking-wide transition-all shadow-sm ${activeSubTab === tab ? 'bg-outloud-blue text-white' : 'bg-[#e6f0f9] text-outloud-blue hover:bg-[#d6e6f5]'}`}>{tab}</button>
@@ -2915,6 +2936,14 @@ const MasterSettings = ({ supabase }) => {
                 </div>
                 <div className="flex gap-2 shrink-0">
                   <span className={`text-white rounded text-[10px] px-2 py-1 font-bold tracking-widest ${u.role === 'Student' ? 'bg-blue-500' : u.role === 'Teacher' ? 'bg-purple-500' : 'bg-red-500'}`}>{u.role}</span>
+                  {u.role === 'Student' && (
+  <button 
+    onClick={(e) => { e.stopPropagation(); setImpersonatedStudent(u); }} 
+    className="ml-2 bg-gray-100 text-gray-500 border border-gray-200 rounded text-[10px] px-2 py-1 font-bold tracking-widest hover:bg-outloud-blue hover:text-white transition-colors"
+  >
+    VIEW AS
+  </button>
+)}
                 </div>
               </div>
             )) : <p className="text-center text-gray-400 font-bold uppercase tracking-widest text-xs py-10">No users found in database.</p>}
