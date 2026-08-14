@@ -228,13 +228,168 @@ const MobileView = ({ student, onReturnHome }) => {
 };
 
 // ==========================================
+// GATEKEEPER UI: THE EVALUATION CROSSROAD
+// ==========================================
+const EvaluationCrossroad = ({ data, onRetry, onBookClass, onBookTutoring }) => {
+  const { lessonScore, workbookScore, fails } = data;
+  const passed = lessonScore >= 75 && workbookScore >= 75;
+  const isStrikeTwo = fails >= 1;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#08203e]/80 backdrop-blur-sm px-4">
+      <div className="bg-white rounded-[30px] p-8 max-w-md w-full shadow-2xl flex flex-col items-center text-center font-montserrat">
+        <h2 className="text-2xl font-black text-outloud-blue mb-6">
+          {passed ? "¡Felicidades!" : "Resultados de la Unidad"}
+        </h2>
+
+        <div className="w-full space-y-4 mb-8">
+          <div>
+            <div className="flex justify-between text-sm font-bold text-gray-500 mb-1">
+              <span>Lección</span>
+              <span>{lessonScore}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-3">
+              <div className={`h-3 rounded-full ${lessonScore >= 75 ? 'bg-green-500' : 'bg-red-500'}`} style={{ width: `${lessonScore}%` }}></div>
+            </div>
+          </div>
+          
+          <div>
+            <div className="flex justify-between text-sm font-bold text-gray-500 mb-1">
+              <span>Workbook</span>
+              <span>{workbookScore}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-3">
+              <div className={`h-3 rounded-full ${workbookScore >= 75 ? 'bg-green-500' : 'bg-red-500'}`} style={{ width: `${workbookScore}%` }}></div>
+            </div>
+          </div>
+        </div>
+
+        {passed ? (
+          <>
+            <p className="text-gray-600 mb-6 font-medium">¡Has superado el 75% en ambas actividades! Ya puedes agendar tu clase en vivo.</p>
+            <button onClick={onBookClass} className="w-full py-3 bg-[#fcd34d] text-outloud-blue font-black rounded-full hover:scale-105 transition-transform">
+              OPEN CALENDAR
+            </button>
+          </>
+        ) : !isStrikeTwo ? (
+          <>
+            <p className="text-sm text-red-500 font-bold mb-6">
+              Necesitas al menos 75% para avanzar al siguiente nivel. Inténtalo de nuevo, un tutor se pondrá en contacto contigo para definir cómo ayudarte.
+            </p>
+            <button onClick={onRetry} className="w-full py-3 bg-outloud-blue text-white font-black rounded-full hover:scale-105 transition-transform">
+              TRY AGAIN
+            </button>
+          </>
+        ) : (
+          <>
+            <p className="text-sm text-red-500 font-bold mb-6">
+              Has completado tu segundo intento. Por favor agenda una clase complementaria personalizada.
+            </p>
+            <button onClick={onBookTutoring} className="w-full py-3 bg-pink-500 text-white font-black rounded-full hover:scale-105 transition-transform shadow-lg shadow-pink-500/30">
+              COMPLEMENTARY CLASS
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+// ==========================================
 // 3. MAIN ROUTER COMPONENT (Traffic Cop)
 // ==========================================
 const StudentHub = ({ onReturnHome, preloadedStudent }) => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [studentData, setStudentData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [activeLesson, setActiveLesson] = useState(null);
+  const [isFetchingLesson, setIsFetchingLesson] = useState(false);
+  const [showEvaluation, setShowEvaluation] = useState(false);
+  const [evaluationData, setEvaluationData] = useState({ lessonScore: 0, workbookScore: 0, fails: 0 });
+// --- LESSON RETRIEVAL LOGIC ---
+  const handleStartLesson = async () => {
+    if (!studentData) return;
+    setIsFetchingLesson(true);
+    
+    try {
+      const { data, error } = await supabase
+        .from('content_blueprints')
+        .select('*')
+        .eq('level', studentData.level)
+        .eq('content_type', 'Lesson')
+        .limit(1)
+        .single();
 
+      if (error) throw error;
+      setActiveLesson(data);
+      console.log("SUCCESS! Lesson Blueprint Loaded:", data);
+
+    } catch (err) {
+      console.error("Error loading lesson:", err);
+      alert("No active lesson found for your current level yet!");
+    } finally {
+      setIsFetchingLesson(false);
+    }
+  };
+
+  // --- 75% GATEKEEPER LOGIC ---
+  const handleWorkbookComplete = async (calculatedLessonScore, calculatedWorkbookScore) => {
+    if (!studentData) return;
+    
+    // 1. Pull their current fail count
+    const currentFails = studentData.unit_fail_count || 0;
+    
+    // 2. Save scores to memory to show on the screen
+    setEvaluationData({
+      lessonScore: calculatedLessonScore,
+      workbookScore: calculatedWorkbookScore,
+      fails: currentFails
+    });
+    // --- EVALUATION HANDLERS ---
+  const handleRetry = async () => {
+    if (!studentData) return;
+    const newFails = (studentData.unit_fail_count || 0) + 1;
+    
+    // 1. Soft Wipe in Database: Increase fails, clear scores, but keep the submitted JSON answers for the tutor
+    await supabase
+      .from('profiles')
+      .update({ 
+        unit_fail_count: newFails,
+        lesson_score: null,
+        workbook_score: null
+      })
+      .eq('id', studentData.id);
+
+    // 2. Reset the local screen memory and close the pop-up
+    setStudentData({ ...studentData, unit_fail_count: newFails, lesson_score: null, workbook_score: null });
+    setShowEvaluation(false);
+  };
+
+  const handleBookClass = () => {
+    // TODO: Wire to calendar widget with standard class tag
+    console.log("Opening standard calendar...");
+    setShowEvaluation(false);
+  };
+
+  const handleBookTutoring = () => {
+    // TODO: Wire to calendar widget with tutoring tag
+    console.log("Opening tutoring calendar...");
+    setShowEvaluation(false);
+  };
+
+    // 3. Open the Gatekeeper UI
+    setShowEvaluation(true);
+
+    // 4. Quietly save scores to Supabase database
+    const { error } = await supabase
+      .from('profiles')
+      .update({ 
+        lesson_score: calculatedLessonScore, 
+        workbook_score: calculatedWorkbookScore 
+      })
+      .eq('id', studentData.id);
+
+    if (error) console.error("Error saving scores:", error);
+  };
   useEffect(() => {
   const handleResize = () => setIsMobile(window.innerWidth < 768);
   window.addEventListener('resize', handleResize);
@@ -277,10 +432,37 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
   }
 
   // The switch that decides which isolated component to render
-  return isMobile ? (
-    <MobileView student={studentData} onReturnHome={onReturnHome} />
-  ) : (
-    <DesktopView student={studentData} onReturnHome={onReturnHome} />
+return (
+    <>
+      {showEvaluation && (
+        <EvaluationCrossroad 
+          data={evaluationData}
+          onRetry={handleRetry}
+          onBookClass={handleBookClass}
+          onBookTutoring={handleBookTutoring}
+        />
+      )}
+      
+      {isMobile ? (
+        <MobileView 
+          student={studentData} 
+          onReturnHome={onReturnHome}
+          onStartLesson={handleStartLesson}
+          onWorkbookComplete={handleWorkbookComplete}
+          activeLesson={activeLesson}
+          isFetchingLesson={isFetchingLesson}
+        />
+      ) : (
+        <DesktopView 
+          student={studentData} 
+          onReturnHome={onReturnHome} 
+          onStartLesson={handleStartLesson}
+          onWorkbookComplete={handleWorkbookComplete}
+          activeLesson={activeLesson}
+          isFetchingLesson={isFetchingLesson}
+        />
+      )}
+    </>
   );
 };
 
