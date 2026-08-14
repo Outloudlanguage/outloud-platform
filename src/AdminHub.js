@@ -2107,7 +2107,7 @@ const AdminHub = () => {
         <>
           <div className="relative z-10 flex flex-col items-center w-full flex-grow">
                         {activeTab === 'CONTENT_EDITING' && (
-            <div className="sticky top-0 z-[150] bg-white/95 backdrop-blur-md pt-6 pb-4 border-b border-gray-200 flex flex-col w-full px-2 lg:px-8 shadow-sm rounded-b-2xl transition-all">
+            <div className="fixed top-0 left-0 w-full z-[150] bg-white/95 backdrop-blur-md pt-6 pb-4 border-b border-gray-200 shadow-md">
                 <h3 className="text-lg md:text-xl font-black text-outloud-blue font-montserrat uppercase mb-6 tracking-wide">CONTENT MANAGEMENT</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
                   <AdminDropdown placeholder="Select Level" options={LEVEL_OPTIONS} value={selectedLevel} onChange={setSelectedLevel} />
@@ -2136,7 +2136,7 @@ const AdminHub = () => {
             )}
             
 
-
+<div className="w-full h-[220px] shrink-0 pointer-events-none"></div>
             {(contentType === 'Lesson' ? lessonScreens : workbookScreens > 0 ? Array.from({length: workbookScreens}, (_, i) => i + 1) : []).map((screenId, index) => (
               <React.Fragment key={screenId}>
                 {index > 0 && !isPreviewMode && (
