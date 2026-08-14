@@ -21,13 +21,13 @@ const LEVEL_OPTIONS = Object.keys(LEVEL_UNIT_MAP);
 
 const LESSON_TOOLS = [
   'Text', 'Shape', 'Video', 'Audio', 'Image', 'Record & Compare', 
-  'Fill in the blank', 'Drag and drop', 'Short answer', 'Multiple selection', 'Slider bar'
+  'Fill in the blank', 'Drag and drop', 'Short answer', 'Multiple selection', 'Slider bar', 'Next Screen Button'
 ];
 
 const WORKBOOK_TOOLS = [
   'Text', 'Shape', 'Image', 'Record & Compare', 
   'Fill in the blank', 'Drag and drop', 'Short answer', 'Multiple selection', 'Slider bar',
-  'Crossword', 'Word search'
+  'Crossword', 'Word search', 'Next Screen Button'
 ];
 
 const RESIZE_HANDLES = [
@@ -1232,6 +1232,7 @@ const AdminHub = () => {
     else if (tool === 'Slider bar') { setEditingElementId(null); setActiveModal('slider_bar'); }
     else if (tool === 'Crossword') { setEditingElementId(null); setActiveModal('crossword'); }
     else if (tool === 'Word search') { setEditingElementId(null); setActiveModal('word_search'); }
+    else if (tool === 'Next Screen Button') spawnInteractiveElement('nav_button');
     else console.log(`Tool selected: ${tool}`); 
   };
 
@@ -1248,6 +1249,7 @@ const AdminHub = () => {
       newElement.htmlContent = `<span style="font-family: Montserrat; font-size: 24px; color: #08203e;">Type your text here...</span>`;
     }
 
+    else if (type === 'nav_button') { newElement.width = 250; newElement.height = 60; }
     setCanvasElements([...canvasElements, newElement]);
     if (type === 'text') setTimeout(() => setEditingTextId(newElement.id), 50);
   };
@@ -2095,7 +2097,16 @@ const AdminHub = () => {
               </div>
             </div>
 
-            {activeTab === 'CONTENT_EDITING' && (
+            {activeTab === 'CUSTOMER_MANAGEMENT' && <CustomerManagement supabase={supabase} />}
+            {activeTab === 'MASTER_SETTINGS' && <MasterSettings supabase={supabase} />}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'CONTENT_EDITING' && (
+        <>
+          <div className="relative z-10 flex flex-col items-center w-full flex-grow">
+                        {activeTab === 'CONTENT_EDITING' && (
             <div className="sticky top-0 z-[150] bg-white/95 backdrop-blur-md pt-6 pb-4 border-b border-gray-200 flex flex-col w-full px-2 lg:px-8 shadow-sm rounded-b-2xl transition-all">
                 <h3 className="text-lg md:text-xl font-black text-outloud-blue font-montserrat uppercase mb-6 tracking-wide">CONTENT MANAGEMENT</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
@@ -2124,15 +2135,8 @@ const AdminHub = () => {
               </div>
             )}
             
-            {activeTab === 'CUSTOMER_MANAGEMENT' && <CustomerManagement supabase={supabase} />}
-            {activeTab === 'MASTER_SETTINGS' && <MasterSettings supabase={supabase} />}
-          </div>
-        </div>
-      )}
 
-      {activeTab === 'CONTENT_EDITING' && (
-        <>
-          <div className="relative z-10 flex flex-col items-center w-full flex-grow">
+
             {(contentType === 'Lesson' ? lessonScreens : workbookScreens > 0 ? Array.from({length: workbookScreens}, (_, i) => i + 1) : []).map((screenId, index) => (
               <React.Fragment key={screenId}>
                 {index > 0 && !isPreviewMode && (
@@ -2469,6 +2473,18 @@ const AdminHub = () => {
                              );
                           })()}
 
+{el.type === 'nav_button' && (
+  <div className={`w-full h-full flex items-center justify-center rounded-full shadow-lg font-black uppercase tracking-widest text-sm transition-transform ${isPreviewMode ? 'bg-outloud-blue text-white cursor-pointer hover:scale-[1.02] active:scale-95 shadow-xl' : 'bg-gray-200 text-gray-500 border-2 border-dashed border-gray-400'}`}
+       onClick={() => {
+         if (isPreviewMode) {
+           const nextId = (contentType === 'Lesson' ? lessonScreens : Array.from({length: workbookScreens}, (_, i) => i + 1))[index + 1];
+           handlePreviewContinue(screenId, nextId);
+         }
+       }}
+  >
+    {index === (contentType === 'Lesson' ? lessonScreens.length : workbookScreens) - 1 ? 'FINISH' : 'CONTINUE ⬇'}
+  </div>
+)}
                           {/* --- SHARED ADVANCED UI EDITING OVERLAYS --- */}
                           {!isPreviewMode && !isTool && editingTextId !== el.id && (
                             <div className={`absolute inset-0 pointer-events-none ${el.type === 'text' ? 'hover:ring-2 hover:ring-student-yellow hover:bg-yellow-50/10' : ''}`} style={{ pointerEvents: editingTextId === el.id ? 'none' : 'auto' }}>
