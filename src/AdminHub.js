@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import StudentHub from './StudentHub';
+import AdminCalendar from './AdminCalendar';
 
 // =========================================
 // CONSTANTS FOR MAPPING
@@ -1293,12 +1294,25 @@ const AdminHub = () => {
   };
 
   const handleSaveShape = (data) => {
-    if (editingElementId) { setCanvasElements(prev => prev.map(el => el.id === editingElementId ? { ...el, data } : el)); } 
-    else {
-      const newElement = { id: `shape_${Date.now()}`, type: 'shape', screenId: activeScreenId };
+    if (editingElementId) { 
+      setCanvasElements(prev => prev.map(el => el.id === editingElementId ? { ...el, data } : el)); 
+    } else {
+      const newElement = { 
+        id: `shape_${Date.now()}`, 
+        type: 'shape', 
+        screenId: activeScreenId,
+        x: 50,
+        y: 50,
+        width: 150,
+        height: 150,
+        rotation: 0,
+        layer: 10,
+        data: data 
+      };
       setCanvasElements([...canvasElements, newElement]);
     }
-    setActiveModal(null); setEditingElementId(null);
+    setActiveModal(null); 
+    setEditingElementId(null);
   };
 
   const handleSaveDragAndDrop = (data) => {
@@ -2095,11 +2109,18 @@ const AdminHub = () => {
                 >
                   MASTER SETTINGS
                 </button>
+                <button 
+                  onClick={() => setActiveTab('CALENDAR')}
+                  className={`flex-1 max-w-[280px] w-full py-3 px-2 rounded-full text-xs md:text-sm uppercase tracking-wide transition-all text-center truncate ${activeTab === 'CALENDAR' ? 'bg-student-yellow text-outloud-blue font-black border-none shadow-md active:scale-95' : 'bg-transparent border-[1.5px] border-dashed border-outloud-blue text-outloud-blue font-bold hover:bg-[#e6f0f9]'}`}
+                >
+                  SESSION CALENDAR
+                </button>
               </div>
             </div>
 
             {activeTab === 'CUSTOMER_MANAGEMENT' && <CustomerManagement supabase={supabase} />}
             {activeTab === 'MASTER_SETTINGS' && <MasterSettings supabase={supabase} />}
+            {activeTab === 'CALENDAR' && <AdminCalendar supabase={supabase}/>}
           </div>
         </div>
       )}
