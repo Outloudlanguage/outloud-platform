@@ -1081,6 +1081,7 @@ const AdminHub = () => {
   const [lessonScreens, setLessonScreens] = useState([1]); 
   const [workbookScreens, setWorkbookScreens] = useState(1); 
   const [canvasElements, setCanvasElements] = useState([]); 
+  const [activeScreenId, setActiveScreenId] = useState(1);
 
   // Tool Modals State
   const [activeModal, setActiveModal] = useState(null); 
@@ -1238,7 +1239,7 @@ const AdminHub = () => {
 
   const spawnInteractiveElement = (type) => {
     let newElement = {
-      id: `${type}_${Date.now()}`, type: type, screenId: contentType === 'Lesson' ? lessonScreens[0] : workbookScreens, 
+      id: `${type}_${Date.now()}`, type: type, screenId: activeScreenId } 
       x: 50, y: 50, width: 200, height: 100, rotation: 0, layer: 10 
     };
 
@@ -1273,7 +1274,7 @@ const AdminHub = () => {
 
     const newElement = {
       id: `${activeModal}_${Date.now()}`, type: activeModal, url: mediaUrlInput,
-      screenId: contentType === 'Lesson' ? lessonScreens[0] : workbookScreens, 
+      screenId: activeScreenId, 
       x: 50, y: 50, width: defaultWidth, height: defaultHeight, rotation: 0, layer: 10,
       imgX: 0, imgY: 0, imgW: defaultWidth, imgH: defaultHeight
     };
@@ -1285,7 +1286,7 @@ const AdminHub = () => {
   const handleSaveFillInTheBlank = (data) => {
     if (editingElementId) { setCanvasElements(prev => prev.map(el => el.id === editingElementId ? { ...el, data } : el)); } 
     else {
-      const newElement = { id: `fill_in_the_blank_${Date.now()}`, type: 'fill_in_the_blank', screenId: contentType === 'Lesson' ? lessonScreens[0] : workbookScreens, x: 50, y: 50, width: 500, height: 150, rotation: 0, layer: 10, data: data };
+      const newElement = { id: `fill_in_the_blank_${Date.now()}`, type: 'fill_in_the_blank', screenId: activeScreenId };
       setCanvasElements([...canvasElements, newElement]);
     }
     setActiveModal(null); setEditingElementId(null);
@@ -1294,7 +1295,7 @@ const AdminHub = () => {
   const handleSaveShape = (data) => {
     if (editingElementId) { setCanvasElements(prev => prev.map(el => el.id === editingElementId ? { ...el, data } : el)); } 
     else {
-      const newElement = { id: `shape_${Date.now()}`, type: 'shape', screenId: contentType === 'Lesson' ? lessonScreens[0] : workbookScreens, x: 50, y: 50, width: data.shapeType === 'line' ? 300 : 150, height: data.shapeType === 'line' ? 20 : 150, rotation: 0, layer: 10, data: data };
+      const newElement = { id: `shape_${Date.now()}`, type: 'shape', screenId: activeScreenId };
       setCanvasElements([...canvasElements, newElement]);
     }
     setActiveModal(null); setEditingElementId(null);
@@ -1304,7 +1305,7 @@ const AdminHub = () => {
     if (editingElementId) { setCanvasElements(prev => prev.map(el => el.id === editingElementId ? { ...el, data } : el)); } 
     else {
       const validItems = data.items.filter(i => i.imageUrl).length || 1;
-      const newElement = { id: `drag_and_drop_${Date.now()}`, type: 'drag_and_drop', screenId: contentType === 'Lesson' ? lessonScreens[0] : workbookScreens, x: 50, y: 50, width: Math.max(300, validItems * 200 + 40), height: 380, rotation: 0, layer: 10, data: data };
+      const newElement = { id: `drag_and_drop_${Date.now()}`, type: 'drag_and_drop', screenId: activeScreenId, x: 50, y: 50, width: Math.max(300, validItems * 200 + 40), height: 380, rotation: 0, layer: 10, data: data };
       setCanvasElements([...canvasElements, newElement]);
     }
     setActiveModal(null); setEditingElementId(null);
@@ -1313,7 +1314,7 @@ const AdminHub = () => {
   const handleSaveShortAnswer = (data) => {
     if (editingElementId) { setCanvasElements(prev => prev.map(el => el.id === editingElementId ? { ...el, data } : el)); } 
     else {
-      const newElement = { id: `short_answer_${Date.now()}`, type: 'short_answer', screenId: contentType === 'Lesson' ? lessonScreens[0] : workbookScreens, x: 50, y: 50, width: 400, height: 120, rotation: 0, layer: 10, data: data };
+      const newElement = { id: `short_answer_${Date.now()}`, type: 'short_answer', screenId: activeScreenId, x: 50, y: 50, width: 400, height: 120, rotation: 0, layer: 10, data: data };
       setCanvasElements([...canvasElements, newElement]);
     }
     setActiveModal(null); setEditingElementId(null);
@@ -1322,7 +1323,7 @@ const AdminHub = () => {
   const handleSaveMultipleSelection = (data) => {
     if (editingElementId) { setCanvasElements(prev => prev.map(el => el.id === editingElementId ? { ...el, data } : el)); } 
     else {
-      const newElement = { id: `multiple_selection_${Date.now()}`, type: 'multiple_selection', screenId: contentType === 'Lesson' ? lessonScreens[0] : workbookScreens, x: 50, y: 50, width: 450, height: 250, rotation: 0, layer: 10, data: data };
+      const newElement = { id: `multiple_selection_${Date.now()}`, type: 'multiple_selection', screenId: activeScreenId, x: 50, y: 50, width: 450, height: 250, rotation: 0, layer: 10, data: data };
       setCanvasElements([...canvasElements, newElement]);
     }
     setActiveModal(null); setEditingElementId(null);
@@ -1332,7 +1333,7 @@ const AdminHub = () => {
     if (editingElementId) { setCanvasElements(prev => prev.map(el => el.id === editingElementId ? { ...el, data } : el)); } 
     else {
       const isVert = data.orientation === 'vertical';
-      const newElement = { id: `slider_bar_${Date.now()}`, type: 'slider_bar', screenId: contentType === 'Lesson' ? lessonScreens[0] : workbookScreens, x: 50, y: 50, width: isVert ? 100 : 300, height: isVert ? 300 : 100, rotation: 0, layer: 10, data: data };
+      const newElement = { id: `slider_bar_${Date.now()}`, type: 'slider_bar', screenId: activeScreenId, x: 50, y: 50, width: isVert ? 100 : 300, height: isVert ? 300 : 100, rotation: 0, layer: 10, data: data };
       setCanvasElements([...canvasElements, newElement]);
     }
     setActiveModal(null); setEditingElementId(null);
@@ -1484,7 +1485,7 @@ const AdminHub = () => {
         setCanvasElements(prev => prev.map(el => el.id === editingElementId ? { ...el, data: generatedData } : el));
      } else {
         const newElement = { 
-           id: `crossword_${Date.now()}`, type: 'crossword', screenId: contentType === 'Lesson' ? lessonScreens[0] : workbookScreens, 
+           id: `crossword_${Date.now()}`, type: 'crossword', screenId: activeScreenId, 
            x: 50, y: 50, width: 600, height: 400, rotation: 0, layer: 10, data: generatedData 
         };
         setCanvasElements([...canvasElements, newElement]);
@@ -1548,7 +1549,7 @@ const AdminHub = () => {
         setCanvasElements(prev => prev.map(el => el.id === editingElementId ? { ...el, data: generatedData } : el));
      } else {
         const newElement = { 
-           id: `word_search_${Date.now()}`, type: 'word_search', screenId: contentType === 'Lesson' ? lessonScreens[0] : workbookScreens, 
+           id: `word_search_${Date.now()}`, type: 'word_search', screenId: activeScreenId, 
            x: 50, y: 50, width: 600, height: 400, rotation: 0, layer: 10, data: generatedData 
         };
         setCanvasElements([...canvasElements, newElement]);
@@ -2149,6 +2150,7 @@ const AdminHub = () => {
 
                 <div 
                   id={`preview-screen-${screenId}`}
+                  onClick={() => setActiveScreenId(screenId)}
                   onPointerDown={(e) => { if (e.target.id === `preview-screen-${screenId}`) setSelectedElementId(null); }}
                   className={`w-full relative overflow-hidden flex flex-col ${isPreviewMode ? '' : 'workspace-grid border-b-2 border-outloud-blue/20'}`}
                   style={{ minHeight: '100vh' }}
