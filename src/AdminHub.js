@@ -1239,7 +1239,7 @@ const AdminHub = () => {
 
   const spawnInteractiveElement = (type) => {
     let newElement = {
-      id: `${type}_${Date.now()}`, type: type, screenId: activeScreenId } 
+      id: `${type}_${Date.now()}`, type: type, screenId: activeScreenId,
       x: 50, y: 50, width: 200, height: 100, rotation: 0, layer: 10 
     };
 
