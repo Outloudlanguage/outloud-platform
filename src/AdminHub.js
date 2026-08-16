@@ -2319,6 +2319,7 @@ const handleSaveNavButton = (data) => {
                   <div className="flex items-center gap-8 md:gap-16">
                     <button onClick={() => setIsSaveModalOpen(true)} className="text-outloud-blue font-black tracking-widest uppercase hover:opacity-70 transition-opacity">SAVE</button>
                   <button id="undo-btn" onClick={handleUndoWorkspace} className="text-outloud-blue font-black tracking-widest uppercase hover:opacity-70 transition-opacity" title="Undo Last Action (Ctrl+Z)">UNDO</button>
+                    <button onClick={handleDuplicateScreen} className="text-outloud-blue font-black tracking-widest uppercase hover:opacity-70 transition-opacity" title="Duplicate current active screen">DUPLICATE</button>
                     <button onClick={() => setIsPreviewMode(true)} className="text-outloud-blue font-black tracking-widest uppercase hover:opacity-70 transition-opacity">PREVIEW</button>
                   </div>
                   <div className="h-6 w-[2px] bg-outloud-blue opacity-20"></div>
@@ -2372,7 +2373,7 @@ const handleSaveNavButton = (data) => {
                       else if (rcPhase === 'PLAYING') { rcText = 'COMPARING'; rcTextColor = 'text-green-500'; } 
                       else if (rcPhase === 'RETRY') { rcText = 'RETRY'; }
 
-                      const isTool = !['fill_in_the_blank', 'shape', 'text', 'drag_and_drop', 'short_answer', 'multiple_selection', 'slider_bar', 'crossword', 'word_search'].includes(el.type);
+                    const isTool = !['fill_in_the_blank', 'shape', 'text', 'drag_and_drop', 'short_answer', 'multiple_selection', 'slider_bar', 'crossword', 'word_search', 'nav_button'].includes(el.type);
 
                       return (
                         <div 
@@ -2714,22 +2715,22 @@ const handleSaveNavButton = (data) => {
                               <div className="absolute -left-1.5 top-1/2 -translate-y-1/2 w-3 h-5 bg-student-yellow border-2 border-outloud-blue rounded-sm cursor-w-resize z-50" onPointerDown={(e) => handleResizeStart(e, el, 'w')} />
                               <div className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-3 h-5 bg-student-yellow border-2 border-outloud-blue rounded-sm cursor-e-resize z-50" onPointerDown={(e) => handleResizeStart(e, el, 'e')} />
 
-                              <div className={`absolute -right-10 top-0 flex flex-col gap-1.5 z-[80] ${selectedElementId === el.id || multiSelectedIds.includes(el.id) || menuOpenId === el.id ? 'opacity-100' : 'group-hover:opacity-100 opacity-0'} transition-opacity`}>
-                                <button onPointerDown={(e) => { e.stopPropagation(); setMenuOpenId(menuOpenId === el.id ? null : el.id); }} className={`w-7 h-7 rounded-full shadow flex items-center justify-center transition border border-gray-200 ${menuOpenId === el.id ? 'bg-student-yellow text-outloud-blue' : 'bg-white hover:bg-gray-100'}`} title="Menu"><span className="font-black pb-2 pointer-events-none">...</span></button>
-                                <button onPointerDown={(e) => handleRotateStart(e, el)} className="w-7 h-7 bg-white rounded-full shadow flex items-center justify-center cursor-alias hover:bg-gray-100 transition border border-gray-200" title="Rotate"><span role="img" aria-label="rotate" className="text-sm pointer-events-none">🔄</span></button>
-                                <button onPointerDown={(e) => handleDragStart(e, el.id, el.x, el.y)} className="w-7 h-7 bg-white rounded-full shadow flex items-center justify-center cursor-grab active:cursor-grabbing hover:bg-gray-100 transition border border-gray-200" title="Move"><span role="img" aria-label="move" className="text-sm pointer-events-none">🖐️</span></button>
+                             <div className={`absolute -right-10 top-0 flex flex-col gap-1.5 z-[80] ${selectedElementId === el.id || multiSelectedIds.includes(el.id) || menuOpenId === el.id ? 'opacity-100' : 'group-hover:opacity-100 opacity-0'} transition-opacity`}>
+                                <button onMouseDown={(e) => { e.stopPropagation(); setMenuOpenId(menuOpenId === el.id ? null : el.id); }} className={`w-7 h-7 rounded-full shadow flex items-center justify-center transition border border-gray-200 ${menuOpenId === el.id ? 'bg-student-yellow text-outloud-blue' : 'bg-white hover:bg-gray-100'}`} title="Menu"><span className="font-black pb-2 pointer-events-none">...</span></button>
+                                <button onMouseDown={(e) => handleRotateStart(e, el)} className="w-7 h-7 bg-white rounded-full shadow flex items-center justify-center cursor-alias hover:bg-gray-100 transition border border-gray-200" title="Rotate"><span role="img" aria-label="rotate" className="text-sm pointer-events-none">🔄</span></button>
+                                <button onMouseDown={(e) => handleDragStart(e, el.id, el.x, el.y)} className="w-7 h-7 bg-white rounded-full shadow flex items-center justify-center cursor-grab active:cursor-grabbing hover:bg-gray-100 transition border border-gray-200" title="Move"><span role="img" aria-label="move" className="text-sm pointer-events-none">🖐️</span></button>
 
                                 {menuOpenId === el.id && (
                                   <div className="absolute top-0 left-10 bg-white shadow-xl rounded-xl border border-gray-200 py-2 w-36 flex flex-col z-[100] animate-fade-in">
-                                    {el.type !== 'text' && <div onPointerDown={(e) => { e.stopPropagation(); setEditingElementId(el.id); setActiveModal(el.type); setMenuOpenId(null); }} className="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 hover:text-outloud-blue cursor-pointer">✏️ Edit Settings</div>}
-                                    {el.type === 'text' && <div onPointerDown={(e) => { e.stopPropagation(); setEditingTextId(el.id); setMenuOpenId(null); }} className="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 hover:text-outloud-blue cursor-pointer">✏️ Edit Text</div>}
-                                    <div onPointerDown={(e) => { e.stopPropagation(); handleDuplicateElement(el.id); setMenuOpenId(null); }} className="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 hover:text-outloud-blue cursor-pointer">📋 Duplicate</div>
+                                    {el.type !== 'text' && <div onMouseDown={(e) => { e.stopPropagation(); setEditingElementId(el.id); setActiveModal(el.type); setMenuOpenId(null); }} className="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 hover:text-outloud-blue cursor-pointer">✏️ Edit Settings</div>}
+                                    {el.type === 'text' && <div onMouseDown={(e) => { e.stopPropagation(); setEditingTextId(el.id); setMenuOpenId(null); }} className="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 hover:text-outloud-blue cursor-pointer">✏️ Edit Text</div>}
+                                    <div onMouseDown={(e) => { e.stopPropagation(); handleDuplicateElement(el.id); setMenuOpenId(null); }} className="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 hover:text-outloud-blue cursor-pointer">📋 Duplicate</div>
                                     
-                                    {multiSelectedIds.length > 1 && !el.groupId && <div onPointerDown={(e) => { e.stopPropagation(); handleGroupItems(); }} className="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 hover:text-outloud-blue cursor-pointer">🔗 Group Items</div>}
-                                    {el.groupId && <div onPointerDown={(e) => { e.stopPropagation(); handleSeparateItems(el.groupId); }} className="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 hover:text-outloud-blue cursor-pointer">✂️ Separate</div>}
+                                    {multiSelectedIds.length > 1 && !el.groupId && <div onMouseDown={(e) => { e.stopPropagation(); handleGroupItems(); }} className="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 hover:text-outloud-blue cursor-pointer">🔗 Group Items</div>}
+                                    {el.groupId && <div onMouseDown={(e) => { e.stopPropagation(); handleSeparateItems(el.groupId); }} className="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 hover:text-outloud-blue cursor-pointer">✂️ Separate</div>}
                                     
                                     <div className="w-full h-px bg-gray-100 my-1"></div>
-                                    <div onPointerDown={(e) => { e.stopPropagation(); handleDeleteElement(el.id); setMenuOpenId(null); }} className="px-4 py-2 text-xs font-bold text-red-500 hover:bg-red-50 cursor-pointer">🗑️ Delete</div>
+                                    <div onMouseDown={(e) => { e.stopPropagation(); handleDeleteElement(el.id); setMenuOpenId(null); }} className="px-4 py-2 text-xs font-bold text-red-500 hover:bg-red-50 cursor-pointer">🗑️ Delete</div>
                                   </div>
                                 )}
                               </div>
