@@ -1322,7 +1322,14 @@ const AdminHub = () => {
     const elementToDuplicate = canvasElements.find(el => el.id === id);
     if (!elementToDuplicate) return;
     
-    // Perform a true deep clone explicitly carrying over the data payload and html string
+    // Safety check to grab live typed text if state hasn't synced yet
+    let latestHtml = elementToDuplicate.htmlContent;
+    if (elementToDuplicate.type === 'text') {
+      const liveNode = document.querySelector(`#element-${id} .rich-text-content`);
+      if (liveNode) latestHtml = liveNode.innerHTML;
+    }
+
+    saveSnapshot();
     const newElement = {
       ...elementToDuplicate,
       id: `${elementToDuplicate.type}_${Date.now()}`,
@@ -1330,7 +1337,7 @@ const AdminHub = () => {
       y: elementToDuplicate.y + 30,
       layer: (elementToDuplicate.layer || 10) + 1,
       data: elementToDuplicate.data ? JSON.parse(JSON.stringify(elementToDuplicate.data)) : undefined,
-      htmlContent: elementToDuplicate.htmlContent || ''
+      htmlContent: latestHtml || ''
     };
     
     setCanvasElements(prev => [...prev, newElement]);
