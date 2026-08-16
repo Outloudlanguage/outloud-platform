@@ -2102,10 +2102,39 @@ const handleSaveNavButton = (data) => {
   };
 
   useEffect(() => {
-    setLessonScreens([1]);
-    setWorkbookScreens(1);
-    setCanvasElements([]); 
-  }, [contentType]);
+    // If all dropdowns aren't selected yet, do nothing
+    if (!selectedLevel || !selectedUnit || !contentType) {
+      setCanvasElements([]);
+      return;
+    }
+
+    const loadContent = async () => {
+      // 1. Query Supabase for this specific master lesson
+      const { data, error } = await supabase
+        .from('content_blueprints')
+        .select('*')
+        .eq('level', selectedLevel)
+        .eq('unit', selectedUnit)
+        .eq('content_type', contentType)
+        .maybeSingle();
+
+      // 2. If it exists, load the data onto the canvas
+      if (data && data.blueprint_data) {
+        setCanvasElements(data.blueprint_data.elements || []);
+        if (contentType === 'Lesson') setLessonScreens(data.screens || [1]);
+        else setWorkbookScreens(data.screens || 1);
+      } 
+      // 3. If it doesn't exist, clear the canvas and show the message
+      else {
+        setCanvasElements([]);
+        setLessonScreens([1]);
+        setWorkbookScreens(1);
+        window.alert("This file is still empty, ready to start working on it?");
+      }
+    };
+
+    loadContent();
+  }, [selectedLevel, selectedUnit, contentType]);
 
   const handleConfirmSave = async () => {
     if (!selectedLevel || !selectedUnit || !contentType) return alert("Please select a Level, Unit, and Content Type before saving.");
