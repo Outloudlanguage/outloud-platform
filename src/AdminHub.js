@@ -1066,6 +1066,46 @@ const WordSearchModal = ({ isOpen, initialData = {}, onSave, onCancel }) => {
 // =========================================
 // 3. MAIN ADMIN HUB
 // =========================================
+const NavButtonModal = ({ isOpen, initialData = {}, onSave, onCancel }) => {
+  const [buttonStyle, setButtonStyle] = useState(initialData.buttonStyle || 'continue_pill');
+
+  useEffect(() => {
+    if (initialData && isOpen) {
+      setButtonStyle(initialData.buttonStyle || 'continue_pill');
+    }
+  }, [initialData, isOpen]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[250] flex items-center justify-center bg-outloud-blue/40 backdrop-blur-sm p-4">
+      <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/60 animate-fade-in flex flex-col">
+        <div className="bg-[#eef5fc] p-5 border-b border-gray-200 shrink-0">
+          <h2 className="text-outloud-blue font-black text-lg uppercase tracking-wider font-montserrat">BUTTON SETTINGS</h2>
+          <p className="text-gray-600 text-xs mt-1">Choose the visual layout for this navigation button.</p>
+        </div>
+        <div className="p-6 bg-gray-50 flex flex-col gap-4">
+          <label className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-xl cursor-pointer hover:border-student-yellow transition">
+            <input type="radio" name="navStyle" value="continue_pill" checked={buttonStyle === 'continue_pill'} onChange={(e) => setButtonStyle(e.target.value)} className="text-student-yellow focus:ring-student-yellow" />
+            <span className="font-bold text-sm text-outloud-blue">"CONTINUE" Pill</span>
+          </label>
+          <label className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-xl cursor-pointer hover:border-student-yellow transition">
+            <input type="radio" name="navStyle" value="finish_pill" checked={buttonStyle === 'finish_pill'} onChange={(e) => setButtonStyle(e.target.value)} className="text-student-yellow focus:ring-student-yellow" />
+            <span className="font-bold text-sm text-outloud-blue">"FINISH" Pill</span>
+          </label>
+          <label className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-xl cursor-pointer hover:border-student-yellow transition">
+            <input type="radio" name="navStyle" value="arrow_icon" checked={buttonStyle === 'arrow_icon'} onChange={(e) => setButtonStyle(e.target.value)} className="text-student-yellow focus:ring-student-yellow" />
+            <span className="font-bold text-sm text-outloud-blue">Circular Arrow Icon ➔</span>
+          </label>
+        </div>
+        <div className="p-4 bg-gray-100 border-t border-gray-200 flex justify-end gap-4 shrink-0">
+          <button type="button" onClick={onCancel} className="px-6 py-2.5 rounded-full font-bold text-xs uppercase tracking-wide text-gray-600 bg-transparent border-2 border-gray-300 hover:bg-gray-200 transition">CANCEL</button>
+          <button type="button" onClick={() => onSave({ buttonStyle })} className="px-8 py-2.5 rounded-full font-black text-xs uppercase tracking-wide text-outloud-blue bg-student-yellow hover:scale-105 active:scale-95 transition shadow-md">SAVE</button>
+        </div>
+      </div>
+    </div>
+  );
+};
 const AdminHub = () => {
   // Application State
   const [activeTab, setActiveTab] = useState('CONTENT_EDITING');
@@ -1081,16 +1121,36 @@ const AdminHub = () => {
   // Canvas & Blueprint State
   const [lessonScreens, setLessonScreens] = useState([1]); 
   const [workbookScreens, setWorkbookScreens] = useState(1); 
-  const [canvasElements, setCanvasElements] = useState([]); 
+  const [canvasElements, setCanvasElements] = useState([]);
+  const [canvasHistory, setCanvasHistory] = useState([]);
   const [activeScreenId, setActiveScreenId] = useState(1);
 
+  const saveSnapshot = (elements = canvasElements) => {
+    setCanvasHistory(prev => [...prev.slice(-29), JSON.parse(JSON.stringify(elements))]);
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+        if (!isPreviewMode && !editingTextId) {
+          e.preventDefault();
+          document.getElementById('undo-btn')?.click(); 
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isPreviewMode, editingTextId]);
   // Tool Modals State
   const [activeModal, setActiveModal] = useState(null); 
   const [editingElementId, setEditingElementId] = useState(null);
   const [mediaUrlInput, setMediaUrlInput] = useState('');
 
   // Universal Selection State
+  // Universal Selection State
   const [selectedElementId, setSelectedElementId] = useState(null);
+  const [multiSelectedIds, setMultiSelectedIds] = useState([]);
+  const [menuOpenId, setMenuOpenId] = useState(null);
 
   // Drag, Resize, and ROTATE Engine State
   const [draggingId, setDraggingId] = useState(null);
@@ -1256,14 +1316,21 @@ const AdminHub = () => {
     if (type === 'text') setTimeout(() => setEditingTextId(newElement.id), 50);
   };
 
-  const handleDuplicateElement = (id) => {
+ const handleDuplicateElement = (id) => {
     const elementToDuplicate = canvasElements.find(el => el.id === id);
     if (!elementToDuplicate) return;
-    const newElement = JSON.parse(JSON.stringify(elementToDuplicate));
-    newElement.id = `${newElement.type}_${Date.now()}`;
-    newElement.x = newElement.x + 30; 
-    newElement.y = newElement.y + 30;
-    newElement.layer = (newElement.layer || 10) + 1;
+    
+    // Perform a true deep clone explicitly carrying over the data payload and html string
+    const newElement = {
+      ...elementToDuplicate,
+      id: `${elementToDuplicate.type}_${Date.now()}`,
+      x: elementToDuplicate.x + 30,
+      y: elementToDuplicate.y + 30,
+      layer: (elementToDuplicate.layer || 10) + 1,
+      data: elementToDuplicate.data ? JSON.parse(JSON.stringify(elementToDuplicate.data)) : undefined,
+      htmlContent: elementToDuplicate.htmlContent || ''
+    };
+    
     setCanvasElements(prev => [...prev, newElement]);
   };
 
@@ -1583,9 +1650,46 @@ const AdminHub = () => {
      }
      setActiveModal(null); setEditingElementId(null);
   };
+const handleSaveNavButton = (data) => {
+    if (editingElementId) {
+      setCanvasElements(prev => prev.map(el => el.id === editingElementId ? { ...el, data } : el));
+    }
+    setActiveModal(null); 
+    setEditingElementId(null);
+  };
+
+  const handleGroupItems = () => {
+    if (multiSelectedIds.length < 2) return;
+    saveSnapshot();
+    const newGroupId = `group_${Date.now()}`;
+    setCanvasElements(prev => prev.map(el => multiSelectedIds.includes(el.id) ? { ...el, groupId: newGroupId } : el));
+    setMultiSelectedIds([]);
+    setMenuOpenId(null);
+  };
+
+  const handleSeparateItems = (groupId) => {
+    saveSnapshot();
+    setCanvasElements(prev => prev.map(el => el.groupId === groupId ? { ...el, groupId: null } : el));
+    setMenuOpenId(null);
+  };
 
   const handleDeleteElement = (id) => {
+    saveSnapshot();
     setCanvasElements(canvasElements.filter(el => el.id !== id));
+  };
+
+  const handleDeleteScreen = (screenIdToDelete) => {
+    if (window.confirm(`Are you sure you want to delete Screen ${screenIdToDelete} and all its elements?`)) {
+      const remainingElements = canvasElements.filter(el => el.screenId !== screenIdToDelete);
+      if (contentType === 'Lesson') {
+        setLessonScreens(prev => prev.filter(id => id !== screenIdToDelete));
+        setCanvasElements(remainingElements);
+      } else {
+        setWorkbookScreens(prev => Math.max(1, prev - 1));
+        setCanvasElements(remainingElements.map(el => el.screenId > screenIdToDelete ? { ...el, screenId: el.screenId - 1 } : el));
+      }
+      setActiveScreenId(1);
+    }
   };
 
   // --- PROPORTIONAL BATCH EVALUATION (TRIGGERED ON CONTINUE) ---
@@ -1778,6 +1882,7 @@ const AdminHub = () => {
   };
 
   const handleTextBlurSave = (id, newHtml) => {
+    saveSnapshot();
     setCanvasElements(prev => prev.map(el => el.id === id ? { ...el, htmlContent: newHtml } : el));
   };
 
@@ -1785,11 +1890,50 @@ const AdminHub = () => {
   const handleDragStart = (e, id, currentX, currentY) => {
     if (isPreviewMode || editingTextId) return;
     e.stopPropagation();
+    saveSnapshot();
+    const targetEl = canvasElements.find(el => el.id === id);
+    let groupIds = [id];
+    if (targetEl?.groupId) {
+      groupIds = canvasElements.filter(el => el.groupId === targetEl.groupId).map(el => el.id);
+    } else if (multiSelectedIds.includes(id)) {
+      groupIds = multiSelectedIds;
+    } else {
+      setMultiSelectedIds([]);
+    }
+
     setSelectedElementId(id);
+    setMenuOpenId(null);
     setDraggingId(id);
-    setDragOffset({ x: e.clientX - currentX, y: e.clientY - currentY });
+    setDragOffset({ 
+      startX: e.clientX, 
+      startY: e.clientY, 
+      items: canvasElements.filter(el => groupIds.includes(el.id)).map(el => ({ id: el.id, initX: el.x, initY: el.y }))
+    });
   };
 
+  const handleResizeStart = (e, el, handleDirection) => {
+    if (isPreviewMode || editingTextId) return;
+    e.stopPropagation();
+    saveSnapshot();
+    setSelectedElementId(el.id);
+    setResizingId(el.id);
+    setResizeStart({ 
+      mouseX: e.clientX, mouseY: e.clientY, elX: el.x, elY: el.y, elW: el.width, elH: el.height, elImgX: el.imgX ?? 0, elImgY: el.imgY ?? 0, elImgW: el.imgW ?? el.width, elImgH: el.imgH ?? el.height, handle: handleDirection 
+    });
+  };
+
+  const handleRotateStart = (e, el) => {
+    if (isPreviewMode || editingTextId) return;
+    e.stopPropagation();
+    saveSnapshot();
+    setSelectedElementId(el.id);
+    const rect = document.getElementById(`element-${el.id}`).getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const initialMouseAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX);
+    setRotatingId(el.id);
+    setRotationStart({ centerX, centerY, initialMouseAngle, initialRotation: el.rotation || 0 });
+  };
   const handleResizeStart = (e, el, handleDirection) => {
     if (isPreviewMode || editingTextId) return;
     e.stopPropagation();
@@ -1817,11 +1961,17 @@ const AdminHub = () => {
     const handleGlobalMouseMove = (e) => {
       if (isPreviewMode) return;
       
-      if (draggingId) {
-        let newX = e.clientX - dragOffset.x;
-        let newY = e.clientY - dragOffset.y;
-        setCanvasElements(prev => prev.map(el => el.id === draggingId ? { ...el, x: Math.max(0, newX), y: Math.max(0, newY) } : el));
-      } 
+     if (draggingId) {
+        const deltaX = e.clientX - dragOffset.startX;
+        const deltaY = e.clientY - dragOffset.startY;
+        setCanvasElements(prev => prev.map(el => {
+          const movingItem = dragOffset.items?.find(i => i.id === el.id);
+          if (movingItem) {
+            return { ...el, x: Math.max(0, movingItem.initX + deltaX), y: Math.max(0, movingItem.initY + deltaY) };
+          }
+          return el;
+        }));
+      }
       else if (resizingId) {
         const deltaX = e.clientX - resizeStart.mouseX;
         const deltaY = e.clientY - resizeStart.mouseY;
@@ -1927,8 +2077,39 @@ const AdminHub = () => {
   };
 
   const handleUndoWorkspace = () => {
-    if (contentType === 'Lesson' && lessonScreens.length > 1) setLessonScreens(prev => prev.slice(0, -1));
-    else if (workbookScreens > 1) setWorkbookScreens(prev => prev - 1);
+    if (canvasHistory.length > 0) {
+      const previousState = canvasHistory[canvasHistory.length - 1];
+      setCanvasHistory(prev => prev.slice(0, -1));
+      setCanvasElements(previousState);
+    } else {
+      if (contentType === 'Lesson' && lessonScreens.length > 1) setLessonScreens(prev => prev.slice(0, -1));
+      else if (workbookScreens > 1) setWorkbookScreens(prev => prev - 1);
+    }
+  };
+
+  const handleDuplicateScreen = () => {
+    const newScreenId = (contentType === 'Lesson' ? lessonScreens.length : workbookScreens) + 1;
+    
+    if (contentType === 'Lesson') {
+      setLessonScreens(prev => [...prev, newScreenId]);
+    } else {
+      setWorkbookScreens(prev => prev + 1);
+    }
+
+    const elementsToClone = canvasElements.filter(el => el.screenId === activeScreenId);
+    const clonedElements = elementsToClone.map(el => ({
+      ...el,
+      id: `${el.type}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+      screenId: newScreenId,
+      data: el.data ? JSON.parse(JSON.stringify(el.data)) : undefined,
+      htmlContent: el.htmlContent || ''
+    }));
+
+    setCanvasElements(prev => [...prev, ...clonedElements]);
+    setActiveScreenId(newScreenId);
+    setTimeout(() => {
+      document.getElementById(`preview-screen-${newScreenId}`)?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
   };
 
   useEffect(() => {
@@ -2019,14 +2200,15 @@ const AdminHub = () => {
         <img src="https://i.postimg.cc/PJbrcZdF/Agregar-un-subtitulo-(5).png" alt="Bubble Background" className="w-full h-full object-cover opacity-80" />
       </div>
 
-      <FillInTheBlankModal isOpen={activeModal === 'fill_in_the_blank'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={handleSaveFillInTheBlank} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
-      <ShapeConfigModal isOpen={activeModal === 'shape'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={handleSaveShape} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
-      <DragAndDropModal isOpen={activeModal === 'drag_and_drop'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={handleSaveDragAndDrop} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
-      <ShortAnswerModal isOpen={activeModal === 'short_answer'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={handleSaveShortAnswer} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
-      <MultipleSelectionModal isOpen={activeModal === 'multiple_selection'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={handleSaveMultipleSelection} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
-      <SliderBarModal isOpen={activeModal === 'slider_bar'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={handleSaveSliderBar} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
-      <CrosswordModal isOpen={activeModal === 'crossword'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={handleSaveCrossword} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
-      <WordSearchModal isOpen={activeModal === 'word_search'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={handleSaveWordSearch} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
+      <FillInTheBlankModal isOpen={activeModal === 'fill_in_the_blank'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={(d) => { saveSnapshot(); handleSaveFillInTheBlank(d); }} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
+      <ShapeConfigModal isOpen={activeModal === 'shape'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={(d) => { saveSnapshot(); handleSaveShape(d); }} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
+      <DragAndDropModal isOpen={activeModal === 'drag_and_drop'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={(d) => { saveSnapshot(); handleSaveDragAndDrop(d); }} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
+      <ShortAnswerModal isOpen={activeModal === 'short_answer'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={(d) => { saveSnapshot(); handleSaveShortAnswer(d); }} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
+      <MultipleSelectionModal isOpen={activeModal === 'multiple_selection'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={(d) => { saveSnapshot(); handleSaveMultipleSelection(d); }} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
+      <SliderBarModal isOpen={activeModal === 'slider_bar'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={(d) => { saveSnapshot(); handleSaveSliderBar(d); }} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
+      <CrosswordModal isOpen={activeModal === 'crossword'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={(d) => { saveSnapshot(); handleSaveCrossword(d); }} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
+      <WordSearchModal isOpen={activeModal === 'word_search'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={(d) => { saveSnapshot(); handleSaveWordSearch(d); }} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
+      <NavButtonModal isOpen={activeModal === 'nav_button'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={(d) => { saveSnapshot(); handleSaveNavButton(d); }} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
 
       {isSaveModalOpen && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-outloud-blue/20 backdrop-blur-sm px-4">
@@ -2154,7 +2336,7 @@ const AdminHub = () => {
                 <div className="flex flex-row justify-center items-center w-full mt-8 gap-8 md:gap-12">
                   <div className="flex items-center gap-8 md:gap-16">
                     <button onClick={() => setIsSaveModalOpen(true)} className="text-outloud-blue font-black tracking-widest uppercase hover:opacity-70 transition-opacity">SAVE</button>
-                    <button onClick={handleUndoWorkspace} className="text-outloud-blue font-black tracking-widest uppercase hover:opacity-70 transition-opacity">UNDO</button>
+                  <button id="undo-btn" onClick={handleUndoWorkspace} className="text-outloud-blue font-black tracking-widest uppercase hover:opacity-70 transition-opacity" title="Undo Last Action (Ctrl+Z)">UNDO</button>
                     <button onClick={() => setIsPreviewMode(true)} className="text-outloud-blue font-black tracking-widest uppercase hover:opacity-70 transition-opacity">PREVIEW</button>
                   </div>
                   <div className="h-6 w-[2px] bg-outloud-blue opacity-20"></div>
@@ -2182,13 +2364,22 @@ const AdminHub = () => {
                   </div>
                 )}
 
-                <div 
+<div 
                   id={`preview-screen-${screenId}`}
                   onClick={() => setActiveScreenId(screenId)}
                   onPointerDown={(e) => { if (e.target.id === `preview-screen-${screenId}`) setSelectedElementId(null); }}
                   className={`w-full relative overflow-hidden flex flex-col ${isPreviewMode ? '' : 'workspace-grid border-b-2 border-outloud-blue/20'}`}
                   style={{ minHeight: '100vh' }}
                 >
+                  {!isPreviewMode && index > 0 && (
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); handleDeleteScreen(screenId); }}
+                      className="absolute top-6 right-6 z-[60] w-12 h-12 bg-red-50 hover:bg-red-100 border-2 border-red-200 rounded-full flex items-center justify-center text-red-500 hover:text-red-600 transition shadow-sm cursor-pointer"
+                      title="Delete Screen"
+                    >
+                      <svg className="w-6 h-6 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
+                  )}
                   <div className="flex-grow relative pointer-events-none" style={{ pointerEvents: 'auto' }}>
                     {canvasElements.filter(el => el.screenId === screenId).map(el => {
                       
@@ -2204,9 +2395,14 @@ const AdminHub = () => {
                       return (
                         <div 
                           id={`element-${el.id}`} key={el.id}
-                          onMouseDown={() => !isPreviewMode && setSelectedElementId(el.id)}
-                          style={{ position: 'absolute', left: `${el.x}px`, top: `${el.y}px`, width: `${el.width}px`, height: `${el.height}px`, transform: `rotate(${el.rotation || 0}deg)`, zIndex: (editingTextId === el.id || draggingId === el.id || resizingId === el.id || rotatingId === el.id) ? 999 : (el.layer || 10) }}
-                          className={`group ${!isPreviewMode && isTool ? (selectedElementId === el.id ? 'ring-4 ring-student-yellow shadow-xl rounded-2xl' : 'hover:ring-4 ring-student-yellow ring-opacity-50 rounded-2xl transition-shadow') : ''}`}
+                         onMouseDown={(e) => {
+                            if (!isPreviewMode) {
+                              if (e.shiftKey) { setMultiSelectedIds(prev => prev.includes(el.id) ? prev.filter(id => id !== el.id) : [...prev, el.id]); } 
+                              else { setSelectedElementId(el.id); if (!multiSelectedIds.includes(el.id)) setMultiSelectedIds([]); setMenuOpenId(null); }
+                            }
+                          }}
+                          style={{ position: 'absolute', left: `${el.x}px`, top: `${el.y}px`, width: `${el.width}px`, height: `${el.height}px`, transform: `rotate(${el.rotation || 0}deg)`, zIndex: (editingTextId === el.id || draggingId === el.id || resizingId === el.id || rotatingId === el.id || menuOpenId === el.id) ? 999 : (el.layer || 10) }}
+                          className={`group ${!isPreviewMode && isTool ? (selectedElementId === el.id || multiSelectedIds.includes(el.id) ? 'ring-4 ring-student-yellow shadow-xl rounded-2xl' : 'hover:ring-4 ring-student-yellow ring-opacity-50 rounded-2xl transition-shadow') : ''}`}
                         >
                           {/* Standard Drag Handle */}
                           {!isPreviewMode && isTool && (
@@ -2510,15 +2706,20 @@ const AdminHub = () => {
                           })()}
 
 {el.type === 'nav_button' && (
-  <div className={`w-full h-full flex items-center justify-center rounded-full shadow-lg font-black uppercase tracking-widest text-sm transition-transform ${isPreviewMode ? 'bg-outloud-blue text-white cursor-pointer hover:scale-[1.02] active:scale-95 shadow-xl' : 'bg-gray-200 text-gray-500 border-2 border-dashed border-gray-400'}`}
-       onClick={() => {
-         if (isPreviewMode) {
-           const nextId = (contentType === 'Lesson' ? lessonScreens : Array.from({length: workbookScreens}, (_, i) => i + 1))[index + 1];
-           handlePreviewContinue(screenId, nextId);
-         }
-       }}
+  <div 
+    className={`w-full h-full flex items-center justify-center rounded-full shadow-lg transition-transform ${
+      isPreviewMode ? 'bg-outloud-blue text-white cursor-pointer hover:scale-[1.02] active:scale-95 shadow-xl' : 'bg-gray-200 text-gray-500 border-2 border-dashed border-gray-400'
+    }`}
+    onClick={() => {
+      if (isPreviewMode) {
+        const nextId = (contentType === 'Lesson' ? lessonScreens : Array.from({length: workbookScreens}, (_, i) => i + 1))[index + 1];
+        handlePreviewContinue(screenId, nextId);
+      }
+    }}
   >
-    {index === (contentType === 'Lesson' ? lessonScreens.length : workbookScreens) - 1 ? 'FINISH' : 'CONTINUE ⬇'}
+    {(!el.data || !el.data.buttonStyle || el.data.buttonStyle === 'continue_pill') && <span className="font-black uppercase tracking-widest text-sm">CONTINUE ⬇</span>}
+    {el.data?.buttonStyle === 'finish_pill' && <span className="font-black uppercase tracking-widest text-sm">FINISH</span>}
+    {el.data?.buttonStyle === 'arrow_icon' && <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>}
   </div>
 )}
                           {/* --- SHARED ADVANCED UI EDITING OVERLAYS --- */}
@@ -2531,13 +2732,24 @@ const AdminHub = () => {
                               <div className="absolute -left-1.5 top-1/2 -translate-y-1/2 w-3 h-5 bg-student-yellow border-2 border-outloud-blue rounded-sm cursor-w-resize z-50" onPointerDown={(e) => handleResizeStart(e, el, 'w')} />
                               <div className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-3 h-5 bg-student-yellow border-2 border-outloud-blue rounded-sm cursor-e-resize z-50" onPointerDown={(e) => handleResizeStart(e, el, 'e')} />
 
-                              <div className={`absolute -right-10 top-0 flex flex-col gap-1.5 z-50 ${selectedElementId === el.id ? 'opacity-100' : 'group-hover:opacity-100 opacity-0'} transition-opacity`}>
-                                {el.type !== 'text' && <button onPointerDown={(e) => { e.stopPropagation(); setEditingElementId(el.id); setActiveModal(el.type); }} className="w-7 h-7 bg-white rounded-full shadow flex items-center justify-center hover:bg-gray-100 transition border border-gray-200" title="Edit"><span role="img" aria-label="edit" className="text-sm pointer-events-none">✏️</span></button>}
-                                {el.type === 'text' && <button onPointerDown={(e) => { e.stopPropagation(); setEditingTextId(el.id); }} className="w-7 h-7 bg-white rounded-full shadow flex items-center justify-center hover:bg-gray-100 transition border border-gray-200" title="Edit Text"><span role="img" aria-label="edit" className="text-sm pointer-events-none">✏️</span></button>}
-                                <button onPointerDown={(e) => { e.stopPropagation(); handleDuplicateElement(el.id); }} className="w-7 h-7 bg-white rounded-full shadow flex items-center justify-center hover:bg-gray-100 transition border border-gray-200" title="Duplicate"><span role="img" aria-label="duplicate" className="text-sm pointer-events-none">📋</span></button>
+                              <div className={`absolute -right-10 top-0 flex flex-col gap-1.5 z-[80] ${selectedElementId === el.id || multiSelectedIds.includes(el.id) || menuOpenId === el.id ? 'opacity-100' : 'group-hover:opacity-100 opacity-0'} transition-opacity`}>
+                                <button onPointerDown={(e) => { e.stopPropagation(); setMenuOpenId(menuOpenId === el.id ? null : el.id); }} className={`w-7 h-7 rounded-full shadow flex items-center justify-center transition border border-gray-200 ${menuOpenId === el.id ? 'bg-student-yellow text-outloud-blue' : 'bg-white hover:bg-gray-100'}`} title="Menu"><span className="font-black pb-2 pointer-events-none">...</span></button>
                                 <button onPointerDown={(e) => handleRotateStart(e, el)} className="w-7 h-7 bg-white rounded-full shadow flex items-center justify-center cursor-alias hover:bg-gray-100 transition border border-gray-200" title="Rotate"><span role="img" aria-label="rotate" className="text-sm pointer-events-none">🔄</span></button>
                                 <button onPointerDown={(e) => handleDragStart(e, el.id, el.x, el.y)} className="w-7 h-7 bg-white rounded-full shadow flex items-center justify-center cursor-grab active:cursor-grabbing hover:bg-gray-100 transition border border-gray-200" title="Move"><span role="img" aria-label="move" className="text-sm pointer-events-none">🖐️</span></button>
-                                <button onPointerDown={(e) => { e.stopPropagation(); handleDeleteElement(el.id); }} className="w-7 h-7 bg-white rounded-full shadow flex items-center justify-center hover:bg-red-50 transition border border-gray-200" title="Delete"><span role="img" aria-label="delete" className="text-sm pointer-events-none">🗑️</span></button>
+
+                                {menuOpenId === el.id && (
+                                  <div className="absolute top-0 left-10 bg-white shadow-xl rounded-xl border border-gray-200 py-2 w-36 flex flex-col z-[100] animate-fade-in">
+                                    {el.type !== 'text' && <div onPointerDown={(e) => { e.stopPropagation(); setEditingElementId(el.id); setActiveModal(el.type); setMenuOpenId(null); }} className="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 hover:text-outloud-blue cursor-pointer">✏️ Edit Settings</div>}
+                                    {el.type === 'text' && <div onPointerDown={(e) => { e.stopPropagation(); setEditingTextId(el.id); setMenuOpenId(null); }} className="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 hover:text-outloud-blue cursor-pointer">✏️ Edit Text</div>}
+                                    <div onPointerDown={(e) => { e.stopPropagation(); handleDuplicateElement(el.id); setMenuOpenId(null); }} className="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 hover:text-outloud-blue cursor-pointer">📋 Duplicate</div>
+                                    
+                                    {multiSelectedIds.length > 1 && !el.groupId && <div onPointerDown={(e) => { e.stopPropagation(); handleGroupItems(); }} className="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 hover:text-outloud-blue cursor-pointer">🔗 Group Items</div>}
+                                    {el.groupId && <div onPointerDown={(e) => { e.stopPropagation(); handleSeparateItems(el.groupId); }} className="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 hover:text-outloud-blue cursor-pointer">✂️ Separate</div>}
+                                    
+                                    <div className="w-full h-px bg-gray-100 my-1"></div>
+                                    <div onPointerDown={(e) => { e.stopPropagation(); handleDeleteElement(el.id); setMenuOpenId(null); }} className="px-4 py-2 text-xs font-bold text-red-500 hover:bg-red-50 cursor-pointer">🗑️ Delete</div>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           )}
@@ -2555,13 +2767,7 @@ const AdminHub = () => {
                     })}
                   </div>
 
-                  {isPreviewMode && (
-                    <div className="w-full flex justify-center pb-8 pt-4 shrink-0 z-40 relative">
-                      <button onClick={() => handlePreviewContinue(screenId, (contentType === 'Lesson' ? lessonScreens : Array.from({length: workbookScreens}, (_, i) => i + 1))[index + 1])} className="bg-outloud-blue text-white font-black px-12 py-4 rounded-full shadow-lg text-sm uppercase tracking-widest hover:scale-105 active:scale-95 transition-transform animate-fade-in">
-                        {index === (contentType === 'Lesson' ? lessonScreens.length : workbookScreens) - 1 ? 'FINISH' : 'CONTINUE ⬇'}
-                      </button>
-                    </div>
-                  )}
+
                 </div>
               </React.Fragment>
             ))}
