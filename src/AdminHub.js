@@ -2139,12 +2139,41 @@ const handleSaveNavButton = (data) => {
   const handleConfirmSave = async () => {
     if (!selectedLevel || !selectedUnit || !contentType) return alert("Please select a Level, Unit, and Content Type before saving.");
     setIsSaving(true);
-    const payload = { level: selectedLevel, unit: selectedUnit, content_type: contentType, screens: contentType === 'Lesson' ? lessonScreens : workbookScreens, blueprint_data: { elements: canvasElements }, updated_at: new Date().toISOString() };
+
+    // 1. Force sync all live text directly from the screen into memory
+    const syncedElements = canvasElements.map(el => {
+      if (el.type === 'text') {
+        const liveNode = document.querySelector(`#element-${el.id} .rich-text-content`);
+        if (liveNode) {
+          return { ...el, htmlContent: liveNode.innerHTML };
+        }
+      }
+      return el;
+    });
+
+    // 2. Update the visual canvas just to be safe
+    setCanvasElements(syncedElements);
+
+    // 3. Send the fully synced elements to Supabase
+    const payload = { 
+      level: selectedLevel, 
+      unit: selectedUnit, 
+      content_type: contentType, 
+      screens: contentType === 'Lesson' ? lessonScreens : workbookScreens, 
+      blueprint_data: { elements: syncedElements }, 
+      updated_at: new Date().toISOString() 
+    };
+
     try {
-      const { data, error } = await supabase.from('content_blueprints').upsert(payload, { onConflict: 'level,unit,content_type' });
+      const { error } = await supabase.from('content_blueprints').upsert(payload, { onConflict: 'level,unit,content_type' });
       if (error) { alert("Failed to push changes. Check the console for details."); } 
       else { alert("Changes saved and pushed live successfully!"); }
-    } catch (err) {} finally { setIsSaving(false); setIsSaveModalOpen(false); }
+    } catch (err) { 
+      console.error(err); 
+    } finally { 
+      setIsSaving(false); 
+      setIsSaveModalOpen(false); 
+    }
   };
 
   // Helper for rendering Fill in the Blank parsed text
