@@ -1129,18 +1129,7 @@ const AdminHub = () => {
     setCanvasHistory(prev => [...prev.slice(-29), JSON.parse(JSON.stringify(elements))]);
   };
 
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
-        if (!isPreviewMode && !editingTextId) {
-          e.preventDefault();
-          document.getElementById('undo-btn')?.click(); 
-        }
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isPreviewMode, editingTextId]);
+ 
   // Tool Modals State
   const [activeModal, setActiveModal] = useState(null); 
   const [editingElementId, setEditingElementId] = useState(null);
@@ -1192,6 +1181,19 @@ const AdminHub = () => {
     comprehension: 100,
     reading: 100
   });
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+        if (!isPreviewMode && !editingTextId) {
+          e.preventDefault();
+          document.getElementById('undo-btn')?.click(); 
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isPreviewMode, editingTextId]);
 
   // Height Synchronization for Drag and Drop Grids
   useEffect(() => {
