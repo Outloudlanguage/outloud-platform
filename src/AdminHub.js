@@ -1934,27 +1934,7 @@ const handleSaveNavButton = (data) => {
     setRotatingId(el.id);
     setRotationStart({ centerX, centerY, initialMouseAngle, initialRotation: el.rotation || 0 });
   };
-  const handleResizeStart = (e, el, handleDirection) => {
-    if (isPreviewMode || editingTextId) return;
-    e.stopPropagation();
-    setSelectedElementId(el.id);
-    setResizingId(el.id);
-    setResizeStart({ 
-      mouseX: e.clientX, mouseY: e.clientY, elX: el.x, elY: el.y, elW: el.width, elH: el.height, elImgX: el.imgX ?? 0, elImgY: el.imgY ?? 0, elImgW: el.imgW ?? el.width, elImgH: el.imgH ?? el.height, handle: handleDirection 
-    });
-  };
 
-  const handleRotateStart = (e, el) => {
-    if (isPreviewMode || editingTextId) return;
-    e.stopPropagation();
-    setSelectedElementId(el.id);
-    const rect = document.getElementById(`element-${el.id}`).getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    const initialMouseAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX);
-    setRotatingId(el.id);
-    setRotationStart({ centerX, centerY, initialMouseAngle, initialRotation: el.rotation || 0 });
-  };
 
   // --- GLOBAL MATH ENGINE ---
   useEffect(() => {
