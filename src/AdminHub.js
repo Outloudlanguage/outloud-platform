@@ -1285,13 +1285,26 @@ const AdminHub = () => {
   };
 
   const handleSaveFillInTheBlank = (data) => {
-    if (editingElementId) { setCanvasElements(prev => prev.map(el => el.id === editingElementId ? { ...el, data } : el)); } 
-    else {
-      const newElement = { id: `fill_in_the_blank_${Date.now()}`, type: 'fill_in_the_blank', screenId: activeScreenId };
-      setCanvasElements([...canvasElements, newElement]);
-    }
-    setActiveModal(null); setEditingElementId(null);
-  };
+  if (editingElementId) { 
+    setCanvasElements(prev => prev.map(el => el.id === editingElementId ? { ...el, data } : el)); 
+  } else {
+    const newElement = { 
+      id: `fill_in_the_blank_${Date.now()}`, 
+      type: 'fill_in_the_blank', 
+      screenId: activeScreenId,
+      x: 50,
+      y: 50,
+      width: 400,
+      height: 150,
+      rotation: 0,
+      layer: 10,
+      data: data 
+    };
+    setCanvasElements([...canvasElements, newElement]);
+  }
+  setActiveModal(null); 
+  setEditingElementId(null);
+};
 
   const handleSaveShape = (data) => {
     if (editingElementId) { 
