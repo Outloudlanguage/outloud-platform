@@ -11,7 +11,7 @@ import 'swiper/css/pagination';
 // ==========================================
 // 1. DESKTOP UI COMPONENT (Isolated)
 // ==========================================
-const DesktopView = ({ student, onReturnHome }) => {
+const DesktopView = ({ student, onReturnHome, onStartLesson }) => {
   const isClassTime = false; 
 
   return (
@@ -71,8 +71,8 @@ const DesktopView = ({ student, onReturnHome }) => {
             <div className="grid grid-cols-3 gap-6">
               <div className="bg-white rounded-2xl p-6 shadow-lg flex flex-col items-center justify-between border-b-4 border-transparent hover:border-[#fcd34d] transition-all cursor-pointer">
                 <img src="https://i.postimg.cc/Z51cRLBR/1(6).png" alt="Lesson" className="h-32 object-contain mb-4" />
-                <h3 className="font-black text-outloud-blue text-lg mb-3 uppercase">Lesson 25</h3>
-                <button className="w-full bg-[#fcd34d] text-outloud-blue font-black text-xs py-2 rounded-full shadow-md">CONTINUE</button>
+                <h3 className="font-black text-outloud-blue text-lg mb-3 uppercase">Lesson {student.unit || 1}</h3>
+        <button onClick={onStartLesson} className="w-full bg-[#fcd34d] text-outloud-blue font-black text-xs py-2 rounded-full shadow-md hover:scale-105 transition-transform">START</button>
               </div>
 
               <div className="bg-white rounded-2xl p-6 shadow-lg flex flex-col items-center justify-between border-b-4 border-transparent hover:border-[#fcd34d] transition-all cursor-pointer">
@@ -306,31 +306,65 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
   const [showEvaluation, setShowEvaluation] = useState(false);
   const [evaluationData, setEvaluationData] = useState({ lessonScore: 0, workbookScore: 0, fails: 0 });
 // --- LESSON RETRIEVAL LOGIC ---
-  const handleStartLesson = async () => {
+ const handleStartLesson = async () => {
     if (!studentData) return;
     setIsFetchingLesson(true);
-    
+
     try {
-      const { data, error } = await supabase
+      // 1. Fetch the exact Master Blueprint for this student's Level and Unit
+      const { data: masterData, error: masterError } = await supabase
         .from('content_blueprints')
         .select('*')
         .eq('level', studentData.level)
+        .eq('unit', studentData.unit || 1)
         .eq('content_type', 'Lesson')
-        .limit(1)
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
-      setActiveLesson(data);
-      console.log("SUCCESS! Lesson Blueprint Loaded:", data);
+      if (masterError) throw masterError;
+      if (!masterData) {
+        alert(`Lesson ${studentData.unit || 1} for ${studentData.level} has not been published yet!`);
+        setIsFetchingLesson(false);
+        return;
+      }
 
+      // 2. Check if this specific student already has a saved copy of this lesson
+      const { data: sessionData, error: sessionError } = await supabase
+        .from('student_sessions')
+        .select('*')
+        .eq('student_id', studentData.id)
+        .eq('blueprint_id', masterData.id)
+        .maybeSingle();
+
+      if (sessionError) throw sessionError;
+
+      // 3. Load their existing copy OR create a brand new private clone
+      if (sessionData) {
+        setActiveLesson(sessionData.session_data);
+        console.log("SUCCESS! Loaded existing student session.");
+      } else {
+        const newSession = {
+          student_id: studentData.id,
+          blueprint_id: masterData.id,
+          session_data: masterData,
+          status: 'in_progress'
+        };
+        const { data: insertedSession, error: insertError } = await supabase
+          .from('student_sessions')
+          .insert(newSession)
+          .select()
+          .single();
+          
+        if (insertError) throw insertError;
+        setActiveLesson(insertedSession.session_data);
+        console.log("SUCCESS! Cloned master lesson for student.");
+      }
     } catch (err) {
       console.error("Error loading lesson:", err);
-      alert("No active lesson found for your current level yet!");
+      alert("Failed to connect to the lesson server.");
     } finally {
       setIsFetchingLesson(false);
     }
   };
-
   // --- 75% GATEKEEPER LOGIC ---
   const handleWorkbookComplete = async (calculatedLessonScore, calculatedWorkbookScore) => {
     if (!studentData) return;
@@ -444,23 +478,9 @@ return (
       )}
       
       {isMobile ? (
-        <MobileView 
-          student={studentData} 
-          onReturnHome={onReturnHome}
-          onStartLesson={handleStartLesson}
-          onWorkbookComplete={handleWorkbookComplete}
-          activeLesson={activeLesson}
-          isFetchingLesson={isFetchingLesson}
-        />
+        <MobileView student={studentData} onReturnHome={onReturnHome} onStartLesson={handleStartLesson} />
       ) : (
-        <DesktopView 
-          student={studentData} 
-          onReturnHome={onReturnHome} 
-          onStartLesson={handleStartLesson}
-          onWorkbookComplete={handleWorkbookComplete}
-          activeLesson={activeLesson}
-          isFetchingLesson={isFetchingLesson}
-        />
+        <DesktopView student={studentData} onReturnHome={onReturnHome} onStartLesson={handleStartLesson} />
       )}
     </>
   );
