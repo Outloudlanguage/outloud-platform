@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from './SupabaseClient';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { EffectCoverflow, Pagination } from 'swiper/modules';
+import StudentPlayer from './StudentPlayer';
 
 // Import Swiper styles
 import 'swiper/css';
@@ -465,8 +466,19 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
     );
   }
 
+  // --- LESSON INTERCEPTOR SWITCH ---
+  if (activeLesson) {
+    return (
+      <StudentPlayer 
+        lessonData={activeLesson} 
+        student={studentData} 
+        onExit={() => setActiveLesson(null)} 
+      />
+    );
+  }
+
   // The switch that decides which isolated component to render
-return (
+  return (
     <>
       {showEvaluation && (
         <EvaluationCrossroad 

@@ -1078,34 +1078,35 @@ const NavButtonModal = ({ isOpen, initialData = {}, onSave, onCancel }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[250] flex items-center justify-center bg-outloud-blue/40 backdrop-blur-sm p-4">
-      <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/60 animate-fade-in flex flex-col">
+    <div className="fixed inset-0 z-[250] flex items-center justify-center bg-outloud-blue/40 backdrop-blur-sm">
+      <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-200">
         <div className="bg-[#eef5fc] p-5 border-b border-gray-200 shrink-0">
-          <h2 className="text-outloud-blue font-black text-lg uppercase tracking-wider font-montserrat">BUTTON SETTINGS</h2>
+          <h2 className="text-xl font-black text-outloud-blue uppercase tracking-wider">Nav Button Style</h2>
           <p className="text-gray-600 text-xs mt-1">Choose the visual layout for this navigation button.</p>
         </div>
-        <div className="p-6 bg-gray-50 flex flex-col gap-4">
-          <label className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-xl cursor-pointer hover:border-student-yellow transition">
-            <input type="radio" name="navStyle" value="continue_pill" checked={buttonStyle === 'continue_pill'} onChange={(e) => setButtonStyle(e.target.value)} className="text-student-yellow focus:ring-student-yellow" />
+        <div className="p-6 flex flex-col gap-4 bg-gray-50">
+          <label className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-xl cursor-pointer hover:border-outloud-blue">
+            <input type="radio" name="navStyle" value="continue_pill" checked={buttonStyle === 'continue_pill'} onChange={(e) => setButtonStyle(e.target.value)} />
             <span className="font-bold text-sm text-outloud-blue">"CONTINUE" Pill</span>
           </label>
-          <label className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-xl cursor-pointer hover:border-student-yellow transition">
-            <input type="radio" name="navStyle" value="finish_pill" checked={buttonStyle === 'finish_pill'} onChange={(e) => setButtonStyle(e.target.value)} className="text-student-yellow focus:ring-student-yellow" />
+          <label className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-xl cursor-pointer hover:border-outloud-blue">
+            <input type="radio" name="navStyle" value="finish_pill" checked={buttonStyle === 'finish_pill'} onChange={(e) => setButtonStyle(e.target.value)} />
             <span className="font-bold text-sm text-outloud-blue">"FINISH" Pill</span>
           </label>
-          <label className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-xl cursor-pointer hover:border-student-yellow transition">
-            <input type="radio" name="navStyle" value="arrow_icon" checked={buttonStyle === 'arrow_icon'} onChange={(e) => setButtonStyle(e.target.value)} className="text-student-yellow focus:ring-student-yellow" />
-            <span className="font-bold text-sm text-outloud-blue">Circular Arrow Icon ➔</span>
+          <label className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-xl cursor-pointer hover:border-outloud-blue">
+            <input type="radio" name="navStyle" value="arrow_icon" checked={buttonStyle === 'arrow_icon'} onChange={(e) => setButtonStyle(e.target.value)} />
+            <span className="font-bold text-sm text-outloud-blue">Circular Arrow Icon</span>
           </label>
         </div>
         <div className="p-4 bg-gray-100 border-t border-gray-200 flex justify-end gap-4 shrink-0">
-          <button type="button" onClick={onCancel} className="px-6 py-2.5 rounded-full font-bold text-xs uppercase tracking-wide text-gray-600 bg-transparent border-2 border-gray-300 hover:bg-gray-200 transition">CANCEL</button>
-          <button type="button" onClick={() => onSave({ buttonStyle })} className="px-8 py-2.5 rounded-full font-black text-xs uppercase tracking-wide text-outloud-blue bg-student-yellow hover:scale-105 active:scale-95 transition shadow-md">SAVE</button>
+          <button type="button" onClick={onCancel} className="px-6 py-2.5 rounded-full font-bold text-gray-500 hover:bg-gray-200 transition">CANCEL</button>
+          <button type="button" onClick={() => onSave({ buttonStyle })} className="px-8 py-2.5 rounded-full font-black bg-student-yellow text-outloud-blue shadow hover:scale-105 transition">SAVE</button>
         </div>
       </div>
     </div>
   );
 };
+
 const AdminHub = () => {
   // Application State
   const [activeTab, setActiveTab] = useState('CONTENT_EDITING');
@@ -3061,8 +3062,8 @@ const AccountCreationModal = ({ isOpen, onClose, onSave }) => {
             </h3>
             {role === 'Student' && (
               <div className="grid grid-cols-2 gap-4">
-                 <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-gray-500 uppercase">Initial Level</label><select value={formData.level} onChange={(e) => handleInputChange('level', e.target.value)} className="w-full p-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none"><option>A1: Básico 1</option><option>A2: Básico 2</option><option>B1: Inter. 1</option></select></div>
-                 <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-gray-500 uppercase">Initial Unit</label><select value={formData.unit} onChange={(e) => handleInputChange('unit', e.target.value)} className="w-full p-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none"><option>Unit 1</option><option>Unit 2</option><option>Unit 3</option></select></div>
+                <div className="flex flex-col gap-1 w-full"><span className="text-[10px] font-bold text-outloud-blue uppercase tracking-widest">Initial Level</span><select name="level" className="bg-white border border-gray-200 rounded-lg p-2 text-sm font-bold text-gray-700 focus:outline-none focus:border-student-yellow"><option value="A1">A1: Básico 1</option><option value="A2">A2: Básico 2</option><option value="B1">B1: Intermedio 1</option><option value="B2">B2: Intermedio 2</option><option value="C1">C1: Avanzado 1</option><option value="C2">C2: Avanzado 2</option></select></div>
+<div className="flex flex-col gap-1 w-full"><span className="text-[10px] font-bold text-outloud-blue uppercase tracking-widest">Initial Unit</span><select name="unit" className="bg-white border border-gray-200 rounded-lg p-2 text-sm font-bold text-gray-700 focus:outline-none focus:border-student-yellow">{Array.from({length: 93}, (_, i) => (<option key={i+1} value={i+1}>Unit {i+1}</option>))}</select></div>
                  <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-gray-500 uppercase">Discount Applied (%)</label><input type="number" min="0" max="100" value={formData.discount} onChange={(e) => handleInputChange('discount', e.target.value)} className="w-full p-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none text-center" /></div>
                  <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-gray-500 uppercase">Starting Credits</label><input type="number" min="0" value={formData.credits} onChange={(e) => handleInputChange('credits', e.target.value)} className="w-full p-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none text-center" /></div>
               </div>
@@ -3137,9 +3138,10 @@ const UserManagementDrawer = ({ user, onClose }) => {
              <div className="flex flex-col gap-3">
                <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-200 pb-1">Academic & Financial</h4>
                <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex flex-col gap-3 text-sm">
-                 <div className="flex justify-between items-center"><span className="font-semibold text-gray-500">Current Level:</span><select defaultValue={user.level} className="bg-gray-50 border border-gray-200 rounded p-1 text-xs font-bold text-outloud-blue focus:outline-none"><option>A1: Básico 1</option><option>A2: Básico 2</option></select></div>
-                 <div className="flex justify-between items-center"><span className="font-semibold text-gray-500">Discounts (%):</span><input type="number" defaultValue={user.discount || 0} className="w-16 bg-gray-50 border border-gray-200 rounded p-1 text-xs font-bold text-center focus:outline-none" /></div>
-                 <div className="flex justify-between items-center"><span className="font-semibold text-gray-500">Available Credits:</span><input type="number" defaultValue={user.credits || 0} className="w-16 bg-gray-50 border border-gray-200 rounded p-1 text-xs font-bold text-center focus:outline-none" /></div>
+                 <div className="flex justify-between items-center"><span className="font-semibold text-gray-500">Current Level:</span><select name="level" defaultValue={user.level} className="bg-gray-50 border border-gray-200 rounded p-1.5 text-xs font-bold text-outloud-blue focus:outline-none focus:border-student-yellow"><option value="A1">A1: Básico 1</option><option value="A2">A2: Básico 2</option><option value="B1">B1: Intermedio 1</option><option value="B2">B2: Intermedio 2</option><option value="C1">C1: Avanzado 1</option><option value="C2">C2: Avanzado 2</option></select></div>
+          <div className="flex justify-between items-center"><span className="font-semibold text-gray-500">Current Unit:</span><select name="unit" defaultValue={user.unit || 1} className="bg-gray-50 border border-gray-200 rounded p-1.5 text-xs font-bold text-outloud-blue focus:outline-none focus:border-student-yellow">{Array.from({length: 93}, (_, i) => (<option key={i+1} value={i+1}>Unit {i+1}</option>))}</select></div>
+          <div className="flex justify-between items-center"><span className="font-semibold text-gray-500">Discounts (%):</span><input type="number" name="discount" defaultValue={user.discount || 0} className="w-16 bg-gray-50 border border-gray-200 rounded p-1 text-xs font-bold text-center focus:outline-none focus:border-student-yellow" /></div>
+          <div className="flex justify-between items-center"><span className="font-semibold text-gray-500">Available Credits:</span><input type="number" name="credits" defaultValue={user.credits || 0} className="w-16 bg-gray-50 border border-gray-200 rounded p-1 text-xs font-bold text-center focus:outline-none focus:border-student-yellow" /></div>
                </div>
              </div>
           )}
