@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { supabase } from './SupabaseClient'; 
 
 const StudentPlayer = ({ lessonData, student, onExit }) => {
   const [currentScreen, setCurrentScreen] = useState(1);
@@ -20,8 +21,6 @@ const StudentPlayer = ({ lessonData, student, onExit }) => {
   const totalScreens = Array.isArray(lessonData?.screens) 
     ? lessonData.screens.length 
     : lessonData?.screens || 1;
-
-  const progressPercentage = Math.round((currentScreen / totalScreens) * 100);
 
   const handleNext = () => {
     if (currentScreen < totalScreens) setCurrentScreen(prev => prev + 1);
@@ -59,14 +58,20 @@ const StudentPlayer = ({ lessonData, student, onExit }) => {
   };
 
   // --- THE GRADING ENGINE ---
-  const handleFinish = () => {
+  const handleFinish = async () => {
     const maxPoints = { listeningSpeaking: 0, grammar: 0, comprehension: 0, reading: 0 };
     const earnedPoints = { listeningSpeaking: 0, grammar: 0, comprehension: 0, reading: 0 };
     
     let hasWriting = false;
     let totalWritingMistakes = 0;
+    const essaySubmissions = {};
 
     elements.forEach(el => {
+      if (el.type === 'interactive_input' && !el.data?.correctAnswer) {
+        essaySubmissions[el.id] = studentAnswers[el.id] || "";
+        return;
+      }
+
       if (el.data?.correctAnswer) {
         const category = el.data?.category || 'comprehension';
         if (maxPoints[category] !== undefined) maxPoints[category] += 1;
@@ -105,24 +110,41 @@ const StudentPlayer = ({ lessonData, student, onExit }) => {
       if (writingScore < 0) writingScore = 0; 
       
       calculatedScores.writing = writingScore;
-      
       totalMax += 100; 
       totalEarn += writingScore;
     }
 
     const totalScore = totalMax > 0 ? Math.round((totalEarn / totalMax) * 100) : 100;
 
+    try {
+      await supabase
+        .from('student_sessions')
+        .update({ 
+          session_data: { 
+            ...lessonData, 
+            studentAnswers, 
+            essaySubmissions,
+            status: 'pending_teacher_review' 
+          },
+          score: totalScore
+        })
+        .eq('student_id', student.id)
+        .eq('blueprint_id', lessonData.id);
+    } catch (err) {
+      console.error("Error saving session answers:", err);
+    }
+
     setFinalScores({ categories: calculatedScores, total: totalScore });
     setShowAnalytics(true); 
   };
 
-  // --- THE CANVAS RENDERER ---
+  // --- THE CANVAS RENDERER (DARK GLASSMORPHISM STYLED) ---
   const renderElement = (el) => {
     const elementStyle = isMobile 
       ? {
           position: 'relative',
           width: '100%',
-          minHeight: el.type === 'image' ? 'auto' : `${el.height}px`,
+          minHeight: (el.type === 'image' || el.type === 'video') ? 'auto' : `${el.height}px`,
           zIndex: el.layer || 10,
           marginBottom: '1.25rem',
         }
@@ -135,10 +157,13 @@ const StudentPlayer = ({ lessonData, student, onExit }) => {
           zIndex: el.layer || 10,
         };
 
+    const mediaSource = el.src || el.url || el.content || el.data?.src || '';
+
     switch (el.type) {
       case 'text':
         return (
-          <div key={el.id} style={elementStyle} className="pointer-events-none">
+          // Added text-white and drop-shadow so text pops on the dark background
+          <div key={el.id} style={elementStyle} className="pointer-events-none text-white drop-shadow-md">
             <div dangerouslySetInnerHTML={{ __html: el.htmlContent || el.data?.text || '' }} />
           </div>
         );
@@ -147,32 +172,97 @@ const StudentPlayer = ({ lessonData, student, onExit }) => {
         return (
           <img 
             key={el.id} 
-            src={el.data?.src} 
+            src={mediaSource} 
             alt="Lesson Graphic" 
             style={elementStyle} 
-            className={`object-contain rounded-xl shadow-sm ${isMobile ? 'mx-auto' : ''}`}
+            className={`object-contain rounded-2xl shadow-2xl ${isMobile ? 'mx-auto' : ''}`}
           />
         );
       
+      case 'video':
+        return (
+          <div key={el.id} style={elementStyle} className="overflow-hidden rounded-2xl shadow-2xl bg-black border border-white/10 flex items-center justify-center">
+            {mediaSource ? (
+              <video controls className="w-full h-full object-cover">
+                <source src={mediaSource} type="video/mp4" />
+              </video>
+            ) : (
+              <span className="text-white/50 text-xs tracking-widest uppercase">Video Missing</span>
+            )}
+          </div>
+        );
+        
+      case 'audio':
+        return (
+          <div key={el.id} style={elementStyle} className="flex items-center justify-center bg-white/10 backdrop-blur-md border border-white/20 rounded-full shadow-lg px-4">
+            <audio controls src={mediaSource} className="w-full invert opacity-90" />
+          </div>
+        );
+      
       case 'nav_button':
-        const isFinish = el.data?.buttonStyle === 'finish_pill';
+        const isFinish = el.data?.buttonStyle === 'finish_pill' || el.data?.text?.toLowerCase().includes('finish');
         return (
           <button 
             key={el.id} 
             style={elementStyle} 
             onClick={isFinish ? handleFinish : handleNext}
-            className={`font-black py-3 rounded-full shadow-md hover:scale-105 transition-transform uppercase tracking-widest ${
-              isFinish ? 'bg-outloud-blue text-white' : 'bg-[#fcd34d] text-outloud-blue'
+            className={`font-black py-2 md:py-3 rounded-full shadow-xl hover:scale-105 transition-transform uppercase tracking-widest flex items-center justify-center ${
+              isFinish ? 'bg-[#fcd34d] text-[#08203e] shadow-[0_0_15px_rgba(252,211,77,0.4)]' : 'bg-white/10 border border-white/20 text-white hover:bg-white/20'
             } ${isMobile ? 'text-sm w-full mt-2' : 'text-xs'}`} 
           >
-            {isFinish ? 'FINISH' : 'CONTINUE'}
+            {el.data?.text || (isFinish ? 'FINISH' : 'CONTINUE')}
           </button>
         );
 
-      case 'drop_zone':
+      case 'drag_and_drop':
+        const items = el.data?.items || [];
         return (
-          <div key={el.id} style={elementStyle} className="border-2 border-dashed border-outloud-blue/40 rounded-xl bg-white/50 flex items-center justify-center p-4 cursor-pointer hover:bg-outloud-blue/10 transition">
-             <span className="text-[10px] text-outloud-blue opacity-50 font-bold">Drop Zone</span>
+          <div key={el.id} style={elementStyle} className="flex flex-col items-center gap-6 pointer-events-auto">
+             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
+                {items.map((item, idx) => (
+                  <div key={`dnd-target-${idx}`} className="flex flex-col items-center gap-3">
+                    <img src={item.imageUrl} alt="Drop target" className="w-full h-auto rounded-xl shadow-lg border border-white/10" />
+                    <div className="w-full h-12 border-2 border-dashed border-white/30 rounded-full flex items-center justify-center bg-white/5 text-white/50 text-[10px] font-bold uppercase tracking-widest">
+                       Drop Here
+                    </div>
+                  </div>
+                ))}
+             </div>
+             <div className="flex flex-wrap justify-center gap-4 mt-2 w-full">
+                {items.map((item, idx) => (
+                  <div key={`pill-${idx}`} className="px-6 py-3 bg-white/10 backdrop-blur-md border border-white/20 text-white font-black text-xs rounded-full shadow-lg cursor-grab active:cursor-grabbing hover:scale-105 hover:bg-white/20 transition">
+                    {item.studentViewText}
+                  </div>
+                ))}
+             </div>
+          </div>
+        );
+
+      case 'record_compare':
+        return (
+          <div key={el.id} style={elementStyle} className="flex flex-col justify-center gap-4 pointer-events-auto bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-3xl shadow-xl">
+             <div className="flex flex-col items-center gap-2">
+                <span className="text-white/70 text-[10px] font-bold tracking-widest uppercase">Listen</span>
+                <button className="w-14 h-14 bg-white/10 border border-white/20 rounded-full flex items-center justify-center hover:bg-white/20 transition shadow-lg text-white" onClick={() => {
+                   if (el.url) new Audio(el.url).play();
+                }}>
+                   <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z"/></svg>
+                </button>
+             </div>
+             
+             <div className="flex flex-col items-center gap-2">
+                <span className="text-white/70 text-[10px] font-bold tracking-widest uppercase">Record</span>
+                <button className="w-14 h-14 bg-red-500/20 border border-red-500/50 rounded-full flex items-center justify-center hover:bg-red-500/40 transition shadow-[0_0_15px_rgba(239,68,68,0.3)] text-red-400">
+                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+                </button>
+             </div>
+
+             <div className="flex flex-col items-center gap-2">
+                <span className="text-white/70 text-[10px] font-bold tracking-widest uppercase">Compare</span>
+                <button className="w-14 h-14 bg-[#fcd34d]/20 border border-[#fcd34d]/50 rounded-full flex items-center justify-center hover:bg-[#fcd34d]/40 transition shadow-[0_0_15px_rgba(252,211,77,0.3)] text-[#fcd34d]">
+                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                </button>
+             </div>
           </div>
         );
 
@@ -185,58 +275,61 @@ const StudentPlayer = ({ lessonData, student, onExit }) => {
             placeholder="Type answer..."
             value={studentAnswers[el.id] || ''}
             onChange={(e) => setStudentAnswers({...studentAnswers, [el.id]: e.target.value})}
-            className={`border-b-2 bg-transparent font-bold text-outloud-blue focus:outline-none focus:border-outloud-blue px-2 ${
-              isMobile ? 'border-gray-300 w-full text-center py-2' : 'border-gray-400'
+            className={`border-b-2 bg-white/5 border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-[#fcd34d] px-4 rounded-t-md shadow-inner transition-colors ${
+              isMobile ? 'w-full text-center py-4' : 'py-2'
             }`}
           />
         );
 
       default:
-        return <div key={el.id} style={elementStyle} className="bg-gray-200/50 rounded-lg border border-gray-300/50"></div>;
+        return <div key={el.id} style={elementStyle} className="bg-white/5 border border-white/10 rounded-lg"></div>;
     }
   };
 
-  // --- THE ANALYTICS SCREEN UI ---
+  // --- THE ANALYTICS SCREEN UI (DARK GLOW STYLED) ---
   if (showAnalytics && finalScores) {
     return (
-      <div className="fixed inset-0 z-[400] bg-[#eef5fc] flex flex-col items-center justify-center font-montserrat overflow-hidden">
-        <div className="absolute inset-0 z-0 pointer-events-none opacity-40">
-          <img src="https://i.postimg.cc/PJbrcZdF/Agregar-un-subtitulo-(5).png" alt="bg" className="w-full h-full object-cover" />
+      <div className="fixed inset-0 z-[400] bg-[#070b19] flex flex-col items-center justify-center font-montserrat overflow-hidden text-white">
+        {/* Neon Wavy Background Simulation */}
+        <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+          <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-blue-900/40 blur-[120px] rounded-full mix-blend-screen"></div>
+          <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-[#fcd34d]/20 blur-[100px] rounded-full mix-blend-screen"></div>
+          <div className="absolute inset-0 opacity-10" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 10 Q 25 20, 50 10 T 100 10' stroke='%23ffffff' fill='none' stroke-width='0.5'/%3E%3C/svg%3E")`, backgroundSize: '100px 20px' }}></div>
         </div>
 
-        <div className="relative z-10 w-full max-w-4xl p-8 flex flex-col items-center">
-          <h2 className="text-2xl md:text-4xl font-black text-outloud-blue mb-2 tracking-widest uppercase">
+        <div className="relative z-10 w-full max-w-4xl p-8 flex flex-col items-center bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[3rem] shadow-2xl">
+          <h2 className="text-xl md:text-2xl font-black text-white/70 mb-2 tracking-widest uppercase drop-shadow-md">
             {lessonData?.level || student?.level}: UNIT {lessonData?.unit || student?.unit}
           </h2>
-          <h3 className="text-3xl md:text-5xl font-black text-outloud-blue mb-2 uppercase">
+          <h3 className="text-3xl md:text-5xl font-black text-white mb-2 uppercase drop-shadow-lg">
             {isLesson ? 'LESSON 1' : 'WORKBOOK 1'}
           </h3>
-          <h1 className="text-5xl md:text-[5rem] font-black text-outloud-blue mb-12 tracking-wide leading-none">
+          <h1 className="text-5xl md:text-[5rem] font-black text-[#fcd34d] mb-12 tracking-wide leading-none drop-shadow-[0_0_20px_rgba(252,211,77,0.5)]">
             COMPLETED
           </h1>
 
-          <div className="w-full max-w-md flex flex-col gap-4 mb-10">
+          <div className="w-full max-w-md flex flex-col gap-5 mb-12">
             {Object.keys(finalScores.categories).map(cat => {
                const score = finalScores.categories[cat];
                const label = cat === 'listeningSpeaking' ? 'List/Speak' : cat;
                return (
                  <div key={cat} className="flex items-center gap-4">
-                   <span className="w-32 text-right text-sm md:text-base font-bold text-outloud-blue capitalize">{label}:</span>
-                   <div className="flex-grow h-3 bg-outloud-blue/20 rounded-full overflow-hidden">
-                     <div className="h-full bg-outloud-blue rounded-full transition-all duration-1000 ease-out" style={{ width: `${score}%` }}></div>
+                   <span className="w-32 text-right text-sm md:text-base font-bold text-white tracking-widest uppercase">{label}:</span>
+                   <div className="flex-grow h-3 bg-white/10 rounded-full overflow-hidden shadow-inner">
+                     <div className="h-full bg-[#fcd34d] rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(252,211,77,0.8)]" style={{ width: `${score}%` }}></div>
                    </div>
                  </div>
                );
             })}
           </div>
 
-          <div className="text-[6rem] md:text-[8rem] font-black text-outloud-blue leading-none mb-8 tracking-tighter">
+          <div className="text-[7rem] md:text-[9rem] font-black text-white leading-none mb-8 tracking-tighter drop-shadow-2xl">
             {finalScores.total}%
           </div>
 
           <button 
             onClick={() => onExit(finalScores.total)} 
-            className="bg-outloud-blue text-white font-black text-sm md:text-base px-10 py-4 rounded-[1.5rem] shadow-xl hover:scale-105 transition-transform uppercase tracking-widest"
+            className="bg-[#fcd34d] text-[#08203e] font-black text-sm md:text-base px-12 py-5 rounded-full shadow-[0_0_20px_rgba(252,211,77,0.4)] hover:scale-105 transition-transform uppercase tracking-widest"
           >
             {isLesson ? 'CONTINUE TO WORKBOOK' : 'CONTINUE TO CALENDAR'}
           </button>
@@ -245,7 +338,6 @@ const StudentPlayer = ({ lessonData, student, onExit }) => {
     );
   }
 
-  // --- VISIBILITY & SORTING LOGIC ---
   let visibleElements = isLesson 
     ? elements.filter(el => el.screenId === currentScreen || !el.screenId)
     : elements;
@@ -254,86 +346,85 @@ const StudentPlayer = ({ lessonData, student, onExit }) => {
     visibleElements = [...visibleElements].sort((a, b) => (a.y || 0) - (b.y || 0));
   }
 
-  const canvasContainerClass = isMobile 
-    ? "relative w-full bg-white rounded-3xl shadow-xl border border-gray-100 p-6 flex flex-col overflow-y-auto" 
-    : "relative w-full bg-white rounded-[2rem] shadow-xl border border-gray-100 overflow-hidden";
-    
-  const canvasContainerStyle = isMobile
-    ? { minHeight: '70vh' } 
-    : { height: isLesson ? '800px' : `${totalScreens * 800}px` };
-
   return (
-    <div className="fixed inset-0 z-[300] bg-[#eef5fc] flex flex-col font-montserrat overflow-hidden">
+    <div className="fixed inset-0 z-[300] bg-[#070b19] text-white flex flex-col font-montserrat">
       
-      <div className="relative z-10 flex justify-between items-center w-full px-4 md:px-6 py-3 md:py-4 bg-white/80 backdrop-blur-md shadow-sm shrink-0">
+      {/* Background Waves */}
+      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+        <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-blue-900/30 blur-[120px] rounded-full mix-blend-screen"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-[#fcd34d]/10 blur-[100px] rounded-full mix-blend-screen"></div>
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 10 Q 25 20, 50 10 T 100 10' stroke='%23ffffff' fill='none' stroke-width='0.5'/%3E%3C/svg%3E")`, backgroundSize: '100px 20px' }}></div>
+      </div>
+
+      <div className="relative z-10 flex justify-between items-center w-full px-4 md:px-8 py-4 bg-white/5 backdrop-blur-xl border-b border-white/10 shadow-lg shrink-0">
         <div className="flex items-center gap-3 md:gap-4">
-          <img src="https://i.postimg.cc/fyvnv4XT/Diseno-sin-titulo-(14).png" alt="Outloud Logo" className="h-6 md:h-8 object-contain" />
-          <div className="h-4 md:h-6 w-[2px] bg-outloud-blue opacity-20"></div>
+          <img src="https://i.postimg.cc/QtxK3nQn/Diseno-sin-titulo-(14).png" alt="Outloud Logo" className="h-6 md:h-8 object-contain brightness-0 invert opacity-90" />
+          <div className="h-4 md:h-6 w-[2px] bg-white/20"></div>
           <div className="flex flex-col">
-            <span className="text-[10px] md:text-sm font-black text-outloud-blue tracking-widest uppercase">{lessonData?.level || student?.level}: UNIT {lessonData?.unit || student?.unit}</span>
-            <span className="text-[8px] md:text-[10px] font-bold text-gray-500 uppercase">{lessonData?.content_type || 'Activity'}</span>
+            <span className="text-[10px] md:text-sm font-black text-white tracking-widest uppercase">{lessonData?.level || student?.level}: UNIT {lessonData?.unit || student?.unit}</span>
+            <span className="text-[8px] md:text-[10px] font-bold text-white/50 uppercase">{lessonData?.content_type || 'Activity'}</span>
           </div>
         </div>
         
         <div className="flex items-center gap-4 md:gap-6">
-          <div className="hidden md:flex items-center gap-3">
-            <span className="text-xs font-bold text-outloud-blue">{student?.first_name || 'Student'} {student?.last_name || ''}</span>
-            <div className="w-8 h-8 rounded-full bg-gray-200 border-2 border-white shadow-sm overflow-hidden">
+          <div className="hidden md:flex items-center gap-3 bg-white/10 py-1.5 px-3 rounded-full border border-white/10">
+            <span className="text-xs font-bold text-white">{student?.first_name || 'Student'} {student?.last_name || ''}</span>
+            <div className="w-6 h-6 rounded-full overflow-hidden">
                <img src="https://i.postimg.cc/P5V486CM/Sin-titulo-(Post-para-Instagram-(45))-(2).png" alt="Avatar" className="w-full h-full object-cover" />
             </div>
           </div>
-          <button onClick={() => onExit()} className="text-[9px] md:text-[10px] font-black bg-gray-200 text-gray-600 px-4 py-2 rounded-full hover:bg-red-500 hover:text-white transition uppercase tracking-widest">
+          <button onClick={() => onExit()} className="text-[9px] md:text-[10px] font-black bg-white/10 border border-white/20 text-white px-4 py-2 rounded-full hover:bg-red-500 hover:border-red-500 hover:shadow-[0_0_15px_rgba(239,68,68,0.5)] transition-all uppercase tracking-widest">
             Close
           </button>
         </div>
       </div>
 
-      <div className={`relative flex-grow w-full max-w-[1200px] mx-auto p-4 md:p-8 ${isLesson && !isMobile ? 'overflow-hidden' : 'overflow-y-auto'}`}>
-        <div className={canvasContainerClass} style={canvasContainerStyle}>
+      <div className="relative z-10 flex-grow w-full max-w-[1200px] mx-auto p-4 md:p-8 overflow-y-auto overflow-x-hidden">
+        <div 
+          className={`relative w-full bg-white/5 backdrop-blur-md shadow-2xl border border-white/10 ${isMobile ? 'rounded-3xl p-6 flex flex-col' : 'rounded-[2rem]'}`}
+          style={{ minHeight: isLesson && !isMobile ? '800px' : 'auto' }}
+        >
           {visibleElements.map(renderElement)}
         </div>
       </div>
 
       {isLesson && (
-        <div className="relative z-10 w-full bg-white border-t border-gray-200 p-3 md:p-4 shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+        <div className="relative z-10 w-full bg-white/5 backdrop-blur-xl border-t border-white/10 p-3 md:p-5 shrink-0 shadow-[0_-10px_30px_rgba(0,0,0,0.2)]">
           <div className="max-w-[1200px] mx-auto flex items-center justify-between gap-4 md:gap-8">
-            
             <button 
               onClick={handlePrev} 
               disabled={currentScreen === 1}
-              className={`font-black text-[10px] md:text-xs px-5 md:px-6 py-2.5 rounded-full uppercase tracking-widest transition-all ${
-                currentScreen === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-gray-200 text-outloud-blue hover:bg-gray-300'
+              className={`font-black text-[10px] md:text-xs px-5 md:px-8 py-3 rounded-full uppercase tracking-widest transition-all ${
+                currentScreen === 1 ? 'bg-white/5 text-white/20 cursor-not-allowed border border-white/5' : 'bg-white/10 border border-white/20 text-white hover:bg-white/20'
               }`}
             >
               Back
             </button>
-            
-            <div className="flex-grow flex flex-col gap-1.5 md:gap-2 max-w-md">
-              <div className="flex justify-between text-[9px] md:text-[10px] font-black text-outloud-blue uppercase tracking-widest">
+            <div className="flex-grow flex flex-col gap-2 max-w-lg">
+              <div className="flex justify-between text-[9px] md:text-[10px] font-black text-white/70 uppercase tracking-widest">
                 <span>Progress</span>
-                <span>{progressPercentage}%</span>
+                <span className="text-[#fcd34d]">{progressPercentage}%</span>
               </div>
-              <div className="w-full h-1.5 md:h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div className="w-full h-2 md:h-3 bg-white/10 rounded-full overflow-hidden shadow-inner">
                 <div 
-                  className="h-full bg-[#fcd34d] transition-all duration-500 ease-out" 
+                  className="h-full bg-[#fcd34d] transition-all duration-500 ease-out shadow-[0_0_10px_rgba(252,211,77,0.8)]" 
                   style={{ width: `${progressPercentage}%` }}
                 ></div>
               </div>
             </div>
-
             <button 
               onClick={handleNext} 
               disabled={currentScreen === totalScreens}
-              className={`font-black text-[10px] md:text-xs px-5 md:px-6 py-2.5 rounded-full uppercase tracking-widest transition-all ${
-                currentScreen === totalScreens ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-outloud-blue text-white hover:scale-105 shadow-md'
+              className={`font-black text-[10px] md:text-xs px-5 md:px-8 py-3 rounded-full uppercase tracking-widest transition-all ${
+                currentScreen === totalScreens ? 'bg-white/5 text-white/20 cursor-not-allowed border border-white/5' : 'bg-[#fcd34d] text-[#08203e] hover:scale-105 shadow-[0_0_15px_rgba(252,211,77,0.4)]'
               }`}
             >
               Next
             </button>
-
           </div>
         </div>
       )}
+      
     </div>
   );
 };
