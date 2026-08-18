@@ -36,33 +36,32 @@ const MobileLogin = ({ onLogin, onInfoClick }) => {
   };
 
   return (
-    <div className="relative min-h-screen w-full font-montserrat flex flex-col overflow-hidden bg-[#eef5fc]">
-      <div className="absolute inset-0 z-0">
-        <div 
-          className="absolute inset-0 bg-cover bg-center scale-105 filter blur-[3px]"
-          style={{ backgroundImage: "url('https://i.postimg.cc/QtmtPdr7/Diseno-sin-titulo-(16).png')" }}
-        ></div>
-        <div className="absolute inset-0 bg-white/20"></div>
-        <div className="absolute inset-0 bg-gradient-to-t from-[#08203e]/80 via-transparent to-white/40"></div>
+    <div className="relative min-h-screen w-full font-montserrat flex flex-col overflow-hidden bg-[#070b19] text-white">
+      
+      {/* Neon Wavy Background */}
+      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+        <div className="absolute top-[-10%] left-[-20%] w-[80%] h-[50%] bg-blue-900/30 blur-[100px] rounded-full mix-blend-screen"></div>
+        <div className="absolute bottom-[20%] right-[-20%] w-[60%] h-[60%] bg-[#fcd34d]/10 blur-[90px] rounded-full mix-blend-screen"></div>
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 10 Q 25 20, 50 10 T 100 10' stroke='%23ffffff' fill='none' stroke-width='0.5'/%3E%3C/svg%3E")`, backgroundSize: '100px 20px' }}></div>
       </div>
 
       <div className="relative z-10 flex flex-col h-full min-h-screen p-6">
-        <div className="flex items-center space-x-2 mb-6 mt-4">
-          <img src="https://i.postimg.cc/fyvnv4XT/Diseno-sin-titulo-(14).png" alt="Outloud Logo" className="h-8 object-contain drop-shadow-md" />
-          <div className="h-6 w-[2px] bg-outloud-blue opacity-40"></div>
-          <span className="text-xs font-light text-outloud-blue whitespace-nowrap drop-shadow-sm">Online Platform</span>
+        <div className="flex items-center space-x-3 mb-8 mt-4">
+          <img src="https://i.postimg.cc/43zTZQhx/Diseno-sin-titulo-(20).png" alt="Outloud Logo" className="h-8 object-contain drop-shadow-md opacity-90" />
+          <div className="h-6 w-[1px] bg-white/30"></div>
+          <span className="text-xs font-light text-white/80 tracking-wide whitespace-nowrap">Online Platform</span>
         </div>
 
-        <div className="w-full max-w-sm mx-auto bg-student-yellow rounded-2xl shadow-[0_15px_35px_rgba(0,0,0,0.2)] p-6 relative overflow-hidden flex flex-col">
-          <div className="absolute inset-0 flex items-center justify-center opacity-[0.07] pointer-events-none z-0">
+        <div className="w-full max-w-sm mx-auto bg-[#eef5fc]/95 backdrop-blur-xl border border-white/20 rounded-[2rem] shadow-[0_15px_35px_rgba(0,0,0,0.3)] p-8 relative overflow-hidden flex flex-col">
+          <div className="absolute inset-0 flex items-center justify-center opacity-[0.05] pointer-events-none z-0">
             <img src="https://i.postimg.cc/fyvnv4XT/Diseno-sin-titulo-(14).png" alt="Watermark" className="w-64 h-64 object-contain" />
           </div>
 
           <div className="relative z-10">
-            <h2 className="text-[22px] font-bold text-outloud-blue text-center leading-tight mb-1">
+            <h2 className="text-2xl font-black text-[#08203e] text-center leading-tight mb-1">
               Student Portal Login
             </h2>
-            <p className="text-[13px] text-outloud-blue/80 text-center mb-6">
+            <p className="text-xs text-[#08203e]/70 text-center mb-6 font-medium">
               Enter your credentials to continue
             </p>
 
@@ -74,32 +73,32 @@ const MobileLogin = ({ onLogin, onInfoClick }) => {
 
             <form onSubmit={handleSubmit} className="flex flex-col space-y-4">
               <div>
-                <label className="block text-[11px] font-black text-outloud-blue mb-1.5">Username or Email</label>
+                <label className="block text-xs font-black text-[#08203e] mb-1.5">Username or Email</label>
                 <input
                   type="email"
                   value={credentials.username}
                   onChange={(e) => handleInputChange('username', e.target.value)}
                   placeholder="Student_Example@ola.com"
-                  className="w-full h-10 rounded-lg px-3 text-[13px] text-outloud-blue outline-none border border-transparent focus:border-outloud-blue transition-colors shadow-inner"
+                  className="w-full h-11 rounded-lg px-4 text-sm text-[#08203e] outline-none border border-transparent focus:border-outloud-blue transition-colors shadow-inner bg-white"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-black text-outloud-blue mb-1.5">Password</label>
+                <label className="block text-xs font-black text-[#08203e] mb-1.5">Password</label>
                 <div className="relative w-full">
                   <input
                     type={showPassword ? "text" : "password"}
                     value={credentials.password}
                     onChange={(e) => handleInputChange('password', e.target.value)}
                     placeholder="••••••••"
-                    className="w-full h-10 rounded-lg pl-3 pr-10 text-[13px] text-outloud-blue outline-none border border-transparent focus:border-outloud-blue transition-colors shadow-inner"
+                    className="w-full h-11 rounded-lg pl-4 pr-12 text-sm text-[#08203e] outline-none border border-transparent focus:border-outloud-blue transition-colors shadow-inner bg-white"
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-3 flex items-center justify-center text-outloud-blue/60 hover:text-outloud-blue transition-colors"
+                    className="absolute inset-y-0 right-3 flex items-center justify-center text-[#08203e]/50 hover:text-[#08203e] transition-colors"
                   >
                     {showPassword ? (
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -118,17 +117,17 @@ const MobileLogin = ({ onLogin, onInfoClick }) => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-outloud-blue text-white font-bold text-sm h-11 rounded-full mt-2 shadow-md hover:bg-blue-900 transition-colors active:scale-95 disabled:opacity-70"
+                className="w-full bg-[#08203e] text-white font-black text-sm h-12 rounded-full mt-4 shadow-lg hover:scale-[1.02] transition-transform active:scale-95 disabled:opacity-70"
               >
                 {loading ? 'Authenticating...' : 'Login'}
               </button>
             </form>
 
-            <div className="flex flex-col items-center mt-5 space-y-1">
-              <button onClick={onInfoClick} className="text-[11px] font-black text-outloud-blue uppercase tracking-wide hover:underline">
-                OBTENER INFORMACIÓN
+            <div className="flex flex-col items-center mt-6 space-y-1.5">
+              <button onClick={onInfoClick} className="text-xs font-black text-[#08203e] uppercase tracking-wider hover:underline transition-all">
+                CLICK HERE FOR INFORMATION
               </button>
-              <p className="text-[11px] text-outloud-blue">
+              <p className="text-[11px] text-[#08203e]/80">
                 Take a placement test <button className="font-bold hover:underline">here.</button>
               </p>
             </div>
@@ -136,7 +135,7 @@ const MobileLogin = ({ onLogin, onInfoClick }) => {
         </div>
 
         <div className="mt-auto pt-10 pb-6 flex justify-center w-full">
-          <h1 className="text-white text-[32px] font-light leading-[1.1] text-center drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">
+          <h1 className="text-white text-[32px] font-light tracking-widest leading-[1.2] text-center drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">
             YOUR JOURNEY<br/>
             TO SUCCESS<br/>
             STARTS TODAY
@@ -215,7 +214,7 @@ const DesktopLogin = ({ onLogin, onInfoClick }) => {
   };
 
   return (
-    <div className="flex h-screen w-full font-sans overflow-hidden bg-student-yellow">
+    <div className="flex h-screen w-full font-montserrat overflow-hidden bg-[#070b19] text-white">
       <style>{`
         @keyframes hardBlink {
           0%, 100% { opacity: 1; }
@@ -224,54 +223,68 @@ const DesktopLogin = ({ onLogin, onInfoClick }) => {
         .animate-hard-blink { animation: hardBlink 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
       `}</style>
 
-      <div className="relative flex w-[45%] flex-col items-center justify-center px-6 md:px-10">
-        <div className="w-full max-w-[24rem] flex flex-col -mt-4">
-          <div className="flex items-center justify-start w-full mb-3 shrink-0">
-            <img src="https://i.postimg.cc/fyvnv4XT/Diseno-sin-titulo-(14).png" alt="Outloud Logo" className="h-10 md:h-12 object-contain" />
-            <div className="mx-3 h-8 w-[1px] bg-outloud-blue opacity-50 shrink-0"></div>
-            <span className="text-base md:text-lg font-light text-outloud-blue font-montserrat whitespace-nowrap">Online Platform</span>
+      {/* LEFT AREA: Glassmorphism Login Canvas */}
+      <div className="relative flex w-[45%] flex-col items-center justify-center px-6 md:px-10 overflow-hidden">
+        
+        {/* Neon Wavy Background Simulation */}
+        <div className="absolute inset-0 pointer-events-none z-0">
+          <div className="absolute top-[-20%] left-[-10%] w-[80%] h-[80%] bg-blue-900/30 blur-[120px] rounded-full mix-blend-screen"></div>
+          <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-[#fcd34d]/10 blur-[100px] rounded-full mix-blend-screen"></div>
+          <div className="absolute inset-0 opacity-10" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 10 Q 25 20, 50 10 T 100 10' stroke='%23ffffff' fill='none' stroke-width='0.5'/%3E%3C/svg%3E")`, backgroundSize: '100px 20px' }}></div>
+        </div>
+
+        <div className="w-full max-w-[26rem] flex flex-col relative z-10 -mt-4">
+          <div className="flex items-center justify-start w-full mb-6 shrink-0 gap-4">
+            <img src="https://i.postimg.cc/43zTZQhx/Diseno-sin-titulo-(20).png" alt="Outloud Logo" className="h-10 md:h-12 object-contain opacity-90" />
+            <div className="h-8 w-[1px] bg-white/30 shrink-0"></div>
+            <span className="text-sm md:text-base font-light text-white/80 tracking-wide whitespace-nowrap">Online Platform</span>
           </div>
           
-          <div className="relative w-full rounded-[1.5rem] bg-white/85 px-6 py-6 md:px-8 md:py-8 shadow-[12px_12px_20px_rgba(0,0,0,0.15)] flex flex-col backdrop-blur-sm shrink-0">
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.12] overflow-hidden rounded-[1.5rem]">
-              <img src="https://i.postimg.cc/Kj5HBG23/Agregar-algo-de-texto-(10).png" alt="Monogram Watermark" className="w-[75%] object-contain" />
+          {/* Frosted Glass Login Container */}
+          <div className="relative w-full rounded-[2rem] bg-[#eef5fc]/95 px-8 py-10 shadow-[0_20px_50px_rgba(0,0,0,0.3)] flex flex-col backdrop-blur-xl border border-white/20 shrink-0">
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.05] overflow-hidden rounded-[2rem]">
+              <img src="https://i.postimg.cc/fyvnv4XT/Diseno-sin-titulo-(14).png" alt="Monogram Watermark" className="w-[75%] object-contain" />
             </div>
             
             <div className="relative z-10 flex flex-col">
-              <h2 className="mb-1 text-xl md:text-[1.5rem] font-extrabold text-outloud-blue font-tabarra text-center leading-tight whitespace-nowrap">Student Portal Login</h2>
-              <p className="mb-5 text-xs text-gray-500 font-montserrat text-center">Enter your credentials to continue</p>
+              <h2 className="mb-1 text-2xl md:text-3xl font-black text-[#08203e] text-center leading-tight whitespace-nowrap">
+                Student Portal Login
+              </h2>
+              <p className="mb-8 text-sm text-[#08203e]/70 font-medium text-center">
+                Enter your credentials to continue
+              </p>
               
               {(devMessage || authError) && (
-                <div className="w-full text-center bg-red-100 border border-red-200 text-red-700 text-[10px] md:text-[11px] font-bold p-2 rounded-lg font-montserrat shadow-sm mb-4">
+                <div className="w-full text-center bg-red-100 border border-red-200 text-red-700 text-[10px] md:text-[11px] font-bold p-2.5 rounded-lg shadow-sm mb-5">
                   {devMessage || authError}
                 </div>
               )}
               
-              <form onSubmit={handleLoginSubmit} className="flex w-full flex-col space-y-3 font-montserrat">
+              <form onSubmit={handleLoginSubmit} className="flex w-full flex-col space-y-4">
                 <div className="w-full text-left">
-                  <label className="mb-1 block text-xs md:text-sm font-bold text-outloud-blue">Username or Email</label>
+                  <label className="mb-1.5 block text-xs md:text-sm font-black text-[#08203e]">Username or Email</label>
                   <input 
                     type="email" 
                     value={credentials.username}
                     onChange={(e) => handleInputChange('username', e.target.value)}
                     placeholder="Student_Example@ola.com" 
-                    className="w-full rounded-lg border-none bg-white p-2.5 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-outloud-blue shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)]"
+                    className="w-full h-11 rounded-lg border-none bg-white px-4 text-sm text-[#08203e] outline-none focus:ring-2 focus:ring-[#fcd34d] shadow-inner transition-shadow"
                     required
                   />
                 </div>
                 
                 <div className="w-full text-left">
-                  <label className="mb-1 block text-xs md:text-sm font-bold text-outloud-blue">Password</label>
+                  <label className="mb-1.5 block text-xs md:text-sm font-black text-[#08203e]">Password</label>
                   <div className="relative w-full">
                     <input 
                       type={showPassword ? "text" : "password"}
                       value={credentials.password}
                       onChange={(e) => handleInputChange('password', e.target.value)}
                       placeholder="••••••••" 
-                      className="w-full rounded-lg border-none bg-white p-2.5 pr-10 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-outloud-blue shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)]"
+                      className="w-full h-11 rounded-lg border-none bg-white pl-4 pr-12 text-sm text-[#08203e] outline-none focus:ring-2 focus:ring-[#fcd34d] shadow-inner transition-shadow"
                       required
                     />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-3 flex items-center justify-center text-outloud-blue/60 hover:text-outloud-blue transition-colors">
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-3 flex items-center justify-center text-[#08203e]/50 hover:text-[#08203e] transition-colors">
                       {showPassword ? (
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
                       ) : (
@@ -281,16 +294,16 @@ const DesktopLogin = ({ onLogin, onInfoClick }) => {
                   </div>
                 </div>
                 
-                <button type="submit" disabled={loading} className="mt-3 mx-auto w-[85%] rounded-full bg-outloud-blue p-2.5 text-sm font-bold text-white shadow-md transition hover:bg-blue-900 disabled:opacity-70">
+                <button type="submit" disabled={loading} className="mt-4 mx-auto w-[85%] rounded-full bg-[#08203e] py-3 text-sm font-black text-white shadow-lg hover:scale-105 transition-transform disabled:opacity-70 active:scale-95">
                   {loading ? 'Authenticating...' : 'Login'}
                 </button>
 
-                <div className="mt-3 text-center text-[10px] md:text-[11px] text-outloud-blue flex flex-col items-center">
-                  <a href="#" onClick={(e) => { e.preventDefault(); if (onInfoClick) onInfoClick(); }} className="font-extrabold uppercase tracking-wide hover:underline cursor-pointer animate-hard-blink">
-                    Obtener información
+                <div className="mt-5 text-center text-xs text-[#08203e] flex flex-col items-center gap-1.5">
+                  <a href="#" onClick={(e) => { e.preventDefault(); if (onInfoClick) onInfoClick(); }} className="font-black uppercase tracking-wider hover:underline cursor-pointer animate-hard-blink">
+                    CLICK HERE FOR INFORMATION
                   </a>
-                  <p className="mt-1">
-                    Take a placement test <a href="#" onClick={handleDevClick} className="font-bold underline">here</a>.
+                  <p className="text-[11px] text-[#08203e]/80">
+                    Take a placement test <a href="#" onClick={handleDevClick} className="font-bold underline text-[#08203e]">here.</a>
                   </p>
                 </div>
               </form>
@@ -299,15 +312,19 @@ const DesktopLogin = ({ onLogin, onInfoClick }) => {
         </div>
       </div>
 
-      <div className="relative flex w-[55%] bg-gray-200">
+      {/* RIGHT AREA: Photography Canvas */}
+      <div className="relative flex w-[55%] bg-[#070b19]">
         <div className="absolute inset-0">
           <img src="https://i.postimg.cc/P5V486CM/Sin-titulo-(Post-para-Instagram-(45))-(2).png" alt="Student Background" className="h-full w-full object-cover" />
         </div>
-        <div className="absolute left-0 top-0 bottom-0 w-[55%] bg-outloud-blue/90 flex flex-col items-center justify-center text-center px-4 md:px-8 shadow-[10px_0_20px_rgba(0,0,0,0.2)]">
-          <div className="mb-6 flex flex-col items-center">
-            <img src="https://i.postimg.cc/gjMxxhnD/Agregar-algo-de-texto-(7).png" alt="Outloud Logo" className="w-48 md:w-56 object-contain drop-shadow-md" />
+        
+        {/* Dark Blue Overlay Fade */}
+        <div className="absolute left-0 top-0 bottom-0 w-[60%] bg-[#070b19]/80 backdrop-blur-sm flex flex-col items-center justify-center text-center px-8 shadow-[20px_0_40px_rgba(0,0,0,0.5)] border-r border-white/5">
+          <div className="mb-8 flex flex-col items-center">
+            {/* Stacked logo inverted to white */}
+            <img src="https://i.postimg.cc/gjMxxhnD/Agregar-algo-de-texto-(7).png" alt="Outloud Stacked Logo" className="w-48 md:w-56 object-contain drop-shadow-lg brightness-0 invert opacity-90" />
           </div>
-          <h1 className="text-[1.5rem] md:text-[2rem] lg:text-[2.25rem] font-light tracking-widest leading-[1.35] text-white font-uni-sans whitespace-nowrap">
+          <h1 className="text-[1.8rem] md:text-[2.2rem] lg:text-[2.6rem] font-light tracking-[0.15em] leading-[1.3] text-white whitespace-nowrap drop-shadow-md">
             YOUR JOURNEY<br/>TO SUCCESS<br/>STARTS TODAY
           </h1>
         </div>
