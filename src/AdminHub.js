@@ -17,7 +17,10 @@ import SliderBarModal from './components/AdminHub/Modals/SliderBarModal';
 import CrosswordModal from './components/AdminHub/Modals/CrosswordModal';
 import WordSearchModal from './components/AdminHub/Modals/WordSearchModal';
 import NavButtonModal from './components/AdminHub/Modals/NavButtonModal';
-
+import ComprobanteModal from './components/AdminHub/Modals/ComprobanteModal';
+import EditarReglasModal from './components/AdminHub/Modals/EditarReglasModal';
+import AccountCreationModal from './components/AdminHub/Modals/AccountCreationModal';
+import UserManagementDrawer from './components/AdminHub/Modals/UserManagementDrawer';
 
 
 // =========================================
@@ -1613,68 +1616,7 @@ const AdminHub = () => {
 // 4. NEW TAB COMPONENTS
 // =========================================
 
-const ComprobanteModal = ({ isOpen, imageUrl, onClose }) => {
-  if (!isOpen) return null;
-  return (
-    <div className="fixed inset-0 z-[250] flex items-center justify-center bg-outloud-blue/40 backdrop-blur-sm p-4">
-      <div className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/60 animate-fade-in flex flex-col max-h-[90vh]">
-        <div className="bg-[#eef5fc] p-5 border-b border-gray-200 shrink-0">
-          <h2 className="text-outloud-blue font-black text-lg uppercase tracking-wider font-montserrat">COMPROBANTE DE PAGO</h2>
-        </div>
-        <div className="p-5 overflow-y-auto custom-scrollbar flex justify-center bg-gray-50">
-          {imageUrl ? <img src={imageUrl} alt="Comprobante" className="max-w-full h-auto rounded-xl shadow-sm border border-gray-200" /> : <p className="text-gray-500 font-bold uppercase text-xs tracking-widest py-10">Imagen no disponible</p>}
-        </div>
-        <div className="p-4 bg-gray-100 border-t border-gray-200 flex justify-end shrink-0">
-          <button type="button" onClick={onClose} className="px-6 py-2.5 rounded-full font-bold text-xs uppercase tracking-wide text-gray-600 bg-transparent border-2 border-gray-300 hover:bg-gray-200 transition">CERRAR</button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
-const EditarReglasModal = ({ isOpen, initialHtml = '<span style="font-family: Montserrat; font-size: 16px; color: #08203e;">Escribe las reglas de la comunidad aquí...</span>', onSave, onClose }) => {
-  const [htmlContent, setHtmlContent] = useState(initialHtml);
-  const [textDropdown, setTextDropdown] = useState(null);
-  const editorRef = useRef(null);
-
-  useEffect(() => { if (isOpen && editorRef.current) { editorRef.current.innerHTML = htmlContent; } }, [isOpen]);
-
-  const handleFormat = (command, value = null) => {
-    if (command === 'fontSizePx') { document.execCommand('fontSize', false, '7'); document.querySelectorAll('font[size="7"]').forEach(f => { f.removeAttribute('size'); f.style.fontSize = `${value}px`; }); } 
-    else { document.execCommand(command, false, value); }
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-[250] flex items-center justify-center bg-outloud-blue/40 backdrop-blur-sm p-4">
-      <div className="w-full max-w-3xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/60 animate-fade-in flex flex-col max-h-[90vh]">
-        <div className="bg-[#eef5fc] p-5 border-b border-gray-200 shrink-0">
-          <h2 className="text-outloud-blue font-black text-lg uppercase tracking-wider font-montserrat">EDITAR REGLAS DE LA COMUNIDAD</h2>
-        </div>
-        <div className="p-5 overflow-y-auto custom-scrollbar flex flex-col gap-4">
-           <div className="flex flex-wrap gap-2 items-center bg-gray-50 p-2 rounded-t-xl border border-gray-300 border-b-0">
-              <div className="flex border border-gray-300 rounded overflow-hidden bg-white">
-                <button onMouseDown={(e)=>{e.preventDefault(); handleFormat('bold');}} className="w-8 h-8 font-bold text-gray-700 hover:bg-gray-100">B</button>
-                <button onMouseDown={(e)=>{e.preventDefault(); handleFormat('italic');}} className="w-8 h-8 italic text-gray-700 hover:bg-gray-100 border-l border-gray-300">I</button>
-                <button onMouseDown={(e)=>{e.preventDefault(); handleFormat('underline');}} className="w-8 h-8 underline text-gray-700 hover:bg-gray-100 border-l border-gray-300">U</button>
-              </div>
-              <input type="color" onMouseDown={(e)=>e.preventDefault()} onChange={(e) => handleFormat('foreColor', e.target.value)} className="w-8 h-8 rounded cursor-pointer border border-gray-300" title="Color de Texto" />
-              <div className="relative">
-                <button onMouseDown={(e)=>e.preventDefault()} onClick={() => setTextDropdown(textDropdown === 'size' ? null : 'size')} className="p-1.5 px-2 border border-gray-300 rounded text-xs font-semibold focus:outline-none bg-white">Tamaño...</button>
-                {textDropdown === 'size' && (<div className="absolute top-full left-0 mt-1 w-16 max-h-40 overflow-y-auto bg-white border border-gray-200 rounded shadow-lg z-[200]">{[12,14,16,18,20,24,28,32].map(sz => (<div key={sz} onMouseDown={(e) => e.preventDefault()} onClick={() => { handleFormat('fontSizePx', sz); setTextDropdown(null); }} className="px-2 py-1 hover:bg-gray-100 cursor-pointer text-xs">{sz}px</div>))}</div>)}
-              </div>
-           </div>
-           <div ref={editorRef} contentEditable suppressContentEditableWarning className="w-full p-4 bg-white border border-gray-300 rounded-b-xl focus:outline-none focus:ring-2 focus:ring-student-yellow transition overflow-y-auto min-h-[200px] rich-text-content" />
-        </div>
-        <div className="p-4 bg-gray-100 border-t border-gray-200 flex justify-end gap-4 shrink-0">
-          <button type="button" onClick={onClose} className="px-6 py-2.5 rounded-full font-bold text-xs uppercase tracking-wide text-gray-600 bg-transparent border-2 border-gray-300">CANCELAR</button>
-          <button type="button" onClick={() => { onSave(editorRef.current ? editorRef.current.innerHTML : htmlContent); onClose(); }} className="px-8 py-2.5 rounded-full font-black text-xs uppercase tracking-wide text-outloud-blue bg-student-yellow shadow-md">GUARDAR REGLAS</button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 const CustomerManagement = ({ supabase }) => {
   const [activeSubTab, setActiveSubTab] = useState('Estudiantes');
@@ -1776,166 +1718,6 @@ const CustomerManagement = ({ supabase }) => {
 // 5. MASTER SETTINGS COMPONENTS
 // =========================================
 
-const AccountCreationModal = ({ isOpen, onClose, onSave }) => {
-  const [role, setRole] = useState('Student');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
-    firstName: '', lastName: '', email: '', whatsapp: '', avatarUrl: '', username: '', password: '',
-    level: 'A1: Básico 1', unit: 'Unit 1', discount: '0', credits: '0', cefr: 'C1', rate: '15.00', bioUrl: '', adminLevel: 'Admin (Content)',
-  });
-
-  if (!isOpen) return null;
-
-  const handleInputChange = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
-
-  const handleSubmit = async () => {
-    if (!formData.firstName || !formData.email || !formData.whatsapp || !formData.username || !formData.password) {
-      return alert('Please fill in all required universal fields (Name, Email, Phone, Username, Password).');
-    }
-    setIsSubmitting(true);
-    await onSave({ ...formData, role });
-    setIsSubmitting(false);
-    onClose();
-  };
-
-  return (
-    <div className="fixed inset-0 z-[400] flex items-center justify-center bg-outloud-blue/40 backdrop-blur-sm p-4">
-      <style>{`.custom-phone-input .PhoneInputInput { border: none; background: transparent; outline: none; width: 100%; font-size: 0.875rem; color: #08203e; } .custom-phone-input .PhoneInputCountryIcon { box-shadow: none; border: none; }`}</style>
-      <div className="w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/60 animate-fade-in flex flex-col max-h-[90vh]">
-        
-        <div className="bg-[#eef5fc] p-6 border-b border-gray-200 shrink-0 flex justify-between items-center">
-          <div>
-            <h2 className="text-outloud-blue font-black text-xl uppercase tracking-wider font-montserrat">CREATE NEW ACCOUNT</h2>
-          </div>
-          <div className="flex gap-2 bg-white p-1 rounded-xl shadow-sm border border-gray-200">
-            {['Student', 'Teacher', 'Admin'].map(r => (
-              <button key={r} onClick={() => setRole(r)} className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide transition-colors ${role === r ? 'bg-outloud-blue text-white' : 'text-gray-500 hover:bg-gray-100'}`}>{r === 'Admin' ? 'Admin / Super' : r}</button>
-            ))}
-          </div>
-        </div>
-        
-        <div className="p-6 overflow-y-auto custom-scrollbar flex flex-col md:flex-row gap-8 bg-gray-50 flex-grow">
-          <div className="flex-1 flex flex-col gap-5">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-200 pb-2">Universal Profile Details</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-gray-500 uppercase">First Name *</label><input type="text" value={formData.firstName} onChange={(e) => handleInputChange('firstName', e.target.value)} className="w-full p-2.5 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-student-yellow" /></div>
-              <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-gray-500 uppercase">Last Name *</label><input type="text" value={formData.lastName} onChange={(e) => handleInputChange('lastName', e.target.value)} className="w-full p-2.5 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-student-yellow" /></div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-gray-500 uppercase">Username *</label><input type="text" value={formData.username} onChange={(e) => handleInputChange('username', e.target.value)} className="w-full p-2.5 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-student-yellow" /></div>
-              <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-gray-500 uppercase">Password *</label><input type="text" value={formData.password} onChange={(e) => handleInputChange('password', e.target.value)} className="w-full p-2.5 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-student-yellow" /></div>
-            </div>
-            <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-gray-500 uppercase">Email Address *</label><input type="email" value={formData.email} onChange={(e) => handleInputChange('email', e.target.value)} className="w-full p-2.5 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-student-yellow" /></div>
-            <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-gray-500 uppercase">WhatsApp Number *</label><PhoneInput international defaultCountry="US" value={formData.whatsapp} onChange={(value) => handleInputChange('whatsapp', value)} className="custom-phone-input w-full p-2.5 bg-white border border-gray-300 rounded-xl text-sm focus-within:ring-2 focus-within:ring-student-yellow transition flex items-center gap-3" /></div>
-            <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-gray-500 uppercase">Profile Picture URL</label><input type="url" value={formData.avatarUrl} onChange={(e) => handleInputChange('avatarUrl', e.target.value)} className="w-full p-2.5 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-student-yellow" /></div>
-          </div>
-
-          <div className="flex-1 flex flex-col gap-5">
-            <h3 className="text-xs font-bold text-outloud-blue uppercase tracking-widest border-b border-outloud-blue/20 pb-2 flex items-center justify-between">
-              {role} Configuration
-            </h3>
-            {role === 'Student' && (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1 w-full"><span className="text-[10px] font-bold text-outloud-blue uppercase tracking-widest">Initial Level</span><select name="level" className="bg-white border border-gray-200 rounded-lg p-2 text-sm font-bold text-gray-700 focus:outline-none focus:border-student-yellow"><option value="A1">A1: Básico 1</option><option value="A2">A2: Básico 2</option><option value="B1">B1: Intermedio 1</option><option value="B2">B2: Intermedio 2</option><option value="C1">C1: Avanzado 1</option><option value="C2">C2: Avanzado 2</option></select></div>
-<div className="flex flex-col gap-1 w-full"><span className="text-[10px] font-bold text-outloud-blue uppercase tracking-widest">Initial Unit</span><select name="unit" className="bg-white border border-gray-200 rounded-lg p-2 text-sm font-bold text-gray-700 focus:outline-none focus:border-student-yellow">{Array.from({length: 93}, (_, i) => (<option key={i+1} value={i+1}>Unit {i+1}</option>))}</select></div>
-                 <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-gray-500 uppercase">Discount Applied (%)</label><input type="number" min="0" max="100" value={formData.discount} onChange={(e) => handleInputChange('discount', e.target.value)} className="w-full p-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none text-center" /></div>
-                 <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-gray-500 uppercase">Starting Credits</label><input type="number" min="0" value={formData.credits} onChange={(e) => handleInputChange('credits', e.target.value)} className="w-full p-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none text-center" /></div>
-              </div>
-            )}
-            {role === 'Teacher' && (
-              <div className="grid grid-cols-2 gap-4">
-                 <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-gray-500 uppercase">CEFR Certification</label><select value={formData.cefr} onChange={(e) => handleInputChange('cefr', e.target.value)} className="w-full p-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none font-bold"><option>B2</option><option>C1</option><option>C2</option><option>Native</option></select></div>
-                 <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-gray-500 uppercase">Hourly Rate (USD)</label><input type="number" step="0.50" value={formData.rate} onChange={(e) => handleInputChange('rate', e.target.value)} className="w-full p-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none" /></div>
-                 <div className="flex flex-col gap-1.5 col-span-2"><label className="text-[10px] font-bold text-gray-500 uppercase">Resume / Bio PDF URL</label><input type="url" value={formData.bioUrl} onChange={(e) => handleInputChange('bioUrl', e.target.value)} className="w-full p-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none" /></div>
-              </div>
-            )}
-            {role === 'Admin' && (
-              <div className="flex flex-col gap-1.5">
-                 <label className="text-[10px] font-bold text-gray-500 uppercase">Admin Tier</label>
-                 <select value={formData.adminLevel} onChange={(e) => handleInputChange('adminLevel', e.target.value)} className="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none font-bold text-outloud-blue"><option>Admin (Content & Teachers)</option><option>Admin (Financials & Students)</option><option>Super Admin (General Manager)</option></select>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="p-4 bg-white border-t border-gray-200 flex justify-end gap-4 shrink-0">
-          <button type="button" onClick={onClose} className="px-6 py-3 rounded-full font-bold text-xs uppercase tracking-wide text-gray-600 bg-transparent border-2 border-gray-300 hover:bg-gray-200 transition">CANCEL</button>
-          <button type="button" onClick={handleSubmit} disabled={isSubmitting} className="px-8 py-3 rounded-full font-black text-xs uppercase tracking-wide text-outloud-blue bg-student-yellow hover:scale-105 active:scale-95 disabled:opacity-50">{isSubmitting ? 'PROVISIONING...' : `PROVISION ${role.toUpperCase()} ACCOUNT`}</button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const UserManagementDrawer = ({ user, onClose }) => {
-  const [showPassword, setShowPassword] = useState(false);
-  const [editableWhatsApp, setEditableWhatsApp] = useState('');
-
-  useEffect(() => { if (user) setEditableWhatsApp(user.whatsapp || ''); }, [user]);
-
-  if (!user) return null;
-
-  return (
-    <>
-      <div className="fixed inset-0 bg-outloud-blue/20 backdrop-blur-sm z-[299] transition-opacity animate-fade-in" onClick={onClose} />
-      
-      <div className="fixed inset-y-0 right-0 w-full max-w-md bg-white shadow-2xl z-[300] flex flex-col transform transition-transform duration-300 ease-in-out border-l border-white/60 animate-fade-in overflow-hidden">
-        <div className="bg-[#eef5fc] p-6 border-b border-gray-200 flex justify-between items-start shrink-0">
-          <div className="flex flex-col">
-            <h3 className="text-lg font-black text-outloud-blue font-montserrat uppercase tracking-wide">{user.role} Profile Management</h3>
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-1">ID: {user.id.substring(0,8)}...</span>
-          </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-red-50 hover:text-red-500 transition shadow-sm">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
-          </button>
-        </div>
-
-        <div className="p-6 overflow-y-auto custom-scrollbar flex flex-col gap-6 flex-grow bg-gray-50">
-          <div className="flex flex-col items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-            <img src={user.avatar_url || 'https://i.pravatar.cc/150'} alt="Avatar" className="w-24 h-24 rounded-full object-cover border-4 border-gray-50 shadow-sm mb-4" />
-            <h4 className="text-xl font-bold text-outloud-blue mb-1">{user.first_name} {user.last_name}</h4>
-            <div className="flex gap-2 mt-2">
-              <span className={`text-white rounded text-[10px] px-3 py-1 font-bold uppercase tracking-widest ${user.role === 'Student' ? 'bg-blue-500' : user.role === 'Teacher' ? 'bg-purple-500' : 'bg-red-500'}`}>{user.role}</span>
-              {user.cefr && <span className="bg-outloud-blue text-white rounded text-[10px] px-3 py-1 font-bold tracking-widest">{user.cefr}</span>}
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-3">
-             <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-200 pb-1">Contact Information</h4>
-             <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex flex-col gap-2 text-sm">
-               <div className="flex justify-between items-center"><span className="font-semibold text-gray-500">Email:</span><input type="email" defaultValue={user.email} className="w-48 bg-gray-50 border border-gray-200 rounded p-1.5 text-xs font-bold text-outloud-blue focus:outline-none focus:border-student-yellow" /></div>
-               <div className="flex justify-between items-center"><span className="font-semibold text-gray-500">WhatsApp:</span><PhoneInput international defaultCountry="US" value={editableWhatsApp} onChange={setEditableWhatsApp} className="custom-phone-input w-48 bg-gray-50 border border-gray-200 rounded p-1.5 text-xs font-bold focus-within:border-student-yellow flex items-center gap-2" /></div>
-             </div>
-          </div>
-
-          {user.role === 'Student' && (
-             <div className="flex flex-col gap-3">
-               <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-200 pb-1">Academic & Financial</h4>
-               <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex flex-col gap-3 text-sm">
-                 <div className="flex justify-between items-center"><span className="font-semibold text-gray-500">Current Level:</span><select name="level" defaultValue={user.level} className="bg-gray-50 border border-gray-200 rounded p-1.5 text-xs font-bold text-outloud-blue focus:outline-none focus:border-student-yellow"><option value="A1">A1: Básico 1</option><option value="A2">A2: Básico 2</option><option value="B1">B1: Intermedio 1</option><option value="B2">B2: Intermedio 2</option><option value="C1">C1: Avanzado 1</option><option value="C2">C2: Avanzado 2</option></select></div>
-          <div className="flex justify-between items-center"><span className="font-semibold text-gray-500">Current Unit:</span><select name="unit" defaultValue={user.unit || 1} className="bg-gray-50 border border-gray-200 rounded p-1.5 text-xs font-bold text-outloud-blue focus:outline-none focus:border-student-yellow">{Array.from({length: 93}, (_, i) => (<option key={i+1} value={i+1}>Unit {i+1}</option>))}</select></div>
-          <div className="flex justify-between items-center"><span className="font-semibold text-gray-500">Discounts (%):</span><input type="number" name="discount" defaultValue={user.discount || 0} className="w-16 bg-gray-50 border border-gray-200 rounded p-1 text-xs font-bold text-center focus:outline-none focus:border-student-yellow" /></div>
-          <div className="flex justify-between items-center"><span className="font-semibold text-gray-500">Available Credits:</span><input type="number" name="credits" defaultValue={user.credits || 0} className="w-16 bg-gray-50 border border-gray-200 rounded p-1 text-xs font-bold text-center focus:outline-none focus:border-student-yellow" /></div>
-               </div>
-             </div>
-          )}
-          
-          {/* Real Authentication credentials cannot be fetched backwards from Supabase Auth for security, we only show the username from the profile table */}
-          <div className="flex flex-col gap-3">
-             <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-200 pb-1">System Security</h4>
-             <div className="bg-red-50 p-3 rounded-xl border border-red-100 shadow-sm flex flex-col gap-2 text-sm">
-               <div className="flex justify-between items-center"><span className="font-semibold text-red-800">Username:</span><input type="text" defaultValue={user.username} className="w-48 bg-white border border-red-200 rounded p-1.5 text-xs font-bold text-gray-700 focus:outline-none focus:ring-1 focus:ring-red-400" /></div>
-             </div>
-          </div>
-        </div>
-
-        <div className="p-4 bg-white border-t border-gray-200 shrink-0 flex flex-col gap-2">
-          <button className="w-full bg-student-yellow text-outloud-blue font-black rounded-xl py-3 shadow-md uppercase tracking-wide hover:opacity-90 transition-opacity text-xs">SAVE CHANGES</button>
-        </div>
-      </div>
-    </>
-  );
-};
 
 const MasterSettings = ({ supabase }) => {
   const [activeSubTab, setActiveSubTab] = useState('User Provisioning');
