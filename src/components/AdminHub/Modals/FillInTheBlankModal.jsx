@@ -56,81 +56,90 @@ const FillInTheBlankModal = ({ isOpen, initialData = {}, onSave, onCancel }) => 
   const setActiveIsUnderline = (v) => editTarget === 'template' ? setT_isUnderline(v) : setA_isUnderline(v);
 
   return (
-    <div className="fixed inset-0 z-[250] flex items-center justify-center bg-outloud-blue/40 backdrop-blur-sm p-4">
-      <div className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/60 animate-fade-in flex flex-col max-h-[90vh]">
-        <div className="bg-[#eef5fc] p-5 border-b border-gray-200 shrink-0">
-          <h2 className="text-outloud-blue font-black text-lg uppercase tracking-wider font-montserrat">FILL IN THE BLANK</h2>
-          <p className="text-gray-600 text-xs mt-1">Type in the text, using "<span className="font-bold text-outloud-blue">_</span>" to replace the letters of the key words.</p>
+    <div className="fixed inset-0 z-[250] flex items-center justify-center bg-[#070b19]/80 backdrop-blur-md p-4 font-montserrat">
+      <div className="w-full max-w-2xl bg-[#070b19]/40 backdrop-blur-xl border border-white/20 rounded-[30px] shadow-2xl overflow-hidden animate-fade-in flex flex-col max-h-[90vh]">
+        
+        <div className="bg-white/5 p-6 border-b border-white/10 shrink-0">
+          <h2 className="text-white font-black text-lg uppercase tracking-widest drop-shadow-md">FILL IN THE BLANK</h2>
+          <p className="text-white/70 text-xs mt-2 font-medium">Type in the text, using "<span className="font-black text-[#fcd34d]">_</span>" to replace the letters of the key words.</p>
         </div>
-        <div className="p-5 space-y-4 overflow-y-auto custom-scrollbar">
-          <div className="flex flex-col space-y-1.5">
-            <label className="text-[10px] font-bold uppercase text-gray-500">Sentence Template</label>
-            <textarea rows={3} value={templateText} onChange={(e) => setTemplateText(e.target.value)} className="w-full p-3 bg-gray-50 border border-gray-300 rounded-xl font-montserrat text-sm focus:outline-none focus:ring-2 focus:ring-student-yellow transition" />
+        
+        <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar">
+          <div className="flex flex-col space-y-2">
+            <label className="text-[10px] font-bold uppercase text-white/70 tracking-widest">Sentence Template</label>
+            <textarea rows={3} value={templateText} onChange={(e) => setTemplateText(e.target.value)} className="w-full p-4 bg-white/5 border border-white/20 rounded-xl font-montserrat text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#fcd34d] transition shadow-inner placeholder-white/30" placeholder="I _____ need your help..." />
           </div>
-          <div className="flex flex-col space-y-1.5">
-            <label className="text-[10px] font-bold uppercase text-gray-500">Correct Answer(s)</label>
-            <p className="text-[10px] text-gray-400 leading-tight">Type the exact words inside quotation marks, separated by commas (e.g. "is", "Lucas'").</p>
-            <input type="text" value={answerText} onChange={(e) => setAnswerText(e.target.value)} placeholder='"is", "is"' className="w-full p-3 bg-gray-50 border border-gray-300 rounded-xl font-montserrat text-sm focus:outline-none focus:ring-2 focus:ring-student-yellow transition" />
-          </div>
-          <div className="bg-gray-50 p-4 rounded-2xl border border-gray-200 flex flex-col space-y-4">
-            <div className="flex bg-gray-200/70 p-1 rounded-xl">
-              <button type="button" className={`flex-1 text-[11px] font-bold py-2.5 rounded-lg transition-all uppercase tracking-wide ${editTarget === 'template' ? 'bg-white shadow-sm text-outloud-blue' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'}`} onClick={() => setEditTarget('template')}>Edit Sentence Template</button>
-              <button type="button" className={`flex-1 text-[11px] font-bold py-2.5 rounded-lg transition-all uppercase tracking-wide ${editTarget === 'answer' ? 'bg-white shadow-sm text-outloud-blue' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'}`} onClick={() => setEditTarget('answer')}>Edit Correct Answer(s)</button>
+          
+          <div className="flex flex-col space-y-2">
+            <div className="flex justify-between items-end">
+              <label className="text-[10px] font-bold uppercase text-white/70 tracking-widest">Correct Answer(s)</label>
+              <span className="text-[9px] text-white/50 tracking-wider">Separate with commas (e.g. "is", "Lucas'")</span>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end">
-              <div className="flex flex-col space-y-1.5">
-                <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Text Color</span>
-                <input type="color" value={activeTextColor} onChange={(e) => setActiveTextColor(e.target.value)} className="w-full h-9 rounded cursor-pointer border border-gray-300" />
+            <input type="text" value={answerText} onChange={(e) => setAnswerText(e.target.value)} placeholder='"is", "is"' className="w-full p-4 bg-white/5 border border-white/20 rounded-xl font-montserrat text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#fcd34d] transition shadow-inner placeholder-white/30" />
+          </div>
+          
+          <div className="bg-white/5 p-5 rounded-2xl border border-white/10 flex flex-col space-y-5">
+            <div className="flex bg-black/40 p-1.5 rounded-xl border border-white/5">
+              <button type="button" className={`flex-1 text-[10px] font-bold py-3 rounded-lg transition-all uppercase tracking-widest ${editTarget === 'template' ? 'bg-white/20 text-white shadow-md border border-white/20' : 'text-white/50 hover:text-white/90 hover:bg-white/5'}`} onClick={() => setEditTarget('template')}>Edit Template</button>
+              <button type="button" className={`flex-1 text-[10px] font-bold py-3 rounded-lg transition-all uppercase tracking-widest ${editTarget === 'answer' ? 'bg-white/20 text-white shadow-md border border-white/20' : 'text-white/50 hover:text-white/90 hover:bg-white/5'}`} onClick={() => setEditTarget('answer')}>Edit Answers</button>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-5 items-end">
+              <div className="flex flex-col space-y-2">
+                <span className="text-[9px] font-bold uppercase text-white/70 tracking-widest text-center">Text Color</span>
+                <input type="color" value={activeTextColor} onChange={(e) => setActiveTextColor(e.target.value)} className="w-full h-10 rounded-lg cursor-pointer bg-transparent border border-white/20" />
               </div>
-              <div className="flex flex-col space-y-1.5">
-                <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Box Color</span>
-                <div className="flex gap-1 items-center">
-                  <input type="color" value={activeBoxColor === 'transparent' ? '#ffffff' : activeBoxColor} onChange={(e) => setActiveBoxColor(e.target.value)} disabled={activeBoxColor === 'transparent'} className={`flex-grow h-9 rounded cursor-pointer border border-gray-300 ${activeBoxColor === 'transparent' ? 'opacity-40' : ''}`} />
-                  <button type="button" onClick={() => setActiveBoxColor(activeBoxColor === 'transparent' ? '#ffffff' : 'transparent')} className={`w-9 h-9 flex items-center justify-center rounded border ${activeBoxColor === 'transparent' ? 'bg-red-50 border-red-200 text-red-500 shadow-inner' : 'bg-white border-gray-300 text-gray-400 hover:bg-gray-100'}`} title="Toggle Transparent">🚫</button>
+              <div className="flex flex-col space-y-2">
+                <span className="text-[9px] font-bold uppercase text-white/70 tracking-widest text-center">Box Color</span>
+                <div className="flex gap-2 items-center">
+                  <input type="color" value={activeBoxColor === 'transparent' ? '#ffffff' : activeBoxColor} onChange={(e) => setActiveBoxColor(e.target.value)} disabled={activeBoxColor === 'transparent'} className={`flex-grow h-10 rounded-lg cursor-pointer bg-transparent border border-white/20 ${activeBoxColor === 'transparent' ? 'opacity-40' : ''}`} />
+                  <button type="button" onClick={() => setActiveBoxColor(activeBoxColor === 'transparent' ? '#ffffff' : 'transparent')} className={`w-10 h-10 flex items-center justify-center rounded-lg border transition-colors ${activeBoxColor === 'transparent' ? 'bg-red-500/20 border-red-500/50 text-red-400 shadow-inner' : 'bg-white/10 border-white/20 text-white/70 hover:bg-white/20'}`} title="Toggle Transparent">🚫</button>
                 </div>
               </div>
-              <div className="flex flex-col space-y-1.5">
-                <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Line Color</span>
-                <div className="flex gap-1 items-center">
-                  <input type="color" value={activeLineColor === 'transparent' ? '#ffffff' : activeLineColor} onChange={(e) => setActiveLineColor(e.target.value)} disabled={activeLineColor === 'transparent'} className={`flex-grow h-9 rounded cursor-pointer border border-gray-300 ${activeLineColor === 'transparent' ? 'opacity-40' : ''}`} />
-                  <button type="button" onClick={() => setActiveLineColor(activeLineColor === 'transparent' ? '#ffffff' : 'transparent')} className={`w-9 h-9 flex items-center justify-center rounded border ${activeLineColor === 'transparent' ? 'bg-red-50 border-red-200 text-red-500 shadow-inner' : 'bg-white border-gray-300 text-gray-400 hover:bg-gray-100'}`} title="Toggle Transparent">🚫</button>
+              <div className="flex flex-col space-y-2">
+                <span className="text-[9px] font-bold uppercase text-white/70 tracking-widest text-center">Line Color</span>
+                <div className="flex gap-2 items-center">
+                  <input type="color" value={activeLineColor === 'transparent' ? '#ffffff' : activeLineColor} onChange={(e) => setActiveLineColor(e.target.value)} disabled={activeLineColor === 'transparent'} className={`flex-grow h-10 rounded-lg cursor-pointer bg-transparent border border-white/20 ${activeLineColor === 'transparent' ? 'opacity-40' : ''}`} />
+                  <button type="button" onClick={() => setActiveLineColor(activeLineColor === 'transparent' ? '#ffffff' : 'transparent')} className={`w-10 h-10 flex items-center justify-center rounded-lg border transition-colors ${activeLineColor === 'transparent' ? 'bg-red-500/20 border-red-500/50 text-red-400 shadow-inner' : 'bg-white/10 border-white/20 text-white/70 hover:bg-white/20'}`} title="Toggle Transparent">🚫</button>
                 </div>
               </div>
-              <div className="flex flex-col space-y-1.5">
-                <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Style</span>
-                <div className="flex border border-gray-300 rounded overflow-hidden bg-white h-9">
-                  <button type="button" onClick={() => setActiveIsBold(!activeIsBold)} className={`flex-1 font-bold text-sm ${activeIsBold ? 'bg-outloud-blue text-white' : 'text-gray-700 hover:bg-gray-100'}`}>B</button>
-                  <button type="button" onClick={() => setActiveIsItalic(!activeIsItalic)} className={`flex-1 italic text-sm border-x border-gray-300 ${activeIsItalic ? 'bg-outloud-blue text-white' : 'text-gray-700 hover:bg-gray-100'}`}>I</button>
-                  <button type="button" onClick={() => setActiveIsUnderline(!activeIsUnderline)} className={`flex-1 underline text-sm ${activeIsUnderline ? 'bg-outloud-blue text-white' : 'text-gray-700 hover:bg-gray-100'}`}>U</button>
+              <div className="flex flex-col space-y-2">
+                <span className="text-[9px] font-bold uppercase text-white/70 tracking-widest text-center">Style</span>
+                <div className="flex border border-white/20 rounded-lg overflow-hidden bg-black/20 h-10">
+                  <button type="button" onClick={() => setActiveIsBold(!activeIsBold)} className={`flex-1 font-bold text-sm transition-colors ${activeIsBold ? 'bg-[#fcd34d] text-[#08203e]' : 'text-white/70 hover:bg-white/10'}`}>B</button>
+                  <button type="button" onClick={() => setActiveIsItalic(!activeIsItalic)} className={`flex-1 italic text-sm border-x border-white/20 transition-colors ${activeIsItalic ? 'bg-[#fcd34d] text-[#08203e]' : 'text-white/70 hover:bg-white/10'}`}>I</button>
+                  <button type="button" onClick={() => setActiveIsUnderline(!activeIsUnderline)} className={`flex-1 underline text-sm transition-colors ${activeIsUnderline ? 'bg-[#fcd34d] text-[#08203e]' : 'text-white/70 hover:bg-white/10'}`}>U</button>
                 </div>
               </div>
-              <div className="flex flex-col space-y-1.5">
-                <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Font Size</span>
-                <select value={activeFontSize} onChange={(e) => setActiveFontSize(e.target.value)} className="w-full p-2 bg-white border border-gray-300 rounded text-xs font-semibold focus:outline-none">
+              <div className="flex flex-col space-y-2">
+                <span className="text-[9px] font-bold uppercase text-white/70 tracking-widest text-center">Font Size</span>
+                <select value={activeFontSize} onChange={(e) => setActiveFontSize(e.target.value)} className="w-full p-2.5 bg-[#070b19] border border-white/20 rounded-lg text-xs font-semibold text-white focus:outline-none focus:border-[#fcd34d]">
                   {['12', '14', '16', '18', '20', '24', '28', '32', '36', '42'].map((sz) => <option key={sz} value={sz}>{sz}px</option>)}
                 </select>
               </div>
-              <div className="flex flex-col space-y-1.5 col-span-2">
-                <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Font</span>
-                <select value={activeFontFamily} onChange={(e) => setActiveFontFamily(e.target.value)} className="w-full p-2 bg-white border border-gray-300 rounded text-xs font-semibold focus:outline-none">
+              <div className="flex flex-col space-y-2 col-span-2">
+                <span className="text-[9px] font-bold uppercase text-white/70 tracking-widest text-center">Font</span>
+                <select value={activeFontFamily} onChange={(e) => setActiveFontFamily(e.target.value)} className="w-full p-2.5 bg-[#070b19] border border-white/20 rounded-lg text-xs font-semibold text-white focus:outline-none focus:border-[#fcd34d]">
                   <option value="Montserrat">Montserrat</option>
                   <option value="Tabarra">Tabarra</option>
                   <option value="Arial">Arial</option>
                 </select>
               </div>
-              <div className="flex flex-col space-y-1.5">
-                <span className="text-[10px] font-bold uppercase text-gray-500 text-center">Corners</span>
-                <input type="number" min="0" value={activeBorderRadius} onChange={(e) => setActiveBorderRadius(e.target.value)} className="w-full p-2 bg-white border border-gray-300 rounded text-xs font-semibold focus:outline-none text-center" />
+              <div className="flex flex-col space-y-2">
+                <span className="text-[9px] font-bold uppercase text-white/70 tracking-widest text-center">Corners</span>
+                <input type="number" min="0" value={activeBorderRadius} onChange={(e) => setActiveBorderRadius(e.target.value)} className="w-full p-2.5 bg-[#070b19] border border-white/20 rounded-lg text-xs font-semibold text-white focus:outline-none focus:border-[#fcd34d] text-center" />
               </div>
             </div>
           </div>
         </div>
-        <div className="p-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-4 shrink-0">
-          <button type="button" onClick={onCancel} className="px-6 py-2.5 rounded-full font-bold text-xs uppercase tracking-wide text-gray-600 bg-transparent border-2 border-gray-300 hover:bg-gray-200 transition">CANCEL</button>
-          <button type="button" onClick={() => onSave({ templateText, answerText, t_textColor, t_boxColor, t_lineColor, t_fontSize, t_fontFamily, t_borderRadius, t_isBold, t_isItalic, t_isUnderline, a_textColor, a_boxColor, a_lineColor, a_fontSize, a_fontFamily, a_borderRadius, a_isBold, a_isItalic, a_isUnderline })} className="px-8 py-2.5 rounded-full font-black text-xs uppercase tracking-wide text-outloud-blue bg-student-yellow hover:scale-105 active:scale-95 transition shadow-md">SAVE</button>
+        
+        <div className="p-5 bg-black/40 border-t border-white/10 flex justify-end gap-4 shrink-0 rounded-b-[30px]">
+          <button type="button" onClick={onCancel} className="px-6 py-3 rounded-full font-bold text-xs uppercase tracking-widest text-white/80 bg-white/5 border border-white/20 hover:bg-white/10 hover:text-white transition-all">CANCEL</button>
+          <button type="button" onClick={() => onSave({ templateText, answerText, t_textColor, t_boxColor, t_lineColor, t_fontSize, t_fontFamily, t_borderRadius, t_isBold, t_isItalic, t_isUnderline, a_textColor, a_boxColor, a_lineColor, a_fontSize, a_fontFamily, a_borderRadius, a_isBold, a_isItalic, a_isUnderline })} className="px-8 py-3 rounded-full font-black text-xs uppercase tracking-widest text-[#08203e] bg-[#fcd34d] hover:scale-105 active:scale-95 transition-all shadow-[0_0_15px_rgba(252,211,77,0.4)]">SAVE</button>
         </div>
       </div>
     </div>
   );
 };
+
 export default FillInTheBlankModal;
