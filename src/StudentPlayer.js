@@ -22,6 +22,8 @@ const StudentPlayer = ({ lessonData, student, onExit }) => {
     ? lessonData.screens.length 
     : lessonData?.screens || 1;
 
+  const progressPercentage = Math.round((currentScreen / totalScreens) * 100);
+
   const handleNext = () => {
     if (currentScreen < totalScreens) setCurrentScreen(prev => prev + 1);
   };
