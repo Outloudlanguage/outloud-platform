@@ -358,7 +358,7 @@ const StudentPlayer = ({ lessonData, student, onExit }) => {
 
       <div className="relative z-10 flex justify-between items-center w-full px-4 md:px-8 py-4 bg-white/5 backdrop-blur-xl border-b border-white/10 shadow-lg shrink-0">
         <div className="flex items-center gap-3 md:gap-4">
-          <img src="https://i.postimg.cc/QtxK3nQn/Diseno-sin-titulo-(14).png" alt="Outloud Logo" className="h-6 md:h-8 object-contain brightness-0 invert opacity-90" />
+          <img src="https://i.postimg.cc/43zTZQhx/Diseno-sin-titulo-(20).png" alt="Outloud Logo" className="h-6 md:h-8 object-contain opacity-90" />
           <div className="h-4 md:h-6 w-[2px] bg-white/20"></div>
           <div className="flex flex-col">
             <span className="text-[10px] md:text-sm font-black text-white tracking-widest uppercase">{lessonData?.level || student?.level}: UNIT {lessonData?.unit || student?.unit}</span>
