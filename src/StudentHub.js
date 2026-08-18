@@ -4,7 +4,6 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { EffectCoverflow, Pagination } from 'swiper/modules';
 import StudentPlayer from './StudentPlayer';
 
-// Import Swiper styles
 import 'swiper/css';
 import 'swiper/css/effect-coverflow';
 import 'swiper/css/pagination';
@@ -15,21 +14,22 @@ import 'swiper/css/pagination';
 const DesktopView = ({ student, onReturnHome, onStartLesson, isFetchingLesson }) => {
   const isClassTime = false;
   
-  // Progress Ring Math
-  const lessonsCompleted = student?.lessons_completed || 36;
-  const totalLessons = 80;
-  const progressPercentage = Math.round((lessonsCompleted / totalLessons) * 100);
+  // Progress Ring Math (Dynamic based on Level)
+  const currentUnit = student?.unit || 1;
+  const totalUnits = 12; // Assuming 12 units per level (e.g., Level A1)
+  const completedUnits = Math.max(0, currentUnit - 1); // If on Unit 1, 0 are completed.
+  const progressPercentage = Math.round((completedUnits / totalUnits) * 100);
+  
   const circleCircumference = 2 * Math.PI * 40; 
   const strokeDashoffset = circleCircumference - (progressPercentage / 100) * circleCircumference;
 
   return (
     <div className="min-h-screen w-full font-montserrat flex justify-center p-8 relative overflow-hidden bg-[#070b19] text-white">
       
-      {/* Neon Wavy Background Simulation */}
+      {/* Neon Wavy Background */}
       <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
         <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-blue-900/30 blur-[120px] rounded-full mix-blend-screen"></div>
         <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-[#fcd34d]/10 blur-[100px] rounded-full mix-blend-screen"></div>
-        {/* SVG Topographic waves overlay */}
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 10 Q 25 20, 50 10 T 100 10' stroke='%23ffffff' fill='none' stroke-width='0.5'/%3E%3C/svg%3E")`, backgroundSize: '100px 20px' }}></div>
       </div>
 
@@ -56,10 +56,10 @@ const DesktopView = ({ student, onReturnHome, onStartLesson, isFetchingLesson })
              </svg>
              <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
                 <span className="text-3xl font-black text-white leading-none drop-shadow-md">{progressPercentage}%</span>
-                <span className="text-[9px] font-bold text-white/70 tracking-widest uppercase mt-1">ACQUIRED</span>
+                <span className="text-[9px] font-bold text-white/70 tracking-widest uppercase mt-1">COMPLETED</span>
              </div>
           </div>
-          <p className="text-center text-white/80 font-bold text-sm mb-8 tracking-widest uppercase">LESSONS {lessonsCompleted}/{totalLessons}</p>
+          <p className="text-center text-white/80 font-bold text-sm mb-8 tracking-widest uppercase">UNIT {currentUnit}/{totalUnits}</p>
 
           <h3 className="text-white font-black text-sm mb-4 tracking-widest uppercase">UPCOMING ACTIVITIES</h3>
           <ul className="space-y-3 mb-auto text-xs font-medium text-white/80">
@@ -74,13 +74,25 @@ const DesktopView = ({ student, onReturnHome, onStartLesson, isFetchingLesson })
           </button>
 
           <div className="text-center">
-            <p className="text-white/60 font-black text-[10px] mb-3 tracking-widest uppercase">CONNECT WITH US</p>
-            <div className="flex justify-center gap-3">
-              <div className="w-8 h-8 bg-white/10 border border-white/20 text-white rounded-full flex items-center justify-center cursor-pointer hover:bg-white/20 transition">f</div>
-              <div className="w-8 h-8 bg-white/10 border border-white/20 text-white rounded-full flex items-center justify-center cursor-pointer hover:bg-white/20 transition">ig</div>
-              <div className="w-8 h-8 bg-white/10 border border-white/20 text-white rounded-full flex items-center justify-center cursor-pointer hover:bg-white/20 transition">tk</div>
-              <div className="w-8 h-8 bg-white/10 border border-white/20 text-white rounded-full flex items-center justify-center cursor-pointer hover:bg-white/20 transition">dc</div>
-              <button className="bg-white/20 text-white font-bold text-xs px-3 rounded-full hover:bg-white/30 transition border border-white/20">FAQs</button>
+            <p className="text-white/80 font-black text-xs md:text-sm mb-4 tracking-widest uppercase">CONNECT WITH US</p>
+            <div className="flex justify-center items-center gap-3">
+              {/* Custom Facebook */}
+              <a href="https://www.facebook.com/share/1KxawRX9vA/" target="_blank" rel="noreferrer" className="hover:scale-110 transition-transform">
+                <img src="https://i.postimg.cc/G2gBJR3M/11(4).png" alt="Facebook" className="w-10 h-10 object-contain shadow-md rounded-full" />
+              </a>
+              {/* Custom Instagram */}
+              <a href="https://www.instagram.com/outloudlanguage?igsh=MXU5dmRzeTZ3YTk1cg==" target="_blank" rel="noreferrer" className="hover:scale-110 transition-transform">
+                <img src="https://i.postimg.cc/hGShkvfs/10(3).png" alt="Instagram" className="w-10 h-10 object-contain shadow-md rounded-full" />
+              </a>
+              {/* Custom TikTok */}
+              <a href="https://tiktok.com/@outloudlanguage" target="_blank" rel="noreferrer" className="hover:scale-110 transition-transform">
+                <img src="https://i.postimg.cc/FFfbWCtD/9(1).png" alt="TikTok" className="w-10 h-10 object-contain shadow-md rounded-full" />
+              </a>
+              {/* Custom WhatsApp */}
+              <a href="https://wa.me/584226885683" target="_blank" rel="noreferrer" className="hover:scale-110 transition-transform">
+                <img src="https://i.postimg.cc/h4b4BcRY/Copia-de-Diseno-sin-titulo.png" alt="WhatsApp" className="w-10 h-10 object-contain shadow-md rounded-full" />
+              </a>
+              <button className="bg-white/20 text-white font-bold text-xs h-10 px-4 rounded-full hover:bg-white/30 transition border border-white/20 shadow-md">FAQs</button>
             </div>
           </div>
         </div>
@@ -90,7 +102,7 @@ const DesktopView = ({ student, onReturnHome, onStartLesson, isFetchingLesson })
           
           <div className="flex justify-between items-center mb-8">
              <div className="flex items-center gap-4">
-                <img src="https://i.postimg.cc/QtxK3nQn/Diseno-sin-titulo-(14).png" alt="Outloud Logo" className="h-8 object-contain brightness-0 invert opacity-90" />
+                <img src="https://i.postimg.cc/43zTZQhx/Diseno-sin-titulo-(20).png" alt="Outloud Logo" className="h-8 object-contain opacity-90" />
                 <div className="h-6 w-[1px] bg-white/30"></div>
                 <span className="text-sm font-light text-white/80 tracking-wide">Online Platform</span>
              </div>
@@ -130,26 +142,26 @@ const DesktopView = ({ student, onReturnHome, onStartLesson, isFetchingLesson })
               </button>
             </div>
 
-            {/* BOTTOM ROW */}
+            {/* BOTTOM ROW (RESIZED & ENLARGED) */}
             <div className="grid grid-cols-4 gap-6 flex-1">
-              <button className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-4 shadow-xl flex flex-col items-center justify-center gap-3 hover:bg-white/20 hover:scale-[1.02] transition-all group">
-                <img src="https://i.postimg.cc/rpgthxF0/4(5).png" alt="Forum" className="h-16 object-contain opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-transform duration-500" />
-                <h3 className="font-light tracking-wide text-lg text-center leading-tight">Open<br/>forum</h3>
+              <button className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 hover:bg-white/20 hover:scale-[1.02] transition-all group">
+                <img src="https://i.postimg.cc/rpgthxF0/4(5).png" alt="Forum" className="h-20 md:h-28 object-contain opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-transform duration-500" />
+                <h3 className="font-light tracking-wide text-lg md:text-2xl text-center leading-tight">Open<br/>forum</h3>
               </button>
 
-              <button className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-4 shadow-xl flex flex-col items-center justify-center gap-3 hover:bg-white/20 hover:scale-[1.02] transition-all group">
-                <img src="https://i.postimg.cc/XNrQC7QY/5(4).png" alt="Chat" className="h-16 object-contain opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-transform duration-500" />
-                <h3 className="font-light tracking-wide text-lg text-center leading-tight">Chat<br/>room</h3>
+              <button className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 hover:bg-white/20 hover:scale-[1.02] transition-all group">
+                <img src="https://i.postimg.cc/XNrQC7QY/5(4).png" alt="Chat" className="h-20 md:h-28 object-contain opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-transform duration-500" />
+                <h3 className="font-light tracking-wide text-lg md:text-2xl text-center leading-tight">Chat<br/>room</h3>
               </button>
 
-              <button className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-4 shadow-xl flex flex-col items-center justify-center gap-3 hover:bg-white/20 hover:scale-[1.02] transition-all group">
-                <img src="https://i.postimg.cc/PqfMrtCH/6(4).png" alt="Info" className="h-16 object-contain opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-transform duration-500" />
-                <h3 className="font-light tracking-wide text-lg text-center leading-tight">Info<br/>board</h3>
+              <button className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 hover:bg-white/20 hover:scale-[1.02] transition-all group">
+                <img src="https://i.postimg.cc/PqfMrtCH/6(4).png" alt="Info" className="h-20 md:h-28 object-contain opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-transform duration-500" />
+                <h3 className="font-light tracking-wide text-lg md:text-2xl text-center leading-tight">Info<br/>board</h3>
               </button>
 
-              <button className={`bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-4 shadow-xl flex flex-col items-center justify-center gap-3 hover:bg-white/20 hover:scale-[1.02] transition-all group ${isClassTime ? 'border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.5)]' : ''}`}>
-                <img src="https://i.postimg.cc/Wpqw4Y1x/7(6).png" alt="Live Class" className="h-16 object-contain opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-transform duration-500" />
-                <h3 className="font-light tracking-wide text-lg text-center leading-tight">Live<br/>class</h3>
+              <button className={`bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 hover:bg-white/20 hover:scale-[1.02] transition-all group ${isClassTime ? 'border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.5)]' : ''}`}>
+                <img src="https://i.postimg.cc/Wpqw4Y1x/7(6).png" alt="Live Class" className="h-20 md:h-28 object-contain opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-transform duration-500" />
+                <h3 className="font-light tracking-wide text-lg md:text-2xl text-center leading-tight">Live<br/>class</h3>
               </button>
             </div>
           </div>
@@ -173,9 +185,11 @@ const MobileView = ({ student, onReturnHome, onStartLesson, isFetchingLesson }) 
     { title: "Live Class", action: "ENTER ROOM", img: "https://i.postimg.cc/Wpqw4Y1x/7(6).png", active: false },
   ];
 
-  const lessonsCompleted = student?.lessons_completed || 36;
-  const totalLessons = 80;
-  const progressPercentage = Math.round((lessonsCompleted / totalLessons) * 100);
+  const currentUnit = student?.unit || 1;
+  const totalUnits = 12; 
+  const completedUnits = Math.max(0, currentUnit - 1);
+  const progressPercentage = Math.round((completedUnits / totalUnits) * 100);
+  
   const circleCircumference = 2 * Math.PI * 30; 
   const strokeDashoffset = circleCircumference - (progressPercentage / 100) * circleCircumference;
 
@@ -191,7 +205,7 @@ const MobileView = ({ student, onReturnHome, onStartLesson, isFetchingLesson }) 
 
       {/* Top Header */}
       <div className="flex justify-between items-center p-5 z-10">
-        <img src="https://i.postimg.cc/QtxK3nQn/Diseno-sin-titulo-(14).png" alt="Outloud Logo" className="h-6 object-contain brightness-0 invert opacity-90" />
+        <img src="https://i.postimg.cc/43zTZQhx/Diseno-sin-titulo-(20).png" alt="Outloud Logo" className="h-6 object-contain opacity-90" />
         <div className="flex items-center gap-3">
           <span className="font-bold text-white text-[10px]">{student?.first_name || 'Student'}</span>
           <div className="w-8 h-8 bg-gray-300 rounded-full overflow-hidden border border-white/30" onClick={onReturnHome}>
@@ -221,7 +235,7 @@ const MobileView = ({ student, onReturnHome, onStartLesson, isFetchingLesson }) 
               <span className="text-sm font-black text-white leading-none">{progressPercentage}%</span>
             </div>
           </div>
-          <p className="text-[8px] font-bold tracking-widest text-white/70 mt-2 uppercase">Lessons {lessonsCompleted}/{totalLessons}</p>
+          <p className="text-[8px] font-bold tracking-widest text-white/70 mt-2 uppercase">Unit {currentUnit}/{totalUnits}</p>
         </div>
         
         <div className="flex-1 flex flex-col justify-center">
@@ -277,14 +291,26 @@ const MobileView = ({ student, onReturnHome, onStartLesson, isFetchingLesson }) 
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
           REQUEST HUMAN ASSISTANCE
         </button>
-        <p className="font-black tracking-widest text-white/50 text-[10px] uppercase mt-4">CONNECT WITH US</p>
-        <div className="flex gap-4">
-           <div className="w-10 h-10 bg-white/10 border border-white/20 text-white rounded-full flex items-center justify-center shadow-md">f</div>
-           <div className="w-10 h-10 bg-white/10 border border-white/20 text-white rounded-full flex items-center justify-center shadow-md">ig</div>
-           <div className="w-10 h-10 bg-white/10 border border-white/20 text-white rounded-full flex items-center justify-center shadow-md">tk</div>
-           <div className="w-10 h-10 bg-white/10 border border-white/20 text-white rounded-full flex items-center justify-center shadow-md">dc</div>
+        <p className="font-black tracking-widest text-white/80 text-xs uppercase mt-4">CONNECT WITH US</p>
+        <div className="flex justify-center items-center gap-3">
+          {/* Custom Facebook */}
+          <a href="https://www.facebook.com/share/1KxawRX9vA/" target="_blank" rel="noreferrer" className="hover:scale-110 transition-transform">
+            <img src="https://i.postimg.cc/G2gBJR3M/11(4).png" alt="Facebook" className="w-10 h-10 object-contain shadow-md rounded-full" />
+          </a>
+          {/* Custom Instagram */}
+          <a href="https://www.instagram.com/outloudlanguage?igsh=MXU5dmRzeTZ3YTk1cg==" target="_blank" rel="noreferrer" className="hover:scale-110 transition-transform">
+            <img src="https://i.postimg.cc/hGShkvfs/10(3).png" alt="Instagram" className="w-10 h-10 object-contain shadow-md rounded-full" />
+          </a>
+          {/* Custom TikTok */}
+          <a href="https://tiktok.com/@outloudlanguage" target="_blank" rel="noreferrer" className="hover:scale-110 transition-transform">
+            <img src="https://i.postimg.cc/FFfbWCtD/9(1).png" alt="TikTok" className="w-10 h-10 object-contain shadow-md rounded-full" />
+          </a>
+          {/* Custom WhatsApp */}
+          <a href="https://wa.me/584226885683" target="_blank" rel="noreferrer" className="hover:scale-110 transition-transform">
+            <img src="https://i.postimg.cc/h4b4BcRY/Copia-de-Diseno-sin-titulo.png" alt="WhatsApp" className="w-10 h-10 object-contain shadow-md rounded-full" />
+          </a>
         </div>
-        <button className="bg-white/10 border border-white/20 text-white font-bold text-xs px-6 py-2 rounded-full mt-2 shadow-md">FAQs</button>
+        <button className="bg-white/10 border border-white/20 text-white font-bold text-xs px-6 py-2 rounded-full mt-2 shadow-md hover:bg-white/20 transition">FAQs</button>
       </div>
 
     </div>
@@ -518,7 +544,7 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#070b19]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#fcd34d]"></div>
       </div>
     );
   }
