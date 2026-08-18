@@ -7,7 +7,6 @@ const MobileCyclePage = ({ onReturnHome, onRegister }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const bottomRef = useRef(null);
 
-  // Extracted from your original desktop code
   const steps = [
     {
       id: 1,
@@ -57,108 +56,103 @@ const MobileCyclePage = ({ onReturnHome, onRegister }) => {
   };
 
   return (
-    <div className="relative min-h-screen w-full font-sans bg-[#eef5fc] flex flex-col overflow-y-auto overflow-x-hidden">
+    <div className="relative min-h-screen w-full font-sans bg-[#070b19] text-white flex flex-col overflow-y-auto overflow-x-hidden">
       
-      {/* Background Bubbles (Same as Desktop) */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <img
-          src="https://i.postimg.cc/PJbrcZdF/Agregar-un-subtitulo-(5).png"
-          alt="Bubble Background"
-          className="w-full h-full object-cover opacity-60"
-        />
+      {/* Neon Wavy Background Simulation */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <div className="absolute top-[-10%] left-[-20%] w-[80%] h-[50%] bg-blue-900/30 blur-[100px] rounded-full mix-blend-screen"></div>
+        <div className="absolute bottom-[20%] right-[-20%] w-[60%] h-[60%] bg-[#fcd34d]/10 blur-[90px] rounded-full mix-blend-screen"></div>
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 10 Q 25 20, 50 10 T 100 10' stroke='%23ffffff' fill='none' stroke-width='0.5'/%3E%3C/svg%3E")`, backgroundSize: '100px 20px' }}></div>
       </div>
 
       <div className="relative z-10 flex flex-col w-full px-5 py-6 flex-grow">
         
         {/* Top Header */}
         <div className="flex flex-row justify-between items-center w-full mb-8">
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-3">
             <img 
-              src="https://i.postimg.cc/fyvnv4XT/Diseno-sin-titulo-(14).png" 
+              src="https://i.postimg.cc/43zTZQhx/Diseno-sin-titulo-(20).png" 
               alt="Outloud Logo" 
-              className="h-6 object-contain" 
+              className="h-8 object-contain opacity-90 drop-shadow-md" 
             />
-            <div className="h-5 w-[1px] bg-outloud-blue opacity-40"></div>
-            <span className="text-[10px] font-light text-outloud-blue font-montserrat whitespace-nowrap">
+            <div className="h-6 w-[1px] bg-white/30"></div>
+            <span className="text-[10px] font-light text-white/80 font-montserrat whitespace-nowrap tracking-wide">
               Online Platform
             </span>
           </div>
 
           <button 
             onClick={onReturnHome} 
-            className="flex items-center space-x-1 text-outloud-blue font-bold font-montserrat hover:text-blue-900 transition bg-white/50 px-2 py-1 rounded-full backdrop-blur-sm"
+            className="flex items-center space-x-1.5 text-white/90 font-bold font-montserrat hover:text-[#fcd34d] transition-colors bg-white/10 px-3 py-1.5 rounded-full border border-white/20 backdrop-blur-md"
           >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
-            <span className="text-[11px] whitespace-nowrap">Return Home</span>
-            <svg className="w-4 h-4 ml-0.5" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M11.47 3.84a.75.75 0 011.06 0l8.69 8.69a.75.75 0 101.06-1.06l-8.689-8.69a2.25 2.25 0 00-3.182 0l-8.69 8.69a.75.75 0 001.061 1.06l8.69-8.69z" />
-              <path d="M12 5.432l8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 01-.75-.75v-4.5a.75.75 0 00-.75-.75h-3a.75.75 0 00-.75.75V21a.75.75 0 01-.75.75H5.625a1.875 1.875 0 01-1.875-1.875v-6.198a2.29 2.29 0 00.091-.086L12 5.43z" />
-            </svg>
+            <span className="text-[10px] whitespace-nowrap tracking-wide uppercase">Return Home</span>
           </button>
         </div>
 
-        {/* Main White Content Card */}
-        <div className="flex-grow bg-white rounded-[2rem] shadow-[0_15px_40px_rgba(0,0,0,0.08)] w-full flex flex-col items-center py-10 px-6 relative z-10 mb-6 min-h-[75vh]">
+        {/* Main Glass Content Card */}
+        <div className="flex-grow bg-white/10 backdrop-blur-2xl border border-white/20 rounded-[2rem] shadow-[0_15px_40px_rgba(0,0,0,0.3)] w-full flex flex-col items-center py-10 px-6 relative z-10 mb-6 min-h-[75vh]">
+          <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none rounded-[2rem]"></div>
           
           {/* Top Button State (INICIAR vs EXPLORANDO) */}
           {currentStep === 0 ? (
-            <div className="flex flex-col items-center w-full animate-fade-in-up mt-10">
+            <div className="flex flex-col items-center w-full animate-fade-in-up mt-10 relative z-10">
               <button 
                 onClick={handleNext}
-                className="bg-[#08203e] text-white font-black font-montserrat text-sm tracking-widest px-8 py-3 rounded-xl shadow-[0_8px_20px_rgba(8,32,62,0.3)] hover:scale-105 transition-transform"
+                className="bg-[#fcd34d] text-[#08203e] font-black font-montserrat text-sm tracking-widest px-10 py-3.5 rounded-full shadow-[0_0_15px_rgba(252,211,77,0.4)] hover:bg-[#fde68a] hover:scale-105 transition-all active:scale-95 uppercase"
               >
                 INICIAR
               </button>
-              <p className="text-xs text-outloud-blue font-montserrat mt-6 text-center leading-relaxed">
+              <p className="text-xs text-white/70 font-montserrat mt-6 text-center leading-relaxed">
                 Haz click en el botón e<br/>interactua con el diagrama.
               </p>
             </div>
           ) : (
-            <div className="flex flex-col items-center w-full animate-fade-in mb-8">
-              <div className="bg-white text-outloud-blue border border-gray-100 font-black font-montserrat text-[11px] tracking-widest px-6 py-2.5 rounded-xl shadow-[0_5px_15px_rgba(0,0,0,0.08)]">
+            <div className="flex flex-col items-center w-full animate-fade-in mb-8 relative z-10">
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 text-[#fcd34d] font-black font-montserrat text-[11px] tracking-widest px-6 py-2.5 rounded-full shadow-[0_5px_15px_rgba(0,0,0,0.2)]">
                 EXPLORANDO
               </div>
-              <p className="text-[11px] font-bold text-outloud-blue font-montserrat mt-4 text-center leading-relaxed">
+              <p className="text-[11px] font-bold text-white/80 font-montserrat mt-5 text-center leading-relaxed">
                 Toca el botón de<br/>
-                <strong className="font-black text-[12px]">CONTINUAR</strong> para ver los<br/>
+                <strong className="font-black text-[#fcd34d] text-[12px]">CONTINUAR</strong> para ver los<br/>
                 siguientes pasos
               </p>
             </div>
           )}
 
           {/* Render Revealed Steps */}
-          <div className="flex flex-col w-full items-center space-y-12">
+          <div className="flex flex-col w-full items-center space-y-12 relative z-10">
             {steps.slice(0, currentStep).map((step, index) => (
               <div key={step.id} className="flex flex-col items-center w-full animate-fade-in-up">
                 <img 
                   src={step.icon} 
                   alt={step.title} 
-                  className="w-24 h-24 object-contain mb-4"
+                  className="w-24 h-24 object-contain mb-4 brightness-0 invert opacity-90 drop-shadow-md"
                 />
-                <h3 className="text-[15px] font-black text-outloud-blue font-montserrat text-center mb-1">
+                <h3 className="text-[15px] font-black text-white drop-shadow-md font-montserrat text-center mb-1">
                   {step.title}
                 </h3>
-                <p className="text-[12px] text-outloud-blue font-montserrat text-center leading-relaxed max-w-[240px]">
+                <p className="text-[12px] text-white/70 font-montserrat text-center leading-relaxed max-w-[240px]">
                   {step.desc}
                 </p>
                 
-                {/* CONTINUAR Button (Renders under the LATEST step unless it's the last step) */}
+                {/* CONTINUAR Button */}
                 {index === currentStep - 1 && currentStep < steps.length && (
                   <button 
                     onClick={handleNext}
-                    className="mt-8 bg-student-yellow text-outloud-blue font-black font-montserrat text-xs tracking-widest px-8 py-3 rounded-xl shadow-[0_8px_20px_rgba(250,204,21,0.4)] hover:scale-105 transition-transform uppercase"
+                    className="mt-8 bg-[#fcd34d] text-[#08203e] font-black font-montserrat text-xs tracking-widest px-10 py-3.5 rounded-full shadow-[0_0_15px_rgba(252,211,77,0.4)] hover:bg-[#fde68a] hover:scale-105 transition-all active:scale-95 uppercase"
                   >
                     CONTINUAR
                   </button>
                 )}
 
-                {/* INSCRIBIRSE Button (Renders under the very last step) */}
+                {/* INSCRIBIRSE Button */}
                 {index === currentStep - 1 && currentStep === steps.length && (
                   <button 
                     onClick={onRegister}
-                    className="mt-8 bg-student-yellow text-outloud-blue font-black font-montserrat text-xs tracking-widest px-10 py-3.5 rounded-full shadow-[0_8px_20px_rgba(250,204,21,0.4)] hover:scale-105 transition-transform uppercase border-2 border-transparent animate-pulse"
+                    className="mt-8 bg-[#fcd34d] text-[#08203e] font-black font-montserrat text-xs tracking-widest px-10 py-4 rounded-full shadow-[0_0_20px_rgba(252,211,77,0.5)] hover:bg-[#fde68a] hover:scale-105 transition-all active:scale-95 uppercase animate-pulse border-2 border-transparent"
                   >
                     INSCRIBIRSE
                   </button>
@@ -194,7 +188,7 @@ const MobileCyclePage = ({ onReturnHome, onRegister }) => {
 };
 
 // =========================================
-// 2. DESKTOP & PC UI (Original Code)
+// 2. DESKTOP & PC UI
 // =========================================
 const DesktopCyclePage = ({ onReturnHome, onRegister }) => {
   const [step, setStep] = useState(0);
@@ -213,72 +207,64 @@ const DesktopCyclePage = ({ onReturnHome, onRegister }) => {
   };
 
   return (
-    <div className="relative h-screen w-full font-sans bg-[#eef5fc] overflow-hidden flex flex-col p-4 md:p-8">
+    <div className="relative h-screen w-full font-sans bg-[#070b19] text-white overflow-hidden flex flex-col p-4 md:p-8">
       <style>{`
         @keyframes pulse-yellow {
-          0%, 100% { background-color: #fef08a; box-shadow: 0 0 15px rgba(234, 179, 8, 0.4); }
-          50% { background-color: #eab308; box-shadow: 0 0 25px rgba(234, 179, 8, 0.7); }
+          0%, 100% { background-color: #fde68a; box-shadow: 0 0 15px rgba(252, 211, 77, 0.4); }
+          50% { background-color: #fcd34d; box-shadow: 0 0 30px rgba(252, 211, 77, 0.8); }
         }
-        .btn-blink { animation: pulse-yellow 1.5s infinite; }
+        .btn-blink { animation: pulse-yellow 2s infinite; }
       `}</style>
 
-      {/* Bubble Background */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <img
-          src="https://i.postimg.cc/PJbrcZdF/Agregar-un-subtitulo-(5).png"
-          alt="Bubble Background"
-          className="w-full h-full object-cover"
-        />
+      {/* Neon Wavy Background Simulation */}
+      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+        <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-blue-900/30 blur-[120px] rounded-full mix-blend-screen"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-[#fcd34d]/10 blur-[100px] rounded-full mix-blend-screen"></div>
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 10 Q 25 20, 50 10 T 100 10' stroke='%23ffffff' fill='none' stroke-width='0.5'/%3E%3C/svg%3E")`, backgroundSize: '100px 20px' }}></div>
       </div>
 
       {/* Top Header */}
       <div className="relative z-10 flex flex-row justify-between items-center w-full max-w-[90rem] mx-auto mb-2 shrink-0">
         <div className="flex items-center">
           <img
-            src="https://i.postimg.cc/fyvnv4XT/Diseno-sin-titulo-(14).png"
+            src="https://i.postimg.cc/43zTZQhx/Diseno-sin-titulo-(20).png"
             alt="Outloud Logo"
-            className="h-10 lg:h-12 object-contain shrink-0"
+            className="h-10 lg:h-12 object-contain opacity-90 drop-shadow-md shrink-0"
           />
-          <div className="mx-4 h-8 w-[2px] bg-outloud-blue opacity-40 shrink-0"></div>
-          <span className="text-base lg:text-xl font-light text-outloud-blue font-montserrat whitespace-nowrap">
+          <div className="mx-4 h-8 w-[2px] bg-white/30 shrink-0"></div>
+          <span className="text-base lg:text-xl font-light text-white/80 font-montserrat whitespace-nowrap tracking-wide">
             Online Platform
           </span>
         </div>
 
         <button
           onClick={onReturnHome}
-          className="flex items-center space-x-2 text-outloud-blue font-bold font-montserrat hover:text-blue-900 transition"
+          className="flex items-center space-x-2 text-white font-bold font-montserrat hover:text-[#fcd34d] transition-colors"
         >
           <svg
             className="w-5 h-5"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
+            strokeWidth="2.5"
           >
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
-              strokeWidth="2.5"
               d="M15 19l-7-7 7-7"
             />
           </svg>
-          <span className="text-sm lg:text-base whitespace-nowrap">
+          <span className="text-sm lg:text-base whitespace-nowrap uppercase tracking-wider">
             Return Home
           </span>
-          <svg
-            className="w-5 h-5 lg:w-6 lg:h-6"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-          >
-            <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
-          </svg>
         </button>
       </div>
 
       {/* FIXED ASPECT RATIO CANVAS */}
       <div className="relative z-10 flex-grow w-full max-w-6xl mx-auto flex items-center justify-center">
         <div className="relative w-full aspect-[16/10] lg:aspect-[2/1] max-h-[75vh]">
-          {/* SVG Arrow Connectors Layer */}
+          
+          {/* SVG Arrow Connectors Layer (Glow/Neon styling) */}
           <svg
             className="absolute inset-0 w-full h-full pointer-events-none"
             viewBox="0 0 1000 500"
@@ -294,8 +280,15 @@ const DesktopCyclePage = ({ onReturnHome, onRegister }) => {
                 markerHeight="6"
                 orient="auto-start-reverse"
               >
-                <path d="M 0 0 L 10 5 L 0 10 z" fill="#1e3a8a" />
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#fcd34d" />
               </marker>
+              <filter id="glow">
+                <feGaussianBlur stdDeviation="3.5" result="coloredBlur"/>
+                <feMerge>
+                  <feMergeNode in="coloredBlur"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
             </defs>
 
             {/* Start -> Step 1 */}
@@ -303,10 +296,11 @@ const DesktopCyclePage = ({ onReturnHome, onRegister }) => {
               <path
                 d="M 160 220 Q 200 130 250 130"
                 fill="none"
-                stroke="#1e3a8a"
+                stroke="#fcd34d"
                 strokeWidth="3"
                 markerEnd="url(#arrow)"
-                className="animate-[fadeIn_0.5s_ease-in]"
+                filter="url(#glow)"
+                className="animate-[fadeIn_0.5s_ease-in] drop-shadow-md"
               />
             )}
             {/* Step 1 -> Step 2 */}
@@ -314,34 +308,37 @@ const DesktopCyclePage = ({ onReturnHome, onRegister }) => {
               <path
                 d="M 430 130 L 580 130"
                 fill="none"
-                stroke="#1e3a8a"
+                stroke="#fcd34d"
                 strokeWidth="3"
                 markerEnd="url(#arrow)"
-                className="animate-[fadeIn_0.5s_ease-in]"
+                filter="url(#glow)"
+                className="animate-[fadeIn_0.5s_ease-in] drop-shadow-md"
               />
             )}
 
-            {/* Step 2 -> Step 3 (Adjusted to stop above the calendar icon) */}
+            {/* Step 2 -> Step 3 */}
             {step >= 3 && (
               <path
                 d="M 750 130 Q 860 130 860 170"
                 fill="none"
-                stroke="#1e3a8a"
+                stroke="#fcd34d"
                 strokeWidth="3"
                 markerEnd="url(#arrow)"
-                className="animate-[fadeIn_0.5s_ease-in]"
+                filter="url(#glow)"
+                className="animate-[fadeIn_0.5s_ease-in] drop-shadow-md"
               />
             )}
 
-            {/* Step 3 -> Step 4 (Adjusted to start below the paragraph text) */}
+            {/* Step 3 -> Step 4 */}
             {step >= 4 && (
               <path
                 d="M 860 355 Q 860 380 750 380"
                 fill="none"
-                stroke="#1e3a8a"
+                stroke="#fcd34d"
                 strokeWidth="3"
                 markerEnd="url(#arrow)"
-                className="animate-[fadeIn_0.5s_ease-in]"
+                filter="url(#glow)"
+                className="animate-[fadeIn_0.5s_ease-in] drop-shadow-md"
               />
             )}
 
@@ -350,10 +347,11 @@ const DesktopCyclePage = ({ onReturnHome, onRegister }) => {
               <path
                 d="M 580 380 L 440 380"
                 fill="none"
-                stroke="#1e3a8a"
+                stroke="#fcd34d"
                 strokeWidth="3"
                 markerEnd="url(#arrow)"
-                className="animate-[fadeIn_0.5s_ease-in]"
+                filter="url(#glow)"
+                className="animate-[fadeIn_0.5s_ease-in] drop-shadow-md"
               />
             )}
           </svg>
@@ -364,17 +362,17 @@ const DesktopCyclePage = ({ onReturnHome, onRegister }) => {
             {step === 0 ? (
               <button
                 onClick={handleNext}
-                className="w-full bg-outloud-blue text-white rounded-full py-3 lg:py-4 text-xs md:text-sm font-black font-montserrat tracking-widest btn-blink transition-transform hover:scale-105"
+                className="w-full text-[#08203e] rounded-full py-3 lg:py-4 text-xs md:text-sm font-black font-montserrat tracking-widest btn-blink transition-transform hover:scale-105"
               >
                 INICIAR
               </button>
             ) : (
-              <div className="w-full bg-white text-outloud-blue rounded-full py-2.5 lg:py-3 text-xs md:text-sm font-black font-montserrat tracking-widest shadow-[0_5px_15px_rgba(0,0,0,0.1)] border border-gray-100">
+              <div className="w-full bg-white/10 backdrop-blur-md border border-white/20 text-[#fcd34d] rounded-full py-2.5 lg:py-3 text-xs md:text-sm font-black font-montserrat tracking-widest shadow-[0_5px_15px_rgba(0,0,0,0.2)]">
                 EXPLORANDO
               </div>
             )}
 
-            <p className="mt-3 text-[10px] md:text-xs text-outloud-blue font-montserrat font-bold leading-tight px-2">
+            <p className="mt-4 text-[10px] md:text-xs text-white/70 font-montserrat font-medium leading-relaxed px-2">
               {step === 0
                 ? 'Haz click en el botón e interactua con el diagrama.'
                 : 'Toca el botón de CONTINUAR para ver los siguientes pasos'}
@@ -391,12 +389,12 @@ const DesktopCyclePage = ({ onReturnHome, onRegister }) => {
             <img
               src={iconUrls.step1}
               alt="Live Lab"
-              className="h-14 md:h-16 lg:h-20 mx-auto object-contain mb-2"
+              className="h-14 md:h-16 lg:h-20 mx-auto object-contain mb-3 brightness-0 invert opacity-90 drop-shadow-md"
             />
-            <h4 className="text-[11px] lg:text-sm font-black text-outloud-blue font-montserrat uppercase leading-tight">
+            <h4 className="text-[11px] lg:text-[13px] font-black text-white drop-shadow-md font-montserrat uppercase leading-tight">
               PASO 1: Live Lab
             </h4>
-            <p className="text-[9px] lg:text-[11px] text-outloud-blue/80 font-montserrat leading-tight mt-1">
+            <p className="text-[9px] lg:text-[11px] text-white/70 font-montserrat leading-relaxed mt-1.5">
               Entra a tu cuenta y adquiere nuevo vocabulario de forma
               interactiva
             </p>
@@ -404,7 +402,7 @@ const DesktopCyclePage = ({ onReturnHome, onRegister }) => {
             {step === 1 && (
               <button
                 onClick={handleNext}
-                className="absolute left-1/2 -translate-x-1/2 top-full mt-4 bg-student-yellow text-outloud-blue rounded-full px-6 py-2.5 text-[11px] lg:text-xs font-black font-montserrat tracking-wider shadow-md hover:bg-yellow-500 transition-colors animate-[fadeIn_0.3s_ease-in]"
+                className="absolute left-1/2 -translate-x-1/2 top-full mt-4 bg-[#fcd34d] text-[#08203e] rounded-full px-6 py-2.5 text-[11px] lg:text-xs font-black font-montserrat tracking-wider shadow-[0_0_15px_rgba(252,211,77,0.4)] hover:bg-[#fde68a] hover:scale-105 transition-all animate-[fadeIn_0.3s_ease-in]"
               >
                 CONTINUAR
               </button>
@@ -421,19 +419,19 @@ const DesktopCyclePage = ({ onReturnHome, onRegister }) => {
             <img
               src={iconUrls.step2}
               alt="Práctica"
-              className="h-14 md:h-16 lg:h-20 mx-auto object-contain mb-2"
+              className="h-14 md:h-16 lg:h-20 mx-auto object-contain mb-3 brightness-0 invert opacity-90 drop-shadow-md"
             />
-            <h4 className="text-[11px] lg:text-sm font-black text-outloud-blue font-montserrat uppercase leading-tight">
+            <h4 className="text-[11px] lg:text-[13px] font-black text-white drop-shadow-md font-montserrat uppercase leading-tight">
               PASO 2: Práctica interactiva
             </h4>
-            <p className="text-[9px] lg:text-[11px] text-outloud-blue/80 font-montserrat leading-tight mt-1">
+            <p className="text-[9px] lg:text-[11px] text-white/70 font-montserrat leading-relaxed mt-1.5">
               Completa los ejercicios para afianzar lo aprendido.
             </p>
 
             {step === 2 && (
               <button
                 onClick={handleNext}
-                className="absolute left-1/2 -translate-x-1/2 top-full mt-4 bg-student-yellow text-outloud-blue rounded-full px-6 py-2.5 text-[11px] lg:text-xs font-black font-montserrat tracking-wider shadow-md hover:bg-yellow-500 transition-colors animate-[fadeIn_0.3s_ease-in]"
+                className="absolute left-1/2 -translate-x-1/2 top-full mt-4 bg-[#fcd34d] text-[#08203e] rounded-full px-6 py-2.5 text-[11px] lg:text-xs font-black font-montserrat tracking-wider shadow-[0_0_15px_rgba(252,211,77,0.4)] hover:bg-[#fde68a] hover:scale-105 transition-all animate-[fadeIn_0.3s_ease-in]"
               >
                 CONTINUAR
               </button>
@@ -450,19 +448,19 @@ const DesktopCyclePage = ({ onReturnHome, onRegister }) => {
             <img
               src={iconUrls.step3}
               alt="Agenda"
-              className="h-14 md:h-16 lg:h-20 mx-auto object-contain mb-2"
+              className="h-14 md:h-16 lg:h-20 mx-auto object-contain mb-3 brightness-0 invert opacity-90 drop-shadow-md"
             />
-            <h4 className="text-[11px] lg:text-sm font-black text-outloud-blue font-montserrat uppercase leading-tight">
+            <h4 className="text-[11px] lg:text-[13px] font-black text-white drop-shadow-md font-montserrat uppercase leading-tight">
               PASO 3: Agenda tus clases
             </h4>
-            <p className="text-[9px] lg:text-[11px] text-outloud-blue/80 font-montserrat leading-tight mt-1">
+            <p className="text-[9px] lg:text-[11px] text-white/70 font-montserrat leading-relaxed mt-1.5">
               Reserva sesiones 100% en vivo con un profesor.
             </p>
 
             {step === 3 && (
               <button
                 onClick={handleNext}
-                className="absolute right-full mr-4 top-1/2 -translate-y-1/2 bg-student-yellow text-outloud-blue rounded-full px-6 py-2.5 text-[11px] lg:text-xs font-black font-montserrat tracking-wider shadow-md hover:bg-yellow-500 transition-colors animate-[fadeIn_0.3s_ease-in]"
+                className="absolute right-full mr-4 top-1/2 -translate-y-1/2 bg-[#fcd34d] text-[#08203e] rounded-full px-6 py-2.5 text-[11px] lg:text-xs font-black font-montserrat tracking-wider shadow-[0_0_15px_rgba(252,211,77,0.4)] hover:bg-[#fde68a] hover:scale-105 transition-all animate-[fadeIn_0.3s_ease-in]"
               >
                 CONTINUAR
               </button>
@@ -479,12 +477,12 @@ const DesktopCyclePage = ({ onReturnHome, onRegister }) => {
             <img
               src={iconUrls.step4}
               alt="Clase"
-              className="h-14 md:h-16 lg:h-20 mx-auto object-contain mb-2"
+              className="h-14 md:h-16 lg:h-20 mx-auto object-contain mb-3 brightness-0 invert opacity-90 drop-shadow-md"
             />
-            <h4 className="text-[11px] lg:text-sm font-black text-outloud-blue font-montserrat uppercase leading-tight">
+            <h4 className="text-[11px] lg:text-[13px] font-black text-white drop-shadow-md font-montserrat uppercase leading-tight">
               PASO 4: Clase 100% en vivo
             </h4>
-            <p className="text-[9px] lg:text-[11px] text-outloud-blue/80 font-montserrat leading-tight mt-1">
+            <p className="text-[9px] lg:text-[11px] text-white/70 font-montserrat leading-relaxed mt-1.5">
               Un instructor dictará clases interactivas, completamente
               prácticas, te aconsejará y te evaluará.
             </p>
@@ -492,7 +490,7 @@ const DesktopCyclePage = ({ onReturnHome, onRegister }) => {
             {step === 4 && (
               <button
                 onClick={handleNext}
-                className="absolute right-full mr-4 top-1/2 -translate-y-1/2 bg-student-yellow text-outloud-blue rounded-full px-6 py-2.5 text-[11px] lg:text-xs font-black font-montserrat tracking-wider shadow-md hover:bg-yellow-500 transition-colors animate-[fadeIn_0.3s_ease-in]"
+                className="absolute right-full mr-4 top-1/2 -translate-y-1/2 bg-[#fcd34d] text-[#08203e] rounded-full px-6 py-2.5 text-[11px] lg:text-xs font-black font-montserrat tracking-wider shadow-[0_0_15px_rgba(252,211,77,0.4)] hover:bg-[#fde68a] hover:scale-105 transition-all animate-[fadeIn_0.3s_ease-in]"
               >
                 CONTINUAR
               </button>
@@ -509,12 +507,12 @@ const DesktopCyclePage = ({ onReturnHome, onRegister }) => {
             <img
               src={iconUrls.step5}
               alt="Aplica"
-              className="h-14 md:h-16 lg:h-20 mx-auto object-contain mb-2"
+              className="h-14 md:h-16 lg:h-20 mx-auto object-contain mb-3 brightness-0 invert opacity-90 drop-shadow-md"
             />
-            <h4 className="text-[11px] lg:text-sm font-black text-outloud-blue font-montserrat uppercase leading-tight">
+            <h4 className="text-[11px] lg:text-[13px] font-black text-white drop-shadow-md font-montserrat uppercase leading-tight">
               PASO 5: Aplica lo aprendido
             </h4>
-            <p className="text-[9px] lg:text-[11px] text-outloud-blue/80 font-montserrat leading-tight mt-1">
+            <p className="text-[9px] lg:text-[11px] text-white/70 font-montserrat leading-relaxed mt-1.5">
               Participa en actividades comunitarias con otros alumnos: foros,
               debates, club de conversación, salas de chat y más.
             </p>
@@ -522,7 +520,7 @@ const DesktopCyclePage = ({ onReturnHome, onRegister }) => {
             {step === 5 && (
               <button
                 onClick={onRegister}
-                className="absolute right-full mr-4 top-1/2 -translate-y-1/2 bg-student-yellow text-outloud-blue rounded-full px-6 py-3 text-[11px] lg:text-xs font-black font-montserrat tracking-wider shadow-md hover:bg-yellow-500 transition-colors animate-[fadeIn_0.3s_ease-in]"
+                className="absolute right-full mr-4 top-1/2 -translate-y-1/2 bg-[#fcd34d] text-[#08203e] rounded-full px-6 py-3 text-[11px] lg:text-xs font-black font-montserrat tracking-wider shadow-[0_0_20px_rgba(252,211,77,0.5)] hover:bg-[#fde68a] hover:scale-105 transition-all animate-pulse border-2 border-transparent"
               >
                 INSCRIBIRME
               </button>
@@ -542,19 +540,14 @@ const CyclePage = (props) => {
 
   useEffect(() => {
     const handleResize = () => {
-      // Determines if the device screen is mobile/tablet portrait width
       setIsMobile(window.innerWidth < 768);
     };
 
-    // Set initial value
     handleResize();
-
-    // Listen for window resize
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Serves completely isolated components based on device type
   return isMobile ? <MobileCyclePage {...props} /> : <DesktopCyclePage {...props} />;
 };
 
