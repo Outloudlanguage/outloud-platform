@@ -39,8 +39,11 @@ const MobileLogin = ({ onLogin, onInfoClick }) => {
       {/* Background with Original Image + Dark Glass Aesthetic */}
       <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
         <div 
-          className="absolute inset-0 bg-cover bg-[center_15%]"
-          style={{ backgroundImage: "url('https://i.postimg.cc/QtmtPdr7/Diseno-sin-titulo-(16).png')" }}
+          className="absolute inset-0 bg-cover bg-no-repeat"
+          style={{ 
+            backgroundImage: "url('https://i.postimg.cc/QtmtPdr7/Diseno-sin-titulo-(16).png')",
+            backgroundPosition: "center 20%" // Bulletproof positioning to reveal her face
+          }}
         ></div>
         <div className="absolute inset-0 bg-[#070b19]/85 backdrop-blur-[2px]"></div>
 
@@ -130,7 +133,7 @@ const MobileLogin = ({ onLogin, onInfoClick }) => {
             </form>
 
             <div className="flex flex-col items-center mt-6 space-y-1.5">
-              <button onClick={onInfoClick} className="text-[11px] font-black text-white uppercase tracking-wider hover:text-[#fcd34d] animate-hard-blink transition-colors">
+              <button onClick={onInfoClick} className="text-[11px] font-black text-white uppercase tracking-wider hover:text-[#fcd34d] animate-hard-blink transition-colors cursor-pointer">
                 OBTENER MÁS INFORMACIÓN
               </button>
               <p className="text-[11px] text-white/70">
@@ -312,7 +315,7 @@ const DesktopLogin = ({ onLogin, onInfoClick }) => {
       {/* RIGHT AREA: Photography Canvas */}
       <div className="relative flex w-[55%] bg-[#070b19]">
         <div className="absolute inset-0">
-          <img src="https://i.postimg.cc/QtmtPdr7/Diseno-sin-titulo-(16).png" alt="Student Background" className="h-full w-full object-cover object-[center_15%]" />
+          <img src="https://i.postimg.cc/QtmtPdr7/Diseno-sin-titulo-(16).png" alt="Student Background" className="h-full w-full object-cover" />
         </div>
         
         {/* Dark Blue Overlay Fade */}
