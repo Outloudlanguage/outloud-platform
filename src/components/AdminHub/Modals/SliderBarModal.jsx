@@ -1,3 +1,4 @@
+import React, { useState, useEffect, useRef } from 'react';
 const SliderBarModal = ({ isOpen, initialData = {}, onSave, onCancel }) => {
   const [options, setOptions] = useState(initialData.options || [
     { id: 1, text: 'Pretty', isCorrect: false },

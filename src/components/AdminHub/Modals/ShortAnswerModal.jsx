@@ -1,3 +1,4 @@
+import React, { useState, useEffect, useRef } from 'react';
 const ShortAnswerModal = ({ isOpen, initialData = {}, onSave, onCancel }) => {
   const [questionHtml, setQuestionHtml] = useState(initialData.questionHtml || '<span style="font-family: Montserrat; font-size: 16px; color: #08203e;">Type your question here...</span>');
   const [targetAnswer, setTargetAnswer] = useState(initialData.targetAnswer || '');

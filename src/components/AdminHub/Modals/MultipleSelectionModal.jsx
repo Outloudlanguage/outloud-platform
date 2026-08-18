@@ -1,3 +1,4 @@
+import React, { useState, useEffect, useRef } from 'react';
 const MultipleSelectionModal = ({ isOpen, initialData = {}, onSave, onCancel }) => {
   const [promptType, setPromptType] = useState(initialData.promptType || 'text');
   const [promptUrl, setPromptUrl] = useState(initialData.promptUrl || '');

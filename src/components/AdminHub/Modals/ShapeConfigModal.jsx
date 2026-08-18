@@ -1,3 +1,4 @@
+import React, { useState, useEffect, useRef } from 'react';
 const ShapeConfigModal = ({ isOpen, initialData = {}, onSave, onCancel }) => {
   const [shapeType, setShapeType] = useState(initialData.shapeType || 'rect');
   const [fillColor, setFillColor] = useState(initialData.fillColor || '#eab308');

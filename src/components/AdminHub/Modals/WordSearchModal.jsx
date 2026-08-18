@@ -1,4 +1,4 @@
-// --- NEW WORD SEARCH MODAL ---
+import React, { useState, useEffect, useRef } from 'react';
 const WordSearchModal = ({ isOpen, initialData = {}, onSave, onCancel }) => {
   const [promptHtml, setPromptHtml] = useState(initialData.promptHtml || '<span style="font-family: Montserrat; font-size: 18px; font-weight: bold; color: #08203e;">WORD SEARCH: Find all the words.</span>');
   const [words, setWords] = useState(initialData.words || ['POLICEMAN', 'BARBER', 'CHEF']);

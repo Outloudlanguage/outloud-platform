@@ -1,4 +1,4 @@
-// --- NEW CROSSWORD MODAL ---
+import React, { useState, useEffect, useRef } from 'react';
 const CrosswordModal = ({ isOpen, initialData = {}, onSave, onCancel }) => {
   const [items, setItems] = useState(initialData.items || [
     { id: 1, word: 'JUSTICE', prompt: 'Fairness in the way people are dealt with' },

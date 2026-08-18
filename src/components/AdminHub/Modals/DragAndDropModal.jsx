@@ -1,3 +1,4 @@
+import React, { useState, useEffect, useRef } from 'react';
 const DragAndDropModal = ({ isOpen, initialData = {}, onSave, onCancel }) => {
   const [items, setItems] = useState(initialData.items || [
     { imageUrl: '', targetText: '', studentViewText: '' },

@@ -1,3 +1,4 @@
+import React, { useState, useEffect, useRef } from 'react';
 const NavButtonModal = ({ isOpen, initialData = {}, onSave, onCancel }) => {
   const [buttonStyle, setButtonStyle] = useState(initialData.buttonStyle || 'continue_pill');
 
