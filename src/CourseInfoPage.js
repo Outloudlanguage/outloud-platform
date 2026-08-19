@@ -218,10 +218,10 @@ const DesktopCourseInfo = ({
 
       <div className="relative z-10 flex flex-col h-full px-6 py-4 md:px-10 md:py-6 max-w-[90rem] mx-auto w-full">
         
-        {/* Top Header */}
-        <div className="relative z-10 flex flex-row justify-between items-center w-full mb-6 lg:mb-10 shrink-0">
+        {/* Top Header - FIXED OVERLAP & SIZING */}
+        <div className="relative z-10 flex flex-row justify-between items-center w-full mb-6 lg:mb-10 shrink-0 gap-4">
           
-          <div className="flex items-center space-x-4 md:space-x-5">
+          <div className="flex items-center flex-1 min-w-0">
             <div className="flex-none flex items-center">
               <img 
                 src="https://i.postimg.cc/43zTZQhx/Diseno-sin-titulo-(20).png" 
@@ -230,23 +230,24 @@ const DesktopCourseInfo = ({
               />
             </div>
             
-            <div className="flex-none h-8 md:h-10 w-[2px] bg-white/30"></div>
+            <div className="flex-none h-8 md:h-10 w-[2px] bg-white/30 mx-4 md:mx-5"></div>
             
-            <span className="flex-none hidden md:block text-xs lg:text-sm font-light text-white/80 font-montserrat whitespace-nowrap tracking-wide">
+            <span className="flex-none hidden md:block text-xs lg:text-sm font-light text-white/80 font-montserrat whitespace-nowrap tracking-wide mr-2">
               Online Platform
             </span>
             
-            <h1 className="flex-none text-[14px] sm:text-[15px] md:text-lg lg:text-[22px] xl:text-[28px] font-black text-white drop-shadow-md font-montserrat tracking-widest uppercase whitespace-nowrap ml-2">
+            {/* Decreased text size slightly, allowed leading-tight instead of whitespace-nowrap to prevent overlap */}
+            <h1 className="flex-1 text-[14px] sm:text-[15px] md:text-base lg:text-xl xl:text-2xl font-black text-white drop-shadow-md font-montserrat tracking-widest uppercase leading-tight truncate">
               INFORMACIÓN ACERCA DE LOS CURSOS
             </h1>
           </div>
 
           <button 
             onClick={onReturnHome} 
-            className="flex-none flex items-center space-x-2 md:space-x-3 text-white font-bold font-montserrat hover:text-[#fcd34d] transition-colors ml-4"
+            className="flex-none flex items-center space-x-2 md:space-x-3 text-white font-bold font-montserrat hover:text-[#fcd34d] transition-colors ml-4 shrink-0"
           >
-            <span className="flex-none text-xs md:text-sm lg:text-base whitespace-nowrap tracking-wider uppercase">Return Home</span>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="flex-none w-5 h-5 md:w-6 md:h-6">
+            <span className="text-xs md:text-sm lg:text-base whitespace-nowrap tracking-wider uppercase">Return Home</span>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 md:w-6 md:h-6">
               <path d="M11.47 3.841a.75.75 0 0 1 1.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.061l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 0 0 1.061 1.06l8.69-8.689Z" />
               <path d="m12 5.432 8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 0-.75.75V21a.75.75 0 0 1-.75.75H5.625a1.875 1.875 0 0 1-1.875-1.875v-6.198a2.29 2.29 0 0 0 .091-.086L12 5.432Z" />
             </svg>
@@ -261,7 +262,8 @@ const DesktopCourseInfo = ({
             <div className="group flex flex-col flex-grow bg-white/10 backdrop-blur-2xl border border-white/20 hover:bg-white/20 transition-all duration-300 rounded-[2.5rem] p-6 lg:p-8 shadow-[0_15px_40px_rgba(0,0,0,0.3)] hover:shadow-[0_0_30px_rgba(252,211,77,0.15)] items-center text-center cursor-default overflow-hidden relative">
               <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none"></div>
               
-              <div className="h-[4rem] lg:h-[5rem] xl:h-[6rem] w-full flex items-center justify-center mb-3 shrink-0 relative z-10">
+              {/* FIXED ICON SCALING - Removed scale and translations, gave it a solid container height */}
+              <div className="h-16 lg:h-20 xl:h-24 w-full flex items-center justify-center mb-4 shrink-0 relative z-10">
                 <img
                   src="https://i.postimg.cc/LssD8BWw/Agregar-algo-de-texto-(14).png"
                   alt="Inmersión Total Icon"
@@ -272,11 +274,12 @@ const DesktopCourseInfo = ({
                 ¿CÓMO FUNCIONA EL CURSO?
               </p>
               
-              <h3 className="min-h-[3.5rem] lg:min-h-[4.5rem] xl:min-h-[5rem] text-2xl lg:text-3xl xl:text-[2.2rem] font-black text-white drop-shadow-md font-tabarra mb-1 lg:mb-2 leading-none shrink-0 relative z-10">
+              <h3 className="min-h-[3rem] lg:min-h-[4rem] text-2xl lg:text-3xl xl:text-[2.2rem] font-black text-white drop-shadow-md font-tabarra mb-2 leading-none shrink-0 relative z-10">
                 INMERSIÓN TOTAL
               </h3>
               
-              <p className="text-[11px] lg:text-[12px] xl:text-[14px] text-white/90 font-montserrat text-justify leading-[1.6] flex-grow mt-2 relative z-10">
+              {/* Tighter line-height to fit text */}
+              <p className="text-[11px] lg:text-[12px] xl:text-[13px] text-white/90 font-montserrat text-justify leading-snug flex-grow relative z-10 px-2">
                 Olvídate de la teoría rígida. Hemos diseñado un aprendizaje
                 libre de distracciones, interactivo y directo, basado en{' '}
                 <strong className="font-extrabold text-[#fcd34d]">
@@ -288,7 +291,7 @@ const DesktopCourseInfo = ({
                 pasar horas estudiando listas de vocabulario o gramática.
               </p>
               
-              <p className="text-[9px] lg:text-[10px] xl:text-[11px] font-black text-white/50 font-montserrat mt-4 tracking-widest uppercase shrink-0 relative z-10">
+              <p className="text-[9px] lg:text-[10px] font-black text-white/50 font-montserrat mt-2 tracking-widest uppercase shrink-0 relative z-10">
                 ¿CÓMO FUNCIONA? SIGUE LEYENDO.
               </p>
             </div>
@@ -306,7 +309,8 @@ const DesktopCourseInfo = ({
             <div className="group flex flex-col flex-grow bg-white/10 backdrop-blur-2xl border border-white/20 hover:bg-white/20 transition-all duration-300 rounded-[2.5rem] p-6 lg:p-8 shadow-[0_15px_40px_rgba(0,0,0,0.3)] hover:shadow-[0_0_30px_rgba(252,211,77,0.15)] items-center text-center cursor-default overflow-hidden relative">
               <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none"></div>
 
-              <div className="h-[4rem] lg:h-[5rem] xl:h-[6rem] w-full flex items-center justify-center mb-3 shrink-0 relative z-10">
+              {/* FIXED ICON SCALING */}
+              <div className="h-16 lg:h-20 xl:h-24 w-full flex items-center justify-center mb-4 shrink-0 relative z-10">
                 <img
                   src="https://i.postimg.cc/mDJHRQff/6(2).png"
                   alt="Acceso 24/7 Icon"
@@ -317,11 +321,11 @@ const DesktopCourseInfo = ({
                 ESTUDIA A TU RITMO
               </p>
               
-              <h3 className="min-h-[3.5rem] lg:min-h-[4.5rem] xl:min-h-[5rem] text-2xl lg:text-3xl xl:text-[2.2rem] font-black text-white drop-shadow-md font-tabarra mb-1 lg:mb-2 leading-none shrink-0 relative z-10">
+              <h3 className="min-h-[3rem] lg:min-h-[4rem] text-2xl lg:text-3xl xl:text-[2.2rem] font-black text-white drop-shadow-md font-tabarra mb-2 leading-none shrink-0 relative z-10">
                 ACCESO 24/7
               </h3>
               
-              <p className="text-[11px] lg:text-[12px] xl:text-[14px] text-white/90 font-montserrat text-justify leading-[1.6] flex-grow mt-2 relative z-10">
+              <p className="text-[11px] lg:text-[12px] xl:text-[13px] text-white/90 font-montserrat text-justify leading-snug flex-grow relative z-10 px-2">
                 Accede cuando y donde quieras a lecciones dinámicas, audios,
                 chats, foros,{' '}
                 <strong className="font-extrabold text-[#fcd34d]">club de conversación</strong>
@@ -347,7 +351,8 @@ const DesktopCourseInfo = ({
             <div className="group flex flex-col flex-grow bg-white/10 backdrop-blur-2xl border border-white/20 hover:bg-white/20 transition-all duration-300 rounded-[2.5rem] p-6 lg:p-8 shadow-[0_15px_40px_rgba(0,0,0,0.3)] hover:shadow-[0_0_30px_rgba(252,211,77,0.15)] items-center text-center cursor-default overflow-hidden relative">
               <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none"></div>
 
-              <div className="h-[4rem] lg:h-[5rem] xl:h-[6rem] w-full flex items-center justify-center mb-3 shrink-0 relative z-10">
+              {/* FIXED ICON SCALING */}
+              <div className="h-16 lg:h-20 xl:h-24 w-full flex items-center justify-center mb-4 shrink-0 relative z-10">
                 <img
                   src="https://i.postimg.cc/LXn1rxWs/7(3).png"
                   alt="Clases En Vivo Icon"
@@ -358,11 +363,11 @@ const DesktopCourseInfo = ({
                 INTERACCIÓN REAL
               </p>
               
-              <h3 className="min-h-[3.5rem] lg:min-h-[4.5rem] xl:min-h-[5rem] text-2xl lg:text-3xl xl:text-[2.2rem] font-black text-white drop-shadow-md font-tabarra mb-1 lg:mb-2 leading-none whitespace-pre-line shrink-0 relative z-10">
+              <h3 className="min-h-[3rem] lg:min-h-[4rem] text-2xl lg:text-3xl xl:text-[2.2rem] font-black text-white drop-shadow-md font-tabarra mb-2 leading-none whitespace-pre-line shrink-0 relative z-10">
                 CLASES 100%{'\n'}EN VIVO
               </h3>
               
-              <p className="text-[11px] lg:text-[12px] xl:text-[14px] text-white/90 font-montserrat text-justify leading-[1.6] flex-grow mt-2 relative z-10">
+              <p className="text-[11px] lg:text-[12px] xl:text-[13px] text-white/90 font-montserrat text-justify leading-snug flex-grow relative z-10 px-2">
                 Agenda sesiones individuales o grupales con un{' '}
                 <strong className="font-extrabold text-[#fcd34d]">profesor en vivo</strong>{' '}
                 según tu disponibilidad. Recibe tutoría{' '}
@@ -387,7 +392,6 @@ const DesktopCourseInfo = ({
     </div>
   );
 };
-
 
 // =========================================
 // 3. THE INDEPENDENT ROUTER
