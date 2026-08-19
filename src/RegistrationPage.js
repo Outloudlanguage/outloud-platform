@@ -28,8 +28,8 @@ const CustomDropdown = ({
   }, []);
 
   return (
-    {/* Added 'relative' here so the absolute dropdown menu respects this container's width */}
     <div className="relative w-full mb-4" ref={dropdownRef}>
+      {/* Added 'relative' here so the absolute dropdown menu respects this container's width */}
       <div className="relative z-20">
         <div
           onClick={() => setIsOpen(!isOpen)}
