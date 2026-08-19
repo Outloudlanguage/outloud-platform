@@ -61,11 +61,13 @@ const MobileCourseInfo = ({
               
               {/* Left Col */}
               <div className="w-[42%] flex flex-col items-center justify-center text-center pr-3 shrink-0 border-r border-white/10 relative z-10">
-                <img
-                  src="https://i.postimg.cc/LssD8BWw/Agregar-algo-de-texto-(14).png"
-                  alt="Inmersión Total Icon"
-                  className="h-20 w-auto object-contain mb-3 brightness-0 invert opacity-90 drop-shadow-md"
-                />
+                <div className="h-16 w-full flex items-center justify-center mb-2">
+                  <img
+                    src="https://i.postimg.cc/LssD8BWw/Agregar-algo-de-texto-(14).png"
+                    alt="Inmersión Total Icon"
+                    className="h-[80%] w-auto object-contain brightness-0 invert opacity-90 drop-shadow-md"
+                  />
+                </div>
                 <p className="text-[8px] font-bold text-[#fcd34d] font-montserrat tracking-widest uppercase leading-tight mb-1">
                   ¿CÓMO FUNCIONA EL CURSO?
                 </p>
@@ -109,11 +111,13 @@ const MobileCourseInfo = ({
               
               {/* Left Col */}
               <div className="w-[42%] flex flex-col items-center justify-center text-center pr-3 shrink-0 border-r border-white/10 relative z-10">
-                <img
-                  src="https://i.postimg.cc/mDJHRQff/6(2).png"
-                  alt="Acceso 24/7 Icon"
-                  className="h-20 w-auto object-contain mb-3 brightness-0 invert opacity-90 drop-shadow-md"
-                />
+                <div className="h-16 w-full flex items-center justify-center mb-2">
+                  <img
+                    src="https://i.postimg.cc/mDJHRQff/6(2).png"
+                    alt="Acceso 24/7 Icon"
+                    className="h-[100%] w-auto object-contain brightness-0 invert opacity-90 drop-shadow-md"
+                  />
+                </div>
                 <p className="text-[8px] font-bold text-[#fcd34d] font-montserrat tracking-widest uppercase leading-tight mb-1">
                   ESTUDIA A TU RITMO
                 </p>
@@ -153,11 +157,13 @@ const MobileCourseInfo = ({
               
               {/* Left Col */}
               <div className="w-[42%] flex flex-col items-center justify-center text-center pr-3 shrink-0 border-r border-white/10 relative z-10">
-                <img
-                  src="https://i.postimg.cc/LXn1rxWs/7(3).png"
-                  alt="Clases En Vivo Icon"
-                  className="h-20 w-auto object-contain mb-3 brightness-0 invert opacity-90 drop-shadow-md"
-                />
+                <div className="h-16 w-full flex items-center justify-center mb-2">
+                  <img
+                    src="https://i.postimg.cc/LXn1rxWs/7(3).png"
+                    alt="Clases En Vivo Icon"
+                    className="h-[80%] w-auto object-contain brightness-0 invert opacity-90 drop-shadow-md"
+                  />
+                </div>
                 <p className="text-[8px] font-bold text-[#fcd34d] font-montserrat tracking-widest uppercase leading-tight mb-1">
                   INTERACCIÓN REAL
                 </p>
@@ -218,7 +224,7 @@ const DesktopCourseInfo = ({
 
       <div className="relative z-10 flex flex-col h-full px-6 py-4 md:px-10 md:py-6 max-w-[90rem] mx-auto w-full">
         
-        {/* Top Header */}
+        {/* Top Header - FIXED OVERLAP & SIZING */}
         <div className="relative z-10 flex flex-row justify-between items-center w-full mb-6 lg:mb-10 shrink-0 gap-4">
           
           <div className="flex items-center flex-1 min-w-0">
@@ -258,31 +264,36 @@ const DesktopCourseInfo = ({
           
           {/* COLUMN 1 */}
           <div className="flex flex-col h-full min-h-0">
-            <div className="group flex flex-col flex-grow bg-white/10 backdrop-blur-2xl border border-white/20 hover:bg-white/20 transition-all duration-300 rounded-[2.5rem] p-6 lg:p-7 shadow-[0_15px_40px_rgba(0,0,0,0.3)] hover:shadow-[0_0_30px_rgba(252,211,77,0.15)] items-center text-center cursor-default overflow-hidden relative">
+            {/* Reduced top padding from pt-8 to pt-5 to pull content up */}
+            <div className="group flex flex-col flex-grow bg-white/10 backdrop-blur-2xl border border-white/20 hover:bg-white/20 transition-all duration-300 rounded-[2.5rem] px-5 lg:px-7 pt-5 lg:pt-6 pb-5 lg:pb-6 shadow-[0_15px_40px_rgba(0,0,0,0.3)] hover:shadow-[0_0_30px_rgba(252,211,77,0.15)] items-center text-center cursor-default overflow-hidden relative">
               <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none"></div>
               
-              {/* Perfectly Balanced Icon Container */}
-              <div className="h-16 lg:h-20 xl:h-24 w-full flex items-center justify-center mb-4 shrink-0 relative z-10">
+              {/* Optically Balanced Icon Container */}
+              <div className="h-[4.5rem] xl:h-[5.5rem] w-full flex items-center justify-center mb-2 lg:mb-3 shrink-0 relative z-10">
                 <img
                   src="https://i.postimg.cc/LssD8BWw/Agregar-algo-de-texto-(14).png"
                   alt="Inmersión Total Icon"
-                  className="h-full w-auto object-contain brightness-0 invert opacity-90 drop-shadow-lg"
+                  className="h-[80%] w-auto object-contain brightness-0 invert opacity-90 drop-shadow-lg"
                 />
               </div>
               
               {/* Perfectly Balanced Titles Container */}
-              <div className="flex flex-col items-center shrink-0 w-full mb-4 relative z-10">
-                <p className="text-[10px] lg:text-[11px] xl:text-xs font-bold text-[#fcd34d] font-montserrat tracking-widest uppercase mb-2 h-[14px] lg:h-[16px] flex items-center justify-center w-full">
-                  ¿CÓMO FUNCIONA EL CURSO?
-                </p>
-                <h3 className="h-[3.5rem] lg:h-[4.5rem] text-2xl lg:text-3xl xl:text-4xl font-black text-white drop-shadow-md font-tabarra leading-none flex items-center justify-center w-full">
-                  INMERSIÓN TOTAL
-                </h3>
+              <div className="flex flex-col items-center shrink-0 w-full mb-3 relative z-10">
+                <div className="h-[14px] lg:h-[18px] flex items-end justify-center w-full mb-1">
+                  <p className="text-[9px] lg:text-[10px] xl:text-[11px] font-bold text-[#fcd34d] font-montserrat tracking-widest uppercase leading-none">
+                    ¿CÓMO FUNCIONA EL CURSO?
+                  </p>
+                </div>
+                <div className="h-[3.5rem] lg:h-[4rem] flex items-center justify-center w-full">
+                  <h3 className="text-xl lg:text-2xl xl:text-3xl font-black text-white drop-shadow-md font-tabarra leading-none whitespace-pre-line">
+                    INMERSIÓN TOTAL
+                  </h3>
+                </div>
               </div>
               
-              {/* Balanced Flex-Grow Text Container */}
-              <div className="flex flex-col flex-grow w-full relative z-10">
-                <p className="text-[11px] lg:text-xs xl:text-[13px] text-white/90 font-montserrat text-justify leading-relaxed flex-grow">
+              {/* Flex-Grow Text Container */}
+              <div className="flex flex-col flex-grow w-full justify-start relative z-10">
+                <p className="text-[10.5px] lg:text-[11.5px] xl:text-[13px] text-white/90 font-montserrat text-justify leading-snug xl:leading-[1.5]">
                   Olvídate de la teoría rígida. Hemos diseñado un aprendizaje
                   libre de distracciones, interactivo y directo, basado en{' '}
                   <strong className="font-extrabold text-[#fcd34d]">
@@ -293,16 +304,12 @@ const DesktopCourseInfo = ({
                   <strong className="font-extrabold text-[#fcd34d]">sin traducir</strong> y sin
                   pasar horas estudiando listas de vocabulario o gramática.
                 </p>
-                
-                <p className="text-[9px] lg:text-[10px] font-black text-white/50 font-montserrat tracking-widest uppercase mt-4 shrink-0">
-                  ¿CÓMO FUNCIONA? SIGUE LEYENDO.
-                </p>
               </div>
             </div>
 
             <button
               onClick={onCycleClick}
-              className="mt-4 lg:mt-6 w-full rounded-full border-[2.5px] border-dashed border-[#fcd34d] px-4 py-3 lg:py-4 text-[11px] lg:text-xs xl:text-sm font-black text-[#fcd34d] transition-all duration-300 hover:bg-[#fcd34d] hover:text-[#08203e] hover:border-solid shadow-[0_0_15px_rgba(252,211,77,0.15)] hover:shadow-[0_0_25px_rgba(252,211,77,0.4)] uppercase tracking-widest shrink-0"
+              className="mt-3 lg:mt-4 w-full rounded-full border-[2.5px] border-dashed border-[#fcd34d] px-4 py-3 lg:py-4 text-[11px] lg:text-xs xl:text-sm font-black text-[#fcd34d] transition-all duration-300 hover:bg-[#fcd34d] hover:text-[#08203e] hover:border-solid shadow-[0_0_15px_rgba(252,211,77,0.15)] hover:shadow-[0_0_25px_rgba(252,211,77,0.4)] uppercase tracking-widest shrink-0"
             >
               VER EL CICLO DE ESTUDIO
             </button>
@@ -310,31 +317,35 @@ const DesktopCourseInfo = ({
 
           {/* COLUMN 2 */}
           <div className="flex flex-col h-full min-h-0">
-            <div className="group flex flex-col flex-grow bg-white/10 backdrop-blur-2xl border border-white/20 hover:bg-white/20 transition-all duration-300 rounded-[2.5rem] p-6 lg:p-7 shadow-[0_15px_40px_rgba(0,0,0,0.3)] hover:shadow-[0_0_30px_rgba(252,211,77,0.15)] items-center text-center cursor-default overflow-hidden relative">
+            <div className="group flex flex-col flex-grow bg-white/10 backdrop-blur-2xl border border-white/20 hover:bg-white/20 transition-all duration-300 rounded-[2.5rem] px-5 lg:px-7 pt-5 lg:pt-6 pb-5 lg:pb-6 shadow-[0_15px_40px_rgba(0,0,0,0.3)] hover:shadow-[0_0_30px_rgba(252,211,77,0.15)] items-center text-center cursor-default overflow-hidden relative">
               <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none"></div>
 
-              {/* Perfectly Balanced Icon Container */}
-              <div className="h-16 lg:h-20 xl:h-24 w-full flex items-center justify-center mb-4 shrink-0 relative z-10">
+              {/* Optically Balanced Icon Container */}
+              <div className="h-[4.5rem] xl:h-[5.5rem] w-full flex items-center justify-center mb-2 lg:mb-3 shrink-0 relative z-10">
                 <img
                   src="https://i.postimg.cc/mDJHRQff/6(2).png"
                   alt="Acceso 24/7 Icon"
-                  className="h-full w-auto object-contain brightness-0 invert opacity-90 drop-shadow-lg"
+                  className="h-[100%] w-auto object-contain brightness-0 invert opacity-90 drop-shadow-lg"
                 />
               </div>
               
               {/* Perfectly Balanced Titles Container */}
-              <div className="flex flex-col items-center shrink-0 w-full mb-4 relative z-10">
-                <p className="text-[10px] lg:text-[11px] xl:text-xs font-bold text-[#fcd34d] font-montserrat tracking-widest uppercase mb-2 h-[14px] lg:h-[16px] flex items-center justify-center w-full">
-                  ESTUDIA A TU RITMO
-                </p>
-                <h3 className="h-[3.5rem] lg:h-[4.5rem] text-2xl lg:text-3xl xl:text-4xl font-black text-white drop-shadow-md font-tabarra leading-none flex items-center justify-center w-full">
-                  ACCESO 24/7
-                </h3>
+              <div className="flex flex-col items-center shrink-0 w-full mb-3 relative z-10">
+                <div className="h-[14px] lg:h-[18px] flex items-end justify-center w-full mb-1">
+                  <p className="text-[9px] lg:text-[10px] xl:text-[11px] font-bold text-[#fcd34d] font-montserrat tracking-widest uppercase leading-none">
+                    ESTUDIA A TU RITMO
+                  </p>
+                </div>
+                <div className="h-[3.5rem] lg:h-[4rem] flex items-center justify-center w-full">
+                  <h3 className="text-xl lg:text-2xl xl:text-3xl font-black text-white drop-shadow-md font-tabarra leading-none whitespace-pre-line">
+                    ACCESO 24/7
+                  </h3>
+                </div>
               </div>
               
-              {/* Balanced Flex-Grow Text Container */}
-              <div className="flex flex-col flex-grow w-full relative z-10">
-                <p className="text-[11px] lg:text-xs xl:text-[13px] text-white/90 font-montserrat text-justify leading-relaxed flex-grow">
+              {/* Flex-Grow Text Container */}
+              <div className="flex flex-col flex-grow w-full justify-start relative z-10">
+                <p className="text-[10.5px] lg:text-[11.5px] xl:text-[13px] text-white/90 font-montserrat text-justify leading-snug xl:leading-[1.5]">
                   Accede cuando y donde quieras a lecciones dinámicas, audios,
                   chats, foros,{' '}
                   <strong className="font-extrabold text-[#fcd34d]">club de conversación</strong>
@@ -350,7 +361,7 @@ const DesktopCourseInfo = ({
 
             <button
               onClick={onLevelsClick}
-              className="mt-4 lg:mt-6 w-full rounded-full border-[2.5px] border-dashed border-[#fcd34d] px-4 py-3 lg:py-4 text-[11px] lg:text-xs xl:text-sm font-black text-[#fcd34d] transition-all duration-300 hover:bg-[#fcd34d] hover:text-[#08203e] hover:border-solid shadow-[0_0_15px_rgba(252,211,77,0.15)] hover:shadow-[0_0_25px_rgba(252,211,77,0.4)] uppercase tracking-widest shrink-0"
+              className="mt-3 lg:mt-4 w-full rounded-full border-[2.5px] border-dashed border-[#fcd34d] px-4 py-3 lg:py-4 text-[11px] lg:text-xs xl:text-sm font-black text-[#fcd34d] transition-all duration-300 hover:bg-[#fcd34d] hover:text-[#08203e] hover:border-solid shadow-[0_0_15px_rgba(252,211,77,0.15)] hover:shadow-[0_0_25px_rgba(252,211,77,0.4)] uppercase tracking-widest shrink-0"
             >
               NIVELES Y MÓDULOS
             </button>
@@ -358,31 +369,35 @@ const DesktopCourseInfo = ({
 
           {/* COLUMN 3 */}
           <div className="flex flex-col h-full min-h-0">
-            <div className="group flex flex-col flex-grow bg-white/10 backdrop-blur-2xl border border-white/20 hover:bg-white/20 transition-all duration-300 rounded-[2.5rem] p-6 lg:p-7 shadow-[0_15px_40px_rgba(0,0,0,0.3)] hover:shadow-[0_0_30px_rgba(252,211,77,0.15)] items-center text-center cursor-default overflow-hidden relative">
+            <div className="group flex flex-col flex-grow bg-white/10 backdrop-blur-2xl border border-white/20 hover:bg-white/20 transition-all duration-300 rounded-[2.5rem] px-5 lg:px-7 pt-5 lg:pt-6 pb-5 lg:pb-6 shadow-[0_15px_40px_rgba(0,0,0,0.3)] hover:shadow-[0_0_30px_rgba(252,211,77,0.15)] items-center text-center cursor-default overflow-hidden relative">
               <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none"></div>
 
-              {/* Perfectly Balanced Icon Container */}
-              <div className="h-16 lg:h-20 xl:h-24 w-full flex items-center justify-center mb-4 shrink-0 relative z-10">
+              {/* Optically Balanced Icon Container */}
+              <div className="h-[4.5rem] xl:h-[5.5rem] w-full flex items-center justify-center mb-2 lg:mb-3 shrink-0 relative z-10">
                 <img
                   src="https://i.postimg.cc/LXn1rxWs/7(3).png"
                   alt="Clases En Vivo Icon"
-                  className="h-full w-auto object-contain brightness-0 invert opacity-90 drop-shadow-lg"
+                  className="h-[80%] w-auto object-contain brightness-0 invert opacity-90 drop-shadow-lg"
                 />
               </div>
               
               {/* Perfectly Balanced Titles Container */}
-              <div className="flex flex-col items-center shrink-0 w-full mb-4 relative z-10">
-                <p className="text-[10px] lg:text-[11px] xl:text-xs font-bold text-[#fcd34d] font-montserrat tracking-widest uppercase mb-2 h-[14px] lg:h-[16px] flex items-center justify-center w-full">
-                  INTERACCIÓN REAL
-                </p>
-                <h3 className="h-[3.5rem] lg:h-[4.5rem] text-2xl lg:text-3xl xl:text-4xl font-black text-white drop-shadow-md font-tabarra leading-none flex items-center justify-center w-full whitespace-pre-line">
-                  CLASES 100%{'\n'}EN VIVO
-                </h3>
+              <div className="flex flex-col items-center shrink-0 w-full mb-3 relative z-10">
+                <div className="h-[14px] lg:h-[18px] flex items-end justify-center w-full mb-1">
+                  <p className="text-[9px] lg:text-[10px] xl:text-[11px] font-bold text-[#fcd34d] font-montserrat tracking-widest uppercase leading-none">
+                    INTERACCIÓN REAL
+                  </p>
+                </div>
+                <div className="h-[3.5rem] lg:h-[4rem] flex items-center justify-center w-full">
+                  <h3 className="text-xl lg:text-2xl xl:text-3xl font-black text-white drop-shadow-md font-tabarra leading-none whitespace-pre-line">
+                    CLASES 100%{'\n'}EN VIVO
+                  </h3>
+                </div>
               </div>
               
-              {/* Balanced Flex-Grow Text Container */}
-              <div className="flex flex-col flex-grow w-full relative z-10">
-                <p className="text-[11px] lg:text-xs xl:text-[13px] text-white/90 font-montserrat text-justify leading-relaxed flex-grow">
+              {/* Flex-Grow Text Container */}
+              <div className="flex flex-col flex-grow w-full justify-start relative z-10">
+                <p className="text-[10.5px] lg:text-[11.5px] xl:text-[13px] text-white/90 font-montserrat text-justify leading-snug xl:leading-[1.5]">
                   Agenda sesiones individuales o grupales con un{' '}
                   <strong className="font-extrabold text-[#fcd34d]">profesor en vivo</strong>{' '}
                   según tu disponibilidad. Recibe tutoría{' '}
@@ -398,7 +413,7 @@ const DesktopCourseInfo = ({
             
             <button
               onClick={onRegister}
-              className="mt-4 lg:mt-6 w-full rounded-full border-[2.5px] border-dashed border-[#fcd34d] px-4 py-3 lg:py-4 text-[11px] lg:text-xs xl:text-sm font-black text-[#fcd34d] transition-all duration-300 hover:bg-[#fcd34d] hover:text-[#08203e] hover:border-solid shadow-[0_0_15px_rgba(252,211,77,0.15)] hover:shadow-[0_0_25px_rgba(252,211,77,0.4)] uppercase tracking-widest shrink-0"
+              className="mt-3 lg:mt-4 w-full rounded-full border-[2.5px] border-dashed border-[#fcd34d] px-4 py-3 lg:py-4 text-[11px] lg:text-xs xl:text-sm font-black text-[#fcd34d] transition-all duration-300 hover:bg-[#fcd34d] hover:text-[#08203e] hover:border-solid shadow-[0_0_15px_rgba(252,211,77,0.15)] hover:shadow-[0_0_25px_rgba(252,211,77,0.4)] uppercase tracking-widest shrink-0"
             >
               INSCRIBIRSE
             </button>
@@ -408,6 +423,7 @@ const DesktopCourseInfo = ({
     </div>
   );
 };
+
 
 // =========================================
 // 3. THE INDEPENDENT ROUTER
