@@ -15,33 +15,33 @@ const AdminDropdown = ({ placeholder, options, value, onChange }) => {
   }, []);
 
   return (
-    <div className="relative w-full z-30" ref={dropdownRef}>
+    <div className="relative w-full z-50 font-montserrat" ref={dropdownRef}>
       <div 
         onClick={() => setIsOpen(!isOpen)} 
-        className="bg-[#e6f0f9] text-outloud-blue px-4 py-3 rounded-xl text-xs md:text-sm font-montserrat font-semibold flex justify-between items-center cursor-pointer hover:bg-[#d6e6f5] transition-colors shadow-sm"
+        className={`bg-black/20 text-white border px-5 py-3.5 rounded-xl text-xs md:text-sm font-semibold flex justify-between items-center cursor-pointer transition-all shadow-inner ${isOpen ? 'border-[#fcd34d] bg-white/5' : 'border-white/20 hover:bg-white/10 hover:border-white/30'}`}
       >
-        <span>{value || placeholder}</span>
-        <svg className={`w-4 h-4 shrink-0 ml-2 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+        <span className={value ? 'text-white font-bold tracking-wide' : 'text-white/50 tracking-wider uppercase text-[10px]'}>{value || placeholder}</span>
+        <svg className={`w-4 h-4 shrink-0 ml-2 transition-transform duration-300 text-[#fcd34d] ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" />
         </svg>
       </div>
       
       {isOpen && (
-        <div className="absolute top-full left-0 mt-2 w-full bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
-          <div className="max-h-48 overflow-y-auto custom-scrollbar">
+        <div className="absolute top-full left-0 mt-2 w-full bg-[#070b19]/95 backdrop-blur-xl rounded-xl shadow-2xl border border-white/20 overflow-hidden z-50 animate-fade-in">
+          <div className="max-h-56 overflow-y-auto custom-scrollbar">
             {options.length > 0 ? (
               options.map((opt) => (
                 <div 
                   key={opt} 
                   onClick={() => { onChange(opt); setIsOpen(false); }} 
-                  className="px-4 py-3 text-xs md:text-sm font-montserrat text-outloud-blue hover:bg-student-yellow hover:font-bold cursor-pointer transition-colors border-b border-gray-50 last:border-none"
+                  className="px-5 py-3.5 text-xs md:text-sm font-semibold text-white/80 hover:bg-[#fcd34d] hover:text-[#08203e] hover:font-black cursor-pointer transition-all border-b border-white/10 last:border-none"
                 >
                   {opt}
                 </div>
               ))
             ) : (
-              <div className="px-4 py-3 text-xs md:text-sm font-montserrat text-gray-400 italic">
-                No options available
+              <div className="px-5 py-4 text-xs font-bold uppercase tracking-widest text-white/40 italic text-center">
+                No options
               </div>
             )}
           </div>

@@ -33,23 +33,23 @@ const StudentRegistrationForm = () => {
   };
 
   return (
-    <div className="w-full bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mt-6 mb-6">
-      <h3 className="text-lg font-black text-outloud-blue uppercase tracking-widest mb-4">Register New Student</h3>
-      <form onSubmit={handleCreateStudent} className="flex flex-col md:flex-row gap-4 items-end">
-        <div className="flex-1 w-full">
-          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Student Email</label>
-          <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="w-full p-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-student-yellow" />
+    <div className="w-full bg-white/5 backdrop-blur-md p-6 md:p-8 rounded-[30px] shadow-2xl border border-white/10 mt-6 mb-8">
+      <h3 className="text-lg font-black text-[#fcd34d] uppercase tracking-widest mb-6 drop-shadow-md">Register New Student</h3>
+      <form onSubmit={handleCreateStudent} className="flex flex-col md:flex-row gap-5 items-end">
+        <div className="flex-1 w-full flex flex-col gap-2">
+          <label className="text-[10px] font-bold text-white/70 uppercase tracking-widest">Student Email</label>
+          <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="w-full p-4 bg-[#070b19] border border-white/20 rounded-xl text-white text-sm focus:outline-none focus:ring-1 focus:ring-[#fcd34d] transition-colors placeholder-white/30 shadow-inner" placeholder="student@example.com" />
         </div>
-        <div className="flex-1 w-full">
-          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Temp Password</label>
-          <input type="text" required value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-student-yellow" />
+        <div className="flex-1 w-full flex flex-col gap-2">
+          <label className="text-[10px] font-bold text-white/70 uppercase tracking-widest">Temp Password</label>
+          <input type="text" required value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-4 bg-[#070b19] border border-white/20 rounded-xl text-white text-sm focus:outline-none focus:ring-1 focus:ring-[#fcd34d] transition-colors placeholder-white/30 shadow-inner" placeholder="SecurePassword123" />
         </div>
-        <button type="submit" disabled={isLoading} className="w-full md:w-auto bg-student-yellow text-outloud-blue font-black px-8 py-3 rounded-xl shadow-md uppercase tracking-widest hover:scale-105 active:scale-95 transition-transform disabled:opacity-50">
+        <button type="submit" disabled={isLoading} className="w-full md:w-auto bg-[#fcd34d] text-[#08203e] font-black px-8 py-4 rounded-xl shadow-[0_0_15px_rgba(252,211,77,0.4)] uppercase tracking-widest hover:scale-105 active:scale-95 transition-transform disabled:opacity-50 text-xs">
           {isLoading ? 'WAIT...' : 'CREATE'}
         </button>
       </form>
       {statusMessage && (
-        <div className={`mt-4 p-3 rounded-xl text-xs font-bold text-center ${statusMessage.includes('Error') ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-green-50 text-green-600 border border-green-200'}`}>
+        <div className={`mt-6 p-4 rounded-xl text-xs font-bold text-center tracking-widest uppercase shadow-inner border ${statusMessage.includes('Error') ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-green-500/10 text-green-400 border-green-500/20'}`}>
           {statusMessage}
         </div>
       )}
