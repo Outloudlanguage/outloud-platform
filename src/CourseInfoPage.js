@@ -39,10 +39,11 @@ const MobileCourseInfo = ({
             onClick={onReturnHome} 
             className="flex items-center space-x-1.5 text-white/90 font-bold font-montserrat hover:text-[#fcd34d] transition-colors"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
             <span className="text-[11px] whitespace-nowrap tracking-wide uppercase">Return Home</span>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+              <path d="M11.47 3.841a.75.75 0 0 1 1.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.061l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 0 0 1.061 1.06l8.69-8.689Z" />
+              <path d="m12 5.432 8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 0-.75.75V21a.75.75 0 0 1-.75.75H5.625a1.875 1.875 0 0 1-1.875-1.875v-6.198a2.29 2.29 0 0 0 .091-.086L12 5.432Z" />
+            </svg>
           </button>
         </div>
 
@@ -63,7 +64,7 @@ const MobileCourseInfo = ({
                 <img
                   src="https://i.postimg.cc/LssD8BWw/Agregar-algo-de-texto-(14).png"
                   alt="Inmersión Total Icon"
-                  className="h-20 w-auto object-contain mb-3 brightness-0 invert opacity-90 drop-shadow-md"
+                  className="h-12 w-auto object-contain mb-2 brightness-0 invert opacity-90 drop-shadow-md"
                 />
                 <p className="text-[8px] font-bold text-[#fcd34d] font-montserrat tracking-widest uppercase leading-tight mb-1">
                   ¿CÓMO FUNCIONA EL CURSO?
@@ -111,7 +112,7 @@ const MobileCourseInfo = ({
                 <img
                   src="https://i.postimg.cc/mDJHRQff/6(2).png"
                   alt="Acceso 24/7 Icon"
-                  className="h-20 w-auto object-contain mb-3 brightness-0 invert opacity-90 drop-shadow-md"
+                  className="h-12 w-auto object-contain mb-2 brightness-0 invert opacity-90 drop-shadow-md"
                 />
                 <p className="text-[8px] font-bold text-[#fcd34d] font-montserrat tracking-widest uppercase leading-tight mb-1">
                   ESTUDIA A TU RITMO
@@ -155,7 +156,7 @@ const MobileCourseInfo = ({
                 <img
                   src="https://i.postimg.cc/LXn1rxWs/7(3).png"
                   alt="Clases En Vivo Icon"
-                  className="h-20 w-auto object-contain mb-3 brightness-0 invert opacity-90 drop-shadow-md"
+                  className="h-12 w-auto object-contain mb-2 brightness-0 invert opacity-90 drop-shadow-md"
                 />
                 <p className="text-[8px] font-bold text-[#fcd34d] font-montserrat tracking-widest uppercase leading-tight mb-1">
                   INTERACCIÓN REAL
@@ -244,14 +245,10 @@ const DesktopCourseInfo = ({
             onClick={onReturnHome} 
             className="flex-none flex items-center space-x-2 md:space-x-3 text-white font-bold font-montserrat hover:text-[#fcd34d] transition-colors ml-4"
           >
-            <svg className="flex-none w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
             <span className="flex-none text-xs md:text-sm lg:text-base whitespace-nowrap tracking-wider uppercase">Return Home</span>
-            
-            <svg className="flex-none w-5 h-5 md:w-6 md:h-6" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M11.47 3.84a.75.75 0 011.06 0l8.69 8.69a.75.75 0 101.06-1.06l-8.689-8.69a2.25 2.25 0 00-3.182 0l-8.69 8.69a.75.75 0 001.061 1.06l8.69-8.69z" />
-              <path d="M12 5.432l8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 01-.75-.75v-4.5a.75.75 0 00-.75-.75h-3a.75.75 0 00-.75.75V21a.75.75 0 01-.75.75H5.625a1.875 1.875 0 01-1.875-1.875v-6.198a2.29 2.29 0 00.091-.086L12 5.43z" />
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="flex-none w-5 h-5 md:w-6 md:h-6">
+              <path d="M11.47 3.841a.75.75 0 0 1 1.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.061l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 0 0 1.061 1.06l8.69-8.689Z" />
+              <path d="m12 5.432 8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 0-.75.75V21a.75.75 0 0 1-.75.75H5.625a1.875 1.875 0 0 1-1.875-1.875v-6.198a2.29 2.29 0 0 0 .091-.086L12 5.432Z" />
             </svg>
           </button>
           
@@ -264,11 +261,11 @@ const DesktopCourseInfo = ({
             <div className="group flex flex-col flex-grow bg-white/10 backdrop-blur-2xl border border-white/20 hover:bg-white/20 transition-all duration-300 rounded-[2.5rem] p-6 lg:p-8 shadow-[0_15px_40px_rgba(0,0,0,0.3)] hover:shadow-[0_0_30px_rgba(252,211,77,0.15)] items-center text-center cursor-default overflow-hidden relative">
               <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none"></div>
               
-              <div className="h-[5rem] lg:h-[6.5rem] xl:h-[8rem] w-full flex items-end justify-center mb-2 lg:mb-4 shrink-0 relative z-10">
+              <div className="h-[4rem] lg:h-[5rem] xl:h-[6rem] w-full flex items-center justify-center mb-3 shrink-0 relative z-10">
                 <img
                   src="https://i.postimg.cc/LssD8BWw/Agregar-algo-de-texto-(14).png"
                   alt="Inmersión Total Icon"
-                  className="h-full w-auto object-contain scale-[1.5] xl:scale-[1.7] origin-bottom translate-y-4 lg:translate-y-6 xl:translate-y-8 brightness-0 invert opacity-90 drop-shadow-lg"
+                  className="h-full w-auto object-contain brightness-0 invert opacity-90 drop-shadow-lg"
                 />
               </div>
               <p className="text-[10px] lg:text-[11px] xl:text-xs font-bold text-[#fcd34d] font-montserrat tracking-widest uppercase mb-1 lg:mb-2 shrink-0 relative z-10">
@@ -309,11 +306,11 @@ const DesktopCourseInfo = ({
             <div className="group flex flex-col flex-grow bg-white/10 backdrop-blur-2xl border border-white/20 hover:bg-white/20 transition-all duration-300 rounded-[2.5rem] p-6 lg:p-8 shadow-[0_15px_40px_rgba(0,0,0,0.3)] hover:shadow-[0_0_30px_rgba(252,211,77,0.15)] items-center text-center cursor-default overflow-hidden relative">
               <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none"></div>
 
-              <div className="h-[5rem] lg:h-[6.5rem] xl:h-[8rem] w-full flex items-end justify-center mb-2 lg:mb-4 shrink-0 relative z-10">
+              <div className="h-[4rem] lg:h-[5rem] xl:h-[6rem] w-full flex items-center justify-center mb-3 shrink-0 relative z-10">
                 <img
                   src="https://i.postimg.cc/mDJHRQff/6(2).png"
                   alt="Acceso 24/7 Icon"
-                  className="h-full w-auto object-contain scale-[1.35] xl:scale-[1.5] origin-bottom translate-y-3 lg:translate-y-4 xl:translate-y-6 brightness-0 invert opacity-90 drop-shadow-lg"
+                  className="h-full w-auto object-contain brightness-0 invert opacity-90 drop-shadow-lg"
                 />
               </div>
               <p className="text-[10px] lg:text-[11px] xl:text-xs font-bold text-[#fcd34d] font-montserrat tracking-widest uppercase mb-1 lg:mb-2 shrink-0 relative z-10">
@@ -350,11 +347,11 @@ const DesktopCourseInfo = ({
             <div className="group flex flex-col flex-grow bg-white/10 backdrop-blur-2xl border border-white/20 hover:bg-white/20 transition-all duration-300 rounded-[2.5rem] p-6 lg:p-8 shadow-[0_15px_40px_rgba(0,0,0,0.3)] hover:shadow-[0_0_30px_rgba(252,211,77,0.15)] items-center text-center cursor-default overflow-hidden relative">
               <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none"></div>
 
-              <div className="h-[5rem] lg:h-[6.5rem] xl:h-[8rem] w-full flex items-end justify-center mb-2 lg:mb-4 shrink-0 relative z-10">
+              <div className="h-[4rem] lg:h-[5rem] xl:h-[6rem] w-full flex items-center justify-center mb-3 shrink-0 relative z-10">
                 <img
                   src="https://i.postimg.cc/LXn1rxWs/7(3).png"
                   alt="Clases En Vivo Icon"
-                  className="h-full w-auto object-contain origin-bottom brightness-0 invert opacity-90 drop-shadow-lg"
+                  className="h-full w-auto object-contain brightness-0 invert opacity-90 drop-shadow-lg"
                 />
               </div>
               <p className="text-[10px] lg:text-[11px] xl:text-xs font-bold text-[#fcd34d] font-montserrat tracking-widest uppercase mb-1 lg:mb-2 shrink-0 relative z-10">
@@ -400,19 +397,15 @@ const CourseInfoPage = (props) => {
 
   useEffect(() => {
     const handleResize = () => {
-      // Determines if the device screen is mobile/tablet portrait width
       setIsMobile(window.innerWidth < 768);
     };
 
-    // Set initial value
     handleResize();
 
-    // Listen for window resize
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Serves completely isolated components based on device type
   return isMobile ? <MobileCourseInfo {...props} /> : <DesktopCourseInfo {...props} />;
 };
 

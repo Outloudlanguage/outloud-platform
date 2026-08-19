@@ -67,7 +67,7 @@ const levelsData = [
 ];
 
 // =========================================
-// 2. MOBILE & TABLET PORTRAIT UI
+// 2. MOBILE & TABLET PORTRAIT UI (UNTOUCHED)
 // =========================================
 const MobileLevelsPage = ({ onReturnHome }) => {
   const [blinkId, setBlinkId] = useState(null);
@@ -289,24 +289,16 @@ const DesktopLevelsPage = ({ onReturnHome }) => {
 
         <button
           onClick={onReturnHome}
-          className="flex items-center space-x-2 text-white font-bold font-montserrat hover:text-[#fcd34d] transition-colors z-50 shrink-0"
+          className="flex items-center space-x-2 text-white font-bold font-montserrat hover:text-[#fcd34d] transition-colors z-50 shrink-0 ml-4"
         >
-          <svg
-            className="w-5 h-5 lg:w-6 lg:h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            strokeWidth="2.5"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M15 19l-7-7 7-7"
-            />
+          <svg className="flex-none w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
-          <span className="text-sm lg:text-base whitespace-nowrap uppercase tracking-wider">
-            Return Home
-          </span>
+          <span className="flex-none text-xs md:text-sm lg:text-base whitespace-nowrap tracking-wider uppercase">Return Home</span>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="flex-none w-5 h-5 md:w-6 md:h-6">
+            <path d="M11.47 3.841a.75.75 0 0 1 1.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.061l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 0 0 1.061 1.06l8.69-8.689Z" />
+            <path d="m12 5.432 8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 0-.75.75V21a.75.75 0 0 1-.75.75H5.625a1.875 1.875 0 0 1-1.875-1.875v-6.198a2.29 2.29 0 0 0 .091-.086L12 5.432Z" />
+          </svg>
         </button>
       </div>
 
@@ -415,7 +407,7 @@ const DesktopLevelsPage = ({ onReturnHome }) => {
                     onMouseLeave={() => setHoveredLevel(null)}
                   >
                     <div
-                      className={`relative w-full rounded-t-md md:rounded-t-lg flex flex-col items-center justify-start pt-1 lg:pt-2 text-center shadow-lg transition-all duration-300 animate-chart-grow overflow-hidden ${
+                      className={`relative w-full rounded-t-md flex flex-col items-center justify-start pt-1 text-center shadow-lg transition-all duration-300 animate-chart-grow overflow-hidden ${
                         bar.color
                       } ${
                         hoveredLevel === bar.id
@@ -435,19 +427,14 @@ const DesktopLevelsPage = ({ onReturnHome }) => {
                         }`}
                       ></div>
 
-                      <span
-                        className={`relative z-10 text-[10px] md:text-[12px] lg:text-sm xl:text-base font-black leading-none ${bar.textColor}`}
-                      >
+                      {/* Adjusted font sizes and tighter margins so it fits securely inside the A1 bar */}
+                      <span className={`relative z-10 text-[9px] lg:text-[11px] xl:text-[13px] font-black leading-none ${bar.textColor}`}>
                         {bar.id}
                       </span>
-                      <span
-                        className={`relative z-10 text-[6px] lg:text-[7px] xl:text-[8px] font-bold leading-none mt-1 px-0.5 ${bar.textColor}`}
-                      >
+                      <span className={`relative z-10 text-[5px] lg:text-[6px] xl:text-[7px] font-bold leading-none mt-0.5 px-0.5 ${bar.textColor}`}>
                         {bar.title}
                       </span>
-                      <span
-                        className={`relative z-10 text-[5px] lg:text-[6px] xl:text-[7px] font-medium leading-none mt-0.5 px-0.5 ${bar.textColor}`}
-                      >
+                      <span className={`relative z-10 text-[4.5px] lg:text-[5px] xl:text-[6px] font-medium leading-none mt-0.5 px-0.5 ${bar.textColor}`}>
                         {bar.score}
                       </span>
                     </div>

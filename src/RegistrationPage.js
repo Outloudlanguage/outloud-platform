@@ -4,7 +4,7 @@ import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 
 // =========================================
-// 0. SHARED DROPDOWN COMPONENT
+// 0. SHARED DROPDOWN COMPONENT (FIXED)
 // =========================================
 const CustomDropdown = ({
   options,
@@ -28,7 +28,8 @@ const CustomDropdown = ({
   }, []);
 
   return (
-    <div className="w-full mb-4" ref={dropdownRef}>
+    {/* Added 'relative' here so the absolute dropdown menu respects this container's width */}
+    <div className="relative w-full mb-4" ref={dropdownRef}>
       <div className="relative z-20">
         <div
           onClick={() => setIsOpen(!isOpen)}
@@ -103,7 +104,7 @@ const CustomDropdown = ({
 };
 
 // =========================================
-// 1. MOBILE REGISTRATION UI
+// 1. MOBILE REGISTRATION UI (UNTOUCHED)
 // =========================================
 const MobileRegistration = ({
   formData, setFormData, errors, isSubmitting, devMessage,
@@ -261,7 +262,7 @@ const MobileRegistration = ({
 };
 
 // =========================================
-// 2. DESKTOP REGISTRATION UI
+// 2. DESKTOP REGISTRATION UI (FIXED)
 // =========================================
 const DesktopRegistration = ({
   formData, setFormData, errors, isSubmitting, devMessage,
@@ -286,10 +287,16 @@ const DesktopRegistration = ({
           <span className="text-base lg:text-xl font-light text-white/80 font-montserrat whitespace-nowrap tracking-wide">Online Platform</span>
         </div>
 
-        <button onClick={onReturnHome} className="flex items-center space-x-2 text-white font-bold font-montserrat hover:text-[#fcd34d] transition-colors">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg>
-          <span className="text-sm lg:text-base uppercase tracking-wider">Return Home</span>
-          <svg className="w-5 h-5 lg:w-6 lg:h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg>
+        {/* FIXED: Added correct house icon matching Levels/Info */}
+        <button onClick={onReturnHome} className="flex items-center space-x-2 text-white font-bold font-montserrat hover:text-[#fcd34d] transition-colors z-50 shrink-0 ml-4">
+          <svg className="flex-none w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+          <span className="flex-none text-xs md:text-sm lg:text-base whitespace-nowrap uppercase tracking-wider">Return Home</span>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="flex-none w-5 h-5 md:w-6 md:h-6">
+            <path d="M11.47 3.841a.75.75 0 0 1 1.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.061l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 0 0 1.061 1.06l8.69-8.689Z" />
+            <path d="m12 5.432 8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 0-.75.75V21a.75.75 0 0 1-.75.75H5.625a1.875 1.875 0 0 1-1.875-1.875v-6.198a2.29 2.29 0 0 0 .091-.086L12 5.432Z" />
+          </svg>
         </button>
       </div>
 
