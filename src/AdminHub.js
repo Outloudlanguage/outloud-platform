@@ -17,6 +17,68 @@ import CustomerManagement from './components/AdminHub/Tabs/CustomerManagement';
 import MasterSettings from './components/AdminHub/Tabs/MasterSettings';
 import AdminDropdown from './components/ui/AdminDropdown';
 
+// PAN & ZOOM IMAGE COMPONENT (No Corner Dragging)
+const PanZoomImage = ({ src, data, onSave, isPreview, wrapperClass = "w-full h-64" }) => {
+  const [zoom, setZoom] = useState(data?.zoom || 1);
+  const [pan, setPan] = useState({ x: data?.panX || 0, y: data?.panY || 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    setZoom(data?.zoom || 1);
+    setPan({ x: data?.panX || 0, y: data?.panY || 0 });
+  }, [data?.zoom, data?.panX, data?.panY]);
+
+  const handleWheel = (e) => {
+    if (isPreview) return;
+    e.preventDefault();
+    const newZoom = Math.max(1, Math.min(zoom + (e.deltaY < 0 ? 0.1 : -0.1), 5));
+    setZoom(newZoom);
+    if (onSave) onSave({ zoom: newZoom, panX: pan.x, panY: pan.y });
+  };
+
+  const handlePointerDown = (e) => {
+    if (isPreview) return;
+    setIsDragging(true);
+    setStartPos({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+    e.target.setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e) => {
+    if (!isDragging || isPreview) return;
+    setPan({ x: e.clientX - startPos.x, y: e.clientY - startPos.y });
+  };
+
+  const handlePointerUp = (e) => {
+    if (isPreview) return;
+    setIsDragging(false);
+    if (onSave) onSave({ zoom, panX: pan.x, panY: pan.y });
+    e.target.releasePointerCapture(e.pointerId);
+  };
+
+  return (
+    <div className={`overflow-hidden relative bg-black/20 ${wrapperClass}`} onWheel={handleWheel}>
+      <img 
+        src={src} 
+        alt="media" 
+        draggable="false"
+        onContextMenu={(e) => e.preventDefault()}
+        className={`w-full h-full object-cover ${isPreview ? '' : 'cursor-move'} touch-none`}
+        onPointerDown={handlePointerDown} 
+        onPointerMove={handlePointerMove} 
+        onPointerUp={handlePointerUp} 
+        onPointerCancel={handlePointerUp}
+        style={{ transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)` }} 
+      />
+      {!isPreview && (
+        <div className="absolute bottom-2 right-2 bg-black/80 backdrop-blur-md text-white text-[9px] font-black px-3 py-1.5 rounded-md pointer-events-none uppercase tracking-widest shadow-md">
+          Scroll: Zoom | Drag: Pan
+        </div>
+      )}
+    </div>
+  );
+};
+
 const AdminHub = () => {
   const [activeTab, setActiveTab] = useState('CONTENT_EDITING');
   const [isPreviewMode, setIsPreviewMode] = useState(false);
@@ -43,7 +105,6 @@ const AdminHub = () => {
   const [mediaTarget, setMediaTarget] = useState({ id: null, type: 'image' });
   const [mediaUrlInput, setMediaUrlInput] = useState('');
 
-  // Rich Text Editor State
   const [focusedTextId, setFocusedTextId] = useState(null);
 
   const [rcStates, setRcStates] = useState({}); 
@@ -125,26 +186,18 @@ const AdminHub = () => {
   const handleAddMedia = () => {
     if (!mediaUrlInput) return;
     saveSnapshot();
-    
     if (mediaTarget.id) {
       setCanvasElements(prev => prev.map(el => {
         if (el.id === mediaTarget.id) {
           const newData = { ...el.data };
-          if (mediaTarget.type === 'image') {
-             newData.imageUrl = mediaUrlInput;
-             newData.imageWidth = '100%';
-             newData.imageHeight = 'auto';
-          }
+          if (mediaTarget.type === 'image') newData.imageUrl = mediaUrlInput;
           if (mediaTarget.type === 'audio') newData.audioUrl = mediaUrlInput;
           return { ...el, data: newData };
         }
         return el;
       }));
     } else {
-      const newElement = { 
-        id: `${mediaTarget.type}_${Date.now()}`, type: mediaTarget.type, url: mediaUrlInput, screenId: activeScreenId,
-        data: mediaTarget.type === 'image' ? { imageWidth: '100%', imageHeight: 'auto' } : {}
-      };
+      const newElement = { id: `${mediaTarget.type}_${Date.now()}`, type: mediaTarget.type, url: mediaUrlInput, screenId: activeScreenId };
       setCanvasElements([...canvasElements, newElement]);
     }
     setActiveModal(null); setMediaUrlInput(''); setMediaTarget({ id: null, type: 'image' });
@@ -163,11 +216,9 @@ const AdminHub = () => {
     }));
   };
 
-  const handleResizeEnd = (e, id) => {
-    if (isPreviewMode) return;
-    const width = e.currentTarget.style.width;
-    const height = e.currentTarget.style.height;
-    setCanvasElements(prev => prev.map(p => p.id === id ? { ...p, data: { ...p.data, imageWidth: width, imageHeight: height } } : p));
+  const handleSaveData = (id, newData) => {
+    saveSnapshot();
+    setCanvasElements(prev => prev.map(el => el.id === id ? { ...el, data: newData } : el));
   };
 
   const handleSaveModal = (type, data) => {
@@ -207,6 +258,41 @@ const AdminHub = () => {
       const previousState = canvasHistory[canvasHistory.length - 1];
       setCanvasHistory(prev => prev.slice(0, -1));
       setCanvasElements(previousState);
+    }
+  };
+
+  const handleRcClick = async (id) => {
+    const currentState = rcStates[id]?.phase || 'IDLE';
+
+    if (currentState === 'IDLE' || currentState === 'RETRY') {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const recorder = new MediaRecorder(stream);
+        rcRecorders.current[id] = recorder;
+        rcChunks.current[id] = [];
+        recorder.ondataavailable = (e) => { if (e.data.size > 0) rcChunks.current[id].push(e.data); };
+        recorder.onstop = () => {
+          const audioBlob = new Blob(rcChunks.current[id], { type: 'audio/webm' });
+          setRcStates(prev => ({ ...prev, [id]: { phase: 'HAS_RECORDING', url: URL.createObjectURL(audioBlob) } }));
+          stream.getTracks().forEach(track => track.stop());
+        };
+        recorder.start();
+        setRcStates(prev => ({ ...prev, [id]: { phase: 'RECORDING', url: null } }));
+      } catch (err) { alert("Microphone access is required."); }
+    } 
+    else if (currentState === 'RECORDING') {
+      if (rcRecorders.current[id] && rcRecorders.current[id].state !== 'inactive') rcRecorders.current[id].stop();
+    } 
+    else if (currentState === 'HAS_RECORDING') {
+      const audio = new Audio(rcStates[id].url);
+      rcPlayers.current[id] = audio;
+      audio.onended = () => setRcStates(prev => ({ ...prev, [id]: { ...prev[id], phase: 'RETRY' } }));
+      audio.play();
+      setRcStates(prev => ({ ...prev, [id]: { ...prev[id], phase: 'PLAYING' } }));
+    }
+    else if (currentState === 'PLAYING') {
+      if (rcPlayers.current[id]) rcPlayers.current[id].pause();
+      setRcStates(prev => ({ ...prev, [id]: { ...prev[id], phase: 'RETRY' } }));
     }
   };
 
@@ -276,14 +362,12 @@ const AdminHub = () => {
 
   return (
     <div className="relative min-h-screen w-full font-montserrat bg-[#070b19] text-white overflow-y-auto overflow-x-hidden flex flex-col">
-      {/* ANTI-DOWNLOAD PROTOCOL CSS */}
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; } 
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; } 
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; } 
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #fcd34d; }
         .zoom-container { touch-action: pan-x pan-y pinch-zoom; overflow: auto; overscroll-behavior: contain; }
-        img { -webkit-user-drag: none; user-select: none; pointer-events: auto; }
         video::-internal-media-controls-download-button { display: none !important; }
         audio::-internal-media-controls-download-button { display: none !important; }
         video::-webkit-media-controls-enclosure { overflow: hidden; }
@@ -407,7 +491,40 @@ const AdminHub = () => {
                   
                   {/* Container for content */}
                   <div className="flex flex-wrap justify-center gap-6 w-full relative z-10 flex-grow content-start pointer-events-auto">
-                    {contentElements.map(el => {
+                    
+                    {/* MEDIA STANDALONE BLOCK */}
+                    {contentElements.filter(el => ['video', 'image', 'audio'].includes(el.type)).length > 0 && (
+                      <div className="w-full flex flex-col items-center gap-6 mb-6">
+                        {contentElements.filter(el => ['video', 'image', 'audio'].includes(el.type)).map(el => (
+                           <div key={el.id} className={`w-full ${el.type === 'video' ? 'max-w-3xl' : 'max-w-2xl'} bg-black/40 rounded-3xl overflow-hidden border border-white/20 shadow-2xl animate-fade-in relative`}>
+                              {!isPreviewMode && <button onClick={() => handleDeleteElement(el.id)} className="absolute top-2 right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center text-xs shadow-md z-50">✕</button>}
+                              
+                              {el.type === 'video' && <video src={el.url} controls controlsList="nodownload" onContextMenu={(e) => e.preventDefault()} className="w-full aspect-video object-contain" />}
+                              
+                              {el.type === 'image' && <PanZoomImage src={el.url} data={el.data} onSave={(d) => handleSaveData(el.id, { ...el.data, ...d })} isPreview={isPreviewMode} wrapperClass="w-full h-64 md:h-96 rounded-3xl" />}
+                              
+                              {el.type === 'audio' && (
+                                 <div className="p-6 w-full flex flex-col items-center">
+                                    {!isPreviewMode && !el.data?.imageUrl && (
+                                       <div onClick={() => { setMediaTarget({ id: el.id, type: 'image' }); setActiveModal('media_upload'); }} className="w-full h-16 bg-white/10 border-2 border-dashed border-white/20 rounded-xl flex items-center justify-center text-white/50 cursor-pointer hover:bg-white/20 hover:text-white transition-all mb-4">
+                                         <span className="text-[10px] font-bold uppercase tracking-widest">+ Add Image (Optional)</span>
+                                       </div>
+                                    )}
+                                    {el.data?.imageUrl && (
+                                       <div className="w-full relative mb-4">
+                                         <PanZoomImage src={el.data.imageUrl} data={el.data} onSave={(d) => handleSaveData(el.id, { ...el.data, ...d })} isPreview={isPreviewMode} wrapperClass="w-full h-64 rounded-2xl" />
+                                         {!isPreviewMode && <button onClick={() => handleRemoveMedia(el.id, 'image')} className="absolute top-2 right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center text-xs shadow-md z-50">✕</button>}
+                                       </div>
+                                    )}
+                                    <audio src={el.url} controls controlsList="nodownload" onContextMenu={(e) => e.preventDefault()} className="w-full" />
+                                 </div>
+                              )}
+                           </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {contentElements.filter(el => !['video', 'image', 'audio'].includes(el.type)).map(el => {
                       const isCard = ['short_answer', 'multiple_selection', 'slider_bar', 'fill_in_the_blank', 'record_compare'].includes(el.type);
                       
                       return (
@@ -423,9 +540,9 @@ const AdminHub = () => {
 
                           {/* TEXT / HEADER & CUSTOM INLINE EDITOR */}
                           {el.type === 'text' && (
-                            <div className="w-full bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/20 shadow-xl text-center mb-4 relative" onFocus={() => setFocusedTextId(el.id)}>
+                            <div className={`w-full bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/20 shadow-xl text-center mb-4 relative ${focusedTextId === el.id ? 'z-[100]' : 'z-10'}`} onFocus={() => setFocusedTextId(el.id)}>
                                {!isPreviewMode && focusedTextId === el.id && (
-                                 <div className="absolute -top-14 left-1/2 -translate-x-1/2 bg-[#070b19]/95 backdrop-blur-xl border border-white/20 rounded-xl p-2 flex items-center gap-2 shadow-2xl z-[100] whitespace-nowrap text-white">
+                                 <div className="absolute -top-14 left-1/2 -translate-x-1/2 bg-[#070b19]/95 backdrop-blur-xl border border-white/20 rounded-xl p-2 flex items-center gap-2 shadow-2xl whitespace-nowrap text-white z-[100]">
                                     <button onMouseDown={(e)=>{e.preventDefault(); formatText('bold')}} className="px-3 py-1 font-bold hover:bg-white/10 rounded">B</button>
                                     <button onMouseDown={(e)=>{e.preventDefault(); formatText('italic')}} className="px-3 py-1 italic hover:bg-white/10 rounded">I</button>
                                     <button onMouseDown={(e)=>{e.preventDefault(); formatText('underline')}} className="px-3 py-1 underline hover:bg-white/10 rounded">U</button>
@@ -447,24 +564,11 @@ const AdminHub = () => {
                             </div>
                           )}
 
-                          {/* MEDIA: Standalone Images & Video */}
-                          {el.type === 'video' && (
-                            <div className="w-full max-w-4xl bg-black/40 rounded-3xl overflow-hidden border border-white/20 shadow-2xl aspect-[4/5] md:aspect-video mb-4">
-                               <video src={el.url} controls controlsList="nodownload noplaybackrate" onContextMenu={(e) => e.preventDefault()} className="w-full h-full object-cover" />
-                            </div>
-                          )}
-                          
-                          {el.type === 'image' && (
-                            <div className="relative flex justify-center items-center overflow-hidden mx-auto bg-black/20 rounded-3xl border border-white/20 shadow-2xl mb-4 p-1" style={{ resize: isPreviewMode ? 'none' : 'both', width: el.data?.imageWidth || '100%', height: el.data?.imageHeight || 'auto', minWidth: '150px', minHeight: '150px', maxWidth: '100%' }} onMouseUp={(e) => handleResizeEnd(e, el.id)}>
-                               <img src={el.url} className="w-full h-full object-contain" draggable="false" onContextMenu={(e) => e.preventDefault()} alt="Media" />
-                            </div>
-                          )}
-
                           {/* CARDS */}
                           {isCard && (
                             <div className="w-full bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 p-6 flex flex-col gap-4 shadow-xl h-full justify-between hover:bg-white/10 transition-colors">
                                
-                               {/* Universal Image Uploader for Cards (Resizable limit bounded by Card Width) */}
+                               {/* Universal Image Uploader for Cards */}
                                {!isPreviewMode && !el.data?.imageUrl && (
                                   <div onClick={() => { setMediaTarget({ id: el.id, type: 'image' }); setActiveModal('media_upload'); }} className="w-full h-32 bg-white/10 border-2 border-dashed border-white/20 rounded-2xl flex flex-col items-center justify-center text-white/50 cursor-pointer hover:bg-white/20 hover:text-white transition-all mb-2">
                                     <span className="text-4xl mb-1">+</span>
@@ -472,9 +576,9 @@ const AdminHub = () => {
                                   </div>
                                )}
                                {el.data?.imageUrl && (
-                                  <div className="relative group mx-auto w-full mb-2 bg-black/20 rounded-2xl border border-white/10 overflow-hidden" style={{ resize: isPreviewMode ? 'none' : 'both', width: el.data?.imageWidth || '100%', height: el.data?.imageHeight || '250px', minWidth: '100px', minHeight: '100px', maxWidth: '100%' }} onMouseUp={(e) => handleResizeEnd(e, el.id)}>
-                                    <img src={el.data.imageUrl} className="w-full h-full object-contain" draggable="false" onContextMenu={(e) => e.preventDefault()} alt="Card Media" />
-                                    {!isPreviewMode && <button onClick={() => handleRemoveMedia(el.id, 'image')} className="absolute top-2 right-2 w-8 h-8 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-xs shadow-md">✕</button>}
+                                  <div className="relative mx-auto w-full mb-6 group">
+                                    <PanZoomImage src={el.data.imageUrl} data={el.data} onSave={(d) => handleSaveData(el.id, { ...el.data, ...d })} isPreview={isPreviewMode} wrapperClass="w-full h-64 rounded-2xl" />
+                                    {!isPreviewMode && <button onClick={() => handleRemoveMedia(el.id, 'image')} className="absolute top-2 right-2 w-8 h-8 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-xs shadow-md z-50">✕</button>}
                                   </div>
                                )}
 
@@ -488,8 +592,8 @@ const AdminHub = () => {
                                    )}
                                    {el.data?.audioUrl && (
                                       <div className="relative group w-full mb-2">
-                                        <audio src={el.data.audioUrl} controls controlsList="nodownload noplaybackrate" onContextMenu={(e) => e.preventDefault()} className="w-full rounded-xl" />
-                                        {!isPreviewMode && <button onClick={() => handleRemoveMedia(el.id, 'audio')} className="absolute -top-3 -right-3 w-6 h-6 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-xs shadow-md">✕</button>}
+                                        <audio src={el.data.audioUrl} controls controlsList="nodownload" onContextMenu={(e) => e.preventDefault()} className="w-full rounded-xl" />
+                                        {!isPreviewMode && <button onClick={() => handleRemoveMedia(el.id, 'audio')} className="absolute -top-3 -right-3 w-6 h-6 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-xs shadow-md z-50">✕</button>}
                                       </div>
                                    )}
                                  </>
@@ -521,7 +625,7 @@ const AdminHub = () => {
                                        {el.data.options?.map((opt) => {
                                           const isSelected = studentAnswers[`${el.id}_${opt.id}`] === true;
                                           return (
-                                            <button key={opt.id} onClick={() => isPreviewMode && setStudentAnswers(prev => ({ ...prev, [`${el.id}_${opt.id}`]: !prev[`${el.id}_${opt.id}`] }))} style={{ backgroundColor: isSelected ? '#fcd34d' : el.data.optBoxColor, borderColor: isSelected ? '#ca8a04' : el.data.optLineColor, borderWidth: (el.data.optLineColor === 'transparent' && !isSelected) ? '0px' : '2px', borderStyle: 'solid', borderRadius: `${el.data.optBorderRadius}px` }} className="w-full p-4 text-left transition-all hover:scale-[1.02] active:scale-95 shadow-md flex items-center">
+                                            <button key={opt.id} onClick={() => isPreviewMode && setStudentAnswers(prev => ({ ...prev, [`${el.id}_${opt.id}`]: !prev[`${el.id}_${opt.id}`] }))} style={{ backgroundColor: isSelected ? '#fcd34d' : el.data.optBoxColor, borderColor: isSelected ? '#ca8a04' : el.data.optLineColor, borderWidth: (el.data.optLineColor === 'transparent' && !isSelected) ? '0px' : '2px', borderStyle: 'solid', borderRadius: `${el.data.optBorderRadius}px` }} className="w-full p-4 text-left transition-all hover:scale-[1.02] active:scale-95 flex items-center">
                                                <div className={`w-5 h-5 rounded-full border-2 mr-4 flex items-center justify-center shrink-0 ${isSelected ? 'border-[#08203e]' : 'border-white/40'}`}>
                                                  {isSelected && <div className="w-2.5 h-2.5 bg-[#08203e] rounded-full"></div>}
                                                </div>
@@ -560,18 +664,17 @@ const AdminHub = () => {
 
                           {/* DRAG AND DROP - Upgraded to Glassmorphism */}
                           {el.type === 'drag_and_drop' && el.data && (
-                            <div className="w-full max-w-6xl bg-white/5 backdrop-blur-xl rounded-3xl border border-white/20 p-6 flex flex-col gap-8 shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
-                               <div className={`grid grid-cols-2 md:grid-cols-${Math.min(el.data.items.filter(i=>i.imageUrl).length, 4)} gap-4 w-full`}>
+                            <div className="w-full max-w-7xl bg-white/5 backdrop-blur-xl rounded-3xl border border-white/20 p-6 md:p-8 flex flex-col gap-8 shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
+                               <div className={`grid grid-cols-2 lg:grid-cols-${Math.min(el.data.items.filter(i=>i.imageUrl).length, 4)} gap-6 w-full`}>
                                  {el.data.items.map((item, idx) => item.imageUrl && (
                                    <div key={idx} className="flex flex-col items-center gap-4">
-                                     <div className="w-full bg-white/5 backdrop-blur-md rounded-2xl overflow-hidden border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.3)]" style={{ resize: isPreviewMode ? 'none' : 'both', width: item.imageWidth || '100%', height: item.imageHeight || 'auto', minHeight: '100px', aspectRatio: item.imageWidth ? 'auto' : '4/5' }} onMouseUp={(e) => {
-                                        if (isPreviewMode) return;
-                                        const newItems = [...el.data.items];
-                                        newItems[idx].imageWidth = e.currentTarget.style.width;
-                                        newItems[idx].imageHeight = e.currentTarget.style.height;
-                                        handleSaveModal('drag_and_drop', { ...el.data, items: newItems }, el.id);
-                                     }}>
-                                       <img src={item.imageUrl} className="w-full h-full object-cover" draggable="false" onContextMenu={(e) => e.preventDefault()} alt="target" />
+                                     <div className="w-full rounded-2xl overflow-hidden relative group">
+                                       <PanZoomImage src={item.imageUrl} data={item} onSave={(d) => {
+                                          if (isPreviewMode) return;
+                                          const newItems = [...el.data.items];
+                                          newItems[idx] = { ...newItems[idx], ...d };
+                                          handleSaveData(el.id, { ...el.data, items: newItems });
+                                       }} isPreview={isPreviewMode} wrapperClass="w-full aspect-[4/5] rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.3)]" />
                                      </div>
                                      <div data-dnd-zone={`${el.id}_${idx}`} className="w-full min-h-[60px] border-2 border-dashed border-white/40 rounded-xl bg-white/5 backdrop-blur-md flex items-center justify-center transition-colors shadow-inner">
                                         {dndAnswers[`${el.id}_${idx}`] ? (
@@ -637,8 +740,6 @@ const AdminHub = () => {
                                 </div>
                                 
                                 <div className="flex-[2] bg-black/40 rounded-3xl border border-white/10 p-4 zoom-container flex justify-center items-center min-h-[400px] shadow-inner relative">
-                                   <span className="absolute top-4 left-4 text-white/30 text-[10px] uppercase font-bold tracking-widest pointer-events-none z-0">Pinch to Zoom 🔍</span>
-                                   
                                    {el.type === 'crossword' && (
                                      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${el.data.grid[0]?.length || 1}, minmax(35px, 1fr))`, gap: '2px', width: 'fit-content', position: 'relative', zIndex: 10 }}>
                                         {el.data.grid.map((row, rIdx) => 
@@ -646,13 +747,13 @@ const AdminHub = () => {
                                             <div key={`${rIdx}-${cIdx}`} className="relative aspect-square w-10 md:w-12">
                                               {cell ? (
                                                 <div className="w-full h-full relative">
-                                                  {cell.num && <span className="absolute top-1 left-1 text-[9px] font-black text-white/70 z-10 pointer-events-none drop-shadow-md">{cell.num}</span>}
+                                                  {cell.num && <span className="absolute top-1 left-1 text-[9px] font-black text-white/90 z-10 pointer-events-none drop-shadow-md">{cell.num}</span>}
                                                   <input 
                                                     type="text" maxLength={1} 
                                                     value={studentAnswers[`${el.id}_${rIdx}_${cIdx}`] || ''}
                                                     onChange={(e) => setStudentAnswers(prev => ({...prev, [`${el.id}_${rIdx}_${cIdx}`]: e.target.value.toUpperCase().replace(/[^A-Z]/g, '')}))}
-                                                    style={{ backgroundColor: el.data.cellColor, borderColor: el.data.lineColor, color: el.data.textColor, fontSize: `${el.data.fontSize}px`, fontFamily: el.data.fontFamily, fontWeight: el.data.isBold ? 'bold' : 'normal' }}
-                                                    className="w-full h-full text-center uppercase border-2 focus:outline-none focus:ring-4 focus:ring-[#fcd34d] transition shadow-inner rounded-sm"
+                                                    style={{ color: el.data.textColor, fontSize: `${el.data.fontSize}px`, fontFamily: el.data.fontFamily, fontWeight: el.data.isBold ? 'bold' : 'normal' }}
+                                                    className="w-full h-full text-center uppercase focus:outline-none focus:ring-4 focus:ring-[#fcd34d] transition shadow-inner rounded-sm bg-white/10 backdrop-blur-md border border-white/20 text-white font-bold"
                                                   />
                                                 </div>
                                               ) : <div className="w-full h-full bg-transparent" />}
@@ -699,8 +800,9 @@ const AdminHub = () => {
                       if (el.type === 'record_compare') return (
                          <div key={el.id} className="relative group">
                             {!isPreviewMode && <button onClick={() => handleDeleteElement(el.id)} className="absolute -top-3 -right-3 w-6 h-6 bg-red-500 text-white rounded-full text-[10px] opacity-0 group-hover:opacity-100 transition-opacity z-50">✕</button>}
-                            <div className="bg-white/10 backdrop-blur-md border border-white/20 text-white font-black px-8 py-4 rounded-full shadow-xl flex items-center gap-3 cursor-pointer hover:bg-white/20 transition-all uppercase tracking-widest text-sm">
-                               <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div> RECORD
+                            <div onClick={() => handleRcClick(el.id)} className="bg-white/10 backdrop-blur-md border border-white/20 text-white font-black px-8 py-4 rounded-full shadow-xl flex items-center gap-3 cursor-pointer hover:bg-white/20 transition-all uppercase tracking-widest text-sm">
+                               <div className={`w-3 h-3 rounded-full ${rcStates[el.id]?.phase === 'RECORDING' ? 'bg-red-500 animate-pulse' : 'bg-white'}`}></div>
+                               {rcStates[el.id]?.phase === 'RECORDING' ? 'RECORDING' : rcStates[el.id]?.phase === 'HAS_RECORDING' ? 'COMPARE' : rcStates[el.id]?.phase === 'PLAYING' ? 'COMPARING' : 'RECORD'}
                             </div>
                          </div>
                       );

@@ -1,18 +1,72 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './SupabaseClient';
 
+const PanZoomImage = ({ src, data, onSave, isPreview, wrapperClass = "w-full h-64" }) => {
+  const [zoom, setZoom] = useState(data?.zoom || 1);
+  const [pan, setPan] = useState({ x: data?.panX || 0, y: data?.panY || 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    setZoom(data?.zoom || 1);
+    setPan({ x: data?.panX || 0, y: data?.panY || 0 });
+  }, [data?.zoom, data?.panX, data?.panY]);
+
+  const handleWheel = (e) => {
+    if (isPreview) return;
+    e.preventDefault();
+    const newZoom = Math.max(1, Math.min(zoom + (e.deltaY < 0 ? 0.1 : -0.1), 5));
+    setZoom(newZoom);
+    if (onSave) onSave({ zoom: newZoom, panX: pan.x, panY: pan.y });
+  };
+
+  const handlePointerDown = (e) => {
+    if (isPreview) return;
+    setIsDragging(true);
+    setStartPos({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+    e.target.setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e) => {
+    if (!isDragging || isPreview) return;
+    setPan({ x: e.clientX - startPos.x, y: e.clientY - startPos.y });
+  };
+
+  const handlePointerUp = (e) => {
+    if (isPreview) return;
+    setIsDragging(false);
+    if (onSave) onSave({ zoom, panX: pan.x, panY: pan.y });
+    e.target.releasePointerCapture(e.pointerId);
+  };
+
+  return (
+    <div className={`overflow-hidden relative bg-black/20 ${wrapperClass}`} onWheel={handleWheel}>
+      <img 
+        src={src} 
+        alt="media" 
+        draggable="false"
+        onContextMenu={(e) => e.preventDefault()}
+        className={`w-full h-full object-cover ${isPreview ? '' : 'cursor-move'} touch-none`}
+        onPointerDown={handlePointerDown} 
+        onPointerMove={handlePointerMove} 
+        onPointerUp={handlePointerUp} 
+        onPointerCancel={handlePointerUp}
+        style={{ transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)` }} 
+      />
+    </div>
+  );
+};
+
 const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
   const [elements, setElements] = useState([]);
   const [screens, setScreens] = useState([1]);
   const [currentScreenIndex, setCurrentScreenIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   
-  // Interaction States
   const [studentAnswers, setStudentAnswers] = useState({});
   const [dndAnswers, setDndAnswers] = useState({});
   const [touchDragState, setTouchDragState] = useState({ isDragging: false, text: '', x: 0, y: 0, sourceElId: null });
 
-  // Record & Compare States
   const [rcStates, setRcStates] = useState({}); 
   const rcRecorders = useRef({}); 
   const rcChunks = useRef({});    
@@ -46,7 +100,6 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
     fetchBlueprint();
   }, [student, activityType]);
 
-  // --- MOBILE DRAG & DROP AUTO-SCROLL LOGIC ---
   useEffect(() => {
     const handleTouchMove = (e) => {
       if (!touchDragState.isDragging) return;
@@ -90,7 +143,6 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
     };
   }, [touchDragState.isDragging, touchDragState.text]);
 
-  // --- RECORD & COMPARE LOGIC ---
   const handleRcClick = async (id) => {
     const currentState = rcStates[id]?.phase || 'IDLE';
 
@@ -231,22 +283,33 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
       <div className="w-full max-w-[90rem] mx-auto px-4 md:px-8 flex flex-col gap-6 flex-grow relative z-10 pt-4">
         
         {headers.map(el => (
-          <div key={el.id} className="w-full bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/20 shadow-xl text-center mb-2 animate-fade-in">
+          <div key={el.id} className="w-full bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/20 shadow-xl text-center mb-2 animate-fade-in relative z-10">
              <div dangerouslySetInnerHTML={{__html: el.htmlContent}} className="rich-text-content" />
           </div>
         ))}
 
         {mediaElements.length > 0 && (
-           <div className="w-full flex justify-center mb-6">
+           <div className="w-full flex flex-col items-center gap-6 mb-6">
              {mediaElements.map(el => (
-                <div key={el.id} className={`w-full ${el.type === 'audio' ? 'max-w-md bg-white/5 p-4' : 'max-w-4xl bg-black/40 aspect-[4/5] md:aspect-video'} rounded-3xl overflow-hidden border border-white/20 shadow-2xl animate-fade-in`}>
-                   {el.type === 'video' && <video src={el.url} controls controlsList="nodownload noplaybackrate" onContextMenu={(e) => e.preventDefault()} className="w-full h-full object-cover" />}
+                <div key={el.id} className={`w-full ${el.type === 'audio' ? 'max-w-md bg-white/5 p-4' : 'max-w-3xl'} bg-black/40 rounded-3xl overflow-hidden border border-white/20 shadow-2xl animate-fade-in relative`}>
+                   {el.type === 'video' && <video src={el.url} controls controlsList="nodownload" onContextMenu={(e) => e.preventDefault()} className="w-full aspect-video object-contain" />}
+                   
                    {el.type === 'image' && (
-                     <div className="relative flex justify-center items-center overflow-hidden mx-auto" style={{ width: el.data?.imageWidth || '100%', height: el.data?.imageHeight || 'auto', minWidth: '150px', minHeight: '150px', maxWidth: '100%' }}>
-                       <img src={el.url} className="w-full h-full object-contain" draggable="false" onContextMenu={(e) => e.preventDefault()} alt="Media" />
+                     <div className="relative mx-auto w-full">
+                       <PanZoomImage src={el.url} data={el.data} isPreview={true} wrapperClass="w-full h-64 md:h-96 rounded-3xl" />
                      </div>
                    )}
-                   {el.type === 'audio' && <audio src={el.url} controls controlsList="nodownload noplaybackrate" onContextMenu={(e) => e.preventDefault()} className="w-full" />}
+                   
+                   {el.type === 'audio' && (
+                      <div className="p-6 w-full flex flex-col items-center">
+                         {el.data?.imageUrl && (
+                            <div className="w-full relative mb-4">
+                              <PanZoomImage src={el.data.imageUrl} data={el.data} isPreview={true} wrapperClass="w-full h-64 rounded-2xl" />
+                            </div>
+                         )}
+                         <audio src={el.url} controls controlsList="nodownload" onContextMenu={(e) => e.preventDefault()} className="w-full" />
+                      </div>
+                   )}
                 </div>
              ))}
            </div>
@@ -259,8 +322,8 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
                     
                     {/* INJECTED: Resizable Card Image Renderer */}
                     {el.data?.imageUrl && (
-                       <div className="relative mx-auto w-full mb-6 bg-black/20 rounded-2xl border border-white/10 overflow-hidden" style={{ width: el.data?.imageWidth || '100%', height: el.data?.imageHeight || '250px', minWidth: '100px', minHeight: '100px', maxWidth: '100%' }}>
-                         <img src={el.data.imageUrl} className="w-full h-full object-contain" draggable="false" onContextMenu={(e) => e.preventDefault()} alt="Card context" />
+                       <div className="relative mx-auto w-full mb-6 group">
+                         <PanZoomImage src={el.data.imageUrl} data={el.data} isPreview={true} wrapperClass="w-full h-64 rounded-2xl" />
                        </div>
                     )}
 
@@ -268,7 +331,7 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
                     {el.type === 'record_compare' && (
                        <>
                          {el.data?.promptHtml && <div dangerouslySetInnerHTML={{ __html: el.data.promptHtml }} className="mb-4 text-center text-lg" />}
-                         {el.data?.audioUrl && <audio src={el.data.audioUrl} controls controlsList="nodownload noplaybackrate" onContextMenu={(e) => e.preventDefault()} className="w-full rounded-xl mt-auto mb-4" />}
+                         {el.data?.audioUrl && <audio src={el.data.audioUrl} controls controlsList="nodownload" onContextMenu={(e) => e.preventDefault()} className="w-full rounded-xl mt-auto mb-4" />}
                          <div className="text-center text-white/40 text-[10px] uppercase font-bold tracking-widest mt-auto border-t border-white/10 pt-4">
                            (Use the RECORD button below)
                          </div>
@@ -347,11 +410,11 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
               {/* DRAG AND DROP - Upgraded to Glassmorphism */}
               {el.type === 'drag_and_drop' && (
                  <div className="flex flex-col gap-8 w-full pb-24 md:pb-0">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 w-full">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 w-full">
                        {el.data.items.map((item, idx) => item.imageUrl && (
                          <div key={idx} className="flex flex-col items-center gap-4">
-                           <div className="w-full bg-white/5 backdrop-blur-md rounded-2xl overflow-hidden border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.3)]" style={{ width: item.imageWidth || '100%', height: item.imageHeight || 'auto', minHeight: '100px', aspectRatio: item.imageWidth ? 'auto' : '4/5' }}>
-                             <img src={item.imageUrl} className="w-full h-full object-cover" draggable="false" onContextMenu={(e) => e.preventDefault()} alt="target" />
+                           <div className="w-full rounded-2xl overflow-hidden relative group">
+                             <PanZoomImage src={item.imageUrl} data={item} isPreview={true} wrapperClass="w-full aspect-[4/5] rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.3)]" />
                            </div>
                            <div data-dnd-zone={`${el.id}_${idx}`} className="w-full min-h-[60px] border-2 border-dashed border-white/40 rounded-xl bg-white/5 backdrop-blur-md shadow-inner flex items-center justify-center transition-colors">
                               {dndAnswers[`${el.id}_${idx}`] ? (
@@ -421,7 +484,6 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
                     </div>
                     
                     <div className="flex-[2] bg-black/40 rounded-3xl border border-white/10 p-4 zoom-container flex justify-center items-center min-h-[400px] shadow-inner relative">
-                       <span className="absolute top-4 left-4 text-white/30 text-[10px] uppercase font-bold tracking-widest pointer-events-none z-0">Pinch to Zoom 🔍</span>
                        
                        {el.type === 'crossword' && (
                          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${el.data.grid[0]?.length || 1}, minmax(35px, 1fr))`, gap: '2px', width: 'fit-content', position: 'relative', zIndex: 10 }}>
@@ -430,13 +492,13 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
                                 <div key={`${rIdx}-${cIdx}`} className="relative aspect-square w-10 md:w-12">
                                   {cell ? (
                                     <div className="w-full h-full relative">
-                                      {cell.num && <span className="absolute top-1 left-1 text-[9px] font-black text-white/70 z-10 pointer-events-none drop-shadow-md">{cell.num}</span>}
+                                      {cell.num && <span className="absolute top-1 left-1 text-[9px] font-black text-white/90 z-10 pointer-events-none drop-shadow-md">{cell.num}</span>}
                                       <input 
                                         type="text" maxLength={1} 
                                         value={studentAnswers[`${el.id}_${rIdx}_${cIdx}`] || ''}
                                         onChange={(e) => setStudentAnswers(prev => ({...prev, [`${el.id}_${rIdx}_${cIdx}`]: e.target.value.toUpperCase().replace(/[^A-Z]/g, '')}))}
-                                        style={{ backgroundColor: el.data.cellColor, borderColor: el.data.lineColor, color: el.data.textColor, fontSize: `${el.data.fontSize}px`, fontFamily: el.data.fontFamily, fontWeight: el.data.isBold ? 'bold' : 'normal' }}
-                                        className="w-full h-full text-center uppercase border-2 focus:outline-none focus:ring-4 focus:ring-[#fcd34d] transition shadow-inner rounded-sm"
+                                        style={{ color: el.data.textColor, fontSize: `${el.data.fontSize}px`, fontFamily: el.data.fontFamily, fontWeight: el.data.isBold ? 'bold' : 'normal' }}
+                                        className="w-full h-full text-center uppercase focus:outline-none focus:ring-4 focus:ring-[#fcd34d] transition shadow-inner rounded-sm bg-white/10 backdrop-blur-md border border-white/20 text-white font-bold"
                                       />
                                     </div>
                                   ) : <div className="w-full h-full bg-transparent" />}
@@ -447,10 +509,7 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
                        )}
 
                        {el.type === 'word_search' && (
-                         <div 
-                           style={{ display: 'grid', gridTemplateColumns: `repeat(${el.data.size || 10}, 1fr)`, borderWidth: '3px', borderStyle: 'solid', borderColor: el.data.lineColor, backgroundColor: el.data.cellColor }}
-                           className="shadow-2xl max-w-full max-h-full aspect-square w-full rounded-xl overflow-hidden relative z-10"
-                         >
+                         <div style={{ display: 'grid', gridTemplateColumns: `repeat(${el.data.size || 10}, 1fr)`, borderWidth: '3px', borderStyle: 'solid', borderColor: el.data.lineColor, backgroundColor: el.data.cellColor }} className="shadow-2xl max-w-full max-h-full aspect-square w-full rounded-xl overflow-hidden relative z-10">
                            {el.data.grid?.map((row, rIdx) => 
                              row.map((char, cIdx) => {
                                 const cellId = `${el.id}_${rIdx}_${cIdx}`;
@@ -462,11 +521,7 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
                                        const current = prev[`${el.id}_cells`] || [];
                                        return { ...prev, [`${el.id}_cells`]: current.includes(cellId) ? current.filter(c => c !== cellId) : [...current, cellId] };
                                     })}
-                                    style={{
-                                      color: el.data.textColor, fontSize: `${el.data.fontSize}px`, fontFamily: el.data.fontFamily, fontWeight: el.data.isBold ? 'bold' : 'normal',
-                                      borderRight: cIdx < (el.data.size - 1) ? `1px solid ${el.data.lineColor}` : 'none', borderBottom: rIdx < (el.data.size - 1) ? `1px solid ${el.data.lineColor}` : 'none',
-                                      backgroundColor: isSelected ? 'rgba(252, 211, 77, 0.6)' : 'transparent', cursor: 'pointer'
-                                    }}
+                                    style={{ color: el.data.textColor, fontSize: `${el.data.fontSize}px`, fontFamily: el.data.fontFamily, fontWeight: el.data.isBold ? 'bold' : 'normal', borderRight: cIdx < (el.data.size - 1) ? `1px solid ${el.data.lineColor}` : 'none', borderBottom: rIdx < (el.data.size - 1) ? `1px solid ${el.data.lineColor}` : 'none', backgroundColor: isSelected ? 'rgba(252, 211, 77, 0.6)' : 'transparent', cursor: 'pointer' }}
                                     className="flex items-center justify-center transition-colors hover:bg-white/20 select-none"
                                   >
                                     {char}

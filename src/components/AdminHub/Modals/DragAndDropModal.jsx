@@ -4,6 +4,7 @@ const DragAndDropModal = ({ isOpen, initialData = {}, onSave, onCancel }) => {
   const [items, setItems] = useState(initialData.items || [
     { imageUrl: '', targetText: '', studentViewText: '' },
     { imageUrl: '', targetText: '', studentViewText: '' },
+    { imageUrl: '', targetText: '', studentViewText: '' },
     { imageUrl: '', targetText: '', studentViewText: '' }
   ]);
   const [textColor, setTextColor] = useState(initialData.textColor || '#ffffff');
@@ -19,6 +20,7 @@ const DragAndDropModal = ({ isOpen, initialData = {}, onSave, onCancel }) => {
   useEffect(() => {
     if (initialData && isOpen) {
       setItems(initialData.items || [
+        { imageUrl: '', targetText: '', studentViewText: '' },
         { imageUrl: '', targetText: '', studentViewText: '' },
         { imageUrl: '', targetText: '', studentViewText: '' },
         { imageUrl: '', targetText: '', studentViewText: '' }
@@ -37,15 +39,15 @@ const DragAndDropModal = ({ isOpen, initialData = {}, onSave, onCancel }) => {
 
   return (
     <div className="fixed inset-0 z-[250] flex items-center justify-center bg-[#070b19]/80 backdrop-blur-md p-4 font-montserrat">
-      <div className="w-full max-w-5xl bg-[#070b19]/40 backdrop-blur-xl border border-white/20 rounded-[30px] shadow-2xl overflow-hidden animate-fade-in flex flex-col max-h-[90vh]">
+      <div className="w-full max-w-7xl bg-[#070b19]/40 backdrop-blur-xl border border-white/20 rounded-[30px] shadow-2xl overflow-hidden animate-fade-in flex flex-col max-h-[90vh]">
         
         <div className="bg-white/5 p-6 border-b border-white/10 shrink-0">
           <h2 className="text-white font-black text-lg uppercase tracking-widest drop-shadow-md">DRAG AND DROP</h2>
           <p className="text-white/70 text-xs mt-2 font-medium leading-relaxed">Upload your image URLs, type the target text (the correct answer) in the cell underneath, and type the "Student view" (the draggable option text) in the bottom cell.</p>
         </div>
         
-        <div className="p-6 overflow-y-auto custom-scrollbar flex flex-col lg:flex-row gap-8">
-          <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div className="p-6 overflow-y-auto custom-scrollbar flex flex-col xl:flex-row gap-8">
+          <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {items.map((item, index) => (
               <div key={index} className="flex flex-col gap-4 bg-white/5 p-5 rounded-2xl border border-white/10 shadow-inner">
                 <div className="text-center font-bold text-[#fcd34d] text-[10px] uppercase tracking-widest border-b border-white/10 pb-2 drop-shadow-md">Item {index + 1}</div>
@@ -65,7 +67,7 @@ const DragAndDropModal = ({ isOpen, initialData = {}, onSave, onCancel }) => {
             ))}
           </div>
           
-          <div className="w-full lg:w-72 shrink-0 bg-white/5 p-6 rounded-2xl border border-white/10 flex flex-col gap-5 shadow-inner">
+          <div className="w-full xl:w-72 shrink-0 bg-white/5 p-6 rounded-2xl border border-white/10 flex flex-col gap-5 shadow-inner">
             <h3 className="font-bold text-[#fcd34d] text-[10px] uppercase tracking-widest border-b border-white/10 pb-2 drop-shadow-md">Pill Styling</h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">

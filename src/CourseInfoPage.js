@@ -64,7 +64,7 @@ const MobileCourseInfo = ({
                 <img
                   src="https://i.postimg.cc/LssD8BWw/Agregar-algo-de-texto-(14).png"
                   alt="Inmersión Total Icon"
-                  className="h-12 w-auto object-contain mb-2 brightness-0 invert opacity-90 drop-shadow-md"
+                  className="h-20 w-auto object-contain mb-3 brightness-0 invert opacity-90 drop-shadow-md"
                 />
                 <p className="text-[8px] font-bold text-[#fcd34d] font-montserrat tracking-widest uppercase leading-tight mb-1">
                   ¿CÓMO FUNCIONA EL CURSO?
@@ -112,7 +112,7 @@ const MobileCourseInfo = ({
                 <img
                   src="https://i.postimg.cc/mDJHRQff/6(2).png"
                   alt="Acceso 24/7 Icon"
-                  className="h-12 w-auto object-contain mb-2 brightness-0 invert opacity-90 drop-shadow-md"
+                  className="h-20 w-auto object-contain mb-3 brightness-0 invert opacity-90 drop-shadow-md"
                 />
                 <p className="text-[8px] font-bold text-[#fcd34d] font-montserrat tracking-widest uppercase leading-tight mb-1">
                   ESTUDIA A TU RITMO
@@ -156,7 +156,7 @@ const MobileCourseInfo = ({
                 <img
                   src="https://i.postimg.cc/LXn1rxWs/7(3).png"
                   alt="Clases En Vivo Icon"
-                  className="h-12 w-auto object-contain mb-2 brightness-0 invert opacity-90 drop-shadow-md"
+                  className="h-20 w-auto object-contain mb-3 brightness-0 invert opacity-90 drop-shadow-md"
                 />
                 <p className="text-[8px] font-bold text-[#fcd34d] font-montserrat tracking-widest uppercase leading-tight mb-1">
                   INTERACCIÓN REAL
@@ -218,7 +218,7 @@ const DesktopCourseInfo = ({
 
       <div className="relative z-10 flex flex-col h-full px-6 py-4 md:px-10 md:py-6 max-w-[90rem] mx-auto w-full">
         
-        {/* Top Header - FIXED OVERLAP & SIZING */}
+        {/* Top Header */}
         <div className="relative z-10 flex flex-row justify-between items-center w-full mb-6 lg:mb-10 shrink-0 gap-4">
           
           <div className="flex items-center flex-1 min-w-0">
@@ -236,7 +236,6 @@ const DesktopCourseInfo = ({
               Online Platform
             </span>
             
-            {/* Decreased text size slightly, allowed leading-tight instead of whitespace-nowrap to prevent overlap */}
             <h1 className="flex-1 text-[14px] sm:text-[15px] md:text-base lg:text-xl xl:text-2xl font-black text-white drop-shadow-md font-montserrat tracking-widest uppercase leading-tight truncate">
               INFORMACIÓN ACERCA DE LOS CURSOS
             </h1>
@@ -259,10 +258,10 @@ const DesktopCourseInfo = ({
           
           {/* COLUMN 1 */}
           <div className="flex flex-col h-full min-h-0">
-            <div className="group flex flex-col flex-grow bg-white/10 backdrop-blur-2xl border border-white/20 hover:bg-white/20 transition-all duration-300 rounded-[2.5rem] p-6 lg:p-8 shadow-[0_15px_40px_rgba(0,0,0,0.3)] hover:shadow-[0_0_30px_rgba(252,211,77,0.15)] items-center text-center cursor-default overflow-hidden relative">
+            <div className="group flex flex-col flex-grow bg-white/10 backdrop-blur-2xl border border-white/20 hover:bg-white/20 transition-all duration-300 rounded-[2.5rem] p-6 lg:p-7 shadow-[0_15px_40px_rgba(0,0,0,0.3)] hover:shadow-[0_0_30px_rgba(252,211,77,0.15)] items-center text-center cursor-default overflow-hidden relative">
               <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none"></div>
               
-              {/* FIXED ICON SCALING - Removed scale and translations, gave it a solid container height */}
+              {/* Perfectly Balanced Icon Container */}
               <div className="h-16 lg:h-20 xl:h-24 w-full flex items-center justify-center mb-4 shrink-0 relative z-10">
                 <img
                   src="https://i.postimg.cc/LssD8BWw/Agregar-algo-de-texto-(14).png"
@@ -270,30 +269,35 @@ const DesktopCourseInfo = ({
                   className="h-full w-auto object-contain brightness-0 invert opacity-90 drop-shadow-lg"
                 />
               </div>
-              <p className="text-[10px] lg:text-[11px] xl:text-xs font-bold text-[#fcd34d] font-montserrat tracking-widest uppercase mb-1 lg:mb-2 shrink-0 relative z-10">
-                ¿CÓMO FUNCIONA EL CURSO?
-              </p>
               
-              <h3 className="min-h-[3rem] lg:min-h-[4rem] text-2xl lg:text-3xl xl:text-[2.2rem] font-black text-white drop-shadow-md font-tabarra mb-2 leading-none shrink-0 relative z-10">
-                INMERSIÓN TOTAL
-              </h3>
+              {/* Perfectly Balanced Titles Container */}
+              <div className="flex flex-col items-center shrink-0 w-full mb-4 relative z-10">
+                <p className="text-[10px] lg:text-[11px] xl:text-xs font-bold text-[#fcd34d] font-montserrat tracking-widest uppercase mb-2 h-[14px] lg:h-[16px] flex items-center justify-center w-full">
+                  ¿CÓMO FUNCIONA EL CURSO?
+                </p>
+                <h3 className="h-[3.5rem] lg:h-[4.5rem] text-2xl lg:text-3xl xl:text-4xl font-black text-white drop-shadow-md font-tabarra leading-none flex items-center justify-center w-full">
+                  INMERSIÓN TOTAL
+                </h3>
+              </div>
               
-              {/* Tighter line-height to fit text */}
-              <p className="text-[11px] lg:text-[12px] xl:text-[13px] text-white/90 font-montserrat text-justify leading-snug flex-grow relative z-10 px-2">
-                Olvídate de la teoría rígida. Hemos diseñado un aprendizaje
-                libre de distracciones, interactivo y directo, basado en{' '}
-                <strong className="font-extrabold text-[#fcd34d]">
-                  situaciones de la vida real
-                </strong>{' '}
-                que te servirá de guía para adquirir un nuevo idioma de forma
-                natural y fluida,{' '}
-                <strong className="font-extrabold text-[#fcd34d]">sin traducir</strong> y sin
-                pasar horas estudiando listas de vocabulario o gramática.
-              </p>
-              
-              <p className="text-[9px] lg:text-[10px] font-black text-white/50 font-montserrat mt-2 tracking-widest uppercase shrink-0 relative z-10">
-                ¿CÓMO FUNCIONA? SIGUE LEYENDO.
-              </p>
+              {/* Balanced Flex-Grow Text Container */}
+              <div className="flex flex-col flex-grow w-full relative z-10">
+                <p className="text-[11px] lg:text-xs xl:text-[13px] text-white/90 font-montserrat text-justify leading-relaxed flex-grow">
+                  Olvídate de la teoría rígida. Hemos diseñado un aprendizaje
+                  libre de distracciones, interactivo y directo, basado en{' '}
+                  <strong className="font-extrabold text-[#fcd34d]">
+                    situaciones de la vida real
+                  </strong>{' '}
+                  que te servirá de guía para adquirir un nuevo idioma de forma
+                  natural y fluida,{' '}
+                  <strong className="font-extrabold text-[#fcd34d]">sin traducir</strong> y sin
+                  pasar horas estudiando listas de vocabulario o gramática.
+                </p>
+                
+                <p className="text-[9px] lg:text-[10px] font-black text-white/50 font-montserrat tracking-widest uppercase mt-4 shrink-0">
+                  ¿CÓMO FUNCIONA? SIGUE LEYENDO.
+                </p>
+              </div>
             </div>
 
             <button
@@ -306,10 +310,10 @@ const DesktopCourseInfo = ({
 
           {/* COLUMN 2 */}
           <div className="flex flex-col h-full min-h-0">
-            <div className="group flex flex-col flex-grow bg-white/10 backdrop-blur-2xl border border-white/20 hover:bg-white/20 transition-all duration-300 rounded-[2.5rem] p-6 lg:p-8 shadow-[0_15px_40px_rgba(0,0,0,0.3)] hover:shadow-[0_0_30px_rgba(252,211,77,0.15)] items-center text-center cursor-default overflow-hidden relative">
+            <div className="group flex flex-col flex-grow bg-white/10 backdrop-blur-2xl border border-white/20 hover:bg-white/20 transition-all duration-300 rounded-[2.5rem] p-6 lg:p-7 shadow-[0_15px_40px_rgba(0,0,0,0.3)] hover:shadow-[0_0_30px_rgba(252,211,77,0.15)] items-center text-center cursor-default overflow-hidden relative">
               <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none"></div>
 
-              {/* FIXED ICON SCALING */}
+              {/* Perfectly Balanced Icon Container */}
               <div className="h-16 lg:h-20 xl:h-24 w-full flex items-center justify-center mb-4 shrink-0 relative z-10">
                 <img
                   src="https://i.postimg.cc/mDJHRQff/6(2).png"
@@ -317,25 +321,31 @@ const DesktopCourseInfo = ({
                   className="h-full w-auto object-contain brightness-0 invert opacity-90 drop-shadow-lg"
                 />
               </div>
-              <p className="text-[10px] lg:text-[11px] xl:text-xs font-bold text-[#fcd34d] font-montserrat tracking-widest uppercase mb-1 lg:mb-2 shrink-0 relative z-10">
-                ESTUDIA A TU RITMO
-              </p>
               
-              <h3 className="min-h-[3rem] lg:min-h-[4rem] text-2xl lg:text-3xl xl:text-[2.2rem] font-black text-white drop-shadow-md font-tabarra mb-2 leading-none shrink-0 relative z-10">
-                ACCESO 24/7
-              </h3>
+              {/* Perfectly Balanced Titles Container */}
+              <div className="flex flex-col items-center shrink-0 w-full mb-4 relative z-10">
+                <p className="text-[10px] lg:text-[11px] xl:text-xs font-bold text-[#fcd34d] font-montserrat tracking-widest uppercase mb-2 h-[14px] lg:h-[16px] flex items-center justify-center w-full">
+                  ESTUDIA A TU RITMO
+                </p>
+                <h3 className="h-[3.5rem] lg:h-[4.5rem] text-2xl lg:text-3xl xl:text-4xl font-black text-white drop-shadow-md font-tabarra leading-none flex items-center justify-center w-full">
+                  ACCESO 24/7
+                </h3>
+              </div>
               
-              <p className="text-[11px] lg:text-[12px] xl:text-[13px] text-white/90 font-montserrat text-justify leading-snug flex-grow relative z-10 px-2">
-                Accede cuando y donde quieras a lecciones dinámicas, audios,
-                chats, foros,{' '}
-                <strong className="font-extrabold text-[#fcd34d]">club de conversación</strong>
-                , clases complementarias, libros de actividades y demás
-                funciones de la app o el sitio web.
-                <br />
-                <br />
-                En ellas encontrarás contenido dinámico e interactivo que te
-                preparará para tu clase en vivo.
-              </p>
+              {/* Balanced Flex-Grow Text Container */}
+              <div className="flex flex-col flex-grow w-full relative z-10">
+                <p className="text-[11px] lg:text-xs xl:text-[13px] text-white/90 font-montserrat text-justify leading-relaxed flex-grow">
+                  Accede cuando y donde quieras a lecciones dinámicas, audios,
+                  chats, foros,{' '}
+                  <strong className="font-extrabold text-[#fcd34d]">club de conversación</strong>
+                  , clases complementarias, libros de actividades y demás
+                  funciones de la app o el sitio web.
+                  <br />
+                  <br />
+                  En ellas encontrarás contenido dinámico e interactivo que te
+                  preparará para tu clase en vivo.
+                </p>
+              </div>
             </div>
 
             <button
@@ -348,10 +358,10 @@ const DesktopCourseInfo = ({
 
           {/* COLUMN 3 */}
           <div className="flex flex-col h-full min-h-0">
-            <div className="group flex flex-col flex-grow bg-white/10 backdrop-blur-2xl border border-white/20 hover:bg-white/20 transition-all duration-300 rounded-[2.5rem] p-6 lg:p-8 shadow-[0_15px_40px_rgba(0,0,0,0.3)] hover:shadow-[0_0_30px_rgba(252,211,77,0.15)] items-center text-center cursor-default overflow-hidden relative">
+            <div className="group flex flex-col flex-grow bg-white/10 backdrop-blur-2xl border border-white/20 hover:bg-white/20 transition-all duration-300 rounded-[2.5rem] p-6 lg:p-7 shadow-[0_15px_40px_rgba(0,0,0,0.3)] hover:shadow-[0_0_30px_rgba(252,211,77,0.15)] items-center text-center cursor-default overflow-hidden relative">
               <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none"></div>
 
-              {/* FIXED ICON SCALING */}
+              {/* Perfectly Balanced Icon Container */}
               <div className="h-16 lg:h-20 xl:h-24 w-full flex items-center justify-center mb-4 shrink-0 relative z-10">
                 <img
                   src="https://i.postimg.cc/LXn1rxWs/7(3).png"
@@ -359,25 +369,31 @@ const DesktopCourseInfo = ({
                   className="h-full w-auto object-contain brightness-0 invert opacity-90 drop-shadow-lg"
                 />
               </div>
-              <p className="text-[10px] lg:text-[11px] xl:text-xs font-bold text-[#fcd34d] font-montserrat tracking-widest uppercase mb-1 lg:mb-2 shrink-0 relative z-10">
-                INTERACCIÓN REAL
-              </p>
               
-              <h3 className="min-h-[3rem] lg:min-h-[4rem] text-2xl lg:text-3xl xl:text-[2.2rem] font-black text-white drop-shadow-md font-tabarra mb-2 leading-none whitespace-pre-line shrink-0 relative z-10">
-                CLASES 100%{'\n'}EN VIVO
-              </h3>
+              {/* Perfectly Balanced Titles Container */}
+              <div className="flex flex-col items-center shrink-0 w-full mb-4 relative z-10">
+                <p className="text-[10px] lg:text-[11px] xl:text-xs font-bold text-[#fcd34d] font-montserrat tracking-widest uppercase mb-2 h-[14px] lg:h-[16px] flex items-center justify-center w-full">
+                  INTERACCIÓN REAL
+                </p>
+                <h3 className="h-[3.5rem] lg:h-[4.5rem] text-2xl lg:text-3xl xl:text-4xl font-black text-white drop-shadow-md font-tabarra leading-none flex items-center justify-center w-full whitespace-pre-line">
+                  CLASES 100%{'\n'}EN VIVO
+                </h3>
+              </div>
               
-              <p className="text-[11px] lg:text-[12px] xl:text-[13px] text-white/90 font-montserrat text-justify leading-snug flex-grow relative z-10 px-2">
-                Agenda sesiones individuales o grupales con un{' '}
-                <strong className="font-extrabold text-[#fcd34d]">profesor en vivo</strong>{' '}
-                según tu disponibilidad. Recibe tutoría{' '}
-                <strong className="font-extrabold text-[#fcd34d]">personalizada</strong>,
-                feedback instantáneo y corrección en pronunciación, vocabulario
-                y más. <strong className="font-extrabold text-[#fcd34d]">Participa</strong> en
-                escenificaciones, debates, dinámicas y actividades que{' '}
-                <strong className="font-extrabold text-[#fcd34d]">te darán confianza</strong>{' '}
-                al hablar y permitirán evaluar tu propio progreso.
-              </p>
+              {/* Balanced Flex-Grow Text Container */}
+              <div className="flex flex-col flex-grow w-full relative z-10">
+                <p className="text-[11px] lg:text-xs xl:text-[13px] text-white/90 font-montserrat text-justify leading-relaxed flex-grow">
+                  Agenda sesiones individuales o grupales con un{' '}
+                  <strong className="font-extrabold text-[#fcd34d]">profesor en vivo</strong>{' '}
+                  según tu disponibilidad. Recibe tutoría{' '}
+                  <strong className="font-extrabold text-[#fcd34d]">personalizada</strong>,
+                  feedback instantáneo y corrección en pronunciación, vocabulario
+                  y más. <strong className="font-extrabold text-[#fcd34d]">Participa</strong> en
+                  escenificaciones, debates, dinámicas y actividades que{' '}
+                  <strong className="font-extrabold text-[#fcd34d]">te darán confianza</strong>{' '}
+                  al hablar y permitirán evaluar tu propio progreso.
+                </p>
+              </div>
             </div>
             
             <button
