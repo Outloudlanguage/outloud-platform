@@ -40,9 +40,11 @@ const AdminHub = () => {
   const [activeModal, setActiveModal] = useState(null); 
   const [editingElementId, setEditingElementId] = useState(null);
   
-  // FIXED: Specific targeting for adding media to cards
   const [mediaTarget, setMediaTarget] = useState({ id: null, type: 'image' });
   const [mediaUrlInput, setMediaUrlInput] = useState('');
+
+  // Rich Text Editor State
+  const [focusedTextId, setFocusedTextId] = useState(null);
 
   const [rcStates, setRcStates] = useState({}); 
   const rcRecorders = useRef({}); 
@@ -86,12 +88,21 @@ const AdminHub = () => {
   const spawnInteractiveElement = (type) => {
     let newElement = { id: `${type}_${Date.now()}`, type: type, screenId: activeScreenId, data: {} };
 
-    // FIXED: Formatted Header Default
     if (type === 'text') {
-      newElement.htmlContent = `<div style="text-align: center;"><span style="font-family: Montserrat; font-size: 28px; font-weight: 900; color: #ffffff; text-transform: uppercase;">A1-U1: ACTIVITY TITLE</span><br/><span style="font-family: Montserrat; font-size: 14px; color: rgba(255,255,255,0.7);">Type your descriptor here. This text box auto resizes for height.</span></div>`;
+      newElement.htmlContent = `<div style="text-align: center;"><span style="font-family: Montserrat; font-size: 28px; font-weight: 900; color: #ffffff; text-transform: uppercase;">A1-U1: ACTIVITY TITLE</span><br/><span style="font-family: Montserrat; font-size: 14px; font-weight: 500; color: #e2e8f0;">Type your descriptor here. This text box auto resizes for height.</span></div>`;
     }
     
     setCanvasElements([...canvasElements, newElement]);
+  };
+
+  const formatText = (command, value = null) => {
+    document.execCommand(command, false, value);
+    if (focusedTextId) {
+      const liveNode = document.querySelector(`#element-${focusedTextId} .rich-text-content`);
+      if (liveNode) {
+        setCanvasElements(prev => prev.map(p => p.id === focusedTextId ? {...p, htmlContent: liveNode.innerHTML} : p));
+      }
+    }
   };
 
   const handleDeleteScreen = (screenIdToDelete) => {
@@ -111,7 +122,6 @@ const AdminHub = () => {
     setCanvasElements(canvasElements.filter(el => el.id !== id));
   };
 
-  // FIXED: Smart Media Uploader handles both floating elements and card payloads
   const handleAddMedia = () => {
     if (!mediaUrlInput) return;
     saveSnapshot();
@@ -120,14 +130,21 @@ const AdminHub = () => {
       setCanvasElements(prev => prev.map(el => {
         if (el.id === mediaTarget.id) {
           const newData = { ...el.data };
-          if (mediaTarget.type === 'image') newData.imageUrl = mediaUrlInput;
+          if (mediaTarget.type === 'image') {
+             newData.imageUrl = mediaUrlInput;
+             newData.imageWidth = '100%';
+             newData.imageHeight = 'auto';
+          }
           if (mediaTarget.type === 'audio') newData.audioUrl = mediaUrlInput;
           return { ...el, data: newData };
         }
         return el;
       }));
     } else {
-      const newElement = { id: `${mediaTarget.type}_${Date.now()}`, type: mediaTarget.type, url: mediaUrlInput, screenId: activeScreenId };
+      const newElement = { 
+        id: `${mediaTarget.type}_${Date.now()}`, type: mediaTarget.type, url: mediaUrlInput, screenId: activeScreenId,
+        data: mediaTarget.type === 'image' ? { imageWidth: '100%', imageHeight: 'auto' } : {}
+      };
       setCanvasElements([...canvasElements, newElement]);
     }
     setActiveModal(null); setMediaUrlInput(''); setMediaTarget({ id: null, type: 'image' });
@@ -146,10 +163,16 @@ const AdminHub = () => {
     }));
   };
 
+  const handleResizeEnd = (e, id) => {
+    if (isPreviewMode) return;
+    const width = e.currentTarget.style.width;
+    const height = e.currentTarget.style.height;
+    setCanvasElements(prev => prev.map(p => p.id === id ? { ...p, data: { ...p.data, imageWidth: width, imageHeight: height } } : p));
+  };
+
   const handleSaveModal = (type, data) => {
     saveSnapshot();
     if (editingElementId) { 
-      // Merge new data while preserving existing image/audio URLs
       setCanvasElements(prev => prev.map(el => el.id === editingElementId ? { ...el, data: { ...el.data, ...data } } : el)); 
     } else {
       const newElement = { id: `${type}_${Date.now()}`, type: type, screenId: activeScreenId, data: data };
@@ -253,15 +276,20 @@ const AdminHub = () => {
 
   return (
     <div className="relative min-h-screen w-full font-montserrat bg-[#070b19] text-white overflow-y-auto overflow-x-hidden flex flex-col">
+      {/* ANTI-DOWNLOAD PROTOCOL CSS */}
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; } 
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; } 
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; } 
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #fcd34d; }
         .zoom-container { touch-action: pan-x pan-y pinch-zoom; overflow: auto; overscroll-behavior: contain; }
+        img { -webkit-user-drag: none; user-select: none; pointer-events: auto; }
+        video::-internal-media-controls-download-button { display: none !important; }
+        audio::-internal-media-controls-download-button { display: none !important; }
+        video::-webkit-media-controls-enclosure { overflow: hidden; }
+        video::-webkit-media-controls-panel { width: calc(100% + 30px); }
       `}</style>
 
-      {/* FIXED: Preview Button Overlay */}
       {isPreviewMode && (
         <button onClick={() => setIsPreviewMode(false)} className="fixed top-6 right-6 z-[9999] bg-red-600/90 text-white font-black px-8 py-4 rounded-full shadow-[0_0_20px_rgba(220,38,38,0.6)] uppercase tracking-widest text-sm hover:scale-105 border border-red-500/50 backdrop-blur-md transition-all animate-fade-in">
           EXIT PREVIEW
@@ -365,7 +393,6 @@ const AdminHub = () => {
                   </div>
                 )}
 
-                {/* FIXED: Screen bounds are now massive (w-full max-w-[100rem]) */}
                 <div 
                   id={`preview-screen-${screenId}`}
                   onClick={() => setActiveScreenId(screenId)}
@@ -378,7 +405,7 @@ const AdminHub = () => {
                     </button>
                   )}
                   
-                  {/* Cards Flex Container */}
+                  {/* Container for content */}
                   <div className="flex flex-wrap justify-center gap-6 w-full relative z-10 flex-grow content-start pointer-events-auto">
                     {contentElements.map(el => {
                       const isCard = ['short_answer', 'multiple_selection', 'slider_bar', 'fill_in_the_blank', 'record_compare'].includes(el.type);
@@ -394,25 +421,50 @@ const AdminHub = () => {
                              </div>
                           )}
 
-                          {/* TEXT / HEADER */}
+                          {/* TEXT / HEADER & CUSTOM INLINE EDITOR */}
                           {el.type === 'text' && (
-                            <div className="w-full bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/20 shadow-xl text-center mb-4">
+                            <div className="w-full bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/20 shadow-xl text-center mb-4 relative" onFocus={() => setFocusedTextId(el.id)}>
+                               {!isPreviewMode && focusedTextId === el.id && (
+                                 <div className="absolute -top-14 left-1/2 -translate-x-1/2 bg-[#070b19]/95 backdrop-blur-xl border border-white/20 rounded-xl p-2 flex items-center gap-2 shadow-2xl z-[100] whitespace-nowrap text-white">
+                                    <button onMouseDown={(e)=>{e.preventDefault(); formatText('bold')}} className="px-3 py-1 font-bold hover:bg-white/10 rounded">B</button>
+                                    <button onMouseDown={(e)=>{e.preventDefault(); formatText('italic')}} className="px-3 py-1 italic hover:bg-white/10 rounded">I</button>
+                                    <button onMouseDown={(e)=>{e.preventDefault(); formatText('underline')}} className="px-3 py-1 underline hover:bg-white/10 rounded">U</button>
+                                    <div className="w-px h-5 bg-white/20 my-auto mx-1"></div>
+                                    <input type="color" onInput={(e)=>formatText('foreColor', e.target.value)} className="w-6 h-6 rounded cursor-pointer bg-transparent border-0 p-0" />
+                                    <select onChange={(e)=>formatText('fontName', e.target.value)} className="bg-[#070b19] border border-white/20 rounded px-2 py-1 text-xs outline-none ml-1">
+                                       <option value="Montserrat" className="text-white">Montserrat</option>
+                                       <option value="Arial" className="text-white">Arial</option>
+                                       <option value="Times New Roman" className="text-white">Times New Roman</option>
+                                    </select>
+                                    <select onChange={(e)=>formatText('fontSize', e.target.value)} className="bg-[#070b19] border border-white/20 rounded px-2 py-1 text-xs outline-none ml-1">
+                                       <option value="3" className="text-white">Normal</option>
+                                       <option value="5" className="text-white">Large</option>
+                                       <option value="7" className="text-white">Huge</option>
+                                    </select>
+                                 </div>
+                               )}
                                <div id={`element-${el.id}`} contentEditable={!isPreviewMode} dangerouslySetInnerHTML={{__html: el.htmlContent}} onBlur={(e) => !isPreviewMode && saveSnapshot() && setCanvasElements(prev => prev.map(p => p.id === el.id ? {...p, htmlContent: e.target.innerHTML} : p))} className="rich-text-content focus:outline-none" />
                             </div>
                           )}
 
-                          {/* VIDEO (Standalone) */}
+                          {/* MEDIA: Standalone Images & Video */}
                           {el.type === 'video' && (
                             <div className="w-full max-w-4xl bg-black/40 rounded-3xl overflow-hidden border border-white/20 shadow-2xl aspect-[4/5] md:aspect-video mb-4">
-                               <video src={el.url} controls className="w-full h-full object-cover" />
+                               <video src={el.url} controls controlsList="nodownload noplaybackrate" onContextMenu={(e) => e.preventDefault()} className="w-full h-full object-cover" />
+                            </div>
+                          )}
+                          
+                          {el.type === 'image' && (
+                            <div className="relative flex justify-center items-center overflow-hidden mx-auto bg-black/20 rounded-3xl border border-white/20 shadow-2xl mb-4 p-1" style={{ resize: isPreviewMode ? 'none' : 'both', width: el.data?.imageWidth || '100%', height: el.data?.imageHeight || 'auto', minWidth: '150px', minHeight: '150px', maxWidth: '100%' }} onMouseUp={(e) => handleResizeEnd(e, el.id)}>
+                               <img src={el.url} className="w-full h-full object-contain" draggable="false" onContextMenu={(e) => e.preventDefault()} alt="Media" />
                             </div>
                           )}
 
-                          {/* FIXED: ALL CARDS (Including Record & Compare) get the Image Uploader Component */}
+                          {/* CARDS */}
                           {isCard && (
                             <div className="w-full bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 p-6 flex flex-col gap-4 shadow-xl h-full justify-between hover:bg-white/10 transition-colors">
                                
-                               {/* The Unified Image Uploader Slot */}
+                               {/* Universal Image Uploader for Cards (Resizable limit bounded by Card Width) */}
                                {!isPreviewMode && !el.data?.imageUrl && (
                                   <div onClick={() => { setMediaTarget({ id: el.id, type: 'image' }); setActiveModal('media_upload'); }} className="w-full h-32 bg-white/10 border-2 border-dashed border-white/20 rounded-2xl flex flex-col items-center justify-center text-white/50 cursor-pointer hover:bg-white/20 hover:text-white transition-all mb-2">
                                     <span className="text-4xl mb-1">+</span>
@@ -420,13 +472,13 @@ const AdminHub = () => {
                                   </div>
                                )}
                                {el.data?.imageUrl && (
-                                  <div className="relative group w-full mb-2">
-                                    <img src={el.data.imageUrl} className="w-full h-48 object-contain bg-black/20 rounded-2xl border border-white/10" alt="Card Media" />
+                                  <div className="relative group mx-auto w-full mb-2 bg-black/20 rounded-2xl border border-white/10 overflow-hidden" style={{ resize: isPreviewMode ? 'none' : 'both', width: el.data?.imageWidth || '100%', height: el.data?.imageHeight || '250px', minWidth: '100px', minHeight: '100px', maxWidth: '100%' }} onMouseUp={(e) => handleResizeEnd(e, el.id)}>
+                                    <img src={el.data.imageUrl} className="w-full h-full object-contain" draggable="false" onContextMenu={(e) => e.preventDefault()} alt="Card Media" />
                                     {!isPreviewMode && <button onClick={() => handleRemoveMedia(el.id, 'image')} className="absolute top-2 right-2 w-8 h-8 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-xs shadow-md">✕</button>}
                                   </div>
                                )}
 
-                               {/* Record & Compare Exclusive: Audio Slot */}
+                               {/* Record & Compare Audio Slot */}
                                {el.type === 'record_compare' && (
                                  <>
                                    {!isPreviewMode && !el.data?.audioUrl && (
@@ -436,14 +488,13 @@ const AdminHub = () => {
                                    )}
                                    {el.data?.audioUrl && (
                                       <div className="relative group w-full mb-2">
-                                        <audio src={el.data.audioUrl} controls className="w-full rounded-xl" />
+                                        <audio src={el.data.audioUrl} controls controlsList="nodownload noplaybackrate" onContextMenu={(e) => e.preventDefault()} className="w-full rounded-xl" />
                                         {!isPreviewMode && <button onClick={() => handleRemoveMedia(el.id, 'audio')} className="absolute -top-3 -right-3 w-6 h-6 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-xs shadow-md">✕</button>}
                                       </div>
                                    )}
                                  </>
                                )}
 
-                               {/* Specific Data Rendering for the Bottom Half of the Card */}
                                {el.type === 'record_compare' && !isPreviewMode && (
                                   <div className="text-center text-white/40 text-[10px] uppercase font-bold tracking-widest mt-auto border-t border-white/10 pt-4">
                                     (Record Button renders in Bottom Dock)
@@ -470,7 +521,7 @@ const AdminHub = () => {
                                        {el.data.options?.map((opt) => {
                                           const isSelected = studentAnswers[`${el.id}_${opt.id}`] === true;
                                           return (
-                                            <button key={opt.id} onClick={() => isPreviewMode && setStudentAnswers(prev => ({ ...prev, [`${el.id}_${opt.id}`]: !prev[`${el.id}_${opt.id}`] }))} style={{ backgroundColor: isSelected ? '#fcd34d' : el.data.optBoxColor, borderColor: isSelected ? '#ca8a04' : el.data.optLineColor, borderWidth: (el.data.optLineColor === 'transparent' && !isSelected) ? '0px' : '2px', borderStyle: 'solid', borderRadius: `${el.data.optBorderRadius}px` }} className="w-full p-4 text-left transition-all hover:scale-[1.02] active:scale-95 flex items-center">
+                                            <button key={opt.id} onClick={() => isPreviewMode && setStudentAnswers(prev => ({ ...prev, [`${el.id}_${opt.id}`]: !prev[`${el.id}_${opt.id}`] }))} style={{ backgroundColor: isSelected ? '#fcd34d' : el.data.optBoxColor, borderColor: isSelected ? '#ca8a04' : el.data.optLineColor, borderWidth: (el.data.optLineColor === 'transparent' && !isSelected) ? '0px' : '2px', borderStyle: 'solid', borderRadius: `${el.data.optBorderRadius}px` }} className="w-full p-4 text-left transition-all hover:scale-[1.02] active:scale-95 shadow-md flex items-center">
                                                <div className={`w-5 h-5 rounded-full border-2 mr-4 flex items-center justify-center shrink-0 ${isSelected ? 'border-[#08203e]' : 'border-white/40'}`}>
                                                  {isSelected && <div className="w-2.5 h-2.5 bg-[#08203e] rounded-full"></div>}
                                                </div>
@@ -507,42 +558,51 @@ const AdminHub = () => {
                             </div>
                           )}
 
-                          {/* DRAG AND DROP */}
+                          {/* DRAG AND DROP - Upgraded to Glassmorphism */}
                           {el.type === 'drag_and_drop' && el.data && (
-                            <div className="w-full max-w-6xl bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 p-6 flex flex-col gap-8 shadow-xl">
+                            <div className="w-full max-w-6xl bg-white/5 backdrop-blur-xl rounded-3xl border border-white/20 p-6 flex flex-col gap-8 shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
                                <div className={`grid grid-cols-2 md:grid-cols-${Math.min(el.data.items.filter(i=>i.imageUrl).length, 4)} gap-4 w-full`}>
                                  {el.data.items.map((item, idx) => item.imageUrl && (
                                    <div key={idx} className="flex flex-col items-center gap-4">
-                                     <div className="w-full aspect-[4/5] bg-black/20 rounded-2xl overflow-hidden border border-white/10 shadow-md">
-                                       <img src={item.imageUrl} className="w-full h-full object-cover" alt="target" />
+                                     <div className="w-full bg-white/5 backdrop-blur-md rounded-2xl overflow-hidden border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.3)]" style={{ resize: isPreviewMode ? 'none' : 'both', width: item.imageWidth || '100%', height: item.imageHeight || 'auto', minHeight: '100px', aspectRatio: item.imageWidth ? 'auto' : '4/5' }} onMouseUp={(e) => {
+                                        if (isPreviewMode) return;
+                                        const newItems = [...el.data.items];
+                                        newItems[idx].imageWidth = e.currentTarget.style.width;
+                                        newItems[idx].imageHeight = e.currentTarget.style.height;
+                                        handleSaveModal('drag_and_drop', { ...el.data, items: newItems }, el.id);
+                                     }}>
+                                       <img src={item.imageUrl} className="w-full h-full object-cover" draggable="false" onContextMenu={(e) => e.preventDefault()} alt="target" />
                                      </div>
-                                     <div data-dnd-zone={`${el.id}_${idx}`} className="w-full min-h-[60px] border-2 border-dashed border-white/30 rounded-xl bg-black/40 flex items-center justify-center transition-colors">
+                                     <div data-dnd-zone={`${el.id}_${idx}`} className="w-full min-h-[60px] border-2 border-dashed border-white/40 rounded-xl bg-white/5 backdrop-blur-md flex items-center justify-center transition-colors shadow-inner">
                                         {dndAnswers[`${el.id}_${idx}`] ? (
                                           <div onClick={() => setDndAnswers(prev => { const copy = {...prev}; delete copy[`${el.id}_${idx}`]; return copy; })} className="px-4 py-3 bg-[#fcd34d] text-[#08203e] rounded-xl font-bold text-sm shadow-md cursor-pointer w-full text-center hover:scale-105 active:scale-95 transition-transform truncate">
                                             {dndAnswers[`${el.id}_${idx}`]}
                                           </div>
-                                        ) : <span className="text-white/30 text-[10px] uppercase font-bold tracking-widest">DROP HERE</span>}
+                                        ) : <span className="text-white/40 text-[10px] uppercase font-bold tracking-widest">DROP HERE</span>}
                                      </div>
                                    </div>
                                  ))}
                                </div>
-                               <div className="w-full bg-black/40 p-4 rounded-2xl border border-white/10">
-                                  <div className="text-center font-bold text-[#fcd34d] text-[10px] uppercase tracking-widest mb-4">Word Bank</div>
+                               <div className="w-full bg-white/10 backdrop-blur-2xl p-6 md:p-8 rounded-3xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
+                                  <div className="text-center font-bold text-[#fcd34d] text-[10px] uppercase tracking-widest mb-4 drop-shadow-md">Word Bank</div>
                                   <div className="flex flex-wrap justify-center gap-4">
                                     {el.data.items.map((item, idx) => {
                                       if (!item.studentViewText) return null;
                                       const isUsed = Object.values(dndAnswers).includes(item.studentViewText);
                                       if (isUsed) return null;
                                       return (
-                                        <div key={`bank-${idx}`} className="px-6 py-3 bg-white/10 border border-white/20 rounded-xl text-white font-bold text-sm shadow-md cursor-grab">{item.studentViewText}</div>
+                                        <div key={`bank-${idx}`} onPointerDown={(e) => { e.preventDefault(); setTouchDragState({ isDragging: true, text: item.studentViewText, x: e.clientX || (e.touches && e.touches[0].clientX), y: e.clientY || (e.touches && e.touches[0].clientY), sourceElId: el.id }); }} className="px-6 py-3.5 bg-white/10 hover:bg-[#fcd34d] hover:text-[#08203e] border border-white/20 rounded-xl text-white font-bold text-sm shadow-lg cursor-grab active:cursor-grabbing transition-colors touch-none">
+                                          {item.studentViewText}
+                                        </div>
                                       );
                                     })}
+                                    {Object.keys(dndAnswers).length === el.data.items.filter(i=>i.imageUrl).length && <span className="text-green-400 font-bold text-sm tracking-widest uppercase py-3">All items placed!</span>}
                                   </div>
                                </div>
                             </div>
                           )}
 
-                          {/* FIXED: PLAYABLE PUZZLES IN EDITOR */}
+                          {/* PUZZLES - Fully Playable in Editor */}
                           {(el.type === 'crossword' || el.type === 'word_search') && el.data && (
                              <div className="w-full max-w-7xl bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 p-6 flex flex-col md:flex-row gap-8 shadow-xl">
                                 <div className="flex-1 flex flex-col gap-6 max-h-[400px] overflow-y-auto custom-scrollbar pr-4">
@@ -636,7 +696,6 @@ const AdminHub = () => {
                   {/* BOTTOM ACTION DOCK (Auto-Centered, Side-by-Side) */}
                   <div className="w-full mt-auto pt-16 pb-8 flex justify-center items-center gap-6 relative z-50 pointer-events-auto">
                     {dockElements.map(el => {
-                      // FIXED: The R&C Button logic matches the Card ID
                       if (el.type === 'record_compare') return (
                          <div key={el.id} className="relative group">
                             {!isPreviewMode && <button onClick={() => handleDeleteElement(el.id)} className="absolute -top-3 -right-3 w-6 h-6 bg-red-500 text-white rounded-full text-[10px] opacity-0 group-hover:opacity-100 transition-opacity z-50">✕</button>}

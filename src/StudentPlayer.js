@@ -34,7 +34,6 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
           setElements(data.blueprint_data.elements || []);
           setScreens(data.screens || [1]);
         } else {
-          // Fallback if empty
           setElements([]);
           setScreens([1]);
         }
@@ -55,11 +54,9 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
       const touch = e.touches[0];
       setTouchDragState(prev => ({ ...prev, x: touch.clientX, y: touch.clientY }));
 
-      // Auto-scroll if dragged to top 15% of the viewport
       if (touch.clientY < window.innerHeight * 0.15) {
         window.scrollBy({ top: -15, behavior: 'auto' });
       }
-      // Auto-scroll if dragged to bottom 15%
       if (touch.clientY > window.innerHeight * 0.85) {
         window.scrollBy({ top: 15, behavior: 'auto' });
       }
@@ -69,7 +66,6 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
       if (!touchDragState.isDragging) return;
       const touch = e.changedTouches[0];
       
-      // Hide the ghost element momentarily to find what's underneath it
       const ghostEl = document.getElementById('dnd-ghost');
       if (ghostEl) ghostEl.style.display = 'none';
       
@@ -135,7 +131,6 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
       setCurrentScreenIndex(prev => prev + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-      // Generate mock scores based on completion length for the Gatekeeper
       const mockScores = {
         Listening: Math.floor(Math.random() * 30) + 70, 
         Reading: Math.floor(Math.random() * 30) + 70,
@@ -157,7 +152,6 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
   const currentScreenId = screens[currentScreenIndex];
   const screenElements = elements.filter(el => el.screenId === currentScreenId);
   
-  // Separate layout components (record_compare added to cardElements)
   const headers = screenElements.filter(el => el.type === 'text');
   const mediaElements = screenElements.filter(el => ['video', 'image', 'audio'].includes(el.type));
   const cardElements = screenElements.filter(el => ['short_answer', 'multiple_selection', 'slider_bar', 'fill_in_the_blank', 'record_compare'].includes(el.type));
@@ -196,6 +190,18 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
   return (
     <div className="relative min-h-screen w-full font-montserrat bg-[#070b19] text-white overflow-x-hidden flex flex-col pt-20 pb-32">
       
+      {/* ANTI-DOWNLOAD PROTOCOL CSS */}
+      <style>{`
+        .zoom-container { touch-action: pan-x pan-y pinch-zoom; overflow: auto; overscroll-behavior: contain; }
+        .custom-slider::-webkit-slider-thumb { -webkit-appearance: none; height: 28px; width: 28px; border-radius: 50%; background: var(--thumb-color); cursor: pointer; margin-top: -14px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5); border: 2px solid rgba(255,255,255,0.8); }
+        .custom-slider::-moz-range-thumb { height: 28px; width: 28px; border-radius: 50%; background: var(--thumb-color); cursor: pointer; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5); border: 2px solid rgba(255,255,255,0.8); }
+        img { -webkit-user-drag: none; user-select: none; pointer-events: auto; }
+        video::-internal-media-controls-download-button { display: none !important; }
+        audio::-internal-media-controls-download-button { display: none !important; }
+        video::-webkit-media-controls-enclosure { overflow: hidden; }
+        video::-webkit-media-controls-panel { width: calc(100% + 30px); }
+      `}</style>
+
       {/* Top Navigation Bar (Fixed Exit Button) */}
       <div className="fixed top-0 left-0 w-full h-20 bg-[#070b19]/90 backdrop-blur-md border-b border-white/10 z-[100] flex items-center justify-between px-6 shadow-xl">
          <div className="flex items-center gap-4">
@@ -209,65 +215,60 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
          </div>
       </div>
 
-      <style>{`
-        .zoom-container { touch-action: pan-x pan-y pinch-zoom; overflow: auto; overscroll-behavior: contain; }
-        .custom-slider::-webkit-slider-thumb { -webkit-appearance: none; height: 28px; width: 28px; border-radius: 50%; background: var(--thumb-color); cursor: pointer; margin-top: -14px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5); border: 2px solid rgba(255,255,255,0.8); }
-        .custom-slider::-moz-range-thumb { height: 28px; width: 28px; border-radius: 50%; background: var(--thumb-color); cursor: pointer; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5); border: 2px solid rgba(255,255,255,0.8); }
-      `}</style>
-
-      {/* Background */}
       <div className="fixed inset-0 pointer-events-none z-[-1] overflow-hidden">
         <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-blue-900/20 blur-[120px] rounded-full mix-blend-screen"></div>
         <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-[#fcd34d]/10 blur-[100px] rounded-full mix-blend-screen"></div>
         <div className="absolute inset-0 opacity-5" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 10 Q 25 20, 50 10 T 100 10' stroke='%23ffffff' fill='none' stroke-width='0.5'/%3E%3C/svg%3E")`, backgroundSize: '100px 20px' }}></div>
       </div>
 
-      {/* MOBILE GHOST DRAG ELEMENT */}
       {touchDragState.isDragging && (
          <div id="dnd-ghost" className="fixed z-[9999] pointer-events-none transform -translate-x-1/2 -translate-y-1/2 opacity-90 scale-105" style={{ left: touchDragState.x, top: touchDragState.y }}>
             <div className="px-6 py-3 bg-[#fcd34d] text-[#08203e] rounded-xl font-bold text-sm shadow-2xl border-2 border-white">{touchDragState.text}</div>
          </div>
       )}
 
-      {/* FIXED CANVAS SIZE: max-w-[90rem] instead of 5xl */}
+      {/* FULL WIDTH CANVAS */}
       <div className="w-full max-w-[90rem] mx-auto px-4 md:px-8 flex flex-col gap-6 flex-grow relative z-10 pt-4">
         
-        {/* 1. HEADERS */}
         {headers.map(el => (
           <div key={el.id} className="w-full bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/20 shadow-xl text-center mb-2 animate-fade-in">
              <div dangerouslySetInnerHTML={{__html: el.htmlContent}} className="rich-text-content" />
           </div>
         ))}
 
-        {/* 2. MEDIA (Video/Image standalone) */}
         {mediaElements.length > 0 && (
            <div className="w-full flex justify-center mb-6">
              {mediaElements.map(el => (
                 <div key={el.id} className={`w-full ${el.type === 'audio' ? 'max-w-md bg-white/5 p-4' : 'max-w-4xl bg-black/40 aspect-[4/5] md:aspect-video'} rounded-3xl overflow-hidden border border-white/20 shadow-2xl animate-fade-in`}>
-                   {el.type === 'video' && <video src={el.url} controls className="w-full h-full object-cover" />}
-                   {el.type === 'image' && <img src={el.url} className="w-full h-full object-contain" alt="Media" />}
-                   {el.type === 'audio' && <audio src={el.url} controls className="w-full" />}
+                   {el.type === 'video' && <video src={el.url} controls controlsList="nodownload noplaybackrate" onContextMenu={(e) => e.preventDefault()} className="w-full h-full object-cover" />}
+                   {el.type === 'image' && (
+                     <div className="relative flex justify-center items-center overflow-hidden mx-auto" style={{ width: el.data?.imageWidth || '100%', height: el.data?.imageHeight || 'auto', minWidth: '150px', minHeight: '150px', maxWidth: '100%' }}>
+                       <img src={el.url} className="w-full h-full object-contain" draggable="false" onContextMenu={(e) => e.preventDefault()} alt="Media" />
+                     </div>
+                   )}
+                   {el.type === 'audio' && <audio src={el.url} controls controlsList="nodownload noplaybackrate" onContextMenu={(e) => e.preventDefault()} className="w-full" />}
                 </div>
              ))}
            </div>
         )}
 
-        {/* 3. CARD GRID */}
         {cardElements.length > 0 && (
            <div className="flex flex-wrap justify-center gap-6 w-full animate-fade-in">
               {cardElements.map(el => (
                  <div key={el.id} className="w-full md:w-[calc(50%-12px)] flex flex-col bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 p-6 md:p-8 shadow-xl hover:bg-white/10 transition-colors">
                     
-                    {/* INJECTED: Universal Image Renderer for Cards */}
+                    {/* INJECTED: Resizable Card Image Renderer */}
                     {el.data?.imageUrl && (
-                       <img src={el.data.imageUrl} className="w-full h-64 object-contain rounded-xl mb-6 bg-black/20 border border-white/10" alt="Card context" />
+                       <div className="relative mx-auto w-full mb-6 bg-black/20 rounded-2xl border border-white/10 overflow-hidden" style={{ width: el.data?.imageWidth || '100%', height: el.data?.imageHeight || '250px', minWidth: '100px', minHeight: '100px', maxWidth: '100%' }}>
+                         <img src={el.data.imageUrl} className="w-full h-full object-contain" draggable="false" onContextMenu={(e) => e.preventDefault()} alt="Card context" />
+                       </div>
                     )}
 
-                    {/* INJECTED: Record & Compare Audio/Prompt Renderer */}
+                    {/* Record & Compare Audio/Prompt Renderer */}
                     {el.type === 'record_compare' && (
                        <>
                          {el.data?.promptHtml && <div dangerouslySetInnerHTML={{ __html: el.data.promptHtml }} className="mb-4 text-center text-lg" />}
-                         {el.data?.audioUrl && <audio src={el.data.audioUrl} controls className="w-full rounded-xl mt-auto mb-4" />}
+                         {el.data?.audioUrl && <audio src={el.data.audioUrl} controls controlsList="nodownload noplaybackrate" onContextMenu={(e) => e.preventDefault()} className="w-full rounded-xl mt-auto mb-4" />}
                          <div className="text-center text-white/40 text-[10px] uppercase font-bold tracking-widest mt-auto border-t border-white/10 pt-4">
                            (Use the RECORD button below)
                          </div>
@@ -289,7 +290,7 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
 
                     {el.type === 'multiple_selection' && (
                        <>
-                         {el.data.promptType === 'image' && el.data.promptUrl ? <img src={el.data.promptUrl} className="w-full h-48 object-contain rounded-xl mb-6 bg-black/20" alt="Prompt" /> : <div dangerouslySetInnerHTML={{ __html: el.data.promptHtml }} className="mb-6 text-lg" />}
+                         {el.data.promptType === 'image' && el.data.promptUrl ? <img src={el.data.promptUrl} draggable="false" onContextMenu={(e) => e.preventDefault()} className="w-full h-48 object-contain rounded-xl mb-6 bg-black/20" alt="Prompt" /> : <div dangerouslySetInnerHTML={{ __html: el.data.promptHtml }} className="mb-6 text-lg" />}
                          <div className="flex flex-col gap-3 mt-auto">
                             {el.data.options?.map((opt) => {
                                const isSelected = studentAnswers[`${el.id}_${opt.id}`] === true;
@@ -339,30 +340,31 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
            </div>
         )}
 
-        {/* 4. FULL WIDTH ELEMENTS (D&D, Puzzles) */}
+        {/* FULL WIDTH ELEMENTS */}
         {fullWidthElements.map(el => (
            <div key={el.id} className="w-full bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 p-6 md:p-10 shadow-xl animate-fade-in mb-6">
               
+              {/* DRAG AND DROP - Upgraded to Glassmorphism */}
               {el.type === 'drag_and_drop' && (
                  <div className="flex flex-col gap-8 w-full pb-24 md:pb-0">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 w-full">
                        {el.data.items.map((item, idx) => item.imageUrl && (
                          <div key={idx} className="flex flex-col items-center gap-4">
-                           <div className="w-full aspect-[4/5] bg-black/20 rounded-2xl overflow-hidden border border-white/10 shadow-md">
-                             <img src={item.imageUrl} className="w-full h-full object-cover" alt="target" />
+                           <div className="w-full bg-white/5 backdrop-blur-md rounded-2xl overflow-hidden border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.3)]" style={{ width: item.imageWidth || '100%', height: item.imageHeight || 'auto', minHeight: '100px', aspectRatio: item.imageWidth ? 'auto' : '4/5' }}>
+                             <img src={item.imageUrl} className="w-full h-full object-cover" draggable="false" onContextMenu={(e) => e.preventDefault()} alt="target" />
                            </div>
-                           <div data-dnd-zone={`${el.id}_${idx}`} className="w-full min-h-[60px] border-2 border-dashed border-white/30 rounded-xl bg-black/40 flex items-center justify-center transition-colors">
+                           <div data-dnd-zone={`${el.id}_${idx}`} className="w-full min-h-[60px] border-2 border-dashed border-white/40 rounded-xl bg-white/5 backdrop-blur-md shadow-inner flex items-center justify-center transition-colors">
                               {dndAnswers[`${el.id}_${idx}`] ? (
                                 <div onClick={() => setDndAnswers(prev => { const copy = {...prev}; delete copy[`${el.id}_${idx}`]; return copy; })} className="px-4 py-3 bg-[#fcd34d] text-[#08203e] rounded-xl font-bold text-sm shadow-md cursor-pointer w-full text-center hover:scale-105 active:scale-95 transition-transform truncate">
                                   {dndAnswers[`${el.id}_${idx}`]}
                                 </div>
-                              ) : <span className="text-white/30 text-[10px] uppercase font-bold tracking-widest">DROP HERE</span>}
+                              ) : <span className="text-white/40 text-[10px] uppercase font-bold tracking-widest">DROP HERE</span>}
                            </div>
                          </div>
                        ))}
                     </div>
 
-                    <div className="fixed md:static bottom-0 left-0 w-full md:w-auto bg-[#070b19]/95 md:bg-black/40 backdrop-blur-md md:backdrop-blur-none p-6 md:p-8 md:rounded-2xl border-t md:border border-white/20 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] md:shadow-inner z-[90] md:z-auto">
+                    <div className="fixed md:static bottom-0 left-0 w-full md:w-auto bg-[#070b19]/95 md:bg-white/10 md:backdrop-blur-2xl p-6 md:p-8 md:rounded-3xl border-t md:border border-white/20 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] md:shadow-[0_8px_32px_rgba(0,0,0,0.3)] z-[90] md:z-auto">
                        <div className="text-center font-bold text-[#fcd34d] text-[10px] uppercase tracking-widest mb-4 drop-shadow-md">Word Bank</div>
                        <div className="flex flex-wrap justify-center gap-3">
                          {el.data.items.map((item, idx) => {
@@ -481,7 +483,6 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
         ))}
       </div>
 
-      {/* 5. THE BOTTOM DOCK (Record & Compare + Continue) */}
       <div className="fixed bottom-0 left-0 w-full bg-gradient-to-t from-[#070b19] via-[#070b19]/90 to-transparent pt-20 pb-8 px-6 z-[80] pointer-events-none">
          <div className="max-w-5xl mx-auto flex justify-center items-center gap-6 pointer-events-auto">
             {dockElements.map(el => {
