@@ -157,10 +157,10 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
   const currentScreenId = screens[currentScreenIndex];
   const screenElements = elements.filter(el => el.screenId === currentScreenId);
   
-  // Separate layout components
+  // Separate layout components (record_compare added to cardElements)
   const headers = screenElements.filter(el => el.type === 'text');
   const mediaElements = screenElements.filter(el => ['video', 'image', 'audio'].includes(el.type));
-  const cardElements = screenElements.filter(el => ['short_answer', 'multiple_selection', 'slider_bar', 'fill_in_the_blank'].includes(el.type));
+  const cardElements = screenElements.filter(el => ['short_answer', 'multiple_selection', 'slider_bar', 'fill_in_the_blank', 'record_compare'].includes(el.type));
   const fullWidthElements = screenElements.filter(el => ['drag_and_drop', 'crossword', 'word_search', 'shape'].includes(el.type));
   const dockElements = screenElements.filter(el => ['nav_button', 'record_compare'].includes(el.type));
 
@@ -196,16 +196,16 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
   return (
     <div className="relative min-h-screen w-full font-montserrat bg-[#070b19] text-white overflow-x-hidden flex flex-col pt-20 pb-32">
       
-      {/* Top Navigation Bar */}
-      <div className="fixed top-0 left-0 w-full h-16 bg-[#070b19]/90 backdrop-blur-md border-b border-white/10 z-[100] flex items-center justify-between px-6 shadow-xl">
-         <div className="flex items-center gap-3">
-            <button onClick={onExit} className="w-8 h-8 rounded-full bg-white/10 hover:bg-red-500/20 text-white hover:text-red-400 flex items-center justify-center transition-colors">
-               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+      {/* Top Navigation Bar (Fixed Exit Button) */}
+      <div className="fixed top-0 left-0 w-full h-20 bg-[#070b19]/90 backdrop-blur-md border-b border-white/10 z-[100] flex items-center justify-between px-6 shadow-xl">
+         <div className="flex items-center gap-4">
+            <button onClick={onExit} className="bg-red-600/90 border border-red-400 text-white font-black px-6 py-2.5 rounded-full shadow-[0_0_15px_rgba(220,38,38,0.6)] uppercase tracking-widest text-xs hover:scale-105 active:scale-95 transition-all">
+               EXIT / CLOSE
             </button>
             <span className="font-bold tracking-widest uppercase text-xs text-white/70">{activityType} Mode</span>
          </div>
          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-black text-[#fcd34d] tracking-widest uppercase">Screen {currentScreenIndex + 1}/{screens.length}</span>
+            <span className="text-sm font-black text-[#fcd34d] tracking-widest uppercase">Screen {currentScreenIndex + 1}/{screens.length}</span>
          </div>
       </div>
 
@@ -229,7 +229,8 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
          </div>
       )}
 
-      <div className="w-full max-w-5xl mx-auto px-4 md:px-8 flex flex-col gap-6 flex-grow relative z-10">
+      {/* FIXED CANVAS SIZE: max-w-[90rem] instead of 5xl */}
+      <div className="w-full max-w-[90rem] mx-auto px-4 md:px-8 flex flex-col gap-6 flex-grow relative z-10 pt-4">
         
         {/* 1. HEADERS */}
         {headers.map(el => (
@@ -238,11 +239,11 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
           </div>
         ))}
 
-        {/* 2. MEDIA (Video/Image) */}
+        {/* 2. MEDIA (Video/Image standalone) */}
         {mediaElements.length > 0 && (
            <div className="w-full flex justify-center mb-6">
              {mediaElements.map(el => (
-                <div key={el.id} className={`w-full ${el.type === 'audio' ? 'max-w-md bg-white/5 p-4' : 'max-w-2xl bg-black/40 aspect-[4/5] md:aspect-video'} rounded-3xl overflow-hidden border border-white/20 shadow-2xl animate-fade-in`}>
+                <div key={el.id} className={`w-full ${el.type === 'audio' ? 'max-w-md bg-white/5 p-4' : 'max-w-4xl bg-black/40 aspect-[4/5] md:aspect-video'} rounded-3xl overflow-hidden border border-white/20 shadow-2xl animate-fade-in`}>
                    {el.type === 'video' && <video src={el.url} controls className="w-full h-full object-cover" />}
                    {el.type === 'image' && <img src={el.url} className="w-full h-full object-contain" alt="Media" />}
                    {el.type === 'audio' && <audio src={el.url} controls className="w-full" />}
@@ -251,12 +252,28 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
            </div>
         )}
 
-        {/* 3. CARD GRID (Auto-Centers Odd Items) */}
+        {/* 3. CARD GRID */}
         {cardElements.length > 0 && (
            <div className="flex flex-wrap justify-center gap-6 w-full animate-fade-in">
               {cardElements.map(el => (
                  <div key={el.id} className="w-full md:w-[calc(50%-12px)] flex flex-col bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 p-6 md:p-8 shadow-xl hover:bg-white/10 transition-colors">
                     
+                    {/* INJECTED: Universal Image Renderer for Cards */}
+                    {el.data?.imageUrl && (
+                       <img src={el.data.imageUrl} className="w-full h-64 object-contain rounded-xl mb-6 bg-black/20 border border-white/10" alt="Card context" />
+                    )}
+
+                    {/* INJECTED: Record & Compare Audio/Prompt Renderer */}
+                    {el.type === 'record_compare' && (
+                       <>
+                         {el.data?.promptHtml && <div dangerouslySetInnerHTML={{ __html: el.data.promptHtml }} className="mb-4 text-center text-lg" />}
+                         {el.data?.audioUrl && <audio src={el.data.audioUrl} controls className="w-full rounded-xl mt-auto mb-4" />}
+                         <div className="text-center text-white/40 text-[10px] uppercase font-bold tracking-widest mt-auto border-t border-white/10 pt-4">
+                           (Use the RECORD button below)
+                         </div>
+                       </>
+                    )}
+
                     {el.type === 'short_answer' && (
                        <>
                          <div dangerouslySetInnerHTML={{ __html: el.data.questionHtml }} className="w-full break-words text-white text-lg mb-6" />
@@ -274,12 +291,12 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
                        <>
                          {el.data.promptType === 'image' && el.data.promptUrl ? <img src={el.data.promptUrl} className="w-full h-48 object-contain rounded-xl mb-6 bg-black/20" alt="Prompt" /> : <div dangerouslySetInnerHTML={{ __html: el.data.promptHtml }} className="mb-6 text-lg" />}
                          <div className="flex flex-col gap-3 mt-auto">
-                            {el.data.options.map((opt) => {
+                            {el.data.options?.map((opt) => {
                                const isSelected = studentAnswers[`${el.id}_${opt.id}`] === true;
                                return (
                                  <button 
                                    key={opt.id} 
-                                   onClick={() => setStudentAnswers(prev => ({ ...prev, [`${el.id}_${opt.id}`]: !prev[`${el.id}_${opt.id}`] }))}
+                                   onClick={() => setStudentAnswers(prev => ({ ...prev, [`${el.id}_${opt.id}`]: !prev[`${el.id}_${opt.id}`] }))} 
                                    style={{ backgroundColor: isSelected ? '#fcd34d' : el.data.optBoxColor, borderColor: isSelected ? '#ca8a04' : el.data.optLineColor, borderWidth: (el.data.optLineColor === 'transparent' && !isSelected) ? '0px' : '2px', borderStyle: 'solid', borderRadius: `${el.data.optBorderRadius}px` }} 
                                    className="w-full p-4 text-left transition-all hover:scale-[1.02] active:scale-95 shadow-md flex items-center"
                                  >
@@ -303,14 +320,10 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
                        const pct = maxIdx === 0 ? 50 : (currentIdx / maxIdx) * 100;
 
                        return (
-                         <div className="w-full flex flex-col h-full min-h-[200px] justify-end relative pb-6">
+                         <div className="w-full flex flex-col h-full min-h-[200px] justify-end relative pb-6 mt-6">
                             <div className="absolute w-full h-full flex flex-col items-center justify-center">
-                              {/* Track */}
                               <div className="absolute flex items-center justify-center rounded-full shadow-inner overflow-hidden" style={{ backgroundColor: el.data.barColor, width: isVert ? `${el.data.barThickness}px` : '100%', height: isVert ? '100%' : `${el.data.barThickness}px` }}></div>
-                              {/* Input */}
                               <input type="range" min="0" max={maxIdx} step="1" value={currentIdx} onChange={(e) => setStudentAnswers(prev => ({...prev, [el.id]: e.target.value}))} className="absolute custom-slider w-full h-full z-10" style={{ '--thumb-color': el.data.handleColor, transform: isVert ? 'rotate(-90deg)' : 'none', WebkitAppearance: 'none', background: 'transparent' }} />
-                              
-                              {/* Bubble */}
                               { !isVert && (
                                  <div className="absolute flex flex-col items-center transition-all duration-200 pointer-events-none z-0" style={{ left: `${pct}%`, bottom: 'calc(50% + 20px)', transform: 'translateX(-50%)' }}>
                                     <div className="bg-white text-[#08203e] px-5 py-2.5 rounded-xl shadow-xl font-black text-sm">{activeOpt.text}</div>
@@ -349,7 +362,6 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
                        ))}
                     </div>
 
-                    {/* D&D Bank (Sticky on mobile, static on desktop) */}
                     <div className="fixed md:static bottom-0 left-0 w-full md:w-auto bg-[#070b19]/95 md:bg-black/40 backdrop-blur-md md:backdrop-blur-none p-6 md:p-8 md:rounded-2xl border-t md:border border-white/20 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] md:shadow-inner z-[90] md:z-auto">
                        <div className="text-center font-bold text-[#fcd34d] text-[10px] uppercase tracking-widest mb-4 drop-shadow-md">Word Bank</div>
                        <div className="flex flex-wrap justify-center gap-3">
@@ -406,7 +418,6 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
                       )}
                     </div>
                     
-                    {/* The Zoom Container */}
                     <div className="flex-[2] bg-black/40 rounded-3xl border border-white/10 p-4 zoom-container flex justify-center items-center min-h-[400px] shadow-inner relative">
                        <span className="absolute top-4 left-4 text-white/30 text-[10px] uppercase font-bold tracking-widest pointer-events-none z-0">Pinch to Zoom 🔍</span>
                        

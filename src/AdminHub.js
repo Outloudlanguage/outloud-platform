@@ -39,6 +39,9 @@ const AdminHub = () => {
 
   const [activeModal, setActiveModal] = useState(null); 
   const [editingElementId, setEditingElementId] = useState(null);
+  
+  // FIXED: Specific targeting for adding media to cards
+  const [mediaTarget, setMediaTarget] = useState({ id: null, type: 'image' });
   const [mediaUrlInput, setMediaUrlInput] = useState('');
 
   const [rcStates, setRcStates] = useState({}); 
@@ -48,19 +51,13 @@ const AdminHub = () => {
 
   const [studentAnswers, setStudentAnswers] = useState({});
   const [dndAnswers, setDndAnswers] = useState({}); 
-
   const [touchDragState, setTouchDragState] = useState({ isDragging: false, text: '', x: 0, y: 0, sourceElId: null });
 
-  useEffect(() => {
-    setSelectedUnit('');
-  }, [selectedLevel]);
+  useEffect(() => { setSelectedUnit(''); }, [selectedLevel]);
 
   useEffect(() => {
-    if (contentType === 'Lesson') {
-      setActiveScreenId(lessonScreens[0]);
-    } else {
-      setActiveScreenId(workbookScreens[0]);
-    }
+    if (contentType === 'Lesson') setActiveScreenId(lessonScreens[0]);
+    else setActiveScreenId(workbookScreens[0]);
   }, [contentType, lessonScreens, workbookScreens]);
 
   const unitOptions = selectedLevel && LEVEL_UNIT_MAP[selectedLevel] 
@@ -71,8 +68,8 @@ const AdminHub = () => {
 
   const handleToolSelect = (tool) => {
     if (tool === 'Video') setActiveModal('video');
-    else if (tool === 'Image') setActiveModal('image');
-    else if (tool === 'Audio') setActiveModal('audio');
+    else if (tool === 'Image') { setMediaTarget({ id: null, type: 'image' }); setActiveModal('media_upload'); }
+    else if (tool === 'Audio') { setMediaTarget({ id: null, type: 'audio' }); setActiveModal('media_upload'); }
     else if (tool === 'Record & Compare') spawnInteractiveElement('record_compare');
     else if (tool === 'Text') spawnInteractiveElement('text');
     else if (tool === 'Fill in the blank') { setEditingElementId(null); setActiveModal('fill_in_the_blank'); }
@@ -87,20 +84,16 @@ const AdminHub = () => {
   };
 
   const spawnInteractiveElement = (type) => {
-    let newElement = {
-      id: `${type}_${Date.now()}`, type: type, screenId: activeScreenId, data: {}
-    };
+    let newElement = { id: `${type}_${Date.now()}`, type: type, screenId: activeScreenId, data: {} };
 
+    // FIXED: Formatted Header Default
     if (type === 'text') {
-      newElement.htmlContent = `<span style="font-family: Montserrat; font-size: 24px; font-weight: bold; color: #ffffff;">ACTIVITY TITLE HEADER</span><br/><span style="font-family: Montserrat; font-size: 14px; color: rgba(255,255,255,0.7);">Type your descriptor here. This text box auto resizes for height.</span>`;
+      newElement.htmlContent = `<div style="text-align: center;"><span style="font-family: Montserrat; font-size: 28px; font-weight: 900; color: #ffffff; text-transform: uppercase;">A1-U1: ACTIVITY TITLE</span><br/><span style="font-family: Montserrat; font-size: 14px; color: rgba(255,255,255,0.7);">Type your descriptor here. This text box auto resizes for height.</span></div>`;
     }
     
     setCanvasElements([...canvasElements, newElement]);
   };
 
-  // -------------------------------------------------------------
-  // CRITICAL FIX: Explicitly Defining Screen Deletion Logic
-  // -------------------------------------------------------------
   const handleDeleteScreen = (screenIdToDelete) => {
     saveSnapshot();
     if (contentType === 'Lesson') {
@@ -118,18 +111,46 @@ const AdminHub = () => {
     setCanvasElements(canvasElements.filter(el => el.id !== id));
   };
 
+  // FIXED: Smart Media Uploader handles both floating elements and card payloads
   const handleAddMedia = () => {
     if (!mediaUrlInput) return;
-    const newElement = {
-      id: `${activeModal}_${Date.now()}`, type: activeModal, url: mediaUrlInput, screenId: activeScreenId
-    };
-    setCanvasElements([...canvasElements, newElement]);
-    setActiveModal(null); setMediaUrlInput(''); 
+    saveSnapshot();
+    
+    if (mediaTarget.id) {
+      setCanvasElements(prev => prev.map(el => {
+        if (el.id === mediaTarget.id) {
+          const newData = { ...el.data };
+          if (mediaTarget.type === 'image') newData.imageUrl = mediaUrlInput;
+          if (mediaTarget.type === 'audio') newData.audioUrl = mediaUrlInput;
+          return { ...el, data: newData };
+        }
+        return el;
+      }));
+    } else {
+      const newElement = { id: `${mediaTarget.type}_${Date.now()}`, type: mediaTarget.type, url: mediaUrlInput, screenId: activeScreenId };
+      setCanvasElements([...canvasElements, newElement]);
+    }
+    setActiveModal(null); setMediaUrlInput(''); setMediaTarget({ id: null, type: 'image' });
+  };
+
+  const handleRemoveMedia = (elId, mediaType) => {
+    saveSnapshot();
+    setCanvasElements(prev => prev.map(el => {
+      if (el.id === elId) {
+        const newData = { ...el.data };
+        if (mediaType === 'image') delete newData.imageUrl;
+        if (mediaType === 'audio') delete newData.audioUrl;
+        return { ...el, data: newData };
+      }
+      return el;
+    }));
   };
 
   const handleSaveModal = (type, data) => {
+    saveSnapshot();
     if (editingElementId) { 
-      setCanvasElements(prev => prev.map(el => el.id === editingElementId ? { ...el, data } : el)); 
+      // Merge new data while preserving existing image/audio URLs
+      setCanvasElements(prev => prev.map(el => el.id === editingElementId ? { ...el, data: { ...el.data, ...data } } : el)); 
     } else {
       const newElement = { id: `${type}_${Date.now()}`, type: type, screenId: activeScreenId, data: data };
       setCanvasElements([...canvasElements, newElement]);
@@ -152,11 +173,8 @@ const AdminHub = () => {
 
     const elementsToClone = canvasElements.filter(el => el.screenId === activeScreenId);
     const clonedElements = elementsToClone.map(el => ({
-      ...el,
-      id: `${el.type}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
-      screenId: newScreenId,
-      data: el.data ? JSON.parse(JSON.stringify(el.data)) : undefined,
-      htmlContent: el.htmlContent || ''
+      ...el, id: `${el.type}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`, screenId: newScreenId,
+      data: el.data ? JSON.parse(JSON.stringify(el.data)) : undefined, htmlContent: el.htmlContent || ''
     }));
     setCanvasElements(prev => [...prev, ...clonedElements]);
   };
@@ -170,19 +188,13 @@ const AdminHub = () => {
   };
 
   useEffect(() => {
-    if (!selectedLevel || !selectedUnit || !contentType) {
-      setCanvasElements([]);
-      return;
-    }
+    if (!selectedLevel || !selectedUnit || !contentType) { setCanvasElements([]); return; }
     const loadContent = async () => {
       const { data } = await supabase.from('content_blueprints').select('*').eq('level', selectedLevel).eq('unit', selectedUnit).eq('content_type', contentType).maybeSingle();
       if (data && data.blueprint_data) {
         setCanvasElements(data.blueprint_data.elements || []);
-        if (contentType === 'Lesson') {
-          setLessonScreens(data.screens || [Date.now()]);
-        } else {
-          setWorkbookScreens(data.screens || [Date.now() + 1]);
-        }
+        if (contentType === 'Lesson') setLessonScreens(data.screens || [Date.now()]);
+        else setWorkbookScreens(data.screens || [Date.now() + 1]);
       } else {
         setCanvasElements([]); 
         if (contentType === 'Lesson') setLessonScreens([Date.now()]);
@@ -195,7 +207,6 @@ const AdminHub = () => {
   const handleConfirmSave = async () => {
     if (!selectedLevel || !selectedUnit || !contentType) return;
     setIsSaving(true);
-    
     const syncedElements = canvasElements.map(el => {
       if (el.type === 'text') {
         const liveNode = document.querySelector(`#element-${el.id} .rich-text-content`);
@@ -204,13 +215,11 @@ const AdminHub = () => {
       return el;
     });
     setCanvasElements(syncedElements);
-
     const payload = { 
       level: selectedLevel, unit: selectedUnit, content_type: contentType, 
       screens: contentType === 'Lesson' ? lessonScreens : workbookScreens, 
       blueprint_data: { elements: syncedElements }, updated_at: new Date().toISOString() 
     };
-
     try {
       await supabase.from('content_blueprints').upsert(payload, { onConflict: 'level,unit,content_type' });
       alert("Changes saved and pushed live successfully!");
@@ -252,21 +261,28 @@ const AdminHub = () => {
         .zoom-container { touch-action: pan-x pan-y pinch-zoom; overflow: auto; overscroll-behavior: contain; }
       `}</style>
 
+      {/* FIXED: Preview Button Overlay */}
+      {isPreviewMode && (
+        <button onClick={() => setIsPreviewMode(false)} className="fixed top-6 right-6 z-[9999] bg-red-600/90 text-white font-black px-8 py-4 rounded-full shadow-[0_0_20px_rgba(220,38,38,0.6)] uppercase tracking-widest text-sm hover:scale-105 border border-red-500/50 backdrop-blur-md transition-all animate-fade-in">
+          EXIT PREVIEW
+        </button>
+      )}
+
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-blue-900/20 blur-[120px] rounded-full mix-blend-screen"></div>
         <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-[#fcd34d]/10 blur-[100px] rounded-full mix-blend-screen"></div>
         <div className="absolute inset-0 opacity-5" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 10 Q 25 20, 50 10 T 100 10' stroke='%23ffffff' fill='none' stroke-width='0.5'/%3E%3C/svg%3E")`, backgroundSize: '100px 20px' }}></div>
       </div>
 
-      <FillInTheBlankModal isOpen={activeModal === 'fill_in_the_blank'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={(d) => { saveSnapshot(); handleSaveModal('fill_in_the_blank', d); }} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
-      <ShapeConfigModal isOpen={activeModal === 'shape'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={(d) => { saveSnapshot(); handleSaveModal('shape', d); }} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
-      <DragAndDropModal isOpen={activeModal === 'drag_and_drop'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={(d) => { saveSnapshot(); handleSaveModal('drag_and_drop', d); }} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
-      <ShortAnswerModal isOpen={activeModal === 'short_answer'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={(d) => { saveSnapshot(); handleSaveModal('short_answer', d); }} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
-      <MultipleSelectionModal isOpen={activeModal === 'multiple_selection'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={(d) => { saveSnapshot(); handleSaveModal('multiple_selection', d); }} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
-      <SliderBarModal isOpen={activeModal === 'slider_bar'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={(d) => { saveSnapshot(); handleSaveModal('slider_bar', d); }} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
-      <CrosswordModal isOpen={activeModal === 'crossword'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={(d) => { saveSnapshot(); handleSaveModal('crossword', { ...d, ...generateCrosswordLayout(d.items) }); }} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
-      <WordSearchModal isOpen={activeModal === 'word_search'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={(d) => { saveSnapshot(); handleSaveModal('word_search', { ...d, ...generateWordSearchGrid(d.words) }); }} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
-      <NavButtonModal isOpen={activeModal === 'nav_button'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={(d) => { saveSnapshot(); handleSaveModal('nav_button', d); }} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
+      <FillInTheBlankModal isOpen={activeModal === 'fill_in_the_blank'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={(d) => { handleSaveModal('fill_in_the_blank', d); }} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
+      <ShapeConfigModal isOpen={activeModal === 'shape'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={(d) => { handleSaveModal('shape', d); }} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
+      <DragAndDropModal isOpen={activeModal === 'drag_and_drop'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={(d) => { handleSaveModal('drag_and_drop', d); }} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
+      <ShortAnswerModal isOpen={activeModal === 'short_answer'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={(d) => { handleSaveModal('short_answer', d); }} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
+      <MultipleSelectionModal isOpen={activeModal === 'multiple_selection'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={(d) => { handleSaveModal('multiple_selection', d); }} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
+      <SliderBarModal isOpen={activeModal === 'slider_bar'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={(d) => { handleSaveModal('slider_bar', d); }} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
+      <CrosswordModal isOpen={activeModal === 'crossword'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={(d) => { handleSaveModal('crossword', { ...d, ...generateCrosswordLayout(d.items) }); }} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
+      <WordSearchModal isOpen={activeModal === 'word_search'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={(d) => { handleSaveModal('word_search', { ...d, ...generateWordSearchGrid(d.words) }); }} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
+      <NavButtonModal isOpen={activeModal === 'nav_button'} initialData={editingElementId ? canvasElements.find(e => e.id === editingElementId)?.data : {}} onSave={(d) => { handleSaveModal('nav_button', d); }} onCancel={() => { setActiveModal(null); setEditingElementId(null); }} />
 
       {isSaveModalOpen && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[#070b19]/80 backdrop-blur-md px-4">
@@ -280,14 +296,14 @@ const AdminHub = () => {
         </div>
       )}
 
-      {(activeModal === 'video' || activeModal === 'image' || activeModal === 'audio') && (
+      {(activeModal === 'video' || activeModal === 'media_upload') && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[#070b19]/80 backdrop-blur-md px-4">
           <div className="bg-[#070b19]/40 backdrop-blur-xl rounded-[30px] p-8 max-w-lg w-full shadow-2xl border border-white/20 flex flex-col items-center animate-fade-in">
-            <h2 className="text-xl font-black text-white uppercase tracking-widest mb-6">ADD {activeModal.toUpperCase()}</h2>
+            <h2 className="text-xl font-black text-white uppercase tracking-widest mb-6">ADD {mediaTarget.type.toUpperCase()}</h2>
             <input type="text" placeholder="Paste URL here..." value={mediaUrlInput} onChange={(e) => setMediaUrlInput(e.target.value)} className="w-full bg-[#070b19] border border-white/20 rounded-xl px-5 py-4 text-sm text-white focus:outline-none focus:border-[#fcd34d] mb-8" />
             <div className="flex flex-row space-x-4 w-full justify-center">
-              <button onClick={() => { setActiveModal(null); setMediaUrlInput(''); }} className="bg-white/5 border border-white/20 text-white/80 font-bold px-6 py-3 rounded-full text-xs w-1/2 hover:bg-white/10">CANCEL</button>
-              <button onClick={handleAddMedia} className="bg-[#fcd34d] text-[#08203e] font-black px-6 py-3 rounded-full text-xs w-1/2 hover:scale-105">ADD TO CANVAS</button>
+              <button onClick={() => { setActiveModal(null); setMediaUrlInput(''); setMediaTarget({id: null, type: 'image'}); }} className="bg-white/5 border border-white/20 text-white/80 font-bold px-6 py-3 rounded-full text-xs w-1/2 hover:bg-white/10">CANCEL</button>
+              <button onClick={handleAddMedia} className="bg-[#fcd34d] text-[#08203e] font-black px-6 py-3 rounded-full text-xs w-1/2 hover:scale-105">ADD MEDIA</button>
             </div>
           </div>
         </div>
@@ -295,7 +311,7 @@ const AdminHub = () => {
 
       {!isPreviewMode && (
         <div className="relative z-20 w-full flex flex-col items-center pt-6 md:pt-10 px-4 md:px-8 pb-10">
-          <div className="w-full max-w-6xl flex flex-col space-y-12">
+          <div className="w-full max-w-[90rem] flex flex-col space-y-12">
             <div className="bg-white/5 backdrop-blur-xl rounded-[30px] shadow-2xl p-6 md:p-10 flex flex-col items-center w-full border border-white/10">
               <h2 className="text-3xl md:text-5xl font-black text-white uppercase tracking-widest mb-10 text-center drop-shadow-md">ADMIN EDITING HUB</h2>
               <div className="flex flex-col md:flex-row items-center justify-center w-full gap-4 md:gap-6">
@@ -317,7 +333,7 @@ const AdminHub = () => {
         <div className="relative z-10 flex flex-col items-center w-full flex-grow">
           {!isPreviewMode && (
             <div className="fixed top-0 left-0 w-full z-[150] bg-[#070b19]/90 backdrop-blur-xl pt-6 pb-6 border-b border-white/10 shadow-2xl">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-5 w-full px-6 max-w-7xl mx-auto">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-5 w-full px-6 max-w-[90rem] mx-auto">
                 <AdminDropdown placeholder="Select Level" options={LEVEL_OPTIONS} value={selectedLevel} onChange={setSelectedLevel} />
                 <AdminDropdown placeholder="Select Unit" options={unitOptions} value={selectedUnit} onChange={setSelectedUnit} />
                 <AdminDropdown placeholder="Content type" options={['Lesson', 'Workbook']} value={contentType} onChange={setContentType} />
@@ -327,7 +343,7 @@ const AdminHub = () => {
                 <button onClick={() => setIsSaveModalOpen(true)} className="text-[#fcd34d] font-black tracking-widest uppercase hover:text-white transition-all text-xs">SAVE</button>
                 <button onClick={handleUndoWorkspace} className="text-[#fcd34d] font-black tracking-widest uppercase hover:text-white transition-all text-xs">UNDO</button>
                 <button onClick={handleDuplicateScreen} className="text-[#fcd34d] font-black tracking-widest uppercase hover:text-white transition-all text-xs">DUPLICATE</button>
-                <button onClick={() => setIsPreviewMode(!isPreviewMode)} className="text-[#fcd34d] font-black tracking-widest uppercase hover:text-white transition-all text-xs">PREVIEW</button>
+                <button onClick={() => setIsPreviewMode(true)} className="text-[#fcd34d] font-black tracking-widest uppercase hover:text-white transition-all text-xs">PREVIEW</button>
               </div>
             </div>
           )}
@@ -336,7 +352,7 @@ const AdminHub = () => {
             
           {activeScreenArray.map((screenId, index) => {
             const screenElements = canvasElements.filter(el => el.screenId === screenId);
-            const contentElements = screenElements.filter(el => !['nav_button', 'record_compare'].includes(el.type));
+            const contentElements = screenElements.filter(el => !['nav_button'].includes(el.type));
             const dockElements = screenElements.filter(el => ['nav_button', 'record_compare'].includes(el.type));
 
             return (
@@ -349,12 +365,12 @@ const AdminHub = () => {
                   </div>
                 )}
 
-                {/* THE NEW RESPONSIVE TEMPLATE GRID */}
+                {/* FIXED: Screen bounds are now massive (w-full max-w-[100rem]) */}
                 <div 
                   id={`preview-screen-${screenId}`}
                   onClick={() => setActiveScreenId(screenId)}
-                  className={`w-full relative flex flex-col p-6 mx-auto ${isPreviewMode ? 'max-w-6xl' : 'max-w-7xl border-x border-b-2 border-white/10 bg-white/5 rounded-b-3xl'}`}
-                  style={{ minHeight: 'calc(100vh - 180px)' }}
+                  className={`w-full relative flex flex-col p-6 mx-auto ${isPreviewMode ? 'max-w-[100rem]' : 'max-w-[100rem] border-x border-b-2 border-white/10 bg-white/5 rounded-b-3xl'}`}
+                  style={{ minHeight: '100vh' }}
                 >
                   {!isPreviewMode && (
                     <button onClick={(e) => { e.stopPropagation(); handleDeleteScreen(screenId); }} className="absolute top-4 right-4 z-[60] w-10 h-10 bg-red-500/10 hover:bg-red-500 border border-red-500/30 rounded-full flex items-center justify-center text-red-400 hover:text-white transition-all shadow-md">
@@ -362,10 +378,10 @@ const AdminHub = () => {
                     </button>
                   )}
                   
-                  {/* Cards Flex Container (Auto-Centers Odd Items) */}
+                  {/* Cards Flex Container */}
                   <div className="flex flex-wrap justify-center gap-6 w-full relative z-10 flex-grow content-start pointer-events-auto">
                     {contentElements.map(el => {
-                      const isCard = ['short_answer', 'multiple_selection', 'slider_bar', 'fill_in_the_blank'].includes(el.type);
+                      const isCard = ['short_answer', 'multiple_selection', 'slider_bar', 'fill_in_the_blank', 'record_compare'].includes(el.type);
                       
                       return (
                         <div key={el.id} className={`relative flex flex-col group ${isCard ? 'w-full md:w-[calc(50%-12px)]' : 'w-full flex-col items-center'}`}>
@@ -373,7 +389,7 @@ const AdminHub = () => {
                           {/* Admin Overlay Actions */}
                           {!isPreviewMode && (
                              <div className="absolute -top-4 -right-4 z-50 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                               <button onClick={() => { setEditingElementId(el.id); setActiveModal(el.type); }} className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center shadow-lg text-xs">✏️</button>
+                               {el.type !== 'text' && <button onClick={() => { setEditingElementId(el.id); setActiveModal(el.type); }} className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center shadow-lg text-xs">✏️</button>}
                                <button onClick={() => handleDeleteElement(el.id)} className="w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg text-xs">🗑️</button>
                              </div>
                           )}
@@ -385,78 +401,230 @@ const AdminHub = () => {
                             </div>
                           )}
 
-                          {/* VIDEO & MEDIA */}
-                          {(el.type === 'video' || el.type === 'image') && (
+                          {/* VIDEO (Standalone) */}
+                          {el.type === 'video' && (
                             <div className="w-full max-w-4xl bg-black/40 rounded-3xl overflow-hidden border border-white/20 shadow-2xl aspect-[4/5] md:aspect-video mb-4">
-                               {el.type === 'video' ? <video src={el.url} controls className="w-full h-full object-cover" /> : <img src={el.url} className="w-full h-full object-contain" alt="Media" />}
+                               <video src={el.url} controls className="w-full h-full object-cover" />
                             </div>
                           )}
 
-                          {/* SHORT ANSWER & FILL IN BLANK CARDS */}
-                          {isCard && el.data && (
+                          {/* FIXED: ALL CARDS (Including Record & Compare) get the Image Uploader Component */}
+                          {isCard && (
                             <div className="w-full bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 p-6 flex flex-col gap-4 shadow-xl h-full justify-between hover:bg-white/10 transition-colors">
-                               {el.type === 'short_answer' && (
+                               
+                               {/* The Unified Image Uploader Slot */}
+                               {!isPreviewMode && !el.data?.imageUrl && (
+                                  <div onClick={() => { setMediaTarget({ id: el.id, type: 'image' }); setActiveModal('media_upload'); }} className="w-full h-32 bg-white/10 border-2 border-dashed border-white/20 rounded-2xl flex flex-col items-center justify-center text-white/50 cursor-pointer hover:bg-white/20 hover:text-white transition-all mb-2">
+                                    <span className="text-4xl mb-1">+</span>
+                                    <span className="text-[10px] font-bold uppercase tracking-widest text-center px-4">Click to add an image</span>
+                                  </div>
+                               )}
+                               {el.data?.imageUrl && (
+                                  <div className="relative group w-full mb-2">
+                                    <img src={el.data.imageUrl} className="w-full h-48 object-contain bg-black/20 rounded-2xl border border-white/10" alt="Card Media" />
+                                    {!isPreviewMode && <button onClick={() => handleRemoveMedia(el.id, 'image')} className="absolute top-2 right-2 w-8 h-8 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-xs shadow-md">✕</button>}
+                                  </div>
+                               )}
+
+                               {/* Record & Compare Exclusive: Audio Slot */}
+                               {el.type === 'record_compare' && (
+                                 <>
+                                   {!isPreviewMode && !el.data?.audioUrl && (
+                                      <div onClick={() => { setMediaTarget({ id: el.id, type: 'audio' }); setActiveModal('media_upload'); }} className="w-full h-16 bg-white/10 border-2 border-dashed border-white/20 rounded-xl flex items-center justify-center text-white/50 cursor-pointer hover:bg-white/20 hover:text-white transition-all mb-2">
+                                        <span className="text-[10px] font-bold uppercase tracking-widest">+ Add Target Audio</span>
+                                      </div>
+                                   )}
+                                   {el.data?.audioUrl && (
+                                      <div className="relative group w-full mb-2">
+                                        <audio src={el.data.audioUrl} controls className="w-full rounded-xl" />
+                                        {!isPreviewMode && <button onClick={() => handleRemoveMedia(el.id, 'audio')} className="absolute -top-3 -right-3 w-6 h-6 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-xs shadow-md">✕</button>}
+                                      </div>
+                                   )}
+                                 </>
+                               )}
+
+                               {/* Specific Data Rendering for the Bottom Half of the Card */}
+                               {el.type === 'record_compare' && !isPreviewMode && (
+                                  <div className="text-center text-white/40 text-[10px] uppercase font-bold tracking-widest mt-auto border-t border-white/10 pt-4">
+                                    (Record Button renders in Bottom Dock)
+                                  </div>
+                               )}
+                               
+                               {el.type === 'short_answer' && el.data && (
                                   <>
-                                    <div dangerouslySetInnerHTML={{ __html: el.data.questionHtml }} className="w-full break-words text-white" />
-                                    <input type="text" disabled={!isPreviewMode} placeholder={isPreviewMode ? "Your answer..." : "Student answers here"} className="w-full p-4 mt-auto bg-black/40 border border-white/20 rounded-xl text-white focus:ring-1 focus:ring-[#fcd34d] transition-all" />
+                                    <div dangerouslySetInnerHTML={{ __html: el.data.questionHtml }} className="w-full break-words text-white mt-2" />
+                                    <input type="text" disabled={!isPreviewMode} placeholder={isPreviewMode ? "Your answer..." : "Student answers here"} value={studentAnswers[el.id] || ''} onChange={(e) => setStudentAnswers(prev => ({...prev, [el.id]: e.target.value}))} className="w-full p-4 mt-auto bg-black/40 border border-white/20 rounded-xl text-white focus:ring-1 focus:ring-[#fcd34d] transition-all shadow-inner placeholder-white/30" />
                                   </>
                                )}
-                               {el.type === 'fill_in_the_blank' && (
-                                  <div className="w-full h-full flex items-center flex-wrap">
+
+                               {el.type === 'fill_in_the_blank' && el.data && (
+                                  <div className="w-full h-full flex flex-col justify-end mt-2">
                                      {renderFormattedText(el, isPreviewMode)}
                                   </div>
                                )}
-                               {el.type === 'multiple_selection' && (
+
+                               {el.type === 'multiple_selection' && el.data && (
                                   <>
-                                    {el.data.promptType === 'image' && el.data.promptUrl ? <img src={el.data.promptUrl} className="w-full h-40 object-contain rounded-xl mb-4 bg-black/20" alt="Prompt" /> : <div dangerouslySetInnerHTML={{ __html: el.data.promptHtml }} className="mb-4" />}
+                                    {el.data.promptHtml && <div dangerouslySetInnerHTML={{ __html: el.data.promptHtml }} className="mb-4 mt-2" />}
                                     <div className="flex flex-col gap-2 mt-auto">
-                                       {el.data.options.map((opt) => (
-                                          <button key={opt.id} className="w-full p-4 bg-white/10 border border-white/20 rounded-xl text-left hover:bg-[#fcd34d] hover:text-[#08203e] transition-colors"><div dangerouslySetInnerHTML={{__html: opt.html}} className="pointer-events-none" /></button>
-                                       ))}
+                                       {el.data.options?.map((opt) => {
+                                          const isSelected = studentAnswers[`${el.id}_${opt.id}`] === true;
+                                          return (
+                                            <button key={opt.id} onClick={() => isPreviewMode && setStudentAnswers(prev => ({ ...prev, [`${el.id}_${opt.id}`]: !prev[`${el.id}_${opt.id}`] }))} style={{ backgroundColor: isSelected ? '#fcd34d' : el.data.optBoxColor, borderColor: isSelected ? '#ca8a04' : el.data.optLineColor, borderWidth: (el.data.optLineColor === 'transparent' && !isSelected) ? '0px' : '2px', borderStyle: 'solid', borderRadius: `${el.data.optBorderRadius}px` }} className="w-full p-4 text-left transition-all hover:scale-[1.02] active:scale-95 flex items-center">
+                                               <div className={`w-5 h-5 rounded-full border-2 mr-4 flex items-center justify-center shrink-0 ${isSelected ? 'border-[#08203e]' : 'border-white/40'}`}>
+                                                 {isSelected && <div className="w-2.5 h-2.5 bg-[#08203e] rounded-full"></div>}
+                                               </div>
+                                               <div dangerouslySetInnerHTML={{__html: opt.html}} className="pointer-events-none" style={{ color: isSelected ? '#08203e' : 'inherit' }} />
+                                            </button>
+                                          )
+                                       })}
                                     </div>
                                   </>
                                )}
-                               {el.type === 'slider_bar' && (
-                                  <div className="w-full flex flex-col items-center justify-center mt-auto pt-8 pb-4">
-                                     <input type="range" min="0" max={(el.data.options?.length || 1) - 1} className="w-full custom-slider" />
-                                  </div>
-                               )}
+
+                               {el.type === 'slider_bar' && el.data && (() => {
+                                  const isVert = el.data.orientation === 'vertical';
+                                  const opts = el.data.options || [];
+                                  const maxIdx = Math.max(0, opts.length - 1);
+                                  const currentIdx = studentAnswers[el.id] !== undefined ? parseInt(studentAnswers[el.id]) : Math.floor(maxIdx / 2);
+                                  const activeOpt = opts[currentIdx] || {};
+                                  const pct = maxIdx === 0 ? 50 : (currentIdx / maxIdx) * 100;
+                                  return (
+                                    <div className="w-full flex flex-col h-full min-h-[150px] justify-end relative pb-6 mt-4">
+                                       <div className="absolute w-full h-full flex flex-col items-center justify-center">
+                                         <div className="absolute flex items-center justify-center rounded-full shadow-inner overflow-hidden" style={{ backgroundColor: el.data.barColor, width: isVert ? `${el.data.barThickness}px` : '100%', height: isVert ? '100%' : `${el.data.barThickness}px` }}></div>
+                                         <input type="range" min="0" max={maxIdx} step="1" disabled={!isPreviewMode} value={currentIdx} onChange={(e) => setStudentAnswers(prev => ({...prev, [el.id]: e.target.value}))} className="absolute custom-slider w-full h-full z-10" style={{ '--thumb-color': el.data.handleColor, transform: isVert ? 'rotate(-90deg)' : 'none', WebkitAppearance: 'none', background: 'transparent' }} />
+                                         { !isVert && (
+                                            <div className="absolute flex flex-col items-center transition-all duration-200 pointer-events-none z-0" style={{ left: `${pct}%`, bottom: 'calc(50% + 20px)', transform: 'translateX(-50%)' }}>
+                                               <div className="bg-white text-[#08203e] px-5 py-2.5 rounded-xl shadow-xl font-black text-sm">{activeOpt.text}</div>
+                                               <div className="w-0 h-0 border-solid" style={{ borderWidth: '8px 6px 0 6px', borderColor: 'white transparent transparent transparent' }} />
+                                            </div>
+                                         )}
+                                       </div>
+                                    </div>
+                                  );
+                               })()}
                             </div>
                           )}
 
                           {/* DRAG AND DROP */}
                           {el.type === 'drag_and_drop' && el.data && (
-                            <div className="w-full max-w-5xl bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 p-6 flex flex-col gap-8 shadow-xl">
+                            <div className="w-full max-w-6xl bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 p-6 flex flex-col gap-8 shadow-xl">
                                <div className={`grid grid-cols-2 md:grid-cols-${Math.min(el.data.items.filter(i=>i.imageUrl).length, 4)} gap-4 w-full`}>
                                  {el.data.items.map((item, idx) => item.imageUrl && (
                                    <div key={idx} className="flex flex-col items-center gap-4">
-                                     <div className="w-full aspect-square bg-black/20 rounded-2xl overflow-hidden border border-white/10"><img src={item.imageUrl} className="w-full h-full object-cover" alt="target" /></div>
-                                     <div className="w-full h-16 border-2 border-dashed border-white/30 rounded-xl bg-black/20 flex items-center justify-center text-white/30 text-[10px] uppercase font-bold">Drop Zone</div>
+                                     <div className="w-full aspect-[4/5] bg-black/20 rounded-2xl overflow-hidden border border-white/10 shadow-md">
+                                       <img src={item.imageUrl} className="w-full h-full object-cover" alt="target" />
+                                     </div>
+                                     <div data-dnd-zone={`${el.id}_${idx}`} className="w-full min-h-[60px] border-2 border-dashed border-white/30 rounded-xl bg-black/40 flex items-center justify-center transition-colors">
+                                        {dndAnswers[`${el.id}_${idx}`] ? (
+                                          <div onClick={() => setDndAnswers(prev => { const copy = {...prev}; delete copy[`${el.id}_${idx}`]; return copy; })} className="px-4 py-3 bg-[#fcd34d] text-[#08203e] rounded-xl font-bold text-sm shadow-md cursor-pointer w-full text-center hover:scale-105 active:scale-95 transition-transform truncate">
+                                            {dndAnswers[`${el.id}_${idx}`]}
+                                          </div>
+                                        ) : <span className="text-white/30 text-[10px] uppercase font-bold tracking-widest">DROP HERE</span>}
+                                     </div>
                                    </div>
                                  ))}
                                </div>
                                <div className="w-full bg-black/40 p-4 rounded-2xl border border-white/10">
-                                  <div className="text-center font-bold text-white/50 text-[10px] uppercase tracking-widest mb-4">Word Bank</div>
+                                  <div className="text-center font-bold text-[#fcd34d] text-[10px] uppercase tracking-widest mb-4">Word Bank</div>
                                   <div className="flex flex-wrap justify-center gap-4">
-                                    {el.data.items.map((item, idx) => item.studentViewText && (
-                                      <div key={`bank-${idx}`} className="px-6 py-3 bg-white/10 border border-white/20 rounded-xl text-white font-bold text-sm shadow-md cursor-grab">{item.studentViewText}</div>
-                                    ))}
+                                    {el.data.items.map((item, idx) => {
+                                      if (!item.studentViewText) return null;
+                                      const isUsed = Object.values(dndAnswers).includes(item.studentViewText);
+                                      if (isUsed) return null;
+                                      return (
+                                        <div key={`bank-${idx}`} className="px-6 py-3 bg-white/10 border border-white/20 rounded-xl text-white font-bold text-sm shadow-md cursor-grab">{item.studentViewText}</div>
+                                      );
+                                    })}
                                   </div>
                                </div>
                             </div>
                           )}
 
-                          {/* PUZZLES (Zoomable container) */}
+                          {/* FIXED: PLAYABLE PUZZLES IN EDITOR */}
                           {(el.type === 'crossword' || el.type === 'word_search') && el.data && (
-                             <div className="w-full max-w-6xl bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 p-6 flex flex-col md:flex-row gap-8 shadow-xl">
-                                <div className="flex-1 flex flex-col gap-4">
-                                  <h3 className="font-bold text-[#fcd34d] uppercase tracking-widest border-b border-white/10 pb-2">Prompts</h3>
-                                  <div className="flex gap-4">
-                                     <div className="flex flex-col gap-2 text-sm text-white/80">List rendered here...</div>
-                                  </div>
+                             <div className="w-full max-w-7xl bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 p-6 flex flex-col md:flex-row gap-8 shadow-xl">
+                                <div className="flex-1 flex flex-col gap-6 max-h-[400px] overflow-y-auto custom-scrollbar pr-4">
+                                  {el.type === 'crossword' && (
+                                    <>
+                                      <h3 className="font-black text-[#fcd34d] text-lg uppercase tracking-widest border-b border-white/10 pb-3 drop-shadow-md">Prompts</h3>
+                                      <div className="flex gap-8">
+                                        <div className="flex-1 flex flex-col gap-4">
+                                          <h4 className="text-[10px] font-bold text-white/50 uppercase tracking-widest border-b border-white/10 pb-1">Across</h4>
+                                          {el.data.across?.map(a => <div key={`a-${a.num}`} className="text-sm text-white flex gap-3"><span className="font-black text-[#fcd34d]">{a.num}.</span><span className="font-medium opacity-90">{a.prompt}</span></div>)}
+                                        </div>
+                                        <div className="flex-1 flex flex-col gap-4">
+                                          <h4 className="text-[10px] font-bold text-white/50 uppercase tracking-widest border-b border-white/10 pb-1">Down</h4>
+                                          {el.data.down?.map(d => <div key={`d-${d.num}`} className="text-sm text-white flex gap-3"><span className="font-black text-[#fcd34d]">{d.num}.</span><span className="font-medium opacity-90">{d.prompt}</span></div>)}
+                                        </div>
+                                      </div>
+                                    </>
+                                  )}
+                                  {el.type === 'word_search' && (
+                                    <>
+                                      <div dangerouslySetInnerHTML={{ __html: el.data.promptHtml }} className="w-full whitespace-pre-wrap break-words border-b border-white/10 pb-4 mb-2 drop-shadow-md text-lg" />
+                                      <div className="flex gap-4">
+                                        <ul className="flex-1 flex flex-col gap-3 list-none pl-2">
+                                          {el.data.targetWords?.slice(0, Math.ceil(el.data.targetWords.length / 2)).map((w, i) => <li key={`w1-${i}`} className="text-sm font-bold text-white/90 tracking-widest flex items-center gap-3"><span className="w-2 h-2 rounded-full bg-[#fcd34d] shadow-[0_0_8px_#fcd34d]"></span>{w}</li>)}
+                                        </ul>
+                                        <ul className="flex-1 flex flex-col gap-3 list-none pl-2">
+                                          {el.data.targetWords?.slice(Math.ceil(el.data.targetWords.length / 2)).map((w, i) => <li key={`w2-${i}`} className="text-sm font-bold text-white/90 tracking-widest flex items-center gap-3"><span className="w-2 h-2 rounded-full bg-[#fcd34d] shadow-[0_0_8px_#fcd34d]"></span>{w}</li>)}
+                                        </ul>
+                                      </div>
+                                    </>
+                                  )}
                                 </div>
-                                <div className="flex-[2] bg-black/40 rounded-2xl border border-white/10 p-4 zoom-container flex justify-center items-center">
-                                   <div className="w-64 h-64 bg-white/10 border border-white/20 rounded-xl flex items-center justify-center text-white/50 font-bold uppercase tracking-widest text-center">Interactive Grid<br/>(Visible in Student Player)</div>
+                                
+                                <div className="flex-[2] bg-black/40 rounded-3xl border border-white/10 p-4 zoom-container flex justify-center items-center min-h-[400px] shadow-inner relative">
+                                   <span className="absolute top-4 left-4 text-white/30 text-[10px] uppercase font-bold tracking-widest pointer-events-none z-0">Pinch to Zoom 🔍</span>
+                                   
+                                   {el.type === 'crossword' && (
+                                     <div style={{ display: 'grid', gridTemplateColumns: `repeat(${el.data.grid[0]?.length || 1}, minmax(35px, 1fr))`, gap: '2px', width: 'fit-content', position: 'relative', zIndex: 10 }}>
+                                        {el.data.grid.map((row, rIdx) => 
+                                          row.map((cell, cIdx) => (
+                                            <div key={`${rIdx}-${cIdx}`} className="relative aspect-square w-10 md:w-12">
+                                              {cell ? (
+                                                <div className="w-full h-full relative">
+                                                  {cell.num && <span className="absolute top-1 left-1 text-[9px] font-black text-white/70 z-10 pointer-events-none drop-shadow-md">{cell.num}</span>}
+                                                  <input 
+                                                    type="text" maxLength={1} 
+                                                    value={studentAnswers[`${el.id}_${rIdx}_${cIdx}`] || ''}
+                                                    onChange={(e) => setStudentAnswers(prev => ({...prev, [`${el.id}_${rIdx}_${cIdx}`]: e.target.value.toUpperCase().replace(/[^A-Z]/g, '')}))}
+                                                    style={{ backgroundColor: el.data.cellColor, borderColor: el.data.lineColor, color: el.data.textColor, fontSize: `${el.data.fontSize}px`, fontFamily: el.data.fontFamily, fontWeight: el.data.isBold ? 'bold' : 'normal' }}
+                                                    className="w-full h-full text-center uppercase border-2 focus:outline-none focus:ring-4 focus:ring-[#fcd34d] transition shadow-inner rounded-sm"
+                                                  />
+                                                </div>
+                                              ) : <div className="w-full h-full bg-transparent" />}
+                                            </div>
+                                          ))
+                                        )}
+                                     </div>
+                                   )}
+
+                                   {el.type === 'word_search' && (
+                                     <div style={{ display: 'grid', gridTemplateColumns: `repeat(${el.data.size || 10}, 1fr)`, borderWidth: '3px', borderStyle: 'solid', borderColor: el.data.lineColor, backgroundColor: el.data.cellColor }} className="shadow-2xl max-w-full max-h-full aspect-square w-full rounded-xl overflow-hidden relative z-10">
+                                       {el.data.grid?.map((row, rIdx) => 
+                                         row.map((char, cIdx) => {
+                                            const cellId = `${el.id}_${rIdx}_${cIdx}`;
+                                            const isSelected = (studentAnswers[`${el.id}_cells`] || []).includes(cellId);
+                                            return (
+                                              <div 
+                                                key={cellId} 
+                                                onClick={() => setStudentAnswers(prev => {
+                                                   const current = prev[`${el.id}_cells`] || [];
+                                                   return { ...prev, [`${el.id}_cells`]: current.includes(cellId) ? current.filter(c => c !== cellId) : [...current, cellId] };
+                                                })}
+                                                style={{ color: el.data.textColor, fontSize: `${el.data.fontSize}px`, fontFamily: el.data.fontFamily, fontWeight: el.data.isBold ? 'bold' : 'normal', borderRight: cIdx < (el.data.size - 1) ? `1px solid ${el.data.lineColor}` : 'none', borderBottom: rIdx < (el.data.size - 1) ? `1px solid ${el.data.lineColor}` : 'none', backgroundColor: isSelected ? 'rgba(252, 211, 77, 0.6)' : 'transparent', cursor: 'pointer' }}
+                                                className="flex items-center justify-center transition-colors hover:bg-white/20 select-none"
+                                              >
+                                                {char}
+                                              </div>
+                                            )
+                                         })
+                                       )}
+                                     </div>
+                                   )}
                                 </div>
                              </div>
                           )}
@@ -468,6 +636,7 @@ const AdminHub = () => {
                   {/* BOTTOM ACTION DOCK (Auto-Centered, Side-by-Side) */}
                   <div className="w-full mt-auto pt-16 pb-8 flex justify-center items-center gap-6 relative z-50 pointer-events-auto">
                     {dockElements.map(el => {
+                      // FIXED: The R&C Button logic matches the Card ID
                       if (el.type === 'record_compare') return (
                          <div key={el.id} className="relative group">
                             {!isPreviewMode && <button onClick={() => handleDeleteElement(el.id)} className="absolute -top-3 -right-3 w-6 h-6 bg-red-500 text-white rounded-full text-[10px] opacity-0 group-hover:opacity-100 transition-opacity z-50">✕</button>}
