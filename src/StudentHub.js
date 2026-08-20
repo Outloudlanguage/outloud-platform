@@ -11,12 +11,23 @@ import 'swiper/css/pagination';
 // ==========================================
 // 1. DASHBOARD VIEWS (Desktop & Mobile)
 // ==========================================
-const DesktopView = ({ student, onReturnHome, onStartActivity, isFetching }) => {
+const DesktopView = ({ student, onReturnHome, onStartActivity, isFetching, activeLiveSession }) => {
   const currentUnit = student?.unit || 1;
   const totalUnits = 12; 
   const progressPercentage = Math.round((Math.max(0, currentUnit - 1) / totalUnits) * 100);
   const circleCircumference = 2 * Math.PI * 40; 
   const strokeDashoffset = circleCircumference - (progressPercentage / 100) * circleCircumference;
+
+  const lessonScore = student?.lesson_score || 0;
+  const workbookScore = student?.workbook_score || 0;
+  const isWorkbookUnlocked = lessonScore >= 75;
+  const isCalendarUnlocked = isWorkbookUnlocked && workbookScore >= 75;
+
+  const LockIcon = () => (
+    <svg className="w-6 h-6 text-white/40 absolute top-6 right-6" fill="currentColor" viewBox="0 0 20 20">
+      <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+    </svg>
+  );
 
   return (
     <div className="min-h-screen w-full font-montserrat flex justify-center p-8 relative overflow-hidden bg-[#070b19] text-white">
@@ -43,8 +54,14 @@ const DesktopView = ({ student, onReturnHome, onStartActivity, isFetching }) => 
 
           <h3 className="text-white font-black text-sm mb-4 tracking-widest uppercase">UPCOMING ACTIVITIES</h3>
           <ul className="space-y-3 mb-auto text-xs font-medium text-white/80">
-            <li className="flex items-center gap-3"><span className="opacity-70">📅</span> Aug 15: Live Lab Session</li>
-            <li className="flex items-center gap-3"><span className="opacity-70">💬</span> Aug 18: Chat room meeting</li>
+            {activeLiveSession ? (
+              <li className="flex flex-col gap-1 border-l-2 border-[#fcd34d] pl-3">
+                <span className="text-white font-bold">Live Lab Session</span>
+                <span className="text-[11px] text-emerald-400 font-bold">{activeLiveSession.session_date} • {activeLiveSession.time_slot}</span>
+              </li>
+            ) : (
+              <li className="opacity-50 italic text-xs">No upcoming sessions.</li>
+            )}
           </ul>
 
           <button className="w-full bg-white/90 text-[#08203e] font-black text-[10px] py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-white hover:scale-105 transition-transform shadow-lg mt-8 mb-6 uppercase tracking-widest">
@@ -76,23 +93,51 @@ const DesktopView = ({ student, onReturnHome, onStartActivity, isFetching }) => 
             <div className="grid grid-cols-3 gap-6 h-[45%]">
               <button onClick={() => onStartActivity('Lesson')} disabled={isFetching} className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 hover:bg-white/20 hover:scale-[1.02] transition-all group">
                 <img src="https://i.postimg.cc/wxw0tRXY/1(7).png" alt="Lesson" className="h-28 object-contain opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-transform duration-500" />
-                <h3 className="font-light tracking-wide text-2xl uppercase text-[#fcd34d] drop-shadow-md">{isFetching ? 'Loading...' : `Lesson ${student?.unit || 1}`}</h3>
+                <div className="flex flex-col items-center">
+                  <h3 className="font-light tracking-wide text-2xl uppercase text-[#fcd34d] drop-shadow-md">{isFetching ? 'Loading...' : `Lesson ${student?.unit || 1}`}</h3>
+                  {lessonScore > 0 && <span className="text-[10px] font-bold text-white/50 mt-1">SCORE: {lessonScore}%</span>}
+                </div>
               </button>
-              <button onClick={() => onStartActivity('Workbook')} disabled={isFetching} className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 hover:bg-white/20 hover:scale-[1.02] transition-all group">
+
+              <button onClick={() => onStartActivity('Workbook')} disabled={!isWorkbookUnlocked || isFetching} className={`relative bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 transition-all group ${!isWorkbookUnlocked ? 'opacity-50 grayscale cursor-not-allowed' : 'hover:bg-white/20 hover:scale-[1.02]'}`}>
+                {!isWorkbookUnlocked && <LockIcon />}
                 <img src="https://i.postimg.cc/s2J5tbKz/2(9).png" alt="Workbook" className="h-28 object-contain opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-transform duration-500" />
-                <h3 className="font-light tracking-wide text-2xl uppercase">Workbook</h3>
+                <div className="flex flex-col items-center">
+                  <h3 className="font-light tracking-wide text-2xl uppercase">Workbook</h3>
+                  {workbookScore > 0 && <span className="text-[10px] font-bold text-white/50 mt-1">SCORE: {workbookScore}%</span>}
+                </div>
               </button>
-              <button onClick={() => onStartActivity('Calendar')} className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 hover:bg-white/20 hover:scale-[1.02] transition-all group">
+
+              <button onClick={() => onStartActivity('Calendar')} disabled={!isCalendarUnlocked || isFetching} className={`relative bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 transition-all group ${!isCalendarUnlocked ? 'opacity-50 grayscale cursor-not-allowed' : 'hover:bg-white/20 hover:scale-[1.02]'}`}>
+                {!isCalendarUnlocked && <LockIcon />}
                 <img src="https://i.postimg.cc/vT49xTyn/3(6).png" alt="Calendar" className="h-28 object-contain opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-transform duration-500" />
                 <h3 className="font-light tracking-wide text-2xl uppercase">Calendar</h3>
               </button>
             </div>
+            
             <div className="grid grid-cols-4 gap-6 flex-1">
-              {/* Bottom Row Icons - Same as before */}
               <button className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 hover:bg-white/20 hover:scale-[1.02] transition-all group"><img src="https://i.postimg.cc/rpgthxF0/4(5).png" alt="Forum" className="h-20 object-contain opacity-90 group-hover:scale-110 transition-transform" /><h3 className="font-light tracking-wide text-lg text-center leading-tight">Open<br/>forum</h3></button>
               <button className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 hover:bg-white/20 hover:scale-[1.02] transition-all group"><img src="https://i.postimg.cc/XNrQC7QY/5(4).png" alt="Chat" className="h-20 object-contain opacity-90 group-hover:scale-110 transition-transform" /><h3 className="font-light tracking-wide text-lg text-center leading-tight">Chat<br/>room</h3></button>
               <button className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 hover:bg-white/20 hover:scale-[1.02] transition-all group"><img src="https://i.postimg.cc/PqfMrtCH/6(4).png" alt="Info" className="h-20 object-contain opacity-90 group-hover:scale-110 transition-transform" /><h3 className="font-light tracking-wide text-lg text-center leading-tight">Info<br/>board</h3></button>
-              <button className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 hover:bg-white/20 hover:scale-[1.02] transition-all group"><img src="https://i.postimg.cc/Wpqw4Y1x/7(6).png" alt="Live Class" className="h-20 object-contain opacity-90 group-hover:scale-110 transition-transform" /><h3 className="font-light tracking-wide text-lg text-center leading-tight">Live<br/>class</h3></button>
+              
+              {/* LIVE CLASS JOIN BUTTON */}
+              <button 
+                onClick={() => onStartActivity('LiveClass')}
+                disabled={!activeLiveSession?.meeting_link}
+                className={`relative bg-white/10 backdrop-blur-md border-2 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 transition-all group ${
+                  activeLiveSession?.meeting_link 
+                    ? 'border-emerald-400/80 bg-emerald-500/10 shadow-[0_0_25px_rgba(52,211,153,0.3)] hover:scale-105 animate-pulse' 
+                    : 'border-white/20 opacity-50 grayscale cursor-not-allowed'
+                }`}
+              >
+                {activeLiveSession?.meeting_link && (
+                  <div className="absolute top-4 right-4 w-3 h-3 bg-emerald-400 rounded-full animate-ping"></div>
+                )}
+                <img src="https://i.postimg.cc/Wpqw4Y1x/7(6).png" alt="Live Class" className="h-20 object-contain opacity-90 group-hover:scale-110 transition-transform" />
+                <h3 className={`font-black tracking-wide text-lg text-center leading-tight ${activeLiveSession?.meeting_link ? 'text-emerald-400' : 'text-white'}`}>
+                  {activeLiveSession?.meeting_link ? 'Join\nLive Class' : 'Live\nClass'}
+                </h3>
+              </button>
             </div>
           </div>
         </div>
@@ -101,19 +146,28 @@ const DesktopView = ({ student, onReturnHome, onStartActivity, isFetching }) => 
   );
 };
 
-const MobileView = ({ student, onReturnHome, onStartActivity, isFetching }) => {
+const MobileView = ({ student, onReturnHome, onStartActivity, isFetching, activeLiveSession }) => {
   const currentUnit = student?.unit || 1;
   const totalUnits = 12; 
   const progressPercentage = Math.round((Math.max(0, currentUnit - 1) / totalUnits) * 100);
   const circleCircumference = 2 * Math.PI * 30; 
   const strokeDashoffset = circleCircumference - (progressPercentage / 100) * circleCircumference;
 
+  const isWorkbookUnlocked = (student?.lesson_score || 0) >= 75;
+  const isCalendarUnlocked = isWorkbookUnlocked && (student?.workbook_score || 0) >= 75;
+
   const cards = [
     { title: `Lesson ${student?.unit || 1}`, action: isFetching ? "LOADING..." : "START", img: "https://i.postimg.cc/wxw0tRXY/1(7).png", active: true, onClick: () => onStartActivity('Lesson') },
-    { title: "Workbook", action: "START", img: "https://i.postimg.cc/s2J5tbKz/2(9).png", active: false, onClick: () => onStartActivity('Workbook') },
-    { title: "Calendar", action: "SCHEDULE", img: "https://i.postimg.cc/vT49xTyn/3(6).png", active: false, onClick: () => onStartActivity('Calendar') },
-    { title: "Open Forum", action: "COMMENT", img: "https://i.postimg.cc/rpgthxF0/4(5).png", active: false },
-    { title: "Chat Room", action: "JOIN", img: "https://i.postimg.cc/XNrQC7QY/5(4).png", active: false },
+    { title: "Workbook", action: "START", img: "https://i.postimg.cc/s2J5tbKz/2(9).png", active: isWorkbookUnlocked, onClick: () => onStartActivity('Workbook') },
+    { title: "Calendar", action: "SCHEDULE", img: "https://i.postimg.cc/vT49xTyn/3(6).png", active: isCalendarUnlocked, onClick: () => onStartActivity('Calendar') },
+    { 
+      title: activeLiveSession?.meeting_link ? "Join Class" : "Live Class", 
+      action: activeLiveSession?.meeting_link ? "JOIN NOW" : "LOCKED", 
+      img: "https://i.postimg.cc/Wpqw4Y1x/7(6).png", 
+      active: !!activeLiveSession?.meeting_link, 
+      highlight: !!activeLiveSession?.meeting_link,
+      onClick: () => onStartActivity('LiveClass') 
+    },
   ];
 
   return (
@@ -144,10 +198,14 @@ const MobileView = ({ student, onReturnHome, onStartActivity, isFetching }) => {
         </div>
         <div className="flex-1 flex flex-col justify-center">
           <h3 className="text-[#fcd34d] font-black text-[10px] mb-2 uppercase tracking-widest drop-shadow-md">Upcoming Activities</h3>
-          <ul className="space-y-2 text-[9px] font-medium text-white/80">
-            <li className="flex items-center gap-2"><span className="opacity-70">📅</span> Aug 15: Live Lab Session</li>
-            <li className="flex items-center gap-2"><span className="opacity-70">💬</span> Aug 18: Chat room meeting</li>
-          </ul>
+          {activeLiveSession ? (
+            <ul className="space-y-1 text-[9px] font-medium text-white/80">
+              <li className="font-bold text-white">Live Lab Session</li>
+              <li className="text-emerald-400 font-bold">{activeLiveSession.session_date} • {activeLiveSession.time_slot}</li>
+            </ul>
+          ) : (
+            <p className="text-[9px] text-white/50 italic">No upcoming sessions.</p>
+          )}
         </div>
       </div>
 
@@ -156,11 +214,20 @@ const MobileView = ({ student, onReturnHome, onStartActivity, isFetching }) => {
       <div className="w-full h-64 relative z-10">
         <Swiper effect={'coverflow'} grabCursor={true} centeredSlides={true} slidesPerView={'auto'} coverflowEffect={{ rotate: 0, stretch: 0, depth: 150, modifier: 2.5, slideShadows: false }} modules={[EffectCoverflow, Pagination]} className="w-full h-full">
           {cards.map((card, idx) => (
-            <SwiperSlide key={idx} className="w-48 h-60 bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] p-4 shadow-2xl flex flex-col items-center justify-between">
+            <SwiperSlide key={idx} className={`w-48 h-60 bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] p-4 shadow-2xl flex flex-col items-center justify-between transition-all ${!card.active ? 'opacity-50 grayscale' : ''} ${card.highlight ? 'border-emerald-400/50 bg-emerald-500/10' : ''}`}>
+              {!card.active && (
+                <svg className="w-6 h-6 text-white/50 absolute top-4 right-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" /></svg>
+              )}
               <img src={card.img} alt={card.title} className="h-24 object-contain mt-4 drop-shadow-md opacity-90" />
               <div className="w-full text-center">
-                <h3 className={`font-light text-xl mb-4 tracking-wide uppercase ${card.active ? 'text-[#fcd34d] font-bold drop-shadow-md' : 'text-white/70'}`}>{card.title}</h3>
-                <button onClick={() => card.onClick && card.onClick()} className={`w-full font-black text-[10px] py-3 rounded-full shadow-lg tracking-widest uppercase transition-transform active:scale-95 ${card.active ? 'bg-[#fcd34d] text-[#08203e]' : 'bg-white/20 text-white'}`}>{card.action}</button>
+                <h3 className={`font-light text-xl mb-4 tracking-wide uppercase ${card.highlight ? 'text-emerald-400 font-bold' : card.active ? 'text-[#fcd34d] font-bold' : 'text-white/70'}`}>{card.title}</h3>
+                <button 
+                  disabled={!card.active}
+                  onClick={() => card.onClick && card.onClick()} 
+                  className={`w-full font-black text-[10px] py-3 rounded-full shadow-lg tracking-widest uppercase transition-transform active:scale-95 ${card.highlight ? 'bg-emerald-400 text-[#08203e]' : card.active ? 'bg-[#fcd34d] text-[#08203e]' : 'bg-white/20 text-white cursor-not-allowed'}`}
+                >
+                  {card.action}
+                </button>
               </div>
             </SwiperSlide>
           ))}
@@ -173,64 +240,63 @@ const MobileView = ({ student, onReturnHome, onStartActivity, isFetching }) => {
 // ==========================================
 // 2. TEMPLATE 9: THE GATEKEEPER
 // ==========================================
-const EvaluationCrossroad = ({ data, onScheduleLive, onScheduleComplementary, onScheduleTutoring, onRetry }) => {
-  const { type, scores, fails, unit, level } = data;
-  
-  // Calculate average dynamically
-  const scoreValues = Object.values(scores);
-  const average = scoreValues.length > 0 ? Math.round(scoreValues.reduce((a, b) => a + b, 0) / scoreValues.length) : 0;
-  const passed = average >= 75;
+const EvaluationCrossroad = ({ data, onProceed, onRetry, onScheduleLive, onScheduleComplementary, onScheduleTutoring }) => {
+  const { type, scores, fails, unit, level, average, passed } = data;
+  const skillEntries = Object.entries(scores);
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#070b19]/90 backdrop-blur-md px-4 font-montserrat">
-      <div className="bg-white/5 border border-white/20 backdrop-blur-xl rounded-[30px] p-8 md:p-12 max-w-md w-full shadow-2xl flex flex-col items-center text-center animate-fade-in relative overflow-hidden">
-        
-        {/* Animated Glow Behind Text */}
-        <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full blur-[80px] pointer-events-none opacity-30 ${passed ? 'bg-green-500' : 'bg-red-500'}`}></div>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#050814]/95 px-4 md:px-10 font-montserrat overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none opacity-40 mix-blend-screen" 
+           style={{ 
+             backgroundImage: `url("data:image/svg+xml,%3Csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M-100,50 Q250,150 600,50 T1300,50' fill='none' stroke='%23fcd34d' stroke-width='1.5' opacity='0.3'/%3E%3Cpath d='M-100,70 Q250,-10 600,70 T1300,70' fill='none' stroke='%23ffffff' stroke-width='1' opacity='0.1'/%3E%3Cpath d='M-100,90 Q250,190 600,90 T1300,90' fill='none' stroke='%23fcd34d' stroke-width='0.5' opacity='0.2'/%3E%3C/svg%3E")`, 
+             backgroundSize: 'cover', backgroundPosition: 'center' 
+           }}>
+      </div>
 
-        <h2 className="text-2xl md:text-3xl font-black text-white mb-2 tracking-widest uppercase drop-shadow-md relative z-10">
-          {level}: UNIT {unit}
-        </h2>
-        <h3 className="text-xl md:text-2xl font-black text-white/70 mb-6 tracking-widest uppercase relative z-10">
-          {type} {passed ? 'COMPLETED' : 'RESULTS'}
-        </h3>
-
-        <div className="w-full space-y-4 mb-8 relative z-10">
-          {Object.entries(scores).map(([skill, score]) => (
-            <div key={skill}>
-              <div className="flex justify-between text-[10px] font-bold text-white/70 tracking-widest uppercase mb-1">
-                <span>{skill}</span>
-                <span>{score}%</span>
-              </div>
-              <div className="w-full bg-black/40 rounded-full h-2 overflow-hidden shadow-inner border border-white/10">
-                <div className={`h-full rounded-full transition-all duration-1000 ${score >= 75 ? 'bg-[#fcd34d] shadow-[0_0_10px_rgba(252,211,77,0.8)]' : 'bg-red-400 shadow-[0_0_10px_rgba(248,113,113,0.8)]'}`} style={{ width: `${score}%` }}></div>
-              </div>
-            </div>
-          ))}
+      <div className="bg-white/10 border border-white/20 backdrop-blur-2xl rounded-[2rem] md:rounded-[3rem] p-8 md:p-16 w-full max-w-sm md:max-w-5xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col md:flex-row items-center md:items-center gap-8 md:gap-16 relative z-10">
+        <div className="flex-1 flex flex-col items-center md:items-start justify-center text-center md:text-left w-full">
+          <h2 className="text-3xl md:text-5xl font-black text-white mb-2 md:mb-4 tracking-wide uppercase drop-shadow-md">{level}: UNIT {unit}</h2>
+          <h3 className="text-3xl md:text-5xl font-black text-white mb-2 md:mb-6 tracking-wide uppercase drop-shadow-md">{type} 1</h3>
+          <h1 className={`text-5xl md:text-7xl font-black uppercase tracking-wider ${passed ? 'text-white drop-shadow-[0_0_25px_rgba(255,255,255,0.9)]' : 'text-red-100 drop-shadow-[0_0_25px_rgba(248,113,113,0.9)]'}`}>
+            {passed ? 'COMPLETED' : 'RESULTS'}
+          </h1>
         </div>
 
-        <div className="relative z-10 flex flex-col items-center w-full">
-          <span className={`text-6xl md:text-7xl font-black mb-8 drop-shadow-[0_0_15px_currentColor] ${passed ? 'text-[#fcd34d]' : 'text-red-400'}`}>
-            {average}%
-          </span>
+        <div className="flex-[0.8] flex flex-col items-center justify-center w-full max-w-sm">
+          <div className="w-full space-y-3 md:space-y-4 mb-6 md:mb-8">
+            {skillEntries.map(([skill, score]) => (
+              <div key={skill} className="flex items-center justify-between gap-3 md:gap-4">
+                <span className="w-24 md:w-32 text-left text-xs md:text-sm font-medium text-white tracking-wide">{skill}:</span>
+                <div className="flex-1 bg-white rounded-full h-3 md:h-3.5 overflow-hidden shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]">
+                  <div className={`h-full rounded-full transition-all duration-1000 ${score >= 75 ? 'bg-[#fcd34d] shadow-[0_0_10px_rgba(252,211,77,0.8)]' : 'bg-red-400'}`} style={{ width: `${score}%` }}></div>
+                </div>
+              </div>
+            ))}
+          </div>
 
-          {passed ? (
-            <button onClick={onScheduleLive} className="w-full py-4 bg-white/10 border border-white/20 text-white hover:bg-[#fcd34d] hover:text-[#08203e] hover:border-transparent font-black tracking-widest text-xs uppercase rounded-full hover:scale-105 transition-all shadow-lg">
-              RESERVAR CLASE EN VIVO
-            </button>
-          ) : fails === 0 ? (
-            <button onClick={onRetry} className="w-full py-4 bg-white/10 border border-white/20 text-white hover:bg-white/20 font-black tracking-widest text-xs uppercase rounded-full hover:scale-105 transition-all shadow-lg">
-              INTENTAR DE NUEVO
-            </button>
-          ) : fails === 1 ? (
-            <button onClick={onScheduleComplementary} className="w-full py-4 bg-[#fcd34d] text-[#08203e] font-black tracking-widest text-xs uppercase rounded-full hover:scale-105 transition-all shadow-[0_0_15px_rgba(252,211,77,0.4)]">
-              RESERVAR CLASE COMPLEMENTARIA
-            </button>
-          ) : (
-            <button onClick={onScheduleTutoring} className="w-full py-4 bg-red-500 text-white font-black tracking-widest text-xs uppercase rounded-full hover:scale-105 transition-all shadow-[0_0_15px_rgba(239,68,68,0.5)]">
-              RESERVAR TUTORIA 1-ON-1
-            </button>
-          )}
+          <div className={`text-7xl md:text-[7rem] leading-none font-black mb-6 md:mb-8 ${passed ? 'text-[#fcd34d] drop-shadow-[0_0_30px_rgba(252,211,77,0.6)]' : 'text-red-400 drop-shadow-[0_0_30px_rgba(248,113,113,0.6)]'}`}>
+            {average}%
+          </div>
+
+          <div className="w-full max-w-[240px]">
+            {passed ? (
+              <button onClick={onProceed} className="w-full py-3.5 md:py-4 bg-gradient-to-b from-[#e8e8e8] to-[#999999] border border-white/50 text-[#1a1a1a] hover:from-white hover:to-[#b3b3b3] font-black tracking-widest text-xs md:text-sm uppercase rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-[0_10px_20px_rgba(0,0,0,0.4)] whitespace-pre-line leading-tight">
+                {type === 'Lesson' ? 'PROCEED TO\nWORKBOOK' : 'RESERVAR\nCLASE EN VIVO'}
+              </button>
+            ) : fails === 0 ? (
+              <button onClick={onRetry} className="w-full py-3.5 md:py-4 bg-white/10 border border-white/20 text-white hover:bg-white/20 font-black tracking-widest text-xs md:text-sm uppercase rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-lg whitespace-pre-line leading-tight">
+                INTENTAR\nDE NUEVO
+              </button>
+            ) : fails === 1 ? (
+              <button onClick={onScheduleComplementary} className="w-full py-3.5 md:py-4 bg-orange-400 text-white font-black tracking-widest text-xs md:text-sm uppercase rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-[0_0_15px_rgba(251,146,60,0.5)] whitespace-pre-line leading-tight">
+                RESERVAR CLASE\nCOMPLEMENTARIA
+              </button>
+            ) : (
+              <button onClick={onScheduleTutoring} className="w-full py-3.5 md:py-4 bg-red-500 text-white font-black tracking-widest text-xs md:text-sm uppercase rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-[0_0_15px_rgba(239,68,68,0.5)] whitespace-pre-line leading-tight">
+                RESERVAR TUTORIA\n1-ON-1
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -238,37 +304,82 @@ const EvaluationCrossroad = ({ data, onScheduleLive, onScheduleComplementary, on
 };
 
 // ==========================================
-// 3. TEMPLATE 10: STUDENT SCHEDULING CALENDAR
+// 3. THE LIVE CALENDAR BRIDGE (SUPABASE CONNECTED)
 // ==========================================
 const StudentCalendar = ({ student, filterType, onConfirm, onCancel }) => {
   const [currentWeekOffset, setCurrentWeekOffset] = useState(0);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [availableSlots, setAvailableSlots] = useState([]);
+  const [selectedSlot, setSelectedSlot] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  // Generate generic week dates based on offset
+  useEffect(() => {
+    const fetchAvailability = async () => {
+      const { data, error } = await supabase
+        .from('live_sessions')
+        .select('*')
+        .eq('status', 'available');
+        
+      if (!error && data) {
+        setAvailableSlots(data);
+      }
+    };
+    fetchAvailability();
+  }, []);
+
   const getWeekDates = (offsetWeeks) => {
     const today = new Date();
     const currentDay = today.getDay();
     const distanceToMonday = currentDay === 0 ? -6 : 1 - currentDay;
     const monday = new Date(today);
     monday.setDate(today.getDate() + distanceToMonday + (offsetWeeks * 7));
-
     const dates = [];
     for (let i = 0; i < 6; i++) {
       const d = new Date(monday);
       d.setDate(monday.getDate() + i);
       dates.push(d);
     }
-    return dates; // [Mon, Tue, Wed, Thu, Fri, Sat]
+    return dates; 
   };
 
   const weekDates = getWeekDates(currentWeekOffset);
   const dayNames = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
   const times = ['9:00 AM', '11:00 AM', '1:00 PM', '3:00 PM', '6:00 PM', '9:00 PM'];
 
-  // Mocking "Yellow" available blocks based on unit/level for demonstration
-  const isAvailable = (dayIndex, timeIndex) => {
-    // Just pseudo-random logic for the mockup to show yellow blocks
-    return (dayIndex + timeIndex + currentWeekOffset) % 5 === 0;
+  const getSlotData = (date, timeStr) => {
+    const dateStr = date.toISOString().split('T')[0];
+    return availableSlots.find(s => s.session_date === dateStr && s.time_slot === timeStr);
+  };
+
+  const handleSlotClick = (slot) => {
+    setSelectedSlot(slot);
+    setShowConfirmation(true);
+  };
+
+  const handleConfirmBooking = async () => {
+    if (!selectedSlot || !student) return;
+    setIsProcessing(true);
+    
+    try {
+      const { error } = await supabase
+        .from('live_sessions')
+        .update({
+          status: 'booked',
+          student_id: student.id,
+          unit: student.unit || 1
+        })
+        .eq('id', selectedSlot.id);
+        
+      if (error) throw error;
+      
+      setShowConfirmation(false);
+      onConfirm(); 
+    } catch (error) {
+      console.error("Booking Error:", error);
+      alert("Lo sentimos, este horario ya no está disponible.");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -277,12 +388,23 @@ const StudentCalendar = ({ student, filterType, onConfirm, onCancel }) => {
       {showConfirmation && (
         <div className="absolute inset-0 z-[200] flex items-center justify-center bg-[#070b19]/80 backdrop-blur-md p-4 animate-fade-in">
            <div className="bg-white/10 border border-white/20 backdrop-blur-xl rounded-[30px] p-8 md:p-12 max-w-md w-full shadow-2xl flex flex-col items-center text-center">
-              <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-8 drop-shadow-md leading-relaxed">
-                YOUR {filterType} HAS BEEN SCHEDULED ALREADY
+              <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-4 drop-shadow-md leading-relaxed">
+                CONFIRM YOUR {filterType}
               </h2>
-              <button onClick={() => { setShowConfirmation(false); onConfirm(); }} className="w-full py-4 bg-[#fcd34d] text-[#08203e] font-black tracking-widest text-xs uppercase rounded-full hover:scale-105 transition-all shadow-[0_0_15px_rgba(252,211,77,0.4)]">
-                GO TO STUDENT HUB
-              </button>
+              <p className="text-white/70 text-sm mb-8">
+                {selectedSlot?.session_date} at {selectedSlot?.time_slot}
+              </p>
+              
+              <div className="flex w-full gap-4">
+                <button onClick={() => setShowConfirmation(false)} className="flex-1 py-4 bg-white/5 hover:bg-white/10 text-white font-bold text-xs uppercase rounded-xl transition-colors">CANCEL</button>
+                <button 
+                  onClick={handleConfirmBooking} 
+                  disabled={isProcessing}
+                  className="flex-1 py-4 bg-[#fcd34d] text-[#08203e] font-black tracking-widest text-xs uppercase rounded-xl hover:scale-105 transition-all shadow-[0_0_15px_rgba(252,211,77,0.4)] disabled:opacity-50"
+                >
+                  {isProcessing ? 'SAVING...' : 'CONFIRM'}
+                </button>
+              </div>
            </div>
         </div>
       )}
@@ -298,25 +420,15 @@ const StudentCalendar = ({ student, filterType, onConfirm, onCancel }) => {
            </p>
            
            <div className="flex flex-col gap-4">
-              <select className="w-full p-4 bg-black/40 border border-white/20 rounded-xl text-xs font-bold text-white uppercase tracking-widest focus:outline-none appearance-none">
-                 <option>{filterType}</option>
-              </select>
-              <select className="w-full p-4 bg-black/40 border border-white/20 rounded-xl text-xs font-bold text-white uppercase tracking-widest focus:outline-none appearance-none">
-                 <option>DAY OF THE WEEK ▾</option>
-              </select>
-              <select className="w-full p-4 bg-black/40 border border-white/20 rounded-xl text-xs font-bold text-white uppercase tracking-widest focus:outline-none appearance-none">
-                 <option>HOUR ▾</option>
-              </select>
-              <button className="w-full py-4 mt-2 bg-transparent border-2 border-white/20 text-white font-black tracking-widest text-xs uppercase rounded-xl hover:bg-white/10 transition-colors">
-                FILTER RESULTS
-              </button>
+              <select className="w-full p-4 bg-black/40 border border-white/20 rounded-xl text-xs font-bold text-white uppercase tracking-widest focus:outline-none appearance-none"><option>{filterType}</option></select>
+              <select className="w-full p-4 bg-black/40 border border-white/20 rounded-xl text-xs font-bold text-white uppercase tracking-widest focus:outline-none appearance-none"><option>DAY OF THE WEEK ▾</option></select>
+              <select className="w-full p-4 bg-black/40 border border-white/20 rounded-xl text-xs font-bold text-white uppercase tracking-widest focus:outline-none appearance-none"><option>HOUR ▾</option></select>
            </div>
         </div>
 
         <div className="flex-[1.5] flex flex-col bg-black/20 rounded-3xl border border-white/10 p-4 md:p-6 relative shadow-inner">
            <h3 className="text-center font-black text-white text-lg uppercase tracking-widest mb-6 drop-shadow-md">{filterType} CALENDAR</h3>
            
-           {/* Navigation Arrows */}
            <button disabled={currentWeekOffset === 0} onClick={() => setCurrentWeekOffset(prev => prev - 1)} className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-white/50 hover:text-white disabled:opacity-20 z-10 transition-colors">
              <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
            </button>
@@ -335,12 +447,14 @@ const StudentCalendar = ({ student, filterType, onConfirm, onCancel }) => {
              {times.map((time, tIdx) => (
                <React.Fragment key={time}>
                  {dayNames.map((_, dIdx) => {
-                   const available = isAvailable(dIdx, tIdx);
+                   const slotData = getSlotData(weekDates[dIdx], time);
+                   const isAvailable = !!slotData;
+                   
                    return (
                      <div 
                        key={`${dIdx}-${tIdx}`} 
-                       onClick={() => available && setShowConfirmation(true)}
-                       className={`h-10 md:h-12 flex items-center justify-center text-[8px] md:text-[9px] font-bold tracking-widest border border-white/5 rounded-sm transition-all ${available ? 'bg-[#fcd34d] text-[#08203e] cursor-pointer hover:scale-105 shadow-[0_0_10px_rgba(252,211,77,0.3)] z-10 relative' : 'bg-white/5 text-white/30 cursor-not-allowed'}`}
+                       onClick={() => isAvailable && handleSlotClick(slotData)}
+                       className={`h-10 md:h-12 flex items-center justify-center text-[8px] md:text-[9px] font-bold tracking-widest border border-white/5 rounded-sm transition-all ${isAvailable ? 'bg-[#fcd34d] text-[#08203e] cursor-pointer hover:scale-105 shadow-[0_0_10px_rgba(252,211,77,0.3)] z-10 relative' : 'bg-white/5 text-white/30 cursor-not-allowed'}`}
                      >
                        {time}
                      </div>
@@ -349,9 +463,6 @@ const StudentCalendar = ({ student, filterType, onConfirm, onCancel }) => {
                </React.Fragment>
              ))}
            </div>
-           <button className="w-full mt-auto py-3 bg-white/10 border border-white/20 text-white/50 font-black tracking-widest text-xs uppercase rounded-full cursor-not-allowed">
-             SAVE LAB SESSION
-           </button>
         </div>
       </div>
     </div>
@@ -364,12 +475,13 @@ const StudentCalendar = ({ student, filterType, onConfirm, onCancel }) => {
 const StudentHub = ({ onReturnHome, preloadedStudent }) => {
   const [studentData, setStudentData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeActivity, setActiveActivity] = useState(null); // 'Lesson', 'Workbook', or null
+  const [activeActivity, setActiveActivity] = useState(null);
   const [isFetching, setIsFetching] = useState(false);
+  const [activeLiveSession, setActiveLiveSession] = useState(null);
   
-  // Gatekeeper & Calendar States
   const [showGatekeeper, setShowGatekeeper] = useState(false);
   const [gatekeeperData, setGatekeeperData] = useState(null);
+  
   const [showCalendar, setShowCalendar] = useState(false);
   const [calendarFilter, setCalendarFilter] = useState('LAB SESSION');
 
@@ -377,6 +489,7 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
     if (preloadedStudent) {
       setStudentData(preloadedStudent);
       setLoading(false);
+      fetchUpcomingSession(preloadedStudent.id);
     } else {
       fetchStudentProfile();
     }
@@ -388,11 +501,28 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
       if (!session) return;
       const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
       setStudentData(profile);
+      fetchUpcomingSession(profile.id);
     } catch (err) {
       console.error("Error loading student profile:", err);
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchUpcomingSession = async (studentId) => {
+    if (!studentId) return;
+    const today = new Date().toISOString().split('T')[0];
+    const { data } = await supabase
+      .from('live_sessions')
+      .select('*')
+      .eq('student_id', studentId)
+      .eq('status', 'booked')
+      .gte('session_date', today)
+      .order('session_date', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (data) setActiveLiveSession(data);
   };
 
   const handleStartActivity = async (type) => {
@@ -402,72 +532,85 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
       setShowCalendar(true);
       return;
     }
-
-    setIsFetching(true);
-    try {
-      // Mocking fetch logic for flow continuity
-      setTimeout(() => {
-         setActiveActivity(type);
-         setIsFetching(false);
-      }, 1000);
-    } catch (err) {
-      setIsFetching(false);
+    if (type === 'LiveClass') {
+      if (activeLiveSession?.meeting_link) {
+        window.open(activeLiveSession.meeting_link, '_blank');
+      }
+      return;
     }
+    setIsFetching(true);
+    setTimeout(() => {
+       setActiveActivity(type);
+       setIsFetching(false);
+    }, 1000);
   };
 
-  // --- THE GATEKEEPER LOGIC ---
-  const handleActivityComplete = (type, mockScores) => {
+  const handleActivityComplete = async (type, mockScores) => {
     setActiveActivity(null);
-    
-    // Dynamic Score filtering based on type
     const finalScores = type === 'Workbook' 
-      ? { Reading: mockScores.Reading, Grammar: mockScores.Grammar, Comprehension: mockScores.Comprehension, Writing: 80 } 
-      : { Listening: mockScores.Listening, Reading: mockScores.Reading, Grammar: mockScores.Grammar, Comprehension: mockScores.Comprehension, Speaking: 75 };
+      ? { Reading: mockScores.Reading, Grammar: mockScores.Grammar, Comprehension: mockScores.Comprehension, Writing: mockScores.Writing || 80 } 
+      : { Listening: mockScores.Listening, Reading: mockScores.Reading, Grammar: mockScores.Grammar, Comprehension: mockScores.Comprehension, Speaking: mockScores.Speaking || 75 };
+
+    const scoreValues = Object.values(finalScores);
+    const average = scoreValues.length > 0 ? Math.round(scoreValues.reduce((a, b) => a + b, 0) / scoreValues.length) : 0;
+    const passed = average >= 75;
+
+    try {
+      await supabase.from('academic_records').insert({
+        student_id: studentData.id,
+        unit: studentData.unit || 1,
+        activity_type: type,
+        score_percentage: average,
+        teacher_notes: 'Auto-Graded'
+      });
+    } catch (e) {
+      console.error("Failed to log academic record", e);
+    }
 
     setGatekeeperData({
-      type: type,
-      level: studentData?.level || 'A1',
-      unit: studentData?.unit || 1,
-      scores: finalScores,
-      fails: studentData?.unit_fail_count || 0
+      type, level: studentData?.level || 'A1', unit: studentData?.unit || 1, scores: finalScores, average, passed, fails: studentData?.unit_fail_count || 0
     });
-    
     setShowGatekeeper(true);
   };
 
-  const handleRetry = async () => {
-    const newFails = (studentData.unit_fail_count || 0) + 1;
-    // In real app: Push new fails to DB, wipe scores
-    setStudentData({ ...studentData, unit_fail_count: newFails });
-    setShowGatekeeper(false);
+  const handleGatekeeperProceed = async () => {
+    try {
+      const isLesson = gatekeeperData.type === 'Lesson';
+      const updatePayload = isLesson ? { lesson_score: gatekeeperData.average } : { workbook_score: gatekeeperData.average };
+
+      await supabase.from('profiles').update(updatePayload).eq('id', studentData.id);
+      setStudentData(prev => ({ ...prev, ...updatePayload }));
+      setShowGatekeeper(false);
+
+      if (!isLesson) {
+        setCalendarFilter('LIVE LAB SESSION');
+        setShowCalendar(true);
+      }
+    } catch (err) {
+      console.error("Error saving progress:", err);
+    }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#070b19]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#fcd34d]"></div>
-      </div>
-    );
-  }
+  const handleRetry = async () => {
+    try {
+      const newFails = (studentData.unit_fail_count || 0) + 1;
+      await supabase.from('profiles').update({ unit_fail_count: newFails }).eq('id', studentData.id);
+      setStudentData({ ...studentData, unit_fail_count: newFails });
+      setShowGatekeeper(false);
+    } catch (err) {}
+  };
 
-  // Intercept for active execution
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#070b19]"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#fcd34d]"></div></div>;
+
   if (activeActivity) {
-    return (
-      <StudentPlayer 
-        activityType={activeActivity}
-        student={studentData} 
-        onExit={() => setActiveActivity(null)}
-        onComplete={(scores) => handleActivityComplete(activeActivity, scores)}
-      />
-    );
+    return <StudentPlayer activityType={activeActivity} student={studentData} onExit={() => setActiveActivity(null)} onComplete={(scores) => handleActivityComplete(activeActivity, scores)} />;
   }
 
   return (
     <>
       {showGatekeeper && (
         <EvaluationCrossroad 
-          data={gatekeeperData}
-          onRetry={handleRetry}
+          data={gatekeeperData} onProceed={handleGatekeeperProceed} onRetry={handleRetry}
           onScheduleLive={() => { setShowGatekeeper(false); setCalendarFilter('LIVE LAB SESSION'); setShowCalendar(true); }}
           onScheduleComplementary={() => { setShowGatekeeper(false); setCalendarFilter('COMPLEMENTARY CLASS'); setShowCalendar(true); }}
           onScheduleTutoring={() => { setShowGatekeeper(false); setCalendarFilter('1-ON-1 TUTORING'); setShowCalendar(true); }}
@@ -476,18 +619,20 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
 
       {showCalendar && (
         <StudentCalendar 
-          student={studentData} 
-          filterType={calendarFilter} 
-          onCancel={() => setShowCalendar(false)} 
-          onConfirm={() => { setShowCalendar(false); /* Trigger unit progression logic here */ }} 
+          student={studentData} filterType={calendarFilter} onCancel={() => setShowCalendar(false)} 
+          onConfirm={() => { 
+            setShowCalendar(false); 
+            fetchUpcomingSession(studentData.id);
+            alert("¡Reserva confirmada exitosamente!"); 
+          }} 
         />
       )}
       
       <div className="hidden md:block">
-        <DesktopView student={studentData} onReturnHome={onReturnHome} onStartActivity={handleStartActivity} isFetching={isFetching} />
+        <DesktopView student={studentData} onReturnHome={onReturnHome} onStartActivity={handleStartActivity} isFetching={isFetching} activeLiveSession={activeLiveSession} />
       </div>
       <div className="block md:hidden">
-        <MobileView student={studentData} onReturnHome={onReturnHome} onStartActivity={handleStartActivity} isFetching={isFetching} />
+        <MobileView student={studentData} onReturnHome={onReturnHome} onStartActivity={handleStartActivity} isFetching={isFetching} activeLiveSession={activeLiveSession} />
       </div>
     </>
   );

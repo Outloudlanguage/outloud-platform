@@ -455,7 +455,23 @@ const RegistrationPage = ({ onReturnHome, onFreeTrialClick }) => {
 
     setIsSubmitting(true);
     try {
-      const { data: supabaseData, error: supabaseError } = await supabase.from('registrations').insert([{}]).select('id').single();
+      // INJECTED DATA: Now maps the form state correctly into the Supabase database
+      const insertPayload = {
+        full_name: formData.fullName,
+        email: formData.email,
+        phone: formData.phone,
+        reason: formData.reason,
+        fluent_time: formData.fluentTime,
+        interest: formData.interest,
+        status: 'pending' 
+      };
+
+      const { data: supabaseData, error: supabaseError } = await supabase
+        .from('registrations')
+        .insert([insertPayload])
+        .select('id')
+        .single();
+        
       if (supabaseError) throw supabaseError;
       const formattedSubmissionId = `Submission #${String(supabaseData.id).padStart(3, '0')}`;
 
