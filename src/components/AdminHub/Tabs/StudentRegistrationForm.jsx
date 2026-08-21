@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../../../SupabaseClient';
 
 const StudentRegistrationForm = () => {
   const [email, setEmail] = useState('');
@@ -19,10 +20,29 @@ const StudentRegistrationForm = () => {
         { auth: { persistSession: false, autoRefreshToken: false } }
       );
 
+      // 1. Create User in Auth Vault
       const { data, error } = await ghostClient.auth.signUp({ email, password });
       if (error) throw error;
 
-      setStatusMessage(`Success! ${email} is registered.`);
+      if (data?.user) {
+        setStatusMessage('Auth created. Building Student Profile...');
+        
+        // 2. INJECTED DATA: Create the profile in the database so they can actually log in and access the hub
+        const { error: profileError } = await supabase.from('profiles').insert({
+          id: data.user.id,
+          first_name: 'New',
+          last_name: 'Student',
+          email: email,
+          role: 'Student',
+          level: 'A1',
+          unit: 1,
+          status: 'active'
+        });
+
+        if (profileError) throw profileError;
+      }
+
+      setStatusMessage(`Success! ${email} is registered and fully provisioned.`);
       setEmail('');
       setPassword('');
     } catch (error) {

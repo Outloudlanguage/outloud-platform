@@ -104,7 +104,7 @@ const CustomDropdown = ({
 };
 
 // =========================================
-// 1. MOBILE REGISTRATION UI (UNTOUCHED)
+// 1. MOBILE REGISTRATION UI
 // =========================================
 const MobileRegistration = ({
   formData, setFormData, errors, isSubmitting, devMessage,
@@ -138,11 +138,11 @@ const MobileRegistration = ({
         </button>
       </div>
 
-      {/* MOBILE FORM CARD */}
-      <div className="relative z-10 flex-grow w-full bg-white/10 backdrop-blur-2xl rounded-[2rem] shadow-[0_15px_40px_rgba(0,0,0,0.3)] border border-white/20 p-5 flex flex-col mb-6 overflow-hidden">
+      {/* MOBILE FORM CARD - overflow-hidden removed to allow dropdowns to pop out */}
+      <div className="relative z-10 flex-grow w-full bg-white/10 backdrop-blur-2xl rounded-[2rem] shadow-[0_15px_40px_rgba(0,0,0,0.3)] border border-white/20 p-5 flex flex-col mb-6">
         <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none rounded-[2rem]"></div>
         
-        <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none z-0">
+        <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none z-0 overflow-hidden">
           <img src="https://i.postimg.cc/fyvnv4XT/Diseno-sin-titulo-(14).png" alt="Watermark" className="w-64 h-64 object-contain invert brightness-0" />
         </div>
 
@@ -262,7 +262,7 @@ const MobileRegistration = ({
 };
 
 // =========================================
-// 2. DESKTOP REGISTRATION UI (FIXED)
+// 2. DESKTOP REGISTRATION UI
 // =========================================
 const DesktopRegistration = ({
   formData, setFormData, errors, isSubmitting, devMessage,
@@ -287,7 +287,6 @@ const DesktopRegistration = ({
           <span className="text-base lg:text-xl font-light text-white/80 font-montserrat whitespace-nowrap tracking-wide">Online Platform</span>
         </div>
 
-        {/* FIXED: Added correct house icon matching Levels/Info */}
         <button onClick={onReturnHome} className="flex items-center space-x-2 text-white font-bold font-montserrat hover:text-[#fcd34d] transition-colors z-50 shrink-0 ml-4">
           <svg className="flex-none w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -300,10 +299,10 @@ const DesktopRegistration = ({
         </button>
       </div>
 
-      {/* Main Glassmorphism Form Container */}
-      <div className="relative z-10 flex-grow w-full max-w-[90rem] mx-auto bg-white/10 backdrop-blur-2xl border border-white/20 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] p-6 lg:p-10 flex flex-col mb-8 overflow-hidden">
+      {/* Main Glassmorphism Form Container - overflow-hidden removed to allow dropdowns to pop out */}
+      <div className="relative z-10 flex-grow w-full max-w-[90rem] mx-auto bg-white/10 backdrop-blur-2xl border border-white/20 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] p-6 lg:p-10 flex flex-col mb-8">
         <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none rounded-[2.5rem]"></div>
-        <div className="absolute inset-0 flex items-center justify-center opacity-[0.02] pointer-events-none z-0">
+        <div className="absolute inset-0 flex items-center justify-center opacity-[0.02] pointer-events-none z-0 overflow-hidden">
           <img src="https://i.postimg.cc/fyvnv4XT/Diseno-sin-titulo-(14).png" alt="Watermark" className="w-[500px] h-[500px] object-contain invert brightness-0" />
         </div>
 
@@ -455,7 +454,7 @@ const RegistrationPage = ({ onReturnHome, onFreeTrialClick }) => {
 
     setIsSubmitting(true);
     try {
-      // INJECTED DATA: Now maps the form state correctly into the Supabase database
+      // INJECTED DATA: Now explicitly includes invest_time to prevent the 500 rejection error
       const insertPayload = {
         full_name: formData.fullName,
         email: formData.email,
@@ -463,6 +462,7 @@ const RegistrationPage = ({ onReturnHome, onFreeTrialClick }) => {
         reason: formData.reason,
         fluent_time: formData.fluentTime,
         interest: formData.interest,
+        invest_time: formData.investTime,
         status: 'pending' 
       };
 
