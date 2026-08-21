@@ -8,7 +8,10 @@ const AdminCalendar = ({ supabase }) => {
   const [sessions, setSessions] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  // Assignment States
   const [selectedTeacherId, setSelectedTeacherId] = useState('');
+  const [selectedClassType, setSelectedClassType] = useState('Unit Class'); // Default type
 
   const dayNames = ['LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB'];
   const times = ['9:00 AM', '11:00 AM', '1:00 PM', '3:00 PM', '6:00 PM', '9:00 PM'];
@@ -76,12 +79,13 @@ const AdminCalendar = ({ supabase }) => {
         session_date: dateStr,
         time_slot: selectedSlot.timeStr,
         teacher_id: selectedTeacherId,
+        class_type: selectedClassType, // Sends the specific class type to DB
         status: 'available'
       });
       await fetchCalendarData();
       closeSlotModal();
     } catch (error) {
-      alert("Error al abrir el bloque.");
+      alert("Error al abrir el bloque. Verifica que la columna 'class_type' exista en tu base de datos.");
     } finally {
       setIsProcessing(false);
     }
@@ -124,9 +128,21 @@ const AdminCalendar = ({ supabase }) => {
     setSelectedSlot({ 
       day: dIdx, time: tIdx, date: weekDates[dIdx], timeStr: times[tIdx], data: currentData 
     });
+    // Reset selections when opening a new blank slot
+    if (!currentData && teachers.length > 0) {
+      setSelectedTeacherId(teachers[0].id);
+      setSelectedClassType('Unit Class');
+    }
   };
 
   const closeSlotModal = () => setSelectedSlot(null);
+
+  // Helper for UI colors based on class type
+  const getTypeColor = (type) => {
+    if (type === '1-on-1 Tutoring') return 'text-orange-400';
+    if (type === 'Social Activity') return 'text-purple-400';
+    return 'text-[#fcd34d]'; // Unit Class
+  };
 
   return (
     <div className="bg-white/5 backdrop-blur-xl rounded-[30px] shadow-2xl border border-white/10 p-6 md:p-10 w-full animate-fade-in relative overflow-hidden font-montserrat">
@@ -154,8 +170,8 @@ const AdminCalendar = ({ supabase }) => {
 
       <div className="flex flex-wrap gap-6 mb-6 px-2 relative z-10">
         <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-white/5 border border-white/20"></div><span className="text-[10px] text-white/50 font-bold uppercase tracking-widest">Inactivo / Oculto</span></div>
-        <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-[#fcd34d] shadow-[0_0_8px_rgba(252,211,77,0.5)]"></div><span className="text-[10px] text-[#fcd34d] font-bold uppercase tracking-widest">Disponible (Bloque Amarillo)</span></div>
-        <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div><span className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest">Clase Reservada</span></div>
+        <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-[#fcd34d] shadow-[0_0_8px_rgba(252,211,77,0.5)]"></div><span className="text-[10px] text-[#fcd34d] font-bold uppercase tracking-widest">Disponible</span></div>
+        <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div><span className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest">Reservada</span></div>
       </div>
 
       <div className="w-full overflow-x-auto custom-scrollbar pb-4 relative z-10">
@@ -184,7 +200,7 @@ const AdminCalendar = ({ supabase }) => {
                   content = (
                     <div className="flex flex-col items-center leading-tight">
                       <span className="text-[8px] font-black">{slotData.student?.first_name || 'Estudiante'}</span>
-                      <span className="text-[7px] opacity-70">U{slotData.unit} • {slotData.teacher?.first_name || 'Profesor'}</span>
+                      <span className="text-[7px] opacity-70">U{slotData.unit || '?'} • {slotData.teacher?.first_name || 'Profesor'}</span>
                     </div>
                   );
                 }
@@ -234,6 +250,9 @@ const AdminCalendar = ({ supabase }) => {
                   <div className="bg-white/5 border border-white/10 rounded-xl p-4">
                     <p className="text-[10px] text-white/50 font-bold uppercase tracking-widest mb-1">Profesor</p>
                     <p className="text-sm font-bold text-white truncate">{selectedSlot.data.teacher?.first_name} {selectedSlot.data.teacher?.last_name}</p>
+                    <p className={`text-[10px] font-bold mt-1 uppercase ${getTypeColor(selectedSlot.data.class_type)}`}>
+                      {selectedSlot.data.class_type || 'Unit Class'}
+                    </p>
                   </div>
                 </div>
                 <button disabled={isProcessing} onClick={handleCancelBooking} className="w-full py-3 mt-4 bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-white font-black text-[10px] uppercase tracking-widest rounded-xl transition-colors border border-red-500/30 disabled:opacity-50">
@@ -248,31 +267,46 @@ const AdminCalendar = ({ supabase }) => {
                 <div>
                   <h4 className="text-lg font-black text-white uppercase tracking-widest">Bloque Abierto</h4>
                   <p className="text-xs text-white/60 mt-2">Profesor Asignado: <span className="font-bold text-white">{selectedSlot.data.teacher?.first_name} {selectedSlot.data.teacher?.last_name}</span></p>
+                  <p className={`text-[10px] font-bold mt-1 uppercase ${getTypeColor(selectedSlot.data.class_type)}`}>
+                    Modalidad: {selectedSlot.data.class_type || 'Unit Class'}
+                  </p>
                 </div>
                 <button disabled={isProcessing} onClick={handleCloseBlock} className="w-full py-3.5 bg-white/10 hover:bg-white/20 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all border border-white/20 disabled:opacity-50">
                   {isProcessing ? 'Procesando...' : 'Cerrar Disponibilidad'}
                 </button>
               </div>
             ) : (
-              <div className="space-y-6 text-center py-4">
+              <div className="space-y-4 text-center py-4">
                 <div className="w-16 h-16 bg-white/5 text-white/30 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/10">
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
                 </div>
                 <div>
-                  <h4 className="text-lg font-black text-white uppercase tracking-widest">Bloque Inactivo</h4>
-                  <p className="text-xs text-white/60 mt-2 mb-4">Selecciona qué profesor impartirá clases en este horario para abrir el bloque.</p>
+                  <h4 className="text-lg font-black text-white uppercase tracking-widest mb-1">Bloque Inactivo</h4>
+                  <p className="text-xs text-white/60 mb-6">Configura este bloque para habilitarlo en el calendario.</p>
                   
-                  <select 
-                    value={selectedTeacherId} 
-                    onChange={(e) => setSelectedTeacherId(e.target.value)}
-                    className="w-full p-3 bg-black/40 border border-white/20 rounded-xl text-xs font-bold text-white uppercase tracking-widest focus:outline-none appearance-none text-center"
-                  >
-                    {teachers.map(t => (
-                      <option key={t.id} value={t.id}>{t.first_name} {t.last_name}</option>
-                    ))}
-                  </select>
+                  <div className="flex flex-col gap-3">
+                    <select 
+                      value={selectedTeacherId} 
+                      onChange={(e) => setSelectedTeacherId(e.target.value)}
+                      className="w-full p-3 bg-black/40 border border-white/20 rounded-xl text-xs font-bold text-white uppercase tracking-widest focus:outline-none appearance-none text-center"
+                    >
+                      {teachers.map(t => (
+                        <option key={t.id} value={t.id}>{t.first_name} {t.last_name}</option>
+                      ))}
+                    </select>
+
+                    <select 
+                      value={selectedClassType} 
+                      onChange={(e) => setSelectedClassType(e.target.value)}
+                      className="w-full p-3 bg-black/40 border border-[#fcd34d]/50 rounded-xl text-xs font-bold text-[#fcd34d] uppercase tracking-widest focus:outline-none appearance-none text-center"
+                    >
+                      <option value="Unit Class">Unit Class (Regular)</option>
+                      <option value="1-on-1 Tutoring">1-on-1 Tutoring</option>
+                      <option value="Social Activity">Social Activity (Moderation)</option>
+                    </select>
+                  </div>
                 </div>
-                <button disabled={isProcessing} onClick={handleOpenBlock} className="w-full py-3.5 bg-[#fcd34d] hover:bg-white text-[#08203e] font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-[0_0_15px_rgba(252,211,77,0.4)] disabled:opacity-50">
+                <button disabled={isProcessing} onClick={handleOpenBlock} className="w-full mt-4 py-3.5 bg-[#fcd34d] hover:bg-white text-[#08203e] font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-[0_0_15px_rgba(252,211,77,0.4)] disabled:opacity-50">
                   {isProcessing ? 'Procesando...' : 'Abrir Bloque (Asignar)'}
                 </button>
               </div>
