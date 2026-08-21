@@ -3,6 +3,7 @@ import { supabase } from './SupabaseClient';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { EffectCoverflow, Pagination } from 'swiper/modules';
 import StudentPlayer from './StudentPlayer';
+import CommunityPanel from './components/CommunityPanel'; // <-- INJECTED COMPONENT
 
 import 'swiper/css';
 import 'swiper/css/effect-coverflow';
@@ -116,9 +117,9 @@ const DesktopView = ({ student, onReturnHome, onStartActivity, isFetching, activ
             </div>
             
             <div className="grid grid-cols-4 gap-6 flex-1">
-              <button className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 hover:bg-white/20 hover:scale-[1.02] transition-all group"><img src="https://i.postimg.cc/rpgthxF0/4(5).png" alt="Forum" className="h-20 object-contain opacity-90 group-hover:scale-110 transition-transform" /><h3 className="font-light tracking-wide text-lg text-center leading-tight">Open<br/>forum</h3></button>
-              <button className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 hover:bg-white/20 hover:scale-[1.02] transition-all group"><img src="https://i.postimg.cc/XNrQC7QY/5(4).png" alt="Chat" className="h-20 object-contain opacity-90 group-hover:scale-110 transition-transform" /><h3 className="font-light tracking-wide text-lg text-center leading-tight">Chat<br/>room</h3></button>
-              <button className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 hover:bg-white/20 hover:scale-[1.02] transition-all group"><img src="https://i.postimg.cc/PqfMrtCH/6(4).png" alt="Info" className="h-20 object-contain opacity-90 group-hover:scale-110 transition-transform" /><h3 className="font-light tracking-wide text-lg text-center leading-tight">Info<br/>board</h3></button>
+              <button onClick={() => onStartActivity('Community_BOARD')} className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 hover:bg-white/20 hover:scale-[1.02] transition-all group"><img src="https://i.postimg.cc/rpgthxF0/4(5).png" alt="Forum" className="h-20 object-contain opacity-90 group-hover:scale-110 transition-transform" /><h3 className="font-light tracking-wide text-lg text-center leading-tight">Open<br/>forum</h3></button>
+              <button onClick={() => onStartActivity('Community_CHAT')} className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 hover:bg-white/20 hover:scale-[1.02] transition-all group"><img src="https://i.postimg.cc/XNrQC7QY/5(4).png" alt="Chat" className="h-20 object-contain opacity-90 group-hover:scale-110 transition-transform" /><h3 className="font-light tracking-wide text-lg text-center leading-tight">Chat<br/>room</h3></button>
+              <button onClick={() => onStartActivity('Community_BOARD')} className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 hover:bg-white/20 hover:scale-[1.02] transition-all group"><img src="https://i.postimg.cc/PqfMrtCH/6(4).png" alt="Info" className="h-20 object-contain opacity-90 group-hover:scale-110 transition-transform" /><h3 className="font-light tracking-wide text-lg text-center leading-tight">Info<br/>board</h3></button>
               
               {/* LIVE CLASS JOIN BUTTON */}
               <button 
@@ -160,6 +161,8 @@ const MobileView = ({ student, onReturnHome, onStartActivity, isFetching, active
     { title: `Lesson ${student?.unit || 1}`, action: isFetching ? "LOADING..." : "START", img: "https://i.postimg.cc/wxw0tRXY/1(7).png", active: true, onClick: () => onStartActivity('Lesson') },
     { title: "Workbook", action: "START", img: "https://i.postimg.cc/s2J5tbKz/2(9).png", active: isWorkbookUnlocked, onClick: () => onStartActivity('Workbook') },
     { title: "Calendar", action: "SCHEDULE", img: "https://i.postimg.cc/vT49xTyn/3(6).png", active: isCalendarUnlocked, onClick: () => onStartActivity('Calendar') },
+    { title: "Chat Room", action: "JOIN", img: "https://i.postimg.cc/XNrQC7QY/5(4).png", active: true, onClick: () => onStartActivity('Community_CHAT') },
+    { title: "Info Board", action: "VIEW", img: "https://i.postimg.cc/PqfMrtCH/6(4).png", active: true, onClick: () => onStartActivity('Community_BOARD') },
     { 
       title: activeLiveSession?.meeting_link ? "Join Class" : "Live Class", 
       action: activeLiveSession?.meeting_link ? "JOIN NOW" : "LOCKED", 
@@ -485,6 +488,10 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
   const [showCalendar, setShowCalendar] = useState(false);
   const [calendarFilter, setCalendarFilter] = useState('LAB SESSION');
 
+  // Community Panel State
+  const [showCommunity, setShowCommunity] = useState(false);
+  const [communityTab, setCommunityTab] = useState('CHAT');
+
   useEffect(() => {
     if (preloadedStudent) {
       setStudentData(preloadedStudent);
@@ -527,6 +534,14 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
 
   const handleStartActivity = async (type) => {
     if (!studentData) return;
+    
+    // Community Routing
+    if (type.startsWith('Community_')) {
+      setCommunityTab(type.split('_')[1]);
+      setShowCommunity(true);
+      return;
+    }
+
     if (type === 'Calendar') {
       setCalendarFilter('LAB SESSION');
       setShowCalendar(true);
@@ -608,6 +623,14 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
 
   return (
     <>
+      <CommunityPanel 
+        isOpen={showCommunity} 
+        onClose={() => setShowCommunity(false)} 
+        initialTab={communityTab}
+        userProfile={studentData}
+        supabase={supabase}
+      />
+
       {showGatekeeper && (
         <EvaluationCrossroad 
           data={gatekeeperData} onProceed={handleGatekeeperProceed} onRetry={handleRetry}

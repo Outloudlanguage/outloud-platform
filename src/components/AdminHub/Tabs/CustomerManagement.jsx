@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import StudentRegistrationForm from './StudentRegistrationForm';
 import StudentManagerModal from './StudentManagerModal';
 import AdminCalendar from './AdminCalendar';
@@ -6,6 +6,8 @@ import AdminCalendar from './AdminCalendar';
 const CustomerManagement = ({ supabase }) => {
   const [activeSubTab, setActiveSubTab] = useState('Calendario'); 
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentUser, setCurrentUser] = useState(null);
+  const [adminProfile, setAdminProfile] = useState(null);
   
   // Directory State
   const [students, setStudents] = useState([]);
@@ -22,6 +24,28 @@ const CustomerManagement = ({ supabase }) => {
   const [financeData, setFinanceData] = useState({ payments: [], payroll: [], metrics: { expected: 0, actual: 0, liability: 0, net: 0 } });
   const [isFinanceLoading, setIsFinanceLoading] = useState(false);
 
+  // Community & Realtime State
+  const [messages, setMessages] = useState([]);
+  const [announcements, setAnnouncements] = useState([]);
+  const [chatInput, setChatInput] = useState('');
+  const [announceTitle, setAnnounceTitle] = useState('');
+  const [announceContent, setAnnounceContent] = useState('');
+  const [isCommunityLoading, setIsCommunityLoading] = useState(false);
+  const chatEndRef = useRef(null);
+
+  // Get Admin Profile on mount
+  useEffect(() => {
+    const initAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setCurrentUser(user);
+        const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+        setAdminProfile(data);
+      }
+    };
+    initAuth();
+  }, [supabase]);
+
   // Fetch Directory
   const fetchDirectoryData = async () => {
     setIsLoading(true);
@@ -31,7 +55,6 @@ const CustomerManagement = ({ supabase }) => {
         supabase.from('profiles').select('*').eq('role', 'Student').order('first_name', { ascending: true }),
         supabase.from('registrations').select('*').eq('status', 'pending').order('created_at', { ascending: false })
       ]);
-
       if (profilesResponse.error) throw profilesResponse.error;
       if (registrationsResponse.error) throw registrationsResponse.error;
 
@@ -53,19 +76,8 @@ const CustomerManagement = ({ supabase }) => {
       startOfMonth.setDate(1);
       startOfMonth.setHours(0,0,0,0);
 
-      // 1. Fetch Payments (Actual Revenue)
-      const { data: paymentsData } = await supabase
-        .from('student_payments')
-        .select(`*, student:profiles!student_id(first_name, last_name, level)`)
-        .gte('created_at', startOfMonth.toISOString())
-        .order('created_at', { ascending: false });
-
-      // 2. Calculate Expected Revenue from Active Students
-      const { data: activeStudents } = await supabase
-        .from('profiles')
-        .select('level')
-        .eq('role', 'Student')
-        .eq('status', 'active');
+      const { data: paymentsData } = await supabase.from('student_payments').select(`*, student:profiles!student_id(first_name, last_name, level)`).gte('created_at', startOfMonth.toISOString()).order('created_at', { ascending: false });
+      const { data: activeStudents } = await supabase.from('profiles').select('level').eq('role', 'Student').eq('status', 'active');
 
       let expected = 0;
       activeStudents?.forEach(s => {
@@ -74,39 +86,22 @@ const CustomerManagement = ({ supabase }) => {
          else expected += 20;
       });
 
-      // 3. Calculate Pending Payroll from unpaid completed sessions
-      const { data: unpaidSessions } = await supabase
-        .from('live_sessions')
-        .select(`teacher_id, teacher:profiles!teacher_id(first_name, last_name, hourly_rate)`)
-        .eq('status', 'completed')
-        .eq('is_paid_out', false);
+      const { data: unpaidSessions } = await supabase.from('live_sessions').select(`teacher_id, teacher:profiles!teacher_id(first_name, last_name, hourly_rate)`).eq('status', 'completed').eq('is_paid_out', false);
 
       const payrollMap = {};
       unpaidSessions?.forEach(session => {
          const tId = session.teacher_id;
          if(!payrollMap[tId]) {
-            payrollMap[tId] = {
-               id: tId,
-               name: `${session.teacher?.first_name || ''} ${session.teacher?.last_name || ''}`.trim(),
-               hours: 0,
-               rate: session.teacher?.hourly_rate || 0,
-               total: 0
-            };
+            payrollMap[tId] = { id: tId, name: `${session.teacher?.first_name || ''} ${session.teacher?.last_name || ''}`.trim(), hours: 0, rate: session.teacher?.hourly_rate || 0, total: 0 };
          }
          payrollMap[tId].hours += 1; 
          payrollMap[tId].total += Number(session.teacher?.hourly_rate || 0);
       });
       const payrollArray = Object.values(payrollMap);
       const totalLiability = payrollArray.reduce((acc, curr) => acc + curr.total, 0);
-
       const actual = paymentsData?.reduce((acc, curr) => acc + Number(curr.amount), 0) || 0;
 
-      setFinanceData({
-        payments: paymentsData || [],
-        payroll: payrollArray,
-        metrics: { expected, actual, liability: totalLiability, net: actual - totalLiability }
-      });
-
+      setFinanceData({ payments: paymentsData || [], payroll: payrollArray, metrics: { expected, actual, liability: totalLiability, net: actual - totalLiability } });
     } catch (error) {
       console.error("Error fetching finance data:", error);
     } finally {
@@ -114,20 +109,75 @@ const CustomerManagement = ({ supabase }) => {
     }
   };
 
+  // Fetch & Subscribe Community Data
   useEffect(() => {
-    if (activeSubTab === 'Estudiantes' || activeSubTab === 'Calendario') fetchDirectoryData();
+    if (activeSubTab === 'Comunidad') {
+      const fetchCommunity = async () => {
+        setIsCommunityLoading(true);
+        const [msgRes, annRes] = await Promise.all([
+          supabase.from('messages').select('*').order('created_at', { ascending: true }).limit(100),
+          supabase.from('announcements').select('*').order('created_at', { ascending: false }).limit(20)
+        ]);
+        if (msgRes.data) setMessages(msgRes.data);
+        if (annRes.data) setAnnouncements(annRes.data);
+        setIsCommunityLoading(false);
+        setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+      };
+      
+      fetchCommunity();
+
+      // SUPABASE REALTIME CHANNELS
+      const messageChannel = supabase.channel('public:messages')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+          setMessages(prev => [...prev, payload.new]);
+          setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+        })
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, payload => {
+          setMessages(prev => prev.map(m => m.id === payload.new.id ? payload.new : m));
+        })
+        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'messages' }, payload => {
+          setMessages(prev => prev.filter(m => m.id !== payload.old.id));
+        }).subscribe();
+
+      const announcementChannel = supabase.channel('public:announcements')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'announcements' }, payload => {
+          setAnnouncements(prev => [payload.new, ...prev]);
+        })
+        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'announcements' }, payload => {
+          setAnnouncements(prev => prev.filter(a => a.id !== payload.old.id));
+        }).subscribe();
+
+      return () => {
+        supabase.removeChannel(messageChannel);
+        supabase.removeChannel(announcementChannel);
+      };
+    }
+  }, [activeSubTab, supabase]);
+
+  useEffect(() => {
+    if (activeSubTab === 'Estudiantes' || activeSubTab === 'Calendario' || activeSubTab === 'Inactividad') fetchDirectoryData();
     if (activeSubTab === 'Pagos') fetchFinanceData();
   }, [activeSubTab]);
 
+  // --- Directory Filters ---
   const query = searchQuery.toLowerCase();
   const filteredStudents = students.filter(student => `${student.first_name || ''} ${student.last_name || ''}`.toLowerCase().includes(query));
   const filteredPending = pendingLeads.filter(lead => `${lead.full_name || ''} ${lead.email || ''} ${lead.phone || ''}`.toLowerCase().includes(query));
 
-  // Handle Mark Payroll as Paid
+  // --- Inactivity Engine ---
+  const inactiveStudents = students.map(student => {
+    const lastActive = new Date(student.last_active_at || student.created_at);
+    const today = new Date();
+    const diffTime = Math.abs(today - lastActive);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return { ...student, daysInactive: diffDays };
+  }).filter(s => s.status === 'active' && s.daysInactive >= 7).sort((a, b) => b.daysInactive - a.daysInactive);
+
+  const formatPhoneForWA = (phone) => phone ? phone.replace(/\D/g, '') : '';
+
   const handlePayTeacher = async (teacherId) => {
     const isConfirm = window.confirm("¿Confirmas que has transferido el pago a este profesor? Esto reseteará sus horas acumuladas a cero.");
     if(!isConfirm) return;
-
     try {
       await supabase.from('live_sessions').update({ is_paid_out: true }).eq('teacher_id', teacherId).eq('status', 'completed').eq('is_paid_out', false);
       alert("Nómina liquidada exitosamente.");
@@ -136,6 +186,54 @@ const CustomerManagement = ({ supabase }) => {
       console.error(e);
       alert("Error al liquidar nómina.");
     }
+  };
+
+  // --- COMMUNITY ACTIONS ---
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (!chatInput.trim() || !currentUser || !adminProfile) return;
+    try {
+      await supabase.from('messages').insert({
+        sender_id: currentUser.id,
+        sender_name: `${adminProfile.first_name} ${adminProfile.last_name}`,
+        sender_role: adminProfile.role,
+        content: chatInput.trim()
+      });
+      setChatInput('');
+    } catch (error) { console.error(error); }
+  };
+
+  const handleDeleteMessage = async (msgId) => {
+    if(!window.confirm("¿Eliminar este mensaje del chat público?")) return;
+    try { await supabase.from('messages').delete().eq('id', msgId); } catch (e) { console.error(e); }
+  };
+
+  const handleDismissReport = async (msgId) => {
+    try { 
+      await supabase.from('messages').update({ is_reported: false }).eq('id', msgId); 
+    } catch (e) { 
+      console.error(e); 
+    }
+  };
+
+  const handlePostAnnouncement = async (e) => {
+    e.preventDefault();
+    if (!announceTitle.trim() || !announceContent.trim() || !currentUser) return;
+    try {
+      await supabase.from('announcements').insert({
+        author_id: currentUser.id,
+        title: announceTitle.trim(),
+        content: announceContent.trim()
+      });
+      setAnnounceTitle('');
+      setAnnounceContent('');
+      alert("Anuncio publicado exitosamente.");
+    } catch (error) { console.error(error); alert("Error publicando anuncio."); }
+  };
+
+  const handleDeleteAnnouncement = async (annId) => {
+    if(!window.confirm("¿Eliminar este anuncio global?")) return;
+    try { await supabase.from('announcements').delete().eq('id', annId); } catch (e) { console.error(e); }
   };
 
   return (
@@ -156,6 +254,7 @@ const CustomerManagement = ({ supabase }) => {
 
       {activeSubTab === 'Calendario' && <AdminCalendar supabase={supabase} />}
 
+      {/* --- ESTUDIANTES TAB --- */}
       {activeSubTab === 'Estudiantes' && (
         <div className="bg-white/5 backdrop-blur-xl rounded-[30px] shadow-2xl border border-white/10 p-6 md:p-10 w-full animate-fade-in relative overflow-hidden">
           <h2 className="text-2xl md:text-3xl font-black text-white uppercase tracking-widest mb-6 drop-shadow-md">DIRECTORIO DE ESTUDIANTES</h2>
@@ -201,6 +300,7 @@ const CustomerManagement = ({ supabase }) => {
         </div>
       )}
 
+      {/* --- PAGOS FINANCIEROS TAB --- */}
       {activeSubTab === 'Pagos' && (
         <div className="bg-white/5 backdrop-blur-xl rounded-[30px] shadow-2xl border border-white/10 p-6 md:p-10 w-full animate-fade-in relative overflow-hidden">
           <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-emerald-500/10 blur-[100px] rounded-full pointer-events-none"></div>
@@ -235,8 +335,6 @@ const CustomerManagement = ({ supabase }) => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 relative z-10">
-            
-            {/* PAYROLL SECTION */}
             <div className="bg-black/20 border border-white/10 rounded-3xl p-6">
               <h3 className="text-sm font-black text-red-400 uppercase tracking-widest mb-6 flex items-center gap-2">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
@@ -262,7 +360,6 @@ const CustomerManagement = ({ supabase }) => {
               )}
             </div>
 
-            {/* TRANSACTIONS SECTION */}
             <div className="bg-black/20 border border-white/10 rounded-3xl p-6">
               <h3 className="text-sm font-black text-emerald-400 uppercase tracking-widest mb-6 flex items-center gap-2">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -292,22 +389,162 @@ const CustomerManagement = ({ supabase }) => {
                 )}
               </div>
             </div>
-
           </div>
         </div>
       )}
 
+      {/* --- INACTVIDAD ENGINE TAB --- */}
       {activeSubTab === 'Inactividad' && (
         <div className="bg-white/5 backdrop-blur-xl rounded-[30px] shadow-2xl border border-white/10 p-6 md:p-10 w-full animate-fade-in relative overflow-hidden">
-          <h2 className="text-2xl md:text-3xl font-black text-white uppercase tracking-widest mb-8 drop-shadow-md">ALERTAS DE INACTIVIDAD</h2>
-          <div className="py-16 text-center text-xs font-bold text-white/40 uppercase tracking-widest bg-black/20 rounded-2xl border border-white/10 shadow-inner">Sin datos de actividad reciente</div>
+          <div className="absolute top-[-20%] right-[-10%] w-[50%] h-[50%] bg-orange-500/10 blur-[100px] rounded-full pointer-events-none"></div>
+          <div className="flex justify-between items-end mb-8 border-b border-white/10 pb-6 relative z-10">
+            <div>
+              <h2 className="text-2xl md:text-3xl font-black text-white uppercase tracking-widest drop-shadow-md">RADAR DE INACTIVIDAD</h2>
+              <p className="text-sm text-white/50 font-medium mt-2">Monitorea estudiantes en riesgo de deserción (7+ días sin actividad).</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 relative z-10">
+            <div className="bg-white/5 border border-[#fcd34d]/30 rounded-2xl p-4 flex flex-col items-center justify-center text-center">
+              <span className="text-2xl font-black text-[#fcd34d]">{inactiveStudents.filter(s => s.daysInactive >= 7 && s.daysInactive < 15).length}</span>
+              <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest mt-1">En Riesgo (7-14 Días)</span>
+            </div>
+            <div className="bg-white/5 border border-orange-500/30 rounded-2xl p-4 flex flex-col items-center justify-center text-center">
+              <span className="text-2xl font-black text-orange-400">{inactiveStudents.filter(s => s.daysInactive >= 15 && s.daysInactive <= 30).length}</span>
+              <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest mt-1">Inactivos (15-30 Días)</span>
+            </div>
+            <div className="bg-white/5 border border-red-500/30 rounded-2xl p-4 flex flex-col items-center justify-center text-center shadow-[inset_0_0_15px_rgba(239,68,68,0.1)]">
+              <span className="text-2xl font-black text-red-500">{inactiveStudents.filter(s => s.daysInactive > 30).length}</span>
+              <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest mt-1">Desaparecidos (+30 Días)</span>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-4 max-h-[500px] overflow-y-auto custom-scrollbar pr-2 relative z-10">
+            {isLoading ? (
+               <div className="py-12 text-center text-xs font-bold text-white/50 uppercase tracking-widest flex flex-col items-center justify-center gap-3"><div className="w-8 h-8 border-4 border-[#fcd34d] border-t-transparent rounded-full animate-spin"></div>Cargando radar...</div>
+            ) : inactiveStudents.length === 0 ? (
+               <div className="py-12 text-center text-xs font-bold text-emerald-400 uppercase tracking-widest bg-emerald-500/10 rounded-2xl border border-emerald-500/20 shadow-inner">
+                 ¡Excelente! Ningún estudiante activo tiene más de 7 días sin conectarse.
+               </div>
+            ) : (
+               inactiveStudents.map((student) => {
+                 let riskColor = "text-[#fcd34d] border-[#fcd34d]/30 bg-[#fcd34d]/10";
+                 if (student.daysInactive >= 15 && student.daysInactive <= 30) {
+                    riskColor = "text-orange-400 border-orange-500/30 bg-orange-500/10";
+                 } else if (student.daysInactive > 30) {
+                    riskColor = "text-red-500 border-red-500/40 bg-red-500/10";
+                 }
+
+                 return (
+                   <div key={`inactive-${student.id}`} className="flex items-center p-4 md:p-5 bg-[#070b19]/60 rounded-2xl border border-white/10 shadow-lg transition-all relative overflow-hidden">
+                     <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-black/40 overflow-hidden border-2 border-white/20 shrink-0 z-10 mr-4">
+                       <img src={student.avatar_url || 'https://i.pravatar.cc/150'} alt="Avatar" className="w-full h-full object-cover" />
+                     </div>
+                     <div className="flex flex-col flex-grow truncate z-10">
+                       <span className="font-bold text-white text-sm md:text-base truncate">{student.first_name} {student.last_name}</span>
+                       <span className="text-[10px] md:text-xs text-white/50 font-medium truncate mt-0.5">Nivel {student.level?.split(':')[0] || 'A1'} • Unidad {student.unit || 1}</span>
+                     </div>
+                     <div className="flex items-center gap-4 shrink-0 z-10">
+                       <div className={`flex flex-col items-center justify-center px-4 py-2 border rounded-xl shadow-inner ${riskColor}`}>
+                          <span className="text-xl font-black leading-none">{student.daysInactive}</span>
+                          <span className="text-[8px] font-bold uppercase tracking-widest mt-1">Días Sin Actividad</span>
+                       </div>
+                       <a href={`https://wa.me/${formatPhoneForWA(student.phone)}`} target="_blank" rel="noreferrer" className="w-10 h-10 md:w-12 md:h-12 bg-emerald-500 hover:bg-emerald-400 text-[#08203e] rounded-full flex items-center justify-center transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)] hover:scale-110 active:scale-95" title="Contactar por WhatsApp">
+                         <svg className="w-5 h-5 md:w-6 md:h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                       </a>
+                     </div>
+                   </div>
+                 );
+               })
+            )}
+          </div>
         </div>
       )}
 
+      {/* --- COMUNIDAD & MODERATION TAB --- */}
       {activeSubTab === 'Comunidad' && (
         <div className="bg-white/5 backdrop-blur-xl rounded-[30px] shadow-2xl border border-white/10 p-6 md:p-10 w-full animate-fade-in relative overflow-hidden">
-          <h2 className="text-2xl md:text-3xl font-black text-white uppercase tracking-widest mb-8 drop-shadow-md">MODERACIÓN DE COMUNIDAD</h2>
-          <div className="py-16 text-center text-xs font-bold text-white/40 uppercase tracking-widest bg-black/20 rounded-2xl border border-white/10 shadow-inner">El chat está vacío</div>
+          <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-indigo-500/10 blur-[100px] rounded-full pointer-events-none"></div>
+
+          <div className="flex justify-between items-end mb-8 border-b border-white/10 pb-6 relative z-10">
+            <div>
+              <h2 className="text-2xl md:text-3xl font-black text-white uppercase tracking-widest drop-shadow-md">COMUNIDAD Y MODERACIÓN</h2>
+              <p className="text-sm text-white/50 font-medium mt-2">Publica anuncios globales y modera el chat público en tiempo real.</p>
+            </div>
+            {isCommunityLoading && <div className="w-8 h-8 border-4 border-indigo-400 border-t-transparent rounded-full animate-spin"></div>}
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 relative z-10">
+            
+            {/* ANNOUNCEMENT BOARD */}
+            <div className="bg-black/20 border border-white/10 rounded-3xl p-6 flex flex-col h-[600px]">
+              <h3 className="text-sm font-black text-indigo-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" /></svg>
+                Tablero de Anuncios
+              </h3>
+
+              <form onSubmit={handlePostAnnouncement} className="mb-6 space-y-3 bg-white/5 border border-indigo-500/20 rounded-2xl p-4">
+                <input type="text" placeholder="Título del anuncio..." value={announceTitle} onChange={(e) => setAnnounceTitle(e.target.value)} className="w-full bg-[#070b19] border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-indigo-400" required />
+                <textarea placeholder="Escribe el mensaje global..." value={announceContent} onChange={(e) => setAnnounceContent(e.target.value)} className="w-full bg-[#070b19] border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-indigo-400 h-20 resize-none" required />
+                <button type="submit" className="w-full py-2.5 bg-indigo-500 hover:bg-indigo-400 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-[0_0_15px_rgba(99,102,241,0.4)]">Publicar a Todos</button>
+              </form>
+
+              <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-4">
+                {announcements.length === 0 ? (
+                   <p className="text-xs text-white/40 font-bold uppercase tracking-widest text-center py-8">No hay anuncios activos</p>
+                ) : (
+                  announcements.map(ann => (
+                    <div key={ann.id} className="bg-indigo-500/10 border border-indigo-500/30 rounded-xl p-4 relative group">
+                      <button onClick={() => handleDeleteAnnouncement(ann.id)} className="absolute top-2 right-2 w-6 h-6 bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">✕</button>
+                      <h4 className="text-white font-bold tracking-wide pr-6">{ann.title}</h4>
+                      <p className="text-xs text-white/70 mt-2">{ann.content}</p>
+                      <p className="text-[9px] text-indigo-300 font-bold uppercase tracking-widest mt-3">{new Date(ann.created_at).toLocaleString('es-ES')}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* CHAT MODERATION */}
+            <div className="bg-black/20 border border-white/10 rounded-3xl p-6 flex flex-col h-[600px]">
+              <h3 className="text-sm font-black text-emerald-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" /></svg>
+                Chat Público en Vivo
+              </h3>
+
+              <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-3 mb-4 flex flex-col">
+                {messages.length === 0 ? (
+                  <div className="flex-1 flex items-center justify-center text-xs text-white/40 font-bold uppercase tracking-widest">El chat está silencioso...</div>
+                ) : (
+                  messages.map(msg => {
+                    const isAdmin = msg.sender_role.includes('Admin');
+                    const isTeacher = msg.sender_role === 'Teacher';
+                    return (
+                      <div key={msg.id} className="flex flex-col group">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`text-[10px] font-black uppercase tracking-widest ${isAdmin ? 'text-[#fcd34d]' : isTeacher ? 'text-emerald-400' : 'text-white/60'}`}>{msg.sender_name}</span>
+                          <span className="text-[8px] text-white/30">{new Date(msg.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute:'2-digit' })}</span>
+                          <button onClick={() => handleDeleteMessage(msg.id)} className="text-[10px] text-red-500 opacity-0 group-hover:opacity-100 transition-opacity ml-auto underline cursor-pointer">Eliminar</button>
+                          {msg.is_reported && <button onClick={() => handleDismissReport(msg.id)} className="text-[10px] text-white/50 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity underline cursor-pointer ml-2">Limpiar Reporte</button>}
+                        </div>
+                        <div className={`text-sm py-2 px-3 rounded-xl w-fit max-w-[90%] ${msg.is_reported ? 'bg-red-500/20 border-2 border-red-500/50 text-white' : isAdmin ? 'bg-[#fcd34d]/20 text-[#fcd34d] border border-[#fcd34d]/30' : isTeacher ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' : 'bg-white/10 text-white/90 border border-white/5'}`}>
+                          {msg.is_reported && <div className="text-[10px] text-red-400 font-black uppercase tracking-widest mb-1 flex items-center gap-1">⚠️ REPORTADO POR USUARIOS</div>}
+                          {msg.content}
+                        </div>
+                      </div>
+                    )
+                  })
+                )}
+                <div ref={chatEndRef} />
+              </div>
+
+              <form onSubmit={handleSendMessage} className="flex gap-2">
+                <input type="text" placeholder="Enviar mensaje como Admin..." value={chatInput} onChange={(e) => setChatInput(e.target.value)} className="flex-1 bg-[#070b19] border border-white/20 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-400" />
+                <button type="submit" className="px-6 bg-emerald-500 hover:bg-emerald-400 text-[#08203e] rounded-xl font-black transition-colors"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg></button>
+              </form>
+            </div>
+
+          </div>
         </div>
       )}
 

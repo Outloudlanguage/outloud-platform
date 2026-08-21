@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './SupabaseClient';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { EffectCoverflow, Pagination } from 'swiper/modules';
+import CommunityPanel from './components/CommunityPanel'; // <-- INJECTED COMPONENT
 
 import 'swiper/css';
 import 'swiper/css/effect-coverflow';
@@ -254,9 +255,18 @@ const DesktopView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onR
             </div>
             
             <div className="grid grid-cols-4 gap-6 flex-1">
-              <button className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 hover:bg-white/20 hover:scale-[1.02] transition-all group"><img src="https://i.postimg.cc/rpgthxF0/4(5).png" alt="Forum" className="h-20 object-contain opacity-90 group-hover:scale-110 transition-transform" /><h3 className="font-light tracking-wide text-lg text-center leading-tight">Open<br/>forum</h3></button>
-              <button className={`bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 transition-all group ${!nextClass ? 'opacity-50 grayscale cursor-not-allowed' : 'hover:bg-white/20 hover:scale-[1.02]'}`}><img src="https://i.postimg.cc/XNrQC7QY/5(4).png" alt="Chat" className="h-20 object-contain opacity-90 group-hover:scale-110 transition-transform" /><h3 className="font-light tracking-wide text-lg text-center leading-tight">Class<br/>Chat</h3></button>
-              <button className="relative bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 hover:bg-white/20 hover:scale-[1.02] transition-all group">
+              {/* WIRED COMMUNITY BUTTONS */}
+              <button onClick={() => onAction('Community_BOARD')} className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 hover:bg-white/20 hover:scale-[1.02] transition-all group">
+                <img src="https://i.postimg.cc/rpgthxF0/4(5).png" alt="Forum" className="h-20 object-contain opacity-90 group-hover:scale-110 transition-transform" />
+                <h3 className="font-light tracking-wide text-lg text-center leading-tight">Open<br/>forum</h3>
+              </button>
+              
+              <button onClick={() => onAction('Community_CHAT')} className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 transition-all group hover:bg-white/20 hover:scale-[1.02]">
+                <img src="https://i.postimg.cc/XNrQC7QY/5(4).png" alt="Chat" className="h-20 object-contain opacity-90 group-hover:scale-110 transition-transform" />
+                <h3 className="font-light tracking-wide text-lg text-center leading-tight">Class<br/>Chat</h3>
+              </button>
+              
+              <button onClick={() => onAction('Community_BOARD')} className="relative bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 hover:bg-white/20 hover:scale-[1.02] transition-all group">
                 <div className="absolute top-4 right-4 w-3 h-3 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]"></div>
                 <img src="https://i.postimg.cc/PqfMrtCH/6(4).png" alt="Info" className="h-20 object-contain opacity-90 group-hover:scale-110 transition-transform" />
                 <h3 className="font-light tracking-wide text-lg text-center leading-tight">Staff<br/>Board</h3>
@@ -295,6 +305,9 @@ const MobileView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onRe
     { title: "Class Tools", subtitle: nextClass ? 'Library Active' : 'Locked', action: "ACCESS", img: "https://i.postimg.cc/s2J5tbKz/2(9).png", active: !!nextClass, onClick: () => onAction('Tools') },
     { title: "My Roster", subtitle: 'Schedule', action: "VIEW", img: "https://i.postimg.cc/vT49xTyn/3(6).png", active: true, onClick: () => onAction('Calendar') },
     { title: "Start Class", subtitle: isLaunching ? 'Generating...' : 'Live Trigger', action: isLaunching ? "WAIT" : "LAUNCH", img: "https://i.postimg.cc/Wpqw4Y1x/7(6).png", active: !!nextClass && !isLaunching, highlight: true, onClick: () => onAction('Live') },
+    // WIRED COMMUNITY CARDS
+    { title: "Class Chat", subtitle: "Live", action: "JOIN", img: "https://i.postimg.cc/XNrQC7QY/5(4).png", active: true, onClick: () => onAction('Community_CHAT') },
+    { title: "Staff Board", subtitle: "Announcements", action: "VIEW", img: "https://i.postimg.cc/PqfMrtCH/6(4).png", active: true, onClick: () => onAction('Community_BOARD') },
   ];
 
   return (
@@ -363,6 +376,10 @@ const TeacherHub = ({ onReturnHome }) => {
   const [isEvalModalOpen, setIsEvalModalOpen] = useState(false);
   const [isLaunching, setIsLaunching] = useState(false);
 
+  // Community Panel State
+  const [showCommunity, setShowCommunity] = useState(false);
+  const [communityTab, setCommunityTab] = useState('CHAT');
+
   useEffect(() => {
     fetchTeacherDashboard();
   }, []);
@@ -425,6 +442,13 @@ const TeacherHub = ({ onReturnHome }) => {
   };
 
   const handleAction = async (actionType) => {
+    // Community Routing
+    if (actionType.startsWith('Community_')) {
+      setCommunityTab(actionType.split('_')[1]);
+      setShowCommunity(true);
+      return;
+    }
+
     if (actionType === 'Live' && nextClass) {
       setIsLaunching(true);
       try {
@@ -464,6 +488,14 @@ const TeacherHub = ({ onReturnHome }) => {
 
   return (
     <>
+      <CommunityPanel 
+        isOpen={showCommunity} 
+        onClose={() => setShowCommunity(false)} 
+        initialTab={communityTab}
+        userProfile={teacherData}
+        supabase={supabase}
+      />
+
       <EvaluationModal isOpen={isEvalModalOpen} onClose={() => setIsEvalModalOpen(false)} pendingClasses={pendingEvaluations} onGradeSubmitted={removeEvaluatedClass} teacherId={teacherData?.id} />
 
       <div className="hidden md:block">
