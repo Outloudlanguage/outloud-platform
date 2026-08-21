@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './SupabaseClient';
-import AdminCalendar from './AdminCalendar';
+import AdminCalendar from './components/AdminHub/Tabs/AdminCalendar';
 import { LEVEL_UNIT_MAP, LEVEL_OPTIONS, LESSON_TOOLS, WORKBOOK_TOOLS } from './constants/adminConfigs';
 import { generateCrosswordLayout } from './utils/crosswordGenerator';
 import { generateWordSearchGrid } from './utils/wordSearchGenerator';
