@@ -1,11 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { supabase as localSupabase } from './SupabaseClient';
 import StudentManagerModal from './StudentManagerModal';
 
-const CustomerManagement = ({ supabase: propSupabase }) => {
-  // Use prop if provided, otherwise fallback to direct singleton
-  const supabase = propSupabase || localSupabase;
-
+const CustomerManagement = ({ supabase }) => {
   const [activeSubTab, setActiveSubTab] = useState('Estudiantes'); 
   const [searchQuery, setSearchQuery] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
@@ -42,6 +38,7 @@ const CustomerManagement = ({ supabase: propSupabase }) => {
   const [editingAnnounce, setEditingAnnounce] = useState(null);
 
   // 1. STABILIZED AUTH INIT (Runs strictly once on mount)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     let isMounted = true;
     const initAuth = async () => {
@@ -58,7 +55,7 @@ const CustomerManagement = ({ supabase: propSupabase }) => {
     };
     initAuth();
     return () => { isMounted = false; };
-  }, []);
+  }, []); // Empty dependency array prevents the infinite render loop
 
   // 2. DIRECTORY FETCHER
   const fetchDirectoryData = useCallback(async () => {
@@ -524,7 +521,7 @@ const CustomerManagement = ({ supabase: propSupabase }) => {
         </div>
       )}
 
-      {/* --- INACTIVIDAD ENGINE TAB --- */}
+      {/* --- INACTVIDAD ENGINE TAB --- */}
       {activeSubTab === 'Inactividad' && (
         <div className="bg-white/5 backdrop-blur-xl rounded-[30px] shadow-2xl border border-white/10 p-6 md:p-10 w-full animate-fade-in relative overflow-hidden">
           <div className="absolute top-[-20%] right-[-10%] w-[50%] h-[50%] bg-orange-500/10 blur-[100px] rounded-full pointer-events-none"></div>
