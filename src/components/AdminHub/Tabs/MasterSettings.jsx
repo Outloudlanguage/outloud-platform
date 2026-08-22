@@ -31,14 +31,14 @@ const MasterSettings = ({ supabase }) => {
       );
 
       // 2. Provision the user via Ghost Client (Bypassing the broken Edge Function)
-      // We pass the role and names directly into the options so our universal SQL Trigger catches them!
       const { error } = await ghostClient.auth.signUp({
-        email: data.email,
+        email: data.username, // <-- THE FIX: Auth now uses the @ola.com Username field
         password: data.password,
         options: {
           data: {
             first_name: data.first_name,
             last_name: data.last_name,
+            personal_email: data.email, // <-- THE FIX: Personal email stored safely in metadata
             role: data.role || 'Teacher', 
             cefr: data.cefr || 'C2' 
           }
