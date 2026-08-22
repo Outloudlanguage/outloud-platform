@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import StudentRegistrationForm from './StudentRegistrationForm';
 import StudentManagerModal from './StudentManagerModal';
-import AdminCalendar from './AdminCalendar';
 
 const CustomerManagement = ({ supabase }) => {
-  const [activeSubTab, setActiveSubTab] = useState('Calendario'); 
+  // 1. Default to 'Estudiantes' since Calendar is gone
+  const [activeSubTab, setActiveSubTab] = useState('Estudiantes'); 
   const [searchQuery, setSearchQuery] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
   const [adminProfile, setAdminProfile] = useState(null);
@@ -30,6 +29,8 @@ const CustomerManagement = ({ supabase }) => {
   const [chatInput, setChatInput] = useState('');
   const [announceTitle, setAnnounceTitle] = useState('');
   const [announceContent, setAnnounceContent] = useState('');
+  const [announceAudience, setAnnounceAudience] = useState('EVERYONE_NO_STAFF'); // New Audience State
+  const [isChatActive, setIsChatActive] = useState(true); // Master Chat Toggle State
   const [isCommunityLoading, setIsCommunityLoading] = useState(false);
   const chatEndRef = useRef(null);
 
@@ -155,7 +156,8 @@ const CustomerManagement = ({ supabase }) => {
   }, [activeSubTab, supabase]);
 
   useEffect(() => {
-    if (activeSubTab === 'Estudiantes' || activeSubTab === 'Calendario' || activeSubTab === 'Inactividad') fetchDirectoryData();
+    // Removed 'Calendario' from triggers
+    if (activeSubTab === 'Estudiantes' || activeSubTab === 'Inactividad') fetchDirectoryData();
     if (activeSubTab === 'Pagos') fetchFinanceData();
   }, [activeSubTab]);
 
@@ -223,7 +225,8 @@ const CustomerManagement = ({ supabase }) => {
       await supabase.from('announcements').insert({
         author_id: currentUser.id,
         title: announceTitle.trim(),
-        content: announceContent.trim()
+        content: announceContent.trim(),
+        audience: announceAudience // New payload addition
       });
       setAnnounceTitle('');
       setAnnounceContent('');
@@ -236,13 +239,29 @@ const CustomerManagement = ({ supabase }) => {
     try { await supabase.from('announcements').delete().eq('id', annId); } catch (e) { console.error(e); }
   };
 
+  const translateAudience = (audienceCode) => {
+    const map = {
+      'EVERYONE_NO_STAFF': 'Todos (Excl. Staff)',
+      'EVERYONE_WITH_STAFF': 'Todos (Incl. Staff)',
+      'STAFF_ONLY': 'Solo Staff',
+      'LEVEL_A1': 'Solo A1',
+      'LEVEL_A2': 'Solo A2',
+      'LEVEL_B1': 'Solo B1',
+      'LEVEL_B2': 'Solo B2',
+      'LEVEL_C1': 'Solo C1',
+      'LEVEL_C2': 'Solo C2',
+    };
+    return map[audienceCode] || 'Todos';
+  };
+
   return (
     <div className="w-full flex flex-col items-center font-montserrat relative z-10">
 
-      <StudentRegistrationForm />
+      {/* 2. Evicted the old Registration Form/Quick Provisioning */}
       
+      {/* 3. Removed 'Calendario' from Tabs Array */}
       <div className="flex flex-wrap justify-center gap-3 mb-8 w-full">
-        {['Calendario', 'Estudiantes', 'Pagos', 'Inactividad', 'Comunidad'].map((tab) => (
+        {['Estudiantes', 'Pagos', 'Inactividad', 'Comunidad'].map((tab) => (
           <button 
             key={tab} type="button" onClick={() => setActiveSubTab(tab)} 
             className={`px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest transition-all ${activeSubTab === tab ? 'bg-[#fcd34d] text-[#08203e] shadow-[0_0_15px_rgba(252,211,77,0.4)] scale-105' : 'bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 hover:text-white'}`}
@@ -251,8 +270,6 @@ const CustomerManagement = ({ supabase }) => {
           </button>
         ))}
       </div>
-
-      {activeSubTab === 'Calendario' && <AdminCalendar supabase={supabase} />}
 
       {/* --- ESTUDIANTES TAB --- */}
       {activeSubTab === 'Estudiantes' && (
@@ -466,12 +483,21 @@ const CustomerManagement = ({ supabase }) => {
         <div className="bg-white/5 backdrop-blur-xl rounded-[30px] shadow-2xl border border-white/10 p-6 md:p-10 w-full animate-fade-in relative overflow-hidden">
           <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-indigo-500/10 blur-[100px] rounded-full pointer-events-none"></div>
 
-          <div className="flex justify-between items-end mb-8 border-b border-white/10 pb-6 relative z-10">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 border-b border-white/10 pb-6 relative z-10 gap-4">
             <div>
               <h2 className="text-2xl md:text-3xl font-black text-white uppercase tracking-widest drop-shadow-md">COMUNIDAD Y MODERACIÓN</h2>
               <p className="text-sm text-white/50 font-medium mt-2">Publica anuncios globales y modera el chat público en tiempo real.</p>
             </div>
-            {isCommunityLoading && <div className="w-8 h-8 border-4 border-indigo-400 border-t-transparent rounded-full animate-spin"></div>}
+            <div className="flex items-center gap-4">
+               {isCommunityLoading && <div className="w-8 h-8 border-4 border-indigo-400 border-t-transparent rounded-full animate-spin"></div>}
+               {/* FORUM MANAGEMENT BUTTON HOOK */}
+               <button 
+                 onClick={() => alert("Módulo de Gestión de Foro en construcción...")} 
+                 className="px-6 py-3 bg-white/10 hover:bg-indigo-500 text-white hover:text-white border border-white/20 rounded-full font-black text-xs uppercase tracking-widest shadow-lg transition-all active:scale-95"
+               >
+                 Gestionar Foro
+               </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 relative z-10">
@@ -485,8 +511,27 @@ const CustomerManagement = ({ supabase }) => {
 
               <form onSubmit={handlePostAnnouncement} className="mb-6 space-y-3 bg-white/5 border border-indigo-500/20 rounded-2xl p-4">
                 <input type="text" placeholder="Título del anuncio..." value={announceTitle} onChange={(e) => setAnnounceTitle(e.target.value)} className="w-full bg-[#070b19] border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-indigo-400" required />
+                
+                {/* NEW GRANULAR AUDIENCE SELECTOR */}
+                <select 
+                  value={announceAudience} 
+                  onChange={(e) => setAnnounceAudience(e.target.value)} 
+                  className="w-full bg-[#070b19] border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-indigo-400 appearance-none"
+                  required
+                >
+                  <option value="EVERYONE_NO_STAFF">Todos los Estudiantes (Excluyendo Staff)</option>
+                  <option value="EVERYONE_WITH_STAFF">Toda la Academia (Incluyendo Staff)</option>
+                  <option value="STAFF_ONLY">Solo Staff (Profesores y Administradores)</option>
+                  <option value="LEVEL_A1">Solo Nivel A1</option>
+                  <option value="LEVEL_A2">Solo Nivel A2</option>
+                  <option value="LEVEL_B1">Solo Nivel B1</option>
+                  <option value="LEVEL_B2">Solo Nivel B2</option>
+                  <option value="LEVEL_C1">Solo Nivel C1</option>
+                  <option value="LEVEL_C2">Solo Nivel C2</option>
+                </select>
+
                 <textarea placeholder="Escribe el mensaje global..." value={announceContent} onChange={(e) => setAnnounceContent(e.target.value)} className="w-full bg-[#070b19] border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-indigo-400 h-20 resize-none" required />
-                <button type="submit" className="w-full py-2.5 bg-indigo-500 hover:bg-indigo-400 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-[0_0_15px_rgba(99,102,241,0.4)]">Publicar a Todos</button>
+                <button type="submit" className="w-full py-2.5 bg-indigo-500 hover:bg-indigo-400 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-[0_0_15px_rgba(99,102,241,0.4)]">Publicar Anuncio</button>
               </form>
 
               <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-4">
@@ -497,8 +542,12 @@ const CustomerManagement = ({ supabase }) => {
                     <div key={ann.id} className="bg-indigo-500/10 border border-indigo-500/30 rounded-xl p-4 relative group">
                       <button onClick={() => handleDeleteAnnouncement(ann.id)} className="absolute top-2 right-2 w-6 h-6 bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">✕</button>
                       <h4 className="text-white font-bold tracking-wide pr-6">{ann.title}</h4>
-                      <p className="text-xs text-white/70 mt-2">{ann.content}</p>
-                      <p className="text-[9px] text-indigo-300 font-bold uppercase tracking-widest mt-3">{new Date(ann.created_at).toLocaleString('es-ES')}</p>
+                      {/* AUDIENCE BADGE */}
+                      <div className="mt-2 mb-2 inline-block bg-indigo-500/30 border border-indigo-400/30 text-indigo-300 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded shadow-sm">
+                        Visibilidad: {translateAudience(ann.audience || 'EVERYONE_NO_STAFF')}
+                      </div>
+                      <p className="text-xs text-white/70">{ann.content}</p>
+                      <p className="text-[9px] text-indigo-300/50 font-bold uppercase tracking-widest mt-3">{new Date(ann.created_at).toLocaleString('es-ES')}</p>
                     </div>
                   ))
                 )}
@@ -507,10 +556,27 @@ const CustomerManagement = ({ supabase }) => {
 
             {/* CHAT MODERATION */}
             <div className="bg-black/20 border border-white/10 rounded-3xl p-6 flex flex-col h-[600px]">
-              <h3 className="text-sm font-black text-emerald-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" /></svg>
-                Chat Público en Vivo
-              </h3>
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-sm font-black text-emerald-400 uppercase tracking-widest flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" /></svg>
+                  Chat Público en Vivo
+                </h3>
+
+                {/* MASTER CHAT TOGGLE */}
+                <button 
+                  onClick={() => setIsChatActive(!isChatActive)} 
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-widest transition-all ${isChatActive ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' : 'bg-red-500/20 border-red-500/50 text-red-400'}`}
+                >
+                  <div className={`w-2 h-2 rounded-full ${isChatActive ? 'bg-emerald-400 shadow-[0_0_8px_#34d399]' : 'bg-red-400 shadow-[0_0_8px_#f87171]'}`}></div>
+                  {isChatActive ? 'Activo' : 'Silenciado'}
+                </button>
+              </div>
+
+              {!isChatActive && (
+                <div className="w-full bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-bold uppercase tracking-widest p-3 rounded-xl mb-4 text-center">
+                  El chat público está bloqueado para los estudiantes.
+                </div>
+              )}
 
               <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-3 mb-4 flex flex-col">
                 {messages.length === 0 ? (
