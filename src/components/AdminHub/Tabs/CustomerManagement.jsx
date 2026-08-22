@@ -54,9 +54,9 @@ const CustomerManagement = ({ supabase }) => {
     };
     initAuth();
     return () => { isMounted = false; };
-  }, [supabase]); 
+  }, []); // Safe: Empty array runs strictly once
 
-  // 2. DIRECTORY FETCHER (Reverted to original safe structure)
+  // 2. DIRECTORY FETCHER (Stripped of useCallback to prevent loops)
   const fetchDirectoryData = async () => {
     setIsLoading(true);
     setErrorMsg(null);
@@ -78,7 +78,7 @@ const CustomerManagement = ({ supabase }) => {
     }
   };
 
-  // 3. FINANCE FETCHER (Reverted to original safe structure)
+  // 3. FINANCE FETCHER (Stripped of useCallback to prevent loops)
   const fetchFinanceData = async () => {
     setIsFinanceLoading(true);
     try {
@@ -144,7 +144,7 @@ const CustomerManagement = ({ supabase }) => {
     }
   };
 
-  // 4. SUBTAB DATA TRIGGERS (Loop Fixed - Strictly checks activeSubTab)
+  // 4. SUBTAB DATA TRIGGERS (Safe: Only watches activeSubTab)
   useEffect(() => {
     if (activeSubTab === 'Estudiantes' || activeSubTab === 'Inactividad') {
       fetchDirectoryData();
@@ -154,7 +154,7 @@ const CustomerManagement = ({ supabase }) => {
     }
   }, [activeSubTab]); 
 
-  // 5. COMMUNITY REALTIME LISTENERS
+  // 5. COMMUNITY REALTIME LISTENERS (Safe: Only watches activeSubTab)
   useEffect(() => {
     if (activeSubTab !== 'Comunidad') return;
 
@@ -216,7 +216,7 @@ const CustomerManagement = ({ supabase }) => {
       supabase.removeChannel(announcementChannel);
       supabase.removeChannel(settingsChannel);
     };
-  }, [activeSubTab, supabase]);
+  }, [activeSubTab]);
 
   // --- FILTERS & RADAR ---
   const query = searchQuery.toLowerCase();
