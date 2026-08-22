@@ -7,7 +7,7 @@ import CyclePage from './CyclePage';
 import LevelsPage from './LevelsPage';
 import FreeLesson from './FreeLesson';
 import AdminHub from './AdminHub';
-import StudentHub from './StudentHub'; // <-- 1. IMPORTED THE STUDENT HUB
+import StudentHub from './StudentHub';
 
 // ==========================================
 // RBAC & LOCALIZATION WRAPPER COMPONENT
@@ -18,7 +18,6 @@ const ProtectedRoute = ({ children, allowedRoles, forcedLanguage, isStudentHub =
 
   useEffect(() => {
     const checkAuthAndRole = async () => {
-      // 1. Check if logged into Supabase Auth
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
@@ -26,7 +25,6 @@ const ProtectedRoute = ({ children, allowedRoles, forcedLanguage, isStudentHub =
         return;
       }
 
-      // 2. Fetch from 'profiles'
       const { data: userData, error } = await supabase
         .from('profiles')
         .select('role')
@@ -38,8 +36,11 @@ const ProtectedRoute = ({ children, allowedRoles, forcedLanguage, isStudentHub =
         return;
       }
 
-      // 3. Verify Role RBAC
-      if (allowedRoles.includes(userData.role) || userData.role === 'GENERAL_MANAGER' || userData.role === 'Admin') {
+      // FIX: Normalize database role and allowed roles to uppercase for safe comparison
+      const userRole = (userData.role || '').toUpperCase();
+      const normalizedAllowed = allowedRoles.map(r => r.toUpperCase());
+
+      if (normalizedAllowed.includes(userRole) || userRole === 'GENERAL_MANAGER' || userRole === 'ADMIN') {
         setIsAuthorized(true);
         applyLocalization(forcedLanguage, isStudentHub);
       } else {
@@ -113,8 +114,6 @@ export default function App() {
     window.history.pushState({ page }, '', `#${page}`);
   }, []);
 
-  // <-- 2. THE SMART ROUTER -->
-  // This checks the database to see WHERE they should go after clicking Login
   const handleLoginSuccess = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     
@@ -129,7 +128,9 @@ export default function App() {
       .eq('id', session.user.id)
       .single();
 
-    if (userData && (userData.role === 'Student' || userData.role === 'STUDENT')) {
+    const role = (userData?.role || '').toLowerCase();
+
+    if (role === 'student') {
       navigate('hub');
     } else {
       navigate('admin');
@@ -140,47 +141,13 @@ export default function App() {
     navigate('free-lesson');
     const currentCount = parseInt(localStorage.getItem('olaFreeLessonClicks') || '0') + 1;
     localStorage.setItem('olaFreeLessonClicks', currentCount.toString());
-
-    const pipelineUrl = "YOUR_DISCORD_WEBHOOK_OR_API_URL_HERE"; 
-
-    const payload = {
-      content: `📘 **Free Lesson Initiated!**`,
-      embeds: [
-        {
-          title: "Outloud Language Academy",
-          color: 23455, 
-          description: "A prospective student has just entered the Free Lesson environment.",
-          fields: [
-            {
-              name: "Local Device Clicks",
-              value: `This device has started the lesson **${currentCount}** time(s).`,
-              inline: true
-            }
-          ],
-          timestamp: new Date().toISOString(),
-        }
-      ]
-    };
-
-    try {
-      await fetch(pipelineUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload)
-      });
-    } catch (error) {
-      console.error("Discord pipeline delivery failed:", error);
-    }
   };
 
   return (
     <>
-      {/* PUBLIC ROUTES */}
       {currentPage === 'login' && (
         <LoginPage
-          onLogin={handleLoginSuccess} // <-- 3. WIRED THE SMART ROUTER HERE
+          onLogin={handleLoginSuccess}
           onInfoClick={() => navigate('info')}
         />
       )}
@@ -219,10 +186,9 @@ export default function App() {
         />
       )}
 
-      {/* PROTECTED ROUTES */}
       {currentPage === 'admin' && (
         <ProtectedRoute 
-          allowedRoles={['TEACHER', 'GENERAL_MANAGER', 'Admin']} 
+          allowedRoles={['Teacher', 'TEACHER', 'GENERAL_MANAGER', 'Admin', 'ADMIN']} 
           forcedLanguage="en" 
           onUnauthorized={() => navigate('login')}
         >
@@ -234,12 +200,11 @@ export default function App() {
 
       {currentPage === 'hub' && (
         <ProtectedRoute 
-          allowedRoles={['Student', 'STUDENT']} // <-- MATCHES YOUR DATABASE
+          allowedRoles={['Student', 'STUDENT']} 
           forcedLanguage="en" 
           isStudentHub={true} 
           onUnauthorized={() => navigate('login')}
         >
-          {/* 4. UN-COMMENTED THE STUDENT HUB */}
           <StudentHub onReturnHome={() => navigate('login')} /> 
         </ProtectedRoute>
       )}
