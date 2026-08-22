@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import StudentManagerModal from './StudentManagerModal';
 
 const CustomerManagement = ({ supabase }) => {
@@ -37,7 +37,7 @@ const CustomerManagement = ({ supabase }) => {
   // Editing State for Info Board
   const [editingAnnounce, setEditingAnnounce] = useState(null);
 
-  // 1. STABILIZED AUTH INIT (Runs strictly once on mount)
+  // 1. STABILIZED AUTH INIT
   useEffect(() => {
     let isMounted = true;
     const initAuth = async () => {
@@ -54,10 +54,10 @@ const CustomerManagement = ({ supabase }) => {
     };
     initAuth();
     return () => { isMounted = false; };
-  }, []); 
+  }, [supabase]); 
 
-  // 2. DIRECTORY FETCHER
-  const fetchDirectoryData = useCallback(async () => {
+  // 2. DIRECTORY FETCHER (Reverted to original safe structure)
+  const fetchDirectoryData = async () => {
     setIsLoading(true);
     setErrorMsg(null);
     try {
@@ -76,10 +76,10 @@ const CustomerManagement = ({ supabase }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [supabase]);
+  };
 
-  // 3. FINANCE FETCHER
-  const fetchFinanceData = useCallback(async () => {
+  // 3. FINANCE FETCHER (Reverted to original safe structure)
+  const fetchFinanceData = async () => {
     setIsFinanceLoading(true);
     try {
       const startOfMonth = new Date();
@@ -142,9 +142,9 @@ const CustomerManagement = ({ supabase }) => {
     } finally {
       setIsFinanceLoading(false);
     }
-  }, [supabase]);
+  };
 
-  // 4. SUBTAB DATA TRIGGERS
+  // 4. SUBTAB DATA TRIGGERS (Loop Fixed - Strictly checks activeSubTab)
   useEffect(() => {
     if (activeSubTab === 'Estudiantes' || activeSubTab === 'Inactividad') {
       fetchDirectoryData();
@@ -152,7 +152,7 @@ const CustomerManagement = ({ supabase }) => {
     if (activeSubTab === 'Pagos') {
       fetchFinanceData();
     }
-  }, [activeSubTab, fetchDirectoryData, fetchFinanceData]);
+  }, [activeSubTab]); 
 
   // 5. COMMUNITY REALTIME LISTENERS
   useEffect(() => {
