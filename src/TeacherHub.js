@@ -185,8 +185,8 @@ const DesktopView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onR
   return (
     <div className="min-h-screen w-full font-montserrat flex justify-center p-8 relative overflow-hidden bg-[#070b19] text-white">
       <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-emerald-900/20 blur-[120px] rounded-full mix-blend-screen"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-[#fcd34d]/10 blur-[100px] rounded-full mix-blend-screen"></div>
+        <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-blue-900/20 blur-[120px] rounded-full mix-blend-screen"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-[#fcd34d]/5 blur-[100px] rounded-full mix-blend-screen"></div>
       </div>
 
       <div className="max-w-[1200px] w-full flex gap-8 relative z-10">
@@ -220,19 +220,20 @@ const DesktopView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onR
           </button>
         </div>
 
-        <div className="flex-1 flex flex-col pt-2">
-          <div className="flex justify-between items-center mb-8">
+        <div className="flex-1 flex flex-col pt-2 h-full max-h-screen">
+          <div className="flex justify-between items-center mb-8 shrink-0">
              <div className="flex items-center gap-4">
-                <img src="https://i.postimg.cc/43zTZQhx/Diseno-sin-titulo-(20).png" alt="Outloud Logo" className="h-8 object-contain opacity-90" />
+                <img src="https://i.postimg.cc/43zTZQhx/Diseno-sin-titulo-(20).png" alt="Outloud Logo" className="h-10 object-contain opacity-90" />
                 <div className="h-6 w-[1px] bg-white/30"></div>
                 <span className="text-sm font-light text-white/80 tracking-wide uppercase">Teacher Hub</span>
              </div>
              <ProfileDropdown teacher={teacher} pendingCount={pendingEvaluations.length} onOpenEvaluations={onOpenEvaluations} onLogout={onReturnHome} />
           </div>
 
-          <div className="flex flex-col gap-6 flex-1">
-            <div className="grid grid-cols-3 gap-6 h-[45%]">
-              <button onClick={() => onAction('Manual')} disabled={!nextClass} className={`bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 transition-all group ${!nextClass ? 'opacity-50 grayscale cursor-not-allowed' : 'hover:bg-white/20 hover:scale-[1.02]'}`}>
+          <div className="flex flex-col gap-6 flex-1 overflow-y-auto custom-scrollbar pr-2 pb-10">
+            {/* FIX: Removed restrictive height, added shrink-0 to preserve shape */}
+            <div className="grid grid-cols-3 gap-6 shrink-0">
+              <button onClick={() => onAction('Manual')} disabled={!nextClass} className={`bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 transition-all group min-h-[220px] ${!nextClass ? 'opacity-50 grayscale cursor-not-allowed' : 'hover:bg-white/20 hover:scale-[1.02]'}`}>
                 <img src="https://i.postimg.cc/Hnj3rbmt/1(8).png" alt="Manual" className="h-28 object-contain opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-transform duration-500" />
                 <div className="flex flex-col items-center">
                   <h3 className="font-light tracking-wide text-2xl uppercase text-[#fcd34d] drop-shadow-md">Manual</h3>
@@ -240,7 +241,7 @@ const DesktopView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onR
                 </div>
               </button>
 
-              <button onClick={() => onAction('Tools')} disabled={!nextClass} className={`bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 transition-all group ${!nextClass ? 'opacity-50 grayscale cursor-not-allowed' : 'hover:bg-white/20 hover:scale-[1.02]'}`}>
+              <button onClick={() => onAction('Tools')} disabled={!nextClass} className={`bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 transition-all group min-h-[220px] ${!nextClass ? 'opacity-50 grayscale cursor-not-allowed' : 'hover:bg-white/20 hover:scale-[1.02]'}`}>
                 <img src="https://i.postimg.cc/g23sLz9n/2(10).png" alt="Tools" className="h-28 object-contain opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-transform duration-500" />
                 <div className="flex flex-col items-center">
                   <h3 className="font-light tracking-wide text-2xl uppercase">Class Tools</h3>
@@ -248,35 +249,35 @@ const DesktopView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onR
                 </div>
               </button>
 
-              <button onClick={() => onAction('Calendar')} className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 hover:bg-white/20 hover:scale-[1.02] transition-all group">
+              <button onClick={() => onAction('Calendar')} className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 hover:bg-white/20 hover:scale-[1.02] transition-all group min-h-[220px]">
                 <img src="https://i.postimg.cc/vT49xTyn/3(6).png" alt="Calendar" className="h-28 object-contain opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-transform duration-500" />
                 <h3 className="font-light tracking-wide text-2xl uppercase">My Roster</h3>
               </button>
             </div>
             
-            <div className="grid grid-cols-4 gap-6 flex-1">
-              <button onClick={() => onAction('Community_BOARD')} className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 hover:bg-white/20 hover:scale-[1.02] transition-all group">
+            {/* FIX: Removed flex-1, added shrink-0 to preserve shape */}
+            <div className="grid grid-cols-4 gap-6 shrink-0">
+              <button onClick={() => onAction('Community_BOARD')} className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 hover:bg-white/20 hover:scale-[1.02] transition-all group min-h-[160px]">
                 <img src="https://i.postimg.cc/rpgthxF0/4(5).png" alt="Forum" className="h-20 object-contain opacity-90 group-hover:scale-110 transition-transform" />
                 <h3 className="font-light tracking-wide text-lg text-center leading-tight">Open<br/>forum</h3>
               </button>
               
-              <button onClick={() => onAction('Community_CHAT')} className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 transition-all group hover:bg-white/20 hover:scale-[1.02]">
+              <button onClick={() => onAction('Community_CHAT')} className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 transition-all group hover:bg-white/20 hover:scale-[1.02] min-h-[160px]">
                 <img src="https://i.postimg.cc/XNrQC7QY/5(4).png" alt="Chat" className="h-20 object-contain opacity-90 group-hover:scale-110 transition-transform" />
                 <h3 className="font-light tracking-wide text-lg text-center leading-tight">Class<br/>Chat</h3>
               </button>
               
-              <button onClick={() => onAction('Community_BOARD')} className="relative bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 hover:bg-white/20 hover:scale-[1.02] transition-all group">
+              <button onClick={() => onAction('Community_BOARD')} className="relative bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 hover:bg-white/20 hover:scale-[1.02] transition-all group min-h-[160px]">
                 {/* DYNAMIC NOTIFICATION DOT */}
                 {hasNewStaffBoard && <div className="absolute top-4 right-4 w-3 h-3 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)] z-10"></div>}
                 <img src="https://i.postimg.cc/PqfMrtCH/6(4).png" alt="Info" className="h-20 object-contain opacity-90 group-hover:scale-110 transition-transform" />
                 <h3 className="font-light tracking-wide text-lg text-center leading-tight">Staff<br/>Board</h3>
               </button>
               
-              {/* START CLASS LAUNCHER */}
               <button 
                 onClick={() => onAction('Live')} 
                 disabled={!nextClass || isLaunching} 
-                className={`bg-white/10 backdrop-blur-md border-2 border-[#fcd34d]/50 rounded-3xl p-6 shadow-[0_0_20px_rgba(252,211,77,0.15)] flex flex-col items-center justify-center gap-4 transition-all group ${
+                className={`bg-white/10 backdrop-blur-md border-2 border-[#fcd34d]/50 rounded-3xl p-6 shadow-[0_0_20px_rgba(252,211,77,0.15)] flex flex-col items-center justify-center gap-4 transition-all group min-h-[160px] ${
                   !nextClass ? 'opacity-50 grayscale cursor-not-allowed border-white/20' : 'hover:bg-[#fcd34d]/10 hover:border-[#fcd34d] hover:scale-[1.02]'
                 }`}
               >
@@ -312,8 +313,8 @@ const MobileView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onRe
   return (
     <div className="min-h-screen w-full font-montserrat flex flex-col overflow-x-hidden pb-10 bg-[#070b19] text-white relative z-0">
       <div className="absolute inset-0 pointer-events-none z-[-1] overflow-hidden">
-        <div className="absolute top-[-10%] left-[-20%] w-[80%] h-[50%] bg-emerald-900/30 blur-[100px] mix-blend-screen"></div>
-        <div className="absolute bottom-[20%] right-[-20%] w-[60%] h-[60%] bg-[#fcd34d]/10 blur-[90px] mix-blend-screen"></div>
+        <div className="absolute top-[-10%] left-[-20%] w-[80%] h-[50%] bg-blue-900/20 blur-[120px] mix-blend-screen"></div>
+        <div className="absolute bottom-[20%] right-[-20%] w-[60%] h-[60%] bg-[#fcd34d]/5 blur-[100px] mix-blend-screen"></div>
       </div>
 
       <div className="flex justify-between items-center p-5 z-10 border-b border-white/10 bg-[#070b19]/80 backdrop-blur-md">
