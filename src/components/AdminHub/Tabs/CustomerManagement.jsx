@@ -1,7 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { supabase as localSupabase } from './SupabaseClient';
 import StudentManagerModal from './StudentManagerModal';
 
-const CustomerManagement = ({ supabase }) => {
+const CustomerManagement = ({ supabase: propSupabase }) => {
+  // Use prop if provided, otherwise fallback to direct singleton
+  const supabase = propSupabase || localSupabase;
+
   const [activeSubTab, setActiveSubTab] = useState('Estudiantes'); 
   const [searchQuery, setSearchQuery] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
@@ -23,7 +27,7 @@ const CustomerManagement = ({ supabase }) => {
   const [isFinanceLoading, setIsFinanceLoading] = useState(false);
 
   // Community & Realtime State
-  const [communityTab, setCommunityTab] = useState('BOARD'); // strictly segregates Board, Chat, and Forum
+  const [communityTab, setCommunityTab] = useState('BOARD'); // Segregates Board, Chat, and Forum
   const [messages, setMessages] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
   const [chatInput, setChatInput] = useState('');
@@ -37,21 +41,27 @@ const CustomerManagement = ({ supabase }) => {
   // Editing State for Info Board
   const [editingAnnounce, setEditingAnnounce] = useState(null);
 
-  // Get Admin Profile on mount
+  // 1. STABILIZED AUTH INIT (Runs strictly once on mount)
   useEffect(() => {
+    let isMounted = true;
     const initAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setCurrentUser(user);
-        const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-        setAdminProfile(data);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user && isMounted) {
+          setCurrentUser(user);
+          const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+          if (isMounted) setAdminProfile(data);
+        }
+      } catch (err) {
+        console.error("Auth init error:", err);
       }
     };
     initAuth();
-  }, [supabase]);
+    return () => { isMounted = false; };
+  }, []);
 
-  // Fetch Directory
-  const fetchDirectoryData = async () => {
+  // 2. DIRECTORY FETCHER
+  const fetchDirectoryData = useCallback(async () => {
     setIsLoading(true);
     setErrorMsg(null);
     try {
@@ -70,130 +80,171 @@ const CustomerManagement = ({ supabase }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [supabase]);
 
-  // Fetch Finance Data
-  const fetchFinanceData = async () => {
+  // 3. FINANCE FETCHER
+  const fetchFinanceData = useCallback(async () => {
     setIsFinanceLoading(true);
     try {
       const startOfMonth = new Date();
       startOfMonth.setDate(1);
-      startOfMonth.setHours(0,0,0,0);
+      startOfMonth.setHours(0, 0, 0, 0);
 
-      const { data: paymentsData } = await supabase.from('student_payments').select(`*, student:profiles!student_id(first_name, last_name, level)`).gte('created_at', startOfMonth.toISOString()).order('created_at', { ascending: false });
-      const { data: activeStudents } = await supabase.from('profiles').select('level').eq('role', 'Student').eq('status', 'active');
+      const { data: paymentsData } = await supabase
+        .from('student_payments')
+        .select(`*, student:profiles!student_id(first_name, last_name, level)`)
+        .gte('created_at', startOfMonth.toISOString())
+        .order('created_at', { ascending: false });
+
+      const { data: activeStudents } = await supabase
+        .from('profiles')
+        .select('level')
+        .eq('role', 'Student')
+        .eq('status', 'active');
 
       let expected = 0;
       activeStudents?.forEach(s => {
-         if (s.level?.includes('C')) expected += 50;
-         else if (s.level?.includes('B')) expected += 30;
-         else expected += 20;
+        const lvl = String(s.level || '');
+        if (lvl.includes('C')) expected += 50;
+        else if (lvl.includes('B')) expected += 30;
+        else expected += 20;
       });
 
-      const { data: unpaidSessions } = await supabase.from('live_sessions').select(`teacher_id, teacher:profiles!teacher_id(first_name, last_name, hourly_rate)`).eq('status', 'completed').eq('is_paid_out', false);
+      const { data: unpaidSessions } = await supabase
+        .from('live_sessions')
+        .select(`teacher_id, teacher:profiles!teacher_id(first_name, last_name, hourly_rate)`)
+        .eq('status', 'completed')
+        .eq('is_paid_out', false);
 
       const payrollMap = {};
       unpaidSessions?.forEach(session => {
-         const tId = session.teacher_id;
-         if(!payrollMap[tId]) {
-            payrollMap[tId] = { id: tId, name: `${session.teacher?.first_name || ''} ${session.teacher?.last_name || ''}`.trim(), hours: 0, rate: session.teacher?.hourly_rate || 0, total: 0 };
-         }
-         payrollMap[tId].hours += 1; 
-         payrollMap[tId].total += Number(session.teacher?.hourly_rate || 0);
+        const tId = session.teacher_id;
+        if (!payrollMap[tId]) {
+          payrollMap[tId] = { 
+            id: tId, 
+            name: `${session.teacher?.first_name || ''} ${session.teacher?.last_name || ''}`.trim(), 
+            hours: 0, 
+            rate: session.teacher?.hourly_rate || 0, 
+            total: 0 
+          };
+        }
+        payrollMap[tId].hours += 1; 
+        payrollMap[tId].total += Number(session.teacher?.hourly_rate || 0);
       });
+
       const payrollArray = Object.values(payrollMap);
       const totalLiability = payrollArray.reduce((acc, curr) => acc + curr.total, 0);
-      const actual = paymentsData?.reduce((acc, curr) => acc + Number(curr.amount), 0) || 0;
+      const actual = paymentsData?.reduce((acc, curr) => acc + Number(curr.amount || 0), 0) || 0;
 
-      setFinanceData({ payments: paymentsData || [], payroll: payrollArray, metrics: { expected, actual, liability: totalLiability, net: actual - totalLiability } });
+      setFinanceData({ 
+        payments: paymentsData || [], 
+        payroll: payrollArray, 
+        metrics: { expected, actual, liability: totalLiability, net: actual - totalLiability } 
+      });
     } catch (error) {
       console.error("Error fetching finance data:", error);
     } finally {
       setIsFinanceLoading(false);
     }
-  };
+  }, [supabase]);
 
-  // Fetch & Subscribe Community Data
+  // 4. SUBTAB DATA TRIGGERS
   useEffect(() => {
-    if (activeSubTab === 'Comunidad') {
-      const fetchCommunity = async () => {
-        setIsCommunityLoading(true);
+    if (activeSubTab === 'Estudiantes' || activeSubTab === 'Inactividad') {
+      fetchDirectoryData();
+    }
+    if (activeSubTab === 'Pagos') {
+      fetchFinanceData();
+    }
+  }, [activeSubTab, fetchDirectoryData, fetchFinanceData]);
+
+  // 5. COMMUNITY REALTIME LISTENERS
+  useEffect(() => {
+    if (activeSubTab !== 'Comunidad') return;
+
+    let isMounted = true;
+    const fetchCommunity = async () => {
+      setIsCommunityLoading(true);
+      try {
         const [msgRes, annRes, settingsRes] = await Promise.all([
           supabase.from('messages').select('*').order('created_at', { ascending: true }).limit(100),
           supabase.from('announcements').select('*').order('created_at', { ascending: false }).limit(50),
-          supabase.from('platform_settings').select('is_chat_active').eq('id', 1).single()
+          supabase.from('platform_settings').select('is_chat_active').eq('id', 1).maybeSingle()
         ]);
-        if (msgRes.data) setMessages(msgRes.data);
-        if (annRes.data) setAnnouncements(annRes.data);
-        if (settingsRes.data) setIsChatActive(settingsRes.data.is_chat_active);
-        
-        setIsCommunityLoading(false);
-        setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-      };
-      
-      fetchCommunity();
-
-      // SUPABASE REALTIME CHANNELS
-      const messageChannel = supabase.channel('public:messages')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
-          setMessages(prev => [...prev, payload.new]);
+        if (isMounted) {
+          if (msgRes.data) setMessages(msgRes.data);
+          if (annRes.data) setAnnouncements(annRes.data);
+          if (settingsRes.data) setIsChatActive(settingsRes.data.is_chat_active);
+          setIsCommunityLoading(false);
           setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-        })
-        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, payload => {
-          setMessages(prev => prev.map(m => m.id === payload.new.id ? payload.new : m));
-        })
-        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'messages' }, payload => {
-          setMessages(prev => prev.filter(m => m.id !== payload.old.id));
-        }).subscribe();
+        }
+      } catch (err) {
+        console.error("Community fetch error:", err);
+        if (isMounted) setIsCommunityLoading(false);
+      }
+    };
 
-      const announcementChannel = supabase.channel('public:announcements')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'announcements' }, payload => {
-          setAnnouncements(prev => [payload.new, ...prev]);
-        })
-        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'announcements' }, payload => {
-          setAnnouncements(prev => prev.map(a => a.id === payload.new.id ? payload.new : a));
-        })
-        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'announcements' }, payload => {
-          setAnnouncements(prev => prev.filter(a => a.id !== payload.old.id));
-        }).subscribe();
-        
-      const settingsChannel = supabase.channel('public:platform_settings')
-        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'platform_settings' }, payload => {
-          if(payload.new.id === 1) setIsChatActive(payload.new.is_chat_active);
-        }).subscribe();
+    fetchCommunity();
 
-      return () => {
-        supabase.removeChannel(messageChannel);
-        supabase.removeChannel(announcementChannel);
-        supabase.removeChannel(settingsChannel);
-      };
-    }
+    const messageChannel = supabase.channel('cm:messages')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+        setMessages(prev => [...prev, payload.new]);
+        setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, payload => {
+        setMessages(prev => prev.map(m => m.id === payload.new.id ? payload.new : m));
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'messages' }, payload => {
+        setMessages(prev => prev.filter(m => m.id !== payload.old.id));
+      }).subscribe();
+
+    const announcementChannel = supabase.channel('cm:announcements')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'announcements' }, payload => {
+        setAnnouncements(prev => [payload.new, ...prev]);
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'announcements' }, payload => {
+        setAnnouncements(prev => prev.map(a => a.id === payload.new.id ? payload.new : a));
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'announcements' }, payload => {
+        setAnnouncements(prev => prev.filter(a => a.id !== payload.old.id));
+      }).subscribe();
+
+    const settingsChannel = supabase.channel('cm:platform_settings')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'platform_settings' }, payload => {
+        if (payload.new?.id === 1) setIsChatActive(payload.new.is_chat_active);
+      }).subscribe();
+
+    return () => {
+      isMounted = false;
+      supabase.removeChannel(messageChannel);
+      supabase.removeChannel(announcementChannel);
+      supabase.removeChannel(settingsChannel);
+    };
   }, [activeSubTab, supabase]);
 
-  useEffect(() => {
-    if (activeSubTab === 'Estudiantes' || activeSubTab === 'Inactividad') fetchDirectoryData();
-    if (activeSubTab === 'Pagos') fetchFinanceData();
-  }, [activeSubTab]);
-
-  // --- Directory Filters ---
+  // --- FILTERS & RADAR ---
   const query = searchQuery.toLowerCase();
-  const filteredStudents = students.filter(student => `${student.first_name || ''} ${student.last_name || ''}`.toLowerCase().includes(query));
-  const filteredPending = pendingLeads.filter(lead => `${lead.full_name || ''} ${lead.email || ''} ${lead.phone || ''}`.toLowerCase().includes(query));
+  const filteredStudents = students.filter(student => 
+    `${student.first_name || ''} ${student.last_name || ''}`.toLowerCase().includes(query)
+  );
+  const filteredPending = pendingLeads.filter(lead => 
+    `${lead.full_name || ''} ${lead.email || ''} ${lead.phone || ''}`.toLowerCase().includes(query)
+  );
 
-  // --- Inactivity Engine ---
   const inactiveStudents = students.map(student => {
-    const lastActive = new Date(student.last_active_at || student.created_at);
+    const rawDate = student.last_active_at || student.created_at;
+    const lastActive = rawDate ? new Date(rawDate) : new Date();
     const today = new Date();
     const diffTime = Math.abs(today - lastActive);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 0;
     return { ...student, daysInactive: diffDays };
   }).filter(s => s.status === 'active' && s.daysInactive >= 7).sort((a, b) => b.daysInactive - a.daysInactive);
 
-  const formatPhoneForWA = (phone) => phone ? phone.replace(/\D/g, '') : '';
+  const formatPhoneForWA = (phone) => phone ? String(phone).replace(/\D/g, '') : '';
 
   const handlePayTeacher = async (teacherId) => {
     const isConfirm = window.confirm("¿Confirmas que has transferido el pago a este profesor? Esto reseteará sus horas acumuladas a cero.");
-    if(!isConfirm) return;
+    if (!isConfirm) return;
     try {
       await supabase.from('live_sessions').update({ is_paid_out: true }).eq('teacher_id', teacherId).eq('status', 'completed').eq('is_paid_out', false);
       alert("Nómina liquidada exitosamente.");
@@ -204,16 +255,15 @@ const CustomerManagement = ({ supabase }) => {
     }
   };
 
-  // --- COMMUNITY ACTIONS ---
-  
+  // --- ACTIONS ---
   const handleToggleChatDb = async () => {
     const newState = !isChatActive;
-    setIsChatActive(newState); // Optimistic update
+    setIsChatActive(newState);
     try {
       await supabase.from('platform_settings').update({ is_chat_active: newState }).eq('id', 1);
     } catch (err) {
       console.error(err);
-      setIsChatActive(!newState); // Revert on failure
+      setIsChatActive(!newState);
       alert("Error al cambiar el estado del chat en la base de datos.");
     }
   };
@@ -224,21 +274,31 @@ const CustomerManagement = ({ supabase }) => {
     try {
       await supabase.from('messages').insert({
         sender_id: currentUser.id,
-        sender_name: `${adminProfile.first_name} ${adminProfile.last_name}`,
-        sender_role: adminProfile.role,
+        sender_name: `${adminProfile.first_name || ''} ${adminProfile.last_name || ''}`.trim() || 'Admin',
+        sender_role: adminProfile.role || 'Admin',
         content: chatInput.trim()
       });
       setChatInput('');
-    } catch (error) { console.error(error); }
+    } catch (error) { 
+      console.error(error); 
+    }
   };
 
   const handleDeleteMessage = async (msgId) => {
-    if(!window.confirm("¿Eliminar este mensaje del chat público?")) return;
-    try { await supabase.from('messages').delete().eq('id', msgId); } catch (e) { console.error(e); }
+    if (!window.confirm("¿Eliminar este mensaje del chat público?")) return;
+    try { 
+      await supabase.from('messages').delete().eq('id', msgId); 
+    } catch (e) { 
+      console.error(e); 
+    }
   };
 
   const handleDismissReport = async (msgId) => {
-    try { await supabase.from('messages').update({ is_reported: false }).eq('id', msgId); } catch (e) { console.error(e); }
+    try { 
+      await supabase.from('messages').update({ is_reported: false }).eq('id', msgId); 
+    } catch (e) { 
+      console.error(e); 
+    }
   };
 
   const handlePostAnnouncement = async (e) => {
@@ -254,16 +314,24 @@ const CustomerManagement = ({ supabase }) => {
       setAnnounceTitle('');
       setAnnounceContent('');
       alert("Anuncio publicado exitosamente.");
-    } catch (error) { console.error(error); alert("Error publicando anuncio."); }
+    } catch (error) { 
+      console.error(error); 
+      alert("Error publicando anuncio."); 
+    }
   };
 
   const handleDeleteAnnouncement = async (annId) => {
-    if(!window.confirm("¿Eliminar este anuncio global?")) return;
-    try { await supabase.from('announcements').delete().eq('id', annId); } catch (e) { console.error(e); }
+    if (!window.confirm("¿Eliminar este anuncio global?")) return;
+    try { 
+      await supabase.from('announcements').delete().eq('id', annId); 
+    } catch (e) { 
+      console.error(e); 
+    }
   };
 
   const handleUpdateAnnouncement = async (e) => {
     e.preventDefault();
+    if (!editingAnnounce) return;
     try {
       await supabase.from('announcements').update({
         title: editingAnnounce.title,
@@ -296,11 +364,16 @@ const CustomerManagement = ({ supabase }) => {
   return (
     <div className="w-full flex flex-col items-center font-montserrat relative z-10">
       
+      {/* Sub-Tabs */}
       <div className="flex flex-wrap justify-center gap-3 mb-8 w-full">
         {['Estudiantes', 'Pagos', 'Inactividad', 'Comunidad'].map((tab) => (
           <button 
             key={tab} type="button" onClick={() => setActiveSubTab(tab)} 
-            className={`px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest transition-all ${activeSubTab === tab ? 'bg-[#fcd34d] text-[#08203e] shadow-[0_0_15px_rgba(252,211,77,0.4)] scale-105' : 'bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 hover:text-white'}`}
+            className={`px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest transition-all ${
+              activeSubTab === tab 
+                ? 'bg-[#fcd34d] text-[#08203e] shadow-[0_0_15px_rgba(252,211,77,0.4)] scale-105' 
+                : 'bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 hover:text-white'
+            }`}
           >
              {tab}
           </button>
@@ -318,7 +391,10 @@ const CustomerManagement = ({ supabase }) => {
           
           <div className="flex flex-col gap-4 max-h-[600px] overflow-y-auto custom-scrollbar pr-2">
             {isLoading ? (
-              <div className="py-12 text-center text-xs font-bold text-white/50 uppercase tracking-widest flex flex-col items-center justify-center gap-3"><div className="w-8 h-8 border-4 border-[#fcd34d] border-t-transparent rounded-full animate-spin"></div>Cargando base de datos...</div>
+              <div className="py-12 text-center text-xs font-bold text-white/50 uppercase tracking-widest flex flex-col items-center justify-center gap-3">
+                <div className="w-8 h-8 border-4 border-[#fcd34d] border-t-transparent rounded-full animate-spin"></div>
+                Cargando base de datos...
+              </div>
             ) : errorMsg ? (
               <div className="py-12 text-center text-xs font-bold text-red-400/80 uppercase tracking-widest bg-red-500/10 rounded-2xl border border-red-500/20 shadow-inner">{errorMsg}</div>
             ) : (filteredPending.length > 0 || filteredStudents.length > 0) ? (
@@ -326,7 +402,9 @@ const CustomerManagement = ({ supabase }) => {
                 {filteredPending.map((lead) => (
                   <div key={`lead-${lead.id}`} className="flex items-center p-4 bg-[#070b19]/60 rounded-2xl border-l-4 border-l-[#fcd34d] border-y border-r border-white/10 shadow-lg hover:bg-white/5 transition-all group relative overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-r from-[#fcd34d]/10 to-transparent opacity-50 pointer-events-none"></div>
-                    <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-white/5 border border-white/20 flex items-center justify-center text-white/50 mr-4 md:mr-5 shrink-0 shadow-inner z-10"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg></div>
+                    <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-white/5 border border-white/20 flex items-center justify-center text-white/50 mr-4 md:mr-5 shrink-0 shadow-inner z-10">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                    </div>
                     <div className="flex flex-col flex-grow mr-4 truncate z-10">
                       <span className="font-bold text-white text-base md:text-lg truncate drop-shadow-md">{lead.full_name}</span>
                       <span className="text-xs text-white/50 font-medium truncate">{lead.email} {lead.phone ? `• ${lead.phone}` : ''}</span>
@@ -341,7 +419,7 @@ const CustomerManagement = ({ supabase }) => {
                   <div key={`student-${student.id}`} onClick={() => { setSelectedUser(student); setIsSelectedPending(false); setIsManagerOpen(true); }} className="flex items-center p-4 bg-black/20 rounded-2xl border border-white/10 shadow-inner hover:border-[#fcd34d]/50 hover:bg-white/5 transition-all group cursor-pointer">
                     <img src={student.avatar_url || 'https://i.pravatar.cc/150'} alt="Avatar" className="w-12 h-12 md:w-14 md:h-14 rounded-full object-cover border-2 border-white/20 shadow-md mr-4 md:mr-5 shrink-0 group-hover:border-[#fcd34d]/50 transition-colors" />
                     <span className="font-bold text-white text-base md:text-lg mr-4 truncate flex-grow drop-shadow-md">{student.first_name} {student.last_name}</span>
-                    <span className="bg-[#fcd34d] text-[#08203e] rounded-md text-[10px] px-3 py-1.5 font-black tracking-widest mr-3 shrink-0 shadow-md">{student.level?.split(':')[0] || 'A1'}</span>
+                    <span className="bg-[#fcd34d] text-[#08203e] rounded-md text-[10px] px-3 py-1.5 font-black tracking-widest mr-3 shrink-0 shadow-md">{String(student.level || 'A1').split(':')[0]}</span>
                     <span className="text-[10px] md:text-xs text-white/40 italic font-bold tracking-widest uppercase shrink-0">({student.role})</span>
                   </div>
                 ))}
@@ -446,7 +524,7 @@ const CustomerManagement = ({ supabase }) => {
         </div>
       )}
 
-      {/* --- INACTVIDAD ENGINE TAB --- */}
+      {/* --- INACTIVIDAD ENGINE TAB --- */}
       {activeSubTab === 'Inactividad' && (
         <div className="bg-white/5 backdrop-blur-xl rounded-[30px] shadow-2xl border border-white/10 p-6 md:p-10 w-full animate-fade-in relative overflow-hidden">
           <div className="absolute top-[-20%] right-[-10%] w-[50%] h-[50%] bg-orange-500/10 blur-[100px] rounded-full pointer-events-none"></div>
@@ -474,7 +552,10 @@ const CustomerManagement = ({ supabase }) => {
 
           <div className="flex flex-col gap-4 max-h-[500px] overflow-y-auto custom-scrollbar pr-2 relative z-10">
             {isLoading ? (
-               <div className="py-12 text-center text-xs font-bold text-white/50 uppercase tracking-widest flex flex-col items-center justify-center gap-3"><div className="w-8 h-8 border-4 border-[#fcd34d] border-t-transparent rounded-full animate-spin"></div>Cargando radar...</div>
+               <div className="py-12 text-center text-xs font-bold text-white/50 uppercase tracking-widest flex flex-col items-center justify-center gap-3">
+                 <div className="w-8 h-8 border-4 border-[#fcd34d] border-t-transparent rounded-full animate-spin"></div>
+                 Cargando radar...
+               </div>
             ) : inactiveStudents.length === 0 ? (
                <div className="py-12 text-center text-xs font-bold text-emerald-400 uppercase tracking-widest bg-emerald-500/10 rounded-2xl border border-emerald-500/20 shadow-inner">
                  ¡Excelente! Ningún estudiante activo tiene más de 7 días sin conectarse.
@@ -495,7 +576,7 @@ const CustomerManagement = ({ supabase }) => {
                      </div>
                      <div className="flex flex-col flex-grow truncate z-10">
                        <span className="font-bold text-white text-sm md:text-base truncate">{student.first_name} {student.last_name}</span>
-                       <span className="text-[10px] md:text-xs text-white/50 font-medium truncate mt-0.5">Nivel {student.level?.split(':')[0] || 'A1'} • Unidad {student.unit || 1}</span>
+                       <span className="text-[10px] md:text-xs text-white/50 font-medium truncate mt-0.5">Nivel {String(student.level || 'A1').split(':')[0]} • Unidad {student.unit || 1}</span>
                      </div>
                      <div className="flex items-center gap-4 shrink-0 z-10">
                        <div className={`flex flex-col items-center justify-center px-4 py-2 border rounded-xl shadow-inner ${riskColor}`}>
@@ -531,19 +612,31 @@ const CustomerManagement = ({ supabase }) => {
           <div className="flex gap-4 border-b border-white/10 pb-4 mb-6 relative z-10 overflow-x-auto custom-scrollbar">
              <button 
                 onClick={() => setCommunityTab('BOARD')}
-                className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${communityTab === 'BOARD' ? 'bg-indigo-500 text-white shadow-[0_0_15px_rgba(99,102,241,0.4)]' : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'}`}
+                className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+                  communityTab === 'BOARD' 
+                    ? 'bg-indigo-500 text-white shadow-[0_0_15px_rgba(99,102,241,0.4)]' 
+                    : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'
+                }`}
              >
                 Tablero de Anuncios (Info Board)
              </button>
              <button 
                 onClick={() => setCommunityTab('CHAT')}
-                className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${communityTab === 'CHAT' ? 'bg-emerald-500 text-[#08203e] shadow-[0_0_15px_rgba(16,185,129,0.4)]' : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'}`}
+                className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+                  communityTab === 'CHAT' 
+                    ? 'bg-emerald-500 text-[#08203e] shadow-[0_0_15px_rgba(16,185,129,0.4)]' 
+                    : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'
+                }`}
              >
                 Chat Público en Vivo
              </button>
              <button 
                 onClick={() => setCommunityTab('FORUM')}
-                className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${communityTab === 'FORUM' ? 'bg-purple-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.4)]' : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'}`}
+                className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+                  communityTab === 'FORUM' 
+                    ? 'bg-purple-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.4)]' 
+                    : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'
+                }`}
              >
                 Foro de Discusión
              </button>
@@ -651,7 +744,11 @@ const CustomerManagement = ({ supabase }) => {
 
                   <button 
                     onClick={handleToggleChatDb} 
-                    className={`flex items-center gap-2 px-4 py-2 rounded-full border text-[10px] font-black uppercase tracking-widest transition-all shadow-lg ${isChatActive ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/30' : 'bg-red-500/20 border-red-500/50 text-red-400 hover:bg-red-500/30'}`}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full border text-[10px] font-black uppercase tracking-widest transition-all shadow-lg ${
+                      isChatActive 
+                        ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/30' 
+                        : 'bg-red-500/20 border-red-500/50 text-red-400 hover:bg-red-500/30'
+                    }`}
                   >
                     <div className={`w-2.5 h-2.5 rounded-full ${isChatActive ? 'bg-emerald-400 shadow-[0_0_8px_#34d399]' : 'bg-red-400 shadow-[0_0_8px_#f87171]'}`}></div>
                     {isChatActive ? 'Chat Global Activo' : 'Chat Global Silenciado'}
@@ -669,7 +766,7 @@ const CustomerManagement = ({ supabase }) => {
                     <div className="flex-1 flex items-center justify-center text-xs text-white/40 font-bold uppercase tracking-widest">El chat está silencioso...</div>
                   ) : (
                     messages.map(msg => {
-                      const isAdmin = msg.sender_role.includes('Admin');
+                      const isAdmin = msg.sender_role?.includes('Admin');
                       const isTeacher = msg.sender_role === 'Teacher';
                       return (
                         <div key={msg.id} className="flex flex-col group">
@@ -679,12 +776,20 @@ const CustomerManagement = ({ supabase }) => {
                             <button onClick={() => handleDeleteMessage(msg.id)} className="text-[10px] text-red-500 opacity-0 group-hover:opacity-100 transition-opacity ml-auto underline cursor-pointer hover:text-red-400">Eliminar</button>
                             {msg.is_reported && <button onClick={() => handleDismissReport(msg.id)} className="text-[10px] text-white/50 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity underline cursor-pointer ml-2">Limpiar Reporte</button>}
                           </div>
-                          <div className={`text-sm py-3 px-4 rounded-xl w-fit max-w-[85%] ${msg.is_reported ? 'bg-red-500/20 border-2 border-red-500/50 text-white' : isAdmin ? 'bg-[#fcd34d]/20 text-[#fcd34d] border border-[#fcd34d]/30' : isTeacher ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' : 'bg-white/10 text-white/90 border border-white/5'}`}>
+                          <div className={`text-sm py-3 px-4 rounded-xl w-fit max-w-[85%] ${
+                            msg.is_reported 
+                              ? 'bg-red-500/20 border-2 border-red-500/50 text-white' 
+                              : isAdmin 
+                              ? 'bg-[#fcd34d]/20 text-[#fcd34d] border border-[#fcd34d]/30' 
+                              : isTeacher 
+                              ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' 
+                              : 'bg-white/10 text-white/90 border border-white/5'
+                          }`}>
                             {msg.is_reported && <div className="text-[10px] text-red-400 font-black uppercase tracking-widest mb-2 flex items-center gap-1">⚠️ REPORTADO POR USUARIOS</div>}
                             {msg.content}
                           </div>
                         </div>
-                      )
+                      );
                     })
                   )}
                   <div ref={chatEndRef} />
@@ -715,8 +820,15 @@ const CustomerManagement = ({ supabase }) => {
       )}
 
       <StudentManagerModal 
-        isOpen={isManagerOpen} onClose={() => setIsManagerOpen(false)} userData={selectedUser} 
-        isPending={isSelectedPending} supabase={supabase} onSuccess={() => { fetchDirectoryData(); if(activeSubTab === 'Pagos') fetchFinanceData(); }} 
+        isOpen={isManagerOpen} 
+        onClose={() => setIsManagerOpen(false)} 
+        userData={selectedUser} 
+        isPending={isSelectedPending} 
+        supabase={supabase} 
+        onSuccess={() => { 
+          fetchDirectoryData(); 
+          if (activeSubTab === 'Pagos') fetchFinanceData(); 
+        }} 
       />
     </div>
   );
