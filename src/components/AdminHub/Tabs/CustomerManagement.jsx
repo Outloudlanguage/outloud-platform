@@ -23,7 +23,7 @@ const CustomerManagement = ({ supabase }) => {
   const [isFinanceLoading, setIsFinanceLoading] = useState(false);
 
   // Community & Realtime State
-  const [communityTab, setCommunityTab] = useState('BOARD'); // Segregates Board, Chat, and Forum
+  const [communityTab, setCommunityTab] = useState('BOARD'); 
   const [messages, setMessages] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
   const [chatInput, setChatInput] = useState('');
@@ -38,7 +38,6 @@ const CustomerManagement = ({ supabase }) => {
   const [editingAnnounce, setEditingAnnounce] = useState(null);
 
   // 1. STABILIZED AUTH INIT (Runs strictly once on mount)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     let isMounted = true;
     const initAuth = async () => {
@@ -55,7 +54,7 @@ const CustomerManagement = ({ supabase }) => {
     };
     initAuth();
     return () => { isMounted = false; };
-  }, []); // Empty dependency array prevents the infinite render loop
+  }, []); 
 
   // 2. DIRECTORY FETCHER
   const fetchDirectoryData = useCallback(async () => {
