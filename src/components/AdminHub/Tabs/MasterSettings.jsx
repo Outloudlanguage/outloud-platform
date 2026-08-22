@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createClient } from '@supabase/supabase-js';
 import AccountCreationModal from '../Modals/AccountCreationModal';
 import UserManagementDrawer from '../Modals/UserManagementDrawer';
 import StudentHub from '../../../StudentHub';
@@ -22,9 +23,31 @@ const MasterSettings = ({ supabase }) => {
 
   const handleSaveNewAccount = async (data) => {
     try {
-      const { data: responseData, error } = await supabase.functions.invoke('provision-user', { body: data });
+      // 1. Create the Ghost Client securely to avoid logging the Admin out
+      const ghostClient = createClient(
+        'https://kuvsmrheywhzxfiyivtg.supabase.co',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt1dnNtcmhleXdoenhmaXlpdnRnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyMTc4MzYsImV4cCI6MjEwMTc5MzgzNn0.upJqo4zdmO3xj4KN7zUURDTI0ZY2RNWqgvLbSSCu3BA',
+        { auth: { persistSession: false, autoRefreshToken: false } }
+      );
+
+      // 2. Provision the user via Ghost Client (Bypassing the broken Edge Function)
+      // We pass the role and names directly into the options so our universal SQL Trigger catches them!
+      const { error } = await ghostClient.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+          data: {
+            first_name: data.first_name,
+            last_name: data.last_name,
+            role: data.role || 'Teacher', 
+            cefr: data.cefr || 'C2' 
+          }
+        }
+      });
+
       if (error) throw error;
-      alert(`${data.role} account securely provisioned!`);
+      
+      alert(`${data.role || 'Teacher'} account securely provisioned!`);
       fetchUsers(); 
     } catch (error) {
       console.error("Error creating user:", error);
