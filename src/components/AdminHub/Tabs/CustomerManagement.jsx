@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import StudentManagerModal from './StudentManagerModal';
 
 const CustomerManagement = ({ supabase }) => {
-  // 1. Default to 'Estudiantes' since Calendar is gone
   const [activeSubTab, setActiveSubTab] = useState('Estudiantes'); 
   const [searchQuery, setSearchQuery] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
@@ -24,15 +23,19 @@ const CustomerManagement = ({ supabase }) => {
   const [isFinanceLoading, setIsFinanceLoading] = useState(false);
 
   // Community & Realtime State
+  const [communityTab, setCommunityTab] = useState('BOARD'); // strictly segregates Board, Chat, and Forum
   const [messages, setMessages] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
   const [chatInput, setChatInput] = useState('');
   const [announceTitle, setAnnounceTitle] = useState('');
   const [announceContent, setAnnounceContent] = useState('');
-  const [announceAudience, setAnnounceAudience] = useState('EVERYONE_NO_STAFF'); // New Audience State
-  const [isChatActive, setIsChatActive] = useState(true); // Master Chat Toggle State
+  const [announceAudience, setAnnounceAudience] = useState('EVERYONE_NO_STAFF'); 
+  const [isChatActive, setIsChatActive] = useState(true); 
   const [isCommunityLoading, setIsCommunityLoading] = useState(false);
   const chatEndRef = useRef(null);
+
+  // Editing State for Info Board
+  const [editingAnnounce, setEditingAnnounce] = useState(null);
 
   // Get Admin Profile on mount
   useEffect(() => {
@@ -115,12 +118,15 @@ const CustomerManagement = ({ supabase }) => {
     if (activeSubTab === 'Comunidad') {
       const fetchCommunity = async () => {
         setIsCommunityLoading(true);
-        const [msgRes, annRes] = await Promise.all([
+        const [msgRes, annRes, settingsRes] = await Promise.all([
           supabase.from('messages').select('*').order('created_at', { ascending: true }).limit(100),
-          supabase.from('announcements').select('*').order('created_at', { ascending: false }).limit(20)
+          supabase.from('announcements').select('*').order('created_at', { ascending: false }).limit(50),
+          supabase.from('platform_settings').select('is_chat_active').eq('id', 1).single()
         ]);
         if (msgRes.data) setMessages(msgRes.data);
         if (annRes.data) setAnnouncements(annRes.data);
+        if (settingsRes.data) setIsChatActive(settingsRes.data.is_chat_active);
+        
         setIsCommunityLoading(false);
         setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
       };
@@ -144,19 +150,27 @@ const CustomerManagement = ({ supabase }) => {
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'announcements' }, payload => {
           setAnnouncements(prev => [payload.new, ...prev]);
         })
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'announcements' }, payload => {
+          setAnnouncements(prev => prev.map(a => a.id === payload.new.id ? payload.new : a));
+        })
         .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'announcements' }, payload => {
           setAnnouncements(prev => prev.filter(a => a.id !== payload.old.id));
+        }).subscribe();
+        
+      const settingsChannel = supabase.channel('public:platform_settings')
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'platform_settings' }, payload => {
+          if(payload.new.id === 1) setIsChatActive(payload.new.is_chat_active);
         }).subscribe();
 
       return () => {
         supabase.removeChannel(messageChannel);
         supabase.removeChannel(announcementChannel);
+        supabase.removeChannel(settingsChannel);
       };
     }
   }, [activeSubTab, supabase]);
 
   useEffect(() => {
-    // Removed 'Calendario' from triggers
     if (activeSubTab === 'Estudiantes' || activeSubTab === 'Inactividad') fetchDirectoryData();
     if (activeSubTab === 'Pagos') fetchFinanceData();
   }, [activeSubTab]);
@@ -191,6 +205,19 @@ const CustomerManagement = ({ supabase }) => {
   };
 
   // --- COMMUNITY ACTIONS ---
+  
+  const handleToggleChatDb = async () => {
+    const newState = !isChatActive;
+    setIsChatActive(newState); // Optimistic update
+    try {
+      await supabase.from('platform_settings').update({ is_chat_active: newState }).eq('id', 1);
+    } catch (err) {
+      console.error(err);
+      setIsChatActive(!newState); // Revert on failure
+      alert("Error al cambiar el estado del chat en la base de datos.");
+    }
+  };
+
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!chatInput.trim() || !currentUser || !adminProfile) return;
@@ -211,11 +238,7 @@ const CustomerManagement = ({ supabase }) => {
   };
 
   const handleDismissReport = async (msgId) => {
-    try { 
-      await supabase.from('messages').update({ is_reported: false }).eq('id', msgId); 
-    } catch (e) { 
-      console.error(e); 
-    }
+    try { await supabase.from('messages').update({ is_reported: false }).eq('id', msgId); } catch (e) { console.error(e); }
   };
 
   const handlePostAnnouncement = async (e) => {
@@ -226,7 +249,7 @@ const CustomerManagement = ({ supabase }) => {
         author_id: currentUser.id,
         title: announceTitle.trim(),
         content: announceContent.trim(),
-        audience: announceAudience // New payload addition
+        audience: announceAudience 
       });
       setAnnounceTitle('');
       setAnnounceContent('');
@@ -239,10 +262,26 @@ const CustomerManagement = ({ supabase }) => {
     try { await supabase.from('announcements').delete().eq('id', annId); } catch (e) { console.error(e); }
   };
 
+  const handleUpdateAnnouncement = async (e) => {
+    e.preventDefault();
+    try {
+      await supabase.from('announcements').update({
+        title: editingAnnounce.title,
+        content: editingAnnounce.content,
+        audience: editingAnnounce.audience
+      }).eq('id', editingAnnounce.id);
+      setEditingAnnounce(null);
+      alert("Anuncio actualizado exitosamente.");
+    } catch (err) {
+      console.error(err);
+      alert("Error actualizando anuncio.");
+    }
+  };
+
   const translateAudience = (audienceCode) => {
     const map = {
-      'EVERYONE_NO_STAFF': 'Todos (Excl. Staff)',
-      'EVERYONE_WITH_STAFF': 'Todos (Incl. Staff)',
+      'EVERYONE_NO_STAFF': 'Estudiantes (Excluyendo Staff)',
+      'EVERYONE_WITH_STAFF': 'Toda la Academia',
       'STAFF_ONLY': 'Solo Staff',
       'LEVEL_A1': 'Solo A1',
       'LEVEL_A2': 'Solo A2',
@@ -256,10 +295,7 @@ const CustomerManagement = ({ supabase }) => {
 
   return (
     <div className="w-full flex flex-col items-center font-montserrat relative z-10">
-
-      {/* 2. Evicted the old Registration Form/Quick Provisioning */}
       
-      {/* 3. Removed 'Calendario' from Tabs Array */}
       <div className="flex flex-wrap justify-center gap-3 mb-8 w-full">
         {['Estudiantes', 'Pagos', 'Inactividad', 'Comunidad'].map((tab) => (
           <button 
@@ -483,133 +519,197 @@ const CustomerManagement = ({ supabase }) => {
         <div className="bg-white/5 backdrop-blur-xl rounded-[30px] shadow-2xl border border-white/10 p-6 md:p-10 w-full animate-fade-in relative overflow-hidden">
           <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-indigo-500/10 blur-[100px] rounded-full pointer-events-none"></div>
 
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 border-b border-white/10 pb-6 relative z-10 gap-4">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 relative z-10 gap-4">
             <div>
               <h2 className="text-2xl md:text-3xl font-black text-white uppercase tracking-widest drop-shadow-md">COMUNIDAD Y MODERACIÓN</h2>
-              <p className="text-sm text-white/50 font-medium mt-2">Publica anuncios globales y modera el chat público en tiempo real.</p>
+              <p className="text-sm text-white/50 font-medium mt-2">Gestiona el Info Board, el Chat en Vivo y el Foro de forma independiente.</p>
             </div>
-            <div className="flex items-center gap-4">
-               {isCommunityLoading && <div className="w-8 h-8 border-4 border-indigo-400 border-t-transparent rounded-full animate-spin"></div>}
-               {/* FORUM MANAGEMENT BUTTON HOOK */}
-               <button 
-                 onClick={() => alert("Módulo de Gestión de Foro en construcción...")} 
-                 className="px-6 py-3 bg-white/10 hover:bg-indigo-500 text-white hover:text-white border border-white/20 rounded-full font-black text-xs uppercase tracking-widest shadow-lg transition-all active:scale-95"
-               >
-                 Gestionar Foro
-               </button>
-            </div>
+            {isCommunityLoading && <div className="w-8 h-8 border-4 border-indigo-400 border-t-transparent rounded-full animate-spin"></div>}
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 relative z-10">
-            
-            {/* ANNOUNCEMENT BOARD */}
-            <div className="bg-black/20 border border-white/10 rounded-3xl p-6 flex flex-col h-[600px]">
-              <h3 className="text-sm font-black text-indigo-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" /></svg>
-                Tablero de Anuncios
-              </h3>
+          {/* ISOLATED INTERNAL NAVIGATION FOR THE 3 WORKSPACES */}
+          <div className="flex gap-4 border-b border-white/10 pb-4 mb-6 relative z-10 overflow-x-auto custom-scrollbar">
+             <button 
+                onClick={() => setCommunityTab('BOARD')}
+                className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${communityTab === 'BOARD' ? 'bg-indigo-500 text-white shadow-[0_0_15px_rgba(99,102,241,0.4)]' : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'}`}
+             >
+                Tablero de Anuncios (Info Board)
+             </button>
+             <button 
+                onClick={() => setCommunityTab('CHAT')}
+                className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${communityTab === 'CHAT' ? 'bg-emerald-500 text-[#08203e] shadow-[0_0_15px_rgba(16,185,129,0.4)]' : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'}`}
+             >
+                Chat Público en Vivo
+             </button>
+             <button 
+                onClick={() => setCommunityTab('FORUM')}
+                className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${communityTab === 'FORUM' ? 'bg-purple-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.4)]' : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'}`}
+             >
+                Foro de Discusión
+             </button>
+          </div>
 
-              <form onSubmit={handlePostAnnouncement} className="mb-6 space-y-3 bg-white/5 border border-indigo-500/20 rounded-2xl p-4">
-                <input type="text" placeholder="Título del anuncio..." value={announceTitle} onChange={(e) => setAnnounceTitle(e.target.value)} className="w-full bg-[#070b19] border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-indigo-400" required />
+          <div className="relative z-10">
+            {/* WORKSPACE 1: INFO BOARD */}
+            {communityTab === 'BOARD' && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 
-                {/* NEW GRANULAR AUDIENCE SELECTOR */}
-                <select 
-                  value={announceAudience} 
-                  onChange={(e) => setAnnounceAudience(e.target.value)} 
-                  className="w-full bg-[#070b19] border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-indigo-400 appearance-none"
-                  required
-                >
-                  <option value="EVERYONE_NO_STAFF">Todos los Estudiantes (Excluyendo Staff)</option>
-                  <option value="EVERYONE_WITH_STAFF">Toda la Academia (Incluyendo Staff)</option>
-                  <option value="STAFF_ONLY">Solo Staff (Profesores y Administradores)</option>
-                  <option value="LEVEL_A1">Solo Nivel A1</option>
-                  <option value="LEVEL_A2">Solo Nivel A2</option>
-                  <option value="LEVEL_B1">Solo Nivel B1</option>
-                  <option value="LEVEL_B2">Solo Nivel B2</option>
-                  <option value="LEVEL_C1">Solo Nivel C1</option>
-                  <option value="LEVEL_C2">Solo Nivel C2</option>
-                </select>
+                {/* Board: Create Announcement Form */}
+                <div className="bg-black/20 border border-indigo-500/30 rounded-3xl p-6 flex flex-col">
+                  <h3 className="text-sm font-black text-indigo-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" /></svg>
+                    Publicar Nuevo Anuncio
+                  </h3>
 
-                <textarea placeholder="Escribe el mensaje global..." value={announceContent} onChange={(e) => setAnnounceContent(e.target.value)} className="w-full bg-[#070b19] border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-indigo-400 h-20 resize-none" required />
-                <button type="submit" className="w-full py-2.5 bg-indigo-500 hover:bg-indigo-400 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-[0_0_15px_rgba(99,102,241,0.4)]">Publicar Anuncio</button>
-              </form>
+                  <form onSubmit={handlePostAnnouncement} className="space-y-4">
+                    <input type="text" placeholder="Título del anuncio..." value={announceTitle} onChange={(e) => setAnnounceTitle(e.target.value)} className="w-full bg-[#070b19] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-400" required />
+                    
+                    <select 
+                      value={announceAudience} 
+                      onChange={(e) => setAnnounceAudience(e.target.value)} 
+                      className="w-full bg-[#070b19] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-400 appearance-none"
+                      required
+                    >
+                      <option value="EVERYONE_NO_STAFF">Todos los Estudiantes (Excluyendo Staff)</option>
+                      <option value="EVERYONE_WITH_STAFF">Toda la Academia (Incluyendo Staff)</option>
+                      <option value="STAFF_ONLY">Solo Staff (Profesores y Administradores)</option>
+                      <option value="LEVEL_A1">Solo Nivel A1</option>
+                      <option value="LEVEL_A2">Solo Nivel A2</option>
+                      <option value="LEVEL_B1">Solo Nivel B1</option>
+                      <option value="LEVEL_B2">Solo Nivel B2</option>
+                      <option value="LEVEL_C1">Solo Nivel C1</option>
+                      <option value="LEVEL_C2">Solo Nivel C2</option>
+                    </select>
 
-              <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-4">
-                {announcements.length === 0 ? (
-                   <p className="text-xs text-white/40 font-bold uppercase tracking-widest text-center py-8">No hay anuncios activos</p>
-                ) : (
-                  announcements.map(ann => (
-                    <div key={ann.id} className="bg-indigo-500/10 border border-indigo-500/30 rounded-xl p-4 relative group">
-                      <button onClick={() => handleDeleteAnnouncement(ann.id)} className="absolute top-2 right-2 w-6 h-6 bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">✕</button>
-                      <h4 className="text-white font-bold tracking-wide pr-6">{ann.title}</h4>
-                      {/* AUDIENCE BADGE */}
-                      <div className="mt-2 mb-2 inline-block bg-indigo-500/30 border border-indigo-400/30 text-indigo-300 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded shadow-sm">
-                        Visibilidad: {translateAudience(ann.audience || 'EVERYONE_NO_STAFF')}
-                      </div>
-                      <p className="text-xs text-white/70">{ann.content}</p>
-                      <p className="text-[9px] text-indigo-300/50 font-bold uppercase tracking-widest mt-3">{new Date(ann.created_at).toLocaleString('es-ES')}</p>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-
-            {/* CHAT MODERATION */}
-            <div className="bg-black/20 border border-white/10 rounded-3xl p-6 flex flex-col h-[600px]">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-sm font-black text-emerald-400 uppercase tracking-widest flex items-center gap-2">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" /></svg>
-                  Chat Público en Vivo
-                </h3>
-
-                {/* MASTER CHAT TOGGLE */}
-                <button 
-                  onClick={() => setIsChatActive(!isChatActive)} 
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-widest transition-all ${isChatActive ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' : 'bg-red-500/20 border-red-500/50 text-red-400'}`}
-                >
-                  <div className={`w-2 h-2 rounded-full ${isChatActive ? 'bg-emerald-400 shadow-[0_0_8px_#34d399]' : 'bg-red-400 shadow-[0_0_8px_#f87171]'}`}></div>
-                  {isChatActive ? 'Activo' : 'Silenciado'}
-                </button>
-              </div>
-
-              {!isChatActive && (
-                <div className="w-full bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-bold uppercase tracking-widest p-3 rounded-xl mb-4 text-center">
-                  El chat público está bloqueado para los estudiantes.
+                    <textarea placeholder="Escribe el mensaje global..." value={announceContent} onChange={(e) => setAnnounceContent(e.target.value)} className="w-full bg-[#070b19] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-400 h-32 resize-none" required />
+                    <button type="submit" className="w-full py-3 bg-indigo-500 hover:bg-indigo-400 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-[0_0_15px_rgba(99,102,241,0.4)]">Publicar Anuncio</button>
+                  </form>
                 </div>
-              )}
 
-              <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-3 mb-4 flex flex-col">
-                {messages.length === 0 ? (
-                  <div className="flex-1 flex items-center justify-center text-xs text-white/40 font-bold uppercase tracking-widest">El chat está silencioso...</div>
-                ) : (
-                  messages.map(msg => {
-                    const isAdmin = msg.sender_role.includes('Admin');
-                    const isTeacher = msg.sender_role === 'Teacher';
-                    return (
-                      <div key={msg.id} className="flex flex-col group">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className={`text-[10px] font-black uppercase tracking-widest ${isAdmin ? 'text-[#fcd34d]' : isTeacher ? 'text-emerald-400' : 'text-white/60'}`}>{msg.sender_name}</span>
-                          <span className="text-[8px] text-white/30">{new Date(msg.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute:'2-digit' })}</span>
-                          <button onClick={() => handleDeleteMessage(msg.id)} className="text-[10px] text-red-500 opacity-0 group-hover:opacity-100 transition-opacity ml-auto underline cursor-pointer">Eliminar</button>
-                          {msg.is_reported && <button onClick={() => handleDismissReport(msg.id)} className="text-[10px] text-white/50 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity underline cursor-pointer ml-2">Limpiar Reporte</button>}
+                {/* Board: Management List */}
+                <div className="bg-black/20 border border-white/10 rounded-3xl p-6 flex flex-col h-[600px]">
+                  <h3 className="text-sm font-black text-white uppercase tracking-widest mb-6">Anuncios Activos</h3>
+                  <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-4">
+                    {editingAnnounce ? (
+                      <form onSubmit={handleUpdateAnnouncement} className="bg-white/5 border border-indigo-500/30 rounded-2xl p-6 space-y-4">
+                        <h3 className="text-indigo-400 font-black uppercase tracking-widest text-sm mb-2">Editando Anuncio</h3>
+                        <input type="text" value={editingAnnounce.title} onChange={(e) => setEditingAnnounce({...editingAnnounce, title: e.target.value})} className="w-full bg-[#070b19] border border-white/20 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-400" required />
+                        <select 
+                          value={editingAnnounce.audience} 
+                          onChange={(e) => setEditingAnnounce({...editingAnnounce, audience: e.target.value})} 
+                          className="w-full bg-[#070b19] border border-white/20 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-400 appearance-none"
+                        >
+                          <option value="EVERYONE_NO_STAFF">Todos los Estudiantes (Excluyendo Staff)</option>
+                          <option value="EVERYONE_WITH_STAFF">Toda la Academia (Incluyendo Staff)</option>
+                          <option value="STAFF_ONLY">Solo Staff (Profesores y Administradores)</option>
+                          <option value="LEVEL_A1">Solo Nivel A1</option>
+                          <option value="LEVEL_A2">Solo Nivel A2</option>
+                          <option value="LEVEL_B1">Solo Nivel B1</option>
+                          <option value="LEVEL_B2">Solo Nivel B2</option>
+                          <option value="LEVEL_C1">Solo Nivel C1</option>
+                          <option value="LEVEL_C2">Solo Nivel C2</option>
+                        </select>
+                        <textarea value={editingAnnounce.content} onChange={(e) => setEditingAnnounce({...editingAnnounce, content: e.target.value})} className="w-full bg-[#070b19] border border-white/20 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-400 h-24 resize-none" required />
+                        <div className="flex gap-3 pt-2">
+                          <button type="button" onClick={() => setEditingAnnounce(null)} className="flex-1 py-3 bg-white/10 hover:bg-white/20 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all">Cancelar</button>
+                          <button type="submit" className="flex-1 py-3 bg-indigo-500 hover:bg-indigo-400 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-[0_0_15px_rgba(99,102,241,0.4)]">Guardar</button>
                         </div>
-                        <div className={`text-sm py-2 px-3 rounded-xl w-fit max-w-[90%] ${msg.is_reported ? 'bg-red-500/20 border-2 border-red-500/50 text-white' : isAdmin ? 'bg-[#fcd34d]/20 text-[#fcd34d] border border-[#fcd34d]/30' : isTeacher ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' : 'bg-white/10 text-white/90 border border-white/5'}`}>
-                          {msg.is_reported && <div className="text-[10px] text-red-400 font-black uppercase tracking-widest mb-1 flex items-center gap-1">⚠️ REPORTADO POR USUARIOS</div>}
-                          {msg.content}
+                      </form>
+                    ) : announcements.length === 0 ? (
+                      <div className="text-center text-xs text-white/40 font-bold uppercase tracking-widest py-10">No hay anuncios activos.</div>
+                    ) : (
+                      announcements.map(ann => (
+                        <div key={ann.id} className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col gap-3 hover:border-indigo-500/50 transition-colors group">
+                          <div>
+                            <h4 className="text-white font-bold tracking-wide text-lg">{ann.title}</h4>
+                            <div className="mt-1 mb-2 inline-block bg-indigo-500/20 border border-indigo-400/20 text-indigo-300 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded shadow-sm">
+                              {translateAudience(ann.audience || 'EVERYONE_NO_STAFF')}
+                            </div>
+                            <p className="text-xs text-white/60">{ann.content}</p>
+                            <p className="text-[9px] text-white/30 font-bold uppercase tracking-widest mt-2">{new Date(ann.created_at).toLocaleString('es-ES')}</p>
+                          </div>
+                          <div className="flex items-center gap-2 mt-2 pt-3 border-t border-white/5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={() => setEditingAnnounce(ann)} className="px-4 py-1.5 bg-white/10 hover:bg-indigo-500 hover:text-white text-white/70 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all">Editar</button>
+                            <button onClick={() => handleDeleteAnnouncement(ann.id)} className="px-4 py-1.5 bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white rounded-lg text-[10px] font-black uppercase tracking-widest transition-all">Eliminar</button>
+                          </div>
                         </div>
-                      </div>
-                    )
-                  })
-                )}
-                <div ref={chatEndRef} />
+                      ))
+                    )}
+                  </div>
+                </div>
               </div>
+            )}
 
-              <form onSubmit={handleSendMessage} className="flex gap-2">
-                <input type="text" placeholder="Enviar mensaje como Admin..." value={chatInput} onChange={(e) => setChatInput(e.target.value)} className="flex-1 bg-[#070b19] border border-white/20 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-400" />
-                <button type="submit" className="px-6 bg-emerald-500 hover:bg-emerald-400 text-[#08203e] rounded-xl font-black transition-colors"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg></button>
-              </form>
-            </div>
+            {/* WORKSPACE 2: CHAT ROOM */}
+            {communityTab === 'CHAT' && (
+              <div className="bg-black/20 border border-emerald-500/30 rounded-3xl p-6 flex flex-col h-[700px] w-full max-w-4xl mx-auto">
+                <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
+                  <h3 className="text-sm font-black text-emerald-400 uppercase tracking-widest flex items-center gap-2">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" /></svg>
+                    Moderación del Chat Público
+                  </h3>
 
+                  <button 
+                    onClick={handleToggleChatDb} 
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full border text-[10px] font-black uppercase tracking-widest transition-all shadow-lg ${isChatActive ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/30' : 'bg-red-500/20 border-red-500/50 text-red-400 hover:bg-red-500/30'}`}
+                  >
+                    <div className={`w-2.5 h-2.5 rounded-full ${isChatActive ? 'bg-emerald-400 shadow-[0_0_8px_#34d399]' : 'bg-red-400 shadow-[0_0_8px_#f87171]'}`}></div>
+                    {isChatActive ? 'Chat Global Activo' : 'Chat Global Silenciado'}
+                  </button>
+                </div>
+
+                {!isChatActive && (
+                  <div className="w-full bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-bold uppercase tracking-widest p-4 rounded-xl mb-4 text-center">
+                    ⚠️ El chat público está bloqueado. Los estudiantes no pueden enviar mensajes.
+                  </div>
+                )}
+
+                <div className="flex-1 overflow-y-auto custom-scrollbar pr-4 space-y-4 mb-6 flex flex-col">
+                  {messages.length === 0 ? (
+                    <div className="flex-1 flex items-center justify-center text-xs text-white/40 font-bold uppercase tracking-widest">El chat está silencioso...</div>
+                  ) : (
+                    messages.map(msg => {
+                      const isAdmin = msg.sender_role.includes('Admin');
+                      const isTeacher = msg.sender_role === 'Teacher';
+                      return (
+                        <div key={msg.id} className="flex flex-col group">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className={`text-[10px] font-black uppercase tracking-widest ${isAdmin ? 'text-[#fcd34d]' : isTeacher ? 'text-emerald-400' : 'text-white/60'}`}>{msg.sender_name}</span>
+                            <span className="text-[8px] text-white/30">{new Date(msg.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute:'2-digit' })}</span>
+                            <button onClick={() => handleDeleteMessage(msg.id)} className="text-[10px] text-red-500 opacity-0 group-hover:opacity-100 transition-opacity ml-auto underline cursor-pointer hover:text-red-400">Eliminar</button>
+                            {msg.is_reported && <button onClick={() => handleDismissReport(msg.id)} className="text-[10px] text-white/50 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity underline cursor-pointer ml-2">Limpiar Reporte</button>}
+                          </div>
+                          <div className={`text-sm py-3 px-4 rounded-xl w-fit max-w-[85%] ${msg.is_reported ? 'bg-red-500/20 border-2 border-red-500/50 text-white' : isAdmin ? 'bg-[#fcd34d]/20 text-[#fcd34d] border border-[#fcd34d]/30' : isTeacher ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' : 'bg-white/10 text-white/90 border border-white/5'}`}>
+                            {msg.is_reported && <div className="text-[10px] text-red-400 font-black uppercase tracking-widest mb-2 flex items-center gap-1">⚠️ REPORTADO POR USUARIOS</div>}
+                            {msg.content}
+                          </div>
+                        </div>
+                      )
+                    })
+                  )}
+                  <div ref={chatEndRef} />
+                </div>
+
+                <form onSubmit={handleSendMessage} className="flex gap-3">
+                  <input type="text" placeholder="Enviar mensaje oficial como Admin..." value={chatInput} onChange={(e) => setChatInput(e.target.value)} className="flex-1 bg-[#070b19] border border-white/20 rounded-xl px-5 py-4 text-sm text-white focus:outline-none focus:border-emerald-400 shadow-inner" />
+                  <button type="submit" className="px-8 bg-emerald-500 hover:bg-emerald-400 text-[#08203e] rounded-xl font-black transition-colors shadow-lg active:scale-95">ENVIAR</button>
+                </form>
+              </div>
+            )}
+
+            {/* WORKSPACE 3: FORUM */}
+            {communityTab === 'FORUM' && (
+              <div className="bg-black/20 border border-purple-500/30 rounded-3xl p-12 flex flex-col items-center justify-center h-[500px] text-center w-full max-w-4xl mx-auto">
+                <div className="w-20 h-20 bg-purple-500/20 text-purple-400 rounded-full flex items-center justify-center mb-6 border border-purple-500/50 shadow-[0_0_30px_rgba(168,85,247,0.2)]">
+                  <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" /></svg>
+                </div>
+                <h3 className="text-2xl font-black text-white uppercase tracking-widest mb-2">Foro de Discusión</h3>
+                <p className="text-sm text-white/50 max-w-md">El módulo de moderación y gestión del foro está siendo estructurado. Este espacio está reservado para su próxima actualización.</p>
+                <div className="mt-8 px-4 py-2 bg-purple-500/10 border border-purple-500/30 text-purple-400 text-[10px] font-black uppercase tracking-widest rounded-full">
+                  Módulo en Construcción
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
