@@ -104,6 +104,30 @@ const CommunityPanel = ({ isOpen, onClose, initialTab = 'CHAT', userProfile, sup
     }
   };
 
+  // ==========================================
+  // AUDIENCE FILTERING LOGIC
+  // ==========================================
+  const isStaff = ['Teacher', 'Admin', 'GENERAL_MANAGER', 'TEACHER', 'ADMIN'].includes((userProfile?.role || '').toUpperCase());
+  // Extracts "A1" from "A1: Básico 1" safely
+  const userLevel = userProfile?.level ? userProfile.level.split(':')[0].trim().toUpperCase() : '';
+
+  const visibleAnnouncements = announcements.filter(ann => {
+    const aud = ann.audience || 'EVERYONE_NO_STAFF'; // Fallback for old announcements
+    
+    if (aud === 'EVERYONE_WITH_STAFF') return true;
+    if (aud === 'EVERYONE_NO_STAFF') return !isStaff;
+    if (aud === 'STAFF_ONLY') return isStaff;
+    
+    // Level Specific Targeting
+    if (aud.startsWith('LEVEL_')) {
+      const targetLevel = aud.replace('LEVEL_', '');
+      return isStaff || userLevel === targetLevel;
+    }
+    
+    return true; 
+  });
+
+
   if (!isOpen) return null;
 
   return (
@@ -170,10 +194,11 @@ const CommunityPanel = ({ isOpen, onClose, initialTab = 'CHAT', userProfile, sup
         {/* Announcements Area */}
         {activeTab === 'BOARD' && (
           <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar relative z-10">
-             {announcements.length === 0 ? (
+             {/* RENDER THE FILTERED ANNOUNCEMENTS ONLY */}
+             {visibleAnnouncements.length === 0 ? (
                  <p className="text-xs text-white/40 font-bold uppercase tracking-widest text-center py-10">No hay anuncios activos</p>
               ) : (
-                announcements.map(ann => (
+                visibleAnnouncements.map(ann => (
                   <div key={ann.id} className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-5 relative">
                     <h4 className="text-emerald-400 font-black tracking-wide text-lg">{ann.title}</h4>
                     <p className="text-sm text-white/80 mt-2 font-medium leading-relaxed">{ann.content}</p>

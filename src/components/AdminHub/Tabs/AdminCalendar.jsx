@@ -112,12 +112,15 @@ const AdminCalendar = ({ supabase }) => {
       
       const finalTimestamp = new Date(year, month, date, hours, parseInt(minutes, 10), 0).toISOString();
 
+      // THE FIX: Added required 'title' and 'target_level' fields to payload
       const { error } = await supabase.from('live_sessions').insert({
-        scheduled_at: finalTimestamp, // DB column matched
+        title: selectedClassType, 
+        target_level: 'ALL', 
+        scheduled_at: finalTimestamp,
         teacher_id: selectedTeacherId,
         class_type: selectedClassType,
         status: 'available',
-        duration_minutes: 60 // Good default based on your schema
+        duration_minutes: 60 
       });
       
       if (error) throw error;
