@@ -125,7 +125,6 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
   useEffect(() => {
     const fetchLesson = async () => {
       try {
-        // FIXED DATABASE FETCH: Targets the correct table and column
         const { data, error: fetchError } = await supabase
           .from('content_blueprints') 
           .select('*')
@@ -137,8 +136,9 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
         if (fetchError) throw fetchError;
         if (!data) throw new Error("No data found.");
 
-        const parsedScreens = JSON.parse(data.screens || "[]");
-        const parsedBlueprint = JSON.parse(data.blueprint_data || "{}");
+        // THE FIX: Check if it's a string before parsing, otherwise use the object directly
+        const parsedScreens = typeof data.screens === 'string' ? JSON.parse(data.screens || "[]") : (data.screens || []);
+        const parsedBlueprint = typeof data.blueprint_data === 'string' ? JSON.parse(data.blueprint_data || "{}") : (data.blueprint_data || {});
         
         // Group elements by screen ID so the player can paginate through them
         const structuredScreens = parsedScreens.map(screenId => {
@@ -194,7 +194,7 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
         <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-[#fcd34d]/5 blur-[100px] rounded-full mix-blend-screen"></div>
       </div>
 
-      {/* Global Navbar (Keep this so they can exit) */}
+      {/* Global Navbar */}
       <div className="h-20 w-full flex items-center justify-between px-6 md:px-12 relative z-50 shrink-0 border-b border-white/10 bg-black/40 backdrop-blur-md">
         <div className="flex items-center gap-4">
           <img src="https://i.postimg.cc/43zTZQhx/Diseno-sin-titulo-(20).png" alt="Outloud Logo" className="h-8 md:h-10 object-contain drop-shadow-md" />
@@ -202,7 +202,7 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
         <button onClick={onExit} className="text-white hover:text-red-400 transition-colors"><svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg></button>
       </div>
 
-      {/* Canvas Container: Fully relies on your JSON coordinates */}
+      {/* Canvas Container */}
       <div className="flex-1 w-full relative z-10 overflow-y-auto flex pt-8 overflow-x-hidden">
          <CanvasScreen 
            elements={screensData[currentStep]} 

@@ -8,6 +8,7 @@ import LevelsPage from './LevelsPage';
 import FreeLesson from './FreeLesson';
 import AdminHub from './AdminHub';
 import StudentHub from './StudentHub';
+import TeacherHub from './TeacherHub'; // <-- NEW: Imported the Teacher Hub
 
 // ==========================================
 // RBAC & LOCALIZATION WRAPPER COMPONENT
@@ -36,7 +37,7 @@ const ProtectedRoute = ({ children, allowedRoles, forcedLanguage, isStudentHub =
         return;
       }
 
-      // FIX: Normalize database role and allowed roles to uppercase for safe comparison
+      // Normalize database role and allowed roles to uppercase for safe comparison
       const userRole = (userData.role || '').toUpperCase();
       const normalizedAllowed = allowedRoles.map(r => r.toUpperCase());
 
@@ -130,10 +131,13 @@ export default function App() {
 
     const role = (userData?.role || '').toLowerCase();
 
+    // <-- FIX: Specific routing for all 3 roles -->
     if (role === 'student') {
       navigate('hub');
+    } else if (role === 'teacher') {
+      navigate('teacher');
     } else {
-      navigate('admin');
+      navigate('admin'); // General Managers and Admins go here
     }
   };
 
@@ -186,13 +190,27 @@ export default function App() {
         />
       )}
 
+      {/* PROTECTED ROUTES */}
       {currentPage === 'admin' && (
         <ProtectedRoute 
-          allowedRoles={['Teacher', 'TEACHER', 'GENERAL_MANAGER', 'Admin', 'ADMIN']} 
+          allowedRoles={['GENERAL_MANAGER', 'Admin', 'ADMIN']} // Removed Teachers from here
           forcedLanguage="en" 
           onUnauthorized={() => navigate('login')}
         >
           <AdminHub 
+            onReturnHome={() => navigate('login')} 
+          />
+        </ProtectedRoute>
+      )}
+
+      {/* NEW: Dedicated Teacher Route */}
+      {currentPage === 'teacher' && (
+        <ProtectedRoute 
+          allowedRoles={['Teacher', 'TEACHER']} 
+          forcedLanguage="en" 
+          onUnauthorized={() => navigate('login')}
+        >
+          <TeacherHub 
             onReturnHome={() => navigate('login')} 
           />
         </ProtectedRoute>
