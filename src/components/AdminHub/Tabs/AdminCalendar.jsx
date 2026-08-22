@@ -13,19 +13,22 @@ const AdminCalendar = ({ supabase }) => {
   const [selectedTeacherId, setSelectedTeacherId] = useState('');
   const [selectedClassType, setSelectedClassType] = useState('Unit Class');
 
-  const dayNames = ['LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB'];
+  // THE FIX: Added 'DOM' (Sunday) to the days array
+  const dayNames = ['LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB', 'DOM'];
   const times = ['9:00 AM', '11:00 AM', '1:00 PM', '3:00 PM', '6:00 PM', '9:00 PM'];
 
   // 1. GENERATE WEEK DATES
   const getWeekDates = (offsetWeeks) => {
     const today = new Date();
     const currentDay = today.getDay();
+    // Keeps Monday as the start of the week (distance to Monday)
     const distanceToMonday = currentDay === 0 ? -6 : 1 - currentDay;
     const monday = new Date(today);
     monday.setDate(today.getDate() + distanceToMonday + (offsetWeeks * 7));
 
     const dates = [];
-    for (let i = 0; i < 6; i++) {
+    // THE FIX: Loop now runs 7 times to include Sunday
+    for (let i = 0; i < 7; i++) {
       const d = new Date(monday);
       d.setDate(monday.getDate() + i);
       dates.push(d);
@@ -112,7 +115,6 @@ const AdminCalendar = ({ supabase }) => {
       
       const finalTimestamp = new Date(year, month, date, hours, parseInt(minutes, 10), 0).toISOString();
 
-      // THE FIX: Added required 'title' and 'target_level' fields to payload
       const { error } = await supabase.from('live_sessions').insert({
         title: selectedClassType, 
         target_level: 'ALL', 
@@ -217,7 +219,8 @@ const AdminCalendar = ({ supabase }) => {
       </div>
 
       <div className="w-full overflow-x-auto custom-scrollbar pb-4 relative z-10">
-        <div className="min-w-[700px] grid grid-cols-6 gap-2">
+        {/* THE FIX: Adjusted min-width and changed grid to 7 columns */}
+        <div className="min-w-[800px] grid grid-cols-7 gap-2">
           
           {dayNames.map((day, idx) => (
             <div key={day} className="flex flex-col items-center bg-[#08203e]/80 py-3 rounded-t-xl border border-white/10 shadow-sm backdrop-blur-md">
