@@ -11,7 +11,7 @@ const AdminCalendar = ({ supabase }) => {
   
   // Assignment States
   const [selectedTeacherId, setSelectedTeacherId] = useState('');
-  const [selectedClassType, setSelectedClassType] = useState('Unit Class'); // Default type
+  const [selectedClassType, setSelectedClassType] = useState('Unit Class');
 
   const dayNames = ['LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB'];
   const times = ['9:00 AM', '11:00 AM', '1:00 PM', '3:00 PM', '6:00 PM', '9:00 PM'];
@@ -35,6 +35,11 @@ const AdminCalendar = ({ supabase }) => {
 
   const weekDates = getWeekDates(currentWeekOffset);
 
+  // Helper to format local date to YYYY-MM-DD reliably
+  const getLocalDateString = (d) => {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+
   // 2. FETCH DATA FROM SUPABASE
   const fetchCalendarData = async () => {
     try {
@@ -48,15 +53,35 @@ const AdminCalendar = ({ supabase }) => {
         if (teachersData.length > 0) setSelectedTeacherId(teachersData[0].id);
       }
 
-      const { data: sessionsData } = await supabase
+      const { data: sessionsData, error } = await supabase
         .from('live_sessions')
         .select(`
           *,
           student:profiles!student_id(first_name, last_name),
           teacher:profiles!teacher_id(first_name, last_name)
         `);
+        
+      if (error) throw error;
 
-      if (sessionsData) setSessions(sessionsData);
+      if (sessionsData) {
+        // Map the single scheduled_at timestamp back into UI-friendly date and time strings
+        const mappedSessions = sessionsData.map(session => {
+          if (!session.scheduled_at) return session;
+          
+          const d = new Date(session.scheduled_at);
+          const dateStr = getLocalDateString(d);
+          
+          let hours = d.getHours();
+          const ampm = hours >= 12 ? 'PM' : 'AM';
+          hours = hours % 12;
+          hours = hours ? hours : 12; 
+          const mins = String(d.getMinutes()).padStart(2, '0');
+          const timeStr = `${hours}:${mins} ${ampm}`;
+          
+          return { ...session, session_date: dateStr, time_slot: timeStr };
+        });
+        setSessions(mappedSessions);
+      }
     } catch (error) {
       console.error("Error fetching calendar data:", error);
     }
@@ -74,18 +99,34 @@ const AdminCalendar = ({ supabase }) => {
     }
     setIsProcessing(true);
     try {
-      const dateStr = selectedSlot.date.toISOString().split('T')[0];
-      await supabase.from('live_sessions').insert({
-        session_date: dateStr,
-        time_slot: selectedSlot.timeStr,
+      // Convert the selected UI Date and Time back into a strict DB Timestamp
+      const year = selectedSlot.date.getFullYear();
+      const month = selectedSlot.date.getMonth();
+      const date = selectedSlot.date.getDate();
+      
+      const [time, modifier] = selectedSlot.timeStr.split(' ');
+      let [hours, minutes] = time.split(':');
+      hours = parseInt(hours, 10);
+      if (hours === 12 && modifier === 'AM') hours = 0;
+      if (hours !== 12 && modifier === 'PM') hours += 12;
+      
+      const finalTimestamp = new Date(year, month, date, hours, parseInt(minutes, 10), 0).toISOString();
+
+      const { error } = await supabase.from('live_sessions').insert({
+        scheduled_at: finalTimestamp, // DB column matched
         teacher_id: selectedTeacherId,
-        class_type: selectedClassType, // Sends the specific class type to DB
-        status: 'available'
+        class_type: selectedClassType,
+        status: 'available',
+        duration_minutes: 60 // Good default based on your schema
       });
+      
+      if (error) throw error;
+
       await fetchCalendarData();
       closeSlotModal();
     } catch (error) {
-      alert("Error al abrir el bloque. Verifica que la columna 'class_type' exista en tu base de datos.");
+      console.error(error);
+      alert("Error al abrir el bloque. Mira la consola para detalles.");
     } finally {
       setIsProcessing(false);
     }
@@ -128,7 +169,6 @@ const AdminCalendar = ({ supabase }) => {
     setSelectedSlot({ 
       day: dIdx, time: tIdx, date: weekDates[dIdx], timeStr: times[tIdx], data: currentData 
     });
-    // Reset selections when opening a new blank slot
     if (!currentData && teachers.length > 0) {
       setSelectedTeacherId(teachers[0].id);
       setSelectedClassType('Unit Class');
@@ -137,11 +177,10 @@ const AdminCalendar = ({ supabase }) => {
 
   const closeSlotModal = () => setSelectedSlot(null);
 
-  // Helper for UI colors based on class type
   const getTypeColor = (type) => {
     if (type === '1-on-1 Tutoring') return 'text-orange-400';
     if (type === 'Social Activity') return 'text-purple-400';
-    return 'text-[#fcd34d]'; // Unit Class
+    return 'text-[#fcd34d]';
   };
 
   return (
@@ -187,7 +226,7 @@ const AdminCalendar = ({ supabase }) => {
           {times.map((time, tIdx) => (
             <React.Fragment key={time}>
               {dayNames.map((_, dIdx) => {
-                const dateStr = weekDates[dIdx].toISOString().split('T')[0];
+                const dateStr = getLocalDateString(weekDates[dIdx]);
                 const slotData = sessions.find(s => s.session_date === dateStr && s.time_slot === time);
                 
                 let bgClass = "bg-white/5 hover:bg-white/10 border-white/5 text-white/30";

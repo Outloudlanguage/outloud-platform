@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { supabase } from '../../../SupabaseClient';
+import { supabase } from './SupabaseClient'; // Assuming you still need this for other things
 
 const StudentRegistrationForm = () => {
   const [email, setEmail] = useState('');
@@ -20,27 +20,23 @@ const StudentRegistrationForm = () => {
         { auth: { persistSession: false, autoRefreshToken: false } }
       );
 
-      // 1. Create User in Auth Vault
-      const { data, error } = await ghostClient.auth.signUp({ email, password });
+      // 1. Create User & Pass Metadata (The SQL Trigger handles the rest!)
+      const { data, error } = await ghostClient.auth.signUp({ 
+        email, 
+        password,
+        options: {
+          data: {
+            first_name: 'New',
+            last_name: 'Student',
+            role: 'Student',
+            level: 'A1',
+            unit: 1,
+            status: 'active'
+          }
+        }
+      });
+      
       if (error) throw error;
-
-      if (data?.user) {
-        setStatusMessage('Auth created. Building Student Profile...');
-        
-        // 2. INJECTED DATA: Create the profile in the database so they can actually log in and access the hub
-        const { error: profileError } = await supabase.from('profiles').insert({
-          id: data.user.id,
-          first_name: 'New',
-          last_name: 'Student',
-          email: email,
-          role: 'Student',
-          level: 'A1',
-          unit: 1,
-          status: 'active'
-        });
-
-        if (profileError) throw profileError;
-      }
 
       setStatusMessage(`Success! ${email} is registered and fully provisioned.`);
       setEmail('');
@@ -53,26 +49,44 @@ const StudentRegistrationForm = () => {
   };
 
   return (
-    <div className="w-full bg-white/5 backdrop-blur-md p-6 md:p-8 rounded-[30px] shadow-2xl border border-white/10 mt-6 mb-8">
-      <h3 className="text-lg font-black text-[#fcd34d] uppercase tracking-widest mb-6 drop-shadow-md">Register New Student</h3>
-      <form onSubmit={handleCreateStudent} className="flex flex-col md:flex-row gap-5 items-end">
-        <div className="flex-1 w-full flex flex-col gap-2">
-          <label className="text-[10px] font-bold text-white/70 uppercase tracking-widest">Student Email</label>
-          <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="w-full p-4 bg-[#070b19] border border-white/20 rounded-xl text-white text-sm focus:outline-none focus:ring-1 focus:ring-[#fcd34d] transition-colors placeholder-white/30 shadow-inner" placeholder="student@example.com" />
-        </div>
-        <div className="flex-1 w-full flex flex-col gap-2">
-          <label className="text-[10px] font-bold text-white/70 uppercase tracking-widest">Temp Password</label>
-          <input type="text" required value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-4 bg-[#070b19] border border-white/20 rounded-xl text-white text-sm focus:outline-none focus:ring-1 focus:ring-[#fcd34d] transition-colors placeholder-white/30 shadow-inner" placeholder="SecurePassword123" />
-        </div>
-        <button type="submit" disabled={isLoading} className="w-full md:w-auto bg-[#fcd34d] text-[#08203e] font-black px-8 py-4 rounded-xl shadow-[0_0_15px_rgba(252,211,77,0.4)] uppercase tracking-widest hover:scale-105 active:scale-95 transition-transform disabled:opacity-50 text-xs">
-          {isLoading ? 'WAIT...' : 'CREATE'}
-        </button>
-      </form>
+    <div className="w-full max-w-md bg-white/5 border border-white/10 rounded-2xl p-6 shadow-xl backdrop-blur-md text-white font-montserrat">
+      <h2 className="text-xl font-black uppercase tracking-widest mb-4 text-[#fcd34d]">Quick Provisioning</h2>
+      
       {statusMessage && (
-        <div className={`mt-6 p-4 rounded-xl text-xs font-bold text-center tracking-widest uppercase shadow-inner border ${statusMessage.includes('Error') ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-green-500/10 text-green-400 border-green-500/20'}`}>
+        <div className={`mb-4 p-3 rounded-lg text-xs font-bold ${statusMessage.includes('Error') ? 'bg-red-500/20 text-red-300 border border-red-500/30' : 'bg-green-500/20 text-green-300 border border-green-500/30'}`}>
           {statusMessage}
         </div>
       )}
+
+      <form onSubmit={handleCreateStudent} className="flex flex-col gap-4">
+        <div>
+          <label className="block text-xs font-bold text-white/70 mb-1">EMAIL ADDRESS</label>
+          <input 
+            type="email" 
+            value={email} 
+            onChange={(e) => setEmail(e.target.value)} 
+            required 
+            className="w-full bg-black/40 border border-white/20 rounded-lg px-4 py-2 text-sm outline-none focus:border-[#fcd34d]"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-bold text-white/70 mb-1">TEMPORARY PASSWORD</label>
+          <input 
+            type="password" 
+            value={password} 
+            onChange={(e) => setPassword(e.target.value)} 
+            required 
+            className="w-full bg-black/40 border border-white/20 rounded-lg px-4 py-2 text-sm outline-none focus:border-[#fcd34d]"
+          />
+        </div>
+        <button 
+          type="submit" 
+          disabled={isLoading}
+          className="mt-2 w-full bg-[#fcd34d] text-[#08203e] font-black text-xs py-3 rounded-lg hover:bg-white transition-colors disabled:opacity-50 tracking-widest uppercase"
+        >
+          {isLoading ? 'PROVISIONING...' : 'CREATE STUDENT ACCOUNT'}
+        </button>
+      </form>
     </div>
   );
 };
