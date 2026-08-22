@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './SupabaseClient';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { EffectCoverflow, Pagination } from 'swiper/modules';
-import CommunityPanel from './components/CommunityPanel'; // <-- INJECTED COMPONENT
+import CommunityPanel from './components/CommunityPanel'; 
 
 import 'swiper/css';
 import 'swiper/css/effect-coverflow';
@@ -175,9 +175,9 @@ const EvaluationModal = ({ isOpen, onClose, pendingClasses, onGradeSubmitted, te
 // ==========================================
 // 3. DASHBOARD VIEWS
 // ==========================================
-const DesktopView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onReturnHome, onAction, onRequestSub, onOpenEvaluations, isLaunching }) => {
+const DesktopView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onReturnHome, onAction, onRequestSub, onOpenEvaluations, isLaunching, hasNewStaffBoard }) => {
   const goal = payrollStats?.monthlyGoal || 100;
-  const acquired = payrollStats?.current || 45;
+  const acquired = payrollStats?.current || 0;
   const progressPercentage = Math.round((Math.min(acquired, goal) / goal) * 100);
   const circleCircumference = 2 * Math.PI * 40; 
   const strokeDashoffset = circleCircumference - (progressPercentage / 100) * circleCircumference;
@@ -233,7 +233,7 @@ const DesktopView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onR
           <div className="flex flex-col gap-6 flex-1">
             <div className="grid grid-cols-3 gap-6 h-[45%]">
               <button onClick={() => onAction('Manual')} disabled={!nextClass} className={`bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 transition-all group ${!nextClass ? 'opacity-50 grayscale cursor-not-allowed' : 'hover:bg-white/20 hover:scale-[1.02]'}`}>
-                <img src="https://i.postimg.cc/wxw0tRXY/1(7).png" alt="Manual" className="h-28 object-contain opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-transform duration-500" />
+                <img src="https://i.postimg.cc/Hnj3rbmt/1(8).png" alt="Manual" className="h-28 object-contain opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-transform duration-500" />
                 <div className="flex flex-col items-center">
                   <h3 className="font-light tracking-wide text-2xl uppercase text-[#fcd34d] drop-shadow-md">Manual</h3>
                   <span className="text-[10px] font-bold text-white/50 mt-1 uppercase">{nextClass ? `UNIT ${nextClass.unit}` : 'NO CLASS'}</span>
@@ -241,7 +241,7 @@ const DesktopView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onR
               </button>
 
               <button onClick={() => onAction('Tools')} disabled={!nextClass} className={`bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 transition-all group ${!nextClass ? 'opacity-50 grayscale cursor-not-allowed' : 'hover:bg-white/20 hover:scale-[1.02]'}`}>
-                <img src="https://i.postimg.cc/s2J5tbKz/2(9).png" alt="Tools" className="h-28 object-contain opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-transform duration-500" />
+                <img src="https://i.postimg.cc/g23sLz9n/2(10).png" alt="Tools" className="h-28 object-contain opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-transform duration-500" />
                 <div className="flex flex-col items-center">
                   <h3 className="font-light tracking-wide text-2xl uppercase">Class Tools</h3>
                   <span className="text-[10px] font-bold text-white/50 mt-1 uppercase">{nextClass ? 'LIBRARY ACTIVE' : 'LOCKED'}</span>
@@ -255,7 +255,6 @@ const DesktopView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onR
             </div>
             
             <div className="grid grid-cols-4 gap-6 flex-1">
-              {/* WIRED COMMUNITY BUTTONS */}
               <button onClick={() => onAction('Community_BOARD')} className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 hover:bg-white/20 hover:scale-[1.02] transition-all group">
                 <img src="https://i.postimg.cc/rpgthxF0/4(5).png" alt="Forum" className="h-20 object-contain opacity-90 group-hover:scale-110 transition-transform" />
                 <h3 className="font-light tracking-wide text-lg text-center leading-tight">Open<br/>forum</h3>
@@ -267,7 +266,8 @@ const DesktopView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onR
               </button>
               
               <button onClick={() => onAction('Community_BOARD')} className="relative bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 hover:bg-white/20 hover:scale-[1.02] transition-all group">
-                <div className="absolute top-4 right-4 w-3 h-3 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]"></div>
+                {/* DYNAMIC NOTIFICATION DOT */}
+                {hasNewStaffBoard && <div className="absolute top-4 right-4 w-3 h-3 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)] z-10"></div>}
                 <img src="https://i.postimg.cc/PqfMrtCH/6(4).png" alt="Info" className="h-20 object-contain opacity-90 group-hover:scale-110 transition-transform" />
                 <h3 className="font-light tracking-wide text-lg text-center leading-tight">Staff<br/>Board</h3>
               </button>
@@ -293,21 +293,20 @@ const DesktopView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onR
   );
 };
 
-const MobileView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onReturnHome, onAction, onRequestSub, onOpenEvaluations, isLaunching }) => {
+const MobileView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onReturnHome, onAction, onRequestSub, onOpenEvaluations, isLaunching, hasNewStaffBoard }) => {
   const goal = payrollStats?.monthlyGoal || 100;
-  const acquired = payrollStats?.current || 45;
+  const acquired = payrollStats?.current || 0;
   const progressPercentage = Math.round((Math.min(acquired, goal) / goal) * 100);
   const circleCircumference = 2 * Math.PI * 30; 
   const strokeDashoffset = circleCircumference - (progressPercentage / 100) * circleCircumference;
 
   const cards = [
-    { title: `Teacher Manual`, subtitle: nextClass ? `Unit ${nextClass.unit}` : 'Locked', action: "OPEN", img: "https://i.postimg.cc/wxw0tRXY/1(7).png", active: !!nextClass, onClick: () => onAction('Manual') },
-    { title: "Class Tools", subtitle: nextClass ? 'Library Active' : 'Locked', action: "ACCESS", img: "https://i.postimg.cc/s2J5tbKz/2(9).png", active: !!nextClass, onClick: () => onAction('Tools') },
+    { title: `Teacher Manual`, subtitle: nextClass ? `Unit ${nextClass.unit}` : 'Locked', action: "OPEN", img: "https://i.postimg.cc/Hnj3rbmt/1(8).png", active: !!nextClass, onClick: () => onAction('Manual') },
+    { title: "Class Tools", subtitle: nextClass ? 'Library Active' : 'Locked', action: "ACCESS", img: "https://i.postimg.cc/g23sLz9n/2(10).png", active: !!nextClass, onClick: () => onAction('Tools') },
     { title: "My Roster", subtitle: 'Schedule', action: "VIEW", img: "https://i.postimg.cc/vT49xTyn/3(6).png", active: true, onClick: () => onAction('Calendar') },
     { title: "Start Class", subtitle: isLaunching ? 'Generating...' : 'Live Trigger', action: isLaunching ? "WAIT" : "LAUNCH", img: "https://i.postimg.cc/Wpqw4Y1x/7(6).png", active: !!nextClass && !isLaunching, highlight: true, onClick: () => onAction('Live') },
-    // WIRED COMMUNITY CARDS
     { title: "Class Chat", subtitle: "Live", action: "JOIN", img: "https://i.postimg.cc/XNrQC7QY/5(4).png", active: true, onClick: () => onAction('Community_CHAT') },
-    { title: "Staff Board", subtitle: "Announcements", action: "VIEW", img: "https://i.postimg.cc/PqfMrtCH/6(4).png", active: true, onClick: () => onAction('Community_BOARD') },
+    { title: "Staff Board", subtitle: "Announcements", action: "VIEW", img: "https://i.postimg.cc/PqfMrtCH/6(4).png", active: true, hasNotification: hasNewStaffBoard, onClick: () => onAction('Community_BOARD') },
   ];
 
   return (
@@ -349,7 +348,9 @@ const MobileView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onRe
         <Swiper effect={'coverflow'} grabCursor={true} centeredSlides={true} slidesPerView={'auto'} coverflowEffect={{ rotate: 0, stretch: 0, depth: 150, modifier: 2.5, slideShadows: false }} modules={[EffectCoverflow, Pagination]} className="w-full h-full">
           {cards.map((card, idx) => (
             <SwiperSlide key={idx} className={`w-48 h-60 bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] p-4 shadow-2xl flex flex-col items-center justify-between transition-all ${!card.active ? 'opacity-50 grayscale' : ''} ${card.highlight ? 'border-[#fcd34d]/50 bg-[#fcd34d]/5' : ''}`}>
-              {!card.active && <svg className="w-6 h-6 text-white/50 absolute top-4 right-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" /></svg>}
+              {/* DYNAMIC NOTIFICATION DOT FOR MOBILE */}
+              {card.hasNotification && <div className="absolute top-4 right-4 w-3 h-3 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)] z-10"></div>}
+              {!card.active && !card.hasNotification && <svg className="w-6 h-6 text-white/50 absolute top-4 right-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" /></svg>}
               <img src={card.img} alt={card.title} className="h-24 object-contain mt-4 drop-shadow-md opacity-90" />
               <div className="w-full text-center">
                 <h3 className={`font-light text-xl tracking-wide uppercase ${card.highlight ? 'text-[#fcd34d] font-bold' : 'text-white'}`}>{card.title}</h3>
@@ -370,11 +371,14 @@ const TeacherHub = ({ onReturnHome }) => {
   const [teacherData, setTeacherData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [nextClass, setNextClass] = useState(null);
-  const [payrollStats, setPayrollStats] = useState({ current: 0, monthlyGoal: 100 });
+  const [payrollStats, setPayrollStats] = useState({ current: 0, monthlyGoal: 80 }); 
   const [pendingEvaluations, setPendingEvaluations] = useState([]);
   const [isSubModalOpen, setIsSubModalOpen] = useState(false);
   const [isEvalModalOpen, setIsEvalModalOpen] = useState(false);
   const [isLaunching, setIsLaunching] = useState(false);
+
+  // Dynamic Notification State (defaults to false)
+  const [hasNewStaffBoard, setHasNewStaffBoard] = useState(false);
 
   // Community Panel State
   const [showCommunity, setShowCommunity] = useState(false);
@@ -392,7 +396,9 @@ const TeacherHub = ({ onReturnHome }) => {
       const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
       setTeacherData(profile);
 
-      const today = new Date().toISOString().split('T')[0];
+      const currentDate = new Date();
+      const todayStr = currentDate.toISOString().split('T')[0];
+      const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).toISOString().split('T')[0];
 
       // Fetch Real Next Class
       const { data: upcoming } = await supabase
@@ -400,7 +406,7 @@ const TeacherHub = ({ onReturnHome }) => {
         .select(`*, student:profiles!student_id(first_name, last_name)`)
         .eq('teacher_id', session.user.id)
         .eq('status', 'booked')
-        .gte('session_date', today)
+        .gte('session_date', todayStr)
         .order('session_date', { ascending: true })
         .limit(1);
 
@@ -432,7 +438,16 @@ const TeacherHub = ({ onReturnHome }) => {
         })));
       }
 
-      setPayrollStats({ current: 68, monthlyGoal: 80 });
+      // FETCH REAL LOGGED HOURS
+      // Counts all completed sessions for this teacher in the current month
+      const { count: loggedHours } = await supabase
+        .from('live_sessions')
+        .select('*', { count: 'exact', head: true })
+        .eq('teacher_id', session.user.id)
+        .eq('status', 'completed')
+        .gte('session_date', firstDayOfMonth);
+
+      setPayrollStats({ current: loggedHours || 0, monthlyGoal: 80 });
 
     } catch (err) {
       console.error("Error loading teacher dashboard:", err);
@@ -446,6 +461,8 @@ const TeacherHub = ({ onReturnHome }) => {
     if (actionType.startsWith('Community_')) {
       setCommunityTab(actionType.split('_')[1]);
       setShowCommunity(true);
+      // Turn off notification dot if they click the Staff Board
+      if (actionType === 'Community_BOARD') setHasNewStaffBoard(false);
       return;
     }
 
@@ -499,10 +516,32 @@ const TeacherHub = ({ onReturnHome }) => {
       <EvaluationModal isOpen={isEvalModalOpen} onClose={() => setIsEvalModalOpen(false)} pendingClasses={pendingEvaluations} onGradeSubmitted={removeEvaluatedClass} teacherId={teacherData?.id} />
 
       <div className="hidden md:block">
-        <DesktopView teacher={teacherData} nextClass={nextClass} payrollStats={payrollStats} pendingEvaluations={pendingEvaluations} onReturnHome={onReturnHome} onAction={handleAction} onRequestSub={() => setIsSubModalOpen(true)} onOpenEvaluations={() => setIsEvalModalOpen(true)} isLaunching={isLaunching} />
+        <DesktopView 
+          teacher={teacherData} 
+          nextClass={nextClass} 
+          payrollStats={payrollStats} 
+          pendingEvaluations={pendingEvaluations} 
+          onReturnHome={onReturnHome} 
+          onAction={handleAction} 
+          onRequestSub={() => setIsSubModalOpen(true)} 
+          onOpenEvaluations={() => setIsEvalModalOpen(true)} 
+          isLaunching={isLaunching}
+          hasNewStaffBoard={hasNewStaffBoard}
+        />
       </div>
       <div className="block md:hidden">
-        <MobileView teacher={teacherData} nextClass={nextClass} payrollStats={payrollStats} pendingEvaluations={pendingEvaluations} onReturnHome={onReturnHome} onAction={handleAction} onRequestSub={() => setIsSubModalOpen(true)} onOpenEvaluations={() => setIsEvalModalOpen(true)} isLaunching={isLaunching} />
+        <MobileView 
+          teacher={teacherData} 
+          nextClass={nextClass} 
+          payrollStats={payrollStats} 
+          pendingEvaluations={pendingEvaluations} 
+          onReturnHome={onReturnHome} 
+          onAction={handleAction} 
+          onRequestSub={() => setIsSubModalOpen(true)} 
+          onOpenEvaluations={() => setIsEvalModalOpen(true)} 
+          isLaunching={isLaunching} 
+          hasNewStaffBoard={hasNewStaffBoard}
+        />
       </div>
     </>
   );
