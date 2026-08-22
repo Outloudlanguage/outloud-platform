@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { supabase } from './SupabaseClient'; // Assuming you still need this for other things
 
 const StudentRegistrationForm = () => {
   const [email, setEmail] = useState('');
