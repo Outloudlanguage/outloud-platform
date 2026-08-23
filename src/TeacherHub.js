@@ -183,10 +183,20 @@ const DesktopView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onR
   const strokeDashoffset = circleCircumference - (progressPercentage / 100) * circleCircumference;
 
   return (
-    <div className="min-h-screen w-full font-montserrat flex justify-center p-8 relative overflow-hidden bg-[#070b19] text-white">
-      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-blue-900/20 blur-[120px] rounded-full mix-blend-screen"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-[#fcd34d]/5 blur-[100px] rounded-full mix-blend-screen"></div>
+    <div className="min-h-screen w-full font-montserrat flex justify-center p-8 relative overflow-hidden text-white z-0">
+      
+      {/* NEW BLURRED BACKGROUND */}
+      <div className="absolute inset-0 pointer-events-none z-[-1] bg-[#070b19] overflow-hidden">
+        <div 
+          className="absolute inset-0 opacity-60 blur-2xl scale-[1.15]" 
+          style={{ 
+            backgroundImage: `url("https://i.postimg.cc/kg4rxNH2/Gemini-Generated-Image-ohtdmbohtdmbohtd.jpg")`, 
+            backgroundSize: 'cover', 
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat'
+          }}
+        ></div>
+        <div className="absolute inset-0 bg-[#070b19]/70"></div>
       </div>
 
       <div className="max-w-[1200px] w-full flex gap-8 relative z-10">
@@ -231,7 +241,6 @@ const DesktopView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onR
           </div>
 
           <div className="flex flex-col gap-6 flex-1 overflow-y-auto custom-scrollbar pr-2 pb-10">
-            {/* FIX: Removed restrictive height, added shrink-0 to preserve shape */}
             <div className="grid grid-cols-3 gap-6 shrink-0">
               <button onClick={() => onAction('Manual')} disabled={!nextClass} className={`bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 transition-all group min-h-[220px] ${!nextClass ? 'opacity-50 grayscale cursor-not-allowed' : 'hover:bg-white/20 hover:scale-[1.02]'}`}>
                 <img src="https://i.postimg.cc/Hnj3rbmt/1(8).png" alt="Manual" className="h-28 object-contain opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-transform duration-500" />
@@ -255,7 +264,6 @@ const DesktopView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onR
               </button>
             </div>
             
-            {/* FIX: Removed flex-1, added shrink-0 to preserve shape */}
             <div className="grid grid-cols-4 gap-6 shrink-0">
               <button onClick={() => onAction('Community_BOARD')} className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 hover:bg-white/20 hover:scale-[1.02] transition-all group min-h-[160px]">
                 <img src="https://i.postimg.cc/rpgthxF0/4(5).png" alt="Forum" className="h-20 object-contain opacity-90 group-hover:scale-110 transition-transform" />
@@ -311,10 +319,20 @@ const MobileView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onRe
   ];
 
   return (
-    <div className="min-h-screen w-full font-montserrat flex flex-col overflow-x-hidden pb-10 bg-[#070b19] text-white relative z-0">
-      <div className="absolute inset-0 pointer-events-none z-[-1] overflow-hidden">
-        <div className="absolute top-[-10%] left-[-20%] w-[80%] h-[50%] bg-blue-900/20 blur-[120px] mix-blend-screen"></div>
-        <div className="absolute bottom-[20%] right-[-20%] w-[60%] h-[60%] bg-[#fcd34d]/5 blur-[100px] mix-blend-screen"></div>
+    <div className="min-h-screen w-full font-montserrat flex flex-col overflow-x-hidden pb-10 text-white relative z-0">
+      
+      {/* NEW BLURRED BACKGROUND */}
+      <div className="absolute inset-0 pointer-events-none z-[-1] bg-[#070b19] overflow-hidden">
+        <div 
+          className="absolute inset-0 opacity-60 blur-2xl scale-[1.15]" 
+          style={{ 
+            backgroundImage: `url("https://i.postimg.cc/kg4rxNH2/Gemini-Generated-Image-ohtdmbohtdmbohtd.jpg")`, 
+            backgroundSize: 'cover', 
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat'
+          }}
+        ></div>
+        <div className="absolute inset-0 bg-[#070b19]/70"></div>
       </div>
 
       <div className="flex justify-between items-center p-5 z-10 border-b border-white/10 bg-[#070b19]/80 backdrop-blur-md">

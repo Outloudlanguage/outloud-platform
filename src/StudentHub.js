@@ -3,7 +3,7 @@ import { supabase } from './SupabaseClient';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { EffectCoverflow, Pagination } from 'swiper/modules';
 import StudentPlayer from './StudentPlayer';
-import CommunityPanel from './components/CommunityPanel'; // <-- INJECTED COMPONENT
+import CommunityPanel from './components/CommunityPanel'; 
 
 import 'swiper/css';
 import 'swiper/css/effect-coverflow';
@@ -31,11 +31,20 @@ const DesktopView = ({ student, onReturnHome, onStartActivity, isFetching, activ
   );
 
   return (
-    <div className="min-h-screen w-full font-montserrat flex justify-center p-8 relative overflow-hidden bg-[#070b19] text-white">
-      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-blue-900/30 blur-[120px] rounded-full mix-blend-screen"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-[#fcd34d]/10 blur-[100px] rounded-full mix-blend-screen"></div>
-        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 10 Q 25 20, 50 10 T 100 10' stroke='%23ffffff' fill='none' stroke-width='0.5'/%3E%3C/svg%3E")`, backgroundSize: '100px 20px' }}></div>
+    <div className="min-h-screen w-full font-montserrat flex justify-center p-8 relative overflow-hidden text-white z-0">
+      
+      {/* NEW BLURRED BACKGROUND */}
+      <div className="absolute inset-0 pointer-events-none z-[-1] bg-[#070b19] overflow-hidden">
+        <div 
+          className="absolute inset-0 opacity-60 blur-2xl scale-[1.15]" 
+          style={{ 
+            backgroundImage: `url("https://i.postimg.cc/kg4rxNH2/Gemini-Generated-Image-ohtdmbohtdmbohtd.jpg")`, 
+            backgroundSize: 'cover', 
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat'
+          }}
+        ></div>
+        <div className="absolute inset-0 bg-[#070b19]/70"></div>
       </div>
 
       <div className="max-w-[1200px] w-full flex gap-8 relative z-10">
@@ -174,10 +183,20 @@ const MobileView = ({ student, onReturnHome, onStartActivity, isFetching, active
   ];
 
   return (
-    <div className="min-h-screen w-full font-montserrat flex flex-col overflow-x-hidden pb-10 bg-[#070b19] text-white relative z-0">
-      <div className="absolute inset-0 pointer-events-none z-[-1] overflow-hidden">
-        <div className="absolute top-[-10%] left-[-20%] w-[80%] h-[50%] bg-blue-900/30 blur-[100px] mix-blend-screen"></div>
-        <div className="absolute bottom-[20%] right-[-20%] w-[60%] h-[60%] bg-[#fcd34d]/10 blur-[90px] mix-blend-screen"></div>
+    <div className="min-h-screen w-full font-montserrat flex flex-col overflow-x-hidden pb-10 text-white relative z-0">
+      
+      {/* NEW BLURRED BACKGROUND */}
+      <div className="absolute inset-0 pointer-events-none z-[-1] bg-[#070b19] overflow-hidden">
+        <div 
+          className="absolute inset-0 opacity-60 blur-2xl scale-[1.15]" 
+          style={{ 
+            backgroundImage: `url("https://i.postimg.cc/kg4rxNH2/Gemini-Generated-Image-ohtdmbohtdmbohtd.jpg")`, 
+            backgroundSize: 'cover', 
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat'
+          }}
+        ></div>
+        <div className="absolute inset-0 bg-[#070b19]/70"></div>
       </div>
 
       <div className="flex justify-between items-center p-5 z-10 border-b border-white/10 bg-[#070b19]/80 backdrop-blur-md">
