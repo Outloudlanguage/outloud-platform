@@ -13,23 +13,25 @@ const ProgressCard = ({ percentage, currentUnit, totalUnits }) => {
   const strokeDashoffset = circleCircumference - (safePercentage / 100) * circleCircumference;
 
   return (
-    <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-4 sm:p-6 shadow-2xl flex flex-col items-center justify-between relative overflow-hidden h-full">
-      <h3 className="text-white/90 font-bold text-[9px] sm:text-[10px] tracking-widest uppercase text-center leading-tight whitespace-nowrap">
+    <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-5 sm:p-6 shadow-2xl flex flex-col items-center justify-between relative overflow-hidden h-full">
+      <h3 className="text-white/90 font-bold text-[10px] sm:text-xs tracking-widest uppercase text-center whitespace-nowrap">
         COURSE COMPLETION
       </h3>
       
-      <div className="relative w-24 h-24 sm:w-32 sm:h-32 my-2 flex items-center justify-center shrink-0">
-         <svg className="w-full h-full transform -rotate-90 drop-shadow-[0_0_10px_rgba(252,211,77,0.8)]" viewBox="0 0 100 100">
-           <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.2)" strokeWidth="6" fill="transparent" />
-           <circle cx="50" cy="50" r="40" stroke="#fcd34d" strokeWidth="6" fill="transparent" strokeDasharray={circleCircumference} strokeDashoffset={strokeDashoffset} strokeLinecap="round" className="transition-all duration-1000 ease-out" />
-         </svg>
-         <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-            <span className="text-xl sm:text-2xl font-black text-white leading-none drop-shadow-md">{safePercentage}%</span>
-            <span className="text-[6px] sm:text-[7px] font-bold text-white/70 tracking-widest uppercase mt-1">COMPLETED</span>
-         </div>
+      <div className="flex-1 w-full flex items-center justify-center min-h-0 my-2">
+        <div className="relative w-28 h-28 sm:w-36 sm:h-36 flex items-center justify-center shrink-0">
+           <svg className="w-full h-full transform -rotate-90 drop-shadow-[0_0_10px_rgba(252,211,77,0.8)]" viewBox="0 0 100 100">
+             <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.2)" strokeWidth="6" fill="transparent" />
+             <circle cx="50" cy="50" r="40" stroke="#fcd34d" strokeWidth="6" fill="transparent" strokeDasharray={circleCircumference} strokeDashoffset={strokeDashoffset} strokeLinecap="round" className="transition-all duration-1000 ease-out" />
+           </svg>
+           <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+              <span className="text-3xl sm:text-4xl font-black text-white leading-none drop-shadow-md">{safePercentage}%</span>
+              <span className="text-[8px] sm:text-[9px] font-bold text-white/70 tracking-widest uppercase mt-1">COMPLETED</span>
+           </div>
+        </div>
       </div>
       
-      <p className="text-center text-white font-bold text-[9px] sm:text-[10px] tracking-widest uppercase mt-auto leading-tight whitespace-nowrap">
+      <p className="text-center text-white font-bold text-[10px] sm:text-xs tracking-widest uppercase mt-auto whitespace-nowrap">
         LESSONS UNIT {currentUnit}/{totalUnits}
       </p>
     </div>
@@ -38,8 +40,8 @@ const ProgressCard = ({ percentage, currentUnit, totalUnits }) => {
 
 const ActivitiesCard = ({ activeLiveSession }) => (
   <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-5 sm:p-6 shadow-2xl flex flex-col h-full">
-    <h3 className="text-white font-black text-lg sm:text-2xl tracking-wide mb-4 sm:mb-6 text-center sm:text-left drop-shadow-md">Activities</h3>
-    <ul className="space-y-4 text-[11px] sm:text-xs font-medium text-white/90 px-1 mb-auto">
+    <h3 className="text-white font-black text-xl sm:text-2xl tracking-wide mb-2 sm:mb-4 text-center sm:text-left drop-shadow-md shrink-0">Activities</h3>
+    <ul className="space-y-4 sm:space-y-5 text-xs sm:text-sm font-medium text-white/90 flex-1 flex flex-col justify-center px-1">
       {activeLiveSession ? (
         <li className="flex items-center gap-3">
           <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white/70 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
@@ -83,11 +85,11 @@ const MainActionCard = ({ title, iconType, isFetching, isActive, onClick, score 
       <img 
         src={iconSrc} 
         alt={title} 
-        className="w-20 h-20 sm:w-28 sm:h-28 object-contain opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-transform duration-500 drop-shadow-md" 
+        className="w-24 h-24 sm:w-36 sm:h-36 lg:w-44 lg:h-44 object-contain opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-transform duration-500 drop-shadow-md" 
       />
       
       <div className="flex flex-col items-center mt-2">
-        <h3 className="font-black tracking-wide text-2xl sm:text-3xl drop-shadow-md">{isFetching ? 'Loading...' : title}</h3>
+        <h3 className="font-black tracking-wide text-2xl sm:text-3xl lg:text-4xl drop-shadow-md">{isFetching ? 'Loading...' : title}</h3>
         {score > 0 && <span className="text-[9px] sm:text-[10px] font-bold text-[#fcd34d] mt-1 tracking-widest uppercase">SCORE: {score}%</span>}
       </div>
     </button>
@@ -149,7 +151,7 @@ const DesktopView = ({ student, onReturnHome, onStartActivity, isFetching, activ
       {/* BACKGROUND */}
       <div className="absolute inset-0 pointer-events-none z-[-1] overflow-hidden">
         <div 
-          className="absolute inset-0 opacity-60 blur-lg scale-[1.05]" 
+          className="absolute inset-0 opacity-50 blur-md scale-[1.05]" 
           style={{ backgroundImage: `url("https://i.postimg.cc/kg4rxNH2/Gemini-Generated-Image-ohtdmbohtdmbohtd.jpg")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
         ></div>
         <div className="absolute inset-0 bg-[#070b19]/60"></div>
@@ -171,9 +173,9 @@ const DesktopView = ({ student, onReturnHome, onStartActivity, isFetching, activ
         
         {/* HEADER */}
         <div className="flex items-center gap-4 mb-10 pl-2">
-          <img src="https://i.postimg.cc/43zTZQhx/Diseno-sin-titulo-(20).png" alt="Outloud Logo" className="h-12 object-contain opacity-100" />
+          <img src="https://i.postimg.cc/43zTZQhx/Diseno-sin-titulo-(20).png" alt="Outloud Logo" className="h-12 lg:h-14 object-contain opacity-100" />
           <div className="h-10 w-[2px] bg-white/40"></div>
-          <span className="text-2xl font-light text-white tracking-wide">Online Platform</span>
+          <span className="text-2xl lg:text-3xl font-light text-white tracking-wide">Online Platform</span>
         </div>
 
         {/* 3-COLUMN GRID */}
@@ -188,7 +190,7 @@ const DesktopView = ({ student, onReturnHome, onStartActivity, isFetching, activ
               <ActivitiesCard activeLiveSession={activeLiveSession} />
             </div>
             <div className="flex flex-col gap-4 mt-auto">
-              <a href="https://wa.me/584226885683" target="_blank" rel="noreferrer" className="w-full py-3 bg-[#e2e8f0] text-[#0f172a] hover:bg-white font-black text-[11px] uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 transition-transform hover:scale-105 shadow-xl leading-tight text-center">
+              <a href="https://wa.me/584226885683" target="_blank" rel="noreferrer" className="w-full py-4 bg-[#e2e8f0] text-[#0f172a] hover:bg-white font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 transition-transform hover:scale-105 shadow-xl leading-tight text-center">
                 <img src="https://i.postimg.cc/mrtXmB72/Copia-de-Diseno-sin-titulo-(2).png" alt="Help" className="w-8 h-8 object-contain shrink-0" />
                 REQUEST<br/>ASSISTANCE
               </a>
@@ -280,7 +282,7 @@ const MobileView = ({ student, onReturnHome, onStartActivity, isFetching, active
       {/* BACKGROUND */}
       <div className="absolute inset-0 pointer-events-none z-[-1] overflow-hidden fixed">
         <div 
-          className="absolute inset-0 opacity-60 blur-lg scale-[1.05]" 
+          className="absolute inset-0 opacity-50 blur-md scale-[1.05]" 
           style={{ backgroundImage: `url("https://i.postimg.cc/kg4rxNH2/Gemini-Generated-Image-ohtdmbohtdmbohtd.jpg")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
         ></div>
         <div className="absolute inset-0 bg-[#070b19]/60"></div>
@@ -288,9 +290,9 @@ const MobileView = ({ student, onReturnHome, onStartActivity, isFetching, active
 
       {/* HEADER */}
       <div className="p-5 flex items-center gap-3 border-b border-white/10 bg-black/10 backdrop-blur-md sticky top-0 z-40">
-        <img src="https://i.postimg.cc/43zTZQhx/Diseno-sin-titulo-(20).png" alt="Outloud Logo" className="h-8 object-contain opacity-100" />
+        <img src="https://i.postimg.cc/43zTZQhx/Diseno-sin-titulo-(20).png" alt="Outloud Logo" className="h-8 sm:h-10 object-contain opacity-100" />
         <div className="h-6 w-[1px] bg-white/40"></div>
-        <span className="text-sm font-light text-white tracking-wide">Online Platform</span>
+        <span className="text-base sm:text-lg font-light text-white tracking-wide">Online Platform</span>
       </div>
 
       {/* SCROLLABLE CONTENT */}
@@ -298,20 +300,20 @@ const MobileView = ({ student, onReturnHome, onStartActivity, isFetching, active
         
         {/* ROW 1: Completion & Activities */}
         <div className="grid grid-cols-2 gap-3 sm:gap-4">
-          <div className="h-56 sm:h-64">
+          <div className="h-60 sm:h-64">
             <ProgressCard percentage={progressPercentage} currentUnit={currentUnit} totalUnits={totalUnits} />
           </div>
-          <div className="h-56 sm:h-64">
+          <div className="h-60 sm:h-64">
             <ActivitiesCard activeLiveSession={activeLiveSession} />
           </div>
         </div>
 
         {/* ROW 2: Lesson & Workbook */}
         <div className="grid grid-cols-2 gap-3 sm:gap-4 mt-2 sm:mt-4">
-          <div className="h-56 sm:h-64">
+          <div className="h-60 sm:h-64">
             <MainActionCard title="Lesson" iconType="headphones" isActive={true} isFetching={isFetching} onClick={() => onStartActivity('Lesson')} score={lessonScore} />
           </div>
-          <div className="h-56 sm:h-64">
+          <div className="h-60 sm:h-64">
             <MainActionCard title="Workbook" iconType="workbook" isActive={isWorkbookUnlocked} isFetching={isFetching} onClick={() => onStartActivity('Workbook')} score={workbookScore} />
           </div>
         </div>
@@ -347,15 +349,15 @@ const MobileView = ({ student, onReturnHome, onStartActivity, isFetching, active
         </div>
 
         {/* SOCIALS & SUPPORT */}
-        <div className="flex flex-col items-center gap-5 mt-4">
-          <div className="flex justify-center gap-6 w-full px-4">
+        <div className="flex flex-col items-center gap-5 mt-4 px-2">
+          <div className="flex justify-center gap-4 sm:gap-6 w-full">
             <SocialButton src="https://i.postimg.cc/ry0TD2Hv/11(6).png" url="https://www.facebook.com/share/1KxawRX9vA/" />
             <SocialButton src="https://i.postimg.cc/MpD2C6cs/10(5).png" url="https://www.instagram.com/outloudlanguage?igsh=MXU5dmRzeTZ3YTk1cg==" />
             <SocialButton src="https://i.postimg.cc/pXbwyhzD/9(3).png" url="https://www.tiktok.com/@outloudlanguage" />
             <SocialButton src="https://i.postimg.cc/0y9hdTtf/8(4).png" url="https://discord.gg/847PMD2DbV" />
           </div>
-          <a href="https://wa.me/584226885683" target="_blank" rel="noreferrer" className="w-full py-4 bg-[#e2e8f0] text-[#0f172a] font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 shadow-xl leading-tight">
-            <img src="https://i.postimg.cc/mrtXmB72/Copia-de-Diseno-sin-titulo-(2).png" alt="Help" className="w-7 h-7 sm:w-8 sm:h-8 object-contain shrink-0" />
+          <a href="https://wa.me/584226885683" target="_blank" rel="noreferrer" className="w-full py-4 bg-[#e2e8f0] text-[#0f172a] font-black text-sm uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 shadow-xl leading-tight">
+            <img src="https://i.postimg.cc/mrtXmB72/Copia-de-Diseno-sin-titulo-(2).png" alt="Help" className="w-8 h-8 sm:w-10 sm:h-10 object-contain shrink-0" />
             REQUEST ASSISTANCE
           </a>
         </div>
