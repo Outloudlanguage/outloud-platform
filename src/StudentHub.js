@@ -8,86 +8,94 @@ import CommunityPanel from './components/CommunityPanel';
 // ==========================================
 
 const ProgressCard = ({ percentage, currentUnit, totalUnits }) => {
+  const safePercentage = isNaN(percentage) ? 0 : percentage;
   const circleCircumference = 2 * Math.PI * 40; 
-  const strokeDashoffset = circleCircumference - (percentage / 100) * circleCircumference;
+  const strokeDashoffset = circleCircumference - (safePercentage / 100) * circleCircumference;
 
   return (
-    <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 shadow-2xl flex flex-col items-center justify-center relative overflow-hidden h-full">
-      <h3 className="text-white/90 font-bold text-[10px] tracking-widest uppercase mb-4 text-center">Course Completion</h3>
-      <div className="relative w-32 h-32 mb-4 flex items-center justify-center">
+    <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-4 sm:p-6 shadow-2xl flex flex-col items-center justify-between relative overflow-hidden h-full">
+      <h3 className="text-white/90 font-bold text-[9px] sm:text-[10px] tracking-widest uppercase text-center leading-tight">
+        Course<br className="block sm:hidden" /> Completion
+      </h3>
+      
+      <div className="relative w-24 h-24 sm:w-32 sm:h-32 my-2 flex items-center justify-center shrink-0">
          <svg className="w-full h-full transform -rotate-90 drop-shadow-[0_0_10px_rgba(252,211,77,0.8)]" viewBox="0 0 100 100">
            <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.2)" strokeWidth="6" fill="transparent" />
            <circle cx="50" cy="50" r="40" stroke="#fcd34d" strokeWidth="6" fill="transparent" strokeDasharray={circleCircumference} strokeDashoffset={strokeDashoffset} strokeLinecap="round" className="transition-all duration-1000 ease-out" />
          </svg>
          <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-            <span className="text-2xl font-black text-white leading-none drop-shadow-md">{percentage}%</span>
-            <span className="text-[7px] font-bold text-white/70 tracking-widest uppercase mt-1">COMPLETED</span>
+            <span className="text-xl sm:text-2xl font-black text-white leading-none drop-shadow-md">{safePercentage}%</span>
+            <span className="text-[6px] sm:text-[7px] font-bold text-white/70 tracking-widest uppercase mt-1">COMPLETED</span>
          </div>
       </div>
-      <p className="text-center text-white font-bold text-xs tracking-widest uppercase mt-auto">LESSONS {currentUnit}/{totalUnits}</p>
+      
+      <p className="text-center text-white font-bold text-[9px] sm:text-xs tracking-widest uppercase mt-auto leading-tight">
+        Lessons<br className="block sm:hidden" /> Unit {currentUnit}/{totalUnits}
+      </p>
     </div>
   );
 };
 
 const ActivitiesCard = ({ activeLiveSession }) => (
-  <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 shadow-2xl flex flex-col h-full">
-    <h3 className="text-white font-black text-2xl tracking-wide mb-4">Activities</h3>
-    <ul className="space-y-4 mt-2 text-xs font-medium text-white/90">
+  <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-4 sm:p-6 shadow-2xl flex flex-col h-full">
+    <h3 className="text-white font-black text-lg sm:text-2xl tracking-wide mb-3 sm:mb-4 text-center sm:text-left drop-shadow-md">Activities</h3>
+    <ul className="space-y-3 sm:space-y-4 mt-auto text-[10px] sm:text-xs font-medium text-white/90 flex-1 flex flex-col justify-center px-1">
       {activeLiveSession ? (
         <li className="flex items-center gap-3">
-          <svg className="w-4 h-4 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-          <span><span className="font-bold text-emerald-400">Live Lab:</span> {activeLiveSession.session_date}</span>
+          <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white/70 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+          <span className="leading-tight"><span className="font-bold text-emerald-400 block sm:inline">Live Lab:</span> {activeLiveSession.session_date}</span>
         </li>
       ) : (
         <li className="flex items-center gap-3">
-          <svg className="w-4 h-4 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-          <span className="opacity-50 italic">No live sessions booked</span>
+          <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white/70 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+          <span className="opacity-50 italic leading-tight">No live sessions booked</span>
         </li>
       )}
       <li className="flex items-center gap-3">
-        <svg className="w-4 h-4 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-        <span><strong className="font-bold">Next:</strong> Chat room meeting</span>
+        <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white/70 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+        <span className="leading-tight"><strong className="font-bold block sm:inline">Next:</strong> Chat room meeting</span>
       </li>
       <li className="flex items-center gap-3">
-        <svg className="w-4 h-4 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-        <span><strong className="font-bold">Soon:</strong> Conversation Club</span>
+        <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white/70 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+        <span className="leading-tight"><strong className="font-bold block sm:inline">Soon:</strong> Conversation Club</span>
       </li>
     </ul>
   </div>
 );
 
-const MainActionCard = ({ title, iconType, isFetching, isActive, onClick, score }) => (
-  <button 
-    onClick={onClick} 
-    disabled={!isActive || isFetching} 
-    className={`w-full h-full bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 shadow-2xl flex flex-col items-center justify-center gap-4 transition-all group ${!isActive ? 'opacity-50 grayscale cursor-not-allowed' : 'hover:bg-white/20 hover:scale-[1.02]'}`}
-  >
-    {!isActive && (
-      <svg className="w-6 h-6 text-white/40 absolute top-6 right-6" fill="currentColor" viewBox="0 0 20 20">
-        <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-      </svg>
-    )}
-    
-    {iconType === 'headphones' ? (
-      <svg className="w-24 h-24 text-white opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-transform duration-500 drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 18v-6a9 9 0 0118 0v6M3 18a3 3 0 003 3h2a3 3 0 003-3v-3a3 3 0 00-3-3H6M21 18a3 3 0 01-3 3h-2a3 3 0 01-3-3v-3a3 3 0 013-3h2M12 8v8M9 10v4M15 10v4" />
-      </svg>
-    ) : (
-      <svg className="w-24 h-24 text-white opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-transform duration-500 drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15.5 10l3-3m0 0l3 3m-3-3v8" />
-      </svg>
-    )}
-    
-    <div className="flex flex-col items-center mt-2">
-      <h3 className="font-black tracking-wide text-2xl uppercase drop-shadow-md">{isFetching ? 'LOADING...' : title}</h3>
-      {score > 0 && <span className="text-[10px] font-bold text-[#fcd34d] mt-1 tracking-widest uppercase">SCORE: {score}%</span>}
-    </div>
-  </button>
-);
+const MainActionCard = ({ title, iconType, isFetching, isActive, onClick, score }) => {
+  const iconSrc = iconType === 'headphones' 
+    ? 'https://i.postimg.cc/CLG47dtk/3(7).png' 
+    : 'https://i.postimg.cc/HLx4TzxY/4(6).png';
+
+  return (
+    <button 
+      onClick={onClick} 
+      disabled={!isActive || isFetching} 
+      className={`w-full h-full bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-4 sm:p-6 shadow-2xl flex flex-col items-center justify-center gap-4 transition-all group ${!isActive ? 'opacity-50 grayscale cursor-not-allowed' : 'hover:bg-white/20 hover:scale-[1.02]'}`}
+    >
+      {!isActive && (
+        <svg className="w-6 h-6 text-white/40 absolute top-4 right-4 sm:top-6 sm:right-6" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+        </svg>
+      )}
+      
+      <img 
+        src={iconSrc} 
+        alt={title} 
+        className="w-16 h-16 sm:w-24 sm:h-24 object-contain opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-transform duration-500 drop-shadow-md" 
+      />
+      
+      <div className="flex flex-col items-center mt-2">
+        <h3 className="font-black tracking-wide text-xl sm:text-2xl uppercase drop-shadow-md">{isFetching ? 'LOADING...' : title}</h3>
+        {score > 0 && <span className="text-[9px] sm:text-[10px] font-bold text-[#fcd34d] mt-1 tracking-widest uppercase">SCORE: {score}%</span>}
+      </div>
+    </button>
+  );
+};
 
 const PillButton = ({ title, hasNotification }) => (
-  <button className="relative w-full py-4 px-2 bg-white/10 backdrop-blur-md hover:bg-white/20 border border-white/20 rounded-xl text-center text-xs md:text-sm text-white transition-all shadow-md active:scale-95">
+  <button className="relative w-full py-4 px-2 bg-white/10 backdrop-blur-md hover:bg-white/20 border border-white/20 rounded-xl text-center text-[10px] sm:text-xs text-white transition-all shadow-md active:scale-95">
     {hasNotification && <div className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,1)]"></div>}
     {title}
   </button>
@@ -108,6 +116,12 @@ const NavIconBtn = ({ iconSvg, active, onClick, hasNotification, isProfile, avat
   </button>
 );
 
+const SocialButton = ({ src, url }) => (
+  <a href={url} target="_blank" rel="noreferrer" className="w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden hover:scale-110 transition-transform shadow-md shrink-0 border border-white/10">
+    <img src={src} alt="Social" className="w-full h-full object-cover" />
+  </a>
+);
+
 // SVGs for Nav
 const navIcons = {
   calendar: <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /><rect x="7" y="11" width="2" height="2" fill="currentColor"/><rect x="11" y="11" width="2" height="2" fill="currentColor"/><rect x="15" y="11" width="2" height="2" fill="currentColor"/><rect x="7" y="15" width="2" height="2" fill="currentColor"/><rect x="11" y="15" width="2" height="2" fill="currentColor"/><rect x="15" y="15" width="2" height="2" fill="currentColor"/></svg>,
@@ -121,9 +135,10 @@ const navIcons = {
 // 2. DESKTOP VIEW
 // ==========================================
 const DesktopView = ({ student, onReturnHome, onStartActivity, isFetching, activeLiveSession }) => {
-  const currentUnit = student?.unit || 1;
+  const currentUnit = Number(student?.unit) || 1;
   const totalUnits = 12; 
-  const progressPercentage = Math.round((Math.max(0, currentUnit - 1) / totalUnits) * 100);
+  let progressPercentage = Math.round((Math.max(0, currentUnit - 1) / totalUnits) * 100);
+  if (isNaN(progressPercentage)) progressPercentage = 0;
 
   const lessonScore = student?.lesson_score || 0;
   const workbookScore = student?.workbook_score || 0;
@@ -134,7 +149,7 @@ const DesktopView = ({ student, onReturnHome, onStartActivity, isFetching, activ
       {/* BACKGROUND */}
       <div className="absolute inset-0 pointer-events-none z-[-1] overflow-hidden">
         <div 
-          className="absolute inset-0 opacity-70 blur-lg scale-[1.05]" 
+          className="absolute inset-0 opacity-50 blur-xl scale-[1.05]" 
           style={{ backgroundImage: `url("https://i.postimg.cc/kg4rxNH2/Gemini-Generated-Image-ohtdmbohtdmbohtd.jpg")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
         ></div>
         <div className="absolute inset-0 bg-[#070b19]/60"></div>
@@ -173,17 +188,15 @@ const DesktopView = ({ student, onReturnHome, onStartActivity, isFetching, activ
               <ActivitiesCard activeLiveSession={activeLiveSession} />
             </div>
             <div className="flex flex-col gap-4 mt-auto">
-              <button className="w-full py-4 bg-[#e2e8f0] text-[#0f172a] hover:bg-white font-black text-[11px] uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 transition-transform hover:scale-105 shadow-xl">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+              <a href="https://wa.me/584226885683" target="_blank" rel="noreferrer" className="w-full py-4 bg-[#e2e8f0] text-[#0f172a] hover:bg-white font-black text-[11px] uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 transition-transform hover:scale-105 shadow-xl">
+                <img src="https://i.postimg.cc/mrtXmB72/Copia-de-Diseno-sin-titulo-(2).png" alt="Help" className="w-6 h-6 object-contain" />
                 Request Human Assistance
-              </button>
+              </a>
               <div className="flex justify-between items-center px-2">
-                {['fb', 'ig', 'tt', 'dc'].map(social => (
-                  <div key={social} className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-[#070b19] cursor-pointer hover:scale-110 transition-transform shadow-md">
-                    {/* Placeholder simple SVG for socials */}
-                    <div className="w-5 h-5 rounded-full border-2 border-current"></div>
-                  </div>
-                ))}
+                <SocialButton src="https://i.postimg.cc/ry0TD2Hv/11(6).png" url="https://www.facebook.com/share/1KxawRX9vA/" />
+                <SocialButton src="https://i.postimg.cc/MpD2C6cs/10(5).png" url="https://www.instagram.com/outloudlanguage?igsh=MXU5dmRzeTZ3YTk1cg==" />
+                <SocialButton src="https://i.postimg.cc/pXbwyhzD/9(3).png" url="https://tiktok.com/@outloudlanguage" />
+                <SocialButton src="https://i.postimg.cc/0y9hdTtf/8(4).png" url="https://discord.gg/847PMD2DbV" />
               </div>
             </div>
           </div>
@@ -253,20 +266,21 @@ const DesktopView = ({ student, onReturnHome, onStartActivity, isFetching, activ
 // 3. MOBILE VIEW
 // ==========================================
 const MobileView = ({ student, onReturnHome, onStartActivity, isFetching, activeLiveSession }) => {
-  const currentUnit = student?.unit || 1;
+  const currentUnit = Number(student?.unit) || 1;
   const totalUnits = 12; 
-  const progressPercentage = Math.round((Math.max(0, currentUnit - 1) / totalUnits) * 100);
+  let progressPercentage = Math.round((Math.max(0, currentUnit - 1) / totalUnits) * 100);
+  if (isNaN(progressPercentage)) progressPercentage = 0;
 
   const lessonScore = student?.lesson_score || 0;
   const workbookScore = student?.workbook_score || 0;
   const isWorkbookUnlocked = lessonScore >= 75;
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#070b19] relative overflow-x-hidden z-0 font-montserrat text-white pb-28">
+    <div className="min-h-screen flex flex-col bg-[#070b19] relative overflow-x-hidden z-0 font-montserrat text-white pb-32">
       {/* BACKGROUND */}
       <div className="absolute inset-0 pointer-events-none z-[-1] overflow-hidden fixed">
         <div 
-          className="absolute inset-0 opacity-70 blur-lg scale-[1.05]" 
+          className="absolute inset-0 opacity-50 blur-xl scale-[1.05]" 
           style={{ backgroundImage: `url("https://i.postimg.cc/kg4rxNH2/Gemini-Generated-Image-ohtdmbohtdmbohtd.jpg")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
         ></div>
         <div className="absolute inset-0 bg-[#070b19]/60"></div>
@@ -274,38 +288,38 @@ const MobileView = ({ student, onReturnHome, onStartActivity, isFetching, active
 
       {/* HEADER */}
       <div className="p-5 flex items-center gap-3 border-b border-white/10 bg-black/10 backdrop-blur-md sticky top-0 z-40">
-        <img src="https://i.postimg.cc/43zTZQhx/Diseno-sin-titulo-(20).png" alt="Outloud Logo" className="h-6 object-contain opacity-100" />
+        <img src="https://i.postimg.cc/43zTZQhx/Diseno-sin-titulo-(20).png" alt="Outloud Logo" className="h-5 sm:h-6 object-contain opacity-100" />
         <div className="h-5 w-[1px] bg-white/40"></div>
-        <span className="text-sm font-light text-white tracking-wide">Online Platform</span>
+        <span className="text-xs sm:text-sm font-light text-white tracking-wide">Online Platform</span>
       </div>
 
       {/* SCROLLABLE CONTENT */}
       <div className="flex flex-col gap-4 p-4 z-10">
         
         {/* ROW 1: Completion & Activities */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="h-56">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4">
+          <div className="h-60 sm:h-64">
             <ProgressCard percentage={progressPercentage} currentUnit={currentUnit} totalUnits={totalUnits} />
           </div>
-          <div className="h-56">
+          <div className="h-60 sm:h-64">
             <ActivitiesCard activeLiveSession={activeLiveSession} />
           </div>
         </div>
 
         {/* ROW 2: Lesson & Workbook */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="h-56">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 mt-2 sm:mt-4">
+          <div className="h-60 sm:h-64">
             <MainActionCard title="Lesson" iconType="headphones" isActive={true} isFetching={isFetching} onClick={() => onStartActivity('Lesson')} score={lessonScore} />
           </div>
-          <div className="h-56">
+          <div className="h-60 sm:h-64">
             <MainActionCard title="Workbook" iconType="workbook" isActive={isWorkbookUnlocked} isFetching={isFetching} onClick={() => onStartActivity('Workbook')} score={workbookScore} />
           </div>
         </div>
 
         {/* RIGHT COLUMN DATA (Now below) */}
-        <div className="flex flex-col gap-4 bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] p-4 shadow-2xl">
+        <div className="flex flex-col gap-4 bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] p-4 shadow-2xl mt-2 sm:mt-4">
           {/* PILLS */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3">
             <PillButton title="Website Functionality" />
             <PillButton title="General Information" />
             <PillButton title="Upcoming Events" />
@@ -333,24 +347,23 @@ const MobileView = ({ student, onReturnHome, onStartActivity, isFetching, active
         </div>
 
         {/* SOCIALS & SUPPORT */}
-        <div className="flex items-center justify-between gap-4 mt-4">
-          <div className="flex gap-2">
-            {['fb', 'ig', 'tt', 'dc'].map(social => (
-              <div key={social} className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-[#070b19] shadow-md">
-                <div className="w-5 h-5 rounded-full border-2 border-current"></div>
-              </div>
-            ))}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4 px-2">
+          <div className="flex w-full sm:w-auto justify-between sm:justify-start gap-2">
+            <SocialButton src="https://i.postimg.cc/ry0TD2Hv/11(6).png" url="https://www.facebook.com/share/1KxawRX9vA/" />
+            <SocialButton src="https://i.postimg.cc/MpD2C6cs/10(5).png" url="https://www.instagram.com/outloudlanguage?igsh=MXU5dmRzeTZ3YTk1cg==" />
+            <SocialButton src="https://i.postimg.cc/pXbwyhzD/9(3).png" url="https://tiktok.com/@outloudlanguage" />
+            <SocialButton src="https://i.postimg.cc/0y9hdTtf/8(4).png" url="https://discord.gg/847PMD2DbV" />
           </div>
-          <button className="flex-1 py-3 bg-[#e2e8f0] text-[#0f172a] font-black text-[10px] uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 shadow-xl">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+          <a href="https://wa.me/584226885683" target="_blank" rel="noreferrer" className="w-full sm:flex-1 py-4 sm:py-3 bg-[#e2e8f0] text-[#0f172a] font-black text-[11px] uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 shadow-xl">
+            <img src="https://i.postimg.cc/mrtXmB72/Copia-de-Diseno-sin-titulo-(2).png" alt="Help" className="w-5 h-5 sm:w-6 sm:h-6 object-contain" />
             Assistance
-          </button>
+          </a>
         </div>
 
       </div>
 
       {/* FIXED BOTTOM NAVIGATION */}
-      <div className="fixed bottom-0 left-0 right-0 h-24 bg-white/10 backdrop-blur-2xl border-t border-white/20 flex items-center justify-between px-4 z-50 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+      <div className="fixed bottom-0 left-0 right-0 h-20 sm:h-24 bg-white/10 backdrop-blur-2xl border-t border-white/20 flex items-center justify-between px-2 sm:px-4 z-50 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
         <NavIconBtn isProfile avatarUrl={student?.avatar_url} onClick={onReturnHome} />
         <NavIconBtn iconSvg={navIcons.calendar} onClick={() => onStartActivity('Calendar')} />
         <NavIconBtn iconSvg={navIcons.monitor} onClick={() => onStartActivity('LiveClass')} hasNotification={!!activeLiveSession?.meeting_link} />
