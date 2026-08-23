@@ -13,7 +13,7 @@ const ProgressCard = ({ percentage, currentUnit, totalUnits }) => {
   const strokeDashoffset = circleCircumference - (safePercentage / 100) * circleCircumference;
 
   return (
-    <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-5 sm:p-6 shadow-2xl flex flex-col items-center justify-between relative overflow-hidden h-full">
+    <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-4 sm:p-6 shadow-2xl flex flex-col items-center justify-between relative overflow-hidden h-full">
       <h3 className="text-white/90 font-bold text-[10px] sm:text-xs tracking-widest uppercase text-center whitespace-nowrap">
         COURSE COMPLETION
       </h3>
@@ -151,10 +151,10 @@ const DesktopView = ({ student, onReturnHome, onStartActivity, isFetching, activ
       {/* BACKGROUND */}
       <div className="absolute inset-0 pointer-events-none z-[-1] overflow-hidden">
         <div 
-          className="absolute inset-0 opacity-50 blur-md scale-[1.05]" 
+          className="absolute inset-0 opacity-100 blur-sm scale-[1.05]" 
           style={{ backgroundImage: `url("https://i.postimg.cc/kg4rxNH2/Gemini-Generated-Image-ohtdmbohtdmbohtd.jpg")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
         ></div>
-        <div className="absolute inset-0 bg-[#070b19]/60"></div>
+        <div className="absolute inset-0 bg-[#070b19]/40"></div>
       </div>
 
       {/* SIDEBAR NAVIGATION */}
@@ -282,10 +282,10 @@ const MobileView = ({ student, onReturnHome, onStartActivity, isFetching, active
       {/* BACKGROUND */}
       <div className="absolute inset-0 pointer-events-none z-[-1] overflow-hidden fixed">
         <div 
-          className="absolute inset-0 opacity-50 blur-md scale-[1.05]" 
+          className="absolute inset-0 opacity-100 blur-sm scale-[1.05]" 
           style={{ backgroundImage: `url("https://i.postimg.cc/kg4rxNH2/Gemini-Generated-Image-ohtdmbohtdmbohtd.jpg")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
         ></div>
-        <div className="absolute inset-0 bg-[#070b19]/60"></div>
+        <div className="absolute inset-0 bg-[#070b19]/40"></div>
       </div>
 
       {/* HEADER */}
