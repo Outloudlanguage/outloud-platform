@@ -1,62 +1,416 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from './SupabaseClient';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import { EffectCoverflow, Pagination } from 'swiper/modules';
 import CommunityPanel from './components/CommunityPanel'; 
 
-import 'swiper/css';
-import 'swiper/css/effect-coverflow';
-import 'swiper/css/pagination';
-
 // ==========================================
-// 1. REUSABLE PROFILE DROPDOWN
+// 1. REUSABLE UI CARDS (Unified Architecture)
 // ==========================================
-const ProfileDropdown = ({ teacher, pendingCount, onOpenEvaluations, onLogout }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef(null);
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) setIsOpen(false);
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+const PayrollCard = ({ acquired, goal }) => {
+  const safeAcquired = isNaN(acquired) ? 0 : acquired;
+  const safeGoal = goal || 80;
+  let progressPercentage = Math.round((Math.min(safeAcquired, safeGoal) / safeGoal) * 100);
+  if (isNaN(progressPercentage)) progressPercentage = 0;
+  
+  const circleCircumference = 2 * Math.PI * 40; 
+  const strokeDashoffset = circleCircumference - (progressPercentage / 100) * circleCircumference;
 
   return (
-    <div className="relative z-50" ref={dropdownRef}>
-      <div onClick={() => setIsOpen(!isOpen)} className="bg-white/10 backdrop-blur-md border border-white/20 rounded-full py-1.5 pr-6 pl-2 flex items-center gap-3 shadow-lg cursor-pointer hover:bg-white/20 transition-all">
-        <div className="relative w-10 h-10 bg-gray-300 rounded-full overflow-hidden border border-white/50 shrink-0">
-          <img src={teacher?.avatar_url || 'https://i.pravatar.cc/150'} alt="Profile" className="w-full h-full object-cover" />
-          {pendingCount > 0 && <div className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border border-[#070b19] animate-pulse"></div>}
-        </div>
-        <div className="flex flex-col hidden sm:flex">
-          <span className="text-xs font-bold leading-tight text-white">{teacher?.first_name || 'Teacher'} {teacher?.last_name || ''}</span>
-          <span className="text-[9px] text-emerald-400 font-bold tracking-widest uppercase">INSTRUCTOR</span>
+    <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-5 sm:p-6 shadow-2xl flex flex-col items-center justify-between relative overflow-hidden h-full">
+      <h3 className="text-white/90 font-bold text-[10px] sm:text-xs tracking-widest uppercase text-center whitespace-nowrap">
+        MONTHLY PAYROLL
+      </h3>
+      
+      <div className="flex-1 w-full flex items-center justify-center min-h-0 my-2">
+        <div className="relative w-28 h-28 sm:w-36 sm:h-36 flex items-center justify-center shrink-0">
+           <svg className="w-full h-full transform -rotate-90 drop-shadow-[0_0_10px_rgba(52,211,153,0.8)]" viewBox="0 0 100 100">
+             <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.2)" strokeWidth="6" fill="transparent" />
+             <circle cx="50" cy="50" r="40" stroke="#34d399" strokeWidth="6" fill="transparent" strokeDasharray={circleCircumference} strokeDashoffset={strokeDashoffset} strokeLinecap="round" className="transition-all duration-1000 ease-out" />
+           </svg>
+           <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+              <span className="text-3xl sm:text-4xl font-black text-white leading-none drop-shadow-md">{safeAcquired}h</span>
+              <span className="text-[8px] sm:text-[9px] font-bold text-white/70 tracking-widest uppercase mt-1">LOGGED</span>
+           </div>
         </div>
       </div>
+      
+      <p className="text-center text-white font-bold text-[10px] sm:text-xs tracking-widest uppercase mt-auto whitespace-nowrap">
+        TARGET: {safeGoal}h
+      </p>
+    </div>
+  );
+};
 
-      {isOpen && (
-        <div className="absolute right-0 mt-3 w-56 bg-[#070b19]/95 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl overflow-hidden animate-fade-in">
-          <div className="p-4 border-b border-white/10">
-             <p className="text-xs text-white/50 uppercase tracking-widest font-bold">Admin Controls</p>
-          </div>
-          <div className="flex flex-col">
-            <button className="flex items-center justify-between px-4 py-3 text-sm text-white hover:bg-white/10 transition-colors text-left font-semibold">My Profile</button>
-            <button onClick={() => { setIsOpen(false); onOpenEvaluations(); }} className="flex items-center justify-between px-4 py-3 text-sm text-white hover:bg-white/10 transition-colors text-left font-semibold group">
-              <span>Pending Gradings</span>
-              {pendingCount > 0 && <span className="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full group-hover:scale-110 transition-transform">{pendingCount}</span>}
-            </button>
-            <button onClick={onLogout} className="flex items-center justify-between px-4 py-3 text-sm text-red-400 hover:bg-red-500/20 transition-colors text-left font-semibold border-t border-white/10">Logout</button>
+const UpcomingCard = ({ nextClass, pendingCount }) => (
+  <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-5 sm:p-6 shadow-2xl flex flex-col h-full">
+    <h3 className="text-white font-black text-xl sm:text-2xl tracking-wide mb-2 sm:mb-4 text-center sm:text-left drop-shadow-md shrink-0">Upcoming</h3>
+    <ul className="space-y-4 sm:space-y-5 text-xs sm:text-sm font-medium text-white/90 flex-1 flex flex-col justify-center px-1">
+      {nextClass ? (
+        <li className="flex items-center gap-3">
+          <svg className="w-5 h-5 sm:w-6 sm:h-6 text-[#fcd34d] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+          <span className="leading-tight"><span className="font-bold text-[#fcd34d] block sm:inline">{nextClass.student_name}:</span> {new Date(nextClass.date).toLocaleDateString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit' })}</span>
+        </li>
+      ) : (
+        <li className="flex items-center gap-3">
+          <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white/70 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+          <span className="opacity-50 italic leading-tight">No upcoming classes</span>
+        </li>
+      )}
+      <li className="flex items-center gap-3">
+        <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white/70 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+        <span className="leading-tight"><strong className="font-bold block sm:inline">Tasks:</strong> {pendingCount} Pending gradings</span>
+      </li>
+      <li className="flex items-center gap-3">
+        <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white/70 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" /></svg>
+        <span className="leading-tight"><strong className="font-bold block sm:inline">Updates:</strong> Check staff board</span>
+      </li>
+    </ul>
+  </div>
+);
+
+const MainActionCard = ({ title, iconSrc, isFetching, isActive, onClick, subtitle, highlight }) => {
+  return (
+    <button 
+      onClick={onClick} 
+      disabled={!isActive || isFetching} 
+      className={`w-full h-full bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-4 sm:p-6 shadow-2xl flex flex-col items-center justify-center gap-4 transition-all group ${!isActive ? 'opacity-50 grayscale cursor-not-allowed border-white/10' : highlight ? 'hover:bg-[#fcd34d]/10 hover:border-[#fcd34d]/50 hover:scale-[1.02] shadow-[0_0_20px_rgba(252,211,77,0.15)]' : 'hover:bg-white/20 hover:scale-[1.02]'}`}
+    >
+      {!isActive && (
+        <svg className="w-6 h-6 text-white/40 absolute top-4 right-4 sm:top-6 sm:right-6" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+        </svg>
+      )}
+      
+      <img 
+        src={iconSrc} 
+        alt={title} 
+        className="w-24 h-24 sm:w-36 sm:h-36 lg:w-44 lg:h-44 object-contain opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-transform duration-500 drop-shadow-md" 
+      />
+      
+      <div className="flex flex-col items-center mt-2">
+        <h3 className={`font-black tracking-wide text-2xl sm:text-3xl lg:text-4xl drop-shadow-md ${highlight && isActive ? 'text-[#fcd34d]' : 'text-white'}`}>{isFetching ? 'Loading...' : title}</h3>
+        {subtitle && <span className="text-[9px] sm:text-[10px] font-bold text-white/50 mt-1 tracking-widest uppercase">{subtitle}</span>}
+      </div>
+    </button>
+  );
+};
+
+const PillButton = ({ title, hasNotification, onClick }) => (
+  <button onClick={onClick} className="relative w-full py-4 px-2 bg-white/10 backdrop-blur-md hover:bg-white/20 border border-white/20 rounded-xl text-center text-[10px] sm:text-xs text-white transition-all shadow-md active:scale-95">
+    {hasNotification && <div className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,1)]"></div>}
+    {title}
+  </button>
+);
+
+const NavIconBtn = ({ iconSvg, active, onClick, hasNotification, isProfile, avatarUrl }) => (
+  <button onClick={onClick} className={`relative w-14 h-14 md:w-16 md:h-16 flex items-center justify-center rounded-2xl transition-all ${active ? 'bg-white/20 border border-white/40 shadow-inner' : 'hover:bg-white/10 border border-transparent'}`}>
+    {hasNotification && <div className="absolute top-3 right-3 w-2.5 h-2.5 bg-red-500 rounded-full border border-[#070b19] z-10 animate-pulse"></div>}
+    {isProfile ? (
+      <div className="w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden border-2 border-white/50 bg-gray-300">
+        <img src={avatarUrl || 'https://i.pravatar.cc/150'} alt="Profile" className="w-full h-full object-cover" />
+      </div>
+    ) : (
+      <div className={`w-8 h-8 md:w-9 md:h-9 ${active ? 'text-white' : 'text-white/70'}`}>
+        {iconSvg}
+      </div>
+    )}
+  </button>
+);
+
+const SocialButton = ({ src, url }) => (
+  <a href={url} target="_blank" rel="noreferrer" className="w-10 h-10 md:w-12 md:h-12 hover:scale-110 transition-transform shrink-0 drop-shadow-md">
+    <img src={src} alt="Social" className="w-full h-full object-contain" />
+  </a>
+);
+
+// SVGs for Nav
+const navIcons = {
+  calendar: <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /><rect x="7" y="11" width="2" height="2" fill="currentColor"/><rect x="11" y="11" width="2" height="2" fill="currentColor"/><rect x="15" y="11" width="2" height="2" fill="currentColor"/><rect x="7" y="15" width="2" height="2" fill="currentColor"/><rect x="11" y="15" width="2" height="2" fill="currentColor"/><rect x="15" y="15" width="2" height="2" fill="currentColor"/></svg>,
+  monitor: <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /><circle cx="9" cy="8" r="1.5" fill="currentColor"/><circle cx="15" cy="8" r="1.5" fill="currentColor"/><path strokeLinecap="round" d="M7 11h4M13 11h4" /></svg>,
+  bell: <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" /></svg>,
+  chat: <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 10l-1-1m0 0l-1 1m1-1v3" /></svg>,
+  forum: <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" /></svg>
+};
+
+// ==========================================
+// 2. PROFILE MENU OVERLAY
+// ==========================================
+const ProfileOverlay = ({ isOpen, onClose, teacher, pendingCount, onOpenEvaluations, onLogout }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in" onClick={onClose}>
+      <div className="bg-[#070b19]/95 border border-white/20 rounded-3xl shadow-2xl p-6 w-full max-w-sm flex flex-col gap-4 relative overflow-hidden" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center gap-4 border-b border-white/10 pb-4">
+          <img src={teacher?.avatar_url || 'https://i.pravatar.cc/150'} className="w-16 h-16 rounded-full border-2 border-white/20 object-cover shrink-0 bg-gray-300" alt="Profile" />
+          <div className="flex flex-col truncate">
+            <h3 className="text-white font-bold text-lg truncate">{teacher?.first_name || 'Teacher'} {teacher?.last_name || ''}</h3>
+            <p className="text-emerald-400 text-[10px] font-black tracking-widest uppercase mt-0.5">Instructor</p>
           </div>
         </div>
-      )}
+        
+        <button className="w-full py-3.5 bg-white/5 hover:bg-white/10 text-white rounded-xl text-sm font-bold transition-colors text-left px-5">My Profile</button>
+        <button onClick={() => { onClose(); onOpenEvaluations(); }} className="w-full py-3.5 bg-white/5 hover:bg-white/10 text-white rounded-xl text-sm font-bold transition-colors text-left px-5 flex justify-between items-center group">
+          <span>Pending Gradings</span>
+          {pendingCount > 0 && <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-black shadow-md">{pendingCount}</span>}
+        </button>
+        <button onClick={onLogout} className="w-full py-3.5 bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white rounded-xl text-sm font-bold transition-colors text-left px-5 mt-2 border border-red-500/20 hover:border-transparent">Log Out</button>
+      </div>
+    </div>
+  );
+};
+
+
+// ==========================================
+// 3. DESKTOP VIEW
+// ==========================================
+const DesktopView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onReturnHome, onAction, onRequestSub, onOpenProfileMenu, isLaunching, hasNewStaffBoard }) => {
+  const goal = payrollStats?.monthlyGoal || 100;
+  const acquired = payrollStats?.current || 0;
+
+  return (
+    <div className="flex min-h-screen bg-[#070b19] relative overflow-hidden z-0 font-montserrat text-white">
+      {/* BACKGROUND */}
+      <div className="absolute inset-0 pointer-events-none z-[-1] overflow-hidden">
+        <div 
+          className="absolute inset-0 opacity-100 blur-sm scale-[1.05]" 
+          style={{ backgroundImage: `url("https://i.postimg.cc/kg4rxNH2/Gemini-Generated-Image-ohtdmbohtdmbohtd.jpg")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
+        ></div>
+        <div className="absolute inset-0 bg-[#070b19]/40"></div>
+      </div>
+
+      {/* SIDEBAR NAVIGATION */}
+      <div className="w-28 border-r border-white/10 bg-black/20 backdrop-blur-2xl flex flex-col items-center py-10 gap-6 shrink-0 z-10 shadow-2xl">
+        <NavIconBtn isProfile avatarUrl={teacher?.avatar_url} onClick={onOpenProfileMenu} hasNotification={pendingEvaluations.length > 0} />
+        <div className="w-12 h-px bg-white/10 my-2"></div>
+        <NavIconBtn iconSvg={navIcons.calendar} onClick={() => onAction('Calendar')} />
+        <NavIconBtn iconSvg={navIcons.monitor} onClick={() => onAction('Live')} hasNotification={!!nextClass} />
+        <NavIconBtn iconSvg={navIcons.bell} hasNotification={hasNewStaffBoard} />
+        <NavIconBtn iconSvg={navIcons.chat} onClick={() => onAction('Community_CHAT')} />
+        <NavIconBtn iconSvg={navIcons.forum} onClick={() => onAction('Community_BOARD')} />
+      </div>
+
+      {/* MAIN CONTENT */}
+      <div className="flex-1 flex flex-col p-8 lg:p-12 overflow-y-auto custom-scrollbar z-10">
+        
+        {/* HEADER */}
+        <div className="flex items-center gap-4 mb-10 pl-2">
+          <img src="https://i.postimg.cc/43zTZQhx/Diseno-sin-titulo-(20).png" alt="Outloud Logo" className="h-12 lg:h-14 object-contain opacity-100" />
+          <div className="h-10 w-[2px] bg-white/40"></div>
+          <span className="text-2xl lg:text-3xl font-light text-white tracking-wide">Teacher Hub</span>
+        </div>
+
+        {/* 3-COLUMN GRID */}
+        <div className="grid grid-cols-12 gap-6 w-full max-w-[1400px] h-[calc(100vh-160px)]">
+          
+          {/* LEFT COLUMN: Status & Agenda */}
+          <div className="col-span-3 flex flex-col gap-6 h-full">
+            <div className="flex-[0.4]">
+              <PayrollCard acquired={acquired} goal={goal} />
+            </div>
+            <div className="flex-[0.6]">
+              <UpcomingCard nextClass={nextClass} pendingCount={pendingEvaluations.length} />
+            </div>
+            <div className="flex flex-col gap-4 mt-auto">
+              <a href="https://wa.me/584226885683" target="_blank" rel="noreferrer" className="w-full py-4 bg-[#e2e8f0] text-[#0f172a] hover:bg-white font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 transition-transform hover:scale-105 shadow-xl leading-tight text-center">
+                <img src="https://i.postimg.cc/mrtXmB72/Copia-de-Diseno-sin-titulo-(2).png" alt="Help" className="w-8 h-8 object-contain shrink-0" />
+                REQUEST<br/>ASSISTANCE
+              </a>
+              <div className="flex justify-center gap-5 items-center px-2 mt-2">
+                <SocialButton src="https://i.postimg.cc/ry0TD2Hv/11(6).png" url="https://www.facebook.com/share/1KxawRX9vA/" />
+                <SocialButton src="https://i.postimg.cc/MpD2C6cs/10(5).png" url="https://www.instagram.com/outloudlanguage?igsh=MXU5dmRzeTZ3YTk1cg==" />
+                <SocialButton src="https://i.postimg.cc/pXbwyhzD/9(3).png" url="https://www.tiktok.com/@outloudlanguage" />
+                <SocialButton src="https://i.postimg.cc/0y9hdTtf/8(4).png" url="https://discord.gg/847PMD2DbV" />
+              </div>
+            </div>
+          </div>
+
+          {/* CENTER COLUMN: Action Cards */}
+          <div className="col-span-4 flex flex-col gap-6 h-full">
+            <div className="flex-1">
+              <MainActionCard 
+                title="Start class" 
+                iconSrc="https://i.postimg.cc/Wpqw4Y1x/7(6).png" 
+                isActive={!!nextClass} 
+                isFetching={isLaunching} 
+                onClick={() => onAction('Live')} 
+                subtitle={nextClass ? 'READY TO LAUNCH' : 'NO CLASS SCHEDULED'} 
+                highlight={true}
+              />
+            </div>
+            <div className="flex-1">
+              <MainActionCard 
+                title="My roster" 
+                iconSrc="https://i.postimg.cc/vT49xTyn/3(6).png" 
+                isActive={true} 
+                isFetching={false} 
+                onClick={() => onAction('Calendar')} 
+                subtitle="VIEW SCHEDULE" 
+              />
+            </div>
+          </div>
+
+          {/* RIGHT COLUMN: Info Board & Feed */}
+          <div className="col-span-5 flex flex-col gap-6 h-full bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] p-6 shadow-2xl overflow-hidden">
+            <div className="grid grid-cols-3 gap-4 shrink-0">
+              <PillButton title="Teacher Manual" onClick={() => onAction('Manual')} />
+              <PillButton title="Class Tools" onClick={() => onAction('Tools')} />
+              <PillButton title="Class Chat" onClick={() => onAction('Community_CHAT')} />
+              <PillButton title="Staff Board" onClick={() => onAction('Community_BOARD')} hasNotification={hasNewStaffBoard} />
+              <PillButton title="Open Forum" onClick={() => onAction('Community_BOARD')} />
+              <PillButton title="Request Sub" onClick={onRequestSub} />
+            </div>
+
+            <div className="flex-1 flex flex-col gap-4 mt-4 overflow-y-auto custom-scrollbar pr-2 pb-4">
+              {/* SOCIAL CLUB CARD */}
+              <div className="bg-white/10 border border-white/20 rounded-2xl p-4 flex items-center gap-4 hover:bg-white/20 transition-colors cursor-pointer">
+                <div className="w-24 h-24 rounded-xl overflow-hidden shrink-0 border border-white/30 shadow-md">
+                  <img src="https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&q=80&w=400" alt="Game Night" className="w-full h-full object-cover" />
+                </div>
+                <div className="flex flex-col">
+                  <h4 className="text-sm font-black uppercase tracking-widest mb-1 text-white drop-shadow-sm">Social Club: Game Night</h4>
+                  <p className="text-[10px] text-white/80 leading-relaxed font-medium">We're happy to announce that very soon we will be hosting our live game-night. Don't miss it, check out the calendar, look for the green box and claim your spot.</p>
+                </div>
+              </div>
+
+              {/* FORUM BANNER */}
+              <div className="bg-white/10 border border-white/20 rounded-2xl p-5 hover:bg-white/20 transition-colors cursor-pointer text-center">
+                <h4 className="text-sm font-black uppercase tracking-widest mb-2 text-white drop-shadow-sm">Did you check the open forum?</h4>
+                <p className="text-[10px] text-white/80 leading-relaxed font-medium">The latest post on the open forum is already being commented on. Everyone is waiting for you to share your opinion; go and see it for yourself, and remember, be friendly to everyone. Happy posting!</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
     </div>
   );
 };
 
 // ==========================================
-// 2. THE ULTIMATE GATEKEEPER (DB CONNECTED)
+// 4. MOBILE VIEW
+// ==========================================
+const MobileView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onReturnHome, onAction, onRequestSub, onOpenProfileMenu, isLaunching, hasNewStaffBoard }) => {
+  const goal = payrollStats?.monthlyGoal || 100;
+  const acquired = payrollStats?.current || 0;
+
+  return (
+    <div className="min-h-screen flex flex-col bg-[#070b19] relative overflow-x-hidden z-0 font-montserrat text-white pb-32">
+      {/* BACKGROUND */}
+      <div className="absolute inset-0 pointer-events-none z-[-1] overflow-hidden fixed">
+        <div 
+          className="absolute inset-0 opacity-100 blur-sm scale-[1.05]" 
+          style={{ backgroundImage: `url("https://i.postimg.cc/kg4rxNH2/Gemini-Generated-Image-ohtdmbohtdmbohtd.jpg")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
+        ></div>
+        <div className="absolute inset-0 bg-[#070b19]/40"></div>
+      </div>
+
+      {/* HEADER */}
+      <div className="p-5 flex items-center gap-3 border-b border-white/10 bg-black/10 backdrop-blur-md sticky top-0 z-40">
+        <img src="https://i.postimg.cc/43zTZQhx/Diseno-sin-titulo-(20).png" alt="Outloud Logo" className="h-8 sm:h-10 object-contain opacity-100" />
+        <div className="h-6 w-[1px] bg-white/40"></div>
+        <span className="text-base sm:text-lg font-light text-white tracking-wide">Teacher Hub</span>
+      </div>
+
+      {/* SCROLLABLE CONTENT */}
+      <div className="flex flex-col gap-4 p-4 z-10">
+        
+        {/* ROW 1: Completion & Activities */}
+        <div className="grid grid-cols-2 gap-3 sm:gap-4">
+          <div className="h-60 sm:h-64">
+            <PayrollCard acquired={acquired} goal={goal} />
+          </div>
+          <div className="h-60 sm:h-64">
+            <UpcomingCard nextClass={nextClass} pendingCount={pendingEvaluations.length} />
+          </div>
+        </div>
+
+        {/* ROW 2: Start Class & Roster */}
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 mt-2 sm:mt-4">
+          <div className="h-60 sm:h-64">
+            <MainActionCard 
+              title="Start class" 
+              iconSrc="https://i.postimg.cc/Wpqw4Y1x/7(6).png" 
+              isActive={!!nextClass} 
+              isFetching={isLaunching} 
+              onClick={() => onAction('Live')} 
+              subtitle={nextClass ? 'READY' : 'NO CLASS'} 
+              highlight={true}
+            />
+          </div>
+          <div className="h-60 sm:h-64">
+            <MainActionCard 
+              title="My roster" 
+              iconSrc="https://i.postimg.cc/vT49xTyn/3(6).png" 
+              isActive={true} 
+              isFetching={false} 
+              onClick={() => onAction('Calendar')} 
+              subtitle="SCHEDULE" 
+            />
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN DATA (Now below) */}
+        <div className="flex flex-col gap-4 bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] p-4 shadow-2xl mt-2 sm:mt-4">
+          {/* PILLS */}
+          <div className="grid grid-cols-2 gap-2 sm:gap-3">
+            <PillButton title="Teacher Manual" onClick={() => onAction('Manual')} />
+            <PillButton title="Class Tools" onClick={() => onAction('Tools')} />
+            <PillButton title="Class Chat" onClick={() => onAction('Community_CHAT')} />
+            <PillButton title="Staff Board" onClick={() => onAction('Community_BOARD')} hasNotification={hasNewStaffBoard} />
+            <PillButton title="Open Forum" onClick={() => onAction('Community_BOARD')} />
+            <PillButton title="Request Sub" onClick={onRequestSub} />
+          </div>
+
+          {/* SOCIAL CLUB CARD */}
+          <div className="bg-white/10 border border-white/20 rounded-2xl p-4 flex flex-col sm:flex-row items-center gap-4 mt-2">
+            <div className="w-full sm:w-24 h-32 sm:h-24 rounded-xl overflow-hidden shrink-0 border border-white/30">
+              <img src="https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&q=80&w=400" alt="Game Night" className="w-full h-full object-cover" />
+            </div>
+            <div className="flex flex-col text-center sm:text-left">
+              <h4 className="text-sm font-black uppercase tracking-widest mb-1 text-white">Social Club: Game Night</h4>
+              <p className="text-[10px] text-white/80 leading-relaxed font-medium">We're happy to announce that very soon we will be hosting our live game-night. Don't miss it, check out the calendar.</p>
+            </div>
+          </div>
+
+          {/* FORUM BANNER */}
+          <div className="bg-white/10 border border-white/20 rounded-2xl p-5 text-center">
+            <h4 className="text-sm font-black uppercase tracking-widest mb-2 text-white">Did you check the open forum?</h4>
+            <p className="text-[10px] text-white/80 leading-relaxed font-medium">The latest post on the open forum is already being commented on. Everyone is waiting for you to share your opinion; go and see it for yourself!</p>
+          </div>
+        </div>
+
+        {/* SOCIALS & SUPPORT */}
+        <div className="flex flex-col items-center gap-5 mt-4 px-2">
+          <div className="flex justify-center gap-4 sm:gap-6 w-full">
+            <SocialButton src="https://i.postimg.cc/ry0TD2Hv/11(6).png" url="https://www.facebook.com/share/1KxawRX9vA/" />
+            <SocialButton src="https://i.postimg.cc/MpD2C6cs/10(5).png" url="https://www.instagram.com/outloudlanguage?igsh=MXU5dmRzeTZ3YTk1cg==" />
+            <SocialButton src="https://i.postimg.cc/pXbwyhzD/9(3).png" url="https://www.tiktok.com/@outloudlanguage" />
+            <SocialButton src="https://i.postimg.cc/0y9hdTtf/8(4).png" url="https://discord.gg/847PMD2DbV" />
+          </div>
+          <a href="https://wa.me/584226885683" target="_blank" rel="noreferrer" className="w-full py-4 bg-[#e2e8f0] text-[#0f172a] font-black text-sm uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 shadow-xl leading-tight">
+            <img src="https://i.postimg.cc/mrtXmB72/Copia-de-Diseno-sin-titulo-(2).png" alt="Help" className="w-8 h-8 sm:w-10 sm:h-10 object-contain shrink-0" />
+            REQUEST ASSISTANCE
+          </a>
+        </div>
+
+      </div>
+
+      {/* FIXED BOTTOM NAVIGATION */}
+      <div className="fixed bottom-0 left-0 right-0 h-20 sm:h-24 bg-white/10 backdrop-blur-2xl border-t border-white/20 flex items-center justify-between px-2 sm:px-4 z-50 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+        <NavIconBtn isProfile avatarUrl={teacher?.avatar_url} onClick={onOpenProfileMenu} hasNotification={pendingEvaluations.length > 0} />
+        <NavIconBtn iconSvg={navIcons.calendar} onClick={() => onAction('Calendar')} />
+        <NavIconBtn iconSvg={navIcons.monitor} onClick={() => onAction('Live')} hasNotification={!!nextClass} />
+        <NavIconBtn iconSvg={navIcons.bell} hasNotification={hasNewStaffBoard} />
+        <NavIconBtn iconSvg={navIcons.chat} onClick={() => onAction('Community_CHAT')} />
+        <NavIconBtn iconSvg={navIcons.forum} onClick={() => onAction('Community_BOARD')} />
+      </div>
+
+    </div>
+  );
+};
+
+// ==========================================
+// 5. EVALUATION MODAL (Gatekeeper)
 // ==========================================
 const EvaluationModal = ({ isOpen, onClose, pendingClasses, onGradeSubmitted, teacherId }) => {
   const [activeClassIndex, setActiveClassIndex] = useState(0);
@@ -173,218 +527,7 @@ const EvaluationModal = ({ isOpen, onClose, pendingClasses, onGradeSubmitted, te
 };
 
 // ==========================================
-// 3. DASHBOARD VIEWS
-// ==========================================
-const DesktopView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onReturnHome, onAction, onRequestSub, onOpenEvaluations, isLaunching, hasNewStaffBoard }) => {
-  const goal = payrollStats?.monthlyGoal || 100;
-  const acquired = payrollStats?.current || 0;
-  const progressPercentage = Math.round((Math.min(acquired, goal) / goal) * 100);
-  const circleCircumference = 2 * Math.PI * 40; 
-  const strokeDashoffset = circleCircumference - (progressPercentage / 100) * circleCircumference;
-
-  return (
-    <div className="min-h-screen w-full font-montserrat flex justify-center p-8 relative overflow-hidden text-white z-0">
-      
-      {/* NEW BLURRED BACKGROUND */}
-      <div className="absolute inset-0 pointer-events-none z-[-1] bg-[#070b19] overflow-hidden">
-        <div 
-          className="absolute inset-0 opacity-60 blur-2xl scale-[1.15]" 
-          style={{ 
-            backgroundImage: `url("https://i.postimg.cc/kg4rxNH2/Gemini-Generated-Image-ohtdmbohtdmbohtd.jpg")`, 
-            backgroundSize: 'cover', 
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat'
-          }}
-        ></div>
-        <div className="absolute inset-0 bg-[#070b19]/70"></div>
-      </div>
-
-      <div className="max-w-[1200px] w-full flex gap-8 relative z-10">
-        <div className="w-[320px] bg-white/5 backdrop-blur-xl border border-white/10 rounded-[30px] p-8 shadow-2xl flex flex-col shrink-0">
-          <h2 className="text-white font-black text-lg text-center mb-6 tracking-wide drop-shadow-md">MONTHLY PAYROLL</h2>
-          <div className="relative w-40 h-40 mx-auto mb-4 flex items-center justify-center">
-             <svg className="w-full h-full transform -rotate-90 drop-shadow-[0_0_15px_rgba(52,211,153,0.4)]" viewBox="0 0 100 100">
-               <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.1)" strokeWidth="8" fill="transparent" />
-               <circle cx="50" cy="50" r="40" stroke="#34d399" strokeWidth="8" fill="transparent" strokeDasharray={circleCircumference} strokeDashoffset={strokeDashoffset} strokeLinecap="round" />
-             </svg>
-             <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                <span className="text-2xl font-black text-white leading-none drop-shadow-md">{acquired}h</span>
-                <span className="text-[9px] font-bold text-white/70 tracking-widest uppercase mt-1">LOGGED</span>
-             </div>
-          </div>
-          <p className="text-center text-white/80 font-bold text-sm mb-8 tracking-widest uppercase">TARGET: {goal}h</p>
-
-          <h3 className="text-[#fcd34d] font-black text-sm mb-4 tracking-widest uppercase">UPCOMING CLASSES</h3>
-          <ul className="space-y-3 mb-auto text-xs font-medium text-white/80">
-            {nextClass ? (
-              <li className="flex flex-col gap-1 border-l-2 border-[#fcd34d] pl-3">
-                <span className="text-white font-bold">{nextClass.student_name}</span>
-                <span className="opacity-70">{new Date(nextClass.date).toLocaleString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit' })} • Unit {nextClass.unit}</span>
-              </li>
-            ) : <li className="opacity-50 italic">No upcoming classes.</li>}
-          </ul>
-
-          <button onClick={onRequestSub} className="w-full bg-red-500/10 border border-red-500/50 text-red-400 font-black text-[10px] py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-red-500 hover:text-white hover:scale-105 transition-all shadow-lg mt-8 mb-6 uppercase tracking-widest">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-            REQUEST A SUBSTITUTE
-          </button>
-        </div>
-
-        <div className="flex-1 flex flex-col pt-2 h-full max-h-screen">
-          <div className="flex justify-between items-center mb-8 shrink-0">
-             <div className="flex items-center gap-4">
-                <img src="https://i.postimg.cc/43zTZQhx/Diseno-sin-titulo-(20).png" alt="Outloud Logo" className="h-10 object-contain opacity-90" />
-                <div className="h-6 w-[1px] bg-white/30"></div>
-                <span className="text-sm font-light text-white/80 tracking-wide uppercase">Teacher Hub</span>
-             </div>
-             <ProfileDropdown teacher={teacher} pendingCount={pendingEvaluations.length} onOpenEvaluations={onOpenEvaluations} onLogout={onReturnHome} />
-          </div>
-
-          <div className="flex flex-col gap-6 flex-1 overflow-y-auto custom-scrollbar pr-2 pb-10">
-            <div className="grid grid-cols-3 gap-6 shrink-0">
-              <button onClick={() => onAction('Manual')} disabled={!nextClass} className={`bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 transition-all group min-h-[220px] ${!nextClass ? 'opacity-50 grayscale cursor-not-allowed' : 'hover:bg-white/20 hover:scale-[1.02]'}`}>
-                <img src="https://i.postimg.cc/Hnj3rbmt/1(8).png" alt="Manual" className="h-28 object-contain opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-transform duration-500" />
-                <div className="flex flex-col items-center">
-                  <h3 className="font-light tracking-wide text-2xl uppercase text-[#fcd34d] drop-shadow-md">Manual</h3>
-                  <span className="text-[10px] font-bold text-white/50 mt-1 uppercase">{nextClass ? `UNIT ${nextClass.unit}` : 'NO CLASS'}</span>
-                </div>
-              </button>
-
-              <button onClick={() => onAction('Tools')} disabled={!nextClass} className={`bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 transition-all group min-h-[220px] ${!nextClass ? 'opacity-50 grayscale cursor-not-allowed' : 'hover:bg-white/20 hover:scale-[1.02]'}`}>
-                <img src="https://i.postimg.cc/g23sLz9n/2(10).png" alt="Tools" className="h-28 object-contain opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-transform duration-500" />
-                <div className="flex flex-col items-center">
-                  <h3 className="font-light tracking-wide text-2xl uppercase">Class Tools</h3>
-                  <span className="text-[10px] font-bold text-white/50 mt-1 uppercase">{nextClass ? 'LIBRARY ACTIVE' : 'LOCKED'}</span>
-                </div>
-              </button>
-
-              <button onClick={() => onAction('Calendar')} className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 hover:bg-white/20 hover:scale-[1.02] transition-all group min-h-[220px]">
-                <img src="https://i.postimg.cc/vT49xTyn/3(6).png" alt="Calendar" className="h-28 object-contain opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-transform duration-500" />
-                <h3 className="font-light tracking-wide text-2xl uppercase">My Roster</h3>
-              </button>
-            </div>
-            
-            <div className="grid grid-cols-4 gap-6 shrink-0">
-              <button onClick={() => onAction('Community_BOARD')} className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 hover:bg-white/20 hover:scale-[1.02] transition-all group min-h-[160px]">
-                <img src="https://i.postimg.cc/rpgthxF0/4(5).png" alt="Forum" className="h-20 object-contain opacity-90 group-hover:scale-110 transition-transform" />
-                <h3 className="font-light tracking-wide text-lg text-center leading-tight">Open<br/>forum</h3>
-              </button>
-              
-              <button onClick={() => onAction('Community_CHAT')} className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 transition-all group hover:bg-white/20 hover:scale-[1.02] min-h-[160px]">
-                <img src="https://i.postimg.cc/XNrQC7QY/5(4).png" alt="Chat" className="h-20 object-contain opacity-90 group-hover:scale-110 transition-transform" />
-                <h3 className="font-light tracking-wide text-lg text-center leading-tight">Class<br/>Chat</h3>
-              </button>
-              
-              <button onClick={() => onAction('Community_BOARD')} className="relative bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center gap-4 hover:bg-white/20 hover:scale-[1.02] transition-all group min-h-[160px]">
-                {/* DYNAMIC NOTIFICATION DOT */}
-                {hasNewStaffBoard && <div className="absolute top-4 right-4 w-3 h-3 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)] z-10"></div>}
-                <img src="https://i.postimg.cc/PqfMrtCH/6(4).png" alt="Info" className="h-20 object-contain opacity-90 group-hover:scale-110 transition-transform" />
-                <h3 className="font-light tracking-wide text-lg text-center leading-tight">Staff<br/>Board</h3>
-              </button>
-              
-              <button 
-                onClick={() => onAction('Live')} 
-                disabled={!nextClass || isLaunching} 
-                className={`bg-white/10 backdrop-blur-md border-2 border-[#fcd34d]/50 rounded-3xl p-6 shadow-[0_0_20px_rgba(252,211,77,0.15)] flex flex-col items-center justify-center gap-4 transition-all group min-h-[160px] ${
-                  !nextClass ? 'opacity-50 grayscale cursor-not-allowed border-white/20' : 'hover:bg-[#fcd34d]/10 hover:border-[#fcd34d] hover:scale-[1.02]'
-                }`}
-              >
-                <img src="https://i.postimg.cc/Wpqw4Y1x/7(6).png" alt="Live Class" className="h-20 object-contain opacity-90 group-hover:scale-110 transition-transform" />
-                <h3 className={`font-black tracking-wide text-lg text-center leading-tight ${nextClass ? 'text-[#fcd34d]' : 'text-white'}`}>
-                  {isLaunching ? 'Launching...' : 'Start\nClass'}
-                </h3>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const MobileView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onReturnHome, onAction, onRequestSub, onOpenEvaluations, isLaunching, hasNewStaffBoard }) => {
-  const goal = payrollStats?.monthlyGoal || 100;
-  const acquired = payrollStats?.current || 0;
-  const progressPercentage = Math.round((Math.min(acquired, goal) / goal) * 100);
-  const circleCircumference = 2 * Math.PI * 30; 
-  const strokeDashoffset = circleCircumference - (progressPercentage / 100) * circleCircumference;
-
-  const cards = [
-    { title: `Teacher Manual`, subtitle: nextClass ? `Unit ${nextClass.unit}` : 'Locked', action: "OPEN", img: "https://i.postimg.cc/Hnj3rbmt/1(8).png", active: !!nextClass, onClick: () => onAction('Manual') },
-    { title: "Class Tools", subtitle: nextClass ? 'Library Active' : 'Locked', action: "ACCESS", img: "https://i.postimg.cc/g23sLz9n/2(10).png", active: !!nextClass, onClick: () => onAction('Tools') },
-    { title: "My Roster", subtitle: 'Schedule', action: "VIEW", img: "https://i.postimg.cc/vT49xTyn/3(6).png", active: true, onClick: () => onAction('Calendar') },
-    { title: "Start Class", subtitle: isLaunching ? 'Generating...' : 'Live Trigger', action: isLaunching ? "WAIT" : "LAUNCH", img: "https://i.postimg.cc/Wpqw4Y1x/7(6).png", active: !!nextClass && !isLaunching, highlight: true, onClick: () => onAction('Live') },
-    { title: "Class Chat", subtitle: "Live", action: "JOIN", img: "https://i.postimg.cc/XNrQC7QY/5(4).png", active: true, onClick: () => onAction('Community_CHAT') },
-    { title: "Staff Board", subtitle: "Announcements", action: "VIEW", img: "https://i.postimg.cc/PqfMrtCH/6(4).png", active: true, hasNotification: hasNewStaffBoard, onClick: () => onAction('Community_BOARD') },
-  ];
-
-  return (
-    <div className="min-h-screen w-full font-montserrat flex flex-col overflow-x-hidden pb-10 text-white relative z-0">
-      
-      {/* NEW BLURRED BACKGROUND */}
-      <div className="absolute inset-0 pointer-events-none z-[-1] bg-[#070b19] overflow-hidden">
-        <div 
-          className="absolute inset-0 opacity-60 blur-2xl scale-[1.15]" 
-          style={{ 
-            backgroundImage: `url("https://i.postimg.cc/kg4rxNH2/Gemini-Generated-Image-ohtdmbohtdmbohtd.jpg")`, 
-            backgroundSize: 'cover', 
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat'
-          }}
-        ></div>
-        <div className="absolute inset-0 bg-[#070b19]/70"></div>
-      </div>
-
-      <div className="flex justify-between items-center p-5 z-10 border-b border-white/10 bg-[#070b19]/80 backdrop-blur-md">
-        <img src="https://i.postimg.cc/43zTZQhx/Diseno-sin-titulo-(20).png" alt="Outloud Logo" className="h-6 object-contain opacity-90" />
-        <ProfileDropdown teacher={teacher} pendingCount={pendingEvaluations.length} onOpenEvaluations={onOpenEvaluations} onLogout={onReturnHome} />
-      </div>
-
-      <div className="mx-5 mt-6 bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-5 shadow-2xl flex gap-4 z-10">
-        <div className="flex flex-col items-center justify-center border-r border-white/10 pr-5">
-          <div className="relative w-[70px] h-[70px] flex items-center justify-center">
-             <svg className="w-full h-full transform -rotate-90 drop-shadow-[0_0_10px_rgba(52,211,153,0.6)]" viewBox="0 0 100 100">
-               <circle cx="50" cy="50" r="30" stroke="rgba(255,255,255,0.1)" strokeWidth="6" fill="transparent" />
-               <circle cx="50" cy="50" r="30" stroke="#34d399" strokeWidth="6" fill="transparent" strokeDasharray={circleCircumference} strokeDashoffset={strokeDashoffset} strokeLinecap="round" />
-             </svg>
-             <div className="absolute inset-0 flex items-center justify-center text-center"><span className="text-sm font-black text-white leading-none">{acquired}h</span></div>
-          </div>
-          <p className="text-[8px] font-bold tracking-widest text-white/70 mt-2 uppercase">Goal: {goal}h</p>
-        </div>
-        <div className="flex-1 flex flex-col justify-center">
-          <h3 className="text-[#fcd34d] font-black text-[10px] mb-2 uppercase tracking-widest drop-shadow-md">Next Scheduled</h3>
-          {nextClass ? (
-            <ul className="space-y-1 text-[9px] font-medium text-white/80">
-              <li className="font-bold text-white">{nextClass.student_name}</li>
-              <li>{new Date(nextClass.date).toLocaleString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit' })}</li>
-              <li>Unit {nextClass.unit}</li>
-            </ul>
-          ) : <p className="text-[9px] text-white/50 italic">No upcoming classes.</p>}
-        </div>
-      </div>
-
-      <div className="w-full h-64 relative z-10 mt-10">
-        <Swiper effect={'coverflow'} grabCursor={true} centeredSlides={true} slidesPerView={'auto'} coverflowEffect={{ rotate: 0, stretch: 0, depth: 150, modifier: 2.5, slideShadows: false }} modules={[EffectCoverflow, Pagination]} className="w-full h-full">
-          {cards.map((card, idx) => (
-            <SwiperSlide key={idx} className={`w-48 h-60 bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] p-4 shadow-2xl flex flex-col items-center justify-between transition-all ${!card.active ? 'opacity-50 grayscale' : ''} ${card.highlight ? 'border-[#fcd34d]/50 bg-[#fcd34d]/5' : ''}`}>
-              {/* DYNAMIC NOTIFICATION DOT FOR MOBILE */}
-              {card.hasNotification && <div className="absolute top-4 right-4 w-3 h-3 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)] z-10"></div>}
-              {!card.active && !card.hasNotification && <svg className="w-6 h-6 text-white/50 absolute top-4 right-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" /></svg>}
-              <img src={card.img} alt={card.title} className="h-24 object-contain mt-4 drop-shadow-md opacity-90" />
-              <div className="w-full text-center">
-                <h3 className={`font-light text-xl tracking-wide uppercase ${card.highlight ? 'text-[#fcd34d] font-bold' : 'text-white'}`}>{card.title}</h3>
-                <button disabled={!card.active || isLaunching} onClick={() => card.onClick && card.onClick()} className={`w-full font-black text-[10px] py-3 rounded-full shadow-lg tracking-widest uppercase mt-3 transition-transform ${card.highlight && card.active ? 'bg-[#fcd34d] text-[#08203e]' : card.active ? 'bg-white/20 text-white' : 'bg-black/30 text-white/30 cursor-not-allowed'}`}>{card.action}</button>
-              </div>
-            </SwiperSlide>
-          ))}
-        </Swiper>
-      </div>
-    </div>
-  );
-};
-
-// ==========================================
-// 4. MAIN ROUTER COMPONENT
+// 6. MAIN ROUTER COMPONENT
 // ==========================================
 const TeacherHub = ({ onReturnHome }) => {
   const [teacherData, setTeacherData] = useState(null);
@@ -395,6 +538,7 @@ const TeacherHub = ({ onReturnHome }) => {
   const [isSubModalOpen, setIsSubModalOpen] = useState(false);
   const [isEvalModalOpen, setIsEvalModalOpen] = useState(false);
   const [isLaunching, setIsLaunching] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 
   // Dynamic Notification State (defaults to false)
   const [hasNewStaffBoard, setHasNewStaffBoard] = useState(false);
@@ -458,7 +602,6 @@ const TeacherHub = ({ onReturnHome }) => {
       }
 
       // FETCH REAL LOGGED HOURS
-      // Counts all completed sessions for this teacher in the current month
       const { count: loggedHours } = await supabase
         .from('live_sessions')
         .select('*', { count: 'exact', head: true })
@@ -480,7 +623,6 @@ const TeacherHub = ({ onReturnHome }) => {
     if (actionType.startsWith('Community_')) {
       setCommunityTab(actionType.split('_')[1]);
       setShowCommunity(true);
-      // Turn off notification dot if they click the Staff Board
       if (actionType === 'Community_BOARD') setHasNewStaffBoard(false);
       return;
     }
@@ -488,7 +630,6 @@ const TeacherHub = ({ onReturnHome }) => {
     if (actionType === 'Live' && nextClass) {
       setIsLaunching(true);
       try {
-        // 1. Call Edge Function to create/retrieve meeting link
         const { data, error } = await supabase.functions.invoke('create-zoom-meeting', {
           body: { 
             sessionId: nextClass.id,
@@ -497,14 +638,10 @@ const TeacherHub = ({ onReturnHome }) => {
         });
 
         const launchUrl = data?.startUrl || `https://meet.jit.si/OLA-${nextClass.id}`;
-        
-        // 2. Open meeting in a new browser tab
         window.open(launchUrl, '_blank');
 
-        // 3. Mark session as completed in database
         await supabase.from('live_sessions').update({ status: 'completed' }).eq('id', nextClass.id);
         
-        // 4. Update local state and trigger Evaluation Modal
         setPendingEvaluations(prev => [...prev, nextClass]);
         setNextClass(null);
         setIsEvalModalOpen(true);
@@ -532,7 +669,22 @@ const TeacherHub = ({ onReturnHome }) => {
         supabase={supabase}
       />
 
-      <EvaluationModal isOpen={isEvalModalOpen} onClose={() => setIsEvalModalOpen(false)} pendingClasses={pendingEvaluations} onGradeSubmitted={removeEvaluatedClass} teacherId={teacherData?.id} />
+      <EvaluationModal 
+        isOpen={isEvalModalOpen} 
+        onClose={() => setIsEvalModalOpen(false)} 
+        pendingClasses={pendingEvaluations} 
+        onGradeSubmitted={removeEvaluatedClass} 
+        teacherId={teacherData?.id} 
+      />
+
+      <ProfileOverlay 
+        isOpen={isProfileMenuOpen} 
+        onClose={() => setIsProfileMenuOpen(false)} 
+        teacher={teacherData} 
+        pendingCount={pendingEvaluations.length} 
+        onOpenEvaluations={() => setIsEvalModalOpen(true)} 
+        onLogout={onReturnHome} 
+      />
 
       <div className="hidden md:block">
         <DesktopView 
@@ -543,7 +695,7 @@ const TeacherHub = ({ onReturnHome }) => {
           onReturnHome={onReturnHome} 
           onAction={handleAction} 
           onRequestSub={() => setIsSubModalOpen(true)} 
-          onOpenEvaluations={() => setIsEvalModalOpen(true)} 
+          onOpenProfileMenu={() => setIsProfileMenuOpen(true)} 
           isLaunching={isLaunching}
           hasNewStaffBoard={hasNewStaffBoard}
         />
@@ -557,7 +709,7 @@ const TeacherHub = ({ onReturnHome }) => {
           onReturnHome={onReturnHome} 
           onAction={handleAction} 
           onRequestSub={() => setIsSubModalOpen(true)} 
-          onOpenEvaluations={() => setIsEvalModalOpen(true)} 
+          onOpenProfileMenu={() => setIsProfileMenuOpen(true)} 
           isLaunching={isLaunching} 
           hasNewStaffBoard={hasNewStaffBoard}
         />
