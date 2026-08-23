@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './SupabaseClient';
 import CommunityPanel from './components/CommunityPanel'; 
 
@@ -43,8 +43,8 @@ const PayrollCard = ({ acquired, goal }) => {
 
 const UpcomingCard = ({ nextClass, pendingCount }) => (
   <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-5 sm:p-6 shadow-2xl flex flex-col h-full">
-    <h3 className="text-white font-black text-xl sm:text-2xl tracking-wide mb-2 sm:mb-4 text-center sm:text-left drop-shadow-md shrink-0">Upcoming</h3>
-    <ul className="space-y-4 sm:space-y-5 text-xs sm:text-sm font-medium text-white/90 flex-1 flex flex-col justify-center px-1">
+    <h3 className="text-white font-black text-xl sm:text-2xl tracking-wide mb-4 sm:mb-6 text-center sm:text-left drop-shadow-md shrink-0">Upcoming</h3>
+    <ul className="space-y-4 sm:space-y-5 text-xs sm:text-sm font-medium text-white/90 px-1 mb-auto flex-1 flex flex-col justify-center">
       {nextClass ? (
         <li className="flex items-center gap-3">
           <svg className="w-5 h-5 sm:w-6 sm:h-6 text-[#fcd34d] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
@@ -123,10 +123,10 @@ const SocialButton = ({ src, url }) => (
   </a>
 );
 
-// SVGs for Nav
+// SVGs for Teacher Nav (Swapped Live/Calendar for Manual/Tools)
 const navIcons = {
-  calendar: <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /><rect x="7" y="11" width="2" height="2" fill="currentColor"/><rect x="11" y="11" width="2" height="2" fill="currentColor"/><rect x="15" y="11" width="2" height="2" fill="currentColor"/><rect x="7" y="15" width="2" height="2" fill="currentColor"/><rect x="11" y="15" width="2" height="2" fill="currentColor"/><rect x="15" y="15" width="2" height="2" fill="currentColor"/></svg>,
-  monitor: <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /><circle cx="9" cy="8" r="1.5" fill="currentColor"/><circle cx="15" cy="8" r="1.5" fill="currentColor"/><path strokeLinecap="round" d="M7 11h4M13 11h4" /></svg>,
+  manual: <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>,
+  tools: <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.83-5.83M15.17 11.42L21 5.58a2.652 2.652 0 00-3.75-3.75l-5.83 5.83m-1.5 1.5l-4.58 4.58a2.652 2.652 0 01-3.75-3.75l4.58-4.58" /></svg>,
   bell: <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" /></svg>,
   chat: <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 10l-1-1m0 0l-1 1m1-1v3" /></svg>,
   forum: <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" /></svg>
@@ -178,12 +178,12 @@ const DesktopView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onR
         <div className="absolute inset-0 bg-[#070b19]/40"></div>
       </div>
 
-      {/* SIDEBAR NAVIGATION */}
+      {/* SIDEBAR NAVIGATION (Modified for Teachers) */}
       <div className="w-28 border-r border-white/10 bg-black/20 backdrop-blur-2xl flex flex-col items-center py-10 gap-6 shrink-0 z-10 shadow-2xl">
         <NavIconBtn isProfile avatarUrl={teacher?.avatar_url} onClick={onOpenProfileMenu} hasNotification={pendingEvaluations.length > 0} />
         <div className="w-12 h-px bg-white/10 my-2"></div>
-        <NavIconBtn iconSvg={navIcons.calendar} onClick={() => onAction('Calendar')} />
-        <NavIconBtn iconSvg={navIcons.monitor} onClick={() => onAction('Live')} hasNotification={!!nextClass} />
+        <NavIconBtn iconSvg={navIcons.manual} onClick={() => onAction('Manual')} />
+        <NavIconBtn iconSvg={navIcons.tools} onClick={() => onAction('Tools')} />
         <NavIconBtn iconSvg={navIcons.bell} hasNotification={hasNewStaffBoard} />
         <NavIconBtn iconSvg={navIcons.chat} onClick={() => onAction('Community_CHAT')} />
         <NavIconBtn iconSvg={navIcons.forum} onClick={() => onAction('Community_BOARD')} />
@@ -211,10 +211,10 @@ const DesktopView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onR
               <UpcomingCard nextClass={nextClass} pendingCount={pendingEvaluations.length} />
             </div>
             <div className="flex flex-col gap-4 mt-auto">
-              <a href="https://wa.me/584226885683" target="_blank" rel="noreferrer" className="w-full py-4 bg-[#e2e8f0] text-[#0f172a] hover:bg-white font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 transition-transform hover:scale-105 shadow-xl leading-tight text-center">
-                <img src="https://i.postimg.cc/mrtXmB72/Copia-de-Diseno-sin-titulo-(2).png" alt="Help" className="w-8 h-8 object-contain shrink-0" />
-                REQUEST<br/>ASSISTANCE
-              </a>
+              <button onClick={onRequestSub} className="w-full py-4 bg-[#e2e8f0] text-[#0f172a] hover:bg-white font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 transition-transform hover:scale-105 shadow-xl leading-tight text-center">
+                <img src="https://i.postimg.cc/mrtXmB72/Copia-de-Diseno-sin-titulo-(2).png" alt="Substitute" className="w-8 h-8 object-contain shrink-0" />
+                REQUEST<br/>SUBSTITUTE
+              </button>
               <div className="flex justify-center gap-5 items-center px-2 mt-2">
                 <SocialButton src="https://i.postimg.cc/ry0TD2Hv/11(6).png" url="https://www.facebook.com/share/1KxawRX9vA/" />
                 <SocialButton src="https://i.postimg.cc/MpD2C6cs/10(5).png" url="https://www.instagram.com/outloudlanguage?igsh=MXU5dmRzeTZ3YTk1cg==" />
@@ -387,19 +387,19 @@ const MobileView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onRe
             <SocialButton src="https://i.postimg.cc/pXbwyhzD/9(3).png" url="https://www.tiktok.com/@outloudlanguage" />
             <SocialButton src="https://i.postimg.cc/0y9hdTtf/8(4).png" url="https://discord.gg/847PMD2DbV" />
           </div>
-          <a href="https://wa.me/584226885683" target="_blank" rel="noreferrer" className="w-full py-4 bg-[#e2e8f0] text-[#0f172a] font-black text-sm uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 shadow-xl leading-tight">
+          <button onClick={onRequestSub} className="w-full py-4 bg-[#e2e8f0] text-[#0f172a] font-black text-sm uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 shadow-xl leading-tight">
             <img src="https://i.postimg.cc/mrtXmB72/Copia-de-Diseno-sin-titulo-(2).png" alt="Help" className="w-8 h-8 sm:w-10 sm:h-10 object-contain shrink-0" />
-            REQUEST ASSISTANCE
-          </a>
+            REQUEST SUBSTITUTE
+          </button>
         </div>
 
       </div>
 
-      {/* FIXED BOTTOM NAVIGATION */}
+      {/* FIXED BOTTOM NAVIGATION (Modified for Teachers) */}
       <div className="fixed bottom-0 left-0 right-0 h-20 sm:h-24 bg-white/10 backdrop-blur-2xl border-t border-white/20 flex items-center justify-between px-2 sm:px-4 z-50 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
         <NavIconBtn isProfile avatarUrl={teacher?.avatar_url} onClick={onOpenProfileMenu} hasNotification={pendingEvaluations.length > 0} />
-        <NavIconBtn iconSvg={navIcons.calendar} onClick={() => onAction('Calendar')} />
-        <NavIconBtn iconSvg={navIcons.monitor} onClick={() => onAction('Live')} hasNotification={!!nextClass} />
+        <NavIconBtn iconSvg={navIcons.manual} onClick={() => onAction('Manual')} />
+        <NavIconBtn iconSvg={navIcons.tools} onClick={() => onAction('Tools')} />
         <NavIconBtn iconSvg={navIcons.bell} hasNotification={hasNewStaffBoard} />
         <NavIconBtn iconSvg={navIcons.chat} onClick={() => onAction('Community_CHAT')} />
         <NavIconBtn iconSvg={navIcons.forum} onClick={() => onAction('Community_BOARD')} />
