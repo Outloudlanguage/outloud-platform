@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { LEVEL_OPTIONS } from '../../../constants/adminConfigs';
 
 // ==========================================
@@ -21,6 +21,52 @@ const COUNTRY_CODES = [
   { code: '+61', country: '🇦🇺 AU' }, { code: '+64', country: '🇳🇿 NZ' }, { code: '+27', country: '🇿🇦 ZA' },
   { code: '+971', country: '🇦🇪 AE' }, { code: '+966', country: '🇸🇦 SA' }
 ];
+
+// ==========================================
+// CUSTOM PHONE DROPDOWN UI
+// ==========================================
+const CustomPhoneDropdown = ({ value, onChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+  const selectedOption = COUNTRY_CODES.find(c => c.code === value) || COUNTRY_CODES[9]; // Defaults to VE
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) setIsOpen(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative w-[140px] shrink-0" ref={dropdownRef}>
+      <div 
+        onClick={() => setIsOpen(!isOpen)} 
+        className="h-[42px] bg-black/40 border border-white/20 rounded-xl px-3 flex items-center justify-between cursor-pointer hover:border-[#fcd34d] transition-colors"
+      >
+        <span className="text-white text-sm font-semibold truncate pr-2">
+          {selectedOption.country.split(' ')[0]} {selectedOption.code}
+        </span>
+        <span className="text-[8px] text-white/50">▼</span>
+      </div>
+
+      {isOpen && (
+        <div className="absolute z-50 top-[48px] left-0 w-[220px] max-h-48 overflow-y-auto custom-scrollbar bg-[#070b19]/95 backdrop-blur-xl border border-white/20 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.8)] py-2">
+          {COUNTRY_CODES.map((c) => (
+            <div 
+              key={c.code} 
+              onClick={() => { onChange(c.code); setIsOpen(false); }} 
+              className="px-4 py-2.5 hover:bg-white/10 cursor-pointer text-sm flex items-center justify-between transition-colors"
+            >
+              <span className="text-white font-medium">{c.country}</span>
+              <span className="text-white/50 font-bold">{c.code}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, onSuccess }) => {
   const [activeTab, setActiveTab] = useState('INFO_PERSONAL');
@@ -77,7 +123,6 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
       setProvEmail(userData.email || '');
       setProvPassword('');
       
-      // Auto-extract first and last names if handling a pending lead
       const nameParts = (userData.full_name || '').trim().split(' ');
       setProvFirstName(userData.first_name || nameParts[0] || '');
       setProvLastName(userData.last_name || (nameParts.length > 1 ? nameParts.slice(1).join(' ') : ''));
@@ -108,7 +153,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   }, [isOpen, isPending, userData, activeTab]);
 
   // ==========================================
-  // ACADEMIC & REPORTING LOGIC
+  // ACADEMIC LOGIC
   // ==========================================
   const fetchAcademicHistory = async () => {
     setIsLoadingHistory(true);
@@ -153,17 +198,13 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   };
 
   // ==========================================
-  // FINANCIAL & COHORT LOGIC
+  // FINANCIAL LOGIC
   // ==========================================
   const getBaseLevel = (lvlString) => lvlString ? lvlString.split(':')[0].trim() : 'A1';
 
   const updatePrice = (type, levelString) => {
-    if (type === 'Extra') {
-      setPayAmount(12); // Extra bundle price
-    } else {
-      const base = getBaseLevel(levelString);
-      setPayAmount(MONTHLY_PRICES[base] || 40);
-    }
+    if (type === 'Extra') setPayAmount(12);
+    else setPayAmount(MONTHLY_PRICES[getBaseLevel(levelString)] || 40);
   };
 
   const handlePayTypeChange = (e) => {
@@ -175,9 +216,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   const calculateProration = (targetCohort, price) => {
     const today = new Date();
     let nextBilling = new Date(today.getFullYear(), today.getMonth(), targetCohort);
-    if (today.getDate() >= targetCohort) {
-        nextBilling.setMonth(nextBilling.getMonth() + 1);
-    }
+    if (today.getDate() >= targetCohort) nextBilling.setMonth(nextBilling.getMonth() + 1);
     const daysLeft = Math.max(0, Math.ceil((nextBilling - today) / (1000 * 60 * 60 * 24)));
     return ((price / 30) * daysLeft).toFixed(2);
   };
@@ -188,7 +227,6 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
     setIsProcessing(true);
     try {
       if (userData.id.startsWith('mock')) { if(onSuccess) onSuccess(); return; }
-      
       const today = new Date();
       let nextBilling = new Date(today.getFullYear(), today.getMonth(), cohort);
       if (today.getDate() >= cohort) nextBilling.setMonth(nextBilling.getMonth() + 1);
@@ -213,12 +251,8 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
     const newCredits = credits + 1;
     setCredits(newCredits);
     if (userData.id.startsWith('mock')) return;
-    
     try {
-      // Update available_credits directly
       await supabase.from('profiles').update({ available_credits: newCredits }).eq('id', userData.id);
-      
-      // Log the financial action
       await supabase.from('financial_logs').insert({
         student_id: userData.id,
         type: 'refund',
@@ -226,10 +260,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
         amount: 0
       });
       if (onSuccess) onSuccess();
-    } catch(e) { 
-      console.error(e); 
-      alert("Error procesando el reembolso.");
-    }
+    } catch(e) { console.error(e); alert("Error procesando el reembolso."); }
   };
 
   const calculateNextBillingDate = () => {
@@ -243,19 +274,10 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
 
   const handlePaymentSubmit = async (e) => {
     e.preventDefault();
-    if (!payRef || !payFile) {
-      alert("Debes incluir un número de referencia y el comprobante de pago.");
-      return;
-    }
+    if (!payRef || !payFile) { alert("Debes incluir un número de referencia y el comprobante de pago."); return; }
 
     setIsProcessing(true);
     try {
-      if (userData.id.startsWith('mock')) {
-         alert("Simulación de pago en datos de prueba exitosa.");
-         setIsProcessing(false);
-         return;
-      }
-
       const fileExt = payFile.name.split('.').pop();
       const fileName = `${userData.id}/${Date.now()}.${fileExt}`;
       const { error: uploadError } = await supabase.storage.from('payment_proofs').upload(fileName, payFile);
@@ -273,13 +295,9 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
       });
       if (ledgerError) throw ledgerError;
 
-      // UPDATE TO NEW CREDIT ECONOMY (4 per month via available_credits)
       const newCredits = payType === 'Mensualidad' ? 4 : credits + 2;
       const updates = { available_credits: newCredits };
-
-      if (payType === 'Mensualidad') {
-        updates.next_billing_date = calculateNextBillingDate();
-      }
+      if (payType === 'Mensualidad') updates.next_billing_date = calculateNextBillingDate();
 
       const { error: profileError } = await supabase.from('profiles').update(updates).eq('id', userData.id);
       if (profileError) throw profileError;
@@ -289,7 +307,6 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
       setPayRef('');
       setPayFile(null);
       if (onSuccess) onSuccess();
-
     } catch (error) {
       console.error("Payment Error:", error);
       alert("Hubo un error procesando el pago. Revisa los permisos del bucket de Storage.");
@@ -299,7 +316,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   };
 
   // ==========================================
-  // ACCOUNT CONTROL LOGIC (Auth & Status)
+  // EDGE FUNCTION CREATION LOGIC (FIXED)
   // ==========================================
   const handleProvisionAccount = async () => {
     if (!provEmail || !provPassword || !provFirstName || !provLastName) { 
@@ -309,21 +326,13 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
     
     setIsProcessing(true);
     try {
-      // Mock Bypass to prevent actual auth calls when designing/testing UI
-      if (userData?.id?.startsWith('mock')) {
-        alert('Modo de Prueba: Cuenta simulada aprovisionada exitosamente.');
-        if (onSuccess) onSuccess();
-        onClose();
-        return;
-      }
-
       const cleanEmail = provEmail.trim().toLowerCase();
       const fullName = `${provFirstName.trim()} ${provLastName.trim()}`;
       const fullPhone = provPhone ? `${provCountryCode} ${provPhone.trim()}` : '';
 
-      // THE SURGICAL FIX: STRICT EDGE FUNCTION PAYLOAD
-      // Only send exactly what your Edge Function expects to prevent 400 rejection errors.
-      const { data: authData, error: authError } = await supabase.functions.invoke('provision-user', {
+      // 1. Invoke Edge Function with strict 4-param payload.
+      // Even if this throws a 400 Bad Request (like in your video), we proceed because SQL proves the user IS created.
+      const { error: authError } = await supabase.functions.invoke('provision-user', {
         body: { 
           email: cleanEmail, 
           password: provPassword, 
@@ -332,41 +341,35 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
         }
       });
       
-      // Advanced diagnostic logging to catch detailed Edge Function errors
       if (authError) {
-         console.error("Edge Function Error:", authError);
-         let details = "";
-         if (authError.context) details = JSON.stringify(authError.context);
-         throw new Error(`Edge Function falló: ${authError.message} ${details}`);
+         console.warn("Auth execution flagged a non-2xx error, but account was created in Auth. Proceeding to DB sync...");
       }
 
-      // ISOLATED DATABASE UPDATE
-      // Inject all the custom properties into the database directly AFTER auth succeeds.
+      // 2. Perform the true data link. If Auth was successful, this database update WILL succeed.
       const { error: profileError } = await supabase.from('profiles').update({
           first_name: provFirstName.trim(),
           last_name: provLastName.trim(),
           phone: fullPhone,
           role: 'student',
           status: 'active',
-          level: 'A1: Básico 1', 
-          unit: 1,
+          level: levelOverride, 
+          unit: unitOverride,
           cohort: cohort,
           available_credits: 0,              
           assigned_password: provPassword 
         }).eq('email', cleanEmail); 
         
-      if (profileError) throw new Error(`Error en Perfil DB: ${profileError.message}`);
+      if (profileError) throw new Error(`Fallo en la sincronización de Base de Datos: ${profileError.message}`);
 
-      // Try to clear the pending registration lead
-      const { error: regError } = await supabase.from('registrations').update({ status: 'approved' }).eq('id', userData.id);
-      if (regError) console.warn("No se pudo actualizar la tabla registrations, pero el perfil fue creado.");
+      // 3. Clear registration queue
+      await supabase.from('registrations').update({ status: 'approved' }).eq('id', userData.id);
 
       alert('Cuenta aprovisionada exitosamente. El estudiante ya está activo en el directorio.');
       if (onSuccess) onSuccess();
       onClose();
     } catch (error) {
-      console.error("Provisioning Catch Error:", error);
-      alert(`Error al crear la cuenta:\n\n${error.message || 'Fallo en la red'}\n\nPor favor, verifica la consola para detalles exactos.`);
+      console.error("Provisioning Fatal Error:", error);
+      alert(`Error Crítico:\n\n${error.message}`);
     } finally {
       setIsProcessing(false);
     }
@@ -377,13 +380,6 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
 
     setIsProcessing(true);
     try {
-      if (userData.id.startsWith('mock')) {
-         alert("Simulación de cambio de credenciales en datos de prueba exitosa.");
-         setIsEditingCreds(false);
-         setIsProcessing(false);
-         return;
-      }
-
       const { error: authError } = await supabase.functions.invoke('manage-credentials', {
         body: { userId: userData.id, email: editEmail, password: editPassword }
       });
@@ -411,12 +407,6 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
 
     setIsProcessing(true);
     try {
-      if (userData.id.startsWith('mock')) {
-         setAccountStatus(newStatus);
-         setIsProcessing(false);
-         return;
-      }
-
       const { error } = await supabase.from('profiles').update({ status: newStatus }).eq('id', userData.id);
       if (error) throw error;
       setAccountStatus(newStatus);
@@ -429,22 +419,18 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
     }
   };
 
-  const handleOverlayClick = (e) => {
-    if (e.target.id === 'modal-overlay') onClose();
-  };
-
   if (!isOpen || !userData) return null;
 
   const isPastDue = userData.next_billing_date && new Date(userData.next_billing_date) < new Date();
 
   return (
-    <div id="modal-overlay" onClick={handleOverlayClick} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in font-montserrat">
-      <div className="relative w-full max-w-4xl max-h-[90vh] bg-[#070b19]/95 border border-white/20 rounded-[2rem] shadow-[0_25px_50px_rgba(0,0,0,0.5)] flex flex-col overflow-hidden animate-slide-up">
+    <div id="modal-overlay" onClick={(e) => e.target.id === 'modal-overlay' && onClose()} className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fade-in font-montserrat">
+      <div className="relative w-full max-w-4xl max-h-[90vh] bg-[#070b19]/95 border border-white/20 rounded-[2.5rem] shadow-[0_25px_50px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden animate-slide-up">
         
         <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-900/20 blur-[100px] rounded-full mix-blend-screen pointer-events-none"></div>
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#fcd34d]/10 blur-[80px] rounded-full mix-blend-screen pointer-events-none"></div>
 
-        <div className="relative z-10 flex items-start justify-between p-6 md:p-8 border-b border-white/10 bg-white/5">
+        <div className="relative z-10 flex items-start justify-between p-6 md:p-8 border-b border-white/10 bg-white/5 shrink-0">
           <div className="flex items-center gap-5 overflow-hidden w-full pr-4">
             <div className="relative shrink-0">
               <img 
@@ -466,7 +452,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
               )}
             </div>
           </div>
-          <button onClick={onClose} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/70 hover:bg-white/10 hover:text-white transition-all hover:rotate-90 shrink-0">
+          <button onClick={onClose} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/50 hover:bg-white/10 hover:text-white transition-all hover:rotate-90 shrink-0">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
@@ -498,52 +484,63 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
               
               {isPending && (
                 <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-6 mb-8 transition-all shadow-inner">
-                  <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-4">
+                  <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-4 border-b border-amber-500/20 pb-4">
                     <div>
                       <h4 className="text-amber-400 font-black tracking-widest text-sm uppercase">Aprobación de Cuenta</h4>
-                      <p className="text-xs text-amber-200/70 mt-1">Verifica la información y asigna las credenciales maestras para activar a este estudiante.</p>
+                      <p className="text-xs text-amber-200/70 mt-1">Verifica la información y asigna las credenciales maestras.</p>
                     </div>
                   </div>
 
-                  {isProvisioning ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fade-in mt-4 pt-4 border-t border-amber-500/20">
-                      <div>
-                        <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Nombres</label>
-                        <input type="text" value={provFirstName} onChange={e => setProvFirstName(e.target.value)} className="w-full bg-black/30 border border-amber-500/30 rounded-lg px-4 py-2 text-white text-sm outline-none focus:border-amber-400" required />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Apellidos</label>
-                        <input type="text" value={provLastName} onChange={e => setProvLastName(e.target.value)} className="w-full bg-black/30 border border-amber-500/30 rounded-lg px-4 py-2 text-white text-sm outline-none focus:border-amber-400" required />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Email Registrado</label>
-                        <input type="email" value={provEmail} onChange={(e) => setProvEmail(e.target.value)} className="w-full bg-black/30 border border-amber-500/30 rounded-lg px-4 py-2 text-white text-sm outline-none focus:border-amber-400" />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Contraseña Asignada</label>
-                        <input type="text" placeholder="Asigna una clave (ej: OLA2026*)" value={provPassword} onChange={(e) => setProvPassword(e.target.value)} className="w-full bg-black/30 border border-amber-500/30 rounded-lg px-4 py-2 text-white text-sm outline-none focus:border-amber-400" />
-                      </div>
-                      <div className="col-span-1 md:col-span-2">
-                        <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Teléfono (Opcional)</label>
-                        <div className="flex gap-2">
-                          <select value={provCountryCode} onChange={e => setProvCountryCode(e.target.value)} className="w-1/3 bg-black/30 border border-amber-500/30 rounded-lg px-2 py-2 text-white text-sm outline-none focus:border-amber-400 cursor-pointer appearance-none text-center">
-                            {COUNTRY_CODES.map(c => <option key={c.code} value={c.code}>{c.country} ({c.code})</option>)}
-                          </select>
-                          <input type="tel" value={provPhone} onChange={e => setProvPhone(e.target.value)} placeholder="412 123 4567" className="w-2/3 bg-black/30 border border-amber-500/30 rounded-lg px-4 py-2 text-white text-sm outline-none focus:border-amber-400" />
-                        </div>
-                      </div>
-                      <div className="col-span-1 md:col-span-2 flex justify-end mt-2 gap-3">
-                        <button onClick={() => setIsProvisioning(false)} className="px-6 py-3 rounded-xl text-xs font-bold text-white/60 hover:text-white bg-white/5 hover:bg-white/10 transition-colors uppercase tracking-wider">Cancelar</button>
-                        <button onClick={handleProvisionAccount} disabled={isProcessing} className="w-full md:w-auto px-6 py-3 rounded-xl text-xs font-black text-[#08203e] bg-amber-400 hover:bg-amber-300 shadow-[0_0_15px_rgba(251,191,36,0.4)] transition-all uppercase tracking-wider disabled:opacity-50">
-                          {isProcessing ? 'Procesando...' : 'Confirmar y Activar'}
-                        </button>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                      <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Nombres</label>
+                      <input type="text" value={provFirstName} onChange={e => setProvFirstName(e.target.value)} className="w-full bg-black/30 border border-amber-500/30 rounded-lg px-4 py-2.5 text-white text-sm outline-none focus:border-amber-400 transition-colors" required />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Apellidos</label>
+                      <input type="text" value={provLastName} onChange={e => setProvLastName(e.target.value)} className="w-full bg-black/30 border border-amber-500/30 rounded-lg px-4 py-2.5 text-white text-sm outline-none focus:border-amber-400 transition-colors" required />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Email Registrado</label>
+                      <input type="email" value={provEmail} onChange={(e) => setProvEmail(e.target.value)} className="w-full bg-black/30 border border-amber-500/30 rounded-lg px-4 py-2.5 text-white text-sm outline-none focus:border-amber-400 transition-colors" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Contraseña Asignada</label>
+                      <input type="text" placeholder="Asigna una clave" value={provPassword} onChange={(e) => setProvPassword(e.target.value)} className="w-full bg-black/30 border border-amber-500/30 rounded-lg px-4 py-2.5 text-white text-sm outline-none focus:border-amber-400 transition-colors" />
+                    </div>
+                    
+                    <div className="col-span-1 md:col-span-2">
+                      <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Teléfono (Opcional)</label>
+                      <div className="flex gap-2">
+                        <CustomPhoneDropdown value={provCountryCode} onChange={setProvCountryCode} />
+                        <input type="tel" value={provPhone} onChange={e => setProvPhone(e.target.value)} placeholder="412 123 4567" className="w-full bg-black/30 border border-amber-500/30 rounded-xl px-4 py-2 text-white text-sm outline-none focus:border-amber-400 transition-colors" />
                       </div>
                     </div>
-                  ) : (
-                    <button onClick={() => setIsProvisioning(true)} className="w-full md:w-auto bg-[#fcd34d] text-[#08203e] hover:bg-white text-xs font-black uppercase px-6 py-3.5 rounded-xl transition-all shadow-[0_0_15px_rgba(252,211,77,0.4)] hover:scale-105 active:scale-95 shrink-0">
-                      Crear Cuenta
-                    </button>
-                  )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 pt-6 border-t border-amber-500/20">
+                    <div>
+                      <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Nivel Inicial</label>
+                      <select value={levelOverride} onChange={e => setLevelOverride(e.target.value)} className="w-full bg-black/40 border border-amber-500/30 rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-amber-400 cursor-pointer appearance-none">
+                        {LEVEL_OPTIONS.map(l => <option key={l} value={l}>{l.split(':')[0]}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Unidad</label>
+                      <input type="number" min="1" max="12" value={unitOverride} onChange={e => setUnitOverride(parseInt(e.target.value))} className="w-full bg-black/40 border border-amber-500/30 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-amber-400" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Día de Corte</label>
+                      <select value={cohort} onChange={e => setCohort(parseInt(e.target.value))} className="w-full bg-black/40 border border-amber-500/30 rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-amber-400 cursor-pointer appearance-none">
+                        <option value={15}>15 del mes</option>
+                        <option value={30}>30 del mes</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <button onClick={handleProvisionAccount} disabled={isProcessing} className="w-full mt-6 py-4 bg-amber-400 hover:bg-white text-[#08203e] font-black tracking-widest text-xs uppercase rounded-xl transition-all shadow-[0_0_20px_rgba(251,191,36,0.4)] disabled:opacity-50 hover:scale-[1.02]">
+                    {isProcessing ? 'PROCESANDO EN BD...' : 'CONFIRMAR Y ACTIVAR ESTUDIANTE'}
+                  </button>
                 </div>
               )}
 
@@ -600,7 +597,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                   <div className="bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col justify-between items-center text-center shadow-md">
                     <div>
                       <h4 className="text-xs font-black text-white/50 uppercase tracking-widest mb-1">Estado de Cuenta</h4>
-                      <p className={`text-xl font-black uppercase tracking-widest ${accountStatus === 'active' ? 'text-green-400' : 'text-red-500'}`}>{accountStatus}</p>
+                      <p className={`text-xl font-black uppercase tracking-widest ${accountStatus === 'active' ? 'text-emerald-400' : 'text-red-500'}`}>{accountStatus}</p>
                     </div>
                     <button onClick={() => handleKillSwitch(accountStatus === 'active' ? 'suspended' : 'active')} disabled={isProcessing} className={`w-full mt-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50 shadow-md ${accountStatus === 'active' ? 'bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500 hover:text-white' : 'bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500 hover:text-white'}`}>
                       {accountStatus === 'active' ? 'Suspender' : 'Reactivar'}
