@@ -16,6 +16,7 @@ import NavButtonModal from './components/AdminHub/Modals/NavButtonModal';
 import CustomerManagement from './components/AdminHub/Tabs/CustomerManagement';
 import MasterSettings from './components/AdminHub/Tabs/MasterSettings';
 import AdminDropdown from './components/ui/AdminDropdown';
+import StudentManagerModal from './components/AdminHub/Tabs/StudentManagerModal'; // Make sure this path is correct for the next step
 
 // ==========================================
 // PAN & ZOOM IMAGE COMPONENT (Preserved)
@@ -82,173 +83,29 @@ const PanZoomImage = ({ src, data, onSave, isPreview, wrapperClass = "w-full h-6
 };
 
 // ==========================================
-// NAVIGATION ICONS (Unified System)
+// NAVIGATION ICONS (Custom Images)
 // ==========================================
 const navIcons = {
-  accounts: <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" /></svg>,
-  calendar: <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>,
-  content: <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>,
-  communications: <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 110-9h.75c.704 0 1.402-.03 2.09-.09m0 9.18c.253.962.584 1.892.985 2.783.247.55.06 1.21-.463 1.511l-1.598.913a1.125 1.125 0 01-1.614-.73l-1.31-5.111m5.99-9.36c.253-.962.584-1.892.985-2.783.247-.55.06-1.21-.463-1.511l-1.598-.913a1.125 1.125 0 00-1.614.73l-1.31 5.111" /></svg>,
-  finances: <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" /></svg>,
-  settings: <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12a7.5 7.5 0 0115 0m-15 0a7.5 7.5 0 1115 0m-15 0H3m16.5 0H21m-1.5 0H12m-8.457 3.077l1.41-.513m14.095-5.13l1.41-.513M5.106 17.785l1.15-.964m11.49-9.642l1.149-.964M7.501 19.79l.902-1.38M14.596 6.57l.902-1.38M10.05 20.942l.613-1.6M12.337 6.258l.613-1.6M12.637 21.365l.288-1.705M10.075 6.04l.288-1.705M15.112 20.842l-.083-1.728M8.053 6.615l-.083-1.728" /></svg>
+  accounts: "https://i.postimg.cc/7L53pM9G/5(6).png",
+  calendar: "https://i.postimg.cc/RC77501r/8(5).png",
+  content: "https://i.postimg.cc/GtLH1bR6/6(7).png",
+  communications: "https://i.postimg.cc/k5W462gP/3(9).png",
+  finances: "https://i.postimg.cc/qB173V4X/7(9).png",
+  settings: "https://i.postimg.cc/cLwZTVyP/1(9).png"
 };
 
-const NavIconBtn = ({ iconSvg, active, onClick, hasNotification, isProfile }) => (
-  <button onClick={onClick} className={`relative w-14 h-14 md:w-16 md:h-16 flex items-center justify-center rounded-2xl transition-all ${active ? 'bg-white/20 border border-white/40 shadow-inner' : 'hover:bg-white/10 border border-transparent'}`}>
+const NavIconBtn = ({ iconUrl, active, onClick, hasNotification, isProfile }) => (
+  <button onClick={onClick} className={`relative w-14 h-14 md:w-16 md:h-16 flex items-center justify-center rounded-2xl transition-all ${active ? 'bg-white/10 border border-white/20 shadow-inner' : 'hover:bg-white/5 border border-transparent'}`}>
     {hasNotification && <div className="absolute top-3 right-3 w-2.5 h-2.5 bg-red-500 rounded-full border border-[#070b19] z-10 animate-pulse"></div>}
     {isProfile ? (
       <div className="w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden border-2 border-white/50 bg-gray-300">
         <img src="https://i.pravatar.cc/150?img=32" alt="Admin" className="w-full h-full object-cover" />
       </div>
     ) : (
-      <div className={`w-8 h-8 md:w-9 md:h-9 ${active ? 'text-white' : 'text-white/70'}`}>{iconSvg}</div>
+      <img src={iconUrl} alt="Nav Icon" className={`w-8 h-8 md:w-9 md:h-9 object-contain transition-all duration-300 ${active ? 'opacity-100 scale-110 drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]' : 'opacity-50 grayscale hover:grayscale-0 hover:opacity-80'}`} />
     )}
   </button>
 );
-
-// ==========================================
-// STUDENT MANAGER MODAL (Cohort, Refunds, Overrides)
-// ==========================================
-const StudentManagerModal = ({ student, onClose, onUpdate }) => {
-  const [level, setLevel] = useState(student?.level || 'A1');
-  const [unit, setUnit] = useState(student?.unit || 1);
-  
-  // Auto-assign cohort logic if missing (15th or 30th)
-  const getDefaultCohort = () => {
-    const today = new Date().getDate();
-    return today <= 15 ? 15 : 30;
-  };
-  
-  const [cohort, setCohort] = useState(student?.cohort || getDefaultCohort());
-  const [credits, setCredits] = useState(student?.available_credits || 0);
-  const [isSaving, setIsSaving] = useState(false);
-
-  // ADJUST THESE MONTHLY PRICES AS NEEDED FOR YOUR BUSINESS
-  const MONTHLY_PRICES = { A1: 40, A2: 45, B1: 50, B2: 55, C1: 60, C2: 65 }; 
-  const currentPrice = MONTHLY_PRICES[level] || 40;
-
-  // Calculates exact prorated amount based on days until the target cohort date
-  const calculateProration = (targetCohort, price) => {
-    const today = new Date();
-    let nextBilling = new Date(today.getFullYear(), today.getMonth(), targetCohort);
-    if (today.getDate() >= targetCohort) {
-        nextBilling.setMonth(nextBilling.getMonth() + 1);
-    }
-    const daysLeft = Math.max(0, Math.ceil((nextBilling - today) / (1000 * 60 * 60 * 24)));
-    return ((price / 30) * daysLeft).toFixed(2);
-  };
-
-  const proration = calculateProration(cohort, currentPrice);
-
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      if (student.id.startsWith('mock')) {
-         onUpdate();
-         onClose();
-         return;
-      }
-      await supabase.from('profiles').update({
-        level, unit, cohort, available_credits: credits
-      }).eq('id', student.id);
-      onUpdate();
-      onClose();
-    } catch (err) { console.error(err); }
-    setIsSaving(false);
-  };
-
-  const handleRefund = async () => {
-    const newCredits = credits + 1;
-    setCredits(newCredits);
-    if (student.id.startsWith('mock')) return;
-    
-    try {
-      await supabase.from('profiles').update({ available_credits: newCredits }).eq('id', student.id);
-      
-      // Log the financial action
-      await supabase.from('financial_logs').insert({
-        student_id: student.id,
-        type: 'refund',
-        description: '+1 Credit (Academy Fault)',
-        amount: 0
-      });
-    } catch(e) { console.error(e); }
-  };
-
-  return (
-    <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/60 backdrop-blur-md px-4 animate-fade-in">
-      <div className="bg-[#070b19]/95 border border-white/20 rounded-[2rem] p-8 max-w-2xl w-full shadow-2xl flex flex-col relative">
-        <button onClick={onClose} className="absolute top-6 right-6 text-white/50 hover:text-white text-xl">✕</button>
-        
-        <div className="flex items-center gap-6 mb-8 border-b border-white/10 pb-6">
-            <div className="w-16 h-16 rounded-full bg-gray-300 overflow-hidden border-2 border-white/20 shrink-0">
-                <img src={student?.avatar_url || 'https://i.pravatar.cc/150?img=12'} className="w-full h-full object-cover" alt="Profile" />
-            </div>
-            <div className="truncate">
-                <h2 className="text-2xl font-black text-white truncate">{student?.first_name || 'Model'} {student?.last_name || 'Student'}</h2>
-                <span className="text-[#fcd34d] text-[10px] font-black tracking-widest uppercase">Student Profile Management</span>
-            </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-8 mb-8">
-            {/* Column 1: Academic Overrides */}
-            <div className="flex flex-col gap-4">
-                <h3 className="text-white/50 text-xs font-black tracking-widest uppercase mb-2">Academic Overrides</h3>
-                <div className="flex gap-4">
-                    <div className="flex-1">
-                        <label className="text-[10px] text-white/70 font-bold uppercase mb-1 block">Level</label>
-                        <select value={level} onChange={e => setLevel(e.target.value)} className="w-full bg-black/40 border border-white/20 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-[#fcd34d] cursor-pointer">
-                            {LEVEL_OPTIONS.map(l => <option key={l} value={l}>{l}</option>)}
-                        </select>
-                    </div>
-                    <div className="flex-1">
-                        <label className="text-[10px] text-white/70 font-bold uppercase mb-1 block">Unit</label>
-                        <input type="number" min="1" max="12" value={unit} onChange={e => setUnit(parseInt(e.target.value))} className="w-full bg-black/40 border border-white/20 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-[#fcd34d]" />
-                    </div>
-                </div>
-            </div>
-
-            {/* Column 2: Billing & Cohort */}
-            <div className="flex flex-col gap-4">
-                <h3 className="text-white/50 text-xs font-black tracking-widest uppercase mb-2">Billing & Cohort</h3>
-                <div className="flex gap-4 items-end">
-                    <div className="flex-1">
-                        <label className="text-[10px] text-white/70 font-bold uppercase mb-1 block">Cohort Date</label>
-                        <select value={cohort} onChange={e => setCohort(parseInt(e.target.value))} className="w-full bg-black/40 border border-white/20 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-[#fcd34d] cursor-pointer">
-                            <option value={15}>15th of Month</option>
-                            <option value={30}>30th of Month</option>
-                        </select>
-                    </div>
-                    <div className="flex-1 bg-white/5 border border-white/10 rounded-xl p-2 flex flex-col justify-center items-center text-center h-[46px]">
-                        <span className="text-[8px] text-white/50 uppercase tracking-widest font-bold">Prorated Due</span>
-                        <span className="text-sm font-black text-[#fcd34d]">${proration}</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {/* Refund & Credits */}
-        <div className="bg-black/30 border border-white/10 rounded-2xl p-6 mb-8 flex items-center justify-between shadow-inner">
-            <div className="flex flex-col pr-4">
-                <h3 className="text-white font-black text-lg">Class Credits: <span className="text-[#fcd34d]">{credits}</span></h3>
-                <p className="text-[10px] text-white/50 mt-1 leading-relaxed">Students receive 4 credits per month. (1 Credit = 1 Live Lab). Use refunds strictly for academy-fault disruptions.</p>
-            </div>
-            <button onClick={handleRefund} className="bg-white/10 hover:bg-[#fcd34d] hover:text-[#08203e] text-white border border-white/20 hover:border-transparent font-black text-[10px] uppercase tracking-widest px-6 py-4 rounded-xl transition-all shadow-md shrink-0">
-                +1 Credit (Refund)
-            </button>
-        </div>
-
-        <div className="flex gap-4 mt-auto border-t border-white/10 pt-6">
-            <button onClick={onClose} className="flex-1 py-4 bg-white/5 hover:bg-white/10 text-white font-bold text-xs uppercase rounded-xl transition-colors">Cancel</button>
-            <button onClick={handleSave} disabled={isSaving} className="flex-1 py-4 bg-[#fcd34d] text-[#08203e] font-black tracking-widest text-xs uppercase rounded-xl hover:scale-105 transition-all shadow-[0_0_15px_rgba(252,211,77,0.4)] disabled:opacity-50">
-                {isSaving ? 'SAVING...' : 'SAVE OVERRIDES'}
-            </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 
 // ==========================================
 // MAIN ADMIN HUB COMPONENT
@@ -262,7 +119,6 @@ const AdminHub = () => {
   const [directoryUsers, setDirectoryUsers] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState(null);
 
-  // Fetch Directory Users dynamically
   useEffect(() => {
     if (activeModule === 'ACCOUNTS') {
       const roleMap = { 'students': 'student', 'teachers': 'teacher', 'admins': 'admin' };
@@ -272,14 +128,13 @@ const AdminHub = () => {
     }
   }, [activeModule, directoryTab]);
 
-  // Fallback to beautiful mockups if database is empty to ensure presentation is flawless
   const displayUsers = directoryUsers.length > 0 ? directoryUsers : [
-    { id: 'mock1', first_name: 'Model', last_name: 'Student 1', role: 'student', level: 'A1', unit: 1, cohort: 15, available_credits: 2, status: 'pending' },
-    { id: 'mock2', first_name: 'Model', last_name: 'Student 2', role: 'student', level: 'C1', unit: 5, cohort: 30, available_credits: 0 },
-    { id: 'mock3', first_name: 'Model', last_name: 'Student 3', role: 'student', level: 'A2', unit: 3, cohort: 15, available_credits: 4 },
-    { id: 'mock4', first_name: 'Model', last_name: 'Student 4', role: 'student', level: 'B1', unit: 8, cohort: 30, available_credits: 1 },
-    { id: 'mock5', first_name: 'Model', last_name: 'Student 5', role: 'student', level: 'B2', unit: 10, cohort: 15, available_credits: 3 },
-    { id: 'mock6', first_name: 'Model', last_name: 'Student 6', role: 'student', level: 'C2', unit: 12, cohort: 30, available_credits: 0 },
+    { id: 'mock1', first_name: 'Model', last_name: 'Student 1', role: 'student', level: 'A1: Básico 1', unit: 1, cohort: 15, available_credits: 2, status: 'pending', email: 'estudiante1@gmail.com' },
+    { id: 'mock2', first_name: 'Model', last_name: 'Student 2', role: 'student', level: 'C1: Avanzado 1', unit: 5, cohort: 30, available_credits: 0, status: 'active', email: 'estudiante2@gmail.com' },
+    { id: 'mock3', first_name: 'Model', last_name: 'Student 3', role: 'student', level: 'A2: Básico 2', unit: 3, cohort: 15, available_credits: 4, status: 'suspended', email: 'estudiante3@gmail.com' },
+    { id: 'mock4', first_name: 'Model', last_name: 'Student 4', role: 'student', level: 'B1: Intermedio 1', unit: 8, cohort: 30, available_credits: 1, status: 'active', email: 'estudiante4@gmail.com' },
+    { id: 'mock5', first_name: 'Model', last_name: 'Student 5', role: 'student', level: 'B2: Intermedio 2', unit: 10, cohort: 15, available_credits: 3, status: 'active', email: 'estudiante5@gmail.com' },
+    { id: 'mock6', first_name: 'Model', last_name: 'Student 6', role: 'student', level: 'C2: Avanzado 2', unit: 12, cohort: 30, available_credits: 0, status: 'active', email: 'estudiante6@gmail.com' },
   ];
 
   // ----------------------------------------------------
@@ -291,7 +146,6 @@ const AdminHub = () => {
   const [contentType, setContentType] = useState('Lesson');
   const [selectedLevel, setSelectedLevel] = useState('');
   const [selectedUnit, setSelectedUnit] = useState('');
-  
   const [lessonScreens, setLessonScreens] = useState([Date.now()]); 
   const [workbookScreens, setWorkbookScreens] = useState([Date.now() + 1]); 
   const [canvasElements, setCanvasElements] = useState([]);
@@ -477,17 +331,17 @@ const AdminHub = () => {
   const activeScreenArray = contentType === 'Lesson' ? lessonScreens : workbookScreens;
 
 
-  // ----------------------------------------------------
+  // =====================================================
   // MODULE RENDERING FUNCTIONS
-  // ----------------------------------------------------
+  // =====================================================
 
   const renderAccounts = () => (
     <div className="grid grid-cols-12 gap-6 w-full max-w-[1500px] h-[calc(100vh-160px)] animate-fade-in">
       <div className="col-span-3 flex flex-col gap-6 h-full">
-        <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 shadow-2xl flex flex-col items-center justify-center relative overflow-hidden h-[35%]">
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center relative overflow-hidden h-[35%]">
           <div className="relative w-32 h-32 flex items-center justify-center shrink-0 mb-2">
             <svg className="w-full h-full transform -rotate-90 drop-shadow-[0_0_10px_rgba(252,211,77,0.8)]" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.2)" strokeWidth="8" fill="transparent" />
+              <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.1)" strokeWidth="8" fill="transparent" />
               <circle cx="50" cy="50" r="40" stroke="#fcd34d" strokeWidth="8" fill="transparent" strokeDasharray={2 * Math.PI * 40} strokeDashoffset={(2 * Math.PI * 40) - (85 / 100) * (2 * Math.PI * 40)} strokeLinecap="round" />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
@@ -496,31 +350,31 @@ const AdminHub = () => {
           </div>
           <h3 className="text-white/90 font-bold text-xs tracking-widest uppercase text-center mt-2">ACTIVE STUDENTS</h3>
         </div>
-        <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 shadow-2xl flex flex-col h-[65%]">
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col h-[65%]">
           <h3 className="text-white font-black text-2xl tracking-wide mb-4 drop-shadow-md shrink-0">Activities</h3>
           <ul className="space-y-4 text-xs font-medium text-white/90 flex-1 overflow-y-auto custom-scrollbar pr-2 mb-4">
-            <li className="flex items-center gap-3"><svg className="w-5 h-5 text-white/70 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg><span>Aug 15: Live Lab Session</span></li>
-            <li className="flex items-center gap-3"><svg className="w-5 h-5 text-white/70 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg><span>Aug 18: Chat room meeting</span></li>
-            <li className="flex items-center gap-3"><svg className="w-5 h-5 text-white/70 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg><span>Aug 25: Conversation Club</span></li>
-            <li className="flex items-center gap-3"><svg className="w-5 h-5 text-white/70 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg><span>Aug 26: Live Lab Session</span></li>
+            <li className="flex items-center gap-3"><svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg><span>Aug 15: Live Lab Session</span></li>
+            <li className="flex items-center gap-3"><svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg><span>Aug 18: Chat room meeting</span></li>
+            <li className="flex items-center gap-3"><svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg><span>Aug 25: Conversation Club</span></li>
+            <li className="flex items-center gap-3"><svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg><span>Aug 26: Live Lab Session</span></li>
           </ul>
           <button className="w-full py-4 bg-[#e2e8f0] text-[#0f172a] hover:bg-white font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 shadow-xl transition-all hover:scale-105 shrink-0 mt-auto">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+            <img src="https://i.postimg.cc/mrtXmB72/Copia-de-Diseno-sin-titulo-(2).png" alt="Request Substitute" className="w-5 h-5 object-contain" />
             REQUEST SUBSTITUTE
           </button>
         </div>
       </div>
       <div className="col-span-3 flex flex-col gap-6 h-full">
-        <button className="flex-1 bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 shadow-2xl flex flex-col items-center justify-center gap-4 hover:bg-white/20 transition-all hover:scale-[1.02] group">
-          <svg className="w-24 h-24 text-white opacity-90 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 3.75V16.5L12 14.25z" /></svg>
-          <h3 className="font-black text-2xl tracking-widest uppercase mt-2">Provisioning</h3>
+        <button className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center gap-6 hover:bg-white/10 transition-all hover:scale-[1.02] group">
+          <img src="https://i.postimg.cc/ZKPVccsH/4(8).png" alt="Provisioning" className="w-24 h-24 object-contain group-hover:scale-110 transition-transform drop-shadow-md" />
+          <h3 className="font-black text-2xl tracking-widest uppercase text-white">Provisioning</h3>
         </button>
-        <button className="flex-1 bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 shadow-2xl flex flex-col items-center justify-center gap-4 hover:bg-white/20 transition-all hover:scale-[1.02] group">
-          <svg className="w-24 h-24 text-white opacity-90 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>
-          <h3 className="font-black text-2xl tracking-widest uppercase mt-2">Stats</h3>
+        <button className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center gap-6 hover:bg-white/10 transition-all hover:scale-[1.02] group">
+          <img src="https://i.postimg.cc/sxd4PQpm/2(12).png" alt="Stats" className="w-24 h-24 object-contain group-hover:scale-110 transition-transform drop-shadow-md" />
+          <h3 className="font-black text-2xl tracking-widest uppercase text-white">Stats</h3>
         </button>
       </div>
-      <div className="col-span-6 bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] p-6 shadow-2xl flex flex-col h-full overflow-hidden">
+      <div className="col-span-6 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-8 shadow-2xl flex flex-col h-full overflow-hidden">
         <div className="flex bg-black/20 rounded-2xl p-2 mb-6 shrink-0 shadow-inner">
           <button onClick={() => setDirectoryTab('students')} className={`flex-1 py-3 rounded-xl font-bold text-sm shadow-md transition-all ${directoryTab === 'students' ? 'bg-white/20 text-white' : 'text-white/50 hover:text-white'}`}>Students</button>
           <button onClick={() => setDirectoryTab('teachers')} className={`flex-1 py-3 rounded-xl font-bold text-sm shadow-md transition-all ${directoryTab === 'teachers' ? 'bg-white/20 text-white' : 'text-white/50 hover:text-white'}`}>Teachers</button>
@@ -530,17 +384,17 @@ const AdminHub = () => {
           {displayUsers.map((user, i) => (
             <div key={user.id} className="bg-black/30 border border-white/10 rounded-2xl p-4 flex items-center justify-between hover:bg-black/40 transition-colors">
               <div className="flex items-center gap-4 cursor-pointer group" onClick={() => { if(directoryTab === 'students') setSelectedStudent(user); }}>
-                <img src={user.avatar_url || `https://i.pravatar.cc/150?img=${i+10}`} className="w-12 h-12 rounded-full border-2 border-white/20 group-hover:border-[#fcd34d] transition-colors object-cover" alt="User" />
+                <img src={user.avatar_url || `https://i.pravatar.cc/150?img=${i+10}`} className="w-12 h-12 rounded-full border-2 border-white/20 group-hover:border-[#fcd34d] transition-colors object-cover shadow-md" alt="User" />
                 <h4 className="font-bold text-lg text-white group-hover:text-[#fcd34d] transition-colors">{user.first_name || 'Model'} {user.last_name || `User ${i+1}`}</h4>
               </div>
               <div className="flex items-center gap-4">
                 {user.status === 'pending' ? (
-                  <span className="bg-[#fcd34d] text-[#08203e] px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest">Pending</span>
+                  <span className="bg-[#fcd34d] text-[#08203e] px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-md">Pending</span>
                 ) : (
-                  <button onClick={() => alert(`Impersonating ${user.first_name || 'User'}...`)} className="bg-white/10 text-white hover:bg-[#fcd34d] hover:text-[#08203e] px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest hover:scale-105 transition-all shadow-md">View as</button>
+                  <button onClick={() => { if(directoryTab === 'students') setSelectedStudent(user); }} className="bg-white/10 text-white hover:bg-[#fcd34d] hover:text-[#08203e] px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-md">View as</button>
                 )}
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-white text-xl shadow-inner ${i%3===0 ? 'bg-blue-500' : i%2===0 ? 'bg-red-500' : 'bg-green-500'}`}>
-                  {user.level || (i%3===0 ? 'A1' : i%2===0 ? 'C1' : 'A2')}
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-white text-xl shadow-inner ${user.level?.includes('A1') ? 'bg-blue-500' : user.level?.includes('C1') ? 'bg-green-500' : 'bg-red-500'}`}>
+                  {user.level ? user.level.split(':')[0] : 'A1'}
                 </div>
               </div>
             </div>
@@ -553,10 +407,10 @@ const AdminHub = () => {
   const renderCalendars = () => (
     <div className="grid grid-cols-12 gap-6 w-full max-w-[1500px] h-[calc(100vh-160px)] animate-fade-in">
       <div className="col-span-3 flex flex-col gap-6 h-full">
-        <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 shadow-2xl flex flex-col items-center justify-center relative overflow-hidden h-[35%]">
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center relative overflow-hidden h-[35%]">
           <div className="relative w-32 h-32 flex items-center justify-center shrink-0 mb-2">
             <svg className="w-full h-full transform -rotate-90 drop-shadow-[0_0_10px_rgba(252,211,77,0.8)]" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.2)" strokeWidth="8" fill="transparent" />
+              <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.1)" strokeWidth="8" fill="transparent" />
               <circle cx="50" cy="50" r="40" stroke="#fcd34d" strokeWidth="8" fill="transparent" strokeDasharray={2 * Math.PI * 40} strokeDashoffset={(2 * Math.PI * 40) - (90 / 100) * (2 * Math.PI * 40)} strokeLinecap="round" />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
@@ -565,7 +419,7 @@ const AdminHub = () => {
           </div>
           <h3 className="text-white/90 font-bold text-xs tracking-widest uppercase text-center mt-2 whitespace-nowrap">STUDENTS BOOKED</h3>
         </div>
-        <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 shadow-2xl flex flex-col h-[65%]">
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col h-[65%]">
           <h3 className="text-white font-black text-2xl tracking-wide mb-4 drop-shadow-md shrink-0">Session stats</h3>
           <ul className="space-y-4 text-xs font-medium text-white/90 flex-1 overflow-y-auto custom-scrollbar pr-2 mb-4">
             <li className="flex items-center justify-between"><div className="flex items-center gap-3"><svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M19 4h-1V3a1 1 0 00-2 0v1H8V3a1 1 0 00-2 0v1H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2zM5 20V9h14v11H5z" /></svg><span>Aug 15: 45 minutes</span></div><span className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]"></span></li>
@@ -579,9 +433,9 @@ const AdminHub = () => {
           </button>
         </div>
       </div>
-      <div className="col-span-9 bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] p-6 shadow-2xl flex flex-col h-full overflow-hidden relative">
+      <div className="col-span-9 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-8 shadow-2xl flex flex-col h-full overflow-hidden relative">
         {/* Calendar Top Header Actions */}
-        <div className="absolute top-6 right-6 flex gap-4 z-10">
+        <div className="absolute top-8 right-8 flex gap-4 z-10">
           <div className="bg-black/30 rounded-xl flex items-center shadow-inner">
             <button className="px-3 py-2 text-white/50 hover:text-white font-bold">&lt;</button>
             <span className="px-4 text-sm font-black text-white tracking-widest uppercase">Octubre</span>
@@ -649,10 +503,10 @@ const AdminHub = () => {
         ))}
       </div>
 
-      {/* Communications Content Layout (Mockup 4 style) */}
+      {/* Communications Content Layout */}
       <div className="grid grid-cols-12 gap-8 flex-1 overflow-hidden">
         {/* Composer Left */}
-        <div className="col-span-5 bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] p-8 shadow-2xl flex flex-col h-fit">
+        <div className="col-span-5 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-8 shadow-2xl flex flex-col h-fit">
           <div className="flex gap-4 mb-6">
             <button className="w-32 h-32 bg-white/10 border-2 border-dashed border-white/30 rounded-2xl flex flex-col items-center justify-center text-white hover:bg-white/20 transition-colors shrink-0">
               <span className="text-5xl font-light leading-none mb-2">+</span>
@@ -669,7 +523,7 @@ const AdminHub = () => {
         </div>
 
         {/* Feed Right */}
-        <div className="col-span-7 bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] p-8 shadow-2xl overflow-y-auto custom-scrollbar flex flex-col gap-4">
+        <div className="col-span-7 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-8 shadow-2xl overflow-y-auto custom-scrollbar flex flex-col gap-4">
           
           <div className="bg-white/10 border border-white/20 rounded-2xl p-6 flex items-center gap-6 relative group hover:bg-white/20 transition-colors">
             <button className="absolute top-4 right-4 w-8 h-8 bg-white/10 rounded-full flex items-center justify-center text-white/50 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white/30 hover:text-white">✏️</button>
@@ -696,7 +550,7 @@ const AdminHub = () => {
   const renderFinances = () => (
     <div className="grid grid-cols-12 gap-8 w-full max-w-[1500px] h-[calc(100vh-160px)] animate-fade-in relative z-10">
       <div className="col-span-3 flex flex-col gap-8 h-full justify-center">
-        <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] p-8 shadow-2xl flex flex-col items-center relative h-[45%] justify-center">
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 shadow-2xl flex flex-col items-center relative h-[45%] justify-center">
           <div className="relative w-40 h-40 flex items-center justify-center shrink-0 mb-4">
             <svg className="w-full h-full transform -rotate-90 drop-shadow-[0_0_15px_rgba(252,211,77,0.8)]" viewBox="0 0 100 100">
               <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.1)" strokeWidth="10" fill="transparent" />
@@ -709,7 +563,7 @@ const AdminHub = () => {
           <h3 className="text-white/90 font-black text-lg tracking-widest uppercase text-center mt-2">Renewals</h3>
         </div>
 
-        <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] p-8 shadow-2xl flex flex-col items-center relative h-[45%] justify-center">
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 shadow-2xl flex flex-col items-center relative h-[45%] justify-center">
           <div className="relative w-40 h-40 flex items-center justify-center shrink-0 mb-4 cursor-pointer hover:scale-105 transition-transform group">
             <svg className="w-full h-full transform -rotate-90 drop-shadow-[0_0_15px_rgba(59,130,246,0.8)]" viewBox="0 0 100 100">
               <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.1)" strokeWidth="10" fill="transparent" />
@@ -723,7 +577,7 @@ const AdminHub = () => {
         </div>
       </div>
 
-      <div className="col-span-6 bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] p-8 shadow-2xl flex flex-col h-full items-center justify-center">
+      <div className="col-span-6 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-8 shadow-2xl flex flex-col h-full items-center justify-center">
         {/* MOCKUP BAR CHART FOR EXPECTED VS COLLECTED */}
         <div className="flex gap-6 mb-10 w-full justify-center">
           <div className="flex items-center gap-2"><span className="w-4 h-4 rounded-full bg-slate-600"></span><span className="text-sm font-bold text-white/70">Expected</span></div>
@@ -756,15 +610,15 @@ const AdminHub = () => {
       </div>
 
       <div className="col-span-3 flex flex-col gap-6 h-full justify-center">
-        <div className="flex-1 bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center">
+        <div className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center">
           <h4 className="text-white font-black text-xl tracking-widest uppercase drop-shadow-md">Gross Revenue</h4>
           <span className="text-5xl font-black text-[#fcd34d] mt-2 drop-shadow-lg">$5,230</span>
         </div>
-        <div className="flex-1 bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-white/20 transition-colors">
+        <div className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-white/10 transition-colors">
           <h4 className="text-white font-black text-xl tracking-widest uppercase drop-shadow-md text-center leading-tight">Payroll<br/>Liability</h4>
           <span className="text-5xl font-black text-red-400 mt-2 drop-shadow-lg">$1,180</span>
         </div>
-        <div className="flex-1 bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center">
+        <div className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center">
           <h4 className="text-white font-black text-xl tracking-widest uppercase drop-shadow-md">Net Profit</h4>
           <span className="text-5xl font-black text-green-400 mt-2 drop-shadow-lg">$3,370</span>
         </div>
@@ -776,7 +630,7 @@ const AdminHub = () => {
     <div className="flex items-center justify-center w-full h-[calc(100vh-160px)] animate-fade-in relative z-10">
       <div className="grid grid-cols-4 gap-8 max-w-[1200px] w-full">
         {['Tenants', 'Public logs', 'Shifts', 'Evaluator', 'Reports', 'B2B Clients', 'Resumes', 'Language'].map((setting, i) => (
-          <button key={setting} className="aspect-square bg-white/10 backdrop-blur-xl border border-white/20 rounded-[3rem] p-6 shadow-2xl flex flex-col items-center justify-center gap-6 hover:bg-white/20 hover:scale-105 transition-all group">
+          <button key={setting} className="aspect-square bg-white/5 backdrop-blur-xl border border-white/10 rounded-[3rem] p-6 shadow-2xl flex flex-col items-center justify-center gap-6 hover:bg-white/10 hover:scale-105 transition-all group">
             {i===0 && <svg className="w-32 h-32 text-white group-hover:text-[#fcd34d] transition-colors drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" /></svg>}
             {i===1 && <svg className="w-32 h-32 text-white group-hover:text-[#fcd34d] transition-colors drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" /></svg>}
             {i===2 && <svg className="w-32 h-32 text-white group-hover:text-[#fcd34d] transition-colors drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
@@ -804,13 +658,13 @@ const AdminHub = () => {
         audio::-internal-media-controls-download-button { display: none !important; }
       `}</style>
 
-      {/* BACKGROUND */}
+      {/* BACKGROUND IMAGE FIX */}
       <div className="absolute inset-0 pointer-events-none z-[-1] overflow-hidden">
         <div 
-          className="absolute inset-0 opacity-100 blur-sm scale-[1.05]" 
+          className="absolute inset-0 opacity-100 scale-[1.02] blur-sm" 
           style={{ backgroundImage: `url("https://i.postimg.cc/kg4rxNH2/Gemini-Generated-Image-ohtdmbohtdmbohtd.jpg")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
         ></div>
-        <div className="absolute inset-0 bg-[#070b19]/40"></div>
+        <div className="absolute inset-0 bg-[#070b19]/60 mix-blend-multiply"></div>
       </div>
 
       {selectedStudent && (
@@ -821,6 +675,7 @@ const AdminHub = () => {
                 const roleMap = { 'students': 'student', 'teachers': 'teacher', 'admins': 'admin' };
                 supabase.from('profiles').select('*').eq('role', roleMap[directoryTab]).then(({data}) => setDirectoryUsers(data || []));
             }}
+            supabase={supabase}
         />
       )}
 
@@ -830,16 +685,16 @@ const AdminHub = () => {
         </button>
       )}
 
-      {/* SIDEBAR NAVIGATION */}
-      <div className="fixed top-0 left-0 bottom-0 w-28 border-r border-white/10 bg-black/20 backdrop-blur-2xl flex flex-col items-center py-10 gap-6 shrink-0 z-[150] shadow-2xl overflow-y-auto custom-scrollbar">
+      {/* SIDEBAR NAVIGATION (UPDATED WITH CUSTOM IMAGES) */}
+      <div className="fixed top-0 left-0 bottom-0 w-28 border-r border-white/10 bg-[#070b19]/80 backdrop-blur-2xl flex flex-col items-center py-10 gap-6 shrink-0 z-[150] shadow-2xl overflow-y-auto custom-scrollbar">
         <NavIconBtn isProfile />
         <div className="w-12 h-px bg-white/10 my-2 shrink-0"></div>
-        <NavIconBtn iconSvg={navIcons.accounts} active={activeModule === 'ACCOUNTS'} onClick={() => setActiveModule('ACCOUNTS')} />
-        <NavIconBtn iconSvg={navIcons.calendar} active={activeModule === 'CALENDARS'} onClick={() => setActiveModule('CALENDARS')} />
-        <NavIconBtn iconSvg={navIcons.content} active={activeModule === 'CONTENTS'} onClick={() => setActiveModule('CONTENTS')} />
-        <NavIconBtn iconSvg={navIcons.communications} active={activeModule === 'COMMUNICATIONS'} onClick={() => setActiveModule('COMMUNICATIONS')} hasNotification />
-        <NavIconBtn iconSvg={navIcons.finances} active={activeModule === 'FINANCES'} onClick={() => setActiveModule('FINANCES')} />
-        <NavIconBtn iconSvg={navIcons.settings} active={activeModule === 'SETTINGS'} onClick={() => setActiveModule('SETTINGS')} />
+        <NavIconBtn iconUrl={navIcons.accounts} active={activeModule === 'ACCOUNTS'} onClick={() => setActiveModule('ACCOUNTS')} />
+        <NavIconBtn iconUrl={navIcons.calendar} active={activeModule === 'CALENDARS'} onClick={() => setActiveModule('CALENDARS')} />
+        <NavIconBtn iconUrl={navIcons.content} active={activeModule === 'CONTENTS'} onClick={() => setActiveModule('CONTENTS')} />
+        <NavIconBtn iconUrl={navIcons.communications} active={activeModule === 'COMMUNICATIONS'} onClick={() => setActiveModule('COMMUNICATIONS')} hasNotification />
+        <NavIconBtn iconUrl={navIcons.finances} active={activeModule === 'FINANCES'} onClick={() => setActiveModule('FINANCES')} />
+        <NavIconBtn iconUrl={navIcons.settings} active={activeModule === 'SETTINGS'} onClick={() => setActiveModule('SETTINGS')} />
       </div>
 
       {/* MAIN CONTENT AREA */}
@@ -847,10 +702,10 @@ const AdminHub = () => {
         
         {/* HEADER */}
         {activeModule !== 'CONTENTS' && (
-          <div className="flex items-center gap-4 mb-10 pl-2 shrink-0">
-            <img src="https://i.postimg.cc/43zTZQhx/Diseno-sin-titulo-(20).png" alt="Outloud Logo" className="h-12 object-contain opacity-100" />
-            <div className="h-10 w-[2px] bg-white/40"></div>
-            <span className="text-3xl font-light text-white tracking-widest uppercase">{activeModule}</span>
+          <div className="flex items-center gap-5 mb-10 pl-2 shrink-0">
+            <img src="https://i.postimg.cc/43zTZQhx/Diseno-sin-titulo-(20).png" alt="Outloud Logo" className="h-12 object-contain drop-shadow-md" />
+            <div className="h-10 w-[2px] bg-white/20"></div>
+            <span className="text-3xl font-light text-white tracking-widest uppercase drop-shadow-sm">{activeModule}</span>
           </div>
         )}
 

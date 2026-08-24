@@ -3,32 +3,49 @@ import React, { useState, useEffect } from 'react';
 const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, onSuccess }) => {
   const [activeTab, setActiveTab] = useState('INFO_PERSONAL');
 
-  // Provisioning State
+  // ==========================================
+  // TAB 1: INFO PERSONAL (Provisioning, Creds, Overrides)
+  // ==========================================
   const [isProvisioning, setIsProvisioning] = useState(false);
   const [provEmail, setProvEmail] = useState('');
   const [provPassword, setProvPassword] = useState('');
   
-  // Credentials Edit State
   const [isEditingCreds, setIsEditingCreds] = useState(false);
   const [editEmail, setEditEmail] = useState('');
   const [editPassword, setEditPassword] = useState('');
   
-  // Processing & Kill Switch State
   const [isProcessing, setIsProcessing] = useState(false);
   const [accountStatus, setAccountStatus] = useState('active');
 
-  // Reporting Engine States
+  // Academic Overrides State
+  const [levelOverride, setLevelOverride] = useState('A1: Básico 1');
+  const [unitOverride, setUnitOverride] = useState(1);
+
+  // ==========================================
+  // TAB 2: FINANZAS (Cohorts, Proration, Credits, Payments)
+  // ==========================================
+  const getDefaultCohort = () => new Date().getDate() <= 15 ? 15 : 30;
+  const [cohort, setCohort] = useState(15);
+  const [credits, setCredits] = useState(0);
+  
+  const [payType, setPayType] = useState('Mensualidad');
+  const [payAmount, setPayAmount] = useState(40);
+  const [payRef, setPayRef] = useState('');
+  const [payFile, setPayFile] = useState(null);
+
+  // ==========================================
+  // TAB 3: ESTADISTICAS (Reporting Engine)
+  // ==========================================
   const [academicHistory, setAcademicHistory] = useState([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // Financial Engine States
-  const [payType, setPayType] = useState('Mensualidad');
-  const [payAmount, setPayAmount] = useState(20);
-  const [payRef, setPayRef] = useState('');
-  const [payFile, setPayFile] = useState(null);
+  // ADJUST THESE MONTHLY PRICES AS NEEDED FOR YOUR BUSINESS
+  const MONTHLY_PRICES = { A1: 40, A2: 45, B1: 50, B2: 55, C1: 60, C2: 65 };
 
-  // Pre-fill states whenever the selected user changes
+  // ==========================================
+  // INITIALIZATION
+  // ==========================================
   useEffect(() => {
     if (userData) {
       setProvEmail(userData.email || '');
@@ -40,8 +57,14 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
       setIsEditingCreds(false);
       
       setAccountStatus(userData.status || 'active');
+      setLevelOverride(userData.level || 'A1: Básico 1');
+      setUnitOverride(userData.unit || 1);
+
+      setCohort(userData.cohort || getDefaultCohort());
+      setCredits(userData.available_credits || 0);
+
       setActiveTab('INFO_PERSONAL');
-      updatePrice(payType, userData.level);
+      updatePrice(payType, userData.level || 'A1: Básico 1');
     }
   }, [userData]);
 
@@ -51,7 +74,10 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
     }
   }, [isOpen, isPending, userData, activeTab]);
 
-  // --- ACADEMIC LOGIC ---
+
+  // ==========================================
+  // ACADEMIC & REPORTING LOGIC
+  // ==========================================
   const fetchAcademicHistory = async () => {
     setIsLoadingHistory(true);
     try {
@@ -78,33 +104,106 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
     }, 2000);
   };
 
-  // --- FINANCIAL LOGIC ---
-  const updatePrice = (type, level = 'A1') => {
+  const handleSaveOverrides = async () => {
+    setIsProcessing(true);
+    try {
+      if (userData.id.startsWith('mock')) { if(onSuccess) onSuccess(); return; }
+      const { error } = await supabase.from('profiles').update({ level: levelOverride, unit: unitOverride }).eq('id', userData.id);
+      if (error) throw error;
+      alert("Overrides Académicos Guardados Exitosamente.");
+      if (onSuccess) onSuccess();
+    } catch (error) {
+      console.error(error);
+      alert("Error guardando los overrides.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+
+  // ==========================================
+  // FINANCIAL & COHORT LOGIC
+  // ==========================================
+  const getBaseLevel = (lvlString) => lvlString ? lvlString.split(':')[0].trim() : 'A1';
+
+  const updatePrice = (type, levelString) => {
     if (type === 'Extra') {
-      setPayAmount(12);
+      setPayAmount(12); // Extra bundle price
     } else {
-      if (level?.includes('C')) setPayAmount(50);
-      else if (level?.includes('B')) setPayAmount(30);
-      else setPayAmount(20);
+      const base = getBaseLevel(levelString);
+      setPayAmount(MONTHLY_PRICES[base] || 40);
     }
   };
 
   const handlePayTypeChange = (e) => {
     const newType = e.target.value;
     setPayType(newType);
-    updatePrice(newType, userData?.level);
+    updatePrice(newType, levelOverride);
   };
 
-  // Adapts to 15th, 30th, and Feb 28/29
-  const calculateNextBillingDate = (currentDateString) => {
-    const d = currentDateString ? new Date(currentDateString) : new Date();
-    let day = d.getDate();
-    const cohortDay = day <= 15 ? 15 : 30;
+  const calculateProration = (targetCohort, price) => {
+    const today = new Date();
+    let nextBilling = new Date(today.getFullYear(), today.getMonth(), targetCohort);
+    if (today.getDate() >= targetCohort) {
+        nextBilling.setMonth(nextBilling.getMonth() + 1);
+    }
+    const daysLeft = Math.max(0, Math.ceil((nextBilling - today) / (1000 * 60 * 60 * 24)));
+    return ((price / 30) * daysLeft).toFixed(2);
+  };
+
+  const proratedDue = calculateProration(cohort, MONTHLY_PRICES[getBaseLevel(levelOverride)] || 40);
+
+  const handleSaveCohort = async () => {
+    setIsProcessing(true);
+    try {
+      if (userData.id.startsWith('mock')) { if(onSuccess) onSuccess(); return; }
+      
+      const today = new Date();
+      let nextBilling = new Date(today.getFullYear(), today.getMonth(), cohort);
+      if (today.getDate() >= cohort) nextBilling.setMonth(nextBilling.getMonth() + 1);
+
+      const { error } = await supabase.from('profiles').update({ 
+        cohort: cohort, 
+        next_billing_date: nextBilling.toISOString().split('T')[0] 
+      }).eq('id', userData.id);
+      
+      if (error) throw error;
+      alert(`Cohorte actualizada al día ${cohort}. Se debe cobrar el prorrateo de $${proratedDue}.`);
+      if (onSuccess) onSuccess();
+    } catch (e) {
+      console.error(e);
+      alert("Error actualizando la cohorte.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleRefund = async () => {
+    const newCredits = credits + 1;
+    setCredits(newCredits);
+    if (userData.id.startsWith('mock')) return;
     
-    let nextMonth = new Date(d.getFullYear(), d.getMonth() + 1, cohortDay);
-    
-    // Check if JS rolled a 30th over to March 1st or 2nd (February anomaly)
-    if (cohortDay === 30 && nextMonth.getMonth() !== (d.getMonth() + 1) % 12) {
+    try {
+      await supabase.from('profiles').update({ available_credits: newCredits }).eq('id', userData.id);
+      
+      // Log the financial action
+      await supabase.from('financial_logs').insert({
+        student_id: userData.id,
+        type: 'refund',
+        description: '+1 Credit (Academy Fault)',
+        amount: 0
+      });
+      if (onSuccess) onSuccess();
+    } catch(e) { 
+      console.error(e); 
+      alert("Error procesando el reembolso.");
+    }
+  };
+
+  const calculateNextBillingDate = () => {
+    const d = new Date();
+    let nextMonth = new Date(d.getFullYear(), d.getMonth() + 1, cohort);
+    if (cohort === 30 && nextMonth.getMonth() !== (d.getMonth() + 1) % 12) {
         nextMonth = new Date(d.getFullYear(), d.getMonth() + 2, 0); 
     }
     return nextMonth.toISOString().split('T')[0];
@@ -119,53 +218,39 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
 
     setIsProcessing(true);
     try {
-      // 1. Upload the proof of payment to the bucket
       const fileExt = payFile.name.split('.').pop();
       const fileName = `${userData.id}/${Date.now()}.${fileExt}`;
-      const { error: uploadError } = await supabase.storage
-        .from('payment_proofs')
-        .upload(fileName, payFile);
-
+      const { error: uploadError } = await supabase.storage.from('payment_proofs').upload(fileName, payFile);
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('payment_proofs')
-        .getPublicUrl(fileName);
+      const { data: { publicUrl } } = supabase.storage.from('payment_proofs').getPublicUrl(fileName);
 
-      // 2. Log transaction in student_payments ledger
-      const { error: ledgerError } = await supabase
-        .from('student_payments')
-        .insert({
-          student_id: userData.id,
-          payment_type: payType === 'Mensualidad' ? 'Monthly Subscription' : 'Extra Credits',
-          amount: payAmount,
-          reference_number: payRef,
-          proof_image_url: publicUrl,
-          status: 'verified' 
-        });
-
+      const { error: ledgerError } = await supabase.from('student_payments').insert({
+        student_id: userData.id,
+        payment_type: payType === 'Mensualidad' ? 'Monthly Subscription' : 'Extra Credits',
+        amount: payAmount,
+        reference_number: payRef,
+        proof_image_url: publicUrl,
+        status: 'verified' 
+      });
       if (ledgerError) throw ledgerError;
 
-      // 3. Update the student's profile credits and billing date
-      const newCredits = payType === 'Mensualidad' ? 4 : (userData.credits || 0) + 2;
-      const updates = { credits: newCredits };
+      // UPDATE TO NEW CREDIT ECONOMY (4 per month)
+      const newCredits = payType === 'Mensualidad' ? 4 : credits + 2;
+      const updates = { available_credits: newCredits };
 
       if (payType === 'Mensualidad') {
-        updates.next_billing_date = calculateNextBillingDate(userData.next_billing_date);
+        updates.next_billing_date = calculateNextBillingDate();
       }
 
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update(updates)
-        .eq('id', userData.id);
-
+      const { error: profileError } = await supabase.from('profiles').update(updates).eq('id', userData.id);
       if (profileError) throw profileError;
 
+      setCredits(newCredits);
       alert("Pago registrado y créditos aplicados exitosamente.");
       setPayRef('');
       setPayFile(null);
       if (onSuccess) onSuccess();
-      onClose();
 
     } catch (error) {
       console.error("Payment Error:", error);
@@ -175,49 +260,39 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
     }
   };
 
-  // --- ACCOUNT CONTROL LOGIC ---
-  const handleOverlayClick = (e) => {
-    if (e.target.id === 'modal-overlay') onClose();
-  };
 
-  // THE FIX: Immediately populates the blank profile after Auth creation
+  // ==========================================
+  // ACCOUNT CONTROL LOGIC (Auth & Status)
+  // ==========================================
   const handleProvisionAccount = async () => {
-    if (!provEmail || !provPassword) {
-      alert("Debes asignar un correo y una contraseña.");
-      return;
-    }
+    if (!provEmail || !provPassword) { alert("Debes asignar un correo y una contraseña."); return; }
     
     setIsProcessing(true);
     try {
-      // 1. Create the credentials in the Auth system
       const { error: authError } = await supabase.functions.invoke('provision-user', {
         body: { email: provEmail, password: provPassword, fullName: userData.full_name, role: 'student' }
       });
       if (authError) throw authError;
 
-      // 2. Split the full name into first and last names safely
       const nameParts = (userData.full_name || '').trim().split(' ');
       const firstName = nameParts[0] || '';
       const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
 
-      // 3. Update the blank profile row with actual data
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
+      const { error: profileError } = await supabase.from('profiles').update({
           first_name: firstName,
           last_name: lastName,
           phone: userData.phone || '',
           role: 'Student',
           status: 'active',
           level: 'A1: Básico 1', 
-          unit: 1,               
+          unit: 1,
+          cohort: cohort,
+          available_credits: 0,              
           assigned_password: provPassword 
-        })
-        .eq('email', provEmail); 
+        }).eq('email', provEmail); 
         
       if (profileError) throw profileError;
 
-      // 4. Mark the original registration lead as approved
       const { error: regError } = await supabase.from('registrations').update({ status: 'approved' }).eq('id', userData.id);
       if (regError) throw regError;
 
@@ -233,10 +308,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   };
 
   const handleUpdateCredentials = async () => {
-    if (!editEmail || !editPassword) {
-      alert("El correo y contraseña no pueden estar vacíos.");
-      return;
-    }
+    if (!editEmail || !editPassword) { alert("El correo y contraseña no pueden estar vacíos."); return; }
 
     setIsProcessing(true);
     try {
@@ -279,26 +351,32 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
     }
   };
 
+  const handleOverlayClick = (e) => {
+    if (e.target.id === 'modal-overlay') onClose();
+  };
+
   if (!isOpen || !userData) return null;
 
   const isPastDue = userData.next_billing_date && new Date(userData.next_billing_date) < new Date();
 
   return (
-    <div id="modal-overlay" onClick={handleOverlayClick} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in font-montserrat">
-      <div className="relative w-full max-w-4xl max-h-[90vh] bg-[#070b19]/95 border border-white/20 rounded-[2rem] shadow-[0_25px_50px_rgba(0,0,0,0.5)] flex flex-col overflow-hidden animate-slide-up">
+    <div id="modal-overlay" onClick={handleOverlayClick} className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fade-in font-montserrat">
+      <div className="relative w-full max-w-4xl max-h-[90vh] bg-[#070b19]/95 border border-white/20 rounded-[2.5rem] shadow-[0_25px_50px_rgba(0,0,0,0.5)] flex flex-col overflow-hidden animate-slide-up">
         
+        {/* Glow Effects */}
         <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-900/20 blur-[100px] rounded-full mix-blend-screen pointer-events-none"></div>
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#fcd34d]/10 blur-[80px] rounded-full mix-blend-screen pointer-events-none"></div>
 
+        {/* HEADER */}
         <div className="relative z-10 flex items-start justify-between p-6 md:p-8 border-b border-white/10 bg-white/5">
           <div className="flex items-center gap-5">
             <div className="relative">
               <img 
                 src={userData.avatar_url || 'https://i.pravatar.cc/150'} alt="Profile Avatar" 
-                className={`w-16 h-16 md:w-20 md:h-20 rounded-full object-cover border-2 shadow-lg ${isPending ? 'border-amber-400' : accountStatus === 'suspended' ? 'border-red-500 opacity-50 text-grayscale' : 'border-white/20'}`}
+                className={`w-16 h-16 md:w-20 md:h-20 rounded-full object-cover border-2 shadow-lg ${isPending ? 'border-amber-400' : accountStatus === 'suspended' ? 'border-red-500 opacity-50 grayscale' : 'border-white/20'}`}
               />
-              {isPending && <div className="absolute -bottom-2 -right-2 bg-amber-400 text-[#08203e] text-[9px] font-black uppercase px-2 py-1 rounded-md shadow-md animate-pulse">PENDIENTE</div>}
-              {accountStatus === 'suspended' && <div className="absolute -bottom-2 -right-2 bg-red-600 text-white text-[9px] font-black uppercase px-2 py-1 rounded-md shadow-md">SUSPENDIDO</div>}
+              {isPending && <div className="absolute -bottom-2 -right-2 bg-amber-400 text-[#08203e] text-[9px] font-black uppercase px-2 py-1 rounded-md shadow-md animate-pulse">PENDING</div>}
+              {accountStatus === 'suspended' && <div className="absolute -bottom-2 -right-2 bg-red-600 text-white text-[9px] font-black uppercase px-2 py-1 rounded-md shadow-md">SUSPENDED</div>}
             </div>
             <div className="flex flex-col">
               <h2 className={`text-xl md:text-2xl font-black tracking-wide drop-shadow-md truncate ${accountStatus === 'suspended' ? 'text-white/50' : 'text-white'}`}>
@@ -307,16 +385,17 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
               <p className="text-xs md:text-sm text-white/60 font-semibold mt-1">{userData.email} {userData.phone ? `• ${userData.phone}` : ''}</p>
               {!isPending && (
                 <p className="text-[10px] text-[#fcd34d] font-bold uppercase tracking-widest mt-1">
-                  NIVEL: {userData.level?.split(':')[0] || 'A1'} • CRÉDITOS: <span className="text-white">{userData.credits || 0}</span>
+                  NIVEL: {levelOverride.split(':')[0]} • CRÉDITOS: <span className="text-white">{credits}</span>
                 </p>
               )}
             </div>
           </div>
-          <button onClick={onClose} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/70 hover:bg-white/10 hover:text-white transition-all hover:rotate-90">
+          <button onClick={onClose} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/50 hover:bg-white/10 hover:text-white transition-all hover:rotate-90">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
 
+        {/* TABS */}
         <div className="relative z-10 flex flex-wrap border-b border-white/10 bg-black/20 shrink-0">
           {[
             { id: 'INFO_PERSONAL', label: 'Info Personal & Control' },
@@ -334,10 +413,16 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
           ))}
         </div>
 
+        {/* CONTENT AREA */}
         <div className="relative z-10 flex-grow overflow-y-auto custom-scrollbar p-6 md:p-8">
           
+          {/* ==================================================== */}
+          {/* TAB 1: INFO PERSONAL & CONTROL                       */}
+          {/* ==================================================== */}
           {activeTab === 'INFO_PERSONAL' && (
             <div className="animate-fade-in space-y-6">
+              
+              {/* Provisioning Block */}
               {isPending && (
                 <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-6 mb-8 transition-all">
                   <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-4">
@@ -373,10 +458,35 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                 </div>
               )}
 
+              {/* God Mode Overrides */}
+              {!isPending && (
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-6 relative overflow-hidden">
+                  <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-4">
+                    <h4 className="text-xs font-black text-[#fcd34d] uppercase tracking-widest">Academic Overrides (God Mode)</h4>
+                    <button onClick={handleSaveOverrides} disabled={isProcessing} className="text-[10px] uppercase font-black text-[#08203e] bg-[#fcd34d] hover:bg-white px-4 py-2 rounded-lg transition-all shadow-md disabled:opacity-50">
+                      Guardar Overrides
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-[10px] text-white/50 font-bold uppercase mb-2">Override Nivel</label>
+                      <select value={levelOverride} onChange={e => setLevelOverride(e.target.value)} className="w-full bg-[#070b19] border border-white/20 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#fcd34d] cursor-pointer appearance-none">
+                        {LEVEL_OPTIONS.map(l => <option key={l} value={l}>{l}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-white/50 font-bold uppercase mb-2">Override Unidad</label>
+                      <input type="number" min="1" max="12" value={unitOverride} onChange={e => setUnitOverride(parseInt(e.target.value))} className="w-full bg-[#070b19] border border-white/20 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#fcd34d]" />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Credentials & Status */}
               {!isPending && (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                  <div className="md:col-span-2 bg-white/5 border border-white/10 rounded-2xl p-5 relative overflow-hidden">
-                    <div className="flex justify-between items-center mb-4">
+                  <div className="md:col-span-2 bg-white/5 border border-white/10 rounded-2xl p-6 relative overflow-hidden">
+                    <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-4">
                       <h4 className="text-xs font-black text-[#fcd34d] uppercase tracking-widest">Credenciales de Acceso</h4>
                       {!isEditingCreds ? (
                         <button onClick={() => setIsEditingCreds(true)} className="text-[10px] uppercase font-bold text-white/60 hover:text-white bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-md transition-all">Editar</button>
@@ -399,12 +509,12 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                     </div>
                   </div>
 
-                  <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden">
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col justify-between items-center text-center relative overflow-hidden">
                     <div>
                       <h4 className="text-xs font-black text-white/50 uppercase tracking-widest mb-1">Estado de Cuenta</h4>
                       <p className={`text-xl font-black uppercase tracking-widest ${accountStatus === 'active' ? 'text-emerald-400' : 'text-red-500'}`}>{accountStatus === 'active' ? 'Activo' : 'Suspendido'}</p>
                     </div>
-                    <button disabled={isProcessing} onClick={() => handleKillSwitch(accountStatus === 'active' ? 'suspended' : 'active')} className={`w-full mt-4 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-md disabled:opacity-50 ${accountStatus === 'active' ? 'bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500 hover:text-white' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500 hover:text-white'}`}>
+                    <button disabled={isProcessing} onClick={() => handleKillSwitch(accountStatus === 'active' ? 'suspended' : 'active')} className={`w-full mt-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-md disabled:opacity-50 ${accountStatus === 'active' ? 'bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500 hover:text-white' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500 hover:text-white'}`}>
                       {accountStatus === 'active' ? 'Suspender Acceso' : 'Reactivar Acceso'}
                     </button>
                   </div>
@@ -416,26 +526,64 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                 <div className="bg-white/5 border border-white/10 rounded-xl p-4"><p className="text-[10px] text-white/50 font-bold uppercase mb-1">Motivo del Curso</p><p className="text-sm text-white font-semibold">{userData.reason || 'No especificado'}</p></div>
                 <div className="bg-white/5 border border-white/10 rounded-xl p-4"><p className="text-[10px] text-white/50 font-bold uppercase mb-1">Meta de Fluidez</p><p className="text-sm text-white font-semibold">{userData.fluent_time || 'No especificado'}</p></div>
                 <div className="bg-white/5 border border-white/10 rounded-xl p-4"><p className="text-[10px] text-white/50 font-bold uppercase mb-1">Categoría de Interés</p><p className="text-sm text-white font-semibold">{userData.interest || 'No especificado'}</p></div>
-                <div className="bg-white/5 border border-white/10 rounded-xl p-4"><p className="text-[10px] text-white/50 font-bold uppercase mb-1">Fecha de Registro</p><p className="text-sm text-white font-semibold">{new Date(userData.created_at).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</p></div>
+                <div className="bg-white/5 border border-white/10 rounded-xl p-4"><p className="text-[10px] text-white/50 font-bold uppercase mb-1">Fecha de Registro</p><p className="text-sm text-white font-semibold">{new Date(userData.created_at || Date.now()).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</p></div>
               </div>
             </div>
           )}
 
+          {/* ==================================================== */}
+          {/* TAB 2: FINANZAS (Cohorts, Proration, Payments)       */}
+          {/* ==================================================== */}
           {activeTab === 'FINANZAS' && (
             <div className="animate-fade-in space-y-6">
               {!isPending ? (
                 <>
-                  <h3 className="text-xs font-black text-[#fcd34d] uppercase tracking-widest mb-4 border-b border-white/10 pb-2">Estado de Facturación</h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                    <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex flex-col justify-center items-center text-center">
-                      <p className="text-[10px] text-white/50 font-bold uppercase tracking-widest mb-1">Créditos Actuales</p>
-                      <p className={`text-4xl font-black ${userData.credits > 0 ? 'text-emerald-400' : 'text-red-400'}`}>{userData.credits || '0'}</p>
+                  {/* COHORT & REFUNDS ROW */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    {/* Proration & Cohort Control */}
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
+                      <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-4">
+                        <h4 className="text-xs font-black text-[#fcd34d] uppercase tracking-widest">Billing & Cohort</h4>
+                        <button onClick={handleSaveCohort} disabled={isProcessing} className="text-[10px] uppercase font-black text-white bg-white/10 border border-white/20 hover:bg-[#fcd34d] hover:text-[#08203e] hover:border-transparent px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50">
+                          Update Cohort
+                        </button>
+                      </div>
+                      <div className="flex gap-4 items-end">
+                        <div className="flex-1">
+                          <label className="block text-[10px] text-white/50 font-bold uppercase mb-2">Cohort Date</label>
+                          <select value={cohort} onChange={e => setCohort(parseInt(e.target.value))} className="w-full bg-[#070b19] border border-white/20 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#fcd34d] cursor-pointer appearance-none">
+                            <option value={15}>15th of the Month</option>
+                            <option value={30}>30th of the Month</option>
+                          </select>
+                        </div>
+                        <div className="flex-1 bg-black/40 border border-white/10 rounded-xl p-3 flex flex-col justify-center items-center text-center shadow-inner h-[46px]">
+                          <span className="text-[9px] text-white/50 uppercase tracking-widest font-bold mb-0.5">Prorated Due</span>
+                          <span className="text-sm font-black text-[#fcd34d] leading-none">${proratedDue}</span>
+                        </div>
+                      </div>
                     </div>
+
+                    {/* Credit Economy & Refunds */}
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col justify-center">
+                      <div className="flex justify-between items-center mb-3">
+                        <h3 className="text-white font-black text-xl">Class Credits: <span className="text-[#fcd34d]">{credits}</span></h3>
+                        <button onClick={handleRefund} className="bg-white/10 hover:bg-[#fcd34d] hover:text-[#08203e] text-white border border-white/20 hover:border-transparent font-black text-[10px] uppercase tracking-widest px-4 py-2 rounded-xl transition-all shadow-md">
+                          +1 Credit (Refund)
+                        </button>
+                      </div>
+                      <p className="text-[10px] text-white/50 leading-relaxed font-medium">Students automatically receive <strong className="text-white">4 credits</strong> upon monthly renewal. Use the refund button strictly for academy-fault disruptions (Logs directly to finances).</p>
+                    </div>
+
+                  </div>
+
+                  <h3 className="text-xs font-black text-[#fcd34d] uppercase tracking-widest mt-6 mb-4 border-b border-white/10 pb-2">Estado de Suscripción</h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                     <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex flex-col justify-center items-center text-center">
                       <p className="text-[10px] text-white/50 font-bold uppercase tracking-widest mb-1">Tarifa Mensual</p>
-                      <p className="text-2xl text-white font-black">${payAmount}</p>
-                      <p className="text-[9px] text-[#fcd34d] uppercase mt-1">Nivel {userData.level?.split(':')[0] || 'A1'}</p>
+                      <p className="text-2xl text-white font-black">${MONTHLY_PRICES[getBaseLevel(levelOverride)] || 40}</p>
+                      <p className="text-[9px] text-[#fcd34d] uppercase mt-1">Nivel {getBaseLevel(levelOverride)}</p>
                     </div>
                     <div className={`border rounded-xl p-4 flex flex-col justify-center items-center text-center ${isPastDue ? 'bg-red-500/10 border-red-500/50' : 'bg-white/5 border-white/10'}`}>
                       <p className="text-[10px] text-white/50 font-bold uppercase tracking-widest mb-1">Próximo Pago</p>
@@ -447,7 +595,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                   </div>
 
                   <div className="bg-black/30 border border-emerald-500/20 rounded-2xl p-6 md:p-8">
-                    <h3 className="text-emerald-400 font-black uppercase tracking-widest mb-2">Registrar Pago & Asignar Créditos</h3>
+                    <h3 className="text-emerald-400 font-black uppercase tracking-widest mb-2">Registrar Pago Manual</h3>
                     <p className="text-xs text-white/70 mb-6 font-medium">Sube el comprobante y el número de referencia para verificar el pago y aplicar los créditos automáticamente.</p>
                     
                     <form onSubmit={handlePaymentSubmit} className="space-y-4">
@@ -455,8 +603,8 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                         <div>
                           <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Tipo de Compra</label>
                           <select value={payType} onChange={handlePayTypeChange} className="w-full bg-[#070b19] border border-white/20 rounded-xl px-4 py-3 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-emerald-400 appearance-none">
-                            <option value="Mensualidad">Suscripción Mensual (4 Créditos)</option>
-                            <option value="Extra">Créditos Extra (2 Créditos)</option>
+                            <option value="Mensualidad">Suscripción Mensual (+4 Créditos)</option>
+                            <option value="Extra">Créditos Extra (+2 Créditos)</option>
                           </select>
                         </div>
                         <div>
@@ -492,6 +640,9 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
             </div>
           )}
 
+          {/* ==================================================== */}
+          {/* TAB 3: ESTADISTICAS                                  */}
+          {/* ==================================================== */}
           {activeTab === 'ESTADISTICAS' && (
             <div className="animate-fade-in space-y-6">
               {!isPending ? (
