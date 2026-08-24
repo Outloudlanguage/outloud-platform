@@ -250,6 +250,12 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
 
     setIsProcessing(true);
     try {
+      if (userData.id.startsWith('mock')) {
+         alert("Simulación de pago en datos de prueba exitosa.");
+         setIsProcessing(false);
+         return;
+      }
+
       const fileExt = payFile.name.split('.').pop();
       const fileName = `${userData.id}/${Date.now()}.${fileExt}`;
       const { error: uploadError } = await supabase.storage.from('payment_proofs').upload(fileName, payFile);
@@ -303,25 +309,39 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
     
     setIsProcessing(true);
     try {
+      // Mock Bypass to prevent actual auth calls when designing/testing UI
+      if (userData?.id?.startsWith('mock')) {
+        alert('Modo de Prueba: Cuenta simulada aprovisionada exitosamente.');
+        if (onSuccess) onSuccess();
+        onClose();
+        return;
+      }
+
       const cleanEmail = provEmail.trim().toLowerCase();
       const fullName = `${provFirstName.trim()} ${provLastName.trim()}`;
       const fullPhone = provPhone ? `${provCountryCode} ${provPhone.trim()}` : '';
 
-      // COMPREHENSIVE PAYLOAD FIX TO PREVENT 400 ERRORS
-      const { error: authError } = await supabase.functions.invoke('provision-user', {
+      // THE SURGICAL FIX: STRICT EDGE FUNCTION PAYLOAD
+      // Only send exactly what your Edge Function expects to prevent 400 rejection errors.
+      const { data: authData, error: authError } = await supabase.functions.invoke('provision-user', {
         body: { 
           email: cleanEmail, 
           password: provPassword, 
-          firstName: provFirstName.trim(),
-          lastName: provLastName.trim(),
           fullName: fullName, 
-          phone: fullPhone,
           role: 'student' 
         }
       });
       
-      if (authError) throw authError;
+      // Advanced diagnostic logging to catch detailed Edge Function errors
+      if (authError) {
+         console.error("Edge Function Error:", authError);
+         let details = "";
+         if (authError.context) details = JSON.stringify(authError.context);
+         throw new Error(`Edge Function falló: ${authError.message} ${details}`);
+      }
 
+      // ISOLATED DATABASE UPDATE
+      // Inject all the custom properties into the database directly AFTER auth succeeds.
       const { error: profileError } = await supabase.from('profiles').update({
           first_name: provFirstName.trim(),
           last_name: provLastName.trim(),
@@ -335,17 +355,18 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
           assigned_password: provPassword 
         }).eq('email', cleanEmail); 
         
-      if (profileError) throw profileError;
+      if (profileError) throw new Error(`Error en Perfil DB: ${profileError.message}`);
 
+      // Try to clear the pending registration lead
       const { error: regError } = await supabase.from('registrations').update({ status: 'approved' }).eq('id', userData.id);
-      if (regError) throw regError;
+      if (regError) console.warn("No se pudo actualizar la tabla registrations, pero el perfil fue creado.");
 
       alert('Cuenta aprovisionada exitosamente. El estudiante ya está activo en el directorio.');
       if (onSuccess) onSuccess();
       onClose();
     } catch (error) {
-      console.error("Provisioning Error:", error);
-      alert(`Error al crear la cuenta: ${error.message || 'Fallo en la red'}`);
+      console.error("Provisioning Catch Error:", error);
+      alert(`Error al crear la cuenta:\n\n${error.message || 'Fallo en la red'}\n\nPor favor, verifica la consola para detalles exactos.`);
     } finally {
       setIsProcessing(false);
     }
@@ -356,6 +377,13 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
 
     setIsProcessing(true);
     try {
+      if (userData.id.startsWith('mock')) {
+         alert("Simulación de cambio de credenciales en datos de prueba exitosa.");
+         setIsEditingCreds(false);
+         setIsProcessing(false);
+         return;
+      }
+
       const { error: authError } = await supabase.functions.invoke('manage-credentials', {
         body: { userId: userData.id, email: editEmail, password: editPassword }
       });
@@ -383,6 +411,12 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
 
     setIsProcessing(true);
     try {
+      if (userData.id.startsWith('mock')) {
+         setAccountStatus(newStatus);
+         setIsProcessing(false);
+         return;
+      }
+
       const { error } = await supabase.from('profiles').update({ status: newStatus }).eq('id', userData.id);
       if (error) throw error;
       setAccountStatus(newStatus);
@@ -404,15 +438,13 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   const isPastDue = userData.next_billing_date && new Date(userData.next_billing_date) < new Date();
 
   return (
-    <div id="modal-overlay" onClick={handleOverlayClick} className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fade-in font-montserrat">
-      <div className="relative w-full max-w-4xl max-h-[90vh] bg-[#070b19]/95 border border-white/20 rounded-[2.5rem] shadow-[0_25px_50px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden animate-slide-up">
+    <div id="modal-overlay" onClick={handleOverlayClick} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in font-montserrat">
+      <div className="relative w-full max-w-4xl max-h-[90vh] bg-[#070b19]/95 border border-white/20 rounded-[2rem] shadow-[0_25px_50px_rgba(0,0,0,0.5)] flex flex-col overflow-hidden animate-slide-up">
         
-        {/* Glow Effects */}
         <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-900/20 blur-[100px] rounded-full mix-blend-screen pointer-events-none"></div>
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#fcd34d]/10 blur-[80px] rounded-full mix-blend-screen pointer-events-none"></div>
 
-        {/* HEADER */}
-        <div className="relative z-10 flex items-start justify-between p-6 md:p-8 border-b border-white/10 bg-white/5 shrink-0">
+        <div className="relative z-10 flex items-start justify-between p-6 md:p-8 border-b border-white/10 bg-white/5">
           <div className="flex items-center gap-5 overflow-hidden w-full pr-4">
             <div className="relative shrink-0">
               <img 
@@ -434,12 +466,11 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
               )}
             </div>
           </div>
-          <button onClick={onClose} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/50 hover:bg-white/10 hover:text-white transition-all hover:rotate-90 shrink-0">
+          <button onClick={onClose} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/70 hover:bg-white/10 hover:text-white transition-all hover:rotate-90 shrink-0">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
 
-        {/* TABS */}
         <div className="relative z-10 flex flex-wrap border-b border-white/10 bg-black/20 shrink-0">
           {[
             { id: 'INFO_PERSONAL', label: 'Info Personal & Control' },
@@ -457,7 +488,6 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
           ))}
         </div>
 
-        {/* CONTENT AREA */}
         <div className="relative z-10 flex-grow overflow-y-auto custom-scrollbar p-6 md:p-8">
           
           {/* ==================================================== */}
@@ -466,7 +496,6 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
           {activeTab === 'INFO_PERSONAL' && (
             <div className="animate-fade-in space-y-6">
               
-              {/* RESTORED Provisioning Block for Pending Leads */}
               {isPending && (
                 <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-6 mb-8 transition-all shadow-inner">
                   <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-4">

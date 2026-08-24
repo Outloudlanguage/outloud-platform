@@ -16,32 +16,55 @@ import NavButtonModal from './components/AdminHub/Modals/NavButtonModal';
 import CustomerManagement from './components/AdminHub/Tabs/CustomerManagement';
 import MasterSettings from './components/AdminHub/Tabs/MasterSettings';
 import AdminDropdown from './components/ui/AdminDropdown';
-import StudentManagerModal from './components/AdminHub/Tabs/StudentManagerModal';
+import StudentManagerModal from './components/AdminHub/Tabs/StudentManagerModal'; 
 
 // ==========================================
-// COMPREHENSIVE COUNTRY CODES LIBRARY
+// DEDICATED PROVISIONING MODAL (Rebuilt & Upgraded)
 // ==========================================
 const COUNTRY_CODES = [
-  { code: '+1', country: '🇺🇸 US/CA' }, { code: '+44', country: '🇬🇧 UK' }, { code: '+34', country: '🇪🇸 ES' },
-  { code: '+51', country: '🇵🇪 PE' }, { code: '+52', country: '🇲🇽 MX' }, { code: '+54', country: '🇦🇷 AR' },
-  { code: '+55', country: '🇧🇷 BR' }, { code: '+56', country: '🇨🇱 CL' }, { code: '+57', country: '🇨🇴 CO' },
-  { code: '+58', country: '🇻🇪 VE' }, { code: '+593', country: '🇪🇨 EC' }, { code: '+598', country: '🇺🇾 UY' },
-  { code: '+502', country: '🇪🇨 GT' }, { code: '+503', country: '🇸🇻 SV' }, { code: '+504', country: '🇭🇳 HN' },
-  { code: '+505', country: '🇳🇮 NI' }, { code: '+506', country: '🇨🇷 CR' }, { code: '+507', country: '🇵🇦 PA' },
-  { code: '+53', country: '🇨🇺 CU' }, { code: '+1-809', country: '🇩🇴 DO' }, { code: '+1-787', country: '🇩🇴 DO' },
-  { code: '+591', country: '🇧🇴 BO' }, { code: '+595', country: '🇵🇾 PY' }, { code: '+33', country: '🇫🇷 FR' },
-  { code: '+49', country: '🇩🇪 DE' }, { code: '+39', country: '🇩🇪 DE' }, { code: '+351', country: '🇵🇹 PT' },
-  { code: '+31', country: '🇳🇱 NL' }, { code: '+32', country: '🇧🇪 BE' }, { code: '+41', country: '🇨🇭 CH' },
-  { code: '+43', country: '🇦🇹 AT' }, { code: '+46', country: '🇸🇪 SE' }, { code: '+47', country: '🇳🇴 NO' },
-  { code: '+45', country: '🇩🇰 NO' }, { code: '+358', country: '🇫🇮 FI' }, { code: '+7', country: '🇷🇺 RU' },
-  { code: '+81', country: '🇯🇵 JP' }, { code: '+82', country: '🇰🇷 KR' }, { code: '+86', country: '🇰🇵 KP' },
-  { code: '+91', country: '🇮🇳 IN' }, { code: '+61', country: '🇦🇺 AU' }, { code: '+64', country: '🇳🇿 NZ' },
-  { code: '+27', country: '🇿🇦 ZA' }, { code: '+971', country: '🇪🇬 AE' }, { code: '+966', country: '🇸🇦 SA' }
+  { code: '+1', label: 'us US/CA (+1)' },
+  { code: '+44', label: 'gb GB UK (+44)' },
+  { code: '+34', label: 'es ES ES (+34)' },
+  { code: '+51', label: 'pe PE PE (+51)' },
+  { code: '+52', label: 'mx MX MX (+52)' },
+  { code: '+54', label: 'ar AR AR (+54)' },
+  { code: '+55', label: 'br BR BR (+55)' },
+  { code: '+56', label: 'cl CL CL (+56)' },
+  { code: '+57', label: 'co CO CO (+57)' },
+  { code: '+58', label: 've VE VE (+58)' },
+  { code: '+593', label: 'ec EC EC (+593)' },
+  { code: '+598', label: 'uy UY UY (+598)' },
+  { code: '+502', label: 'gt GT GT (+502)' },
+  { code: '+503', label: 'sv SV SV (+503)' },
+  { code: '+504', label: 'hn HN HN (+504)' },
+  { code: '+505', label: 'ni NI NI (+505)' },
+  { code: '+506', label: 'cr CR CR (+506)' },
+  { code: '+507', label: 'pa PA PA (+507)' },
+  { code: '+1-809', label: 'do DO DO (+1-809)' },
+  { code: '+53', label: 'cu CU CU (+53)' },
+  { code: '+591', label: 'bo BO BO (+591)' },
+  { code: '+595', label: 'py PY PY (+595)' },
+  { code: '+33', label: 'fr FR FR (+33)' },
+  { code: '+49', label: 'de DE DE (+49)' },
+  { code: '+39', label: 'it IT IT (+39)' },
+  { code: '+41', label: 'ch CH CH (+41)' },
+  { code: '+43', label: 'at AT AT (+43)' },
+  { code: '+46', label: 'se SE SE (+46)' },
+  { code: '+47', label: 'no NO NO (+47)' },
+  { code: '+45', label: 'dk DK DK (+45)' },
+  { code: '+358', label: 'fi FI FI (+358)' },
+  { code: '+7', label: 'ru RU RU (+7)' },
+  { code: '+81', label: 'jp JP JP (+81)' },
+  { code: '+82', label: 'kr KR KR (+82)' },
+  { code: '+86', label: 'kp KP KP (+86)' },
+  { code: '+91', label: 'in IN IN (+91)' },
+  { code: '+61', label: 'au AU AU (+61)' },
+  { code: '+64', label: 'nz NZ NZ (+64)' },
+  { code: '+27', label: 'za ZA ZA (+27)' },
+  { code: '+971', label: 'ae AE AE (+971)' },
+  { code: '+966', label: 'sa SA SA (+966)' }
 ];
 
-// ==========================================
-// DEDICATED PROVISIONING MODAL
-// ==========================================
 const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess }) => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -52,7 +75,22 @@ const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess }) => {
   const [role, setRole] = useState('student');
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // New Upgraded States
+  const [provAvatar, setProvAvatar] = useState(null);
+  const [provAvatarPreview, setProvAvatarPreview] = useState(null);
+  const [provLevel, setProvLevel] = useState('A1: Básico 1');
+  const [provUnit, setProvUnit] = useState(1);
+  const [provCohort, setProvCohort] = useState(15);
+
   if (!isOpen) return null;
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setProvAvatar(file);
+      setProvAvatarPreview(URL.createObjectURL(file));
+    }
+  };
 
   const handleProvision = async (e) => {
     e.preventDefault();
@@ -63,53 +101,62 @@ const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess }) => {
 
     setIsProcessing(true);
     try {
-      const cleanEmail = email.trim().toLowerCase();
-      const cleanFirstName = firstName.trim();
-      const cleanLastName = lastName.trim();
-      const fullName = `${cleanFirstName} ${cleanLastName}`;
-      const fullPhone = phone ? `${countryCode} ${phone.trim()}` : '';
+      // 1. Upload Avatar if selected
+      let avatarUrl = null;
+      if (provAvatar) {
+        const fileExt = provAvatar.name.split('.').pop();
+        const fileName = `avatars/${Date.now()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage.from('avatars').upload(fileName, provAvatar);
+        if (uploadError) throw new Error(`Error subiendo avatar: ${uploadError.message}`);
+        
+        const { data: pubData } = supabase.storage.from('avatars').getPublicUrl(fileName);
+        avatarUrl = pubData.publicUrl;
+      }
 
-      // Comprehensive payload to prevent 400 Bad Request
+      // 2. Create the credentials in Auth via Edge Function
+      const fullName = `${firstName.trim()} ${lastName.trim()}`;
       const { error: authError } = await supabase.functions.invoke('provision-user', {
-        body: { 
-          email: cleanEmail, 
-          password: password, 
-          firstName: cleanFirstName,
-          lastName: cleanLastName,
-          fullName: fullName, 
-          phone: fullPhone,
-          role: role 
-        }
+        body: { email, password, fullName, role }
       });
       
-      if (authError) throw authError;
+      // ERROR DIAGNOSTIC LOGGING
+      if (authError) {
+        console.error("Edge Function Error:", authError);
+        throw new Error(`Fallo en Edge Function: ${authError.message}. Verifica los logs de la consola o Supabase.`);
+      }
 
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          first_name: cleanFirstName,
-          last_name: cleanLastName,
-          phone: fullPhone,
-          role: role,
-          status: 'active',
-          level: role === 'student' ? 'A1: Básico 1' : null,
-          unit: role === 'student' ? 1 : null,
-          assigned_password: password
-        })
-        .eq('email', cleanEmail);
+      // 3. Update the blank profile row generated by the Auth trigger
+      const fullPhone = phone ? `${countryCode} ${phone}` : '';
+      const updates = {
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
+        phone: fullPhone,
+        role: role,
+        status: 'active',
+        assigned_password: password
+      };
 
-      if (profileError) throw profileError;
+      if (avatarUrl) updates.avatar_url = avatarUrl;
+      
+      if (role === 'student') {
+        updates.level = provLevel;
+        updates.unit = provUnit;
+        updates.cohort = provCohort;
+      }
+
+      const { error: profileError } = await supabase.from('profiles').update(updates).eq('email', email);
+
+      if (profileError) {
+        console.error("Profile DB Update Error:", profileError);
+        throw new Error(`Error al actualizar el perfil en la BD: ${profileError.message}`);
+      }
 
       alert(`Cuenta de ${role} aprovisionada exitosamente.`);
-      
-      // Reset form
-      setFirstName(''); setLastName(''); setEmail(''); setPassword(''); setPhone('');
-      
       if (onSuccess) onSuccess();
       onClose();
     } catch (error) {
-      console.error("Provisioning Error:", error);
-      alert(`Error al crear la cuenta: ${error.message}`);
+      console.error("Provisioning Catch Block Error:", error);
+      alert(`Error crítico: ${error.message}`);
     } finally {
       setIsProcessing(false);
     }
@@ -117,10 +164,10 @@ const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess }) => {
 
   return (
     <div id="prov-overlay" onClick={(e) => e.target.id === 'prov-overlay' && onClose()} className="fixed inset-0 z-[400] flex items-center justify-center bg-black/70 backdrop-blur-md px-4 animate-fade-in font-montserrat">
-      <div className="bg-[#070b19]/95 border border-[#fcd34d]/30 rounded-[2rem] p-8 max-w-xl w-full shadow-[0_0_40px_rgba(252,211,77,0.15)] relative flex flex-col animate-slide-up overflow-hidden">
+      <div className="bg-[#070b19]/95 border border-[#fcd34d]/30 rounded-[2rem] p-8 max-w-3xl w-full shadow-[0_0_40px_rgba(252,211,77,0.15)] relative flex flex-col animate-slide-up overflow-hidden max-h-[95vh]">
         <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-[#fcd34d]/10 blur-[100px] rounded-full pointer-events-none"></div>
         
-        <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4 relative z-10">
+        <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4 relative z-10 shrink-0">
           <div>
             <h2 className="text-2xl font-black text-white uppercase tracking-widest">Provisioning</h2>
             <p className="text-[10px] text-[#fcd34d] font-bold uppercase tracking-widest mt-1">Creación Maestra de Cuentas</p>
@@ -128,52 +175,98 @@ const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess }) => {
           <button onClick={onClose} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/50 hover:bg-white/10 hover:text-white transition-all">✕</button>
         </div>
 
-        <form onSubmit={handleProvision} className="space-y-5 relative z-10">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Nombres</label>
-              <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)} className="w-full bg-black/40 border border-white/20 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#fcd34d]" required />
+        <div className="overflow-y-auto custom-scrollbar pr-2 relative z-10">
+          <form onSubmit={handleProvision} className="space-y-6">
+            
+            {/* Avatar & Role Section */}
+            <div className="flex flex-col md:flex-row gap-6 items-center bg-white/5 border border-white/10 p-5 rounded-2xl">
+              <div className="relative group cursor-pointer shrink-0">
+                <div className="w-24 h-24 rounded-full border-2 border-white/20 overflow-hidden bg-black/40 flex items-center justify-center group-hover:border-[#fcd34d] transition-colors">
+                  {provAvatarPreview ? (
+                    <img src={provAvatarPreview} alt="Preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-4xl text-white/30">+</span>
+                  )}
+                </div>
+                <input type="file" accept="image/*" onChange={handleAvatarChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                <div className="absolute -bottom-2 bg-black/80 text-[8px] uppercase tracking-widest px-2 py-1 rounded w-full text-center text-white/70 font-bold opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">Subir Foto</div>
+              </div>
+              <div className="flex-1 w-full">
+                <label className="block text-[10px] text-[#fcd34d] font-bold uppercase mb-2">Rol de Sistema</label>
+                <div className="flex gap-2">
+                  {['student', 'teacher', 'admin'].map(r => (
+                    <button key={r} type="button" onClick={() => setRole(r)} className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all border ${role === r ? 'bg-[#fcd34d] text-[#08203e] border-transparent shadow-md' : 'bg-black/40 text-white/50 border-white/20 hover:text-white'}`}>
+                      {r}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
-            <div>
-              <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Apellidos</label>
-              <input type="text" value={lastName} onChange={e => setLastName(e.target.value)} className="w-full bg-black/40 border border-white/20 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#fcd34d]" required />
-            </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
+            {/* Personal Data Section */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Nombres</label>
+                <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)} className="w-full bg-black/40 border border-white/20 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#fcd34d]" required />
+              </div>
+              <div>
+                <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Apellidos</label>
+                <input type="text" value={lastName} onChange={e => setLastName(e.target.value)} className="w-full bg-black/40 border border-white/20 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#fcd34d]" required />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Correo Electrónico</label>
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-black/40 border border-white/20 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#fcd34d]" required />
+              </div>
+              <div>
+                <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Asignar Contraseña</label>
+                <input type="text" value={password} onChange={e => setPassword(e.target.value)} placeholder="Ej: OlaAlberto.2026" className="w-full bg-black/40 border border-white/20 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#fcd34d]" required />
+              </div>
+            </div>
+
             <div>
-              <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Correo Electrónico</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-black/40 border border-white/20 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#fcd34d]" required />
+              <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Teléfono (Opcional)</label>
+              <div className="flex gap-2">
+                <select value={countryCode} onChange={e => setCountryCode(e.target.value)} className="w-2/5 bg-black/40 border border-white/20 rounded-xl px-2 py-3 text-white text-sm outline-none focus:border-[#fcd34d] cursor-pointer appearance-none text-center">
+                  {COUNTRY_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+                </select>
+                <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="412 123 4567" className="w-3/5 bg-black/40 border border-white/20 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#fcd34d]" />
+              </div>
             </div>
-            <div>
-              <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Asignar Contraseña</label>
-              <input type="text" value={password} onChange={e => setPassword(e.target.value)} placeholder="Ej: OLA2026*" className="w-full bg-black/40 border border-white/20 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#fcd34d]" required />
-            </div>
-          </div>
 
-          <div>
-            <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Teléfono (Opcional)</label>
-            <div className="flex gap-2">
-              <select value={countryCode} onChange={e => setCountryCode(e.target.value)} className="w-1/3 bg-black/40 border border-white/20 rounded-xl px-2 py-3 text-white text-sm outline-none focus:border-[#fcd34d] cursor-pointer appearance-none text-center">
-                {COUNTRY_CODES.map(c => <option key={c.code} value={c.code}>{c.country} ({c.code})</option>)}
-              </select>
-              <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="412 123 4567" className="w-2/3 bg-black/40 border border-white/20 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#fcd34d]" />
-            </div>
-          </div>
+            {/* Academic & Billing Initialization (Only for Students) */}
+            {role === 'student' && (
+              <div className="grid grid-cols-3 gap-4 p-5 bg-white/5 border border-white/10 rounded-2xl">
+                <div className="col-span-3 mb-1">
+                  <span className="text-[10px] text-[#fcd34d] font-bold uppercase tracking-widest">Asignación Académica & Finanzas</span>
+                </div>
+                <div>
+                  <label className="block text-[9px] text-white/50 font-bold uppercase mb-1">Nivel</label>
+                  <select value={provLevel} onChange={e => setProvLevel(e.target.value)} className="w-full bg-black/40 border border-white/20 rounded-xl px-2 py-3 text-white text-sm outline-none focus:border-[#fcd34d] cursor-pointer appearance-none">
+                    {LEVEL_OPTIONS.map(l => <option key={l} value={l}>{l.split(':')[0]}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[9px] text-white/50 font-bold uppercase mb-1">Unidad</label>
+                  <input type="number" min="1" max="12" value={provUnit} onChange={e => setProvUnit(parseInt(e.target.value))} className="w-full bg-black/40 border border-white/20 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#fcd34d]" />
+                </div>
+                <div>
+                  <label className="block text-[9px] text-white/50 font-bold uppercase mb-1">Día de Corte</label>
+                  <select value={provCohort} onChange={e => setProvCohort(parseInt(e.target.value))} className="w-full bg-black/40 border border-white/20 rounded-xl px-2 py-3 text-white text-sm outline-none focus:border-[#fcd34d] cursor-pointer appearance-none">
+                    <option value={15}>15 del mes</option>
+                    <option value={30}>30 del mes</option>
+                  </select>
+                </div>
+              </div>
+            )}
 
-          <div>
-            <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Rol de Sistema</label>
-            <select value={role} onChange={e => setRole(e.target.value)} className="w-full bg-black/40 border border-white/20 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#fcd34d] cursor-pointer appearance-none">
-              <option value="student">Estudiante</option>
-              <option value="teacher">Profesor</option>
-              <option value="admin">Administrador</option>
-            </select>
-          </div>
-
-          <button type="submit" disabled={isProcessing} className="w-full py-4 mt-2 bg-[#fcd34d] hover:bg-white text-[#08203e] font-black tracking-widest text-xs uppercase rounded-xl transition-all shadow-[0_0_20px_rgba(252,211,77,0.3)] disabled:opacity-50 hover:scale-[1.02]">
-            {isProcessing ? 'CREANDO CUENTA...' : 'PROVISIONAR CUENTA'}
-          </button>
-        </form>
+            <button type="submit" disabled={isProcessing} className="w-full py-4 mt-2 bg-[#fcd34d] hover:bg-white text-[#08203e] font-black tracking-widest text-xs uppercase rounded-xl transition-all shadow-[0_0_20px_rgba(252,211,77,0.3)] disabled:opacity-50 hover:scale-[1.02]">
+              {isProcessing ? 'PROCESANDO E INSERTANDO EN BD...' : 'PROVISIONAR CUENTA'}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );
@@ -245,7 +338,7 @@ const PanZoomImage = ({ src, data, onSave, isPreview, wrapperClass = "w-full h-6
 };
 
 // ==========================================
-// NAVIGATION ICONS
+// NAVIGATION ICONS (Custom Images)
 // ==========================================
 const navIcons = {
   accounts: "https://i.postimg.cc/7L53pM9G/5(6).png",
@@ -505,7 +598,7 @@ const AdminHub = () => {
   const renderAccounts = () => (
     <div className="grid grid-cols-12 gap-6 w-full max-w-[1500px] h-[calc(100vh-160px)] animate-fade-in">
       <div className="col-span-3 flex flex-col gap-6 h-full">
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-xl flex flex-col items-center justify-center relative overflow-hidden h-[35%]">
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center relative overflow-hidden h-[35%]">
           <div className="relative w-32 h-32 flex items-center justify-center shrink-0 mb-2">
             <svg className="w-full h-full transform -rotate-90 drop-shadow-[0_0_10px_rgba(252,211,77,0.8)]" viewBox="0 0 100 100">
               <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.1)" strokeWidth="8" fill="transparent" />
@@ -517,38 +610,39 @@ const AdminHub = () => {
           </div>
           <h3 className="text-white/90 font-bold text-xs tracking-widest uppercase text-center mt-2">ACTIVE STUDENTS</h3>
         </div>
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-xl flex flex-col h-[65%]">
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col h-[65%]">
           <h3 className="text-white font-black text-2xl tracking-wide mb-4 drop-shadow-md shrink-0">Activities</h3>
           <ul className="space-y-4 text-xs font-medium text-white/90 flex-1 overflow-y-auto custom-scrollbar pr-2 mb-4">
-            <li className="flex items-center gap-3"><svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg><span>Aug 15: Live Lab Session</span></li>
-            <li className="flex items-center gap-3"><svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg><span>Aug 18: Chat room meeting</span></li>
-            <li className="flex items-center gap-3"><svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg><span>Aug 25: Conversation Club</span></li>
-            <li className="flex items-center gap-3"><svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg><span>Aug 26: Live Lab Session</span></li>
+            <li className="flex items-center gap-3 overflow-hidden"><svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg><span className="truncate">Aug 15: Live Lab Session</span></li>
+            <li className="flex items-center gap-3 overflow-hidden"><svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg><span className="truncate">Aug 18: Chat room meeting</span></li>
+            <li className="flex items-center gap-3 overflow-hidden"><svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg><span className="truncate">Aug 25: Conversation Club</span></li>
+            <li className="flex items-center gap-3 overflow-hidden"><svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg><span className="truncate">Aug 26: Live Lab Session</span></li>
           </ul>
-          <button className="w-full py-3 px-3 bg-[#e2e8f0] text-[#0f172a] hover:bg-white font-black text-[10px] md:text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 shadow-xl transition-all hover:scale-105 shrink-0 mt-auto">
+          <button className="w-full py-4 px-2 bg-[#e2e8f0] text-[#0f172a] hover:bg-white font-black text-[10px] md:text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 shadow-xl transition-all hover:scale-105 shrink-0 mt-auto overflow-hidden">
             <img src="https://i.postimg.cc/mrtXmB72/Copia-de-Diseno-sin-titulo-(2).png" alt="Request Substitute" className="w-5 h-5 object-contain shrink-0" />
-            <span className="whitespace-normal leading-tight text-left">REQUEST<br/>SUBSTITUTE</span>
+            <span className="truncate leading-tight">REQUEST SUBSTITUTE</span>
           </button>
         </div>
       </div>
       <div className="col-span-3 flex flex-col gap-6 h-full">
-        {/* CLEAN, UNIFORM MACRO CARDS */}
-        <button onClick={() => setIsProvisioningModalOpen(true)} className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-xl flex flex-col items-center justify-center gap-6 hover:bg-white/10 transition-all hover:scale-[1.02] group">
-          <img src="https://i.postimg.cc/ZKPVccsH/4(8).png" alt="Provisioning" className="w-24 md:w-32 object-contain group-hover:scale-110 transition-transform drop-shadow-md" />
+        {/* HUGE MACRO BUTTON FIX */}
+        <button onClick={() => setIsProvisioningModalOpen(true)} className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center gap-6 hover:bg-white/10 transition-all hover:scale-[1.02] group">
+          <img src="https://i.postimg.cc/ZKPVccsH/4(8).png" alt="Provisioning" className="w-32 md:w-40 object-contain group-hover:scale-110 transition-transform drop-shadow-md" />
           <h3 className="font-black text-xl md:text-2xl tracking-widest uppercase text-white">Provisioning</h3>
         </button>
-        <button onClick={() => alert('Módulo de Estadísticas en construcción...')} className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-xl flex flex-col items-center justify-center gap-6 hover:bg-white/10 transition-all hover:scale-[1.02] group">
-          <img src="https://i.postimg.cc/sxd4PQpm/2(12).png" alt="Stats" className="w-24 md:w-32 object-contain group-hover:scale-110 transition-transform drop-shadow-md" />
+        <button onClick={() => setActiveModule('FINANCES')} className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center gap-6 hover:bg-white/10 transition-all hover:scale-[1.02] group">
+          <img src="https://i.postimg.cc/sxd4PQpm/2(12).png" alt="Stats" className="w-32 md:w-40 object-contain group-hover:scale-110 transition-transform drop-shadow-md" />
           <h3 className="font-black text-xl md:text-2xl tracking-widest uppercase text-white">Stats</h3>
         </button>
       </div>
-      <div className="col-span-6 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-8 shadow-xl flex flex-col h-full overflow-hidden">
+      <div className="col-span-6 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-8 shadow-2xl flex flex-col h-full overflow-hidden">
         <div className="flex bg-black/20 rounded-2xl p-2 mb-6 shrink-0 shadow-inner">
           <button onClick={() => setDirectoryTab('students')} className={`flex-1 py-3 rounded-xl font-bold text-sm shadow-md transition-all ${directoryTab === 'students' ? 'bg-white/20 text-white' : 'text-white/50 hover:text-white'}`}>Students</button>
           <button onClick={() => setDirectoryTab('teachers')} className={`flex-1 py-3 rounded-xl font-bold text-sm shadow-md transition-all ${directoryTab === 'teachers' ? 'bg-white/20 text-white' : 'text-white/50 hover:text-white'}`}>Teachers</button>
           <button onClick={() => setDirectoryTab('admins')} className={`flex-1 py-3 rounded-xl font-bold text-sm shadow-md transition-all ${directoryTab === 'admins' ? 'bg-white/20 text-white' : 'text-white/50 hover:text-white'}`}>Admin</button>
         </div>
         
+        {/* DIRECTORY EMPTY STATE FIX */}
         <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 flex flex-col gap-4">
           {isLoadingDirectory ? (
             <div className="h-full flex items-center justify-center">
@@ -827,7 +921,15 @@ const AdminHub = () => {
   );
 
   return (
-    <div className="relative min-h-screen w-full font-montserrat bg-[#070b19] text-white overflow-hidden flex flex-col">
+    <div 
+      className="relative min-h-screen w-full font-montserrat text-white overflow-hidden flex flex-col"
+      style={{ 
+        backgroundImage: `linear-gradient(to bottom right, rgba(7,11,25,0.9), rgba(7,11,25,0.65)), url("https://i.postimg.cc/kg4rxNH2/Gemini-Generated-Image-ohtdmbohtdmbohtd.jpg")`, 
+        backgroundSize: 'cover', 
+        backgroundPosition: 'center', 
+        backgroundAttachment: 'fixed' 
+      }}
+    >
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; } 
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; } 
@@ -837,16 +939,6 @@ const AdminHub = () => {
         video::-internal-media-controls-download-button { display: none !important; }
         audio::-internal-media-controls-download-button { display: none !important; }
       `}</style>
-
-      {/* BACKGROUND IMAGE FIX (Proper Opacity & Legibility) */}
-      <div className="absolute inset-0 pointer-events-none z-[-1] overflow-hidden bg-[#070b19]">
-        <div 
-          className="absolute inset-0 opacity-100 scale-[1.02] blur-[2px]" 
-          style={{ backgroundImage: `url("https://i.postimg.cc/kg4rxNH2/Gemini-Generated-Image-ohtdmbohtdmbohtd.jpg")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
-        ></div>
-        <div className="absolute inset-0 bg-[#070b19]/60"></div>
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#070b19] opacity-80"></div>
-      </div>
 
       <ProvisioningModal 
         isOpen={isProvisioningModalOpen} 
