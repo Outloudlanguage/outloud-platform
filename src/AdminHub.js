@@ -32,21 +32,14 @@ const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess }) => {
   const [role, setRole] = useState('student');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const [provAvatar, setProvAvatar] = useState(null);
-  const [provAvatarPreview, setProvAvatarPreview] = useState(null);
+  // Replaced file upload with simple URL state
+  const [avatarUrl, setAvatarUrl] = useState('');
+  
   const [provLevel, setProvLevel] = useState('A1: Básico 1');
   const [provUnit, setProvUnit] = useState(1);
   const [provCohort, setProvCohort] = useState(15);
 
   if (!isOpen) return null;
-
-  const handleAvatarChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setProvAvatar(file);
-      setProvAvatarPreview(URL.createObjectURL(file));
-    }
-  };
 
   const handleProvision = async (e) => {
     e.preventDefault();
@@ -57,22 +50,10 @@ const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess }) => {
 
     setIsProcessing(true);
     try {
-      // 1. Upload Avatar
-      let avatarUrl = null;
-      if (provAvatar) {
-        const fileExt = provAvatar.name.split('.').pop();
-        const fileName = `avatars/${Date.now()}.${fileExt}`;
-        const { error: uploadError } = await supabase.storage.from('avatars').upload(fileName, provAvatar);
-        if (uploadError) throw new Error(`Error subiendo avatar: ${uploadError.message}`);
-        
-        const { data: pubData } = supabase.storage.from('avatars').getPublicUrl(fileName);
-        avatarUrl = pubData.publicUrl;
-      }
-
       const cleanEmail = email.trim().toLowerCase();
       const fullName = `${firstName.trim()} ${lastName.trim()}`;
       
-      // 2. Auth Edge Function (Strict Payload)
+      // 1. Auth Edge Function (Strict Payload)
       const { error: authError } = await supabase.functions.invoke('provision-user', {
         body: { email: cleanEmail, password, fullName, role }
       });
@@ -81,17 +62,20 @@ const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess }) => {
         console.warn("Edge Function Error Caught, proceeding to DB injection...", authError);
       }
 
-      // 3. Update the blank profile row (Fixed 'whatsapp' column)
+      // 2. Update the blank profile row
       const updates = {
         first_name: firstName.trim(),
         last_name: lastName.trim(),
-        whatsapp: phone || null, // FIXED: Using 'whatsapp' as per database schema
+        whatsapp: phone || null, 
         role: role,
         status: 'active',
         assigned_password: password
       };
 
-      if (avatarUrl) updates.avatar_url = avatarUrl;
+      // Only push avatar_url if the string is not empty
+      if (avatarUrl.trim() !== '') {
+        updates.avatar_url = avatarUrl.trim();
+      }
       
       if (role === 'student') {
         updates.level = provLevel;
@@ -133,25 +117,34 @@ const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess }) => {
           <form onSubmit={handleProvision} className="space-y-6">
             
             <div className="flex flex-col md:flex-row gap-6 items-center bg-white/5 border border-white/10 p-5 rounded-2xl">
-              <div className="relative group cursor-pointer shrink-0">
-                <div className="w-24 h-24 rounded-full border-2 border-white/20 overflow-hidden bg-black/40 flex items-center justify-center group-hover:border-[#fcd34d] transition-colors">
-                  {provAvatarPreview ? (
-                    <img src={provAvatarPreview} alt="Preview" className="w-full h-full object-cover" />
+              <div className="flex flex-col items-center gap-3 shrink-0">
+                <div className="w-24 h-24 rounded-full border-2 border-white/20 overflow-hidden bg-black/40 flex items-center justify-center">
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt="Preview" className="w-full h-full object-cover" />
                   ) : (
                     <span className="text-4xl text-white/30">+</span>
                   )}
                 </div>
-                <input type="file" accept="image/*" onChange={handleAvatarChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                <div className="absolute -bottom-2 bg-black/80 text-[8px] uppercase tracking-widest px-2 py-1 rounded w-full text-center text-white/70 font-bold opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">Subir Foto</div>
+                {avatarUrl && (
+                  <button type="button" onClick={() => setAvatarUrl('')} className="text-[9px] text-red-400 font-bold uppercase tracking-widest hover:text-red-300 transition-colors">
+                    Eliminar
+                  </button>
+                )}
               </div>
-              <div className="flex-1 w-full">
-                <label className="block text-[10px] text-[#fcd34d] font-bold uppercase mb-2">Rol de Sistema</label>
-                <div className="flex gap-2">
-                  {['student', 'teacher', 'admin'].map(r => (
-                    <button key={r} type="button" onClick={() => setRole(r)} className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all border ${role === r ? 'bg-[#fcd34d] text-[#08203e] border-transparent shadow-md' : 'bg-black/40 text-white/50 border-white/20 hover:text-white'}`}>
-                      {r}
-                    </button>
-                  ))}
+              <div className="flex-1 w-full flex flex-col gap-4">
+                <div>
+                  <label className="block text-[10px] text-[#fcd34d] font-bold uppercase mb-1">URL Foto de Perfil (Opcional)</label>
+                  <input type="text" value={avatarUrl} onChange={e => setAvatarUrl(e.target.value)} placeholder="Pega el enlace de la imagen aquí..." className="w-full bg-black/40 border border-white/20 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-[#fcd34d]" />
+                </div>
+                <div>
+                  <label className="block text-[10px] text-[#fcd34d] font-bold uppercase mb-1">Rol de Sistema</label>
+                  <div className="flex gap-2">
+                    {['student', 'teacher', 'admin'].map(r => (
+                      <button key={r} type="button" onClick={() => setRole(r)} className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all border ${role === r ? 'bg-[#fcd34d] text-[#08203e] border-transparent shadow-md' : 'bg-black/40 text-white/50 border-white/20 hover:text-white'}`}>
+                        {r}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -178,15 +171,18 @@ const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess }) => {
               </div>
             </div>
 
-            {/* INTEGRATED PHONE LIBRARY */}
+            {/* User's Exact Phone Input Snippet with color-scheme dark applied */}
             <div>
               <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Teléfono (WhatsApp)</label>
-              <div className="w-full rounded-xl px-4 py-2.5 text-[11px] lg:text-sm font-montserrat transition-all shadow-inner border border-white/20 bg-black/40 text-white focus-within:border-[#fcd34d] focus-within:ring-1 focus-within:ring-[#fcd34d]">
+              <div 
+                className="w-full rounded-xl px-4 py-3 text-[11px] lg:text-sm font-montserrat transition-all shadow-inner border border-white/20 bg-black/40 text-white focus-within:border-[#fcd34d] focus-within:ring-1 focus-within:ring-[#fcd34d]"
+                style={{ colorScheme: 'dark' }}
+              >
                 <PhoneInput 
                   defaultCountry="VE" 
                   international 
                   value={phone} 
-                  onChange={(value) => setPhone(value)} 
+                  onChange={setPhone}
                   className="PhoneInputCustom w-full bg-transparent outline-none"
                 />
               </div>
@@ -572,20 +568,22 @@ const AdminHub = () => {
             <li className="flex items-center gap-3 overflow-hidden"><svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg><span className="truncate">Aug 26: Live Lab Session</span></li>
           </ul>
           
+          {/* NUKED & PAVED REQUEST SUBSTITUTE BUTTON */}
           <button className="w-full py-4 bg-[#e2e8f0] text-[#0f172a] hover:bg-white font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 shadow-xl transition-all hover:scale-105 shrink-0 mt-auto">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-            REQUEST SUBSTITUTE
+            <img src="https://i.postimg.cc/mrtXmB72/Copia-de-Diseno-sin-titulo-(2).png" alt="Substitute" className="w-6 h-6 object-contain" />
+            <span>REQUEST SUBSTITUTE</span>
           </button>
+
         </div>
       </div>
       <div className="col-span-3 flex flex-col gap-6 h-full">
-        {/* FIX: Changed from <button> to <div role="button"> to remove browser artifacts */}
-        <div role="button" tabIndex={0} onClick={() => setIsProvisioningModalOpen(true)} className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center gap-6 hover:bg-white/10 transition-all hover:scale-[1.02] group cursor-pointer">
-          <img src="https://i.postimg.cc/ZKPVccsH/4(8).png" alt="Provisioning" className="w-32 md:w-40 object-contain group-hover:scale-110 transition-transform drop-shadow-md" />
+        {/* NUKED & PAVED GLASS CARDS - Converted to pristine DIVs */}
+        <div onClick={() => setIsProvisioningModalOpen(true)} className="flex-1 w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-white/10 transition-all group">
+          <img src="https://i.postimg.cc/ZKPVccsH/4(8).png" alt="Provisioning" className="h-28 object-contain mb-4 group-hover:scale-110 transition-transform drop-shadow-md" />
           <h3 className="font-black text-xl md:text-2xl tracking-widest uppercase text-white">Provisioning</h3>
         </div>
-        <div role="button" tabIndex={0} onClick={() => setActiveModule('FINANCES')} className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center gap-6 hover:bg-white/10 transition-all hover:scale-[1.02] group cursor-pointer">
-          <img src="https://i.postimg.cc/sxd4PQpm/2(12).png" alt="Stats" className="w-32 md:w-40 object-contain group-hover:scale-110 transition-transform drop-shadow-md" />
+        <div onClick={() => setActiveModule('FINANCES')} className="flex-1 w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-white/10 transition-all group">
+          <img src="https://i.postimg.cc/sxd4PQpm/2(12).png" alt="Stats" className="h-28 object-contain mb-4 group-hover:scale-110 transition-transform drop-shadow-md" />
           <h3 className="font-black text-xl md:text-2xl tracking-widest uppercase text-white">Stats</h3>
         </div>
       </div>
@@ -655,8 +653,8 @@ const AdminHub = () => {
             <li className="flex items-center justify-between"><div className="flex items-center gap-3"><svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M19 4h-1V3a1 1 0 00-2 0v1H8V3a1 1 0 00-2 0v1H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2zM5 20V9h14v11H5z" /></svg><span>Aug 15: 40 minutes</span></div><span className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_#ef4444]"></span></li>
           </ul>
           <button className="w-full py-4 bg-[#e2e8f0] text-[#0f172a] hover:bg-white font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 shadow-xl transition-all hover:scale-105 shrink-0 mt-auto">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-            REQUEST SUBSTITUTE
+            <img src="https://i.postimg.cc/mrtXmB72/Copia-de-Diseno-sin-titulo-(2).png" alt="Substitute" className="w-6 h-6 object-contain" />
+            <span>REQUEST SUBSTITUTE</span>
           </button>
         </div>
       </div>
@@ -893,16 +891,24 @@ const AdminHub = () => {
         audio::-internal-media-controls-download-button { display: none !important; }
         
         /* Phone Input Custom Styling */
+        .PhoneInputCustom { display: flex; align-items: center; width: 100%; }
         .PhoneInputCustom .PhoneInputInput {
             background: transparent !important;
             color: white !important;
             outline: none !important;
             border: none !important;
             font-size: 0.875rem !important;
-            margin-left: 0.5rem !important;
+            margin-left: 0.75rem !important;
         }
-        .PhoneInputCustom .PhoneInputCountryIcon {
-            box-shadow: none !important;
+        .PhoneInputCustom .PhoneInputCountry {
+            margin-right: 0.5rem;
+        }
+        .PhoneInputCustom .PhoneInputCountrySelectArrow {
+            color: rgba(255,255,255,0.5);
+        }
+        .PhoneInputCustom .PhoneInputCountrySelect {
+            color: white;
+            background: #070b19;
         }
       `}</style>
 

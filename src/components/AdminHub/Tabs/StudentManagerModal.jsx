@@ -14,11 +14,13 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   const [provPassword, setProvPassword] = useState('');
   const [provFirstName, setProvFirstName] = useState('');
   const [provLastName, setProvLastName] = useState('');
-  const [provPhone, setProvPhone] = useState(''); // Updated to hold full intl number from PhoneInput
+  const [provPhone, setProvPhone] = useState(''); 
+  const [provAvatarUrl, setProvAvatarUrl] = useState(''); // NEW: URL-based Avatar
   
   const [isEditingCreds, setIsEditingCreds] = useState(false);
   const [editEmail, setEditEmail] = useState('');
   const [editPassword, setEditPassword] = useState('');
+  const [editAvatarUrl, setEditAvatarUrl] = useState(''); // NEW: Edit Existing Avatar
   
   const [isProcessing, setIsProcessing] = useState(false);
   const [accountStatus, setAccountStatus] = useState('active');
@@ -56,17 +58,20 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
     if (userData) {
       setProvEmail(userData.email || '');
       setProvPassword('');
+      setProvAvatarUrl(userData.avatar_url || '');
       
-      // Auto-extract first and last names if handling a pending lead
       const nameParts = (userData.full_name || '').trim().split(' ');
       setProvFirstName(userData.first_name || nameParts[0] || '');
       setProvLastName(userData.last_name || (nameParts.length > 1 ? nameParts.slice(1).join(' ') : ''));
-      setProvPhone(userData.whatsapp || userData.phone || ''); // Check for whatsapp or old phone fallback
+      
+      // Load existing whatsapp or fallback to phone
+      setProvPhone(userData.whatsapp || userData.phone || ''); 
 
       setIsProvisioning(false);
       
       setEditEmail(userData.email || '');
       setEditPassword(userData.assigned_password || '');
+      setEditAvatarUrl(userData.avatar_url || '');
       setIsEditingCreds(false);
       
       setAccountStatus(userData.status || 'active');
@@ -88,7 +93,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   }, [isOpen, isPending, userData, activeTab]);
 
   // ==========================================
-  // ACADEMIC & REPORTING LOGIC
+  // ACADEMIC LOGIC
   // ==========================================
   const fetchAcademicHistory = async () => {
     setIsLoadingHistory(true);
@@ -133,17 +138,13 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   };
 
   // ==========================================
-  // FINANCIAL & COHORT LOGIC
+  // FINANCIAL LOGIC
   // ==========================================
   const getBaseLevel = (lvlString) => lvlString ? lvlString.split(':')[0].trim() : 'A1';
 
   const updatePrice = (type, levelString) => {
-    if (type === 'Extra') {
-      setPayAmount(12); // Extra bundle price
-    } else {
-      const base = getBaseLevel(levelString);
-      setPayAmount(MONTHLY_PRICES[base] || 40);
-    }
+    if (type === 'Extra') setPayAmount(12);
+    else setPayAmount(MONTHLY_PRICES[getBaseLevel(levelString)] || 40);
   };
 
   const handlePayTypeChange = (e) => {
@@ -155,9 +156,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   const calculateProration = (targetCohort, price) => {
     const today = new Date();
     let nextBilling = new Date(today.getFullYear(), today.getMonth(), targetCohort);
-    if (today.getDate() >= targetCohort) {
-        nextBilling.setMonth(nextBilling.getMonth() + 1);
-    }
+    if (today.getDate() >= targetCohort) nextBilling.setMonth(nextBilling.getMonth() + 1);
     const daysLeft = Math.max(0, Math.ceil((nextBilling - today) / (1000 * 60 * 60 * 24)));
     return ((price / 30) * daysLeft).toFixed(2);
   };
@@ -168,7 +167,6 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
     setIsProcessing(true);
     try {
       if (userData.id.startsWith('mock')) { if(onSuccess) onSuccess(); return; }
-      
       const today = new Date();
       let nextBilling = new Date(today.getFullYear(), today.getMonth(), cohort);
       if (today.getDate() >= cohort) nextBilling.setMonth(nextBilling.getMonth() + 1);
@@ -193,10 +191,8 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
     const newCredits = credits + 1;
     setCredits(newCredits);
     if (userData.id.startsWith('mock')) return;
-    
     try {
       await supabase.from('profiles').update({ available_credits: newCredits }).eq('id', userData.id);
-      
       await supabase.from('financial_logs').insert({
         student_id: userData.id,
         type: 'refund',
@@ -204,10 +200,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
         amount: 0
       });
       if (onSuccess) onSuccess();
-    } catch(e) { 
-      console.error(e); 
-      alert("Error procesando el reembolso.");
-    }
+    } catch(e) { console.error(e); alert("Error procesando el reembolso."); }
   };
 
   const calculateNextBillingDate = () => {
@@ -221,10 +214,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
 
   const handlePaymentSubmit = async (e) => {
     e.preventDefault();
-    if (!payRef || !payFile) {
-      alert("Debes incluir un número de referencia y el comprobante de pago.");
-      return;
-    }
+    if (!payRef || !payFile) { alert("Debes incluir un número de referencia y el comprobante de pago."); return; }
 
     setIsProcessing(true);
     try {
@@ -297,7 +287,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
       const cleanEmail = provEmail.trim().toLowerCase();
       const fullName = `${provFirstName.trim()} ${provLastName.trim()}`;
 
-      // 1. Edge Function with Strict Payload
+      // 1. Edge Function with STRICT Payload (Bypassing 400 error handling if needed)
       const { error: authError } = await supabase.functions.invoke('provision-user', {
         body: { 
           email: cleanEmail, 
@@ -312,10 +302,10 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
       }
 
       // 2. Exact DB Injection mapping to the correct 'whatsapp' column
-      const { error: profileError } = await supabase.from('profiles').update({
+      const updates = {
           first_name: provFirstName.trim(),
           last_name: provLastName.trim(),
-          whatsapp: provPhone || null, // FIX: Properly targeting the whatsapp column
+          whatsapp: provPhone || null, // STRICTLY TARGETING WHATSAPP
           role: 'student',
           status: 'active',
           level: levelOverride, 
@@ -323,9 +313,15 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
           cohort: cohort,
           available_credits: 0,              
           assigned_password: provPassword 
-        }).eq('email', cleanEmail); 
+      };
+
+      if (provAvatarUrl.trim() !== '') {
+          updates.avatar_url = provAvatarUrl.trim();
+      }
+
+      const { error: profileError } = await supabase.from('profiles').update(updates).eq('email', cleanEmail); 
         
-      if (profileError) throw new Error(`Fallo en la sincronización de Base de Datos: ${profileError.message}`);
+      if (profileError) throw new Error(`Fallo en la Base de Datos: ${profileError.message}`);
 
       // 3. Approve Registration Lead
       const { error: regError } = await supabase.from('registrations').update({ status: 'approved' }).eq('id', userData.id);
@@ -359,7 +355,12 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
       });
       if (authError) throw authError;
 
-      const { error: profileError } = await supabase.from('profiles').update({ email: editEmail, assigned_password: editPassword }).eq('id', userData.id);
+      const updates = { email: editEmail, assigned_password: editPassword };
+      if (editAvatarUrl.trim() !== '') {
+         updates.avatar_url = editAvatarUrl.trim();
+      }
+
+      const { error: profileError } = await supabase.from('profiles').update(updates).eq('id', userData.id);
       if (profileError) throw profileError;
 
       alert("Credenciales actualizadas correctamente.");
@@ -409,6 +410,29 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
 
   return (
     <div id="modal-overlay" onClick={handleOverlayClick} className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fade-in font-montserrat">
+      
+      {/* CSS INJECTION FOR THE PHONE INPUT TO ENSURE DARK STYLING */}
+      <style>{`
+        .PhoneInputCustom .PhoneInputInput {
+            background: transparent !important;
+            color: white !important;
+            outline: none !important;
+            border: none !important;
+            font-size: 0.875rem !important;
+            margin-left: 0.75rem !important;
+        }
+        .PhoneInputCustom .PhoneInputCountry {
+            margin-right: 0.5rem;
+        }
+        .PhoneInputCustom .PhoneInputCountrySelectArrow {
+            color: rgba(255,255,255,0.5);
+        }
+        .PhoneInputCustom .PhoneInputCountrySelect {
+            color: white;
+            background: #070b19;
+        }
+      `}</style>
+
       <div className="relative w-full max-w-4xl max-h-[90vh] bg-[#070b19]/95 border border-white/20 rounded-[2.5rem] shadow-[0_25px_50px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden animate-slide-up">
         
         {/* Glow Effects */}
@@ -480,6 +504,28 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                     </div>
                   </div>
 
+                  {/* URL AVATAR UPLOAD UI */}
+                  <div className="flex flex-col md:flex-row gap-6 items-center bg-black/20 border border-amber-500/20 p-5 rounded-2xl mb-6">
+                    <div className="flex flex-col items-center gap-3 shrink-0">
+                      <div className="w-20 h-20 rounded-full border-2 border-amber-500/30 overflow-hidden bg-black/40 flex items-center justify-center">
+                        {provAvatarUrl ? (
+                          <img src={provAvatarUrl} alt="Preview" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-3xl text-amber-500/30">+</span>
+                        )}
+                      </div>
+                      {provAvatarUrl && (
+                        <button type="button" onClick={() => setProvAvatarUrl('')} className="text-[9px] text-red-400 font-bold uppercase tracking-widest hover:text-red-300 transition-colors">
+                          ELIMINAR
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex-1 w-full">
+                      <label className="block text-[10px] text-amber-300 font-bold uppercase mb-2">URL Foto de Perfil (Opcional)</label>
+                      <input type="text" value={provAvatarUrl} onChange={e => setProvAvatarUrl(e.target.value)} placeholder="Pega el enlace de la imagen aquí..." className="w-full bg-black/30 border border-amber-500/30 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-amber-400 transition-colors" />
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
                       <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Nombres</label>
@@ -498,18 +544,23 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                       <input type="text" placeholder="Asigna una clave" value={provPassword} onChange={(e) => setProvPassword(e.target.value)} className="w-full bg-black/30 border border-amber-500/30 rounded-lg px-4 py-2.5 text-white text-sm outline-none focus:border-amber-400 transition-colors" />
                     </div>
                     
-                    {/* INTEGRATED PHONE LIBRARY */}
-                    <div className="col-span-1 md:col-span-2">
-                      <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Teléfono (WhatsApp)</label>
-                      <div className="w-full rounded-xl px-4 py-2.5 text-[11px] lg:text-sm font-montserrat transition-all shadow-inner border border-amber-500/30 bg-black/30 text-white focus-within:border-amber-400 focus-within:ring-1 focus-within:ring-amber-400">
-                        <PhoneInput 
-                          defaultCountry="VE" 
-                          international 
-                          value={provPhone} 
-                          onChange={(value) => setProvPhone(value)} 
-                          className="PhoneInputCustom w-full bg-transparent outline-none"
-                        />
-                      </div>
+                    {/* INTEGRATED PHONE LIBRARY FIX: Resized grid to sit cleanly */}
+                    <div className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-5 mt-2">
+                       <div>
+                          <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Teléfono (WhatsApp)</label>
+                          <div 
+                            className="w-full rounded-lg px-4 py-2.5 text-[11px] lg:text-sm font-montserrat transition-all shadow-inner border border-amber-500/30 bg-black/30 text-white focus-within:border-amber-400 focus-within:ring-1 focus-within:ring-amber-400"
+                            style={{ colorScheme: 'dark' }}
+                          >
+                            <PhoneInput 
+                              defaultCountry="VE" 
+                              international 
+                              value={provPhone} 
+                              onChange={(value) => setProvPhone(value)} 
+                              className="PhoneInputCustom w-full bg-transparent outline-none"
+                            />
+                          </div>
+                       </div>
                     </div>
                   </div>
 
@@ -568,7 +619,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="md:col-span-2 bg-white/5 border border-white/10 rounded-2xl p-6 relative shadow-md">
                      <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-4">
-                        <h4 className="text-xs font-black text-[#fcd34d] uppercase tracking-widest">Credenciales de Acceso</h4>
+                        <h4 className="text-xs font-black text-[#fcd34d] uppercase tracking-widest">Credenciales & Perfil</h4>
                         {!isEditingCreds ? (
                           <button onClick={() => setIsEditingCreds(true)} className="text-[10px] uppercase font-bold text-white/60 hover:text-white bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-md transition-all">Editar</button>
                         ) : (
@@ -587,6 +638,14 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                           <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Contraseña</label>
                           {!isEditingCreds ? <p className="text-sm text-white font-semibold py-2 tracking-widest truncate">{editPassword || '********'}</p> : <input type="text" value={editPassword} onChange={(e) => setEditPassword(e.target.value)} className="w-full bg-black/40 border border-[#fcd34d]/50 rounded-lg px-3 py-2 text-white text-sm outline-none" />}
                         </div>
+                        
+                        {/* URL Avatar Edit for Existing Users */}
+                        {isEditingCreds && (
+                          <div className="overflow-hidden col-span-1 md:col-span-2 mt-2">
+                            <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">URL Avatar de Perfil</label>
+                            <input type="text" value={editAvatarUrl} onChange={(e) => setEditAvatarUrl(e.target.value)} placeholder="Enlace a la foto..." className="w-full bg-black/40 border border-[#fcd34d]/50 rounded-lg px-3 py-2 text-white text-sm outline-none" />
+                          </div>
+                        )}
                      </div>
                   </div>
                   <div className="bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col justify-between items-center text-center shadow-md">
