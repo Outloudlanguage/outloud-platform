@@ -16,7 +16,7 @@ import NavButtonModal from './components/AdminHub/Modals/NavButtonModal';
 import CustomerManagement from './components/AdminHub/Tabs/CustomerManagement';
 import MasterSettings from './components/AdminHub/Tabs/MasterSettings';
 import AdminDropdown from './components/ui/AdminDropdown';
-import StudentManagerModal from './components/AdminHub/Tabs/StudentManagerModal'; // Make sure this path is correct for the next step
+import StudentManagerModal from './components/AdminHub/Tabs/StudentManagerModal'; // Updated Path
 
 // ==========================================
 // PAN & ZOOM IMAGE COMPONENT (Preserved)
@@ -353,25 +353,25 @@ const AdminHub = () => {
         <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col h-[65%]">
           <h3 className="text-white font-black text-2xl tracking-wide mb-4 drop-shadow-md shrink-0">Activities</h3>
           <ul className="space-y-4 text-xs font-medium text-white/90 flex-1 overflow-y-auto custom-scrollbar pr-2 mb-4">
-            <li className="flex items-center gap-3"><svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg><span>Aug 15: Live Lab Session</span></li>
-            <li className="flex items-center gap-3"><svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg><span>Aug 18: Chat room meeting</span></li>
-            <li className="flex items-center gap-3"><svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg><span>Aug 25: Conversation Club</span></li>
-            <li className="flex items-center gap-3"><svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg><span>Aug 26: Live Lab Session</span></li>
+            <li className="flex items-center gap-3 overflow-hidden"><svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg><span className="truncate">Aug 15: Live Lab Session</span></li>
+            <li className="flex items-center gap-3 overflow-hidden"><svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg><span className="truncate">Aug 18: Chat room meeting</span></li>
+            <li className="flex items-center gap-3 overflow-hidden"><svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg><span className="truncate">Aug 25: Conversation Club</span></li>
+            <li className="flex items-center gap-3 overflow-hidden"><svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg><span className="truncate">Aug 26: Live Lab Session</span></li>
           </ul>
-          <button className="w-full py-4 bg-[#e2e8f0] text-[#0f172a] hover:bg-white font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 shadow-xl transition-all hover:scale-105 shrink-0 mt-auto">
-            <img src="https://i.postimg.cc/mrtXmB72/Copia-de-Diseno-sin-titulo-(2).png" alt="Request Substitute" className="w-5 h-5 object-contain" />
-            REQUEST SUBSTITUTE
+          <button className="w-full py-4 px-2 bg-[#e2e8f0] text-[#0f172a] hover:bg-white font-black text-[10px] md:text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 shadow-xl transition-all hover:scale-105 shrink-0 mt-auto overflow-hidden">
+            <img src="https://i.postimg.cc/mrtXmB72/Copia-de-Diseno-sin-titulo-(2).png" alt="Request Substitute" className="w-5 h-5 object-contain shrink-0" />
+            <span className="truncate leading-tight">REQUEST SUBSTITUTE</span>
           </button>
         </div>
       </div>
       <div className="col-span-3 flex flex-col gap-6 h-full">
-        <button className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center gap-6 hover:bg-white/10 transition-all hover:scale-[1.02] group">
-          <img src="https://i.postimg.cc/ZKPVccsH/4(8).png" alt="Provisioning" className="w-24 h-24 object-contain group-hover:scale-110 transition-transform drop-shadow-md" />
-          <h3 className="font-black text-2xl tracking-widest uppercase text-white">Provisioning</h3>
+        <button onClick={() => alert('Módulo de Provisioning en construcción...')} className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center gap-6 hover:bg-white/10 transition-all hover:scale-[1.02] group">
+          <img src="https://i.postimg.cc/ZKPVccsH/4(8).png" alt="Provisioning" className="w-20 md:w-28 object-contain group-hover:scale-110 transition-transform drop-shadow-md" />
+          <h3 className="font-black text-xl md:text-2xl tracking-widest uppercase text-white">Provisioning</h3>
         </button>
-        <button className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center gap-6 hover:bg-white/10 transition-all hover:scale-[1.02] group">
-          <img src="https://i.postimg.cc/sxd4PQpm/2(12).png" alt="Stats" className="w-24 h-24 object-contain group-hover:scale-110 transition-transform drop-shadow-md" />
-          <h3 className="font-black text-2xl tracking-widest uppercase text-white">Stats</h3>
+        <button onClick={() => alert('Módulo de Estadísticas en construcción...')} className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center gap-6 hover:bg-white/10 transition-all hover:scale-[1.02] group">
+          <img src="https://i.postimg.cc/sxd4PQpm/2(12).png" alt="Stats" className="w-20 md:w-28 object-contain group-hover:scale-110 transition-transform drop-shadow-md" />
+          <h3 className="font-black text-xl md:text-2xl tracking-widest uppercase text-white">Stats</h3>
         </button>
       </div>
       <div className="col-span-6 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-8 shadow-2xl flex flex-col h-full overflow-hidden">
@@ -382,16 +382,16 @@ const AdminHub = () => {
         </div>
         <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 flex flex-col gap-4">
           {displayUsers.map((user, i) => (
-            <div key={user.id} className="bg-black/30 border border-white/10 rounded-2xl p-4 flex items-center justify-between hover:bg-black/40 transition-colors">
-              <div className="flex items-center gap-4 cursor-pointer group" onClick={() => { if(directoryTab === 'students') setSelectedStudent(user); }}>
-                <img src={user.avatar_url || `https://i.pravatar.cc/150?img=${i+10}`} className="w-12 h-12 rounded-full border-2 border-white/20 group-hover:border-[#fcd34d] transition-colors object-cover shadow-md" alt="User" />
-                <h4 className="font-bold text-lg text-white group-hover:text-[#fcd34d] transition-colors">{user.first_name || 'Model'} {user.last_name || `User ${i+1}`}</h4>
+            <div key={user.id} className="bg-black/30 border border-white/10 rounded-2xl p-4 flex items-center justify-between hover:bg-black/40 transition-colors cursor-pointer group" onClick={() => { if(directoryTab === 'students') setSelectedStudent(user); }}>
+              <div className="flex items-center gap-4 truncate">
+                <img src={user.avatar_url || `https://i.pravatar.cc/150?img=${i+10}`} className="w-12 h-12 rounded-full border-2 border-white/20 group-hover:border-[#fcd34d] transition-colors object-cover shadow-md shrink-0" alt="User" />
+                <h4 className="font-bold text-lg text-white group-hover:text-[#fcd34d] transition-colors truncate">{user.first_name || 'Model'} {user.last_name || `User ${i+1}`}</h4>
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 shrink-0">
                 {user.status === 'pending' ? (
-                  <span className="bg-[#fcd34d] text-[#08203e] px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-md">Pending</span>
+                  <button onClick={(e) => { e.stopPropagation(); if(directoryTab === 'students') setSelectedStudent(user); }} className="bg-[#fcd34d] text-[#08203e] px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-md hover:scale-105 transition-transform">Pending</button>
                 ) : (
-                  <button onClick={() => { if(directoryTab === 'students') setSelectedStudent(user); }} className="bg-white/10 text-white hover:bg-[#fcd34d] hover:text-[#08203e] px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-md">View as</button>
+                  <button onClick={(e) => { e.stopPropagation(); if(directoryTab === 'students') setSelectedStudent(user); }} className="bg-white/10 text-white hover:bg-[#fcd34d] hover:text-[#08203e] px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-md">View as</button>
                 )}
                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-white text-xl shadow-inner ${user.level?.includes('A1') ? 'bg-blue-500' : user.level?.includes('C1') ? 'bg-green-500' : 'bg-red-500'}`}>
                   {user.level ? user.level.split(':')[0] : 'A1'}
@@ -427,9 +427,9 @@ const AdminHub = () => {
             <li className="flex items-center justify-between"><div className="flex items-center gap-3"><svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M19 4h-1V3a1 1 0 00-2 0v1H8V3a1 1 0 00-2 0v1H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2zM5 20V9h14v11H5z" /></svg><span>Aug 25: 46 minutes</span></div><span className="w-2.5 h-2.5 rounded-full bg-yellow-500 shadow-[0_0_8px_#eab308]"></span></li>
             <li className="flex items-center justify-between"><div className="flex items-center gap-3"><svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M19 4h-1V3a1 1 0 00-2 0v1H8V3a1 1 0 00-2 0v1H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2zM5 20V9h14v11H5z" /></svg><span>Aug 15: 40 minutes</span></div><span className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_#ef4444]"></span></li>
           </ul>
-          <button className="w-full py-4 bg-[#e2e8f0] text-[#0f172a] hover:bg-white font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 shadow-xl transition-all hover:scale-105 shrink-0 mt-auto">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-            REQUEST SUBSTITUTE
+          <button className="w-full py-4 px-2 bg-[#e2e8f0] text-[#0f172a] hover:bg-white font-black text-[10px] md:text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 shadow-xl transition-all hover:scale-105 shrink-0 mt-auto overflow-hidden">
+            <img src="https://i.postimg.cc/mrtXmB72/Copia-de-Diseno-sin-titulo-(2).png" alt="Request Substitute" className="w-5 h-5 object-contain shrink-0" />
+            <span className="truncate leading-tight">REQUEST SUBSTITUTE</span>
           </button>
         </div>
       </div>
@@ -664,7 +664,7 @@ const AdminHub = () => {
           className="absolute inset-0 opacity-100 scale-[1.02] blur-sm" 
           style={{ backgroundImage: `url("https://i.postimg.cc/kg4rxNH2/Gemini-Generated-Image-ohtdmbohtdmbohtd.jpg")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
         ></div>
-        <div className="absolute inset-0 bg-[#070b19]/60 mix-blend-multiply"></div>
+        <div className="absolute inset-0 bg-[#070b19]/85"></div>
       </div>
 
       {selectedStudent && (
