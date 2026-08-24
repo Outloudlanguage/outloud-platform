@@ -1,14 +1,40 @@
 import React, { useState, useEffect } from 'react';
 import { LEVEL_OPTIONS } from '../../../constants/adminConfigs';
 
+// ==========================================
+// COMPREHENSIVE COUNTRY CODES LIBRARY
+// ==========================================
+const COUNTRY_CODES = [
+  { code: '+1', country: '🇺🇸 US/CA' }, { code: '+44', country: '🇬🇧 UK' }, { code: '+34', country: '🇪🇸 ES' },
+  { code: '+51', country: '🇵🇪 PE' }, { code: '+52', country: '🇲🇽 MX' }, { code: '+54', country: '🇦🇷 AR' },
+  { code: '+55', country: '🇧🇷 BR' }, { code: '+56', country: '🇨🇱 CL' }, { code: '+57', country: '🇨🇴 CO' },
+  { code: '+58', country: '🇻🇪 VE' }, { code: '+593', country: '🇪🇨 EC' }, { code: '+598', country: '🇺🇾 UY' },
+  { code: '+502', country: '🇬🇹 GT' }, { code: '+503', country: '🇸🇻 SV' }, { code: '+504', country: '🇭🇳 HN' },
+  { code: '+505', country: '🇳🇮 NI' }, { code: '+506', country: '🇨🇷 CR' }, { code: '+507', country: '🇵🇦 PA' },
+  { code: '+53', country: '🇨🇺 CU' }, { code: '+1-809', country: '🇩🇴 DO' }, { code: '+591', country: '🇧🇴 BO' },
+  { code: '+595', country: '🇵🇾 PY' }, { code: '+33', country: '🇫🇷 FR' }, { code: '+49', country: '🇩🇪 DE' },
+  { code: '+39', country: '🇮🇹 IT' }, { code: '+351', country: '🇵🇹 PT' }, { code: '+31', country: '🇳🇱 NL' },
+  { code: '+32', country: '🇧🇪 BE' }, { code: '+41', country: '🇨🇭 CH' }, { code: '+43', country: '🇦🇹 AT' },
+  { code: '+46', country: '🇸🇪 SE' }, { code: '+47', country: '🇳🇴 NO' }, { code: '+45', country: '🇩🇰 DK' },
+  { code: '+358', country: '🇫🇮 FI' }, { code: '+7', country: '🇷🇺 RU' }, { code: '+81', country: '🇯🇵 JP' },
+  { code: '+82', country: '🇰🇷 KR' }, { code: '+86', country: '🇨🇳 CN' }, { code: '+91', country: '🇮🇳 IN' },
+  { code: '+61', country: '🇦🇺 AU' }, { code: '+64', country: '🇳🇿 NZ' }, { code: '+27', country: '🇿🇦 ZA' },
+  { code: '+971', country: '🇦🇪 AE' }, { code: '+966', country: '🇸🇦 SA' }
+];
+
 const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, onSuccess }) => {
   const [activeTab, setActiveTab] = useState('INFO_PERSONAL');
 
   // ==========================================
   // TAB 1: INFO PERSONAL (Provisioning, Creds, Overrides)
   // ==========================================
+  const [isProvisioning, setIsProvisioning] = useState(false);
   const [provEmail, setProvEmail] = useState('');
   const [provPassword, setProvPassword] = useState('');
+  const [provFirstName, setProvFirstName] = useState('');
+  const [provLastName, setProvLastName] = useState('');
+  const [provPhone, setProvPhone] = useState('');
+  const [provCountryCode, setProvCountryCode] = useState('+58');
   
   const [isEditingCreds, setIsEditingCreds] = useState(false);
   const [editEmail, setEditEmail] = useState('');
@@ -50,6 +76,14 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
     if (userData) {
       setProvEmail(userData.email || '');
       setProvPassword('');
+      
+      // Auto-extract first and last names if handling a pending lead
+      const nameParts = (userData.full_name || '').trim().split(' ');
+      setProvFirstName(userData.first_name || nameParts[0] || '');
+      setProvLastName(userData.last_name || (nameParts.length > 1 ? nameParts.slice(1).join(' ') : ''));
+      setProvPhone(userData.phone || '');
+
+      setIsProvisioning(false);
       
       setEditEmail(userData.email || '');
       setEditPassword(userData.assigned_password || '');
@@ -181,10 +215,10 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
     if (userData.id.startsWith('mock')) return;
     
     try {
-      // 1. Update available_credits
+      // Update available_credits directly
       await supabase.from('profiles').update({ available_credits: newCredits }).eq('id', userData.id);
       
-      // 2. Log the financial action
+      // Log the financial action
       await supabase.from('financial_logs').insert({
         student_id: userData.id,
         type: 'refund',
@@ -262,31 +296,44 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   // ACCOUNT CONTROL LOGIC (Auth & Status)
   // ==========================================
   const handleProvisionAccount = async () => {
-    if (!provEmail || !provPassword) { alert("Debes asignar un correo y una contraseña."); return; }
+    if (!provEmail || !provPassword || !provFirstName || !provLastName) { 
+      alert("Nombres, apellidos, correo y contraseña son obligatorios."); 
+      return; 
+    }
     
     setIsProcessing(true);
     try {
+      const cleanEmail = provEmail.trim().toLowerCase();
+      const fullName = `${provFirstName.trim()} ${provLastName.trim()}`;
+      const fullPhone = provPhone ? `${provCountryCode} ${provPhone.trim()}` : '';
+
+      // COMPREHENSIVE PAYLOAD FIX TO PREVENT 400 ERRORS
       const { error: authError } = await supabase.functions.invoke('provision-user', {
-        body: { email: provEmail, password: provPassword, fullName: userData.full_name, role: 'student' }
+        body: { 
+          email: cleanEmail, 
+          password: provPassword, 
+          firstName: provFirstName.trim(),
+          lastName: provLastName.trim(),
+          fullName: fullName, 
+          phone: fullPhone,
+          role: 'student' 
+        }
       });
+      
       if (authError) throw authError;
 
-      const nameParts = (userData.full_name || '').trim().split(' ');
-      const firstName = nameParts[0] || '';
-      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
-
       const { error: profileError } = await supabase.from('profiles').update({
-          first_name: firstName,
-          last_name: lastName,
-          phone: userData.phone || '',
-          role: 'Student',
+          first_name: provFirstName.trim(),
+          last_name: provLastName.trim(),
+          phone: fullPhone,
+          role: 'student',
           status: 'active',
           level: 'A1: Básico 1', 
           unit: 1,
           cohort: cohort,
           available_credits: 0,              
           assigned_password: provPassword 
-        }).eq('email', provEmail); 
+        }).eq('email', cleanEmail); 
         
       if (profileError) throw profileError;
 
@@ -358,11 +405,11 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
 
   return (
     <div id="modal-overlay" onClick={handleOverlayClick} className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fade-in font-montserrat">
-      <div className="relative w-full max-w-4xl max-h-[90vh] bg-[#070b19] border border-white/20 rounded-[2.5rem] shadow-[0_25px_50px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden animate-slide-up">
+      <div className="relative w-full max-w-4xl max-h-[90vh] bg-[#070b19]/95 border border-white/20 rounded-[2.5rem] shadow-[0_25px_50px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden animate-slide-up">
         
         {/* Glow Effects */}
-        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-900/20 blur-[100px] rounded-full pointer-events-none"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#fcd34d]/10 blur-[80px] rounded-full pointer-events-none"></div>
+        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-900/20 blur-[100px] rounded-full mix-blend-screen pointer-events-none"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#fcd34d]/10 blur-[80px] rounded-full mix-blend-screen pointer-events-none"></div>
 
         {/* HEADER */}
         <div className="relative z-10 flex items-start justify-between p-6 md:p-8 border-b border-white/10 bg-white/5 shrink-0">
@@ -419,31 +466,55 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
           {activeTab === 'INFO_PERSONAL' && (
             <div className="animate-fade-in space-y-6">
               
-              {/* Provisioning Block for Pending Leads */}
+              {/* RESTORED Provisioning Block for Pending Leads */}
               {isPending && (
                 <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-6 mb-8 transition-all shadow-inner">
                   <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-4">
                     <div>
                       <h4 className="text-amber-400 font-black tracking-widest text-sm uppercase">Aprobación de Cuenta</h4>
-                      <p className="text-xs text-amber-200/70 mt-1">Asigna las credenciales maestras para activar a este estudiante.</p>
+                      <p className="text-xs text-amber-200/70 mt-1">Verifica la información y asigna las credenciales maestras para activar a este estudiante.</p>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fade-in mt-4 pt-4 border-t border-amber-500/20">
-                    <div>
-                      <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Email Registrado</label>
-                      <input type="email" value={provEmail} onChange={(e) => setProvEmail(e.target.value)} className="w-full bg-black/30 border border-amber-500/30 rounded-lg px-4 py-2 text-white text-sm outline-none focus:border-amber-400" />
+                  {isProvisioning ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fade-in mt-4 pt-4 border-t border-amber-500/20">
+                      <div>
+                        <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Nombres</label>
+                        <input type="text" value={provFirstName} onChange={e => setProvFirstName(e.target.value)} className="w-full bg-black/30 border border-amber-500/30 rounded-lg px-4 py-2 text-white text-sm outline-none focus:border-amber-400" required />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Apellidos</label>
+                        <input type="text" value={provLastName} onChange={e => setProvLastName(e.target.value)} className="w-full bg-black/30 border border-amber-500/30 rounded-lg px-4 py-2 text-white text-sm outline-none focus:border-amber-400" required />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Email Registrado</label>
+                        <input type="email" value={provEmail} onChange={(e) => setProvEmail(e.target.value)} className="w-full bg-black/30 border border-amber-500/30 rounded-lg px-4 py-2 text-white text-sm outline-none focus:border-amber-400" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Contraseña Asignada</label>
+                        <input type="text" placeholder="Asigna una clave (ej: OLA2026*)" value={provPassword} onChange={(e) => setProvPassword(e.target.value)} className="w-full bg-black/30 border border-amber-500/30 rounded-lg px-4 py-2 text-white text-sm outline-none focus:border-amber-400" />
+                      </div>
+                      <div className="col-span-1 md:col-span-2">
+                        <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Teléfono (Opcional)</label>
+                        <div className="flex gap-2">
+                          <select value={provCountryCode} onChange={e => setProvCountryCode(e.target.value)} className="w-1/3 bg-black/30 border border-amber-500/30 rounded-lg px-2 py-2 text-white text-sm outline-none focus:border-amber-400 cursor-pointer appearance-none text-center">
+                            {COUNTRY_CODES.map(c => <option key={c.code} value={c.code}>{c.country} ({c.code})</option>)}
+                          </select>
+                          <input type="tel" value={provPhone} onChange={e => setProvPhone(e.target.value)} placeholder="412 123 4567" className="w-2/3 bg-black/30 border border-amber-500/30 rounded-lg px-4 py-2 text-white text-sm outline-none focus:border-amber-400" />
+                        </div>
+                      </div>
+                      <div className="col-span-1 md:col-span-2 flex justify-end mt-2 gap-3">
+                        <button onClick={() => setIsProvisioning(false)} className="px-6 py-3 rounded-xl text-xs font-bold text-white/60 hover:text-white bg-white/5 hover:bg-white/10 transition-colors uppercase tracking-wider">Cancelar</button>
+                        <button onClick={handleProvisionAccount} disabled={isProcessing} className="w-full md:w-auto px-6 py-3 rounded-xl text-xs font-black text-[#08203e] bg-amber-400 hover:bg-amber-300 shadow-[0_0_15px_rgba(251,191,36,0.4)] transition-all uppercase tracking-wider disabled:opacity-50">
+                          {isProcessing ? 'Procesando...' : 'Confirmar y Activar'}
+                        </button>
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Contraseña Asignada</label>
-                      <input type="text" placeholder="Asigna una clave (ej: OLA2026*)" value={provPassword} onChange={(e) => setProvPassword(e.target.value)} className="w-full bg-black/30 border border-amber-500/30 rounded-lg px-4 py-2 text-white text-sm outline-none focus:border-amber-400" />
-                    </div>
-                    <div className="col-span-1 md:col-span-2 flex justify-end mt-2">
-                      <button onClick={handleProvisionAccount} disabled={isProcessing} className="w-full md:w-auto px-6 py-3 rounded-xl text-xs font-black text-[#08203e] bg-amber-400 hover:bg-amber-300 shadow-[0_0_15px_rgba(251,191,36,0.4)] transition-all uppercase tracking-wider disabled:opacity-50">
-                        {isProcessing ? 'Procesando...' : 'Confirmar y Activar'}
-                      </button>
-                    </div>
-                  </div>
+                  ) : (
+                    <button onClick={() => setIsProvisioning(true)} className="w-full md:w-auto bg-[#fcd34d] text-[#08203e] hover:bg-white text-xs font-black uppercase px-6 py-3.5 rounded-xl transition-all shadow-[0_0_15px_rgba(252,211,77,0.4)] hover:scale-105 active:scale-95 shrink-0">
+                      Crear Cuenta
+                    </button>
+                  )}
                 </div>
               )}
 
