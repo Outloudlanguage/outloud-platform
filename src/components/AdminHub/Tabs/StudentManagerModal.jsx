@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LEVEL_OPTIONS } from '../../constants/adminConfigs';
+import { LEVEL_OPTIONS } from '../../../constants/adminConfigs';
 
 const StudentManagerModal = ({ student, onClose, onUpdate, supabase }) => {
   const [activeTab, setActiveTab] = useState('INFO_PERSONAL');
