@@ -17,73 +17,8 @@ import CustomerManagement from './components/AdminHub/Tabs/CustomerManagement';
 import MasterSettings from './components/AdminHub/Tabs/MasterSettings';
 import AdminDropdown from './components/ui/AdminDropdown';
 import StudentManagerModal from './components/AdminHub/Tabs/StudentManagerModal'; 
-
-// ==========================================
-// COMPREHENSIVE COUNTRY CODES LIBRARY
-// ==========================================
-const COUNTRY_CODES = [
-  { code: '+1', country: '🇺🇸 US/CA' }, { code: '+44', country: '🇬🇧 UK' }, { code: '+34', country: '🇪🇸 ES' },
-  { code: '+51', country: '🇵🇪 PE' }, { code: '+52', country: '🇲🇽 MX' }, { code: '+54', country: '🇦🇷 AR' },
-  { code: '+55', country: '🇧🇷 BR' }, { code: '+56', country: '🇨🇱 CL' }, { code: '+57', country: '🇨🇴 CO' },
-  { code: '+58', country: '🇻🇪 VE' }, { code: '+593', country: '🇪🇨 EC' }, { code: '+598', country: '🇺🇾 UY' },
-  { code: '+502', country: '🇬🇹 GT' }, { code: '+503', country: '🇸🇻 SV' }, { code: '+504', country: '🇭🇳 HN' },
-  { code: '+505', country: '🇳🇮 NI' }, { code: '+506', country: '🇨🇷 CR' }, { code: '+507', country: '🇵🇦 PA' },
-  { code: '+53', country: '🇨🇺 CU' }, { code: '+1-809', country: '🇩🇴 DO' }, { code: '+591', country: '🇧🇴 BO' },
-  { code: '+595', country: '🇵🇾 PY' }, { code: '+33', country: '🇫🇷 FR' }, { code: '+49', country: '🇩🇪 DE' },
-  { code: '+39', country: '🇮🇹 IT' }, { code: '+351', country: '🇵🇹 PT' }, { code: '+31', country: '🇳🇱 NL' },
-  { code: '+32', country: '🇧🇪 BE' }, { code: '+41', country: '🇨🇭 CH' }, { code: '+43', country: '🇦🇹 AT' },
-  { code: '+46', country: '🇸🇪 SE' }, { code: '+47', country: '🇳🇴 NO' }, { code: '+45', country: '🇩🇰 DK' },
-  { code: '+358', country: '🇫🇮 FI' }, { code: '+7', country: '🇷🇺 RU' }, { code: '+81', country: '🇯🇵 JP' },
-  { code: '+82', country: '🇰🇷 KR' }, { code: '+86', country: '🇨🇳 CN' }, { code: '+91', country: '🇮🇳 IN' },
-  { code: '+61', country: '🇦🇺 AU' }, { code: '+64', country: '🇳🇿 NZ' }, { code: '+27', country: '🇿🇦 ZA' },
-  { code: '+971', country: '🇦🇪 AE' }, { code: '+966', country: '🇸🇦 SA' }
-];
-
-// ==========================================
-// CUSTOM PHONE DROPDOWN UI
-// ==========================================
-const CustomPhoneDropdown = ({ value, onChange }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef(null);
-  const selectedOption = COUNTRY_CODES.find(c => c.code === value) || COUNTRY_CODES[9];
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) setIsOpen(false);
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  return (
-    <div className="relative w-[140px] shrink-0" ref={dropdownRef}>
-      <div 
-        onClick={() => setIsOpen(!isOpen)} 
-        className="h-[42px] bg-black/40 border border-white/20 rounded-xl px-3 flex items-center justify-between cursor-pointer hover:border-[#fcd34d] transition-colors"
-      >
-        <span className="text-white text-sm font-semibold truncate pr-2">
-          {selectedOption.country.split(' ')[0]} {selectedOption.code}
-        </span>
-        <span className="text-[8px] text-white/50">▼</span>
-      </div>
-
-      {isOpen && (
-        <div className="absolute z-50 top-[48px] left-0 w-[220px] max-h-48 overflow-y-auto custom-scrollbar bg-[#070b19]/95 backdrop-blur-xl border border-white/20 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.8)] py-2">
-          {COUNTRY_CODES.map((c) => (
-            <div 
-              key={c.code} 
-              onClick={() => { onChange(c.code); setIsOpen(false); }} 
-              className="px-4 py-2.5 hover:bg-white/10 cursor-pointer text-sm flex items-center justify-between transition-colors"
-            >
-              <span className="text-white font-medium">{c.country}</span>
-              <span className="text-white/50 font-bold">{c.code}</span>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
+import PhoneInput from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
 
 // ==========================================
 // DEDICATED PROVISIONING MODAL
@@ -93,7 +28,6 @@ const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess }) => {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [countryCode, setCountryCode] = useState('+58');
   const [phone, setPhone] = useState('');
   const [role, setRole] = useState('student');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -138,7 +72,7 @@ const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess }) => {
       const cleanEmail = email.trim().toLowerCase();
       const fullName = `${firstName.trim()} ${lastName.trim()}`;
       
-      // 2. Auth Edge Function (Bypass 400 error)
+      // 2. Auth Edge Function (Strict Payload)
       const { error: authError } = await supabase.functions.invoke('provision-user', {
         body: { email: cleanEmail, password, fullName, role }
       });
@@ -147,12 +81,11 @@ const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess }) => {
         console.warn("Edge Function Error Caught, proceeding to DB injection...", authError);
       }
 
-      // 3. Update the blank profile row
-      const fullPhone = phone ? `${countryCode} ${phone}` : '';
+      // 3. Update the blank profile row (Fixed 'whatsapp' column)
       const updates = {
         first_name: firstName.trim(),
         last_name: lastName.trim(),
-        phone: fullPhone,
+        whatsapp: phone || null, // FIXED: Using 'whatsapp' as per database schema
         role: role,
         status: 'active',
         assigned_password: password
@@ -245,11 +178,17 @@ const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess }) => {
               </div>
             </div>
 
+            {/* INTEGRATED PHONE LIBRARY */}
             <div>
-              <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Teléfono (Opcional)</label>
-              <div className="flex gap-2">
-                <CustomPhoneDropdown value={countryCode} onChange={setCountryCode} />
-                <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="412 123 4567" className="w-full bg-black/40 border border-white/20 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#fcd34d]" />
+              <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Teléfono (WhatsApp)</label>
+              <div className="w-full rounded-xl px-4 py-2.5 text-[11px] lg:text-sm font-montserrat transition-all shadow-inner border border-white/20 bg-black/40 text-white focus-within:border-[#fcd34d] focus-within:ring-1 focus-within:ring-[#fcd34d]">
+                <PhoneInput 
+                  defaultCountry="VE" 
+                  international 
+                  value={phone} 
+                  onChange={(value) => setPhone(value)} 
+                  className="PhoneInputCustom w-full bg-transparent outline-none"
+                />
               </div>
             </div>
 
@@ -633,23 +572,22 @@ const AdminHub = () => {
             <li className="flex items-center gap-3 overflow-hidden"><svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg><span className="truncate">Aug 26: Live Lab Session</span></li>
           </ul>
           
-          {/* REQUEST SUBSTITUTE REVERTED TO PERFECT WORKING VERSION */}
           <button className="w-full py-4 bg-[#e2e8f0] text-[#0f172a] hover:bg-white font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 shadow-xl transition-all hover:scale-105 shrink-0 mt-auto">
-            <img src="https://i.postimg.cc/mrtXmB72/Copia-de-Diseno-sin-titulo-(2).png" alt="Request Substitute" className="w-5 h-5 object-contain" />
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
             REQUEST SUBSTITUTE
           </button>
         </div>
       </div>
       <div className="col-span-3 flex flex-col gap-6 h-full">
-        {/* URL FIX */}
-        <button onClick={() => setIsProvisioningModalOpen(true)} className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center gap-6 hover:bg-white/10 transition-all hover:scale-[1.02] group">
-          <img src="https://i.postimg.cc/sxd4PQpm/2(12).png" alt="Provisioning" className="w-32 md:w-40 object-contain group-hover:scale-110 transition-transform drop-shadow-md" />
+        {/* FIX: Changed from <button> to <div role="button"> to remove browser artifacts */}
+        <div role="button" tabIndex={0} onClick={() => setIsProvisioningModalOpen(true)} className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center gap-6 hover:bg-white/10 transition-all hover:scale-[1.02] group cursor-pointer">
+          <img src="https://i.postimg.cc/ZKPVccsH/4(8).png" alt="Provisioning" className="w-32 md:w-40 object-contain group-hover:scale-110 transition-transform drop-shadow-md" />
           <h3 className="font-black text-xl md:text-2xl tracking-widest uppercase text-white">Provisioning</h3>
-        </button>
-        <button onClick={() => setActiveModule('FINANCES')} className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center gap-6 hover:bg-white/10 transition-all hover:scale-[1.02] group">
+        </div>
+        <div role="button" tabIndex={0} onClick={() => setActiveModule('FINANCES')} className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center gap-6 hover:bg-white/10 transition-all hover:scale-[1.02] group cursor-pointer">
           <img src="https://i.postimg.cc/sxd4PQpm/2(12).png" alt="Stats" className="w-32 md:w-40 object-contain group-hover:scale-110 transition-transform drop-shadow-md" />
           <h3 className="font-black text-xl md:text-2xl tracking-widest uppercase text-white">Stats</h3>
-        </button>
+        </div>
       </div>
       <div className="col-span-6 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-8 shadow-2xl flex flex-col h-full overflow-hidden">
         <div className="flex bg-black/20 rounded-2xl p-2 mb-6 shrink-0 shadow-inner">
@@ -717,7 +655,7 @@ const AdminHub = () => {
             <li className="flex items-center justify-between"><div className="flex items-center gap-3"><svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M19 4h-1V3a1 1 0 00-2 0v1H8V3a1 1 0 00-2 0v1H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2zM5 20V9h14v11H5z" /></svg><span>Aug 15: 40 minutes</span></div><span className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_#ef4444]"></span></li>
           </ul>
           <button className="w-full py-4 bg-[#e2e8f0] text-[#0f172a] hover:bg-white font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 shadow-xl transition-all hover:scale-105 shrink-0 mt-auto">
-            <img src="https://i.postimg.cc/mrtXmB72/Copia-de-Diseno-sin-titulo-(2).png" alt="Request Substitute" className="w-5 h-5 object-contain" />
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
             REQUEST SUBSTITUTE
           </button>
         </div>
@@ -953,6 +891,19 @@ const AdminHub = () => {
         .zoom-container { touch-action: pan-x pan-y pinch-zoom; overflow: auto; overscroll-behavior: contain; }
         video::-internal-media-controls-download-button { display: none !important; }
         audio::-internal-media-controls-download-button { display: none !important; }
+        
+        /* Phone Input Custom Styling */
+        .PhoneInputCustom .PhoneInputInput {
+            background: transparent !important;
+            color: white !important;
+            outline: none !important;
+            border: none !important;
+            font-size: 0.875rem !important;
+            margin-left: 0.5rem !important;
+        }
+        .PhoneInputCustom .PhoneInputCountryIcon {
+            box-shadow: none !important;
+        }
       `}</style>
 
       <ProvisioningModal 

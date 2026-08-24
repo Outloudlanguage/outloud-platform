@@ -1,72 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { LEVEL_OPTIONS } from '../../../constants/adminConfigs';
-
-// ==========================================
-// COMPREHENSIVE COUNTRY CODES LIBRARY
-// ==========================================
-const COUNTRY_CODES = [
-  { code: '+1', country: '🇺🇸 US/CA' }, { code: '+44', country: '🇬🇧 UK' }, { code: '+34', country: '🇪🇸 ES' },
-  { code: '+51', country: '🇵🇪 PE' }, { code: '+52', country: '🇲🇽 MX' }, { code: '+54', country: '🇦🇷 AR' },
-  { code: '+55', country: '🇧🇷 BR' }, { code: '+56', country: '🇨🇱 CL' }, { code: '+57', country: '🇨🇴 CO' },
-  { code: '+58', country: '🇻🇪 VE' }, { code: '+593', country: '🇪🇨 EC' }, { code: '+598', country: '🇺🇾 UY' },
-  { code: '+502', country: '🇬🇹 GT' }, { code: '+503', country: '🇸🇻 SV' }, { code: '+504', country: '🇭🇳 HN' },
-  { code: '+505', country: '🇳🇮 NI' }, { code: '+506', country: '🇨🇷 CR' }, { code: '+507', country: '🇵🇦 PA' },
-  { code: '+53', country: '🇨🇺 CU' }, { code: '+1-809', country: '🇩🇴 DO' }, { code: '+591', country: '🇧🇴 BO' },
-  { code: '+595', country: '🇵🇾 PY' }, { code: '+33', country: '🇫🇷 FR' }, { code: '+49', country: '🇩🇪 DE' },
-  { code: '+39', country: '🇮🇹 IT' }, { code: '+351', country: '🇵🇹 PT' }, { code: '+31', country: '🇳🇱 NL' },
-  { code: '+32', country: '🇧🇪 BE' }, { code: '+41', country: '🇨🇭 CH' }, { code: '+43', country: '🇦🇹 AT' },
-  { code: '+46', country: '🇸🇪 SE' }, { code: '+47', country: '🇳🇴 NO' }, { code: '+45', country: '🇩🇰 DK' },
-  { code: '+358', country: '🇫🇮 FI' }, { code: '+7', country: '🇷🇺 RU' }, { code: '+81', country: '🇯🇵 JP' },
-  { code: '+82', country: '🇰🇷 KR' }, { code: '+86', country: '🇨🇳 CN' }, { code: '+91', country: '🇮🇳 IN' },
-  { code: '+61', country: '🇦🇺 AU' }, { code: '+64', country: '🇳🇿 NZ' }, { code: '+27', country: '🇿🇦 ZA' },
-  { code: '+971', country: '🇦🇪 AE' }, { code: '+966', country: '🇸🇦 SA' }
-];
-
-// ==========================================
-// CUSTOM PHONE DROPDOWN UI
-// ==========================================
-const CustomPhoneDropdown = ({ value, onChange }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef(null);
-  const selectedOption = COUNTRY_CODES.find(c => c.code === value) || COUNTRY_CODES[9]; // Defaults to VE
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) setIsOpen(false);
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  return (
-    <div className="relative w-[140px] shrink-0" ref={dropdownRef}>
-      <div 
-        onClick={() => setIsOpen(!isOpen)} 
-        className="h-[42px] bg-black/40 border border-white/20 rounded-xl px-3 flex items-center justify-between cursor-pointer hover:border-[#fcd34d] transition-colors"
-      >
-        <span className="text-white text-sm font-semibold truncate pr-2">
-          {selectedOption.country.split(' ')[0]} {selectedOption.code}
-        </span>
-        <span className="text-[8px] text-white/50">▼</span>
-      </div>
-
-      {isOpen && (
-        <div className="absolute z-50 top-[48px] left-0 w-[220px] max-h-48 overflow-y-auto custom-scrollbar bg-[#070b19]/95 backdrop-blur-xl border border-white/20 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.8)] py-2">
-          {COUNTRY_CODES.map((c) => (
-            <div 
-              key={c.code} 
-              onClick={() => { onChange(c.code); setIsOpen(false); }} 
-              className="px-4 py-2.5 hover:bg-white/10 cursor-pointer text-sm flex items-center justify-between transition-colors"
-            >
-              <span className="text-white font-medium">{c.country}</span>
-              <span className="text-white/50 font-bold">{c.code}</span>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
+import PhoneInput from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
 
 const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, onSuccess }) => {
   const [activeTab, setActiveTab] = useState('INFO_PERSONAL');
@@ -79,8 +14,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   const [provPassword, setProvPassword] = useState('');
   const [provFirstName, setProvFirstName] = useState('');
   const [provLastName, setProvLastName] = useState('');
-  const [provPhone, setProvPhone] = useState('');
-  const [provCountryCode, setProvCountryCode] = useState('+58');
+  const [provPhone, setProvPhone] = useState(''); // Updated to hold full intl number from PhoneInput
   
   const [isEditingCreds, setIsEditingCreds] = useState(false);
   const [editEmail, setEditEmail] = useState('');
@@ -123,10 +57,11 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
       setProvEmail(userData.email || '');
       setProvPassword('');
       
+      // Auto-extract first and last names if handling a pending lead
       const nameParts = (userData.full_name || '').trim().split(' ');
       setProvFirstName(userData.first_name || nameParts[0] || '');
       setProvLastName(userData.last_name || (nameParts.length > 1 ? nameParts.slice(1).join(' ') : ''));
-      setProvPhone(userData.phone || '');
+      setProvPhone(userData.whatsapp || userData.phone || ''); // Check for whatsapp or old phone fallback
 
       setIsProvisioning(false);
       
@@ -153,7 +88,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   }, [isOpen, isPending, userData, activeTab]);
 
   // ==========================================
-  // ACADEMIC LOGIC
+  // ACADEMIC & REPORTING LOGIC
   // ==========================================
   const fetchAcademicHistory = async () => {
     setIsLoadingHistory(true);
@@ -198,13 +133,17 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   };
 
   // ==========================================
-  // FINANCIAL LOGIC
+  // FINANCIAL & COHORT LOGIC
   // ==========================================
   const getBaseLevel = (lvlString) => lvlString ? lvlString.split(':')[0].trim() : 'A1';
 
   const updatePrice = (type, levelString) => {
-    if (type === 'Extra') setPayAmount(12);
-    else setPayAmount(MONTHLY_PRICES[getBaseLevel(levelString)] || 40);
+    if (type === 'Extra') {
+      setPayAmount(12); // Extra bundle price
+    } else {
+      const base = getBaseLevel(levelString);
+      setPayAmount(MONTHLY_PRICES[base] || 40);
+    }
   };
 
   const handlePayTypeChange = (e) => {
@@ -216,7 +155,9 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   const calculateProration = (targetCohort, price) => {
     const today = new Date();
     let nextBilling = new Date(today.getFullYear(), today.getMonth(), targetCohort);
-    if (today.getDate() >= targetCohort) nextBilling.setMonth(nextBilling.getMonth() + 1);
+    if (today.getDate() >= targetCohort) {
+        nextBilling.setMonth(nextBilling.getMonth() + 1);
+    }
     const daysLeft = Math.max(0, Math.ceil((nextBilling - today) / (1000 * 60 * 60 * 24)));
     return ((price / 30) * daysLeft).toFixed(2);
   };
@@ -227,6 +168,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
     setIsProcessing(true);
     try {
       if (userData.id.startsWith('mock')) { if(onSuccess) onSuccess(); return; }
+      
       const today = new Date();
       let nextBilling = new Date(today.getFullYear(), today.getMonth(), cohort);
       if (today.getDate() >= cohort) nextBilling.setMonth(nextBilling.getMonth() + 1);
@@ -251,8 +193,10 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
     const newCredits = credits + 1;
     setCredits(newCredits);
     if (userData.id.startsWith('mock')) return;
+    
     try {
       await supabase.from('profiles').update({ available_credits: newCredits }).eq('id', userData.id);
+      
       await supabase.from('financial_logs').insert({
         student_id: userData.id,
         type: 'refund',
@@ -260,7 +204,10 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
         amount: 0
       });
       if (onSuccess) onSuccess();
-    } catch(e) { console.error(e); alert("Error procesando el reembolso."); }
+    } catch(e) { 
+      console.error(e); 
+      alert("Error procesando el reembolso.");
+    }
   };
 
   const calculateNextBillingDate = () => {
@@ -274,10 +221,19 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
 
   const handlePaymentSubmit = async (e) => {
     e.preventDefault();
-    if (!payRef || !payFile) { alert("Debes incluir un número de referencia y el comprobante de pago."); return; }
+    if (!payRef || !payFile) {
+      alert("Debes incluir un número de referencia y el comprobante de pago.");
+      return;
+    }
 
     setIsProcessing(true);
     try {
+      if (userData.id.startsWith('mock')) {
+         alert("Simulación de pago en datos de prueba exitosa.");
+         setIsProcessing(false);
+         return;
+      }
+
       const fileExt = payFile.name.split('.').pop();
       const fileName = `${userData.id}/${Date.now()}.${fileExt}`;
       const { error: uploadError } = await supabase.storage.from('payment_proofs').upload(fileName, payFile);
@@ -297,7 +253,10 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
 
       const newCredits = payType === 'Mensualidad' ? 4 : credits + 2;
       const updates = { available_credits: newCredits };
-      if (payType === 'Mensualidad') updates.next_billing_date = calculateNextBillingDate();
+
+      if (payType === 'Mensualidad') {
+        updates.next_billing_date = calculateNextBillingDate();
+      }
 
       const { error: profileError } = await supabase.from('profiles').update(updates).eq('id', userData.id);
       if (profileError) throw profileError;
@@ -307,6 +266,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
       setPayRef('');
       setPayFile(null);
       if (onSuccess) onSuccess();
+
     } catch (error) {
       console.error("Payment Error:", error);
       alert("Hubo un error procesando el pago. Revisa los permisos del bucket de Storage.");
@@ -315,8 +275,9 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
     }
   };
 
+
   // ==========================================
-  // EDGE FUNCTION CREATION LOGIC (FIXED)
+  // ACCOUNT CONTROL LOGIC (Auth & DB Link)
   // ==========================================
   const handleProvisionAccount = async () => {
     if (!provEmail || !provPassword || !provFirstName || !provLastName) { 
@@ -326,12 +287,17 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
     
     setIsProcessing(true);
     try {
+      if (userData?.id?.startsWith('mock')) {
+        alert('Modo de Prueba: Cuenta simulada aprovisionada exitosamente.');
+        if (onSuccess) onSuccess();
+        onClose();
+        return;
+      }
+
       const cleanEmail = provEmail.trim().toLowerCase();
       const fullName = `${provFirstName.trim()} ${provLastName.trim()}`;
-      const fullPhone = provPhone ? `${provCountryCode} ${provPhone.trim()}` : '';
 
-      // 1. Invoke Edge Function with strict 4-param payload.
-      // Even if this throws a 400 Bad Request (like in your video), we proceed because SQL proves the user IS created.
+      // 1. Edge Function with Strict Payload
       const { error: authError } = await supabase.functions.invoke('provision-user', {
         body: { 
           email: cleanEmail, 
@@ -342,14 +308,14 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
       });
       
       if (authError) {
-         console.warn("Auth execution flagged a non-2xx error, but account was created in Auth. Proceeding to DB sync...");
+         console.warn("Edge Function catch: Proceeding to DB injection...", authError);
       }
 
-      // 2. Perform the true data link. If Auth was successful, this database update WILL succeed.
+      // 2. Exact DB Injection mapping to the correct 'whatsapp' column
       const { error: profileError } = await supabase.from('profiles').update({
           first_name: provFirstName.trim(),
           last_name: provLastName.trim(),
-          phone: fullPhone,
+          whatsapp: provPhone || null, // FIX: Properly targeting the whatsapp column
           role: 'student',
           status: 'active',
           level: levelOverride, 
@@ -361,8 +327,9 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
         
       if (profileError) throw new Error(`Fallo en la sincronización de Base de Datos: ${profileError.message}`);
 
-      // 3. Clear registration queue
-      await supabase.from('registrations').update({ status: 'approved' }).eq('id', userData.id);
+      // 3. Approve Registration Lead
+      const { error: regError } = await supabase.from('registrations').update({ status: 'approved' }).eq('id', userData.id);
+      if (regError) console.warn("No se pudo actualizar la tabla registrations, pero el perfil fue creado.");
 
       alert('Cuenta aprovisionada exitosamente. El estudiante ya está activo en el directorio.');
       if (onSuccess) onSuccess();
@@ -380,6 +347,13 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
 
     setIsProcessing(true);
     try {
+      if (userData.id.startsWith('mock')) {
+         alert("Simulación de cambio de credenciales en datos de prueba exitosa.");
+         setIsEditingCreds(false);
+         setIsProcessing(false);
+         return;
+      }
+
       const { error: authError } = await supabase.functions.invoke('manage-credentials', {
         body: { userId: userData.id, email: editEmail, password: editPassword }
       });
@@ -407,6 +381,12 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
 
     setIsProcessing(true);
     try {
+      if (userData.id.startsWith('mock')) {
+         setAccountStatus(newStatus);
+         setIsProcessing(false);
+         return;
+      }
+
       const { error } = await supabase.from('profiles').update({ status: newStatus }).eq('id', userData.id);
       if (error) throw error;
       setAccountStatus(newStatus);
@@ -419,17 +399,23 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
     }
   };
 
+  const handleOverlayClick = (e) => {
+    if (e.target.id === 'modal-overlay') onClose();
+  };
+
   if (!isOpen || !userData) return null;
 
   const isPastDue = userData.next_billing_date && new Date(userData.next_billing_date) < new Date();
 
   return (
-    <div id="modal-overlay" onClick={(e) => e.target.id === 'modal-overlay' && onClose()} className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fade-in font-montserrat">
+    <div id="modal-overlay" onClick={handleOverlayClick} className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fade-in font-montserrat">
       <div className="relative w-full max-w-4xl max-h-[90vh] bg-[#070b19]/95 border border-white/20 rounded-[2.5rem] shadow-[0_25px_50px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden animate-slide-up">
         
+        {/* Glow Effects */}
         <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-900/20 blur-[100px] rounded-full mix-blend-screen pointer-events-none"></div>
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#fcd34d]/10 blur-[80px] rounded-full mix-blend-screen pointer-events-none"></div>
 
+        {/* HEADER */}
         <div className="relative z-10 flex items-start justify-between p-6 md:p-8 border-b border-white/10 bg-white/5 shrink-0">
           <div className="flex items-center gap-5 overflow-hidden w-full pr-4">
             <div className="relative shrink-0">
@@ -444,7 +430,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
               <h2 className={`text-xl md:text-2xl font-black tracking-wide drop-shadow-md truncate ${accountStatus === 'suspended' ? 'text-white/50' : 'text-white'}`}>
                 {userData.full_name || `${userData.first_name || ''} ${userData.last_name || ''}`.trim() || 'Sin Nombre'}
               </h2>
-              <p className="text-xs md:text-sm text-white/60 font-semibold mt-1 truncate">{userData.email} {userData.phone ? `• ${userData.phone}` : ''}</p>
+              <p className="text-xs md:text-sm text-white/60 font-semibold mt-1 truncate">{userData.email} {userData.whatsapp ? `• ${userData.whatsapp}` : ''}</p>
               {!isPending && (
                 <p className="text-[10px] text-[#fcd34d] font-bold uppercase tracking-widest mt-1">
                   NIVEL: {levelOverride.split(':')[0]} • CRÉDITOS: <span className="text-white">{credits}</span>
@@ -457,6 +443,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
           </button>
         </div>
 
+        {/* TABS */}
         <div className="relative z-10 flex flex-wrap border-b border-white/10 bg-black/20 shrink-0">
           {[
             { id: 'INFO_PERSONAL', label: 'Info Personal & Control' },
@@ -474,6 +461,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
           ))}
         </div>
 
+        {/* CONTENT AREA */}
         <div className="relative z-10 flex-grow overflow-y-auto custom-scrollbar p-6 md:p-8">
           
           {/* ==================================================== */}
@@ -482,12 +470,13 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
           {activeTab === 'INFO_PERSONAL' && (
             <div className="animate-fade-in space-y-6">
               
+              {/* Provisioning Block for Pending Leads */}
               {isPending && (
                 <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-6 mb-8 transition-all shadow-inner">
                   <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-4 border-b border-amber-500/20 pb-4">
                     <div>
                       <h4 className="text-amber-400 font-black tracking-widest text-sm uppercase">Aprobación de Cuenta</h4>
-                      <p className="text-xs text-amber-200/70 mt-1">Verifica la información y asigna las credenciales maestras.</p>
+                      <p className="text-xs text-amber-200/70 mt-1">Verifica la información y asigna las credenciales maestras para activar a este estudiante.</p>
                     </div>
                   </div>
 
@@ -509,11 +498,17 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                       <input type="text" placeholder="Asigna una clave" value={provPassword} onChange={(e) => setProvPassword(e.target.value)} className="w-full bg-black/30 border border-amber-500/30 rounded-lg px-4 py-2.5 text-white text-sm outline-none focus:border-amber-400 transition-colors" />
                     </div>
                     
+                    {/* INTEGRATED PHONE LIBRARY */}
                     <div className="col-span-1 md:col-span-2">
-                      <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Teléfono (Opcional)</label>
-                      <div className="flex gap-2">
-                        <CustomPhoneDropdown value={provCountryCode} onChange={setProvCountryCode} />
-                        <input type="tel" value={provPhone} onChange={e => setProvPhone(e.target.value)} placeholder="412 123 4567" className="w-full bg-black/30 border border-amber-500/30 rounded-xl px-4 py-2 text-white text-sm outline-none focus:border-amber-400 transition-colors" />
+                      <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Teléfono (WhatsApp)</label>
+                      <div className="w-full rounded-xl px-4 py-2.5 text-[11px] lg:text-sm font-montserrat transition-all shadow-inner border border-amber-500/30 bg-black/30 text-white focus-within:border-amber-400 focus-within:ring-1 focus-within:ring-amber-400">
+                        <PhoneInput 
+                          defaultCountry="VE" 
+                          international 
+                          value={provPhone} 
+                          onChange={(value) => setProvPhone(value)} 
+                          className="PhoneInputCustom w-full bg-transparent outline-none"
+                        />
                       </div>
                     </div>
                   </div>
