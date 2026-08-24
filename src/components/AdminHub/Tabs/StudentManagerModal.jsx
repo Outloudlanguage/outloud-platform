@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { LEVEL_OPTIONS } from '../../constants/adminConfigs';
 
 const StudentManagerModal = ({ student, onClose, onUpdate, supabase }) => {
   const [activeTab, setActiveTab] = useState('INFO_PERSONAL');
@@ -234,7 +235,7 @@ const StudentManagerModal = ({ student, onClose, onUpdate, supabase }) => {
       });
       if (ledgerError) throw ledgerError;
 
-      // UPDATE TO NEW CREDIT ECONOMY
+      // UPDATE TO NEW CREDIT ECONOMY (4 per month)
       const newCredits = payType === 'Mensualidad' ? 4 : credits + 2;
       const updates = { available_credits: newCredits };
 
@@ -530,7 +531,7 @@ const StudentManagerModal = ({ student, onClose, onUpdate, supabase }) => {
                        <div className="flex gap-4 items-end">
                           <div className="flex-1">
                             <label className="block text-[10px] text-white/50 font-bold uppercase mb-2">Billing Cohort</label>
-                            <select value={cohort} onChange={e => setCohort(parseInt(e.target.value))} className="w-full bg-black/40 border border-white/20 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#fcd34d] cursor-pointer appearance-none">
+                            <select value={cohort} onChange={e => setCohort(parseInt(e.target.value))} className="w-full bg-[#070b19] border border-white/20 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#fcd34d] cursor-pointer appearance-none">
                                <option value={15}>15th of the Month</option>
                                <option value={30}>30th of the Month</option>
                             </select>

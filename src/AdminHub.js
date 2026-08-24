@@ -360,17 +360,17 @@ const AdminHub = () => {
           </ul>
           <button className="w-full py-4 px-2 bg-[#e2e8f0] text-[#0f172a] hover:bg-white font-black text-[10px] md:text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 shadow-xl transition-all hover:scale-105 shrink-0 mt-auto overflow-hidden">
             <img src="https://i.postimg.cc/mrtXmB72/Copia-de-Diseno-sin-titulo-(2).png" alt="Request Substitute" className="w-5 h-5 object-contain shrink-0" />
-            <span className="truncate leading-tight">REQUEST SUBSTITUTE</span>
+            <span className="whitespace-normal leading-tight text-left">REQUEST SUBSTITUTE</span>
           </button>
         </div>
       </div>
       <div className="col-span-3 flex flex-col gap-6 h-full">
-        <button onClick={() => alert('Módulo de Provisioning en construcción...')} className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center gap-6 hover:bg-white/10 transition-all hover:scale-[1.02] group">
-          <img src="https://i.postimg.cc/ZKPVccsH/4(8).png" alt="Provisioning" className="w-20 md:w-28 object-contain group-hover:scale-110 transition-transform drop-shadow-md" />
+        <button onClick={() => setSelectedStudent({ id: 'new', status: 'pending', first_name: '', last_name: '', email: '', phone: '' })} className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center gap-6 hover:bg-white/10 transition-all hover:scale-[1.02] group">
+          <img src="https://i.postimg.cc/ZKPVccsH/4(8).png" alt="Provisioning" className="w-32 lg:w-40 object-contain group-hover:scale-110 transition-transform drop-shadow-md" />
           <h3 className="font-black text-xl md:text-2xl tracking-widest uppercase text-white">Provisioning</h3>
         </button>
         <button onClick={() => alert('Módulo de Estadísticas en construcción...')} className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center gap-6 hover:bg-white/10 transition-all hover:scale-[1.02] group">
-          <img src="https://i.postimg.cc/sxd4PQpm/2(12).png" alt="Stats" className="w-20 md:w-28 object-contain group-hover:scale-110 transition-transform drop-shadow-md" />
+          <img src="https://i.postimg.cc/sxd4PQpm/2(12).png" alt="Stats" className="w-32 lg:w-40 object-contain group-hover:scale-110 transition-transform drop-shadow-md" />
           <h3 className="font-black text-xl md:text-2xl tracking-widest uppercase text-white">Stats</h3>
         </button>
       </div>
@@ -429,7 +429,7 @@ const AdminHub = () => {
           </ul>
           <button className="w-full py-4 px-2 bg-[#e2e8f0] text-[#0f172a] hover:bg-white font-black text-[10px] md:text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 shadow-xl transition-all hover:scale-105 shrink-0 mt-auto overflow-hidden">
             <img src="https://i.postimg.cc/mrtXmB72/Copia-de-Diseno-sin-titulo-(2).png" alt="Request Substitute" className="w-5 h-5 object-contain shrink-0" />
-            <span className="truncate leading-tight">REQUEST SUBSTITUTE</span>
+            <span className="whitespace-normal leading-tight text-left">REQUEST SUBSTITUTE</span>
           </button>
         </div>
       </div>
@@ -664,7 +664,7 @@ const AdminHub = () => {
           className="absolute inset-0 opacity-100 scale-[1.02] blur-sm" 
           style={{ backgroundImage: `url("https://i.postimg.cc/kg4rxNH2/Gemini-Generated-Image-ohtdmbohtdmbohtd.jpg")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
         ></div>
-        <div className="absolute inset-0 bg-[#070b19]/85"></div>
+        <div className="absolute inset-0 bg-[#070b19]/50"></div>
       </div>
 
       {selectedStudent && (
