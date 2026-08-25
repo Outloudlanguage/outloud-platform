@@ -36,10 +36,9 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   const [cohort, setCohort] = useState(15);
   const [credits, setCredits] = useState(0);
   
-  const [payType, setPayType] = useState('Mensualidad');
+const [payType, setPayType] = useState('Mensualidad');
   const [payAmount, setPayAmount] = useState(40);
   const [payRef, setPayRef] = useState('');
-  const [payFile, setPayFile] = useState(null);
 
   // ==========================================
   // TAB 3: ESTADISTICAS (Reporting Engine)
@@ -212,9 +211,9 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
     return nextMonth.toISOString().split('T')[0];
   };
 
-  const handlePaymentSubmit = async (e) => {
+const handlePaymentSubmit = async (e) => {
     e.preventDefault();
-    if (!payRef || !payFile) { alert("Debes incluir un número de referencia y el comprobante de pago."); return; }
+    if (!payRef) { alert("Debes incluir un número de referencia de pago."); return; }
 
     setIsProcessing(true);
     try {
@@ -224,19 +223,11 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
          return;
       }
 
-      const fileExt = payFile.name.split('.').pop();
-      const fileName = `${userData.id}/${Date.now()}.${fileExt}`;
-      const { error: uploadError } = await supabase.storage.from('payment_proofs').upload(fileName, payFile);
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage.from('payment_proofs').getPublicUrl(fileName);
-
       const { error: ledgerError } = await supabase.from('student_payments').insert({
         student_id: userData.id,
         payment_type: payType === 'Mensualidad' ? 'Monthly Subscription' : 'Extra Credits',
         amount: payAmount,
         reference_number: payRef,
-        proof_image_url: publicUrl,
         status: 'verified' 
       });
       if (ledgerError) throw ledgerError;
@@ -254,12 +245,11 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
       setCredits(newCredits);
       alert("Pago registrado y créditos aplicados exitosamente.");
       setPayRef('');
-      setPayFile(null);
       if (onSuccess) onSuccess();
 
     } catch (error) {
       console.error("Payment Error:", error);
-      alert("Hubo un error procesando el pago. Revisa los permisos del bucket de Storage.");
+      alert("Hubo un error procesando el pago en la base de datos.");
     } finally {
       setIsProcessing(false);
     }
@@ -751,20 +741,15 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                         </div>
                       </div>
 
-                      <div>
-                        <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Número de Referencia (Zelle / Transferencia)</label>
-                        <input type="text" value={payRef} onChange={(e) => setPayRef(e.target.value)} placeholder="Ej: REF-92384729" className="w-full bg-[#070b19] border border-white/20 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-400" required />
-                      </div>
+                  <div className="mb-3">
+                      <label className="block text-[9px] text-white/50 font-bold uppercase mb-1">Número de Referencia (Zelle / Pago Móvil)</label>
+                      <input type="text" value={payRef} onChange={e => setPayRef(e.target.value)} placeholder="Ej: REF-923847" className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-[#fcd34d]" required />
+                    </div>
 
-                      <div>
-                        <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Comprobante (Screenshot)</label>
-                        <input type="file" accept="image/*" onChange={(e) => setPayFile(e.target.files[0])} className="w-full bg-[#070b19] border border-white/20 rounded-xl px-4 py-2 text-sm text-white/70 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-black file:bg-white/10 file:text-white hover:file:bg-white/20 cursor-pointer" required />
-                      </div>
-
-                      <button type="submit" disabled={isProcessing} className="w-full py-4 mt-2 bg-emerald-500 hover:bg-emerald-400 text-[#08203e] font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-[0_0_15px_rgba(16,185,129,0.4)] disabled:opacity-50 hover:scale-[1.02]">
-                        {isProcessing ? 'Verificando y Aplicando...' : `Confirmar Pago de $${payAmount}`}
-                      </button>
-                    </form>
+                    <button type="submit" disabled={isProcessing} className="w-full py-4 mt-auto bg-[#fcd34d] hover:bg-white text-[#08203e] font-black tracking-widest text-xs uppercase rounded-xl transition-all shadow-[0_0_20px_rgba(252,211,77,0.3)] disabled:opacity-50 hover:scale-[1.02]">
+                      {isProcessing ? 'Verificando y Aplicando...' : `Confirmar Pago de $${payAmount}`}
+                    </button>
+                  </form>
                   </div>
                 </>
               ) : (

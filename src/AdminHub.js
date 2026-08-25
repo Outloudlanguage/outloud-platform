@@ -39,11 +39,10 @@ const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess }) => {
   const [provCohort, setProvCohort] = useState(15);
 
   // Financial States
-  const MONTHLY_PRICES = { A1: 40, A2: 45, B1: 50, B2: 55, C1: 60, C2: 65 };
+  const MONTHLY_PRICES = { A1: 20, A2: 20, B1: 30, B2: 30, C1: 50, C2: 50 };
   const [payMethod, setPayMethod] = useState('Zelle');
   const [payDate, setPayDate] = useState('');
   const [payRef, setPayRef] = useState('');
-  const [payFile, setPayFile] = useState(null);
 
   if (!isOpen) return null;
 
@@ -65,8 +64,8 @@ const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess }) => {
       alert("Nombres, correo y contraseña son obligatorios.");
       return;
     }
-    if (role === 'Student' && (!payMethod || !payDate || !payRef || !payFile)) {
-      alert("Para registrar un estudiante, debes llenar todos los datos financieros y adjuntar el comprobante.");
+    if (role === 'student' && (!payMethod || !payDate || !payRef)) {
+      alert("Para registrar un estudiante, debes llenar todos los datos financieros.");
       return;
     }
 
@@ -81,16 +80,7 @@ const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess }) => {
       });
       if (authError) console.warn("Edge Function Flag:", authError);
 
-      // 2. Upload Payment Proof to Storage
-      let publicPaymentUrl = null;
-      if (role === 'Student' && payFile) {
-        const fileExt = payFile.name.split('.').pop();
-        const fileName = `new_provisions/${Date.now()}_${cleanEmail}.${fileExt}`;
-        const { error: uploadError } = await supabase.storage.from('payment_proofs').upload(fileName, payFile);
-        if (uploadError) throw new Error(`Error subiendo comprobante: ${uploadError.message}`);
-        const { data: pubData } = supabase.storage.from('payment_proofs').getPublicUrl(fileName);
-        publicPaymentUrl = pubData.publicUrl;
-      }
+      
 
       // 3. Update the blank profile row (FIXED: whatsapp payload)
       const updates = {
@@ -121,13 +111,12 @@ const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess }) => {
       if (profileError) throw new Error(`Error actualizando perfil: ${profileError.message}`);
 
       // 4. Log the Payment in the Ledger
-      if (role === 'Student' && updatedProfile?.id) {
+      if (role === 'student' && updatedProfile?.id) {
         await supabase.from('student_payments').insert({
           student_id: updatedProfile.id,
           payment_type: 'Initial Enrollment (Prorated)',
           amount: proratedDue,
           reference_number: payRef,
-          proof_image_url: publicPaymentUrl,
           status: 'verified' 
         });
       }
@@ -256,14 +245,9 @@ const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess }) => {
                       </div>
                     </div>
 
-                    <div className="mb-3">
-                      <label className="block text-[9px] text-white/50 font-bold uppercase mb-1">Número de Referencia</label>
+<div className="mb-3">
+                      <label className="block text-[9px] text-white/50 font-bold uppercase mb-1">Número de Referencia (Zelle/Pago Móvil)</label>
                       <input type="text" value={payRef} onChange={e => setPayRef(e.target.value)} placeholder="Ej: REF-923847" className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-[#fcd34d]" required />
-                    </div>
-
-                    <div>
-                      <label className="block text-[9px] text-white/50 font-bold uppercase mb-1">Comprobante (Screenshot)</label>
-                      <input type="file" accept="image/*" onChange={(e) => setPayFile(e.target.files[0])} className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-1.5 text-xs text-white/70 file:mr-3 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-[9px] file:font-black file:bg-white/10 file:text-white hover:file:bg-white/20 cursor-pointer" required />
                     </div>
                   </div>
                 </>
@@ -639,13 +623,13 @@ const AdminHub = () => {
         </div>
       </div>
       <div className="col-span-3 flex flex-col gap-6 h-full">
-        <div onClick={() => setIsProvisioningModalOpen(true)} className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center relative overflow-hidden cursor-pointer hover:bg-white/10 transition-colors">
-          <img src="https://i.postimg.cc/ZKPVccsH/4(8).png" alt="Provisioning" className="w-28 object-contain mb-4 drop-shadow-md relative z-10" />
-          <h3 className="text-white font-black text-2xl tracking-widest uppercase text-center relative z-10">Provisioning</h3>
+        <div onClick={() => setIsProvisioningModalOpen(true)} className="flex-1 w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-white/10 transition-all group">
+          <img src="https://i.postimg.cc/ZKPVccsH/4(8).png" alt="Provisioning" className="h-28 object-contain mb-4 group-hover:scale-110 transition-transform drop-shadow-md mix-blend-screen" />
+          <h3 className="font-black text-xl md:text-2xl tracking-widest uppercase text-white">Provisioning</h3>
         </div>
-        <div onClick={() => setActiveModule('FINANCES')} className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center relative overflow-hidden cursor-pointer hover:bg-white/10 transition-colors">
-          <img src="https://i.postimg.cc/sxd4PQpm/2(12).png" alt="Stats" className="w-28 object-contain mb-4 drop-shadow-md relative z-10" />
-          <h3 className="text-white font-black text-2xl tracking-widest uppercase text-center relative z-10">Stats</h3>
+        <div onClick={() => alert('Módulo de Estadísticas en construcción...')} className="flex-1 w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-white/10 transition-all group">
+          <img src="https://i.postimg.cc/sxd4PQpm/2(12).png" alt="Stats" className="h-28 object-contain mb-4 group-hover:scale-110 transition-transform drop-shadow-md mix-blend-screen" />
+          <h3 className="font-black text-xl md:text-2xl tracking-widest uppercase text-white">Stats</h3>
         </div>
       </div>
       <div className="col-span-6 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-8 shadow-2xl flex flex-col h-full overflow-hidden">
