@@ -21,7 +21,7 @@ import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 
 // ==========================================
-// DEDICATED PROVISIONING MODAL
+// DEDICATED PROVISIONING MODAL (WITH FINANCES)
 // ==========================================
 const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess }) => {
   const [firstName, setFirstName] = useState('');
@@ -29,22 +29,44 @@ const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
-  const [role, setRole] = useState('student');
+  const [role, setRole] = useState('Student');
   const [isProcessing, setIsProcessing] = useState(false);
-
-  // Replaced file upload with simple URL state
   const [avatarUrl, setAvatarUrl] = useState('');
-  
+
+  // Academic & Billing States
   const [provLevel, setProvLevel] = useState('A1: Básico 1');
   const [provUnit, setProvUnit] = useState(1);
   const [provCohort, setProvCohort] = useState(15);
 
+  // Financial States
+  const MONTHLY_PRICES = { A1: 40, A2: 45, B1: 50, B2: 55, C1: 60, C2: 65 };
+  const [payMethod, setPayMethod] = useState('Zelle');
+  const [payDate, setPayDate] = useState('');
+  const [payRef, setPayRef] = useState('');
+  const [payFile, setPayFile] = useState(null);
+
   if (!isOpen) return null;
+
+  // Proration Math
+  const getBaseLevel = (lvl) => lvl ? lvl.split(':')[0].trim() : 'A1';
+  const calculateProration = () => {
+    const today = new Date();
+    let nextBilling = new Date(today.getFullYear(), today.getMonth(), provCohort);
+    if (today.getDate() >= provCohort) nextBilling.setMonth(nextBilling.getMonth() + 1);
+    const daysLeft = Math.max(0, Math.ceil((nextBilling - today) / (1000 * 60 * 60 * 24)));
+    const price = MONTHLY_PRICES[getBaseLevel(provLevel)] || 40;
+    return ((price / 30) * daysLeft).toFixed(2);
+  };
+  const proratedDue = calculateProration();
 
   const handleProvision = async (e) => {
     e.preventDefault();
     if (!firstName || !lastName || !email || !password) {
       alert("Nombres, correo y contraseña son obligatorios.");
+      return;
+    }
+    if (role === 'Student' && (!payMethod || !payDate || !payRef || !payFile)) {
+      alert("Para registrar un estudiante, debes llenar todos los datos financieros y adjuntar el comprobante.");
       return;
     }
 
@@ -54,15 +76,23 @@ const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess }) => {
       const fullName = `${firstName.trim()} ${lastName.trim()}`;
       
       // 1. Auth Edge Function (Strict Payload)
-      const { error: authError } = await supabase.functions.invoke('provision-user', {
+      const { data: authData, error: authError } = await supabase.functions.invoke('provision-user', {
         body: { email: cleanEmail, password, fullName, role }
       });
-      
-      if (authError) {
-        console.warn("Edge Function Error Caught, proceeding to DB injection...", authError);
+      if (authError) console.warn("Edge Function Flag:", authError);
+
+      // 2. Upload Payment Proof to Storage
+      let publicPaymentUrl = null;
+      if (role === 'Student' && payFile) {
+        const fileExt = payFile.name.split('.').pop();
+        const fileName = `new_provisions/${Date.now()}_${cleanEmail}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage.from('payment_proofs').upload(fileName, payFile);
+        if (uploadError) throw new Error(`Error subiendo comprobante: ${uploadError.message}`);
+        const { data: pubData } = supabase.storage.from('payment_proofs').getPublicUrl(fileName);
+        publicPaymentUrl = pubData.publicUrl;
       }
 
-      // 2. Update the blank profile row
+      // 3. Update the blank profile row (FIXED: whatsapp payload)
       const updates = {
         first_name: firstName.trim(),
         last_name: lastName.trim(),
@@ -72,28 +102,41 @@ const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess }) => {
         assigned_password: password
       };
 
-      // Only push avatar_url if the string is not empty
-      if (avatarUrl.trim() !== '') {
-        updates.avatar_url = avatarUrl.trim();
-      }
+      if (avatarUrl.trim() !== '') updates.avatar_url = avatarUrl.trim();
       
-      if (role === 'student') {
+      if (role === 'Student') {
         updates.level = provLevel;
         updates.unit = provUnit;
         updates.cohort = provCohort;
+        updates.available_credits = 4;
+        const d = new Date();
+        let nextBilling = new Date(d.getFullYear(), d.getMonth() + 1, provCohort);
+        if (provCohort === 30 && nextBilling.getMonth() !== (d.getMonth() + 1) % 12) {
+            nextBilling = new Date(d.getFullYear(), d.getMonth() + 2, 0); 
+        }
+        updates.next_billing_date = nextBilling.toISOString().split('T')[0];
       }
 
-      const { error: profileError } = await supabase.from('profiles').update(updates).eq('email', cleanEmail);
+      const { data: updatedProfile, error: profileError } = await supabase.from('profiles').update(updates).eq('email', cleanEmail).select().single();
+      if (profileError) throw new Error(`Error actualizando perfil: ${profileError.message}`);
 
-      if (profileError) {
-        throw new Error(`Error al actualizar el perfil en la BD: ${profileError.message}`);
+      // 4. Log the Payment in the Ledger
+      if (role === 'Student' && updatedProfile?.id) {
+        await supabase.from('student_payments').insert({
+          student_id: updatedProfile.id,
+          payment_type: 'Initial Enrollment (Prorated)',
+          amount: proratedDue,
+          reference_number: payRef,
+          proof_image_url: publicPaymentUrl,
+          status: 'verified' 
+        });
       }
 
-      alert(`Cuenta de ${role} aprovisionada exitosamente.`);
+      alert(`Cuenta aprovisionada exitosamente.`);
       if (onSuccess) onSuccess();
       onClose();
     } catch (error) {
-      console.error("Provisioning Fatal Error:", error);
+      console.error("Provisioning Error:", error);
       alert(`Error crítico: ${error.message}`);
     } finally {
       setIsProcessing(false);
@@ -102,120 +145,140 @@ const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess }) => {
 
   return (
     <div id="prov-overlay" onClick={(e) => e.target.id === 'prov-overlay' && onClose()} className="fixed inset-0 z-[400] flex items-center justify-center bg-black/70 backdrop-blur-md px-4 animate-fade-in font-montserrat">
-      <div className="bg-[#070b19]/95 border border-[#fcd34d]/30 rounded-[2rem] p-8 max-w-3xl w-full shadow-[0_0_40px_rgba(252,211,77,0.15)] relative flex flex-col animate-slide-up overflow-hidden max-h-[95vh]">
+      <div className="bg-[#070b19]/95 border border-[#fcd34d]/30 rounded-[2rem] p-8 max-w-4xl w-full shadow-[0_0_40px_rgba(252,211,77,0.15)] relative flex flex-col animate-slide-up overflow-hidden max-h-[95vh]">
         <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-[#fcd34d]/10 blur-[100px] rounded-full pointer-events-none"></div>
         
         <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4 relative z-10 shrink-0">
           <div>
             <h2 className="text-2xl font-black text-white uppercase tracking-widest">Provisioning</h2>
-            <p className="text-[10px] text-[#fcd34d] font-bold uppercase tracking-widest mt-1">Creación Maestra de Cuentas</p>
+            <p className="text-[10px] text-[#fcd34d] font-bold uppercase tracking-widest mt-1">Creación y Registro Financiero</p>
           </div>
           <button onClick={onClose} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/50 hover:bg-white/10 hover:text-white transition-all">✕</button>
         </div>
 
         <div className="overflow-y-auto custom-scrollbar pr-2 relative z-10">
-          <form onSubmit={handleProvision} className="space-y-6">
+          <form onSubmit={handleProvision} className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             
-            <div className="flex flex-col md:flex-row gap-6 items-center bg-white/5 border border-white/10 p-5 rounded-2xl">
-              <div className="flex flex-col items-center gap-3 shrink-0">
-                <div className="w-24 h-24 rounded-full border-2 border-white/20 overflow-hidden bg-black/40 flex items-center justify-center">
-                  {avatarUrl ? (
-                    <img src={avatarUrl} alt="Preview" className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-4xl text-white/30">+</span>
-                  )}
+            {/* LEFT COLUMN: Personal Data */}
+            <div className="space-y-5">
+              <h3 className="text-xs font-black text-white/50 uppercase tracking-widest border-b border-white/10 pb-2">Información Personal</h3>
+              
+              <div className="flex gap-4 items-center">
+                <div className="w-16 h-16 rounded-full border-2 border-white/20 overflow-hidden bg-black/40 flex items-center justify-center shrink-0">
+                  {avatarUrl ? <img src={avatarUrl} alt="Preview" className="w-full h-full object-cover" /> : <span className="text-2xl text-white/30">+</span>}
                 </div>
-                {avatarUrl && (
-                  <button type="button" onClick={() => setAvatarUrl('')} className="text-[9px] text-red-400 font-bold uppercase tracking-widest hover:text-red-300 transition-colors">
-                    Eliminar
-                  </button>
-                )}
-              </div>
-              <div className="flex-1 w-full flex flex-col gap-4">
-                <div>
-                  <label className="block text-[10px] text-[#fcd34d] font-bold uppercase mb-1">URL Foto de Perfil (Opcional)</label>
-                  <input type="text" value={avatarUrl} onChange={e => setAvatarUrl(e.target.value)} placeholder="Pega el enlace de la imagen aquí..." className="w-full bg-black/40 border border-white/20 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-[#fcd34d]" />
-                </div>
-                <div>
-                  <label className="block text-[10px] text-[#fcd34d] font-bold uppercase mb-1">Rol de Sistema</label>
-                  <div className="flex gap-2">
-                    {['student', 'teacher', 'admin'].map(r => (
-                      <button key={r} type="button" onClick={() => setRole(r)} className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all border ${role === r ? 'bg-[#fcd34d] text-[#08203e] border-transparent shadow-md' : 'bg-black/40 text-white/50 border-white/20 hover:text-white'}`}>
-                        {r}
-                      </button>
-                    ))}
-                  </div>
+                <div className="flex-1">
+                  <label className="block text-[10px] text-[#fcd34d] font-bold uppercase mb-1">URL Foto (Opcional)</label>
+                  <input type="text" value={avatarUrl} onChange={e => setAvatarUrl(e.target.value)} placeholder="Enlace de la imagen..." className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2 text-white text-sm outline-none focus:border-[#fcd34d]" />
                 </div>
               </div>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Nombres</label>
-                <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)} className="w-full bg-black/40 border border-white/20 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#fcd34d]" required />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Nombres</label>
+                  <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)} className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-[#fcd34d]" required />
+                </div>
+                <div>
+                  <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Apellidos</label>
+                  <input type="text" value={lastName} onChange={e => setLastName(e.target.value)} className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-[#fcd34d]" required />
+                </div>
               </div>
-              <div>
-                <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Apellidos</label>
-                <input type="text" value={lastName} onChange={e => setLastName(e.target.value)} className="w-full bg-black/40 border border-white/20 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#fcd34d]" required />
-              </div>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Correo Electrónico</label>
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-black/40 border border-white/20 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#fcd34d]" required />
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-[#fcd34d]" required />
               </div>
+
               <div>
                 <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Asignar Contraseña</label>
-                <input type="text" value={password} onChange={e => setPassword(e.target.value)} placeholder="Ej: OlaAlberto.2026" className="w-full bg-black/40 border border-white/20 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#fcd34d]" required />
+                <input type="text" value={password} onChange={e => setPassword(e.target.value)} placeholder="Ej: OlaAlberto.2026" className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-[#fcd34d]" required />
+              </div>
+
+              <div>
+                <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Teléfono (WhatsApp)</label>
+                <div className="w-full rounded-xl px-3 py-2 text-[11px] lg:text-sm font-montserrat transition-all shadow-inner border border-white/20 bg-black/40 text-white focus-within:border-[#fcd34d] focus-within:ring-1 focus-within:ring-[#fcd34d]" style={{ colorScheme: 'dark' }}>
+                  <PhoneInput defaultCountry="VE" international value={phone} onChange={setPhone} className="PhoneInputCustom w-full bg-transparent outline-none" />
+                </div>
               </div>
             </div>
 
-            {/* User's Exact Phone Input Snippet with color-scheme dark applied */}
-            <div>
-              <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Teléfono (WhatsApp)</label>
-              <div 
-                className="w-full rounded-xl px-4 py-3 text-[11px] lg:text-sm font-montserrat transition-all shadow-inner border border-white/20 bg-black/40 text-white focus-within:border-[#fcd34d] focus-within:ring-1 focus-within:ring-[#fcd34d]"
-                style={{ colorScheme: 'dark' }}
-              >
-                <PhoneInput 
-                  defaultCountry="VE" 
-                  international 
-                  value={phone} 
-                  onChange={setPhone}
-                  className="PhoneInputCustom w-full bg-transparent outline-none"
-                />
+            {/* RIGHT COLUMN: Financials & Academic */}
+            <div className="space-y-5 flex flex-col">
+              <div className="flex justify-between items-end border-b border-white/10 pb-2">
+                <h3 className="text-xs font-black text-white/50 uppercase tracking-widest">Asignación de Rol</h3>
+                <select value={role} onChange={e => setRole(e.target.value)} className="bg-transparent text-[#fcd34d] text-xs font-bold uppercase outline-none cursor-pointer">
+                  <option value="Student">Estudiante</option>
+                  <option value="Teacher">Profesor</option>
+                  <option value="Admin">Administrador</option>
+                </select>
               </div>
+
+              {role === 'Student' ? (
+                <>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-[9px] text-white/50 font-bold uppercase mb-1">Nivel</label>
+                      <select value={provLevel} onChange={e => setProvLevel(e.target.value)} className="w-full bg-black/40 border border-white/20 rounded-xl px-2 py-2.5 text-white text-xs outline-none focus:border-[#fcd34d] cursor-pointer appearance-none">
+                        {LEVEL_OPTIONS.map(l => <option key={l} value={l}>{l.split(':')[0]}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[9px] text-white/50 font-bold uppercase mb-1">Unidad</label>
+                      <input type="number" min="1" max="12" value={provUnit} onChange={e => setProvUnit(parseInt(e.target.value))} className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2.5 text-white text-xs outline-none focus:border-[#fcd34d]" />
+                    </div>
+                    <div>
+                      <label className="block text-[9px] text-white/50 font-bold uppercase mb-1">Cohorte</label>
+                      <select value={provCohort} onChange={e => setProvCohort(parseInt(e.target.value))} className="w-full bg-black/40 border border-white/20 rounded-xl px-2 py-2.5 text-white text-xs outline-none focus:border-[#fcd34d] cursor-pointer appearance-none">
+                        <option value={15}>Día 15</option>
+                        <option value={30}>Día 30</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="bg-white/5 border border-[#fcd34d]/30 rounded-2xl p-5 shadow-inner mt-2">
+                    <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-3">
+                      <span className="text-[10px] text-[#fcd34d] font-bold uppercase tracking-widest">Cobro Prorrateado Hoy</span>
+                      <span className="text-xl font-black text-[#fcd34d]">${proratedDue}</span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 mb-3">
+                      <div>
+                        <label className="block text-[9px] text-white/50 font-bold uppercase mb-1">Método de Pago</label>
+                        <select value={payMethod} onChange={e => setPayMethod(e.target.value)} className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-[#fcd34d] cursor-pointer">
+                          <option value="Zelle">Zelle</option>
+                          <option value="PagoMovil">Pago Móvil</option>
+                          <option value="Cash">Efectivo</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-[9px] text-white/50 font-bold uppercase mb-1">Fecha de Pago</label>
+                        <input type="date" value={payDate} onChange={e => setPayDate(e.target.value)} className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-[#fcd34d] cursor-pointer" required />
+                      </div>
+                    </div>
+
+                    <div className="mb-3">
+                      <label className="block text-[9px] text-white/50 font-bold uppercase mb-1">Número de Referencia</label>
+                      <input type="text" value={payRef} onChange={e => setPayRef(e.target.value)} placeholder="Ej: REF-923847" className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-[#fcd34d]" required />
+                    </div>
+
+                    <div>
+                      <label className="block text-[9px] text-white/50 font-bold uppercase mb-1">Comprobante (Screenshot)</label>
+                      <input type="file" accept="image/*" onChange={(e) => setPayFile(e.target.files[0])} className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-1.5 text-xs text-white/70 file:mr-3 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-[9px] file:font-black file:bg-white/10 file:text-white hover:file:bg-white/20 cursor-pointer" required />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-white/30 border-2 border-dashed border-white/10 rounded-2xl p-6 text-center">
+                  <svg className="w-12 h-12 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  <p className="text-[10px] uppercase tracking-widest font-bold">Personal Administrativo no requiere pago de inscripción.</p>
+                </div>
+              )}
+
+              <button type="submit" disabled={isProcessing} className="w-full py-4 mt-auto bg-[#fcd34d] hover:bg-white text-[#08203e] font-black tracking-widest text-xs uppercase rounded-xl transition-all shadow-[0_0_20px_rgba(252,211,77,0.3)] disabled:opacity-50 hover:scale-[1.02]">
+                {isProcessing ? 'PROCESANDO E INSERTANDO EN BD...' : 'PROVISIONAR CUENTA'}
+              </button>
             </div>
 
-            {role === 'student' && (
-              <div className="grid grid-cols-3 gap-4 p-5 bg-white/5 border border-white/10 rounded-2xl">
-                <div className="col-span-3 mb-1">
-                  <span className="text-[10px] text-[#fcd34d] font-bold uppercase tracking-widest">Asignación Académica & Finanzas</span>
-                </div>
-                <div>
-                  <label className="block text-[9px] text-white/50 font-bold uppercase mb-1">Nivel</label>
-                  <select value={provLevel} onChange={e => setProvLevel(e.target.value)} className="w-full bg-black/40 border border-white/20 rounded-xl px-2 py-3 text-white text-sm outline-none focus:border-[#fcd34d] cursor-pointer appearance-none">
-                    {LEVEL_OPTIONS.map(l => <option key={l} value={l}>{l.split(':')[0]}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[9px] text-white/50 font-bold uppercase mb-1">Unidad</label>
-                  <input type="number" min="1" max="12" value={provUnit} onChange={e => setProvUnit(parseInt(e.target.value))} className="w-full bg-black/40 border border-white/20 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#fcd34d]" />
-                </div>
-                <div>
-                  <label className="block text-[9px] text-white/50 font-bold uppercase mb-1">Día de Corte</label>
-                  <select value={provCohort} onChange={e => setProvCohort(parseInt(e.target.value))} className="w-full bg-black/40 border border-white/20 rounded-xl px-2 py-3 text-white text-sm outline-none focus:border-[#fcd34d] cursor-pointer appearance-none">
-                    <option value={15}>15 del mes</option>
-                    <option value={30}>30 del mes</option>
-                  </select>
-                </div>
-              </div>
-            )}
-
-            <button type="submit" disabled={isProcessing} className="w-full py-4 mt-2 bg-[#fcd34d] hover:bg-white text-[#08203e] font-black tracking-widest text-xs uppercase rounded-xl transition-all shadow-[0_0_20px_rgba(252,211,77,0.3)] disabled:opacity-50 hover:scale-[1.02]">
-              {isProcessing ? 'PROCESANDO E INSERTANDO EN BD...' : 'PROVISIONAR CUENTA'}
-            </button>
           </form>
         </div>
       </div>
@@ -328,7 +391,7 @@ const AdminHub = () => {
   const fetchDirectory = async (roleType) => {
     setIsLoadingDirectory(true);
     try {
-      const roleMap = { 'students': 'student', 'teachers': 'teacher', 'admins': 'admin' };
+     const roleMap = { 'students': 'Student', 'teachers': 'Teacher', 'admins': 'Admin' };
       const targetRole = roleMap[roleType] || 'student';
       const { data, error } = await supabase.from('profiles').select('*').eq('role', targetRole);
       if (error) throw error;
@@ -569,22 +632,20 @@ const AdminHub = () => {
           </ul>
           
           {/* NUKED & PAVED REQUEST SUBSTITUTE BUTTON */}
-          <button className="w-full py-4 bg-[#e2e8f0] text-[#0f172a] hover:bg-white font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 shadow-xl transition-all hover:scale-105 shrink-0 mt-auto">
-            <img src="https://i.postimg.cc/mrtXmB72/Copia-de-Diseno-sin-titulo-(2).png" alt="Substitute" className="w-6 h-6 object-contain" />
-            <span>REQUEST SUBSTITUTE</span>
+          <button className="w-full py-4 px-6 bg-[#e2e8f0] text-[#0f172a] hover:bg-white font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-start gap-4 shadow-xl transition-all hover:scale-105 shrink-0 mt-auto">
+            <img src="https://i.postimg.cc/mrtXmB72/Copia-de-Diseno-sin-titulo-(2).png" alt="Substitute" className="w-6 h-6 object-contain shrink-0" />
+            <span className="flex-1 text-center pr-6">REQUEST SUBSTITUTE</span>
           </button>
-
         </div>
       </div>
       <div className="col-span-3 flex flex-col gap-6 h-full">
-        {/* NUKED & PAVED GLASS CARDS - Converted to pristine DIVs */}
-        <div onClick={() => setIsProvisioningModalOpen(true)} className="flex-1 w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-white/10 transition-all group">
-          <img src="https://i.postimg.cc/ZKPVccsH/4(8).png" alt="Provisioning" className="h-28 object-contain mb-4 group-hover:scale-110 transition-transform drop-shadow-md" />
-          <h3 className="font-black text-xl md:text-2xl tracking-widest uppercase text-white">Provisioning</h3>
+        <div onClick={() => setIsProvisioningModalOpen(true)} className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center relative overflow-hidden cursor-pointer hover:bg-white/10 transition-colors">
+          <img src="https://i.postimg.cc/ZKPVccsH/4(8).png" alt="Provisioning" className="w-28 object-contain mb-4 drop-shadow-md relative z-10" />
+          <h3 className="text-white font-black text-2xl tracking-widest uppercase text-center relative z-10">Provisioning</h3>
         </div>
-        <div onClick={() => setActiveModule('FINANCES')} className="flex-1 w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-white/10 transition-all group">
-          <img src="https://i.postimg.cc/sxd4PQpm/2(12).png" alt="Stats" className="h-28 object-contain mb-4 group-hover:scale-110 transition-transform drop-shadow-md" />
-          <h3 className="font-black text-xl md:text-2xl tracking-widest uppercase text-white">Stats</h3>
+        <div onClick={() => setActiveModule('FINANCES')} className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center relative overflow-hidden cursor-pointer hover:bg-white/10 transition-colors">
+          <img src="https://i.postimg.cc/sxd4PQpm/2(12).png" alt="Stats" className="w-28 object-contain mb-4 drop-shadow-md relative z-10" />
+          <h3 className="text-white font-black text-2xl tracking-widest uppercase text-center relative z-10">Stats</h3>
         </div>
       </div>
       <div className="col-span-6 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-8 shadow-2xl flex flex-col h-full overflow-hidden">
