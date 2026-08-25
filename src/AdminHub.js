@@ -21,7 +21,7 @@ import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 
 // ==========================================
-// DEDICATED PROVISIONING MODAL (WITH FINANCES)
+// DEDICATED PROVISIONING MODAL
 // ==========================================
 const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess }) => {
   const [firstName, setFirstName] = useState('');
@@ -38,8 +38,8 @@ const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess }) => {
   const [provUnit, setProvUnit] = useState(1);
   const [provCohort, setProvCohort] = useState(15);
 
-  // Financial States
-  const MONTHLY_PRICES = { A1: 20, A2: 20, B1: 30, B2: 30, C1: 50, C2: 50 };
+  // Financial States (No screenshots required)
+  const MONTHLY_PRICES = { A1: 40, A2: 45, B1: 50, B2: 55, C1: 60, C2: 65 };
   const [payMethod, setPayMethod] = useState('Zelle');
   const [payDate, setPayDate] = useState('');
   const [payRef, setPayRef] = useState('');
@@ -64,7 +64,7 @@ const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess }) => {
       alert("Nombres, correo y contraseña son obligatorios.");
       return;
     }
-    if (role === 'student' && (!payMethod || !payDate || !payRef)) {
+    if (role === 'Student' && (!payMethod || !payDate || !payRef)) {
       alert("Para registrar un estudiante, debes llenar todos los datos financieros.");
       return;
     }
@@ -74,15 +74,13 @@ const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess }) => {
       const cleanEmail = email.trim().toLowerCase();
       const fullName = `${firstName.trim()} ${lastName.trim()}`;
       
-      // 1. Auth Edge Function (Strict Payload)
-      const { data: authData, error: authError } = await supabase.functions.invoke('provision-user', {
+      // 1. Auth Edge Function
+      const { error: authError } = await supabase.functions.invoke('provision-user', {
         body: { email: cleanEmail, password, fullName, role }
       });
       if (authError) console.warn("Edge Function Flag:", authError);
 
-      
-
-      // 3. Update the blank profile row (FIXED: whatsapp payload)
+      // 2. Safe Database Injection
       const updates = {
         first_name: firstName.trim(),
         last_name: lastName.trim(),
@@ -107,18 +105,22 @@ const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess }) => {
         updates.next_billing_date = nextBilling.toISOString().split('T')[0];
       }
 
-      const { data: updatedProfile, error: profileError } = await supabase.from('profiles').update(updates).eq('email', cleanEmail).select().single();
-      if (profileError) throw new Error(`Error actualizando perfil: ${profileError.message}`);
+      await supabase.from('profiles').update(updates).eq('email', cleanEmail);
 
-      // 4. Log the Payment in the Ledger
-      if (role === 'student' && updatedProfile?.id) {
-        await supabase.from('student_payments').insert({
-          student_id: updatedProfile.id,
-          payment_type: 'Initial Enrollment (Prorated)',
-          amount: proratedDue,
-          reference_number: payRef,
-          status: 'verified' 
-        });
+      // 3. Log the Payment in the Ledger safely
+      if (role === 'Student') {
+        const { data: userRecords } = await supabase.from('profiles').select('id').eq('email', cleanEmail);
+        const studentId = userRecords && userRecords.length > 0 ? userRecords[0].id : null;
+
+        if (studentId) {
+          await supabase.from('student_payments').insert({
+            student_id: studentId,
+            payment_type: 'Initial Enrollment (Prorated)',
+            amount: proratedDue,
+            reference_number: payRef,
+            status: 'verified' 
+          });
+        }
       }
 
       alert(`Cuenta aprovisionada exitosamente.`);
@@ -245,8 +247,8 @@ const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess }) => {
                       </div>
                     </div>
 
-<div className="mb-3">
-                      <label className="block text-[9px] text-white/50 font-bold uppercase mb-1">Número de Referencia (Zelle/Pago Móvil)</label>
+                    <div>
+                      <label className="block text-[9px] text-white/50 font-bold uppercase mb-1">Número de Referencia (Zelle / Pago Móvil)</label>
                       <input type="text" value={payRef} onChange={e => setPayRef(e.target.value)} placeholder="Ej: REF-923847" className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-[#fcd34d]" required />
                     </div>
                   </div>
@@ -259,7 +261,7 @@ const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess }) => {
               )}
 
               <button type="submit" disabled={isProcessing} className="w-full py-4 mt-auto bg-[#fcd34d] hover:bg-white text-[#08203e] font-black tracking-widest text-xs uppercase rounded-xl transition-all shadow-[0_0_20px_rgba(252,211,77,0.3)] disabled:opacity-50 hover:scale-[1.02]">
-                {isProcessing ? 'PROCESANDO E INSERTANDO EN BD...' : 'PROVISIONAR CUENTA'}
+                {isProcessing ? 'PROCESANDO EN BD...' : 'PROVISIONAR CUENTA'}
               </button>
             </div>
 
@@ -623,13 +625,22 @@ const AdminHub = () => {
         </div>
       </div>
       <div className="col-span-3 flex flex-col gap-6 h-full">
-        <div onClick={() => setIsProvisioningModalOpen(true)} className="flex-1 w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-white/10 transition-all group">
-          <img src="https://i.postimg.cc/ZKPVccsH/4(8).png" alt="Provisioning" className="h-28 object-contain mb-4 group-hover:scale-110 transition-transform drop-shadow-md mix-blend-screen" />
-          <h3 className="font-black text-xl md:text-2xl tracking-widest uppercase text-white">Provisioning</h3>
+        <div onClick={() => setIsProvisioningModalOpen(true)} className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center relative overflow-hidden cursor-pointer hover:bg-white/10 transition-colors group">
+          {/* Pure SVG Icon: User Add */}
+          <svg className="w-24 h-24 mb-6 text-white drop-shadow-md group-hover:scale-110 transition-transform relative z-10" fill="none" stroke="currentColor" strokeWidth="1.2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M18 19v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" />
+            <circle cx="10" cy="7" r="4" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M20 8v6M17 11h6" />
+          </svg>
+          <h3 className="text-white font-black text-xl md:text-2xl tracking-widest uppercase text-center relative z-10">Provisioning</h3>
         </div>
-        <div onClick={() => alert('Módulo de Estadísticas en construcción...')} className="flex-1 w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-white/10 transition-all group">
-          <img src="https://i.postimg.cc/sxd4PQpm/2(12).png" alt="Stats" className="h-28 object-contain mb-4 group-hover:scale-110 transition-transform drop-shadow-md mix-blend-screen" />
-          <h3 className="font-black text-xl md:text-2xl tracking-widest uppercase text-white">Stats</h3>
+        <div onClick={() => alert('Módulo de Estadísticas en construcción...')} className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center relative overflow-hidden cursor-pointer hover:bg-white/10 transition-colors group">
+          {/* Pure SVG Icon: Bar Chart */}
+          <svg className="w-24 h-24 mb-6 text-white drop-shadow-md group-hover:scale-110 transition-transform relative z-10" fill="none" stroke="currentColor" strokeWidth="1.2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 3v18h18" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M7 16v-4m4 4v-7m4 7V8m0 0l-4 4m4-4l-4-4" />
+          </svg>
+          <h3 className="text-white font-black text-xl md:text-2xl tracking-widest uppercase text-center relative z-10">Stats</h3>
         </div>
       </div>
       <div className="col-span-6 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-8 shadow-2xl flex flex-col h-full overflow-hidden">
