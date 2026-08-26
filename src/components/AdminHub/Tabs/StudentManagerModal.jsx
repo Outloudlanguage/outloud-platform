@@ -257,7 +257,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   // ==========================================
   // ACCOUNT CONTROL LOGIC (Auth & DB Link)
   // ==========================================
-  const handleProvisionAccount = async () => {
+const handleProvisionAccount = async () => {
     if (!provEmail || !provPassword || !provFirstName || !provLastName) { 
       alert("Nombres, apellidos, correo y contraseña son obligatorios."); 
       return; 
@@ -274,7 +274,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
 
       const cleanEmail = provEmail.trim().toLowerCase();
 
-      // 1. Send ALL data directly to the Edge Function to handle securely
+      // 1. Edge Function creates Auth, feeds Trigger, and patches the email
       const { error: authError } = await supabase.functions.invoke('provision-user', {
         body: { 
           email: cleanEmail, 
@@ -285,8 +285,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
           avatarUrl: provAvatarUrl.trim(),
           role: 'Student', 
           level: levelOverride,
-          unit: unitOverride,
-          cohort: cohort
+          unit: unitOverride
         }
       });
       
@@ -294,9 +293,21 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
          throw new Error(`Fallo en Auth/Edge Function: ${authError.message}`);
       }
 
-      // 2. The Edge Function handled the entire profile. Just approve the original registration.
+      // 2. SECONDARY UPDATE: Safely apply financial fields from the frontend
+      const updates = {
+          cohort: cohort,
+          assigned_password: provPassword,
+          status: 'active',
+          available_credits: 0
+      };
+      
+      // Since the Edge function explicitly inserted the email, this will now find the row perfectly.
+      const { error: profileError } = await supabase.from('profiles').update(updates).eq('email', cleanEmail); 
+        
+      if (profileError) throw new Error(`Fallo actualizando finanzas en BD: ${profileError.message}`);
+
+      // 3. Approve Registration
       const { error: regError } = await supabase.from('registrations').update({ status: 'approved' }).eq('id', userData.id);
-      if (regError) console.warn("No se pudo actualizar la tabla registrations, pero el perfil fue creado.");
 
       alert('Cuenta aprovisionada exitosamente. El estudiante ya está activo en el directorio.');
       if (onSuccess) onSuccess();
