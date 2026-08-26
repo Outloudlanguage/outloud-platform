@@ -274,7 +274,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
 
       const cleanEmail = provEmail.trim().toLowerCase();
 
-      // 1. PERFECT PAYLOAD MATCH: Send exactly what the Edge Function expects
+      // 1. Send ALL data directly to the Edge Function to handle securely
       const { error: authError } = await supabase.functions.invoke('provision-user', {
         body: { 
           email: cleanEmail, 
@@ -285,29 +285,16 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
           avatarUrl: provAvatarUrl.trim(),
           role: 'Student', 
           level: levelOverride,
-          unit: unitOverride
+          unit: unitOverride,
+          cohort: cohort
         }
       });
       
-      // 2. HARD STOP ON ERROR: If Edge Function fails, we abort immediately. No ghost records.
       if (authError) {
          throw new Error(`Fallo en Auth/Edge Function: ${authError.message}`);
       }
 
-      // 3. SECONDARY UPDATE: Only push frontend-specific fields the Edge Function doesn't touch.
-      // Since the Edge Function succeeded, we know for a fact this row exists.
-      const updates = {
-          cohort: cohort,
-          assigned_password: provPassword,
-          status: 'active',
-          available_credits: 0
-      };
-
-      const { error: profileError } = await supabase.from('profiles').update(updates).eq('email', cleanEmail); 
-        
-      if (profileError) throw new Error(`Fallo actualizando datos extras en BD: ${profileError.message}`);
-
-      // 4. Update the registrations table to mark as approved
+      // 2. The Edge Function handled the entire profile. Just approve the original registration.
       const { error: regError } = await supabase.from('registrations').update({ status: 'approved' }).eq('id', userData.id);
       if (regError) console.warn("No se pudo actualizar la tabla registrations, pero el perfil fue creado.");
 

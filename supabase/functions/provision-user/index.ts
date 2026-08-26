@@ -12,53 +12,53 @@ serve(async (req) => {
   }
 
   try {
-    // 1. Get ONLY the exact data sent from your React frontend payload
+    // 1. Catch ALL data sent from the React frontend
     const body = await req.json()
-    const { email, password, firstName, lastName, whatsapp, avatarUrl, role, level, unit } = body
+    const { email, password, firstName, lastName, whatsapp, avatarUrl, role, level, unit, cohort } = body
 
-    // 2. Safely connect to Supabase
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // 3. Create the Auth User AND feed the SQL trigger its required data
+    // 2. Create the Auth User
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: email,
       password: password,
-      email_confirm: true,
-      user_metadata: {
-        first_name: firstName,
-        last_name: lastName,
-        role: role,
-        level: level,
-        unit: unit
-      }
+      email_confirm: true
     })
 
     if (authError) throw authError
 
-    // 4. Update ONLY the fields that the frontend actually sent and the trigger missed
+    // 3. FORCE UPDATE the blank row the database trigger just made.
+    // By using the exact ID, it is mathematically impossible to miss the row.
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
       .update({
+        email: email, // This fixes the NULL email permanently
+        first_name: firstName,
+        last_name: lastName,
         whatsapp: whatsapp,
-        avatar_url: avatarUrl
+        avatar_url: avatarUrl,
+        role: role,
+        level: level,
+        unit: unit,
+        cohort: cohort,
+        assigned_password: password,
+        status: 'active',
+        available_credits: 0
       })
-      .eq('id', authData.user.id)
+      .eq('id', authData.user.id) 
 
     if (profileError) throw profileError
 
-    // 5. Tell the frontend it was a success!
     return new Response(
-      JSON.stringify({ message: 'Account securely created!' }),
+      JSON.stringify({ message: 'Account securely created and fully mapped!' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     )
 
   } catch (error: any) {
-    // This logs the exact failure reason to the Supabase Edge Function console
     console.error("EDGE FUNCTION ERROR:", error.message)
-    
     return new Response(
       JSON.stringify({ error: error.message }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
