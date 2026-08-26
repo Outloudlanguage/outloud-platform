@@ -12,9 +12,9 @@ serve(async (req) => {
   }
 
   try {
-    // 1. Get the data sent from your React frontend
+    // 1. Get ONLY the exact data sent from your React frontend payload
     const body = await req.json()
-    const { email, password, firstName, lastName, whatsapp, username, avatarUrl, role, level, unit, discount, credits, cefr, rate, bioUrl, adminLevel } = body
+    const { email, password, firstName, lastName, whatsapp, avatarUrl, role, level, unit } = body
 
     // 2. Safely connect to Supabase
     const supabaseAdmin = createClient(
@@ -22,7 +22,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // 3. Create the Auth User AND feed the SQL trigger its required data simultaneously
+    // 3. Create the Auth User AND feed the SQL trigger its required data
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: email,
       password: password,
@@ -38,21 +38,14 @@ serve(async (req) => {
 
     if (authError) throw authError
 
-    // 4. Update the profile with the extra fields that the SQL trigger does not handle natively
+    // 4. Update ONLY the fields that the frontend actually sent and the trigger missed
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
       .update({
         whatsapp: whatsapp,
-        username: username,
-        avatar_url: avatarUrl,
-        discount: parseFloat(discount) || 0,
-        credits: parseFloat(credits) || 0,
-        cefr: cefr,
-        rate: rate,
-        bio_url: bioUrl,
-        admin_level: adminLevel
+        avatar_url: avatarUrl
       })
-      .eq('id', authData.user.id) // This updates the row the trigger just created
+      .eq('id', authData.user.id)
 
     if (profileError) throw profileError
 
