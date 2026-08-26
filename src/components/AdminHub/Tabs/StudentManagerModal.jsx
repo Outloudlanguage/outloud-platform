@@ -15,12 +15,12 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   const [provFirstName, setProvFirstName] = useState('');
   const [provLastName, setProvLastName] = useState('');
   const [provPhone, setProvPhone] = useState(''); 
-  const [provAvatarUrl, setProvAvatarUrl] = useState(''); // NEW: URL-based Avatar
+  const [provAvatarUrl, setProvAvatarUrl] = useState(''); 
   
   const [isEditingCreds, setIsEditingCreds] = useState(false);
   const [editEmail, setEditEmail] = useState('');
   const [editPassword, setEditPassword] = useState('');
-  const [editAvatarUrl, setEditAvatarUrl] = useState(''); // NEW: Edit Existing Avatar
+  const [editAvatarUrl, setEditAvatarUrl] = useState(''); 
   
   const [isProcessing, setIsProcessing] = useState(false);
   const [accountStatus, setAccountStatus] = useState('active');
@@ -36,8 +36,8 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   const [cohort, setCohort] = useState(15);
   const [credits, setCredits] = useState(0);
   
-const [payType, setPayType] = useState('Mensualidad');
-  const [payAmount, setPayAmount] = useState(40);
+  const [payType, setPayType] = useState('Mensualidad');
+  const [payAmount, setPayAmount] = useState(20);
   const [payRef, setPayRef] = useState('');
 
   // ==========================================
@@ -47,8 +47,8 @@ const [payType, setPayType] = useState('Mensualidad');
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // ADJUST THESE MONTHLY PRICES AS NEEDED FOR YOUR BUSINESS
-  const MONTHLY_PRICES = { A1: 40, A2: 45, B1: 50, B2: 55, C1: 60, C2: 65 };
+  // DYNAMIC TIERED PRICING MAPPED FROM INSTRUCTIONS
+  const MONTHLY_PRICES = { A1: 20, A2: 20, B1: 30, B2: 30, C1: 50, C2: 50 };
 
   // ==========================================
   // INITIALIZATION
@@ -63,7 +63,6 @@ const [payType, setPayType] = useState('Mensualidad');
       setProvFirstName(userData.first_name || nameParts[0] || '');
       setProvLastName(userData.last_name || (nameParts.length > 1 ? nameParts.slice(1).join(' ') : ''));
       
-      // Load existing whatsapp or fallback to phone
       setProvPhone(userData.whatsapp || userData.phone || ''); 
 
       setIsProvisioning(false);
@@ -143,7 +142,7 @@ const [payType, setPayType] = useState('Mensualidad');
 
   const updatePrice = (type, levelString) => {
     if (type === 'Extra') setPayAmount(12);
-    else setPayAmount(MONTHLY_PRICES[getBaseLevel(levelString)] || 40);
+    else setPayAmount(MONTHLY_PRICES[getBaseLevel(levelString)] || 20);
   };
 
   const handlePayTypeChange = (e) => {
@@ -160,7 +159,7 @@ const [payType, setPayType] = useState('Mensualidad');
     return ((price / 30) * daysLeft).toFixed(2);
   };
 
-  const proratedDue = calculateProration(cohort, MONTHLY_PRICES[getBaseLevel(levelOverride)] || 40);
+  const proratedDue = calculateProration(cohort, MONTHLY_PRICES[getBaseLevel(levelOverride)] || 20);
 
   const handleSaveCohort = async () => {
     setIsProcessing(true);
@@ -211,7 +210,7 @@ const [payType, setPayType] = useState('Mensualidad');
     return nextMonth.toISOString().split('T')[0];
   };
 
-const handlePaymentSubmit = async (e) => {
+  const handlePaymentSubmit = async (e) => {
     e.preventDefault();
     if (!payRef) { alert("Debes incluir un número de referencia de pago."); return; }
 
@@ -255,7 +254,6 @@ const handlePaymentSubmit = async (e) => {
     }
   };
 
-
   // ==========================================
   // ACCOUNT CONTROL LOGIC (Auth & DB Link)
   // ==========================================
@@ -277,7 +275,6 @@ const handlePaymentSubmit = async (e) => {
       const cleanEmail = provEmail.trim().toLowerCase();
       const fullName = `${provFirstName.trim()} ${provLastName.trim()}`;
 
-      // 1. Edge Function with STRICT Payload (Bypassing 400 error handling if needed)
       const { error: authError } = await supabase.functions.invoke('provision-user', {
         body: { 
           email: cleanEmail, 
@@ -291,11 +288,10 @@ const handlePaymentSubmit = async (e) => {
          console.warn("Edge Function catch: Proceeding to DB injection...", authError);
       }
 
-      // 2. Exact DB Injection mapping to the correct 'whatsapp' column
       const updates = {
           first_name: provFirstName.trim(),
           last_name: provLastName.trim(),
-          whatsapp: provPhone || null, // STRICTLY TARGETING WHATSAPP
+          whatsapp: provPhone || null,
           role: 'student',
           status: 'active',
           level: levelOverride, 
@@ -313,7 +309,6 @@ const handlePaymentSubmit = async (e) => {
         
       if (profileError) throw new Error(`Fallo en la Base de Datos: ${profileError.message}`);
 
-      // 3. Approve Registration Lead
       const { error: regError } = await supabase.from('registrations').update({ status: 'approved' }).eq('id', userData.id);
       if (regError) console.warn("No se pudo actualizar la tabla registrations, pero el perfil fue creado.");
 
@@ -401,7 +396,6 @@ const handlePaymentSubmit = async (e) => {
   return (
     <div id="modal-overlay" onClick={handleOverlayClick} className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fade-in font-montserrat">
       
-      {/* CSS INJECTION FOR THE PHONE INPUT TO ENSURE DARK STYLING */}
       <style>{`
         .PhoneInputCustom .PhoneInputInput {
             background: transparent !important;
@@ -425,11 +419,9 @@ const handlePaymentSubmit = async (e) => {
 
       <div className="relative w-full max-w-4xl max-h-[90vh] bg-[#070b19]/95 border border-white/20 rounded-[2.5rem] shadow-[0_25px_50px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden animate-slide-up">
         
-        {/* Glow Effects */}
         <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-900/20 blur-[100px] rounded-full mix-blend-screen pointer-events-none"></div>
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#fcd34d]/10 blur-[80px] rounded-full mix-blend-screen pointer-events-none"></div>
 
-        {/* HEADER */}
         <div className="relative z-10 flex items-start justify-between p-6 md:p-8 border-b border-white/10 bg-white/5 shrink-0">
           <div className="flex items-center gap-5 overflow-hidden w-full pr-4">
             <div className="relative shrink-0">
@@ -457,7 +449,6 @@ const handlePaymentSubmit = async (e) => {
           </button>
         </div>
 
-        {/* TABS */}
         <div className="relative z-10 flex flex-wrap border-b border-white/10 bg-black/20 shrink-0">
           {[
             { id: 'INFO_PERSONAL', label: 'Info Personal & Control' },
@@ -475,16 +466,9 @@ const handlePaymentSubmit = async (e) => {
           ))}
         </div>
 
-        {/* CONTENT AREA */}
         <div className="relative z-10 flex-grow overflow-y-auto custom-scrollbar p-6 md:p-8">
-          
-          {/* ==================================================== */}
-          {/* TAB 1: INFO PERSONAL                                 */}
-          {/* ==================================================== */}
           {activeTab === 'INFO_PERSONAL' && (
             <div className="animate-fade-in space-y-6">
-              
-              {/* Provisioning Block for Pending Leads */}
               {isPending && (
                 <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-6 mb-8 transition-all shadow-inner">
                   <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-4 border-b border-amber-500/20 pb-4">
@@ -494,7 +478,6 @@ const handlePaymentSubmit = async (e) => {
                     </div>
                   </div>
 
-                  {/* URL AVATAR UPLOAD UI */}
                   <div className="flex flex-col md:flex-row gap-6 items-center bg-black/20 border border-amber-500/20 p-5 rounded-2xl mb-6">
                     <div className="flex flex-col items-center gap-3 shrink-0">
                       <div className="w-20 h-20 rounded-full border-2 border-amber-500/30 overflow-hidden bg-black/40 flex items-center justify-center">
@@ -534,7 +517,6 @@ const handlePaymentSubmit = async (e) => {
                       <input type="text" placeholder="Asigna una clave" value={provPassword} onChange={(e) => setProvPassword(e.target.value)} className="w-full bg-black/30 border border-amber-500/30 rounded-lg px-4 py-2.5 text-white text-sm outline-none focus:border-amber-400 transition-colors" />
                     </div>
                     
-                    {/* INTEGRATED PHONE LIBRARY FIX: Resized grid to sit cleanly */}
                     <div className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-5 mt-2">
                        <div>
                           <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Teléfono (WhatsApp)</label>
@@ -580,7 +562,6 @@ const handlePaymentSubmit = async (e) => {
                 </div>
               )}
 
-              {/* God Mode Overrides */}
               {!isPending && (
                 <div className="bg-white/5 border border-white/10 rounded-2xl p-6 relative overflow-hidden">
                   <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-4">
@@ -604,7 +585,6 @@ const handlePaymentSubmit = async (e) => {
                 </div>
               )}
 
-              {/* Credentials & Kill Switch */}
               {!isPending && (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="md:col-span-2 bg-white/5 border border-white/10 rounded-2xl p-6 relative shadow-md">
@@ -629,7 +609,6 @@ const handlePaymentSubmit = async (e) => {
                           {!isEditingCreds ? <p className="text-sm text-white font-semibold py-2 tracking-widest truncate">{editPassword || '********'}</p> : <input type="text" value={editPassword} onChange={(e) => setEditPassword(e.target.value)} className="w-full bg-black/40 border border-[#fcd34d]/50 rounded-lg px-3 py-2 text-white text-sm outline-none" />}
                         </div>
                         
-                        {/* URL Avatar Edit for Existing Users */}
                         {isEditingCreds && (
                           <div className="overflow-hidden col-span-1 md:col-span-2 mt-2">
                             <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">URL Avatar de Perfil</label>
@@ -650,7 +629,6 @@ const handlePaymentSubmit = async (e) => {
                 </div>
               )}
 
-              {/* Registration Data */}
               <h3 className="text-xs font-black text-[#fcd34d] uppercase tracking-widest mb-4 border-b border-white/10 pb-2 mt-8">Respuestas de Registro</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-black/20 border border-white/10 rounded-xl p-4 shadow-inner overflow-hidden"><p className="text-[10px] text-white/50 font-bold uppercase mb-1">Motivo del Curso</p><p className="text-sm text-white font-semibold truncate">{userData.reason || 'No especificado'}</p></div>
@@ -661,15 +639,11 @@ const handlePaymentSubmit = async (e) => {
             </div>
           )}
 
-          {/* ==================================================== */}
-          {/* TAB 2: FINANZAS                                      */}
-          {/* ==================================================== */}
           {activeTab === 'FINANZAS' && (
             <div className="animate-fade-in space-y-6">
               {!isPending ? (
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Proration & Cohort Control */}
                     <div className="bg-white/5 border border-white/10 rounded-2xl p-6 shadow-md">
                        <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-4">
                           <h4 className="text-xs font-black text-[#fcd34d] uppercase tracking-widest">Billing & Cohort</h4>
@@ -690,7 +664,6 @@ const handlePaymentSubmit = async (e) => {
                        </div>
                     </div>
 
-                    {/* Credit Economy & Refunds */}
                     <div className="bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col justify-center shadow-md">
                        <div className="flex justify-between items-center mb-3">
                          <h3 className="text-white font-black text-xl">Class Credits: <span className="text-[#fcd34d]">{credits}</span></h3>
@@ -707,7 +680,7 @@ const handlePaymentSubmit = async (e) => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                     <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex flex-col justify-center items-center text-center shadow-md">
                       <p className="text-[10px] text-white/50 font-bold uppercase tracking-widest mb-1">Tarifa Mensual</p>
-                      <p className="text-2xl text-white font-black">${MONTHLY_PRICES[getBaseLevel(levelOverride)] || 40}</p>
+                      <p className="text-2xl text-white font-black">${MONTHLY_PRICES[getBaseLevel(levelOverride)] || 20}</p>
                       <p className="text-[9px] text-[#fcd34d] uppercase mt-1">Nivel {getBaseLevel(levelOverride)}</p>
                     </div>
                     <div className={`border rounded-xl p-4 flex flex-col justify-center items-center text-center shadow-md ${isPastDue ? 'bg-red-500/10 border-red-500/50' : 'bg-white/5 border-white/10'}`}>
@@ -729,7 +702,7 @@ const handlePaymentSubmit = async (e) => {
                           <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Tipo de Compra</label>
                           <select value={payType} onChange={handlePayTypeChange} className="w-full bg-[#070b19] border border-white/20 rounded-xl px-4 py-3 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-emerald-400 appearance-none cursor-pointer">
                             <option value="Mensualidad">Suscripción Mensual (+4 Créditos)</option>
-                            <option value="Extra">Créditos Extra (+2 Créditos)</option>
+                            <option value="Extra">Créditos Extra (+2 Créditos por $12)</option>
                           </select>
                         </div>
                         <div>
@@ -760,9 +733,6 @@ const handlePaymentSubmit = async (e) => {
             </div>
           )}
 
-          {/* ==================================================== */}
-          {/* TAB 3: ESTADISTICAS                                  */}
-          {/* ==================================================== */}
           {activeTab === 'ESTADISTICAS' && (
             <div className="animate-fade-in space-y-6">
               {!isPending ? (
