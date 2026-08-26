@@ -273,42 +273,41 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
       }
 
       const cleanEmail = provEmail.trim().toLowerCase();
-      const fullName = `${provFirstName.trim()} ${provLastName.trim()}`;
 
+      // 1. PERFECT PAYLOAD MATCH: Send exactly what the Edge Function expects
       const { error: authError } = await supabase.functions.invoke('provision-user', {
         body: { 
           email: cleanEmail, 
           password: provPassword, 
-          fullName: fullName, 
-          role: 'student' 
+          firstName: provFirstName.trim(), 
+          lastName: provLastName.trim(),
+          whatsapp: provPhone || null,
+          avatarUrl: provAvatarUrl.trim(),
+          role: 'Student', 
+          level: levelOverride,
+          unit: unitOverride
         }
       });
       
+      // 2. HARD STOP ON ERROR: If Edge Function fails, we abort immediately. No ghost records.
       if (authError) {
-         console.warn("Edge Function catch: Proceeding to DB injection...", authError);
+         throw new Error(`Fallo en Auth/Edge Function: ${authError.message}`);
       }
 
+      // 3. SECONDARY UPDATE: Only push frontend-specific fields the Edge Function doesn't touch.
+      // Since the Edge Function succeeded, we know for a fact this row exists.
       const updates = {
-          first_name: provFirstName.trim(),
-          last_name: provLastName.trim(),
-          whatsapp: provPhone || null,
-          role: 'student',
-          status: 'active',
-          level: levelOverride, 
-          unit: unitOverride,
           cohort: cohort,
-          available_credits: 0,              
-          assigned_password: provPassword 
+          assigned_password: provPassword,
+          status: 'active',
+          available_credits: 0
       };
-
-      if (provAvatarUrl.trim() !== '') {
-          updates.avatar_url = provAvatarUrl.trim();
-      }
 
       const { error: profileError } = await supabase.from('profiles').update(updates).eq('email', cleanEmail); 
         
-      if (profileError) throw new Error(`Fallo en la Base de Datos: ${profileError.message}`);
+      if (profileError) throw new Error(`Fallo actualizando datos extras en BD: ${profileError.message}`);
 
+      // 4. Update the registrations table to mark as approved
       const { error: regError } = await supabase.from('registrations').update({ status: 'approved' }).eq('id', userData.id);
       if (regError) console.warn("No se pudo actualizar la tabla registrations, pero el perfil fue creado.");
 
