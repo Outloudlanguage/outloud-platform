@@ -74,13 +74,28 @@ const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess }) => {
       const cleanEmail = email.trim().toLowerCase();
       const fullName = `${firstName.trim()} ${lastName.trim()}`;
       
-      // 1. Auth Edge Function
-      const { error: authError } = await supabase.functions.invoke('provision-user', {
-        body: { email: cleanEmail, password, fullName, role }
+      // 1. Auth Edge Function - SENDING THE CORRECT PAYLOAD
+      const { data: edgeData, error: authError } = await supabase.functions.invoke('provision-user', {
+        body: { 
+          email: cleanEmail, 
+          password: password, 
+          firstName: firstName,   // Make sure this matches your React state for "NOMBRES"
+          lastName: lastName,     // Make sure this matches your React state for "APELLIDOS"
+          whatsapp: whatsapp,     // Include the phone number from the form!
+          role: role,
+          level: level,           // Example: "A1", "B2"
+          unit: unit              // Example: 1
+        }
       });
-      if (authError) console.warn("Edge Function Flag:", authError);
 
-      // 2. Safe Database Injection
+      if (authError) {
+        // If the Edge function fails, this forces it to print the exact rejection reason to the console
+        console.error("EDGE FUNCTION REJECTION:", authError);
+        throw new Error(`Fallo en Auth/Edge Function: ${authError.message}.`);
+      }
+
+       /*
+      //  Safe Database Injection
       const updates = {
         first_name: firstName.trim(),
         last_name: lastName.trim(),
@@ -118,6 +133,7 @@ const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess }) => {
         console.warn("WARNING: Profile row not found. Trigger missing or RLS blocked.");
         alert("The login was created, but the profile data couldn't be saved. Check console.");
       }
+      */
 
       // 3. Log the Payment in the Ledger safely
       if (role === 'Student') {
