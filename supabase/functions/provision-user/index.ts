@@ -32,14 +32,13 @@ serve(async (req) => {
 
     if (authError) throw authError
 
-    // 4. Insert their profile data into the custom 'profiles' table
-const { error: profileError } = await supabaseAdmin.from('profiles').upsert([
-      {
-        id: authData.user.id,
+ // 4. Update the blank profile that the database trigger automatically created
+    const { error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .update({
         role: role,
         first_name: firstName,
         last_name: lastName,
-        email: email,
         whatsapp: whatsapp,
         username: username,
         avatar_url: avatarUrl,
@@ -51,8 +50,8 @@ const { error: profileError } = await supabaseAdmin.from('profiles').upsert([
         rate: rate,
         bio_url: bioUrl,
         admin_level: adminLevel
-      }
-    ])
+      })
+      .eq('id', authData.user.id) // This tells it exactly which row to update!
 
     if (profileError) throw profileError
 
