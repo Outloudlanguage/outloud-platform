@@ -13,14 +13,14 @@ serve(async (req) => {
 
   try {
     const body = await req.json()
-    const { email, password, firstName, lastName, whatsapp, avatarUrl, role, level, unit } = body
+    const { email, password, firstName, lastName, role, level, unit } = body
 
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // 1. Create User and feed the SQL trigger safely
+    // 1. Create the Auth User ONLY. We do absolutely ZERO database updates here.
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: email,
       password: password,
@@ -30,26 +30,15 @@ serve(async (req) => {
         last_name: lastName,
         role: role,
         level: level,
-        unit: String(unit) // Casted to string to prevent strict database type crashes
+        unit: String(unit)
       }
     })
 
     if (authError) throw authError
 
-    // 2. Patch the fields that the SQL trigger misses (Crucially: the email)
-    const { error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .update({
-        email: email,
-        whatsapp: whatsapp || null,
-        avatar_url: avatarUrl || null
-      })
-      .eq('id', authData.user.id)
-
-    if (profileError) throw profileError
-
+    // 2. Hand the new User ID straight back to the React frontend
     return new Response(
-      JSON.stringify({ message: 'Success' }),
+      JSON.stringify({ message: 'Auth Success', user: authData.user }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     )
 
