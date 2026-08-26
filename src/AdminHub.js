@@ -105,7 +105,19 @@ const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess }) => {
         updates.next_billing_date = nextBilling.toISOString().split('T')[0];
       }
 
-      await supabase.from('profiles').update(updates).eq('email', cleanEmail);
+      const { data: updateData, error: updateError } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('email', cleanEmail)
+        .select();
+
+      if (updateError) {
+        console.error("SUPABASE UPDATE ERROR:", updateError);
+        alert(`Profile Update Failed: ${updateError.message}`);
+      } else if (!updateData || updateData.length === 0) {
+        console.warn("WARNING: Profile row not found. Trigger missing or RLS blocked.");
+        alert("The login was created, but the profile data couldn't be saved. Check console.");
+      }
 
       // 3. Log the Payment in the Ledger safely
       if (role === 'Student') {
@@ -999,12 +1011,14 @@ const renderAccounts = () => (
         }
       `}</style>
 
-      <ProvisioningModal 
-        isOpen={isProvisioningModalOpen} 
-        onClose={() => setIsProvisioningModalOpen(false)} 
-        supabase={supabase} 
-        onSuccess={() => fetchDirectory(directoryTab)} 
-      />
+      {isProvisioningModalOpen && (
+        <ProvisioningModal 
+          isOpen={isProvisioningModalOpen} 
+          onClose={() => setIsProvisioningModalOpen(false)} 
+          supabase={supabase} 
+          onSuccess={() => fetchDirectory(directoryTab)} 
+        />
+      )}
 
       {selectedStudent && (
         <StudentManagerModal 
