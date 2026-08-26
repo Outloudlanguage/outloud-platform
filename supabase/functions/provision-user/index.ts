@@ -33,7 +33,7 @@ serve(async (req) => {
     if (authError) throw authError
 
     // 4. Insert their profile data into the custom 'profiles' table
-    const { error: profileError } = await supabaseAdmin.from('profiles').insert([
+const { error: profileError } = await supabaseAdmin.from('profiles').upsert([
       {
         id: authData.user.id,
         role: role,
