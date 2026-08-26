@@ -39,7 +39,7 @@ const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess }) => {
   const [provCohort, setProvCohort] = useState(15);
 
   // Financial States (No screenshots required)
-  const MONTHLY_PRICES = { A1: 40, A2: 45, B1: 50, B2: 55, C1: 60, C2: 65 };
+  const MONTHLY_PRICES = { A1: 20, A2: 20, B1: 30, B2: 30, C1: 50, C2: 50 };
   const [payMethod, setPayMethod] = useState('Zelle');
   const [payDate, setPayDate] = useState('');
   const [payRef, setPayRef] = useState('');
@@ -374,6 +374,26 @@ const AdminHub = () => {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [isProvisioningModalOpen, setIsProvisioningModalOpen] = useState(false);
 
+  // --- NEW STATS STATES ---
+  const [activeStudentsPct, setActiveStudentsPct] = useState(0);
+  const [upcomingActivities, setUpcomingActivities] = useState([]);
+
+  const fetchDashboardStats = async () => {
+    try {
+      const tenDaysAgo = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
+      const { count: totalStudents } = await supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'student');
+      const { count: activeStudents } = await supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'student').gte('last_active_at', tenDaysAgo);
+
+      if (totalStudents > 0) setActiveStudentsPct(Math.round((activeStudents / totalStudents) * 100));
+      else setActiveStudentsPct(0); 
+
+      const { data: activities } = await supabase.from('live_sessions').select('id, title, class_type, scheduled_at').gte('scheduled_at', new Date().toISOString()).not('teacher_id', 'is', null).order('scheduled_at', { ascending: true }).limit(5);
+      setUpcomingActivities(activities || []);
+    } catch (err) {
+      console.error("Dashboard Stats Fetch Error:", err);
+    }
+  };
+
   const fetchDirectory = async (roleType) => {
     setIsLoadingDirectory(true);
     try {
@@ -389,9 +409,10 @@ const AdminHub = () => {
     }
   };
 
-  useEffect(() => {
+useEffect(() => {
     if (activeModule === 'ACCOUNTS') {
       fetchDirectory(directoryTab);
+      fetchDashboardStats();
     }
   }, [activeModule, directoryTab]);
 
@@ -593,40 +614,48 @@ const AdminHub = () => {
   // MODULE RENDERING FUNCTIONS
   // =====================================================
 
-  const renderAccounts = () => (
+const renderAccounts = () => (
     <div className="grid grid-cols-12 gap-6 w-full max-w-[1500px] h-[calc(100vh-160px)] animate-fade-in">
       <div className="col-span-3 flex flex-col gap-6 h-full">
+        {/* ACTIVE STUDENTS RING */}
         <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center relative overflow-hidden h-[35%]">
           <div className="relative w-32 h-32 flex items-center justify-center shrink-0 mb-2">
             <svg className="w-full h-full transform -rotate-90 drop-shadow-[0_0_10px_rgba(252,211,77,0.8)]" viewBox="0 0 100 100">
               <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.1)" strokeWidth="8" fill="transparent" />
-              <circle cx="50" cy="50" r="40" stroke="#fcd34d" strokeWidth="8" fill="transparent" strokeDasharray={2 * Math.PI * 40} strokeDashoffset={(2 * Math.PI * 40) - (85 / 100) * (2 * Math.PI * 40)} strokeLinecap="round" />
+              <circle cx="50" cy="50" r="40" stroke="#fcd34d" strokeWidth="8" fill="transparent" strokeDasharray={2 * Math.PI * 40} strokeDashoffset={(2 * Math.PI * 40) - (activeStudentsPct / 100) * (2 * Math.PI * 40)} strokeLinecap="round" className="transition-all duration-1000 ease-out" />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-              <span className="text-3xl font-black text-white leading-none drop-shadow-md">85%</span>
+              <span className="text-3xl font-black text-white leading-none drop-shadow-md">{activeStudentsPct}%</span>
             </div>
           </div>
           <h3 className="text-white/90 font-bold text-xs tracking-widest uppercase text-center mt-2">ACTIVE STUDENTS</h3>
         </div>
+
+        {/* LIVE ACTIVITIES WIDGET */}
         <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col h-[65%]">
-          <h3 className="text-white font-black text-2xl tracking-wide mb-4 drop-shadow-md shrink-0">Activities</h3>
+          <h3 className="text-white font-black text-2xl tracking-wide mb-4 drop-shadow-md shrink-0 w-full text-center">Activities</h3>
           <ul className="space-y-4 text-xs font-medium text-white/90 flex-1 overflow-y-auto custom-scrollbar pr-2 mb-4">
-            <li className="flex items-center gap-3 overflow-hidden"><svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg><span className="truncate">Aug 15: Live Lab Session</span></li>
-            <li className="flex items-center gap-3 overflow-hidden"><svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg><span className="truncate">Aug 18: Chat room meeting</span></li>
-            <li className="flex items-center gap-3 overflow-hidden"><svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg><span className="truncate">Aug 25: Conversation Club</span></li>
-            <li className="flex items-center gap-3 overflow-hidden"><svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg><span className="truncate">Aug 26: Live Lab Session</span></li>
+            {upcomingActivities.length === 0 ? (
+              <li className="text-center text-white/40 uppercase tracking-widest font-bold mt-4">No upcoming live sessions</li>
+            ) : (
+              upcomingActivities.map(act => (
+                <li key={act.id} className="flex items-center gap-3 overflow-hidden">
+                  <svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                  <span className="truncate">{new Date(act.scheduled_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}: {act.title || act.class_type}</span>
+                </li>
+              ))
+            )}
           </ul>
-          
-          {/* NUKED & PAVED REQUEST SUBSTITUTE BUTTON */}
           <button className="w-full py-4 px-6 bg-[#e2e8f0] text-[#0f172a] hover:bg-white font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-start gap-4 shadow-xl transition-all hover:scale-105 shrink-0 mt-auto">
             <img src="https://i.postimg.cc/mrtXmB72/Copia-de-Diseno-sin-titulo-(2).png" alt="Substitute" className="w-6 h-6 object-contain shrink-0" />
             <span className="flex-1 text-center pr-6">REQUEST SUBSTITUTE</span>
           </button>
         </div>
       </div>
+
       <div className="col-span-3 flex flex-col gap-6 h-full">
-        <div onClick={() => setIsProvisioningModalOpen(true)} className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center relative overflow-hidden cursor-pointer hover:bg-white/10 transition-colors group">
-          {/* Pure SVG Icon: User Add */}
+        {/* ADDED 'isolate' TO FIX HORIZONTAL BACKDROP-BLUR ARTIFACT */}
+        <div onClick={() => setIsProvisioningModalOpen(true)} className="isolate flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center relative cursor-pointer hover:bg-white/10 transition-colors group">
           <svg className="w-24 h-24 mb-6 text-white drop-shadow-md group-hover:scale-110 transition-transform relative z-10" fill="none" stroke="currentColor" strokeWidth="1.2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M18 19v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" />
             <circle cx="10" cy="7" r="4" />
@@ -634,8 +663,9 @@ const AdminHub = () => {
           </svg>
           <h3 className="text-white font-black text-xl md:text-2xl tracking-widest uppercase text-center relative z-10">Provisioning</h3>
         </div>
-        <div onClick={() => alert('Módulo de Estadísticas en construcción...')} className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center relative overflow-hidden cursor-pointer hover:bg-white/10 transition-colors group">
-          {/* Pure SVG Icon: Bar Chart */}
+        
+        {/* ADDED 'isolate' TO FIX HORIZONTAL BACKDROP-BLUR ARTIFACT */}
+        <div onClick={() => alert('Módulo de Estadísticas en construcción...')} className="isolate flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center relative cursor-pointer hover:bg-white/10 transition-colors group">
           <svg className="w-24 h-24 mb-6 text-white drop-shadow-md group-hover:scale-110 transition-transform relative z-10" fill="none" stroke="currentColor" strokeWidth="1.2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M3 3v18h18" />
             <path strokeLinecap="round" strokeLinejoin="round" d="M7 16v-4m4 4v-7m4 7V8m0 0l-4 4m4-4l-4-4" />
@@ -643,6 +673,7 @@ const AdminHub = () => {
           <h3 className="text-white font-black text-xl md:text-2xl tracking-widest uppercase text-center relative z-10">Stats</h3>
         </div>
       </div>
+
       <div className="col-span-6 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-8 shadow-2xl flex flex-col h-full overflow-hidden">
         <div className="flex bg-black/20 rounded-2xl p-2 mb-6 shrink-0 shadow-inner">
           <button onClick={() => setDirectoryTab('students')} className={`flex-1 py-3 rounded-xl font-bold text-sm shadow-md transition-all ${directoryTab === 'students' ? 'bg-white/20 text-white' : 'text-white/50 hover:text-white'}`}>Students</button>
