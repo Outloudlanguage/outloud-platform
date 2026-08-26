@@ -58,7 +58,7 @@ const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess }) => {
   };
   const proratedDue = calculateProration();
 
-  const handleProvision = async (e) => {
+const handleProvision = async (e) => {
     e.preventDefault();
     if (!firstName || !lastName || !email || !password) {
       alert("Nombres, correo y contraseña son obligatorios.");
@@ -72,88 +72,71 @@ const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess }) => {
     setIsProcessing(true);
     try {
       const cleanEmail = email.trim().toLowerCase();
-      const fullName = `${firstName.trim()} ${lastName.trim()}`;
-      
-      // 1. Auth Edge Function - SENDING THE CORRECT PAYLOAD
+
+      // 1. Edge Function ONLY creates the secure login and feeds the SQL trigger
       const { data: edgeData, error: authError } = await supabase.functions.invoke('provision-user', {
-body: { 
-  email: cleanEmail, 
-  password: password, 
-  firstName: firstName.trim(),
-  lastName: lastName.trim(),
-  whatsapp: phone,        // <-- We map the expected 'whatsapp' to your 'phone' variable
-  role: role,
-  level: provLevel,       // <-- Updated to match your React variable
-  unit: provUnit          // <-- Updated to match your React variable
-}
+        body: { 
+          email: cleanEmail, 
+          password: password, 
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          role: role,
+          level: role === 'Student' ? provLevel : null,
+          unit: role === 'Student' ? provUnit : null
+        }
       });
 
-      if (authError) {
-        // If the Edge function fails, this forces it to print the exact rejection reason to the console
-        console.error("EDGE FUNCTION REJECTION:", authError);
-        throw new Error(`Fallo en Auth/Edge Function: ${authError.message}.`);
-      }
+      if (authError) throw new Error(`Fallo en Auth/Edge Function: ${authError.message}`);
+      if (edgeData?.error) throw new Error(`Error de Autenticación: ${edgeData.error}`);
 
-       /*
-      //  Safe Database Injection
-      const updates = {
+      // Extract the exact ID of the newly created user
+      const newUserId = edgeData?.user?.id;
+      if (!newUserId) throw new Error("No se pudo obtener el ID del usuario desde la función.");
+
+      // 2. THE MASTER UPDATE: React forces all data into the database directly
+      const profileUpdates = {
+        email: cleanEmail,
         first_name: firstName.trim(),
         last_name: lastName.trim(),
-        whatsapp: phone || null, 
+        whatsapp: phone || null,
+        avatar_url: avatarUrl || null,
         role: role,
-        status: 'active',
-        assigned_password: password
+        assigned_password: password,
+        status: 'active'
       };
 
-      if (avatarUrl.trim() !== '') updates.avatar_url = avatarUrl.trim();
-      
       if (role === 'Student') {
-        updates.level = provLevel;
-        updates.unit = provUnit;
-        updates.cohort = provCohort;
-        updates.available_credits = 4;
-        const d = new Date();
-        let nextBilling = new Date(d.getFullYear(), d.getMonth() + 1, provCohort);
-        if (provCohort === 30 && nextBilling.getMonth() !== (d.getMonth() + 1) % 12) {
-            nextBilling = new Date(d.getFullYear(), d.getMonth() + 2, 0); 
-        }
-        updates.next_billing_date = nextBilling.toISOString().split('T')[0];
+        profileUpdates.cohort = provCohort;
+        profileUpdates.level = provLevel;
+        profileUpdates.unit = provUnit;
+        profileUpdates.available_credits = 0; 
       }
 
-      const { data: updateData, error: updateError } = await supabase
-        .from('profiles')
-        .update(updates)
-        .eq('email', cleanEmail)
-        .select();
-
-      if (updateError) {
-        console.error("SUPABASE UPDATE ERROR:", updateError);
-        alert(`Profile Update Failed: ${updateError.message}`);
-      } else if (!updateData || updateData.length === 0) {
-        console.warn("WARNING: Profile row not found. Trigger missing or RLS blocked.");
-        alert("The login was created, but the profile data couldn't be saved. Check console.");
-      }
-      */
+      const { error: profileError } = await supabase.from('profiles').update(profileUpdates).eq('id', newUserId);
+      
+      // If your database rejects it, THIS line will tell us exactly which column caused it.
+      if (profileError) throw new Error(`Fallo actualizando perfil en BD: ${profileError.message}`);
 
       // 3. Log the Payment in the Ledger safely
-      if (role === 'Student') {
-        const { data: userRecords } = await supabase.from('profiles').select('id').eq('email', cleanEmail);
-        const studentId = userRecords && userRecords.length > 0 ? userRecords[0].id : null;
-
-        if (studentId) {
-          await supabase.from('student_payments').insert({
-            student_id: studentId,
-            payment_type: 'Initial Enrollment (Prorated)',
-            amount: proratedDue,
-            reference_number: payRef,
-            status: 'verified' 
-          });
-        }
+      if (role === 'Student' && payRef) {
+        const { error: paymentError } = await supabase.from('student_payments').insert({
+          student_id: newUserId,
+          payment_type: 'Initial Enrollment (Prorated)',
+          amount: proratedDue,
+          reference_number: payRef,
+          status: 'verified' 
+        });
+        
+        if (paymentError) console.warn("Aviso: Perfil creado, pero falló el registro del pago.", paymentError);
       }
 
-      alert(`Cuenta aprovisionada exitosamente.`);
-      if (onSuccess) onSuccess();
-      onClose();
+      alert(`¡Cuenta aprovisionada exitosamente!`);
+      
+      // Clear the form / Refresh
+      if (typeof onSuccess === 'function') onSuccess();
+      if (typeof onClose === 'function') onClose();
+      window.location.reload();
+
     } catch (error) {
       console.error("Provisioning Error:", error);
       alert(`Error crítico: ${error.message}`);
