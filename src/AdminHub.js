@@ -76,16 +76,16 @@ const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess }) => {
       
       // 1. Auth Edge Function - SENDING THE CORRECT PAYLOAD
       const { data: edgeData, error: authError } = await supabase.functions.invoke('provision-user', {
-        body: { 
-          email: cleanEmail, 
-          password: password, 
-          firstName: firstName,   // Make sure this matches your React state for "NOMBRES"
-          lastName: lastName,     // Make sure this matches your React state for "APELLIDOS"
-          whatsapp: whatsapp,     // Include the phone number from the form!
-          role: role,
-          level: level,           // Example: "A1", "B2"
-          unit: unit              // Example: 1
-        }
+body: { 
+  email: cleanEmail, 
+  password: password, 
+  firstName: firstName.trim(),
+  lastName: lastName.trim(),
+  whatsapp: phone,        // <-- We map the expected 'whatsapp' to your 'phone' variable
+  role: role,
+  level: provLevel,       // <-- Updated to match your React variable
+  unit: provUnit          // <-- Updated to match your React variable
+}
       });
 
       if (authError) {
