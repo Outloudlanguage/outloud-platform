@@ -665,12 +665,12 @@ const renderAccounts = () => (
       </div>
 
     <div className="col-span-3 flex flex-col gap-6 h-full">
-        <div onClick={() => setIsProvisioningModalOpen(true)} className="flex-1 relative overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center cursor-pointer group">
+        <div onClick={() => setIsProvisioningModalOpen(true)} className="flex-1 relative overflow-hidden bg-white/5 backdrop-blur-xl ring-1 ring-inset ring-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center cursor-pointer group transform-gpu">
           <img src="https://i.postimg.cc/ZKPVccsH/4(8).png" alt="Create" className="w-48 h-48 mb-4 object-contain group-hover:scale-110 transition-transform duration-300 drop-shadow-md relative z-10" />
           <h3 className="text-white font-black text-xl md:text-2xl tracking-widest uppercase text-center relative z-10">Create</h3>
         </div>
         
-        <div onClick={() => alert('Módulo de Estadísticas en construcción...')} className="flex-1 relative overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center cursor-pointer group">
+        <div onClick={() => alert('Módulo de Estadísticas en construcción...')} className="flex-1 relative overflow-hidden bg-white/5 backdrop-blur-xl ring-1 ring-inset ring-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center cursor-pointer group transform-gpu">
           <img src="https://i.postimg.cc/sxd4PQpm/2(12).png" alt="Statistics" className="w-48 h-48 mb-4 object-contain group-hover:scale-110 transition-transform duration-300 drop-shadow-md relative z-10" />
           <h3 className="text-white font-black text-xl md:text-2xl tracking-widest uppercase text-center relative z-10">Statistics</h3>
         </div>
