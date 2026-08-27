@@ -664,18 +664,23 @@ const renderAccounts = () => (
         </div>
       </div>
 
-  <div className="col-span-3 flex flex-col gap-6 h-full">
+ {/* Middle Column - Switched to Grid to kill subpixel rounding */}
+      <div className="col-span-3 grid grid-rows-2 gap-6 h-full">
+        
         {/* CREATE CARD */}
-        <div onClick={() => setIsProvisioningModalOpen(true)} className="flex-1 relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center cursor-pointer group">
-          <img src="https://i.postimg.cc/ZKPVccsH/4(8).png" alt="Create" className="w-48 h-48 mb-4 object-contain group-hover:scale-110 transition-transform duration-300 drop-shadow-md relative z-10" />
+        <div onClick={() => setIsProvisioningModalOpen(true)} className="relative w-full h-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center cursor-pointer group transform-gpu">
+          {/* drop-shadow-md REMOVED to stop nested filter rendering panic */}
+          <img src="https://i.postimg.cc/ZKPVccsH/4(8).png" alt="Create" className="w-48 h-48 mb-4 object-contain group-hover:scale-110 transition-transform duration-300 relative z-10" />
           <h3 className="text-white font-black text-xl md:text-2xl tracking-widest uppercase text-center relative z-10">Create</h3>
         </div>
         
         {/* STATISTICS CARD */}
-        <div onClick={() => alert('Módulo de Estadísticas en construcción...')} className="flex-1 relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center cursor-pointer group">
-          <img src="https://i.postimg.cc/sxd4PQpm/2(12).png" alt="Statistics" className="w-48 h-48 mb-4 object-contain group-hover:scale-110 transition-transform duration-300 drop-shadow-md relative z-10" />
+        <div onClick={() => alert('Módulo de Estadísticas en construcción...')} className="relative w-full h-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center cursor-pointer group transform-gpu">
+          {/* drop-shadow-md REMOVED to stop nested filter rendering panic */}
+          <img src="https://i.postimg.cc/sxd4PQpm/2(12).png" alt="Statistics" className="w-48 h-48 mb-4 object-contain group-hover:scale-110 transition-transform duration-300 relative z-10" />
           <h3 className="text-white font-black text-xl md:text-2xl tracking-widest uppercase text-center relative z-10">Statistics</h3>
         </div>
+
       </div>
 
       <div className="col-span-6 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-8 shadow-2xl flex flex-col h-full overflow-hidden">
