@@ -629,7 +629,7 @@ const renderAccounts = () => (
     <div className="grid grid-cols-12 gap-6 w-full max-w-[1500px] h-[calc(100vh-160px)] animate-fade-in">
       <div className="col-span-3 flex flex-col gap-6 h-full">
         {/* ACTIVE STUDENTS RING */}
-        <div className="h-[25%] bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center relative overflow-hidden">
+        <div className="h-[40%] bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center relative overflow-hidden">
           <div className="relative w-32 h-32 flex items-center justify-center shrink-0 mb-2">
             <svg className="w-full h-full transform -rotate-90 drop-shadow-[0_0_10px_rgba(252,211,77,0.8)]" viewBox="0 0 100 100">
               <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.1)" strokeWidth="8" fill="transparent" />
@@ -643,7 +643,7 @@ const renderAccounts = () => (
         </div>
 
         {/* LIVE ACTIVITIES WIDGET */}
-        <div className="h-[75%] bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col">
+        <div className="h-[60%] bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col">
           <h3 className="text-white font-black text-2xl tracking-wide mb-4 drop-shadow-md shrink-0 w-full text-center">Activities</h3>
           <ul className="space-y-4 text-xs font-medium text-white/90 flex-1 overflow-y-auto custom-scrollbar pr-2 mb-4">
             {upcomingActivities.length === 0 ? (
@@ -664,14 +664,14 @@ const renderAccounts = () => (
         </div>
       </div>
 
-     <div className="col-span-3 flex flex-col gap-6 h-full">
-        <div onClick={() => setIsProvisioningModalOpen(true)} className="h-[calc(50%-12px)] transform-gpu relative overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-white/10 transition-colors group">
-          <img src="https://i.postimg.cc/ZKPVccsH/4(8).png" alt="Create" className="w-48 h-48 mb-4 object-contain group-hover:scale-110 transition-transform drop-shadow-md relative z-10" />
+    <div className="col-span-3 flex flex-col gap-6 h-full">
+        <div onClick={() => setIsProvisioningModalOpen(true)} className="flex-1 relative overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center cursor-pointer group">
+          <img src="https://i.postimg.cc/ZKPVccsH/4(8).png" alt="Create" className="w-48 h-48 mb-4 object-contain group-hover:scale-110 transition-transform duration-300 drop-shadow-md relative z-10" />
           <h3 className="text-white font-black text-xl md:text-2xl tracking-widest uppercase text-center relative z-10">Create</h3>
         </div>
         
-        <div onClick={() => alert('Módulo de Estadísticas en construcción...')} className="h-[calc(50%-12px)] transform-gpu relative overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-white/10 transition-colors group">
-          <img src="https://i.postimg.cc/sxd4PQpm/2(12).png" alt="Statistics" className="w-48 h-48 mb-4 object-contain group-hover:scale-110 transition-transform drop-shadow-md relative z-10" />
+        <div onClick={() => alert('Módulo de Estadísticas en construcción...')} className="flex-1 relative overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center cursor-pointer group">
+          <img src="https://i.postimg.cc/sxd4PQpm/2(12).png" alt="Statistics" className="w-48 h-48 mb-4 object-contain group-hover:scale-110 transition-transform duration-300 drop-shadow-md relative z-10" />
           <h3 className="text-white font-black text-xl md:text-2xl tracking-widest uppercase text-center relative z-10">Statistics</h3>
         </div>
       </div>
