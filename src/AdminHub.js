@@ -664,13 +664,27 @@ const renderAccounts = () => (
         </div>
       </div>
 
-    <div className="col-span-3 flex flex-col gap-6 h-full">
-        <div onClick={() => setIsProvisioningModalOpen(true)} className="flex-1 relative overflow-hidden bg-white/5 backdrop-blur-xl ring-1 ring-inset ring-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center cursor-pointer group transform-gpu">
+   <div className="col-span-3 flex flex-col gap-6 h-full">
+        {/* CREATE CARD */}
+        <div onClick={() => setIsProvisioningModalOpen(true)} className="flex-1 relative flex flex-col items-center justify-center cursor-pointer group p-6">
+          {/* Layer 1: Background & Blur (Tucked inside by 1px to prevent edge bleed) */}
+          <div className="absolute inset-[1px] bg-white/5 backdrop-blur-xl rounded-[2rem] overflow-hidden"></div>
+          
+          {/* Layer 2: Border & Shadow (Covers the outer edge completely) */}
+          <div className="absolute inset-0 border border-white/10 rounded-[2rem] shadow-2xl pointer-events-none"></div>
+          
           <img src="https://i.postimg.cc/ZKPVccsH/4(8).png" alt="Create" className="w-48 h-48 mb-4 object-contain group-hover:scale-110 transition-transform duration-300 drop-shadow-md relative z-10" />
           <h3 className="text-white font-black text-xl md:text-2xl tracking-widest uppercase text-center relative z-10">Create</h3>
         </div>
         
-        <div onClick={() => alert('Módulo de Estadísticas en construcción...')} className="flex-1 relative overflow-hidden bg-white/5 backdrop-blur-xl ring-1 ring-inset ring-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center cursor-pointer group transform-gpu">
+        {/* STATISTICS CARD */}
+        <div onClick={() => alert('Módulo de Estadísticas en construcción...')} className="flex-1 relative flex flex-col items-center justify-center cursor-pointer group p-6">
+          {/* Layer 1: Background & Blur (Tucked inside by 1px to prevent edge bleed) */}
+          <div className="absolute inset-[1px] bg-white/5 backdrop-blur-xl rounded-[2rem] overflow-hidden"></div>
+          
+          {/* Layer 2: Border & Shadow (Covers the outer edge completely) */}
+          <div className="absolute inset-0 border border-white/10 rounded-[2rem] shadow-2xl pointer-events-none"></div>
+          
           <img src="https://i.postimg.cc/sxd4PQpm/2(12).png" alt="Statistics" className="w-48 h-48 mb-4 object-contain group-hover:scale-110 transition-transform duration-300 drop-shadow-md relative z-10" />
           <h3 className="text-white font-black text-xl md:text-2xl tracking-widest uppercase text-center relative z-10">Statistics</h3>
         </div>
