@@ -629,7 +629,7 @@ const renderAccounts = () => (
     <div className="grid grid-cols-12 gap-6 w-full max-w-[1500px] h-[calc(100vh-160px)] animate-fade-in">
       <div className="col-span-3 flex flex-col gap-6 h-full">
         {/* ACTIVE STUDENTS RING */}
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center relative overflow-hidden h-[35%]">
+        <div className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center relative overflow-hidden">
           <div className="relative w-32 h-32 flex items-center justify-center shrink-0 mb-2">
             <svg className="w-full h-full transform -rotate-90 drop-shadow-[0_0_10px_rgba(252,211,77,0.8)]" viewBox="0 0 100 100">
               <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.1)" strokeWidth="8" fill="transparent" />
@@ -643,7 +643,7 @@ const renderAccounts = () => (
         </div>
 
         {/* LIVE ACTIVITIES WIDGET */}
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col h-[65%]">
+        <div className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col">
           <h3 className="text-white font-black text-2xl tracking-wide mb-4 drop-shadow-md shrink-0 w-full text-center">Activities</h3>
           <ul className="space-y-4 text-xs font-medium text-white/90 flex-1 overflow-y-auto custom-scrollbar pr-2 mb-4">
             {upcomingActivities.length === 0 ? (
@@ -665,23 +665,14 @@ const renderAccounts = () => (
       </div>
 
       <div className="col-span-3 flex flex-col gap-6 h-full">
-        {/* ADDED 'isolate' TO FIX HORIZONTAL BACKDROP-BLUR ARTIFACT */}
-        <div onClick={() => setIsProvisioningModalOpen(true)} className="isolate flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center relative cursor-pointer hover:bg-white/10 transition-colors group">
-          <svg className="w-24 h-24 mb-6 text-white drop-shadow-md group-hover:scale-110 transition-transform relative z-10" fill="none" stroke="currentColor" strokeWidth="1.2" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M18 19v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" />
-            <circle cx="10" cy="7" r="4" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M20 8v6M17 11h6" />
-          </svg>
-          <h3 className="text-white font-black text-xl md:text-2xl tracking-widest uppercase text-center relative z-10">Provisioning</h3>
+        <div onClick={() => setIsProvisioningModalOpen(true)} className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-white/10 transition-colors group">
+          <img src="https://i.postimg.cc/ZKPVccsH/4(8).png" alt="Create" className="w-24 h-24 mb-6 object-contain group-hover:scale-110 transition-transform drop-shadow-md" />
+          <h3 className="text-white font-black text-xl md:text-2xl tracking-widest uppercase text-center">Create</h3>
         </div>
         
-        {/* ADDED 'isolate' TO FIX HORIZONTAL BACKDROP-BLUR ARTIFACT */}
-        <div onClick={() => alert('Módulo de Estadísticas en construcción...')} className="isolate flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center relative cursor-pointer hover:bg-white/10 transition-colors group">
-          <svg className="w-24 h-24 mb-6 text-white drop-shadow-md group-hover:scale-110 transition-transform relative z-10" fill="none" stroke="currentColor" strokeWidth="1.2" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3 3v18h18" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M7 16v-4m4 4v-7m4 7V8m0 0l-4 4m4-4l-4-4" />
-          </svg>
-          <h3 className="text-white font-black text-xl md:text-2xl tracking-widest uppercase text-center relative z-10">Stats</h3>
+        <div onClick={() => alert('Módulo de Estadísticas en construcción...')} className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-white/10 transition-colors group">
+          <img src="https://i.postimg.cc/sxd4PQpm/2(12).png" alt="Statistics" className="w-24 h-24 mb-6 object-contain group-hover:scale-110 transition-transform drop-shadow-md" />
+          <h3 className="text-white font-black text-xl md:text-2xl tracking-widest uppercase text-center">Statistics</h3>
         </div>
       </div>
 
@@ -1054,7 +1045,7 @@ const renderAccounts = () => (
         {/* HEADER */}
         {activeModule !== 'CONTENTS' && (
           <div className="flex items-center gap-5 mb-10 pl-2 shrink-0">
-            <img src="https://i.postimg.cc/43zTZQhx/Diseno-sin-titulo-(20).png" alt="Outloud Logo" className="h-12 object-contain drop-shadow-md" />
+            <img src="https://i.postimg.cc/W4wH7P4n/Diseno-sin-titulo-(24).png" alt="Outloud Logo" className="h-12 object-contain drop-shadow-md" />
             <div className="h-10 w-[2px] bg-white/20"></div>
             <span className="text-3xl font-light text-white tracking-widest uppercase drop-shadow-sm">{activeModule}</span>
           </div>
