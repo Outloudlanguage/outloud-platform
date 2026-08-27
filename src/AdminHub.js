@@ -666,15 +666,15 @@ const renderAccounts = () => (
 
   <div className="col-span-3 flex flex-col gap-6 h-full">
         {/* CREATE CARD */}
-        <div onClick={() => setIsProvisioningModalOpen(true)} className="flex-1 relative overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center cursor-pointer group">
-          <img src="https://i.postimg.cc/ZKPVccsH/4(8).png" alt="Create" className="w-48 h-48 mb-4 object-contain transition-all duration-300 drop-shadow-md group-hover:drop-shadow-[0_0_25px_rgba(250,204,21,0.8)] relative z-10" />
-          <h3 className="text-white group-hover:text-yellow-400 transition-colors duration-300 font-black text-xl md:text-2xl tracking-widest uppercase text-center relative z-10">Create</h3>
+        <div onClick={() => setIsProvisioningModalOpen(true)} className="flex-1 relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center cursor-pointer group">
+          <img src="https://i.postimg.cc/ZKPVccsH/4(8).png" alt="Create" className="w-48 h-48 mb-4 object-contain group-hover:scale-110 transition-transform duration-300 drop-shadow-md relative z-10" />
+          <h3 className="text-white font-black text-xl md:text-2xl tracking-widest uppercase text-center relative z-10">Create</h3>
         </div>
         
         {/* STATISTICS CARD */}
-        <div onClick={() => alert('Módulo de Estadísticas en construcción...')} className="flex-1 relative overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center cursor-pointer group">
-          <img src="https://i.postimg.cc/sxd4PQpm/2(12).png" alt="Statistics" className="w-48 h-48 mb-4 object-contain transition-all duration-300 drop-shadow-md group-hover:drop-shadow-[0_0_25px_rgba(250,204,21,0.8)] relative z-10" />
-          <h3 className="text-white group-hover:text-yellow-400 transition-colors duration-300 font-black text-xl md:text-2xl tracking-widest uppercase text-center relative z-10">Statistics</h3>
+        <div onClick={() => alert('Módulo de Estadísticas en construcción...')} className="flex-1 relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center cursor-pointer group">
+          <img src="https://i.postimg.cc/sxd4PQpm/2(12).png" alt="Statistics" className="w-48 h-48 mb-4 object-contain group-hover:scale-110 transition-transform duration-300 drop-shadow-md relative z-10" />
+          <h3 className="text-white font-black text-xl md:text-2xl tracking-widest uppercase text-center relative z-10">Statistics</h3>
         </div>
       </div>
 
