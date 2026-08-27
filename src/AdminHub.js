@@ -664,21 +664,33 @@ const renderAccounts = () => (
         </div>
       </div>
 
- {/* Middle Column - Switched to Grid to kill subpixel rounding */}
+ {/* Middle Column */}
       <div className="col-span-3 grid grid-rows-2 gap-6 h-full">
         
-        {/* CREATE CARD */}
-        <div onClick={() => setIsProvisioningModalOpen(true)} className="relative w-full h-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center cursor-pointer group transform-gpu">
-          {/* drop-shadow-md REMOVED to stop nested filter rendering panic */}
-          <img src="https://i.postimg.cc/ZKPVccsH/4(8).png" alt="Create" className="w-48 h-48 mb-4 object-contain group-hover:scale-110 transition-transform duration-300 relative z-10" />
-          <h3 className="text-white font-black text-xl md:text-2xl tracking-widest uppercase text-center relative z-10">Create</h3>
+        {/* CREATE CARD - Outer Wrapper (Acts as the frame & clipping mask) */}
+        <div onClick={() => setIsProvisioningModalOpen(true)} className="relative w-full h-full rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl cursor-pointer group">
+          
+          {/* Layer 1: Oversized Blur (Pushes the buggy edges 16px out of view) */}
+          <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
+
+          {/* Layer 2: Content Container */}
+          <div className="relative w-full h-full flex flex-col items-center justify-center p-6">
+             <img src="https://i.postimg.cc/ZKPVccsH/4(8).png" alt="Create" className="w-48 h-48 mb-4 object-contain group-hover:scale-110 transition-transform duration-300 drop-shadow-md will-change-transform" />
+             <h3 className="text-white font-black text-xl md:text-2xl tracking-widest uppercase text-center">Create</h3>
+          </div>
         </div>
         
-        {/* STATISTICS CARD */}
-        <div onClick={() => alert('Módulo de Estadísticas en construcción...')} className="relative w-full h-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center cursor-pointer group transform-gpu">
-          {/* drop-shadow-md REMOVED to stop nested filter rendering panic */}
-          <img src="https://i.postimg.cc/sxd4PQpm/2(12).png" alt="Statistics" className="w-48 h-48 mb-4 object-contain group-hover:scale-110 transition-transform duration-300 relative z-10" />
-          <h3 className="text-white font-black text-xl md:text-2xl tracking-widest uppercase text-center relative z-10">Statistics</h3>
+        {/* STATISTICS CARD - Outer Wrapper (Acts as the frame & clipping mask) */}
+        <div onClick={() => alert('Módulo de Estadísticas en construcción...')} className="relative w-full h-full rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl cursor-pointer group">
+          
+          {/* Layer 1: Oversized Blur (Pushes the buggy edges 16px out of view) */}
+          <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
+
+          {/* Layer 2: Content Container */}
+          <div className="relative w-full h-full flex flex-col items-center justify-center p-6">
+             <img src="https://i.postimg.cc/sxd4PQpm/2(12).png" alt="Statistics" className="w-48 h-48 mb-4 object-contain group-hover:scale-110 transition-transform duration-300 drop-shadow-md will-change-transform" />
+             <h3 className="text-white font-black text-xl md:text-2xl tracking-widest uppercase text-center">Statistics</h3>
+          </div>
         </div>
 
       </div>
