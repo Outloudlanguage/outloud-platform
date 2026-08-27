@@ -667,9 +667,6 @@ const renderAccounts = () => (
  {/* Middle Column - Switched to Grid to kill subpixel rounding */}
       <div className="col-span-3 grid grid-rows-2 gap-6 h-full">
         
-        {/* Middle Column - Switched to Grid to kill subpixel rounding */}
-      <div className="col-span-3 grid grid-rows-2 gap-6 h-full">
-        
         {/* CREATE CARD */}
         <div onClick={() => setIsProvisioningModalOpen(true)} className="relative w-full h-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center cursor-pointer group transform-gpu">
           {/* drop-shadow-md REMOVED to stop nested filter rendering panic */}
