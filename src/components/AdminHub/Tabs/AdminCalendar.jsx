@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import { supabase } from '../SupabaseClient';
 
-const AdminCalendar = ({ supabase }) => {
-  const [currentWeekOffset, setCurrentWeekOffset] = useState(0);
+const AdminCalendar = () => {
+  // Navigation & Filter States
+  const [baseDate, setBaseDate] = useState(new Date());
+  const [activeTab, setActiveTab] = useState('OVERALL');
+  const [filterTeacherId, setFilterTeacherId] = useState('ALL');
   const [selectedSlot, setSelectedSlot] = useState(null);
   
-  // Real Database States
+  // Database States
   const [sessions, setSessions] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -14,15 +18,14 @@ const AdminCalendar = ({ supabase }) => {
   const [selectedClassType, setSelectedClassType] = useState('Unit Class');
 
   const dayNames = ['LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB', 'DOM'];
-  const times = ['9:00 AM', '11:00 AM', '1:00 PM', '3:00 PM', '6:00 PM', '9:00 PM'];
+  const times = ['3:00 pm', '4:00 pm', '5:00 pm', '6:00 pm', '7:00 pm', '8:00 pm'];
 
-  // 1. GENERATE WEEK DATES
-  const getWeekDates = (offsetWeeks) => {
-    const today = new Date();
-    const currentDay = today.getDay();
+  // --- 1. DATE LOGIC ---
+  const getWeekDates = (date) => {
+    const currentDay = date.getDay();
     const distanceToMonday = currentDay === 0 ? -6 : 1 - currentDay;
-    const monday = new Date(today);
-    monday.setDate(today.getDate() + distanceToMonday + (offsetWeeks * 7));
+    const monday = new Date(date);
+    monday.setDate(date.getDate() + distanceToMonday);
 
     const dates = [];
     for (let i = 0; i < 7; i++) {
@@ -33,28 +36,44 @@ const AdminCalendar = ({ supabase }) => {
     return dates; 
   };
 
-  const weekDates = getWeekDates(currentWeekOffset);
+  const weekDates = getWeekDates(baseDate);
+  const currentMonthName = baseDate.toLocaleString('es-ES', { month: 'long' }).toUpperCase();
 
-  // Helper to format local date to YYYY-MM-DD reliably
+  const handleWeekChange = (direction) => {
+    setBaseDate(prev => {
+      const newDate = new Date(prev);
+      newDate.setDate(prev.getDate() + (direction * 7));
+      return newDate;
+    });
+  };
+
+  const handleMonthChange = (direction) => {
+    setBaseDate(prev => {
+      const newDate = new Date(prev);
+      newDate.setMonth(prev.getMonth() + direction);
+      return newDate;
+    });
+  };
+
   const getLocalDateString = (d) => {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   };
 
-  // 2. FETCH DATA FROM SUPABASE
+  // --- 2. DATA FETCHING ---
   const fetchCalendarData = async () => {
     try {
-      // Fetch Teachers using the 'users' table
+      // Fetch Teachers
       const { data: teachersData } = await supabase
-        .from('users')
-        .select('id, first_name, last_name, email')
-        .eq('role', 'teacher');
+        .from('profiles')
+        .select('id, first_name, last_name')
+        .eq('role', 'Teacher');
       
       if (teachersData) {
         setTeachers(teachersData);
         if (teachersData.length > 0) setSelectedTeacherId(teachersData[0].id);
       }
 
-      // Isolate query to ONLY the visible 7 days
+      // Fetch Sessions strictly for the visible week
       const startDate = weekDates[0];
       const endDate = new Date(weekDates[6]);
       endDate.setHours(23, 59, 59, 999);
@@ -63,8 +82,8 @@ const AdminCalendar = ({ supabase }) => {
         .from('live_sessions')
         .select(`
           *,
-          student:users!student_id(first_name, last_name, email),
-          teacher:users!teacher_id(first_name, last_name, email)
+          student:profiles!student_id(first_name, last_name),
+          teacher:profiles!teacher_id(first_name, last_name)
         `)
         .gte('scheduled_at', startDate.toISOString())
         .lte('scheduled_at', endDate.toISOString());
@@ -74,12 +93,11 @@ const AdminCalendar = ({ supabase }) => {
       if (sessionsData) {
         const mappedSessions = sessionsData.map(session => {
           if (!session.scheduled_at) return session;
-          
           const d = new Date(session.scheduled_at);
           const dateStr = getLocalDateString(d);
           
           let hours = d.getHours();
-          const ampm = hours >= 12 ? 'PM' : 'AM';
+          const ampm = hours >= 12 ? 'pm' : 'am';
           hours = hours % 12;
           hours = hours ? hours : 12; 
           const mins = String(d.getMinutes()).padStart(2, '0');
@@ -96,14 +114,11 @@ const AdminCalendar = ({ supabase }) => {
 
   useEffect(() => {
     fetchCalendarData();
-  }, [currentWeekOffset]);
+  }, [baseDate]);
 
-  // 3. ACTIONS: OPEN, CLOSE, OR CANCEL BLOCKS
+  // --- 3. MODAL ACTIONS ---
   const handleOpenBlock = async () => {
-    if (!selectedTeacherId) {
-      alert("Debes asignar un profesor a este bloque.");
-      return;
-    }
+    if (!selectedTeacherId) return alert("Debes asignar un profesor.");
     setIsProcessing(true);
     try {
       const year = selectedSlot.date.getFullYear();
@@ -113,8 +128,8 @@ const AdminCalendar = ({ supabase }) => {
       const [time, modifier] = selectedSlot.timeStr.split(' ');
       let [hours, minutes] = time.split(':');
       hours = parseInt(hours, 10);
-      if (hours === 12 && modifier === 'AM') hours = 0;
-      if (hours !== 12 && modifier === 'PM') hours += 12;
+      if (hours === 12 && modifier.toLowerCase() === 'am') hours = 0;
+      if (hours !== 12 && modifier.toLowerCase() === 'pm') hours += 12;
       
       const finalTimestamp = new Date(year, month, date, hours, parseInt(minutes, 10), 0).toISOString();
 
@@ -129,12 +144,10 @@ const AdminCalendar = ({ supabase }) => {
       });
       
       if (error) throw error;
-
       await fetchCalendarData();
       closeSlotModal();
     } catch (error) {
-      console.error(error);
-      alert("Error al abrir el bloque. Mira la consola para detalles.");
+      alert("Error al abrir el bloque.");
     } finally {
       setIsProcessing(false);
     }
@@ -154,9 +167,7 @@ const AdminCalendar = ({ supabase }) => {
   };
 
   const handleCancelBooking = async () => {
-    const confirmCancel = window.confirm("¿Estás seguro de cancelar esta reserva? El bloque volverá a estar disponible.");
-    if (!confirmCancel) return;
-    
+    if (!window.confirm("¿Cancelar reserva? El bloque volverá a estar disponible.")) return;
     setIsProcessing(true);
     try {
       await supabase.from('live_sessions').update({
@@ -179,112 +190,187 @@ const AdminCalendar = ({ supabase }) => {
     });
     if (!currentData && teachers.length > 0) {
       setSelectedTeacherId(teachers[0].id);
-      setSelectedClassType('Unit Class');
+      // Smart default based on active tab
+      setSelectedClassType(activeTab === 'SOCIALS' ? 'Social Activity' : activeTab === 'TUTORING' ? '1-on-1 Tutoring' : 'Unit Class');
     }
   };
 
   const closeSlotModal = () => setSelectedSlot(null);
 
-  const getTypeColor = (type) => {
-    if (type === '1-on-1 Tutoring') return 'text-orange-400';
-    if (type === 'Social Activity') return 'text-purple-400';
-    return 'text-[#fcd34d]';
+  // Dynamic slot styling based on class type
+  const getSlotStyle = (slotData, isHover) => {
+    if (!slotData) return isHover ? 'bg-white/10 text-white border-white/20' : 'bg-[#1a2333] text-white/40 border-white/5';
+    
+    if (slotData.status === 'booked' || slotData.status === 'completed') {
+      if (slotData.class_type === 'Unit Class') return 'bg-[#fcd34d] text-black font-black border-[#fcd34d] shadow-[0_0_15px_rgba(252,211,77,0.3)]';
+      if (slotData.class_type === '1-on-1 Tutoring') return 'bg-[#3b82f6] text-white font-black border-[#3b82f6] shadow-[0_0_15px_rgba(59,130,246,0.3)]';
+      if (slotData.class_type === 'Social Activity') return 'bg-[#a855f7] text-white font-black border-[#a855f7] shadow-[0_0_15px_rgba(168,85,247,0.3)]';
+    }
+    
+    return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
   };
 
   return (
-    <div className="bg-white/5 backdrop-blur-xl rounded-[30px] shadow-2xl border border-white/10 p-6 md:p-10 w-full animate-fade-in relative overflow-hidden font-montserrat">
-      
-      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-[#fcd34d]/5 blur-[100px] rounded-full pointer-events-none"></div>
+    <div className="w-full min-h-screen p-6 md:p-10 font-montserrat flex flex-col xl:flex-row gap-8 animate-fade-in relative">
+      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-[#fcd34d]/5 blur-[120px] rounded-full pointer-events-none z-0"></div>
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 border-b border-white/10 pb-6 relative z-10 gap-4">
-        <div>
-          <h2 className="text-2xl md:text-3xl font-black text-white uppercase tracking-widest drop-shadow-md">CONTROL DE CALENDARIO</h2>
-          <p className="text-sm text-white/50 font-medium mt-2">Gestiona la disponibilidad de profesores y las reservas de los estudiantes.</p>
-        </div>
+      {/* LEFT COLUMN: Stats Panel */}
+      <div className="w-full xl:w-1/4 flex flex-col gap-6 relative z-10">
+        <h1 className="text-3xl font-black text-white tracking-widest uppercase mb-2">CALENDARS</h1>
         
-        <div className="flex bg-black/40 rounded-xl border border-white/10 p-1">
-          <button onClick={() => setCurrentWeekOffset(prev => prev - 1)} className="px-4 py-2 text-white/50 hover:text-white transition-colors">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
-          </button>
-          <div className="px-4 py-2 text-xs font-black text-[#fcd34d] uppercase tracking-widest flex items-center border-x border-white/10">
-            SEMANA {currentWeekOffset === 0 ? 'ACTUAL' : currentWeekOffset > 0 ? `+${currentWeekOffset}` : currentWeekOffset}
+        {/* Ring Chart Card */}
+        <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 flex flex-col items-center shadow-xl">
+          <div className="relative w-32 h-32 flex items-center justify-center mb-4">
+            <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#ffffff10" strokeWidth="8" />
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#fcd34d" strokeWidth="8" strokeDasharray="251" strokeDashoffset="25" className="drop-shadow-[0_0_8px_rgba(252,211,77,0.5)]" />
+            </svg>
+            <span className="absolute text-3xl font-black text-white">90%</span>
           </div>
-          <button onClick={() => setCurrentWeekOffset(prev => prev + 1)} className="px-4 py-2 text-white/50 hover:text-white transition-colors">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+          <p className="text-xs font-black text-white uppercase tracking-widest text-center">STUDENTS BOOKED</p>
+        </div>
+
+        {/* Session Stats Card */}
+        <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 shadow-xl flex-1 flex flex-col">
+          <h3 className="text-xl font-bold text-white mb-6">Session stats</h3>
+          <ul className="space-y-5 flex-1">
+            {[
+              { d: 'Aug 15: 45 minutes', c: 'bg-emerald-400' },
+              { d: 'Aug 18: 44 minutes', c: 'bg-yellow-400' },
+              { d: 'Aug 25: 46 minutes', c: 'bg-yellow-400' },
+              { d: 'Aug 15: 40 minutes', c: 'bg-red-400' }
+            ].map((stat, i) => (
+              <li key={i} className="flex items-center justify-between text-sm text-white/70">
+                <div className="flex items-center gap-3">
+                  <svg className="w-4 h-4 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                  {stat.d}
+                </div>
+                <div className={`w-2 h-2 rounded-full ${stat.c}`}></div>
+              </li>
+            ))}
+          </ul>
+          <button className="w-full mt-8 py-4 bg-[#f8fafc] hover:bg-white text-[#0f172a] rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 transition-colors shadow-lg">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+            REQUEST SUBSTITUTE
           </button>
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-6 mb-6 px-2 relative z-10">
-        <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-white/5 border border-white/20"></div><span className="text-[10px] text-white/50 font-bold uppercase tracking-widest">Inactivo / Oculto</span></div>
-        <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-[#fcd34d] shadow-[0_0_8px_rgba(252,211,77,0.5)]"></div><span className="text-[10px] text-[#fcd34d] font-bold uppercase tracking-widest">Disponible</span></div>
-        <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div><span className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest">Reservada</span></div>
-      </div>
+      {/* RIGHT COLUMN: The Interactive Calendar */}
+      <div className="w-full xl:w-3/4 bg-[#111827]/80 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] shadow-2xl flex flex-col relative z-10 overflow-hidden">
+        
+        {/* Controls Header */}
+        <div className="flex flex-col xl:flex-row justify-between items-center p-6 lg:p-8 border-b border-white/10 gap-6">
+          
+          {/* Tabs & Teacher Filter */}
+          <div className="flex flex-col md:flex-row items-center gap-4 w-full xl:w-auto">
+            <div className="flex gap-2 bg-black/40 p-1.5 rounded-full border border-white/5 overflow-x-auto w-full md:w-auto custom-scrollbar">
+              {['OVERALL', 'LIVE LABS', 'TUTORING', 'SOCIALS'].map(tab => (
+                <button 
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-4 lg:px-6 py-2.5 rounded-full text-[10px] lg:text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === tab ? 'bg-white/10 text-white shadow-md' : 'text-white/40 hover:text-white/80'}`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+            
+            {/* Teacher Specific Filter */}
+            <select
+              value={filterTeacherId}
+              onChange={(e) => setFilterTeacherId(e.target.value)}
+              className="bg-black/40 text-[10px] lg:text-xs font-black uppercase tracking-widest text-white/70 px-4 py-3 rounded-full border border-white/10 outline-none w-full md:w-auto appearance-none text-center hover:bg-white/5 transition-colors cursor-pointer"
+            >
+              <option value="ALL">TODOS LOS PROFESORES</option>
+              {teachers.map(t => (
+                <option key={t.id} value={t.id} className="text-slate-900">{t.first_name} {t.last_name}</option>
+              ))}
+            </select>
+          </div>
+          
+          {/* Week & Month Toggles */}
+          <div className="flex items-center justify-center gap-4 lg:gap-6 w-full xl:w-auto">
+            <div className="flex items-center gap-2 lg:gap-3">
+              <button onClick={() => handleWeekChange(-1)} className="text-white/40 hover:text-white transition-colors p-1"><svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg></button>
+              <span className="text-[10px] lg:text-xs font-black text-white uppercase tracking-widest min-w-[70px] text-center">SEMANA</span>
+              <button onClick={() => handleWeekChange(1)} className="text-white/40 hover:text-white transition-colors p-1"><svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg></button>
+            </div>
+            <div className="w-px h-6 bg-white/10"></div>
+            <div className="flex items-center gap-2 lg:gap-3">
+              <button onClick={() => handleMonthChange(-1)} className="text-white/40 hover:text-white transition-colors p-1"><svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg></button>
+              <span className="text-[10px] lg:text-xs font-black text-white uppercase tracking-widest min-w-[90px] text-center">{currentMonthName}</span>
+              <button onClick={() => handleMonthChange(1)} className="text-white/40 hover:text-white transition-colors p-1"><svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg></button>
+            </div>
+          </div>
+        </div>
 
-      <div className="w-full overflow-x-auto custom-scrollbar pb-4 relative z-10">
-        {/* BUG FIX: Added a dedicated 80px Y-Axis column to prevent text clipping */}
-        <div className="min-w-[900px] grid grid-cols-[80px_repeat(7,_1fr)] gap-3">
-          
-          <div className="invisible"></div> {/* Top-left empty corner */}
-          
+        {/* Fixed Day Headers (Outside the scroll!) */}
+        <div className="grid grid-cols-7 gap-3 px-6 lg:px-8 py-4 bg-white/5 border-b border-white/5">
           {dayNames.map((day, idx) => (
-            <div key={day} className="flex flex-col items-center bg-[#08203e]/80 py-3 rounded-xl border border-white/10 shadow-sm backdrop-blur-md">
-              <span className="text-xs font-black text-white tracking-widest">{day}</span>
-              <span className="text-[10px] font-bold text-[#fcd34d]">{weekDates[idx].getDate()}/{weekDates[idx].getMonth()+1}</span>
+            <div key={day} className="flex items-center justify-center gap-2">
+              <span className="text-[11px] font-bold text-white/50 tracking-widest">{day}</span>
+              <span className="text-[11px] font-black text-white">{weekDates[idx].getDate()}</span>
             </div>
           ))}
+        </div>
 
-          {times.map((time, tIdx) => (
-            <React.Fragment key={time}>
-              {/* Y-Axis Time Label */}
-              <div className="flex items-center justify-end pr-4 text-[11px] font-black text-white/50 tracking-wider">
-                {time}
-              </div>
-
-              {/* X-Axis Day Slots */}
-              {dayNames.map((_, dIdx) => {
-                const dateStr = getLocalDateString(weekDates[dIdx]);
-                const slotData = sessions.find(s => s.session_date === dateStr && s.time_slot === time);
-                
-                let bgClass = "bg-white/5 hover:bg-white/10 border-white/10 text-white/30";
-                let content = null;
-
-                if (slotData?.status === 'available') {
-                  bgClass = "bg-[#fcd34d] hover:bg-[#fcd34d]/90 border-[#fcd34d] text-[#08203e] shadow-[0_0_15px_rgba(252,211,77,0.3)] z-10";
-                  content = <span className="text-[10px] font-black tracking-widest uppercase">Disponible</span>;
-                } else if (slotData?.status === 'booked' || slotData?.status === 'completed') {
-                  bgClass = "bg-emerald-500/20 hover:bg-emerald-500/30 border-emerald-500/50 text-emerald-300 shadow-[inset_0_0_15px_rgba(16,185,129,0.1)] z-10";
-                  content = (
-                    <div className="flex flex-col items-center justify-center text-center leading-tight p-1 overflow-hidden">
-                      <span className="text-[10px] font-black truncate w-full">{slotData.student?.first_name || slotData.student?.email?.split('@')[0] || 'Estudiante'}</span>
-                      <span className="text-[8px] opacity-80 mt-1 truncate w-full">U{slotData.unit || '?'} • {slotData.teacher?.first_name || 'Prof.'}</span>
+        {/* Scrollable Time Grid */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 lg:p-8">
+          <div className="grid grid-cols-7 gap-3 min-w-[700px]">
+            {times.map((time, tIdx) => (
+              <React.Fragment key={time}>
+                {dayNames.map((_, dIdx) => {
+                  const dateStr = getLocalDateString(weekDates[dIdx]);
+                  
+                  // THE FIX: The Grid now filters what it renders based on the Tabs and Teacher Dropdown
+                  const slotData = sessions.find(s => {
+                    if (s.session_date !== dateStr || s.time_slot !== time) return false;
+                    
+                    if (activeTab === 'LIVE LABS' && s.class_type !== 'Unit Class') return false;
+                    if (activeTab === 'TUTORING' && s.class_type !== '1-on-1 Tutoring') return false;
+                    if (activeTab === 'SOCIALS' && s.class_type !== 'Social Activity') return false;
+                    
+                    if (filterTeacherId !== 'ALL' && s.teacher_id !== filterTeacherId) return false;
+                    
+                    return true;
+                  });
+                  
+                  return (
+                    <div 
+                      key={`${dIdx}-${tIdx}`} 
+                      onClick={() => handleSlotClick(dIdx, tIdx, slotData)}
+                      className={`h-16 rounded-xl border flex flex-col items-center justify-center cursor-pointer transition-all relative group ${getSlotStyle(slotData, false)}`}
+                    >
+                      {/* Only show the time if the slot is empty, otherwise show the student info */}
+                      {!slotData ? (
+                        <span className="text-[11px] tracking-wider z-10 pointer-events-none">{time}</span>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center text-center leading-tight p-1 overflow-hidden z-10 pointer-events-none">
+                          <span className="text-[10px] font-black truncate w-full">{slotData.student?.first_name || 'Estudiante'}</span>
+                          <span className="text-[8px] opacity-80 mt-1 truncate w-full">U{slotData.unit || '?'} • {slotData.teacher?.first_name || 'Prof.'}</span>
+                        </div>
+                      )}
+                      
+                      {/* Hover Overlay for Empty Slots */}
+                      {!slotData && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-white/10 opacity-0 group-hover:opacity-100 rounded-xl transition-opacity">
+                           <span className="text-[9px] font-black text-white tracking-widest">+ ABRIR</span>
+                        </div>
+                      )}
                     </div>
                   );
-                }
-
-                return (
-                  <div 
-                    key={`${dIdx}-${tIdx}`} 
-                    onClick={() => handleSlotClick(dIdx, tIdx, slotData)}
-                    className={`h-20 flex items-center justify-center border rounded-xl transition-all cursor-pointer relative group ${bgClass}`}
-                  >
-                    {content}
-                    {!slotData && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl backdrop-blur-sm">
-                        <span className="text-white text-[10px] font-black tracking-widest">+ ABRIR</span>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </React.Fragment>
-          ))}
+                })}
+              </React.Fragment>
+            ))}
+          </div>
         </div>
       </div>
 
+      {/* --- THE MODAL --- */}
       {selectedSlot && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-[#070b19]/95 border border-white/20 rounded-[2rem] shadow-2xl w-full max-w-md p-8 relative overflow-hidden">
+          <div className="bg-[#070b19] border border-white/20 rounded-[2rem] shadow-2xl w-full max-w-md p-8 relative">
             <button onClick={closeSlotModal} className="absolute top-6 right-6 text-white/50 hover:text-white"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
             
             <h3 className="text-xl font-black text-white uppercase tracking-widest mb-1">
@@ -292,81 +378,74 @@ const AdminCalendar = ({ supabase }) => {
             </h3>
             <p className="text-[#fcd34d] font-black text-2xl tracking-widest mb-6">{selectedSlot.timeStr}</p>
 
+            {/* Booked State */}
             {selectedSlot.data?.status === 'booked' || selectedSlot.data?.status === 'completed' ? (
               <div className="space-y-4">
-                <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4">
-                  <p className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest mb-1">Estado</p>
-                  <p className="text-sm font-black text-white uppercase">{selectedSlot.data.status === 'completed' ? 'Clase Completada' : 'Clase Reservada'}</p>
+                <div className="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
+                  <p className="text-[10px] text-white/50 font-bold uppercase tracking-widest mb-1">Estado</p>
+                  <p className="text-sm font-black text-emerald-400 uppercase">{selectedSlot.data.status === 'completed' ? 'Clase Completada' : 'Clase Reservada'}</p>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white/10 border border-white/20 rounded-xl p-4">
+                  <div className="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
                     <p className="text-[10px] text-white/50 font-bold uppercase tracking-widest mb-1">Estudiante</p>
-                    <p className="text-sm font-bold text-white truncate">{selectedSlot.data.student?.first_name || selectedSlot.data.student?.email?.split('@')[0]}</p>
-                    <p className="text-[10px] text-[#fcd34d] font-bold mt-1">UNIDAD {selectedSlot.data.unit || '?'}</p>
+                    <p className="text-sm font-bold text-white truncate">{selectedSlot.data.student?.first_name || 'Sin Nombre'}</p>
                   </div>
-                  <div className="bg-white/10 border border-white/20 rounded-xl p-4">
+                  <div className="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
                     <p className="text-[10px] text-white/50 font-bold uppercase tracking-widest mb-1">Profesor</p>
-                    <p className="text-sm font-bold text-white truncate">{selectedSlot.data.teacher?.first_name || selectedSlot.data.teacher?.email?.split('@')[0]}</p>
-                    <p className={`text-[10px] font-bold mt-1 uppercase ${getTypeColor(selectedSlot.data.class_type)}`}>
-                      {selectedSlot.data.class_type || 'Unit Class'}
-                    </p>
+                    <p className="text-sm font-bold text-white truncate">{selectedSlot.data.teacher?.first_name || 'Sin Asignar'}</p>
                   </div>
                 </div>
-                <button disabled={isProcessing} onClick={handleCancelBooking} className="w-full py-3 mt-4 bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-white font-black text-[10px] uppercase tracking-widest rounded-xl transition-colors border border-red-500/30 disabled:opacity-50">
+                <button disabled={isProcessing} onClick={handleCancelBooking} className="w-full py-3 mt-4 bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-white font-black text-[10px] uppercase tracking-widest rounded-xl transition-colors border border-red-500/30">
                   {isProcessing ? 'Procesando...' : 'Cancelar Reserva'}
                 </button>
               </div>
             ) : selectedSlot.data?.status === 'available' ? (
+              /* Available (Open) State */
               <div className="space-y-6 text-center py-4">
-                <div className="w-16 h-16 bg-[#fcd34d]/20 text-[#fcd34d] rounded-full flex items-center justify-center mx-auto mb-4 border border-[#fcd34d]/50">
+                <div className="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-500/50">
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                 </div>
                 <div>
-                  <h4 className="text-lg font-black text-white uppercase tracking-widest">Bloque Abierto</h4>
+                  <h4 className="text-lg font-black text-white uppercase tracking-widest">Bloque Disponible</h4>
                   <p className="text-xs text-white/60 mt-2">Profesor Asignado: <span className="font-bold text-white">{selectedSlot.data.teacher?.first_name} {selectedSlot.data.teacher?.last_name}</span></p>
-                  <p className={`text-[10px] font-bold mt-1 uppercase ${getTypeColor(selectedSlot.data.class_type)}`}>
-                    Modalidad: {selectedSlot.data.class_type || 'Unit Class'}
-                  </p>
                 </div>
-                <button disabled={isProcessing} onClick={handleCloseBlock} className="w-full py-3.5 bg-white/10 hover:bg-white/20 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all border border-white/20 disabled:opacity-50">
+                <button disabled={isProcessing} onClick={handleCloseBlock} className="w-full py-3.5 bg-white/10 hover:bg-white/20 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all border border-white/20">
                   {isProcessing ? 'Procesando...' : 'Cerrar Disponibilidad'}
                 </button>
               </div>
             ) : (
+              /* Empty (Unopened) State */
               <div className="space-y-4 text-center py-4">
                 <div className="w-16 h-16 bg-white/10 text-white/50 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/20">
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
                 </div>
                 <div>
                   <h4 className="text-lg font-black text-white uppercase tracking-widest mb-1">Bloque Inactivo</h4>
-                  <p className="text-xs text-white/60 mb-6">Configura este bloque para habilitarlo en el calendario.</p>
+                  <p className="text-xs text-white/60 mb-6">Asigna un profesor para abrir este bloque.</p>
                   
                   <div className="flex flex-col gap-3">
                     <select 
                       value={selectedTeacherId} 
                       onChange={(e) => setSelectedTeacherId(e.target.value)}
-                      className="w-full p-3 bg-white/10 border border-white/20 rounded-xl text-xs font-bold text-white uppercase tracking-widest focus:outline-none focus:border-[#fcd34d] appearance-none text-center transition-colors"
+                      className="w-full p-3 bg-white/10 border border-white/20 rounded-xl text-xs font-bold text-white uppercase tracking-widest focus:outline-none focus:border-[#fcd34d] appearance-none text-center"
                     >
                       {teachers.map(t => (
-                        <option key={t.id} value={t.id} className="text-slate-900">
-                          {t.first_name ? `${t.first_name} ${t.last_name || ''}` : t.email?.split('@')[0]}
-                        </option>
+                        <option key={t.id} value={t.id} className="text-slate-900">{t.first_name} {t.last_name}</option>
                       ))}
                     </select>
-
                     <select 
                       value={selectedClassType} 
                       onChange={(e) => setSelectedClassType(e.target.value)}
-                      className="w-full p-3 bg-white/10 border border-white/20 rounded-xl text-xs font-bold text-[#fcd34d] uppercase tracking-widest focus:outline-none focus:border-[#fcd34d] appearance-none text-center transition-colors"
+                      className="w-full p-3 bg-white/10 border border-white/20 rounded-xl text-xs font-bold text-[#fcd34d] uppercase tracking-widest focus:outline-none appearance-none text-center"
                     >
                       <option value="Unit Class" className="text-slate-900">Unit Class (Regular)</option>
                       <option value="1-on-1 Tutoring" className="text-slate-900">1-on-1 Tutoring</option>
-                      <option value="Social Activity" className="text-slate-900">Social Activity (Moderation)</option>
+                      <option value="Social Activity" className="text-slate-900">Social Activity</option>
                     </select>
                   </div>
                 </div>
-                <button disabled={isProcessing} onClick={handleOpenBlock} className="w-full mt-4 py-3.5 bg-[#fcd34d] hover:bg-white text-[#08203e] font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-[0_0_15px_rgba(252,211,77,0.4)] disabled:opacity-50">
-                  {isProcessing ? 'Procesando...' : 'Abrir Bloque (Asignar)'}
+                <button disabled={isProcessing} onClick={handleOpenBlock} className="w-full mt-4 py-3.5 bg-[#fcd34d] hover:bg-white text-[#08203e] font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-[0_0_15px_rgba(252,211,77,0.4)]">
+                  {isProcessing ? 'Procesando...' : 'Abrir Bloque'}
                 </button>
               </div>
             )}
