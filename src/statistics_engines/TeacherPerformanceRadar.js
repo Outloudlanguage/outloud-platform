@@ -53,7 +53,7 @@ const TeacherPerformanceRadar = ({ teacherId = 'default-teacher-id' }) => {
         // 3. Fetch Grading Feedback Speed (<12 Hours Turnaround)
         const { data: gradingData } = await supabase
           .from('student_lesson_progress')
-          .select('completed_at, graded_at') // Requires 'graded_at' column addition
+          .select('completed_at, graded_at') 
           .eq('graded_by', teacherId)
           .not('graded_at', 'is', null);
 
@@ -94,35 +94,34 @@ const TeacherPerformanceRadar = ({ teacherId = 'default-teacher-id' }) => {
   }, [teacherId]);
 
   if (loading) {
-    return <div className="p-6 text-center text-slate-500">Loading metrics...</div>;
+    return <div className="p-6 text-center text-slate-500 font-bold tracking-widest">LOADING METRICS...</div>;
   }
 
   return (
-    // break-inside-avoid prevents the PDF engine from splitting this card across two pages
-    <div className="flex flex-col bg-white rounded-2xl shadow-xl border border-slate-100 p-6 w-full max-w-md break-inside-avoid print:shadow-none print:border-gray-300 print:p-4">
+    <div className="flex flex-col bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 shadow-2xl break-inside-avoid print:bg-white print:border-slate-300 print:shadow-none print:p-4 w-full">
       
       {/* Header */}
-      <div className="mb-4">
-        <h3 className="text-xl font-black tracking-wider uppercase text-slate-800 print:text-black">
+      <div className="mb-6">
+        <h3 className="text-2xl font-black tracking-widest uppercase text-white print:text-black">
           Performance Radar
         </h3>
-        <p className="text-sm font-semibold text-slate-400 print:text-gray-600">
-          Composite Score: <span className="text-blue-600 print:text-black">{compositeScore}/100</span>
+        <p className="text-sm font-bold text-yellow-400 print:text-slate-600 uppercase tracking-wide">
+          Composite Score: <span className="text-white print:text-black">{compositeScore}/100</span>
         </p>
       </div>
 
       {/* Radar Chart */}
-      <div className="h-64 w-full mb-4">
+      <div className="h-64 w-full mb-6">
         <ResponsiveContainer width="100%" height="100%">
           <RadarChart cx="50%" cy="50%" outerRadius="70%" data={metrics}>
-            <PolarGrid stroke="#e2e8f0" print:stroke="#cbd5e1" />
+            {/* BUG FIX: Print modifiers safely moved to className */}
+            <PolarGrid stroke="#e2e8f0" className="print:!stroke-slate-300" />
             
             <PolarAngleAxis 
               dataKey="subject" 
-              tick={{ fill: '#475569', fontSize: 12, fontWeight: 600 }} 
+              tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 600 }} 
             />
             
-            {/* Domain strictly locks the axis 0-100 to prevent skewed scaling */}
             <PolarRadiusAxis 
               angle={30} 
               domain={[0, 100]} 
@@ -130,7 +129,6 @@ const TeacherPerformanceRadar = ({ teacherId = 'default-teacher-id' }) => {
               tickCount={6}
             />
             
-            {/* isAnimationActive={false} is critical for immediate PDF generation */}
             <Radar
               name="Teacher Score"
               dataKey="score"
@@ -140,15 +138,19 @@ const TeacherPerformanceRadar = ({ teacherId = 'default-teacher-id' }) => {
               isAnimationActive={false} 
             />
             
-            {/* Hidden in print mode to prevent hover artifacts */}
             <Tooltip wrapperClassName="print:hidden" />
           </RadarChart>
         </ResponsiveContainer>
       </div>
 
-      {/* Dynamic Non-Staff Description Footer */}
-      <div className="mt-auto pt-4 border-t border-slate-100 print:border-gray-300">
-        <p className="text-xs text-slate-500 leading-relaxed print:text-black print:text-[10px]">
+      {/* Dynamic Narrative Footer */}
+      <div className="mt-auto pt-6 border-t border-white/10 print:border-slate-300 flex items-start gap-4">
+        <div className="bg-black/40 print:bg-slate-100 p-3 rounded-xl flex-shrink-0">
+          <svg className="w-6 h-6 text-white print:text-slate-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <p className="text-sm leading-relaxed text-slate-300 print:text-slate-800 font-medium">
           This chart evaluates the teacher's operational quality. <strong>'Class Punctuality'</strong> measures strict adherence to schedule, <strong>'Student Pass Rate'</strong> reflects academic success, and <strong>'Feedback Speed'</strong> ensures students get help within 12 hours. This teacher's overall Composite Score is <strong>{compositeScore}/100</strong>.
         </p>
       </div>
