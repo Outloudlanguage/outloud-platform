@@ -136,7 +136,7 @@ const LiveClassAttendanceChart = () => {
       <div className="w-full h-72 mb-6">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: -20 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" vertical={false} print:stroke="#e2e8f0" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" vertical={false} className="print:!stroke-slate-200" />
             
             <XAxis 
               dataKey="week" 

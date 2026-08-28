@@ -118,7 +118,7 @@ const PacingScatterPlotModule = () => {
       <div className="h-64 w-full mb-4">
         <ResponsiveContainer width="100%" height="100%">
           <ScatterChart margin={{ top: 10, right: 10, bottom: 0, left: -20 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" print:stroke="#e2e8f0" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" className="print:!stroke-slate-200" />
             
             <XAxis 
               type="number" 

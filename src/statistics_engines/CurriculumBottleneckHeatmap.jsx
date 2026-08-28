@@ -79,7 +79,7 @@ const CurriculumBottleneckHeatmap = () => {
       <div className="w-full h-72 mb-6">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: -20 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" vertical={false} print:stroke="#e2e8f0" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" vertical={false} className="print:!stroke-slate-200" />
             <XAxis dataKey="title" tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 600 }} axisLine={{ stroke: '#475569' }} tickLine={{ stroke: '#475569' }} interval={0} angle={-15} textAnchor="end" />
             <YAxis tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 600 }} axisLine={{ stroke: '#475569' }} tickLine={{ stroke: '#475569' }} />
             <Tooltip wrapperClassName="print:hidden" contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: '#fff' }} cursor={{ fill: '#ffffff10' }} />

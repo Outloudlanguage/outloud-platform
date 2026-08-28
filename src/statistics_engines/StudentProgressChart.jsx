@@ -109,7 +109,7 @@ const StudentProgressChart = ({ studentId = 'default-student-id' }) => {
       <div className="w-full h-72 mb-6">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: -20 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" print:stroke="#e2e8f0" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" className="print:!stroke-slate-200" />
             <XAxis 
               dataKey="month" 
               tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 600 }} 
