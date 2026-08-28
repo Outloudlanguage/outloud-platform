@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../SupabaseClient';
+import { supabase } from '../../../SupabaseClient';
 
 const AdminCalendar = () => {
   // Navigation & Filter States
