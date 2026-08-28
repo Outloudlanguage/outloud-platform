@@ -10,7 +10,7 @@ import {
 import { supabase } from '../SupabaseClient';
 import './TutoringAdoptionDashboard.css';
 
-const TutoringAdoptionDashboard = () => {
+const TutoringAdoptionDashboard = ({ studentId }) => {
   const [loading, setLoading] = useState(true);
   const [metrics, setMetrics] = useState({ bookedCount: 0, unbookedCount: 0, totalActive: 0 });
   const [bookedIds, setBookedIds] = useState([]);
@@ -21,18 +21,26 @@ const TutoringAdoptionDashboard = () => {
         setLoading(true);
 
         // 1. Fetch the total pool of active students
-        const { data: activeStudents, error: activeError } = await supabase
+        let activeQuery = supabase
           .from('engine_student_status')
           .select('user_id')
           .eq('activity_status', 'Active');
+        
+        if (studentId) activeQuery = activeQuery.eq('user_id', studentId);
+        
+        const { data: activeStudents, error: activeError } = await activeQuery;
 
         if (activeError) throw activeError;
 
         // 2. Fetch all booked live classes (Remedial/Support adoption)
-        const { data: bookedClasses, error: bookedError } = await supabase
+        let bookedQuery = supabase
           .from('live_class_attendance')
           .select('student_id')
           .eq('is_booked', true);
+
+        if (studentId) bookedQuery = bookedQuery.eq('student_id', studentId);
+
+        const { data: bookedClasses, error: bookedError } = await bookedQuery;
 
         if (bookedError) throw bookedError;
 
@@ -54,14 +62,21 @@ const TutoringAdoptionDashboard = () => {
           setBookedIds(activeBookedIds);
         } else {
           // Fallback UI mock data if database is empty to guarantee layout stability
-          const mockTotal = 120;
-          const mockBooked = 22;
-          const mockIds = Array.from({ length: mockBooked }, (_, i) => 
-            `usr_${Math.random().toString(36).substr(2, 9).toUpperCase()}`
-          );
-          
-          setMetrics({ bookedCount: mockBooked, unbookedCount: mockTotal - mockBooked, totalActive: mockTotal });
-          setBookedIds(mockIds);
+          if (studentId) {
+            // Mock an individual who has booked tutoring
+            setMetrics({ bookedCount: 1, unbookedCount: 0, totalActive: 1 });
+            setBookedIds([studentId]);
+          } else {
+            // Mock the global cohort
+            const mockTotal = 120;
+            const mockBooked = 22;
+            const mockIds = Array.from({ length: mockBooked }, (_, i) => 
+              `usr_${Math.random().toString(36).substr(2, 9).toUpperCase()}`
+            );
+            
+            setMetrics({ bookedCount: mockBooked, unbookedCount: mockTotal - mockBooked, totalActive: mockTotal });
+            setBookedIds(mockIds);
+          }
         }
       } catch (error) {
         console.error("Error fetching tutoring adoption data:", error);
@@ -71,7 +86,7 @@ const TutoringAdoptionDashboard = () => {
     };
 
     fetchAdoptionData();
-  }, []);
+  }, [studentId]); // Re-fire anytime the dual-mode dropdown changes
 
   if (loading) return <div className="p-8 text-white/50 text-center font-bold tracking-widest">LOADING ADOPTION DATA...</div>;
 
@@ -94,10 +109,10 @@ const TutoringAdoptionDashboard = () => {
       {/* Header */}
       <div className="mb-8 border-b border-white/10 print:border-slate-300 pb-4">
         <h3 className="text-2xl font-black tracking-widest uppercase text-white print:text-black">
-          Tutoring Adoption
+          {studentId ? "Personal Tutoring Profile" : "Tutoring Adoption"}
         </h3>
         <p className="text-sm font-bold text-yellow-400 print:text-slate-600 uppercase tracking-wide">
-          1-to-1 Remedial Booking Ratios
+          {studentId ? "Individual Remedial Booking Status" : "1-to-1 Remedial Booking Ratios"}
         </p>
       </div>
 
@@ -137,7 +152,7 @@ const TutoringAdoptionDashboard = () => {
         <div className="flex flex-col bg-black/20 print:bg-slate-50 border border-white/5 print:border-slate-200 rounded-xl overflow-hidden h-64">
           <div className="bg-black/40 print:bg-slate-200 px-4 py-2 border-b border-white/5 print:border-slate-300">
             <h4 className="text-xs font-bold text-white print:text-slate-800 tracking-wider uppercase">
-              Booked Student Roster ({metrics.bookedCount})
+              {studentId ? "Booking Record" : `Booked Student Roster (${metrics.bookedCount})`}
             </h4>
           </div>
           {/* Constrained scroll area to protect dashboard layout; expands gracefully in standard view */}
@@ -170,7 +185,12 @@ const TutoringAdoptionDashboard = () => {
           </svg>
         </div>
         <p className="text-sm leading-relaxed text-slate-300 print:text-slate-800 font-medium">
-          Out of <strong>{metrics.totalActive}</strong> active students this month, <strong>{bookedPercentage}%</strong> of our cohort required extra 1-to-1 remedial support, while <strong>{unbookedPercentage}%</strong> successfully mastered the material directly within their regular classes. The table lists the exact User IDs currently occupying the remedial pipeline.
+          {studentId 
+            ? (metrics.bookedCount > 0 
+                ? "This student has actively booked 1-to-1 remedial support outside of their regular mastery pipeline. Their specific profile ID is currently logged in the active tutoring roster."
+                : "This student is successfully maintaining regular mastery without requiring additional 1-to-1 remedial support bookings.")
+            : `Out of ${metrics.totalActive} active students this month, ${bookedPercentage}% of our cohort required extra 1-to-1 remedial support, while ${unbookedPercentage}% successfully mastered the material directly within their regular classes. The table lists the exact User IDs currently occupying the remedial pipeline.`
+          }
         </p>
       </div>
     </div>

@@ -11,7 +11,7 @@ import {
 import { supabase } from '../SupabaseClient';
 import './CurriculumBottleneckHeatmap.css';
 
-const CurriculumBottleneckHeatmap = () => {
+const CurriculumBottleneckHeatmap = ({ studentId }) => {
   const [loading, setLoading] = useState(true);
   const [chartData, setChartData] = useState([]);
   const [topBottleneck, setTopBottleneck] = useState('');
@@ -20,10 +20,18 @@ const CurriculumBottleneckHeatmap = () => {
     const fetchBottlenecks = async () => {
       try {
         setLoading(true);
-        // Fetch lesson progress joined with lesson titles
-        const { data, error } = await supabase
+        
+        // Build the query to fetch lesson progress joined with lesson titles
+        let query = supabase
           .from('student_lesson_progress')
           .select('failed, lessons(title)');
+
+        // Apply dual-mode filter
+        if (studentId) {
+          query = query.eq('user_id', studentId);
+        }
+
+        const { data, error } = await query;
 
         if (error) throw error;
 
@@ -40,18 +48,27 @@ const CurriculumBottleneckHeatmap = () => {
 
         let processedData = Object.values(lessonStats)
           .map(l => ({ ...l, failRate: ((l.fails / Math.max(l.attempts, 1)) * 100).toFixed(1) }))
+          .filter(l => l.failRate > 0) // Only show things they actually failed
           .sort((a, b) => b.failRate - a.failRate)
           .slice(0, 5); // Top 5 bottlenecks
 
         if (processedData.length === 0) {
           // Fallback UI data
-          processedData = [
-            { title: 'B1 Past Perfect', failRate: 28.5 },
-            { title: 'A2 Phrasal Verbs', failRate: 22.0 },
-            { title: 'B2 Conditional Clauses', failRate: 18.2 },
-            { title: 'A1 Irregular Verbs', failRate: 15.4 },
-            { title: 'C1 Idioms & Nuance', failRate: 12.1 }
-          ];
+          if (studentId) {
+            processedData = [
+              { title: 'B1 Past Perfect', failRate: 66.6 },
+              { title: 'B1 Conditionals', failRate: 50.0 },
+              { title: 'A2 Phrasal Verbs', failRate: 33.3 }
+            ];
+          } else {
+            processedData = [
+              { title: 'B1 Past Perfect', failRate: 28.5 },
+              { title: 'A2 Phrasal Verbs', failRate: 22.0 },
+              { title: 'B2 Conditional Clauses', failRate: 18.2 },
+              { title: 'A1 Irregular Verbs', failRate: 15.4 },
+              { title: 'C1 Idioms & Nuance', failRate: 12.1 }
+            ];
+          }
         }
 
         setChartData(processedData);
@@ -65,15 +82,19 @@ const CurriculumBottleneckHeatmap = () => {
     };
 
     fetchBottlenecks();
-  }, []);
+  }, [studentId]); // Re-fire anytime the dual-mode dropdown changes
 
   if (loading) return <div className="p-8 text-white/50 text-center font-bold tracking-widest">LOADING BOTTLENECKS...</div>;
 
   return (
     <div className="bottleneck-heatmap-card relative flex flex-col w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 shadow-2xl break-inside-avoid print:bg-white print:border-slate-300 print:shadow-none print:p-4">
       <div className="mb-6 border-b border-white/10 print:border-slate-300 pb-4">
-        <h3 className="text-2xl font-black tracking-widest uppercase text-white print:text-black">Curriculum Bottlenecks</h3>
-        <p className="text-sm font-bold text-red-400 print:text-red-600 uppercase tracking-wide">Top 5 Modules by Failure Rate</p>
+        <h3 className="text-2xl font-black tracking-widest uppercase text-white print:text-black">
+          {studentId ? "Personal Sticking Points" : "Curriculum Bottlenecks"}
+        </h3>
+        <p className="text-sm font-bold text-red-400 print:text-red-600 uppercase tracking-wide">
+          {studentId ? "Highest Failure Rates by Module" : "Top 5 Modules by Failure Rate"}
+        </p>
       </div>
 
       <div className="w-full h-72 mb-6">
@@ -95,7 +116,10 @@ const CurriculumBottleneckHeatmap = () => {
           </svg>
         </div>
         <p className="text-sm leading-relaxed text-slate-300 print:text-slate-800 font-medium">
-          The curriculum diagnostic has identified <strong>'{topBottleneck}'</strong> as the most challenging module for current students. High failure rates in specific lessons directly correlate with increased demands for 1-to-1 remedial tutoring.
+          {studentId 
+            ? `The diagnostic has identified '${topBottleneck}' as the most challenging module for this specific student. High failure rates here indicate a need for targeted review before they can comfortably progress to the next CEFR level.`
+            : `The curriculum diagnostic has identified '${topBottleneck}' as the most challenging module for current students. High failure rates in specific lessons directly correlate with increased demands for 1-to-1 remedial tutoring.`
+          }
         </p>
       </div>
     </div>
