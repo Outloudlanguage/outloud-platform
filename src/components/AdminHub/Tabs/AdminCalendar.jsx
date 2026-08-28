@@ -13,7 +13,6 @@ const AdminCalendar = ({ supabase }) => {
   const [selectedTeacherId, setSelectedTeacherId] = useState('');
   const [selectedClassType, setSelectedClassType] = useState('Unit Class');
 
-  // THE FIX: Added 'DOM' (Sunday) to the days array
   const dayNames = ['LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB', 'DOM'];
   const times = ['9:00 AM', '11:00 AM', '1:00 PM', '3:00 PM', '6:00 PM', '9:00 PM'];
 
@@ -21,13 +20,11 @@ const AdminCalendar = ({ supabase }) => {
   const getWeekDates = (offsetWeeks) => {
     const today = new Date();
     const currentDay = today.getDay();
-    // Keeps Monday as the start of the week (distance to Monday)
     const distanceToMonday = currentDay === 0 ? -6 : 1 - currentDay;
     const monday = new Date(today);
     monday.setDate(today.getDate() + distanceToMonday + (offsetWeeks * 7));
 
     const dates = [];
-    // THE FIX: Loop now runs 7 times to include Sunday
     for (let i = 0; i < 7; i++) {
       const d = new Date(monday);
       d.setDate(monday.getDate() + i);
@@ -46,28 +43,35 @@ const AdminCalendar = ({ supabase }) => {
   // 2. FETCH DATA FROM SUPABASE
   const fetchCalendarData = async () => {
     try {
+      // Fetch Teachers using the 'users' table
       const { data: teachersData } = await supabase
-        .from('profiles')
-        .select('id, first_name, last_name')
-        .eq('role', 'Teacher');
+        .from('users')
+        .select('id, first_name, last_name, email')
+        .eq('role', 'teacher');
       
       if (teachersData) {
         setTeachers(teachersData);
         if (teachersData.length > 0) setSelectedTeacherId(teachersData[0].id);
       }
 
+      // Isolate query to ONLY the visible 7 days
+      const startDate = weekDates[0];
+      const endDate = new Date(weekDates[6]);
+      endDate.setHours(23, 59, 59, 999);
+
       const { data: sessionsData, error } = await supabase
         .from('live_sessions')
         .select(`
           *,
-          student:profiles!student_id(first_name, last_name),
-          teacher:profiles!teacher_id(first_name, last_name)
-        `);
+          student:users!student_id(first_name, last_name, email),
+          teacher:users!teacher_id(first_name, last_name, email)
+        `)
+        .gte('scheduled_at', startDate.toISOString())
+        .lte('scheduled_at', endDate.toISOString());
         
       if (error) throw error;
 
       if (sessionsData) {
-        // Map the single scheduled_at timestamp back into UI-friendly date and time strings
         const mappedSessions = sessionsData.map(session => {
           if (!session.scheduled_at) return session;
           
@@ -102,7 +106,6 @@ const AdminCalendar = ({ supabase }) => {
     }
     setIsProcessing(true);
     try {
-      // Convert the selected UI Date and Time back into a strict DB Timestamp
       const year = selectedSlot.date.getFullYear();
       const month = selectedSlot.date.getMonth();
       const date = selectedSlot.date.getDate();
@@ -219,11 +222,13 @@ const AdminCalendar = ({ supabase }) => {
       </div>
 
       <div className="w-full overflow-x-auto custom-scrollbar pb-4 relative z-10">
-        {/* THE FIX: Adjusted min-width and changed grid to 7 columns */}
-        <div className="min-w-[800px] grid grid-cols-7 gap-2">
+        {/* BUG FIX: Added a dedicated 80px Y-Axis column to prevent text clipping */}
+        <div className="min-w-[900px] grid grid-cols-[80px_repeat(7,_1fr)] gap-3">
+          
+          <div className="invisible"></div> {/* Top-left empty corner */}
           
           {dayNames.map((day, idx) => (
-            <div key={day} className="flex flex-col items-center bg-[#08203e]/80 py-3 rounded-t-xl border border-white/10 shadow-sm backdrop-blur-md">
+            <div key={day} className="flex flex-col items-center bg-[#08203e]/80 py-3 rounded-xl border border-white/10 shadow-sm backdrop-blur-md">
               <span className="text-xs font-black text-white tracking-widest">{day}</span>
               <span className="text-[10px] font-bold text-[#fcd34d]">{weekDates[idx].getDate()}/{weekDates[idx].getMonth()+1}</span>
             </div>
@@ -231,21 +236,28 @@ const AdminCalendar = ({ supabase }) => {
 
           {times.map((time, tIdx) => (
             <React.Fragment key={time}>
+              {/* Y-Axis Time Label */}
+              <div className="flex items-center justify-end pr-4 text-[11px] font-black text-white/50 tracking-wider">
+                {time}
+              </div>
+
+              {/* X-Axis Day Slots */}
               {dayNames.map((_, dIdx) => {
                 const dateStr = getLocalDateString(weekDates[dIdx]);
                 const slotData = sessions.find(s => s.session_date === dateStr && s.time_slot === time);
                 
-                let bgClass = "bg-white/5 hover:bg-white/10 border-white/5 text-white/30";
-                let content = time;
+                let bgClass = "bg-white/5 hover:bg-white/10 border-white/10 text-white/30";
+                let content = null;
 
                 if (slotData?.status === 'available') {
                   bgClass = "bg-[#fcd34d] hover:bg-[#fcd34d]/90 border-[#fcd34d] text-[#08203e] shadow-[0_0_15px_rgba(252,211,77,0.3)] z-10";
+                  content = <span className="text-[10px] font-black tracking-widest uppercase">Disponible</span>;
                 } else if (slotData?.status === 'booked' || slotData?.status === 'completed') {
                   bgClass = "bg-emerald-500/20 hover:bg-emerald-500/30 border-emerald-500/50 text-emerald-300 shadow-[inset_0_0_15px_rgba(16,185,129,0.1)] z-10";
                   content = (
-                    <div className="flex flex-col items-center leading-tight">
-                      <span className="text-[8px] font-black">{slotData.student?.first_name || 'Estudiante'}</span>
-                      <span className="text-[7px] opacity-70">U{slotData.unit || '?'} • {slotData.teacher?.first_name || 'Profesor'}</span>
+                    <div className="flex flex-col items-center justify-center text-center leading-tight p-1 overflow-hidden">
+                      <span className="text-[10px] font-black truncate w-full">{slotData.student?.first_name || slotData.student?.email?.split('@')[0] || 'Estudiante'}</span>
+                      <span className="text-[8px] opacity-80 mt-1 truncate w-full">U{slotData.unit || '?'} • {slotData.teacher?.first_name || 'Prof.'}</span>
                     </div>
                   );
                 }
@@ -254,12 +266,12 @@ const AdminCalendar = ({ supabase }) => {
                   <div 
                     key={`${dIdx}-${tIdx}`} 
                     onClick={() => handleSlotClick(dIdx, tIdx, slotData)}
-                    className={`h-16 flex items-center justify-center text-[10px] font-bold tracking-widest border rounded-lg transition-all cursor-pointer relative group ${bgClass}`}
+                    className={`h-20 flex items-center justify-center border rounded-xl transition-all cursor-pointer relative group ${bgClass}`}
                   >
                     {content}
                     {!slotData && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg backdrop-blur-sm">
-                        <span className="text-white text-[8px]">+ ABRIR</span>
+                      <div className="absolute inset-0 flex items-center justify-center bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl backdrop-blur-sm">
+                        <span className="text-white text-[10px] font-black tracking-widest">+ ABRIR</span>
                       </div>
                     )}
                   </div>
@@ -287,14 +299,14 @@ const AdminCalendar = ({ supabase }) => {
                   <p className="text-sm font-black text-white uppercase">{selectedSlot.data.status === 'completed' ? 'Clase Completada' : 'Clase Reservada'}</p>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+                  <div className="bg-white/10 border border-white/20 rounded-xl p-4">
                     <p className="text-[10px] text-white/50 font-bold uppercase tracking-widest mb-1">Estudiante</p>
-                    <p className="text-sm font-bold text-white truncate">{selectedSlot.data.student?.first_name} {selectedSlot.data.student?.last_name}</p>
-                    <p className="text-[10px] text-[#fcd34d] font-bold mt-1">UNIDAD {selectedSlot.data.unit}</p>
+                    <p className="text-sm font-bold text-white truncate">{selectedSlot.data.student?.first_name || selectedSlot.data.student?.email?.split('@')[0]}</p>
+                    <p className="text-[10px] text-[#fcd34d] font-bold mt-1">UNIDAD {selectedSlot.data.unit || '?'}</p>
                   </div>
-                  <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+                  <div className="bg-white/10 border border-white/20 rounded-xl p-4">
                     <p className="text-[10px] text-white/50 font-bold uppercase tracking-widest mb-1">Profesor</p>
-                    <p className="text-sm font-bold text-white truncate">{selectedSlot.data.teacher?.first_name} {selectedSlot.data.teacher?.last_name}</p>
+                    <p className="text-sm font-bold text-white truncate">{selectedSlot.data.teacher?.first_name || selectedSlot.data.teacher?.email?.split('@')[0]}</p>
                     <p className={`text-[10px] font-bold mt-1 uppercase ${getTypeColor(selectedSlot.data.class_type)}`}>
                       {selectedSlot.data.class_type || 'Unit Class'}
                     </p>
@@ -322,7 +334,7 @@ const AdminCalendar = ({ supabase }) => {
               </div>
             ) : (
               <div className="space-y-4 text-center py-4">
-                <div className="w-16 h-16 bg-white/5 text-white/30 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/10">
+                <div className="w-16 h-16 bg-white/10 text-white/50 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/20">
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
                 </div>
                 <div>
@@ -333,21 +345,23 @@ const AdminCalendar = ({ supabase }) => {
                     <select 
                       value={selectedTeacherId} 
                       onChange={(e) => setSelectedTeacherId(e.target.value)}
-                      className="w-full p-3 bg-black/40 border border-white/20 rounded-xl text-xs font-bold text-white uppercase tracking-widest focus:outline-none appearance-none text-center"
+                      className="w-full p-3 bg-white/10 border border-white/20 rounded-xl text-xs font-bold text-white uppercase tracking-widest focus:outline-none focus:border-[#fcd34d] appearance-none text-center transition-colors"
                     >
                       {teachers.map(t => (
-                        <option key={t.id} value={t.id}>{t.first_name} {t.last_name}</option>
+                        <option key={t.id} value={t.id} className="text-slate-900">
+                          {t.first_name ? `${t.first_name} ${t.last_name || ''}` : t.email?.split('@')[0]}
+                        </option>
                       ))}
                     </select>
 
                     <select 
                       value={selectedClassType} 
                       onChange={(e) => setSelectedClassType(e.target.value)}
-                      className="w-full p-3 bg-black/40 border border-[#fcd34d]/50 rounded-xl text-xs font-bold text-[#fcd34d] uppercase tracking-widest focus:outline-none appearance-none text-center"
+                      className="w-full p-3 bg-white/10 border border-white/20 rounded-xl text-xs font-bold text-[#fcd34d] uppercase tracking-widest focus:outline-none focus:border-[#fcd34d] appearance-none text-center transition-colors"
                     >
-                      <option value="Unit Class">Unit Class (Regular)</option>
-                      <option value="1-on-1 Tutoring">1-on-1 Tutoring</option>
-                      <option value="Social Activity">Social Activity (Moderation)</option>
+                      <option value="Unit Class" className="text-slate-900">Unit Class (Regular)</option>
+                      <option value="1-on-1 Tutoring" className="text-slate-900">1-on-1 Tutoring</option>
+                      <option value="Social Activity" className="text-slate-900">Social Activity (Moderation)</option>
                     </select>
                   </div>
                 </div>
