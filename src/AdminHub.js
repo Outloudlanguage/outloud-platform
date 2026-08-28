@@ -19,6 +19,7 @@ import AdminDropdown from './components/ui/AdminDropdown';
 import StudentManagerModal from './components/AdminHub/Tabs/StudentManagerModal'; 
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
+import StatisticsHub from './components/StatisticsHub';
 
 // ==========================================
 // DEDICATED PROVISIONING MODAL
@@ -378,6 +379,7 @@ const NavIconBtn = ({ iconUrl, active, onClick, hasNotification, isProfile }) =>
 // ==========================================
 const AdminHub = () => {
   const [activeModule, setActiveModule] = useState('ACCOUNTS');
+  const [accountsView, setAccountsView] = useState('OVERVIEW');
 
   const [directoryTab, setDirectoryTab] = useState('students');
   const [directoryUsers, setDirectoryUsers] = useState([]);
@@ -681,7 +683,7 @@ const renderAccounts = () => (
         </div>
         
         {/* STATISTICS CARD - Outer Wrapper (Acts as the frame & clipping mask) */}
-        <div onClick={() => alert('Módulo de Estadísticas en construcción...')} className="relative w-full h-full rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl cursor-pointer group">
+        <div onClick={() => setAccountsView('STATISTICS')} className="relative w-full h-full rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl cursor-pointer group">
           
           {/* Layer 1: Oversized Blur (Pushes the buggy edges 16px out of view) */}
           <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
@@ -1050,7 +1052,7 @@ const renderAccounts = () => (
       <div className="fixed top-0 left-0 bottom-0 w-28 border-r border-white/10 bg-[#070b19]/80 backdrop-blur-2xl flex flex-col items-center py-10 gap-6 shrink-0 z-[150] shadow-2xl overflow-y-auto custom-scrollbar">
         <NavIconBtn isProfile />
         <div className="w-12 h-px bg-white/10 my-2 shrink-0"></div>
-        <NavIconBtn iconUrl={navIcons.accounts} active={activeModule === 'ACCOUNTS'} onClick={() => setActiveModule('ACCOUNTS')} />
+        <NavIconBtn iconUrl={navIcons.accounts} active={activeModule === 'ACCOUNTS'} onClick={() => { setActiveModule('ACCOUNTS'); setAccountsView('OVERVIEW'); }} />
         <NavIconBtn iconUrl={navIcons.calendar} active={activeModule === 'CALENDARS'} onClick={() => setActiveModule('CALENDARS')} />
         <NavIconBtn iconUrl={navIcons.content} active={activeModule === 'CONTENTS'} onClick={() => setActiveModule('CONTENTS')} />
         <NavIconBtn iconUrl={navIcons.communications} active={activeModule === 'COMMUNICATIONS'} onClick={() => setActiveModule('COMMUNICATIONS')} hasNotification />
@@ -1071,7 +1073,20 @@ const renderAccounts = () => (
         )}
 
         {/* DYNAMIC MODULE RENDERING */}
-        {activeModule === 'ACCOUNTS' && renderAccounts()}
+        {activeModule === 'ACCOUNTS' && accountsView === 'OVERVIEW' && renderAccounts()}
+        {activeModule === 'ACCOUNTS' && accountsView === 'STATISTICS' && (
+          <div className="w-full h-full flex flex-col animate-fade-in relative z-10">
+            <button 
+              onClick={() => setAccountsView('OVERVIEW')} 
+              className="mb-4 px-8 py-3 bg-white/10 hover:bg-[#fcd34d] hover:text-[#08203e] text-white border border-white/20 rounded-full font-black text-xs uppercase tracking-widest transition-all w-fit shadow-lg"
+            >
+              &larr; Back to Accounts Overview
+            </button>
+            <div className="flex-1 w-full pb-10">
+              <StatisticsHub />
+            </div>
+          </div>
+        )}
         {activeModule === 'CALENDARS' && renderCalendars()}
         {activeModule === 'COMMUNICATIONS' && renderCommunications()}
         {activeModule === 'FINANCES' && renderFinances()}

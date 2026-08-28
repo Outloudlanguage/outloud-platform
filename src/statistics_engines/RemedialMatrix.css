@@ -1,0 +1,24 @@
+/* src/statistics_engines/RemedialMatrix.css */
+
+.remedial-matrix {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  /* Hardware acceleration lock to prevent backdrop-blur edge bleeding */
+  transform: translateZ(0);
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
+  mask-image: radial-gradient(white, black);
+  isolation: isolate;
+}
+
+@media print {
+  .remedial-matrix {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    transform: none;
+    -webkit-mask-image: none;
+    mask-image: none;
+    isolation: auto;
+    /* Ensure the component never splits across two pages in the PDF engine */
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+}

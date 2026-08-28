@@ -1,0 +1,28 @@
+/* src/statistics_engines/CefrHeadcountDashboard.css */
+
+.cefr-headcount-card {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  transform: translateZ(0);
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
+  mask-image: radial-gradient(white, black);
+  isolation: isolate;
+}
+
+@media print {
+  .cefr-headcount-card {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    transform: none;
+    -webkit-mask-image: none;
+    mask-image: none;
+    isolation: auto;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    box-shadow: none !important;
+  }
+
+  /* Ensure the legend remains high-contrast dark gray on paper */
+  .recharts-legend-item-text {
+    color: #1e293b !important;
+  }
+}

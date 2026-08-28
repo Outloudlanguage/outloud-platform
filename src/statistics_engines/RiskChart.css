@@ -1,0 +1,104 @@
+/* src/statistics_engines/RiskChart.css */
+
+.ola-risk-module {
+  display: flex;
+  flex-direction: column;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 900px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+.ola-risk-module.loading,
+.ola-risk-module.error {
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.risk-header {
+  margin-bottom: 1.5rem;
+}
+
+.risk-header h3 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.25rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #0f172a;
+}
+
+.risk-header .subtitle {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.risk-svg-container {
+  width: 100%;
+  height: auto;
+  margin-bottom: 1.5rem;
+}
+
+.risk-label {
+  font-size: 14px;
+}
+
+.risk-narrative {
+  border-top: 1px solid #e2e8f0;
+  padding-top: 1.25rem;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: #475569;
+}
+
+.risk-narrative p {
+  margin: 0 0 0.75rem 0;
+}
+
+.risk-narrative p:last-child {
+  margin-bottom: 0;
+}
+
+.risk-critical-note {
+  font-weight: 700;
+  color: #b91c1c;
+}
+
+@media print {
+  .ola-risk-module {
+    box-shadow: none;
+    border: 1px solid #cbd5e1;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .risk-header h3 {
+    color: #000000;
+  }
+
+  .risk-header .subtitle {
+    color: #475569;
+  }
+
+  .risk-narrative {
+    color: #000000;
+    border-top: 1px solid #cbd5e1;
+  }
+  
+  .risk-critical-note {
+    color: #991b1b;
+  }
+}

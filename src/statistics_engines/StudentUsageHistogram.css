@@ -1,0 +1,28 @@
+/* src/statistics_engines/StudentUsageHistogram.css */
+
+.usage-histogram-card {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  transform: translateZ(0);
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
+  mask-image: radial-gradient(white, black);
+  isolation: isolate;
+}
+
+@media print {
+  .usage-histogram-card {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    transform: none;
+    -webkit-mask-image: none;
+    mask-image: none;
+    isolation: auto;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    box-shadow: none !important;
+  }
+
+  /* Force the ReferenceLine label to render in dark gray on physical paper */
+  .recharts-reference-line-label {
+    fill: #1e293b !important;
+  }
+}

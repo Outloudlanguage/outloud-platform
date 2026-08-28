@@ -1,0 +1,33 @@
+/* src/statistics_engines/StudentProgressChart.css */
+
+.student-progress-card {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  transform: translateZ(0);
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
+  mask-image: radial-gradient(white, black);
+  isolation: isolate;
+}
+
+/* Ensure the chart lines render properly when WebKit drops background vectors on print */
+.recharts-line-curve {
+  fill: none;
+}
+
+@media print {
+  .student-progress-card {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    transform: none;
+    -webkit-mask-image: none;
+    mask-image: none;
+    isolation: auto;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    box-shadow: none !important;
+  }
+
+  /* Override dark mode legend text for physical paper */
+  .recharts-legend-item-text {
+    color: #1e293b !important;
+  }
+}
