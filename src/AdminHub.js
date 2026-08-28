@@ -1000,7 +1000,7 @@ const renderAccounts = () => (
             </div>
           </div>
         )}
-        {activeModule === 'CALENDARS' && renderCalendars()}
+      {activeModule === 'CALENDARS' && <AdminCalendar/>}
         {activeModule === 'COMMUNICATIONS' && renderCommunications()}
         {activeModule === 'FINANCES' && renderFinances()}
         {activeModule === 'SETTINGS' && renderSettings()}
