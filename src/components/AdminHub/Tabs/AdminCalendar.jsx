@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../../SupabaseClient';
+import { supabase } from '../SupabaseClient';
 
 const AdminCalendar = () => {
   // Navigation & Filter States
@@ -62,7 +62,6 @@ const AdminCalendar = () => {
   // --- 2. DATA FETCHING ---
   const fetchCalendarData = async () => {
     try {
-      // Fetch Teachers
       const { data: teachersData } = await supabase
         .from('profiles')
         .select('id, first_name, last_name')
@@ -73,7 +72,6 @@ const AdminCalendar = () => {
         if (teachersData.length > 0) setSelectedTeacherId(teachersData[0].id);
       }
 
-      // Fetch Sessions strictly for the visible week
       const startDate = weekDates[0];
       const endDate = new Date(weekDates[6]);
       endDate.setHours(23, 59, 59, 999);
@@ -190,23 +188,19 @@ const AdminCalendar = () => {
     });
     if (!currentData && teachers.length > 0) {
       setSelectedTeacherId(teachers[0].id);
-      // Smart default based on active tab
       setSelectedClassType(activeTab === 'SOCIALS' ? 'Social Activity' : activeTab === 'TUTORING' ? '1-on-1 Tutoring' : 'Unit Class');
     }
   };
 
   const closeSlotModal = () => setSelectedSlot(null);
 
-  // Dynamic slot styling based on class type
   const getSlotStyle = (slotData, isHover) => {
     if (!slotData) return isHover ? 'bg-white/10 text-white border-white/20' : 'bg-[#1a2333] text-white/40 border-white/5';
-    
     if (slotData.status === 'booked' || slotData.status === 'completed') {
       if (slotData.class_type === 'Unit Class') return 'bg-[#fcd34d] text-black font-black border-[#fcd34d] shadow-[0_0_15px_rgba(252,211,77,0.3)]';
       if (slotData.class_type === '1-on-1 Tutoring') return 'bg-[#3b82f6] text-white font-black border-[#3b82f6] shadow-[0_0_15px_rgba(59,130,246,0.3)]';
       if (slotData.class_type === 'Social Activity') return 'bg-[#a855f7] text-white font-black border-[#a855f7] shadow-[0_0_15px_rgba(168,85,247,0.3)]';
     }
-    
     return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
   };
 
@@ -218,7 +212,6 @@ const AdminCalendar = () => {
       <div className="w-full xl:w-1/4 flex flex-col gap-6 relative z-10">
         <h1 className="text-3xl font-black text-white tracking-widest uppercase mb-2">CALENDARS</h1>
         
-        {/* Ring Chart Card */}
         <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 flex flex-col items-center shadow-xl">
           <div className="relative w-32 h-32 flex items-center justify-center mb-4">
             <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
@@ -230,7 +223,6 @@ const AdminCalendar = () => {
           <p className="text-xs font-black text-white uppercase tracking-widest text-center">STUDENTS BOOKED</p>
         </div>
 
-        {/* Session Stats Card */}
         <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 shadow-xl flex-1 flex flex-col">
           <h3 className="text-xl font-bold text-white mb-6">Session stats</h3>
           <ul className="space-y-5 flex-1">
@@ -249,18 +241,18 @@ const AdminCalendar = () => {
               </li>
             ))}
           </ul>
-          <button className="w-full mt-8 py-4 bg-[#f8fafc] hover:bg-white text-[#0f172a] rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 transition-colors shadow-lg">
+          <button className="w-full mt-8 py-4 bg-[#f8fafc] hover:bg-white text-[#0f172a] rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 transition-colors shadow-lg relative z-20 cursor-pointer">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
             REQUEST SUBSTITUTE
           </button>
         </div>
       </div>
 
-      {/* RIGHT COLUMN: The Interactive Calendar */}
-      <div className="w-full xl:w-3/4 bg-[#111827]/80 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] shadow-2xl flex flex-col relative z-10 overflow-hidden">
+      {/* RIGHT COLUMN: Constrained Height enforces internal scroll */}
+      <div className="w-full xl:w-3/4 bg-[#111827]/80 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] shadow-2xl flex flex-col relative z-20 overflow-hidden h-[800px] max-h-[85vh]">
         
         {/* Controls Header */}
-        <div className="flex flex-col xl:flex-row justify-between items-center p-6 lg:p-8 border-b border-white/10 gap-6">
+        <div className="flex flex-col xl:flex-row justify-between items-center p-6 lg:p-8 border-b border-white/10 gap-6 relative z-30">
           
           {/* Tabs & Teacher Filter */}
           <div className="flex flex-col md:flex-row items-center gap-4 w-full xl:w-auto">
@@ -269,18 +261,17 @@ const AdminCalendar = () => {
                 <button 
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`px-4 lg:px-6 py-2.5 rounded-full text-[10px] lg:text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === tab ? 'bg-white/10 text-white shadow-md' : 'text-white/40 hover:text-white/80'}`}
+                  className={`px-4 lg:px-6 py-2.5 rounded-full text-[10px] lg:text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap cursor-pointer ${activeTab === tab ? 'bg-white/10 text-white shadow-md' : 'text-white/40 hover:text-white/80'}`}
                 >
                   {tab}
                 </button>
               ))}
             </div>
             
-            {/* Teacher Specific Filter */}
             <select
               value={filterTeacherId}
               onChange={(e) => setFilterTeacherId(e.target.value)}
-              className="bg-black/40 text-[10px] lg:text-xs font-black uppercase tracking-widest text-white/70 px-4 py-3 rounded-full border border-white/10 outline-none w-full md:w-auto appearance-none text-center hover:bg-white/5 transition-colors cursor-pointer"
+              className="bg-black/40 text-[10px] lg:text-xs font-black uppercase tracking-widest text-white/70 px-4 py-3 rounded-full border border-white/10 outline-none w-full md:w-auto appearance-none text-center hover:bg-white/5 transition-colors cursor-pointer relative z-30"
             >
               <option value="ALL">TODOS LOS PROFESORES</option>
               {teachers.map(t => (
@@ -289,24 +280,25 @@ const AdminCalendar = () => {
             </select>
           </div>
           
-          {/* Week & Month Toggles */}
+          {/* Week (Left) & Month (Right) Toggles */}
           <div className="flex items-center justify-center gap-4 lg:gap-6 w-full xl:w-auto">
             <div className="flex items-center gap-2 lg:gap-3">
-              <button onClick={() => handleWeekChange(-1)} className="text-white/40 hover:text-white transition-colors p-1"><svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg></button>
+              <button onClick={() => handleWeekChange(-1)} className="text-white/40 hover:text-white transition-colors p-2 cursor-pointer relative z-30"><svg className="w-5 h-5 pointer-events-none" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg></button>
               <span className="text-[10px] lg:text-xs font-black text-white uppercase tracking-widest min-w-[70px] text-center">SEMANA</span>
-              <button onClick={() => handleWeekChange(1)} className="text-white/40 hover:text-white transition-colors p-1"><svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg></button>
+              <button onClick={() => handleWeekChange(1)} className="text-white/40 hover:text-white transition-colors p-2 cursor-pointer relative z-30"><svg className="w-5 h-5 pointer-events-none" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg></button>
             </div>
             <div className="w-px h-6 bg-white/10"></div>
             <div className="flex items-center gap-2 lg:gap-3">
-              <button onClick={() => handleMonthChange(-1)} className="text-white/40 hover:text-white transition-colors p-1"><svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg></button>
+              <button onClick={() => handleMonthChange(-1)} className="text-white/40 hover:text-white transition-colors p-2 cursor-pointer relative z-30"><svg className="w-5 h-5 pointer-events-none" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg></button>
               <span className="text-[10px] lg:text-xs font-black text-white uppercase tracking-widest min-w-[90px] text-center">{currentMonthName}</span>
-              <button onClick={() => handleMonthChange(1)} className="text-white/40 hover:text-white transition-colors p-1"><svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg></button>
+              <button onClick={() => handleMonthChange(1)} className="text-white/40 hover:text-white transition-colors p-2 cursor-pointer relative z-30"><svg className="w-5 h-5 pointer-events-none" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg></button>
             </div>
           </div>
         </div>
 
-        {/* Fixed Day Headers (Outside the scroll!) */}
-        <div className="grid grid-cols-7 gap-3 px-6 lg:px-8 py-4 bg-white/5 border-b border-white/5">
+        {/* 8-Column Grid strictly separates Time Labels from Day Slots */}
+        <div className="grid grid-cols-[80px_repeat(7,_1fr)] gap-3 px-6 lg:px-8 py-4 bg-white/5 border-b border-white/5 relative z-20">
+          <div className="invisible"></div> {/* Empty corner cell */}
           {dayNames.map((day, idx) => (
             <div key={day} className="flex items-center justify-center gap-2">
               <span className="text-[11px] font-bold text-white/50 tracking-widest">{day}</span>
@@ -315,54 +307,52 @@ const AdminCalendar = () => {
           ))}
         </div>
 
-        {/* Scrollable Time Grid */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 lg:p-8">
-          <div className="grid grid-cols-7 gap-3 min-w-[700px]">
-            {times.map((time, tIdx) => (
-              <React.Fragment key={time}>
-                {dayNames.map((_, dIdx) => {
-                  const dateStr = getLocalDateString(weekDates[dIdx]);
+        {/* Scroll Container (Padding removed from wrapper, placed on inner div to fix artifact) */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar relative z-20">
+          <div className="p-6 lg:p-8 min-w-[750px]">
+            <div className="grid grid-cols-[80px_repeat(7,_1fr)] gap-3">
+              {times.map((time, tIdx) => (
+                <React.Fragment key={time}>
                   
-                  // THE FIX: The Grid now filters what it renders based on the Tabs and Teacher Dropdown
-                  const slotData = sessions.find(s => {
-                    if (s.session_date !== dateStr || s.time_slot !== time) return false;
+                  {/* Y-Axis Label */}
+                  <div className="flex items-center justify-end pr-4 text-[11px] font-black text-white/50 tracking-wider select-none">
+                    {time}
+                  </div>
+
+                  {/* X-Axis Slots */}
+                  {dayNames.map((_, dIdx) => {
+                    const dateStr = getLocalDateString(weekDates[dIdx]);
+                    const slotData = sessions.find(s => {
+                      if (s.session_date !== dateStr || s.time_slot !== time) return false;
+                      if (activeTab === 'LIVE LABS' && s.class_type !== 'Unit Class') return false;
+                      if (activeTab === 'TUTORING' && s.class_type !== '1-on-1 Tutoring') return false;
+                      if (activeTab === 'SOCIALS' && s.class_type !== 'Social Activity') return false;
+                      if (filterTeacherId !== 'ALL' && s.teacher_id !== filterTeacherId) return false;
+                      return true;
+                    });
                     
-                    if (activeTab === 'LIVE LABS' && s.class_type !== 'Unit Class') return false;
-                    if (activeTab === 'TUTORING' && s.class_type !== '1-on-1 Tutoring') return false;
-                    if (activeTab === 'SOCIALS' && s.class_type !== 'Social Activity') return false;
-                    
-                    if (filterTeacherId !== 'ALL' && s.teacher_id !== filterTeacherId) return false;
-                    
-                    return true;
-                  });
-                  
-                  return (
-                    <div 
-                      key={`${dIdx}-${tIdx}`} 
-                      onClick={() => handleSlotClick(dIdx, tIdx, slotData)}
-                      className={`h-16 rounded-xl border flex flex-col items-center justify-center cursor-pointer transition-all relative group ${getSlotStyle(slotData, false)}`}
-                    >
-                      {/* Only show the time if the slot is empty, otherwise show the student info */}
-                      {!slotData ? (
-                        <span className="text-[11px] tracking-wider z-10 pointer-events-none">{time}</span>
-                      ) : (
-                        <div className="flex flex-col items-center justify-center text-center leading-tight p-1 overflow-hidden z-10 pointer-events-none">
-                          <span className="text-[10px] font-black truncate w-full">{slotData.student?.first_name || 'Estudiante'}</span>
-                          <span className="text-[8px] opacity-80 mt-1 truncate w-full">U{slotData.unit || '?'} • {slotData.teacher?.first_name || 'Prof.'}</span>
-                        </div>
-                      )}
-                      
-                      {/* Hover Overlay for Empty Slots */}
-                      {!slotData && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-white/10 opacity-0 group-hover:opacity-100 rounded-xl transition-opacity">
-                           <span className="text-[9px] font-black text-white tracking-widest">+ ABRIR</span>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </React.Fragment>
-            ))}
+                    return (
+                      <div 
+                        key={`${dIdx}-${tIdx}`} 
+                        onClick={() => handleSlotClick(dIdx, tIdx, slotData)}
+                        className={`h-16 rounded-xl border flex flex-col items-center justify-center cursor-pointer transition-all relative group hover:scale-[1.02] relative z-30 ${getSlotStyle(slotData, false)}`}
+                      >
+                        {!slotData ? (
+                          <div className="absolute inset-0 flex items-center justify-center bg-white/10 opacity-0 group-hover:opacity-100 rounded-xl transition-opacity pointer-events-none">
+                             <span className="text-[9px] font-black text-white tracking-widest">+ ABRIR</span>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center justify-center text-center leading-tight p-1 overflow-hidden z-10 pointer-events-none">
+                            <span className="text-[10px] font-black truncate w-full">{slotData.student?.first_name || 'Estudiante'}</span>
+                            <span className="text-[8px] opacity-80 mt-1 truncate w-full">U{slotData.unit || '?'} • {slotData.teacher?.first_name || 'Prof.'}</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </React.Fragment>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -371,14 +361,13 @@ const AdminCalendar = () => {
       {selectedSlot && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
           <div className="bg-[#070b19] border border-white/20 rounded-[2rem] shadow-2xl w-full max-w-md p-8 relative">
-            <button onClick={closeSlotModal} className="absolute top-6 right-6 text-white/50 hover:text-white"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+            <button onClick={closeSlotModal} className="absolute top-6 right-6 text-white/50 hover:text-white cursor-pointer"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
             
             <h3 className="text-xl font-black text-white uppercase tracking-widest mb-1">
               {selectedSlot.date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
             </h3>
             <p className="text-[#fcd34d] font-black text-2xl tracking-widest mb-6">{selectedSlot.timeStr}</p>
 
-            {/* Booked State */}
             {selectedSlot.data?.status === 'booked' || selectedSlot.data?.status === 'completed' ? (
               <div className="space-y-4">
                 <div className="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
@@ -395,12 +384,11 @@ const AdminCalendar = () => {
                     <p className="text-sm font-bold text-white truncate">{selectedSlot.data.teacher?.first_name || 'Sin Asignar'}</p>
                   </div>
                 </div>
-                <button disabled={isProcessing} onClick={handleCancelBooking} className="w-full py-3 mt-4 bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-white font-black text-[10px] uppercase tracking-widest rounded-xl transition-colors border border-red-500/30">
+                <button disabled={isProcessing} onClick={handleCancelBooking} className="w-full py-3 mt-4 bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-white font-black text-[10px] uppercase tracking-widest rounded-xl transition-colors border border-red-500/30 cursor-pointer">
                   {isProcessing ? 'Procesando...' : 'Cancelar Reserva'}
                 </button>
               </div>
             ) : selectedSlot.data?.status === 'available' ? (
-              /* Available (Open) State */
               <div className="space-y-6 text-center py-4">
                 <div className="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-500/50">
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
@@ -409,12 +397,11 @@ const AdminCalendar = () => {
                   <h4 className="text-lg font-black text-white uppercase tracking-widest">Bloque Disponible</h4>
                   <p className="text-xs text-white/60 mt-2">Profesor Asignado: <span className="font-bold text-white">{selectedSlot.data.teacher?.first_name} {selectedSlot.data.teacher?.last_name}</span></p>
                 </div>
-                <button disabled={isProcessing} onClick={handleCloseBlock} className="w-full py-3.5 bg-white/10 hover:bg-white/20 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all border border-white/20">
+                <button disabled={isProcessing} onClick={handleCloseBlock} className="w-full py-3.5 bg-white/10 hover:bg-white/20 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all border border-white/20 cursor-pointer">
                   {isProcessing ? 'Procesando...' : 'Cerrar Disponibilidad'}
                 </button>
               </div>
             ) : (
-              /* Empty (Unopened) State */
               <div className="space-y-4 text-center py-4">
                 <div className="w-16 h-16 bg-white/10 text-white/50 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/20">
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
@@ -427,7 +414,7 @@ const AdminCalendar = () => {
                     <select 
                       value={selectedTeacherId} 
                       onChange={(e) => setSelectedTeacherId(e.target.value)}
-                      className="w-full p-3 bg-white/10 border border-white/20 rounded-xl text-xs font-bold text-white uppercase tracking-widest focus:outline-none focus:border-[#fcd34d] appearance-none text-center"
+                      className="w-full p-3 bg-white/10 border border-white/20 rounded-xl text-xs font-bold text-white uppercase tracking-widest focus:outline-none focus:border-[#fcd34d] appearance-none text-center cursor-pointer relative z-40"
                     >
                       {teachers.map(t => (
                         <option key={t.id} value={t.id} className="text-slate-900">{t.first_name} {t.last_name}</option>
@@ -436,7 +423,7 @@ const AdminCalendar = () => {
                     <select 
                       value={selectedClassType} 
                       onChange={(e) => setSelectedClassType(e.target.value)}
-                      className="w-full p-3 bg-white/10 border border-white/20 rounded-xl text-xs font-bold text-[#fcd34d] uppercase tracking-widest focus:outline-none appearance-none text-center"
+                      className="w-full p-3 bg-white/10 border border-white/20 rounded-xl text-xs font-bold text-[#fcd34d] uppercase tracking-widest focus:outline-none appearance-none text-center cursor-pointer relative z-40"
                     >
                       <option value="Unit Class" className="text-slate-900">Unit Class (Regular)</option>
                       <option value="1-on-1 Tutoring" className="text-slate-900">1-on-1 Tutoring</option>
@@ -444,7 +431,7 @@ const AdminCalendar = () => {
                     </select>
                   </div>
                 </div>
-                <button disabled={isProcessing} onClick={handleOpenBlock} className="w-full mt-4 py-3.5 bg-[#fcd34d] hover:bg-white text-[#08203e] font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-[0_0_15px_rgba(252,211,77,0.4)]">
+                <button disabled={isProcessing} onClick={handleOpenBlock} className="w-full mt-4 py-3.5 bg-[#fcd34d] hover:bg-white text-[#08203e] font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-[0_0_15px_rgba(252,211,77,0.4)] cursor-pointer">
                   {isProcessing ? 'Procesando...' : 'Abrir Bloque'}
                 </button>
               </div>
