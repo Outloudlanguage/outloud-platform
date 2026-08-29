@@ -12,12 +12,12 @@ const AdminCalendar = () => {
   // Database States
   const [sessions, setSessions] = useState([]);
   const [teachers, setTeachers] = useState([]);
-  const [allStudents, setAllStudents] = useState([]);
   const [upcomingActivities, setUpcomingActivities] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [bookedPercentage, setBookedPercentage] = useState(0);
   
-  // Unbooked Modal State
+  // Booking & Unbooked Students States
+  const [bookedPercentage, setBookedPercentage] = useState(0);
+  const [unbookedStudents, setUnbookedStudents] = useState([]);
   const [showUnbookedModal, setShowUnbookedModal] = useState(false);
   
   // Assignment States
@@ -84,13 +84,11 @@ const AdminCalendar = () => {
         if (teachersData.length > 0) setSelectedTeacherId(teachersData[0].id);
       }
 
-      // Fetch All Students (used for the unbooked list)
-      const { data: studentsData } = await supabase
+      // Fetch All Students (to compare against booked sessions)
+      const { data: allStudentsData } = await supabase
         .from('profiles')
-        .select('*') 
+        .select('id, first_name, last_name, current_lesson') 
         .eq('role', 'Student');
-        
-      if (studentsData) setAllStudents(studentsData);
 
       // Fetch Upcoming Activities
       const { data: upcomingData } = await supabase
@@ -106,7 +104,7 @@ const AdminCalendar = () => {
 
       if (upcomingData) setUpcomingActivities(upcomingData);
 
-      // Fetch Calendar Grid Sessions
+      // Fetch Weekly Sessions
       const startDate = weekDates[0];
       const endDate = new Date(weekDates[6]);
       endDate.setHours(23, 59, 59, 999);
@@ -140,11 +138,26 @@ const AdminCalendar = () => {
         });
         setSessions(mappedSessions);
 
-        // Calculate Real Percentage for the Ring Chart
-        const totalSessions = sessionsData.length;
-        const bookedCount = sessionsData.filter(s => s.status === 'booked' || s.status === 'completed').length;
-        const calculatedPercentage = totalSessions > 0 ? Math.round((bookedCount / totalSessions) * 100) : 0;
-        setBookedPercentage(calculatedPercentage);
+        // --- Calculate Bookings & Unbooked Students ---
+        const totalStudents = allStudentsData ? allStudentsData.length : 0;
+        
+        // Find which students have a booked or completed status this week
+        const bookedStudentIds = new Set(
+          sessionsData
+            .filter(s => s.status === 'booked' || s.status === 'completed')
+            .map(s => s.student_id)
+            .filter(Boolean)
+        );
+
+        // Filter out the students who are already booked
+        if (allStudentsData) {
+          const unbooked = allStudentsData.filter(student => !bookedStudentIds.has(student.id));
+          setUnbookedStudents(unbooked);
+          
+          // Set real percentage
+          const calculatedPercentage = totalStudents > 0 ? Math.round((bookedStudentIds.size / totalStudents) * 100) : 0;
+          setBookedPercentage(calculatedPercentage);
+        }
       }
     } catch (error) {
       console.error("Error fetching calendar data:", error);
@@ -245,17 +258,10 @@ const AdminCalendar = () => {
     return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
   };
 
-  // --- 4. RING CHART & UNBOOKED LOGIC ---
+  // Ring Chart Mathematical Logic
   const circleRadius = 75;
-  const circleCircumference = 2 * Math.PI * circleRadius;
+  const circleCircumference = 2 * Math.PI * circleRadius; 
   const strokeDashoffset = circleCircumference - (bookedPercentage / 100) * circleCircumference;
-
-  // Derive unbooked students by comparing all students to those who have a 'booked' or 'completed' session
-  const bookedStudentIds = sessions
-    .filter(s => s.student_id && (s.status === 'booked' || s.status === 'completed'))
-    .map(s => s.student_id);
-  
-  const unbookedStudents = allStudents.filter(st => !bookedStudentIds.includes(st.id));
 
   return (
     <div className="w-full h-[calc(100vh-100px)] min-h-[700px] p-2 md:p-6 font-montserrat flex flex-col gap-4 lg:gap-6 animate-fade-in relative z-10 overflow-visible">
@@ -263,17 +269,23 @@ const AdminCalendar = () => {
 
       {/* TOP NAVIGATION ROW */}
       <div className="absolute -top-12 lg:-top-16 right-2 lg:right-6 z-50 flex justify-end shrink-0">
-         <div className="flex items-center gap-4 lg:gap-6 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-full p-2 px-6 shadow-xl bg-clip-padding">
-           <div className="flex items-center gap-2 lg:gap-3">
-             <button onClick={() => handleWeekChange(-1)} className="text-white/40 hover:text-white transition-colors p-2 cursor-pointer relative z-30"><svg className="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg></button>
-             <span className="text-[10px] lg:text-xs font-black text-white uppercase tracking-widest min-w-[70px] text-center">SEMANA</span>
-             <button onClick={() => handleWeekChange(1)} className="text-white/40 hover:text-white transition-colors p-2 cursor-pointer relative z-30"><svg className="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg></button>
-           </div>
-           <div className="w-px h-5 bg-white/20"></div>
-           <div className="flex items-center gap-2 lg:gap-3">
-             <button onClick={() => handleMonthChange(-1)} className="text-white/40 hover:text-white transition-colors p-2 cursor-pointer relative z-30"><svg className="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg></button>
-             <span className="text-[10px] lg:text-xs font-black text-white uppercase tracking-widest min-w-[90px] text-center">{currentMonthName}</span>
-             <button onClick={() => handleMonthChange(1)} className="text-white/40 hover:text-white transition-colors p-2 cursor-pointer relative z-30"><svg className="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg></button>
+         {/* Fix applied: Outer Wrapper for the pill */}
+         <div className="relative border border-white/10 rounded-full shadow-xl overflow-hidden group">
+           {/* Layer 1: Oversized Blur */}
+           <div className="absolute -inset-4 bg-white/5 backdrop-blur-2xl -z-10" />
+           {/* Layer 2: Content Container */}
+           <div className="relative z-10 flex items-center gap-4 lg:gap-6 p-2 px-6">
+             <div className="flex items-center gap-2 lg:gap-3">
+               <button onClick={() => handleWeekChange(-1)} className="text-white/40 hover:text-white transition-colors p-2 cursor-pointer relative z-30"><svg className="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg></button>
+               <span className="text-[10px] lg:text-xs font-black text-white uppercase tracking-widest min-w-[70px] text-center">SEMANA</span>
+               <button onClick={() => handleWeekChange(1)} className="text-white/40 hover:text-white transition-colors p-2 cursor-pointer relative z-30"><svg className="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg></button>
+             </div>
+             <div className="w-px h-5 bg-white/20"></div>
+             <div className="flex items-center gap-2 lg:gap-3">
+               <button onClick={() => handleMonthChange(-1)} className="text-white/40 hover:text-white transition-colors p-2 cursor-pointer relative z-30"><svg className="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg></button>
+               <span className="text-[10px] lg:text-xs font-black text-white uppercase tracking-widest min-w-[90px] text-center">{currentMonthName}</span>
+               <button onClick={() => handleMonthChange(1)} className="text-white/40 hover:text-white transition-colors p-2 cursor-pointer relative z-30"><svg className="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg></button>
+             </div>
            </div>
          </div>
       </div>
@@ -284,172 +296,184 @@ const AdminCalendar = () => {
         {/* LEFT COLUMN */}
         <div className="w-full xl:w-[30%] flex flex-col gap-6 h-full shrink-0">
           
-          {/* Ring Chart Card - Converted to Button with Larger Text */}
+          {/* Ring Chart as a Button - Fix applied */}
           <button 
             onClick={() => setShowUnbookedModal(true)}
-            className="w-full bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-6 lg:p-8 flex flex-col items-center justify-center shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] bg-clip-padding shrink-0 transform-gpu cursor-pointer hover:bg-white/10 hover:border-white/20 transition-all hover:scale-[1.02] active:scale-95 group"
+            className="group relative w-full border border-white/10 rounded-[2rem] overflow-hidden shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] shrink-0 transform-gpu cursor-pointer outline-none"
           >
-            <div className="relative w-32 h-32 lg:w-40 lg:h-40 flex items-center justify-center mb-2">
-              <svg className="w-full h-full transform -rotate-90 overflow-visible" viewBox="0 0 180 180">
-                <circle cx="90" cy="90" r="75" fill="none" stroke="#ffffff10" strokeWidth="12" />
-                <circle 
-                  cx="90" cy="90" r="75" fill="none" stroke="#fcd34d" strokeWidth="12" 
-                  strokeDasharray={circleCircumference} 
-                  strokeDashoffset={strokeDashoffset} 
-                  className="drop-shadow-[0_0_15px_rgba(252,211,77,0.7)] transition-all duration-1000 ease-out" 
-                />
-              </svg>
-              <span className="absolute text-3xl lg:text-4xl font-black text-white drop-shadow-md">{bookedPercentage}%</span>
-            </div>
+            {/* Layer 1: Oversized Blur & Hover Background */}
+            <div className="absolute -inset-4 bg-white/5 backdrop-blur-2xl -z-10 group-hover:bg-white/10 transition-colors duration-300" />
             
-            {/* The increased text size */}
-            <p className="text-sm lg:text-base font-black text-white uppercase tracking-widest text-center mt-3">
-              STUDENTS BOOKED
-            </p>
-            <p className="text-[9px] text-white/40 group-hover:text-white/70 uppercase tracking-widest mt-1.5 font-bold transition-colors">
-              Click to view list
-            </p>
+            {/* Layer 2: Content Container */}
+            <div className="relative w-full h-full p-6 flex flex-col items-center justify-center">
+              <div className="relative w-32 h-32 lg:w-40 lg:h-40 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform duration-300">
+                <svg className="w-full h-full transform -rotate-90 overflow-visible" viewBox="0 0 180 180">
+                  <circle cx="90" cy="90" r="75" fill="none" stroke="#ffffff10" strokeWidth="12" />
+                  <circle 
+                    cx="90" cy="90" r="75" fill="none" stroke="#fcd34d" strokeWidth="12" 
+                    strokeDasharray={circleCircumference} 
+                    strokeDashoffset={strokeDashoffset} 
+                    className="drop-shadow-[0_0_15px_rgba(252,211,77,0.7)] transition-all duration-1000 ease-out" 
+                  />
+                </svg>
+                <span className="absolute text-3xl lg:text-4xl font-black text-white drop-shadow-md">{bookedPercentage}%</span>
+              </div>
+              <p className="text-xs lg:text-sm font-black text-white/90 uppercase tracking-widest text-center group-hover:text-[#fcd34d] transition-colors">STUDENTS BOOKED</p>
+            </div>
           </button>
 
-          {/* Upcoming Sessions Card */}
-          <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-6 lg:p-8 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] bg-clip-padding flex-1 flex flex-col min-h-0 transform-gpu">
-            <h3 className="text-xl font-black text-white mb-6 text-center uppercase tracking-widest drop-shadow-sm shrink-0">Upcoming</h3>
+          {/* Upcoming Sessions Card - Fix applied */}
+          <div className="relative border border-white/10 rounded-[2rem] overflow-hidden shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] flex-1 flex flex-col min-h-0 transform-gpu">
             
-            <ul className="space-y-4 flex-1 overflow-y-auto custom-scrollbar pr-2 min-h-0">
-              {upcomingActivities.length === 0 ? (
-                <li className="text-center text-white/40 text-xs font-bold uppercase tracking-widest py-10">No upcoming sessions</li>
-              ) : (
-                upcomingActivities.map((act) => {
-                  const d = new Date(act.scheduled_at);
-                  const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                  const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-                  return (
-                    <li key={act.id} className="flex flex-col gap-1 text-[11px] bg-white/5 p-4 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors shadow-sm">
-                      <div className="flex items-center justify-between w-full mb-1">
-                        <div className="flex items-center gap-2 truncate">
-                          <div className={`w-2 h-2 rounded-full shrink-0 ${act.class_type === 'Unit Class' ? 'bg-[#fcd34d]' : act.class_type === '1-on-1 Tutoring' ? 'bg-[#3b82f6]' : 'bg-[#a855f7]'}`}></div>
-                          <span className="font-black text-white uppercase tracking-widest truncate">{act.class_type}</span>
-                        </div>
-                        <span className="font-bold text-white/80 shrink-0">{timeStr}</span>
-                      </div>
-                      <div className="flex items-center justify-between pl-4">
-                        <span className="text-white/50 truncate pr-2">Prof. {act.teacher?.first_name || 'TBA'}</span>
-                        <span className="text-[#fcd34d]/80 font-bold shrink-0">{dateStr}</span>
-                      </div>
-                    </li>
-                  );
-                })
-              )}
-            </ul>
+            {/* Layer 1: Oversized Blur */}
+            <div className="absolute -inset-4 bg-white/5 backdrop-blur-2xl -z-10" />
 
-            <button className="w-full mt-6 py-5 bg-[#f8fafc] hover:bg-white text-[#0f172a] rounded-2xl font-black text-[13px] lg:text-sm uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-lg hover:scale-105 shrink-0">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
-              REQUEST SUBSTITUTE
-            </button>
+            {/* Layer 2: Content Container */}
+            <div className="relative w-full h-full p-6 lg:p-8 flex flex-col min-h-0 z-10">
+              <h3 className="text-xl font-black text-white mb-6 text-center uppercase tracking-widest drop-shadow-sm shrink-0">Upcoming</h3>
+              
+              <ul className="space-y-4 flex-1 overflow-y-auto custom-scrollbar pr-2 min-h-0">
+                {upcomingActivities.length === 0 ? (
+                  <li className="text-center text-white/40 text-xs font-bold uppercase tracking-widest py-10">No upcoming sessions</li>
+                ) : (
+                  upcomingActivities.map((act) => {
+                    const d = new Date(act.scheduled_at);
+                    const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+                    return (
+                      <li key={act.id} className="flex flex-col gap-1 text-[11px] bg-white/5 p-4 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors shadow-sm">
+                        <div className="flex items-center justify-between w-full mb-1">
+                          <div className="flex items-center gap-2 truncate">
+                            <div className={`w-2 h-2 rounded-full shrink-0 ${act.class_type === 'Unit Class' ? 'bg-[#fcd34d]' : act.class_type === '1-on-1 Tutoring' ? 'bg-[#3b82f6]' : 'bg-[#a855f7]'}`}></div>
+                            <span className="font-black text-white uppercase tracking-widest truncate">{act.class_type}</span>
+                          </div>
+                          <span className="font-bold text-white/80 shrink-0">{timeStr}</span>
+                        </div>
+                        <div className="flex items-center justify-between pl-4">
+                          <span className="text-white/50 truncate pr-2">Prof. {act.teacher?.first_name || 'TBA'}</span>
+                          <span className="text-[#fcd34d]/80 font-bold shrink-0">{dateStr}</span>
+                        </div>
+                      </li>
+                    );
+                  })
+                )}
+              </ul>
+
+              <button className="w-full mt-6 py-5 bg-[#f8fafc] hover:bg-white text-[#0f172a] rounded-2xl font-black text-[13px] lg:text-sm uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-lg hover:scale-105 shrink-0">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+                REQUEST SUBSTITUTE
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* RIGHT COLUMN: Calendar Grid */}
-        <div className="w-full xl:w-[70%] flex flex-col h-full bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] bg-clip-padding overflow-hidden relative transform-gpu">
+        {/* RIGHT COLUMN: Calendar Grid - Fix applied */}
+        <div className="w-full xl:w-[70%] relative border border-white/10 rounded-[2.5rem] overflow-hidden shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] transform-gpu h-full flex flex-col">
           
-          {/* Header containing Tabs */}
-          <div className="flex flex-col xl:flex-row justify-between items-center p-4 lg:p-6 border-b border-white/10 gap-4 relative z-40 shrink-0">
-            <div className="flex w-full gap-1 lg:gap-2 bg-black/20 p-1.5 lg:p-2 rounded-full border border-white/5 shadow-inner relative">
-              {['OVERALL', 'LIVE LABS', 'TUTORING', 'SOCIALS'].map(tab => (
-                <button 
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`flex-1 px-2 py-2 lg:py-2.5 rounded-full text-[9px] lg:text-[11px] font-black uppercase tracking-widest transition-all whitespace-nowrap cursor-pointer text-center ${activeTab === tab ? 'bg-white/20 text-white shadow-md' : 'text-white/40 hover:text-white/80'}`}
-                >
-                  {tab}
-                </button>
-              ))}
+          {/* Layer 1: Oversized Blur */}
+          <div className="absolute -inset-4 bg-white/5 backdrop-blur-2xl -z-10" />
 
-              <div className="relative flex-1">
-                <button 
-                  onClick={() => setShowTeacherDropdown(!showTeacherDropdown)}
-                  className={`w-full h-full flex items-center justify-center gap-1.5 px-2 py-2 lg:py-2.5 rounded-full text-[9px] lg:text-[11px] font-black uppercase tracking-widest transition-all whitespace-nowrap cursor-pointer ${filterTeacherId !== 'ALL' || showTeacherDropdown ? 'bg-white/20 text-white shadow-md' : 'text-white/40 hover:text-white/80'}`}
-                >
-                  TEACHERS {filterTeacherId !== 'ALL' && <span className="bg-[#fcd34d] text-[#08203e] px-1 rounded-full text-[7px] ml-0.5 flex items-center justify-center">✓</span>}
-                </button>
-                
-                {showTeacherDropdown && (
-                  <>
-                    <div className="fixed inset-0 z-40 cursor-default" onClick={() => setShowTeacherDropdown(false)}></div>
-                    <div className="absolute top-full mt-3 right-0 w-56 bg-[#070b19]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] py-2 z-50 flex flex-col">
-                       <button onClick={() => { setFilterTeacherId('ALL'); setShowTeacherDropdown(false); }} className={`text-left px-5 py-3 text-[10px] font-black uppercase tracking-widest transition-colors ${filterTeacherId === 'ALL' ? 'text-[#fcd34d] bg-white/5' : 'text-white/70 hover:text-white hover:bg-white/5'}`}>ALL TEACHERS</button>
-                       <div className="h-px w-full bg-white/10 my-1"></div>
-                       {teachers.map(t => (
-                         <button key={t.id} onClick={() => { setFilterTeacherId(t.id); setShowTeacherDropdown(false); }} className={`text-left px-5 py-3 text-[10px] font-bold uppercase tracking-widest transition-colors truncate ${filterTeacherId === t.id ? 'text-[#fcd34d] bg-white/5' : 'text-white/70 hover:text-white hover:bg-white/5'}`}>
-                           {t.first_name} {t.last_name}
-                         </button>
-                       ))}
-                    </div>
-                  </>
-                )}
+          {/* Layer 2: Content Container */}
+          <div className="relative w-full h-full flex flex-col z-10 min-h-0">
+            {/* Header containing Tabs */}
+            <div className="flex flex-col xl:flex-row justify-between items-center p-4 lg:p-6 border-b border-white/10 gap-4 relative z-40 shrink-0">
+              <div className="flex w-full gap-1 lg:gap-2 bg-black/20 p-1.5 lg:p-2 rounded-full border border-white/5 shadow-inner relative">
+                {['OVERALL', 'LIVE LABS', 'TUTORING', 'SOCIALS'].map(tab => (
+                  <button 
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`flex-1 px-2 py-2 lg:py-2.5 rounded-full text-[9px] lg:text-[11px] font-black uppercase tracking-widest transition-all whitespace-nowrap cursor-pointer text-center ${activeTab === tab ? 'bg-white/20 text-white shadow-md' : 'text-white/40 hover:text-white/80'}`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+
+                <div className="relative flex-1">
+                  <button 
+                    onClick={() => setShowTeacherDropdown(!showTeacherDropdown)}
+                    className={`w-full h-full flex items-center justify-center gap-1.5 px-2 py-2 lg:py-2.5 rounded-full text-[9px] lg:text-[11px] font-black uppercase tracking-widest transition-all whitespace-nowrap cursor-pointer ${filterTeacherId !== 'ALL' || showTeacherDropdown ? 'bg-white/20 text-white shadow-md' : 'text-white/40 hover:text-white/80'}`}
+                  >
+                    TEACHERS {filterTeacherId !== 'ALL' && <span className="bg-[#fcd34d] text-[#08203e] px-1 rounded-full text-[7px] ml-0.5 flex items-center justify-center">✓</span>}
+                  </button>
+                  
+                  {showTeacherDropdown && (
+                    <>
+                      <div className="fixed inset-0 z-40 cursor-default" onClick={() => setShowTeacherDropdown(false)}></div>
+                      <div className="absolute top-full mt-3 right-0 w-56 bg-[#070b19]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] py-2 z-50 flex flex-col">
+                         <button onClick={() => { setFilterTeacherId('ALL'); setShowTeacherDropdown(false); }} className={`text-left px-5 py-3 text-[10px] font-black uppercase tracking-widest transition-colors ${filterTeacherId === 'ALL' ? 'text-[#fcd34d] bg-white/5' : 'text-white/70 hover:text-white hover:bg-white/5'}`}>ALL TEACHERS</button>
+                         <div className="h-px w-full bg-white/10 my-1"></div>
+                         {teachers.map(t => (
+                           <button key={t.id} onClick={() => { setFilterTeacherId(t.id); setShowTeacherDropdown(false); }} className={`text-left px-5 py-3 text-[10px] font-bold uppercase tracking-widest transition-colors truncate ${filterTeacherId === t.id ? 'text-[#fcd34d] bg-white/5' : 'text-white/70 hover:text-white hover:bg-white/5'}`}>
+                             {t.first_name} {t.last_name}
+                           </button>
+                         ))}
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* 7-Column Grid Headers */}
-          <div className="grid grid-cols-7 gap-2 lg:gap-3 px-4 lg:px-6 py-4 bg-white/5 border-b border-white/5 relative z-20 shrink-0">
-            {dayNames.map((day, idx) => (
-              <div key={day} className="flex items-center justify-center gap-1.5">
-                <span className="text-[10px] lg:text-[11px] font-bold text-white/50 tracking-widest">{day}</span>
-                <span className="text-[10px] lg:text-[11px] font-black text-white">{weekDates[idx].getDate()}</span>
-              </div>
-            ))}
-          </div>
+            {/* 7-Column Grid Headers */}
+            <div className="grid grid-cols-7 gap-2 lg:gap-3 px-4 lg:px-6 py-4 bg-white/5 border-b border-white/5 relative z-20 shrink-0">
+              {dayNames.map((day, idx) => (
+                <div key={day} className="flex items-center justify-center gap-1.5">
+                  <span className="text-[10px] lg:text-[11px] font-bold text-white/50 tracking-widest">{day}</span>
+                  <span className="text-[10px] lg:text-[11px] font-black text-white">{weekDates[idx].getDate()}</span>
+                </div>
+              ))}
+            </div>
 
-          {/* Scrollable Slots Area */}
-          <div className="flex-1 overflow-y-auto custom-scrollbar relative z-20 min-h-0">
-            <div className="p-4 lg:p-6 w-full min-w-0">
-              <div className="grid grid-cols-7 gap-2 lg:gap-3">
-                {times.map((time, tIdx) => (
-                  <React.Fragment key={time}>
-                    {dayNames.map((_, dIdx) => {
-                      const dateStr = getLocalDateString(weekDates[dIdx]);
-                      const slotData = sessions.find(s => {
-                        if (s.session_date !== dateStr || s.time_slot.toLowerCase() !== time.toLowerCase()) return false;
-                        if (activeTab === 'LIVE LABS' && s.class_type !== 'Unit Class') return false;
-                        if (activeTab === 'TUTORING' && s.class_type !== '1-on-1 Tutoring') return false;
-                        if (activeTab === 'SOCIALS' && s.class_type !== 'Social Activity') return false;
-                        if (filterTeacherId !== 'ALL' && s.teacher_id !== filterTeacherId) return false;
-                        return true;
-                      });
-                      
-                      return (
-                        <div 
-                          key={`${dIdx}-${tIdx}`} 
-                          onClick={() => handleSlotClick(dIdx, tIdx, slotData)}
-                          className={`h-16 rounded-xl border flex flex-col items-center justify-center cursor-pointer transition-all relative group hover:scale-[1.02] z-30 overflow-hidden ${getSlotStyle(slotData, false)}`}
-                        >
-                          <span className="absolute top-1 left-2 text-[7px] lg:text-[8px] font-black opacity-40 uppercase tracking-tighter pointer-events-none">
-                            {time}
-                          </span>
+            {/* Scrollable Slots Area */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar relative z-20 min-h-0">
+              <div className="p-4 lg:p-6 w-full min-w-0">
+                <div className="grid grid-cols-7 gap-2 lg:gap-3">
+                  {times.map((time, tIdx) => (
+                    <React.Fragment key={time}>
+                      {dayNames.map((_, dIdx) => {
+                        const dateStr = getLocalDateString(weekDates[dIdx]);
+                        const slotData = sessions.find(s => {
+                          if (s.session_date !== dateStr || s.time_slot.toLowerCase() !== time.toLowerCase()) return false;
+                          if (activeTab === 'LIVE LABS' && s.class_type !== 'Unit Class') return false;
+                          if (activeTab === 'TUTORING' && s.class_type !== '1-on-1 Tutoring') return false;
+                          if (activeTab === 'SOCIALS' && s.class_type !== 'Social Activity') return false;
+                          if (filterTeacherId !== 'ALL' && s.teacher_id !== filterTeacherId) return false;
+                          return true;
+                        });
+                        
+                        return (
+                          <div 
+                            key={`${dIdx}-${tIdx}`} 
+                            onClick={() => handleSlotClick(dIdx, tIdx, slotData)}
+                            className={`h-16 rounded-xl border flex flex-col items-center justify-center cursor-pointer transition-all relative group hover:scale-[1.02] z-30 overflow-hidden ${getSlotStyle(slotData, false)}`}
+                          >
+                            <span className="absolute top-1 left-2 text-[7px] lg:text-[8px] font-black opacity-40 uppercase tracking-tighter pointer-events-none">
+                              {time}
+                            </span>
 
-                          {!slotData ? (
-                            <div className="absolute inset-0 flex items-center justify-center bg-white/10 opacity-0 group-hover:opacity-100 rounded-xl transition-opacity pointer-events-none">
-                               <span className="text-[9px] font-black text-white tracking-widest">+ ABRIR</span>
-                            </div>
-                          ) : (
-                            <div className="flex flex-col items-center justify-center text-center leading-tight p-1 overflow-hidden z-10 pointer-events-none w-full mt-2">
-                              <span className="text-[9px] md:text-[10px] font-black truncate w-full px-1">{slotData.student?.first_name || 'Estudiante'}</span>
-                              <span className="text-[7px] md:text-[8px] opacity-80 mt-0.5 truncate w-full px-1">U{slotData.unit || '?'} • {slotData.teacher?.first_name || 'Prof.'}</span>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </React.Fragment>
-                ))}
+                            {!slotData ? (
+                              <div className="absolute inset-0 flex items-center justify-center bg-white/10 opacity-0 group-hover:opacity-100 rounded-xl transition-opacity pointer-events-none">
+                                 <span className="text-[9px] font-black text-white tracking-widest">+ ABRIR</span>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col items-center justify-center text-center leading-tight p-1 overflow-hidden z-10 pointer-events-none w-full mt-2">
+                                <span className="text-[9px] md:text-[10px] font-black truncate w-full px-1">{slotData.student?.first_name || 'Estudiante'}</span>
+                                <span className="text-[7px] md:text-[8px] opacity-80 mt-0.5 truncate w-full px-1">U{slotData.unit || '?'} • {slotData.teacher?.first_name || 'Prof.'}</span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </React.Fragment>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* --- SLOT MODAL --- */}
+      {/* --- SLOT MANAGEMENT MODAL --- */}
       {selectedSlot && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
           <div className="bg-[#070b19]/95 border border-white/20 rounded-[2rem] shadow-2xl w-full max-w-md p-8 relative">
@@ -534,39 +558,35 @@ const AdminCalendar = () => {
 
       {/* --- UNBOOKED STUDENTS MODAL --- */}
       {showUnbookedModal && (
-        <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-[#070b19]/95 border border-white/20 rounded-[2rem] shadow-2xl w-full max-w-lg p-6 lg:p-8 relative flex flex-col max-h-[80vh]">
-            <button 
-              onClick={() => setShowUnbookedModal(false)} 
-              className="absolute top-6 right-6 text-white/50 hover:text-white cursor-pointer"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-[#070b19]/95 border border-white/20 rounded-[2rem] shadow-2xl w-full max-w-md p-8 relative flex flex-col max-h-[80vh]">
+            <button onClick={() => setShowUnbookedModal(false)} className="absolute top-6 right-6 text-white/50 hover:text-white cursor-pointer z-10"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
             
-            <h3 className="text-xl font-black text-white uppercase tracking-widest mb-1">
+            <h3 className="text-xl font-black text-white uppercase tracking-widest mb-1 shrink-0">
               Unbooked Students
             </h3>
-            <p className="text-xs text-white/60 mb-6">List of students without active bookings this week.</p>
-            
-            <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-3">
+            <p className="text-xs text-white/60 mb-6 shrink-0 font-bold uppercase tracking-widest">
+              Sin reservas esta semana: {unbookedStudents.length}
+            </p>
+
+            <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-3 min-h-0">
               {unbookedStudents.length === 0 ? (
-                <div className="text-center py-10">
-                  <div className="w-12 h-12 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-3 border border-emerald-500/50">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
-                  </div>
-                  <p className="text-white/70 text-xs font-bold uppercase tracking-widest">All students are booked!</p>
-                </div>
+                <p className="text-center text-white/50 font-bold py-10 uppercase tracking-widest text-xs">
+                  Todos los estudiantes tienen reserva activa.
+                </p>
               ) : (
                 unbookedStudents.map(student => (
-                  <div key={student.id} className="bg-white/5 border border-white/10 p-4 rounded-2xl flex items-center justify-between hover:bg-white/10 transition-colors">
-                    <div className="flex flex-col">
-                      <span className="font-bold text-white text-sm">{student.first_name} {student.last_name}</span>
+                  <div key={student.id} className="bg-white/5 border border-white/10 rounded-xl p-4 flex items-center justify-between hover:bg-white/10 transition-colors">
+                    <div>
+                      <p className="text-sm font-bold text-white truncate max-w-[150px]">
+                        {student.first_name} {student.last_name}
+                      </p>
                     </div>
-                    <div className="text-right flex flex-col">
-                      <span className="text-[9px] text-white/50 uppercase tracking-widest font-bold">Current Lesson</span>
-                      <span className="text-[#fcd34d] font-black text-sm">Unit {student.current_unit || student.unit || student.level || '?'}</span>
+                    <div className="text-right shrink-0 pl-4">
+                      <span className="text-[9px] text-white/50 font-bold uppercase tracking-widest block mb-0.5">Lección Actual</span>
+                      <span className="text-xs font-black text-[#fcd34d] uppercase truncate max-w-[100px] block">
+                        {student.current_lesson || 'No Asignada'}
+                      </span>
                     </div>
                   </div>
                 ))
