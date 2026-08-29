@@ -21,7 +21,6 @@ const AdminCalendar = () => {
 
   const dayNames = ['LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB', 'DOM'];
   
-  // Updated time range: 8:00 AM to 8:00 PM
   const times = [
     '8:00 am', '9:00 am', '10:00 am', '11:00 am', '12:00 pm', '1:00 pm', 
     '2:00 pm', '3:00 pm', '4:00 pm', '5:00 pm', '6:00 pm', '7:00 pm', '8:00 pm'
@@ -69,7 +68,6 @@ const AdminCalendar = () => {
   // --- 2. DATA FETCHING ---
   const fetchCalendarData = async () => {
     try {
-      // Fetch Teachers
       const { data: teachersData } = await supabase
         .from('profiles')
         .select('id, first_name, last_name')
@@ -80,7 +78,6 @@ const AdminCalendar = () => {
         if (teachersData.length > 0) setSelectedTeacherId(teachersData[0].id);
       }
 
-      // Fetch Upcoming 5 Sessions (Global)
       const { data: upcomingData } = await supabase
         .from('live_sessions')
         .select(`
@@ -94,7 +91,6 @@ const AdminCalendar = () => {
 
       if (upcomingData) setUpcomingActivities(upcomingData);
 
-      // Fetch Sessions strictly for the visible week grid
       const startDate = weekDates[0];
       const endDate = new Date(weekDates[6]);
       endDate.setHours(23, 59, 59, 999);
@@ -228,89 +224,90 @@ const AdminCalendar = () => {
   };
 
   return (
-    <div className="w-full h-full p-2 md:p-6 font-montserrat flex flex-col xl:flex-row gap-8 animate-fade-in relative z-10">
+    <div className="w-full h-[calc(100vh-100px)] min-h-[700px] p-2 md:p-6 font-montserrat flex flex-col gap-4 lg:gap-6 animate-fade-in relative z-10 overflow-hidden">
       <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-[#fcd34d]/5 blur-[120px] rounded-full pointer-events-none z-0"></div>
 
-      {/* LEFT COLUMN: Stats Panel (Title Removed to save vertical space) */}
-      <div className="w-full xl:w-1/4 flex flex-col gap-6 relative z-10">
-        
-        {/* Ring Chart Card */}
-        <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-8 flex flex-col items-center shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] shrink-0">
-          <div className="relative w-32 h-32 flex items-center justify-center mb-4">
-            <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="40" fill="none" stroke="#ffffff10" strokeWidth="8" />
-              <circle cx="50" cy="50" r="40" fill="none" stroke="#fcd34d" strokeWidth="8" strokeDasharray="251" strokeDashoffset="25" className="drop-shadow-[0_0_8px_rgba(252,211,77,0.5)]" />
-            </svg>
-            <span className="absolute text-3xl font-black text-white drop-shadow-md">90%</span>
-          </div>
-          <p className="text-xs font-black text-white/90 uppercase tracking-widest text-center">STUDENTS BOOKED</p>
-        </div>
-
-        {/* Dynamic Upcoming Sessions Card */}
-        <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-6 lg:p-8 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] flex-1 flex flex-col min-h-[400px]">
-          <h3 className="text-xl font-black text-white mb-6 text-center uppercase tracking-widest drop-shadow-sm">Upcoming</h3>
-          
-          <ul className="space-y-4 flex-1 overflow-y-auto custom-scrollbar pr-2">
-            {upcomingActivities.length === 0 ? (
-              <li className="text-center text-white/40 text-xs font-bold uppercase tracking-widest py-10">No upcoming sessions</li>
-            ) : (
-              upcomingActivities.map((act) => {
-                const d = new Date(act.scheduled_at);
-                const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-                return (
-                  <li key={act.id} className="flex flex-col gap-1 text-[11px] bg-white/5 p-4 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors shadow-sm">
-                    <div className="flex items-center justify-between w-full mb-1">
-                      <div className="flex items-center gap-2 truncate">
-                        <div className={`w-2 h-2 rounded-full shrink-0 ${act.class_type === 'Unit Class' ? 'bg-[#fcd34d]' : act.class_type === '1-on-1 Tutoring' ? 'bg-[#3b82f6]' : 'bg-[#a855f7]'}`}></div>
-                        <span className="font-black text-white uppercase tracking-widest truncate">{act.class_type}</span>
-                      </div>
-                      <span className="font-bold text-white/80 shrink-0">{timeStr}</span>
-                    </div>
-                    <div className="flex items-center justify-between pl-4">
-                      <span className="text-white/50 truncate pr-2">Prof. {act.teacher?.first_name || 'TBA'}</span>
-                      <span className="text-[#fcd34d]/80 font-bold shrink-0">{dateStr}</span>
-                    </div>
-                  </li>
-                );
-              })
-            )}
-          </ul>
-
-          <button className="w-full mt-6 py-4 bg-[#f8fafc] hover:bg-white text-[#0f172a] rounded-2xl font-black text-[10px] lg:text-xs uppercase tracking-widest flex items-center justify-center gap-3 transition-all shadow-lg hover:scale-105 shrink-0">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
-            REQUEST SUBSTITUTE
-          </button>
-        </div>
+      {/* TOP NAVIGATION ROW - Placed above the main layout in the empty space */}
+      <div className="flex justify-end w-full shrink-0 relative z-20">
+         <div className="flex items-center gap-4 lg:gap-6 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-full p-2 px-6 shadow-xl">
+           <div className="flex items-center gap-2 lg:gap-3">
+             <button onClick={() => handleWeekChange(-1)} className="text-white/40 hover:text-white transition-colors p-2 cursor-pointer relative z-30"><svg className="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg></button>
+             <span className="text-[10px] lg:text-xs font-black text-white uppercase tracking-widest min-w-[70px] text-center">SEMANA</span>
+             <button onClick={() => handleWeekChange(1)} className="text-white/40 hover:text-white transition-colors p-2 cursor-pointer relative z-30"><svg className="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg></button>
+           </div>
+           <div className="w-px h-5 bg-white/20"></div>
+           <div className="flex items-center gap-2 lg:gap-3">
+             <button onClick={() => handleMonthChange(-1)} className="text-white/40 hover:text-white transition-colors p-2 cursor-pointer relative z-30"><svg className="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg></button>
+             <span className="text-[10px] lg:text-xs font-black text-white uppercase tracking-widest min-w-[90px] text-center">{currentMonthName}</span>
+             <button onClick={() => handleMonthChange(1)} className="text-white/40 hover:text-white transition-colors p-2 cursor-pointer relative z-30"><svg className="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg></button>
+           </div>
+         </div>
       </div>
 
-      {/* RIGHT COLUMN: Calendar Grid + Outside Controls */}
-      <div className="w-full xl:w-3/4 flex flex-col gap-6 relative z-20 h-[calc(100vh-160px)] max-h-[85vh]">
+      {/* MAIN CONTENT SPLIT ROW */}
+      <div className="flex flex-col xl:flex-row gap-6 lg:gap-8 flex-1 min-h-0 relative z-20">
         
-        {/* NEW: Outside Navigation Controls */}
-        <div className="flex justify-end w-full shrink-0">
-           <div className="flex items-center gap-4 lg:gap-6 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-full p-2 px-6 shadow-xl">
-             <div className="flex items-center gap-2 lg:gap-3">
-               <button onClick={() => handleWeekChange(-1)} className="text-white/40 hover:text-white transition-colors p-2 cursor-pointer relative z-30"><svg className="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg></button>
-               <span className="text-[10px] lg:text-xs font-black text-white uppercase tracking-widest min-w-[70px] text-center">SEMANA</span>
-               <button onClick={() => handleWeekChange(1)} className="text-white/40 hover:text-white transition-colors p-2 cursor-pointer relative z-30"><svg className="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg></button>
-             </div>
-             <div className="w-px h-5 bg-white/20"></div>
-             <div className="flex items-center gap-2 lg:gap-3">
-               <button onClick={() => handleMonthChange(-1)} className="text-white/40 hover:text-white transition-colors p-2 cursor-pointer relative z-30"><svg className="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg></button>
-               <span className="text-[10px] lg:text-xs font-black text-white uppercase tracking-widest min-w-[90px] text-center">{currentMonthName}</span>
-               <button onClick={() => handleMonthChange(1)} className="text-white/40 hover:text-white transition-colors p-2 cursor-pointer relative z-30"><svg className="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg></button>
-             </div>
-           </div>
+        {/* LEFT COLUMN: Wider, perfectly aligned via flex-col h-full */}
+        <div className="w-full xl:w-[30%] flex flex-col gap-6 h-full shrink-0">
+          
+          {/* Ring Chart Card */}
+          <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-8 flex flex-col items-center justify-center shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] shrink-0">
+            <div className="relative w-36 h-36 flex items-center justify-center mb-2">
+              {/* Increased viewBox and decreased relative circle size to allow drop-shadow space without clipping */}
+              <svg className="w-full h-full transform -rotate-90 overflow-visible" viewBox="0 0 140 140">
+                <circle cx="70" cy="70" r="50" fill="none" stroke="#ffffff10" strokeWidth="8" />
+                <circle cx="70" cy="70" r="50" fill="none" stroke="#fcd34d" strokeWidth="8" strokeDasharray="314.16" strokeDashoffset="31.41" className="drop-shadow-[0_0_12px_rgba(252,211,77,0.7)]" />
+              </svg>
+              <span className="absolute text-3xl font-black text-white drop-shadow-md">90%</span>
+            </div>
+            <p className="text-[11px] font-black text-white/90 uppercase tracking-widest text-center mt-2">STUDENTS BOOKED</p>
+          </div>
+
+          {/* Upcoming Sessions Card - flex-1 forces it to stretch to the bottom of the container */}
+          <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-6 lg:p-8 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] flex-1 flex flex-col min-h-0">
+            <h3 className="text-xl font-black text-white mb-6 text-center uppercase tracking-widest drop-shadow-sm shrink-0">Upcoming</h3>
+            
+            <ul className="space-y-4 flex-1 overflow-y-auto custom-scrollbar pr-2 min-h-0">
+              {upcomingActivities.length === 0 ? (
+                <li className="text-center text-white/40 text-xs font-bold uppercase tracking-widest py-10">No upcoming sessions</li>
+              ) : (
+                upcomingActivities.map((act) => {
+                  const d = new Date(act.scheduled_at);
+                  const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                  const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+                  return (
+                    <li key={act.id} className="flex flex-col gap-1 text-[11px] bg-white/5 p-4 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors shadow-sm">
+                      <div className="flex items-center justify-between w-full mb-1">
+                        <div className="flex items-center gap-2 truncate">
+                          <div className={`w-2 h-2 rounded-full shrink-0 ${act.class_type === 'Unit Class' ? 'bg-[#fcd34d]' : act.class_type === '1-on-1 Tutoring' ? 'bg-[#3b82f6]' : 'bg-[#a855f7]'}`}></div>
+                          <span className="font-black text-white uppercase tracking-widest truncate">{act.class_type}</span>
+                        </div>
+                        <span className="font-bold text-white/80 shrink-0">{timeStr}</span>
+                      </div>
+                      <div className="flex items-center justify-between pl-4">
+                        <span className="text-white/50 truncate pr-2">Prof. {act.teacher?.first_name || 'TBA'}</span>
+                        <span className="text-[#fcd34d]/80 font-bold shrink-0">{dateStr}</span>
+                      </div>
+                    </li>
+                  );
+                })
+              )}
+            </ul>
+
+            {/* Adjusted Button Size & Layout */}
+            <button className="w-full mt-6 py-5 bg-[#f8fafc] hover:bg-white text-[#0f172a] rounded-2xl font-black text-[13px] lg:text-sm uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-lg hover:scale-105 shrink-0">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+              REQUEST SUBSTITUTE
+            </button>
+          </div>
         </div>
 
-        {/* Fully Glassmorphic Main Grid Container */}
-        <div className="flex-1 bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] flex flex-col overflow-hidden relative">
+        {/* RIGHT COLUMN: Calendar Grid - Stretches to the exact same height as the left column */}
+        <div className="w-full xl:w-[70%] flex flex-col h-full bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] overflow-hidden relative">
           
-          {/* Header containing regular tabs AND the Teacher dropdown Tab */}
-          <div className="flex flex-col xl:flex-row justify-between items-center p-6 lg:p-8 border-b border-white/10 gap-6 relative z-40">
+          {/* Header containing Tabs */}
+          <div className="flex flex-col xl:flex-row justify-between items-center p-6 lg:p-8 border-b border-white/10 gap-6 relative z-40 shrink-0">
             <div className="flex gap-2 bg-black/20 p-1.5 rounded-full border border-white/5 overflow-x-auto w-full md:w-auto custom-scrollbar shadow-inner relative">
-              {/* Type Tabs */}
               {['OVERALL', 'LIVE LABS', 'TUTORING', 'SOCIALS'].map(tab => (
                 <button 
                   key={tab}
@@ -321,7 +318,6 @@ const AdminCalendar = () => {
                 </button>
               ))}
 
-              {/* Seamless Teacher Dropdown Toggle */}
               <div className="relative">
                 <button 
                   onClick={() => setShowTeacherDropdown(!showTeacherDropdown)}
@@ -330,7 +326,6 @@ const AdminCalendar = () => {
                   TEACHERS {filterTeacherId !== 'ALL' && <span className="bg-[#fcd34d] text-[#08203e] px-1.5 rounded-full text-[9px] ml-1 flex items-center justify-center">✓</span>}
                 </button>
                 
-                {/* The Dropdown Menu */}
                 {showTeacherDropdown && (
                   <>
                     <div className="fixed inset-0 z-40 cursor-default" onClick={() => setShowTeacherDropdown(false)}></div>
@@ -350,7 +345,7 @@ const AdminCalendar = () => {
           </div>
 
           {/* 8-Column Grid Headers */}
-          <div className="grid grid-cols-[80px_repeat(7,_1fr)] gap-3 px-6 lg:px-8 py-4 bg-white/5 border-b border-white/5 relative z-20">
+          <div className="grid grid-cols-[80px_repeat(7,_1fr)] gap-3 px-6 lg:px-8 py-4 bg-white/5 border-b border-white/5 relative z-20 shrink-0">
             <div className="invisible"></div> 
             {dayNames.map((day, idx) => (
               <div key={day} className="flex items-center justify-center gap-2">
@@ -361,18 +356,16 @@ const AdminCalendar = () => {
           </div>
 
           {/* Scrollable Slots Area */}
-          <div className="flex-1 overflow-y-auto custom-scrollbar relative z-20">
+          <div className="flex-1 overflow-y-auto custom-scrollbar relative z-20 min-h-0">
             <div className="p-6 lg:p-8 min-w-[750px]">
               <div className="grid grid-cols-[80px_repeat(7,_1fr)] gap-3">
                 {times.map((time, tIdx) => (
                   <React.Fragment key={time}>
                     
-                    {/* Y-Axis Label */}
                     <div className="flex items-center justify-end pr-4 text-[11px] font-black text-white/50 tracking-wider select-none">
                       {time}
                     </div>
 
-                    {/* X-Axis Slots */}
                     {dayNames.map((_, dIdx) => {
                       const dateStr = getLocalDateString(weekDates[dIdx]);
                       const slotData = sessions.find(s => {
