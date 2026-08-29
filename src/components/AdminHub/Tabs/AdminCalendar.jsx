@@ -14,6 +14,7 @@ const AdminCalendar = () => {
   const [teachers, setTeachers] = useState([]);
   const [upcomingActivities, setUpcomingActivities] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [bookedPercentage, setBookedPercentage] = useState(0);
   
   // Assignment States
   const [selectedTeacherId, setSelectedTeacherId] = useState('');
@@ -123,6 +124,12 @@ const AdminCalendar = () => {
           return { ...session, session_date: dateStr, time_slot: timeStr };
         });
         setSessions(mappedSessions);
+
+        // Calculate Real Percentage for the Ring Chart
+        const totalSessions = sessionsData.length;
+        const bookedCount = sessionsData.filter(s => s.status === 'booked' || s.status === 'completed').length;
+        const calculatedPercentage = totalSessions > 0 ? Math.round((bookedCount / totalSessions) * 100) : 0;
+        setBookedPercentage(calculatedPercentage);
       }
     } catch (error) {
       console.error("Error fetching calendar data:", error);
@@ -223,11 +230,16 @@ const AdminCalendar = () => {
     return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
   };
 
+  // Ring Chart Mathematical Logic
+  const circleRadius = 75;
+  const circleCircumference = 2 * Math.PI * circleRadius; // ~471.24
+  const strokeDashoffset = circleCircumference - (bookedPercentage / 100) * circleCircumference;
+
   return (
     <div className="w-full h-[calc(100vh-100px)] min-h-[700px] p-2 md:p-6 font-montserrat flex flex-col gap-4 lg:gap-6 animate-fade-in relative z-10 overflow-visible">
       <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-[#fcd34d]/5 blur-[120px] rounded-full pointer-events-none z-0"></div>
 
-      {/* TOP NAVIGATION ROW - Posición Absoluta para subir a nivel del Header (CALENDARS) */}
+      {/* TOP NAVIGATION ROW */}
       <div className="absolute -top-12 lg:-top-16 right-2 lg:right-6 z-50 flex justify-end shrink-0">
          <div className="flex items-center gap-4 lg:gap-6 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-full p-2 px-6 shadow-xl bg-clip-padding">
            <div className="flex items-center gap-2 lg:gap-3">
@@ -244,26 +256,30 @@ const AdminCalendar = () => {
          </div>
       </div>
 
-      {/* MAIN CONTENT SPLIT ROW - Ahora sube perfectamente hasta arriba */}
+      {/* MAIN CONTENT SPLIT ROW */}
       <div className="flex flex-col xl:flex-row gap-6 lg:gap-8 flex-1 min-h-0 relative z-20 mt-4 lg:mt-0">
         
         {/* LEFT COLUMN */}
         <div className="w-full xl:w-[30%] flex flex-col gap-6 h-full shrink-0">
           
-          {/* Ring Chart Card - Enlarged size & proportions */}
-          <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-6 lg:p-8 flex flex-col items-center justify-center shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] bg-clip-padding shrink-0 transform-gpu">
-            <div className="relative w-48 h-48 lg:w-56 lg:h-56 flex items-center justify-center mb-2">
+          {/* Ring Chart Card - Scaled down */}
+          <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-6 flex flex-col items-center justify-center shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] bg-clip-padding shrink-0 transform-gpu">
+            <div className="relative w-32 h-32 lg:w-40 lg:h-40 flex items-center justify-center mb-2">
               <svg className="w-full h-full transform -rotate-90 overflow-visible" viewBox="0 0 180 180">
-                {/* cx/cy = 90 (center of 180), r = 75. 2*PI*75 = 471.24 */}
                 <circle cx="90" cy="90" r="75" fill="none" stroke="#ffffff10" strokeWidth="12" />
-                <circle cx="90" cy="90" r="75" fill="none" stroke="#fcd34d" strokeWidth="12" strokeDasharray="471.24" strokeDashoffset="47.12" className="drop-shadow-[0_0_15px_rgba(252,211,77,0.7)]" />
+                <circle 
+                  cx="90" cy="90" r="75" fill="none" stroke="#fcd34d" strokeWidth="12" 
+                  strokeDasharray={circleCircumference} 
+                  strokeDashoffset={strokeDashoffset} 
+                  className="drop-shadow-[0_0_15px_rgba(252,211,77,0.7)] transition-all duration-1000 ease-out" 
+                />
               </svg>
-              <span className="absolute text-4xl lg:text-5xl font-black text-white drop-shadow-md">90%</span>
+              <span className="absolute text-3xl lg:text-4xl font-black text-white drop-shadow-md">{bookedPercentage}%</span>
             </div>
-            <p className="text-[11px] lg:text-xs font-black text-white/90 uppercase tracking-widest text-center mt-2">STUDENTS BOOKED</p>
+            <p className="text-[10px] lg:text-[11px] font-black text-white/90 uppercase tracking-widest text-center mt-2">STUDENTS BOOKED</p>
           </div>
 
-          {/* Upcoming Sessions Card */}
+          {/* Upcoming Sessions Card - Automatically taller because of flex-1 */}
           <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-6 lg:p-8 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] bg-clip-padding flex-1 flex flex-col min-h-0 transform-gpu">
             <h3 className="text-xl font-black text-white mb-6 text-center uppercase tracking-widest drop-shadow-sm shrink-0">Upcoming</h3>
             
@@ -304,9 +320,8 @@ const AdminCalendar = () => {
         {/* RIGHT COLUMN: Calendar Grid */}
         <div className="w-full xl:w-[70%] flex flex-col h-full bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] bg-clip-padding overflow-hidden relative transform-gpu">
           
-          {/* Header containing Tabs (Resized to stretch and fill perfectly) */}
+          {/* Header containing Tabs */}
           <div className="flex flex-col xl:flex-row justify-between items-center p-4 lg:p-6 border-b border-white/10 gap-4 relative z-40 shrink-0">
-            {/* Added w-full and completely restructured the buttons to use flex-1 */}
             <div className="flex w-full gap-1 lg:gap-2 bg-black/20 p-1.5 lg:p-2 rounded-full border border-white/5 shadow-inner relative">
               {['OVERALL', 'LIVE LABS', 'TUTORING', 'SOCIALS'].map(tab => (
                 <button 
