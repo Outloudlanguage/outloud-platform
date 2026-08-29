@@ -227,9 +227,9 @@ const AdminCalendar = () => {
     <div className="w-full h-[calc(100vh-100px)] min-h-[700px] p-2 md:p-6 font-montserrat flex flex-col gap-4 lg:gap-6 animate-fade-in relative z-10 overflow-hidden">
       <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-[#fcd34d]/5 blur-[120px] rounded-full pointer-events-none z-0"></div>
 
-      {/* TOP NAVIGATION ROW - Placed above the main layout in the empty space */}
+      {/* TOP NAVIGATION ROW */}
       <div className="flex justify-end w-full shrink-0 relative z-20">
-         <div className="flex items-center gap-4 lg:gap-6 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-full p-2 px-6 shadow-xl">
+         <div className="flex items-center gap-4 lg:gap-6 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-full p-2 px-6 shadow-xl bg-clip-padding">
            <div className="flex items-center gap-2 lg:gap-3">
              <button onClick={() => handleWeekChange(-1)} className="text-white/40 hover:text-white transition-colors p-2 cursor-pointer relative z-30"><svg className="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg></button>
              <span className="text-[10px] lg:text-xs font-black text-white uppercase tracking-widest min-w-[70px] text-center">SEMANA</span>
@@ -247,13 +247,12 @@ const AdminCalendar = () => {
       {/* MAIN CONTENT SPLIT ROW */}
       <div className="flex flex-col xl:flex-row gap-6 lg:gap-8 flex-1 min-h-0 relative z-20">
         
-        {/* LEFT COLUMN: Wider, perfectly aligned via flex-col h-full */}
+        {/* LEFT COLUMN */}
         <div className="w-full xl:w-[30%] flex flex-col gap-6 h-full shrink-0">
           
           {/* Ring Chart Card */}
-          <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-8 flex flex-col items-center justify-center shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] shrink-0">
+          <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-8 flex flex-col items-center justify-center shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] bg-clip-padding shrink-0 transform-gpu">
             <div className="relative w-36 h-36 flex items-center justify-center mb-2">
-              {/* Increased viewBox and decreased relative circle size to allow drop-shadow space without clipping */}
               <svg className="w-full h-full transform -rotate-90 overflow-visible" viewBox="0 0 140 140">
                 <circle cx="70" cy="70" r="50" fill="none" stroke="#ffffff10" strokeWidth="8" />
                 <circle cx="70" cy="70" r="50" fill="none" stroke="#fcd34d" strokeWidth="8" strokeDasharray="314.16" strokeDashoffset="31.41" className="drop-shadow-[0_0_12px_rgba(252,211,77,0.7)]" />
@@ -263,8 +262,8 @@ const AdminCalendar = () => {
             <p className="text-[11px] font-black text-white/90 uppercase tracking-widest text-center mt-2">STUDENTS BOOKED</p>
           </div>
 
-          {/* Upcoming Sessions Card - flex-1 forces it to stretch to the bottom of the container */}
-          <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-6 lg:p-8 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] flex-1 flex flex-col min-h-0">
+          {/* Upcoming Sessions Card */}
+          <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-6 lg:p-8 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] bg-clip-padding flex-1 flex flex-col min-h-0 transform-gpu">
             <h3 className="text-xl font-black text-white mb-6 text-center uppercase tracking-widest drop-shadow-sm shrink-0">Upcoming</h3>
             
             <ul className="space-y-4 flex-1 overflow-y-auto custom-scrollbar pr-2 min-h-0">
@@ -294,7 +293,6 @@ const AdminCalendar = () => {
               )}
             </ul>
 
-            {/* Adjusted Button Size & Layout */}
             <button className="w-full mt-6 py-5 bg-[#f8fafc] hover:bg-white text-[#0f172a] rounded-2xl font-black text-[13px] lg:text-sm uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-lg hover:scale-105 shrink-0">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
               REQUEST SUBSTITUTE
@@ -302,17 +300,17 @@ const AdminCalendar = () => {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: Calendar Grid - Stretches to the exact same height as the left column */}
-        <div className="w-full xl:w-[70%] flex flex-col h-full bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] overflow-hidden relative">
+        {/* RIGHT COLUMN: Calendar Grid */}
+        <div className="w-full xl:w-[70%] flex flex-col h-full bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] bg-clip-padding overflow-hidden relative transform-gpu">
           
-          {/* Header containing Tabs */}
-          <div className="flex flex-col xl:flex-row justify-between items-center p-6 lg:p-8 border-b border-white/10 gap-6 relative z-40 shrink-0">
-            <div className="flex gap-2 bg-black/20 p-1.5 rounded-full border border-white/5 overflow-x-auto w-full md:w-auto custom-scrollbar shadow-inner relative">
+          {/* Header containing Tabs (Resized to fit exactly) */}
+          <div className="flex flex-col xl:flex-row justify-between items-center p-4 lg:p-6 border-b border-white/10 gap-4 relative z-40 shrink-0">
+            <div className="flex gap-1 lg:gap-2 bg-black/20 p-1 lg:p-1.5 rounded-full border border-white/5 overflow-x-auto w-full md:w-auto shadow-inner relative no-scrollbar">
               {['OVERALL', 'LIVE LABS', 'TUTORING', 'SOCIALS'].map(tab => (
                 <button 
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`px-4 lg:px-6 py-2.5 rounded-full text-[10px] lg:text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap cursor-pointer ${activeTab === tab ? 'bg-white/20 text-white shadow-md' : 'text-white/40 hover:text-white/80'}`}
+                  className={`px-3 lg:px-4 py-1.5 lg:py-2 rounded-full text-[8px] lg:text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap cursor-pointer ${activeTab === tab ? 'bg-white/20 text-white shadow-md' : 'text-white/40 hover:text-white/80'}`}
                 >
                   {tab}
                 </button>
@@ -321,19 +319,19 @@ const AdminCalendar = () => {
               <div className="relative">
                 <button 
                   onClick={() => setShowTeacherDropdown(!showTeacherDropdown)}
-                  className={`px-4 lg:px-6 py-2.5 rounded-full text-[10px] lg:text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap cursor-pointer flex items-center gap-2 ${filterTeacherId !== 'ALL' || showTeacherDropdown ? 'bg-white/20 text-white shadow-md' : 'text-white/40 hover:text-white/80'}`}
+                  className={`px-3 lg:px-4 py-1.5 lg:py-2 rounded-full text-[8px] lg:text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${filterTeacherId !== 'ALL' || showTeacherDropdown ? 'bg-white/20 text-white shadow-md' : 'text-white/40 hover:text-white/80'}`}
                 >
-                  TEACHERS {filterTeacherId !== 'ALL' && <span className="bg-[#fcd34d] text-[#08203e] px-1.5 rounded-full text-[9px] ml-1 flex items-center justify-center">✓</span>}
+                  TEACHERS {filterTeacherId !== 'ALL' && <span className="bg-[#fcd34d] text-[#08203e] px-1 rounded-full text-[7px] ml-0.5 flex items-center justify-center">✓</span>}
                 </button>
                 
                 {showTeacherDropdown && (
                   <>
                     <div className="fixed inset-0 z-40 cursor-default" onClick={() => setShowTeacherDropdown(false)}></div>
                     <div className="absolute top-full mt-3 right-0 w-56 bg-[#070b19]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] py-2 z-50 flex flex-col">
-                       <button onClick={() => { setFilterTeacherId('ALL'); setShowTeacherDropdown(false); }} className={`text-left px-5 py-3 text-xs font-black uppercase tracking-widest transition-colors ${filterTeacherId === 'ALL' ? 'text-[#fcd34d] bg-white/5' : 'text-white/70 hover:text-white hover:bg-white/5'}`}>ALL TEACHERS</button>
+                       <button onClick={() => { setFilterTeacherId('ALL'); setShowTeacherDropdown(false); }} className={`text-left px-5 py-3 text-[10px] font-black uppercase tracking-widest transition-colors ${filterTeacherId === 'ALL' ? 'text-[#fcd34d] bg-white/5' : 'text-white/70 hover:text-white hover:bg-white/5'}`}>ALL TEACHERS</button>
                        <div className="h-px w-full bg-white/10 my-1"></div>
                        {teachers.map(t => (
-                         <button key={t.id} onClick={() => { setFilterTeacherId(t.id); setShowTeacherDropdown(false); }} className={`text-left px-5 py-3 text-xs font-bold uppercase tracking-widest transition-colors truncate ${filterTeacherId === t.id ? 'text-[#fcd34d] bg-white/5' : 'text-white/70 hover:text-white hover:bg-white/5'}`}>
+                         <button key={t.id} onClick={() => { setFilterTeacherId(t.id); setShowTeacherDropdown(false); }} className={`text-left px-5 py-3 text-[10px] font-bold uppercase tracking-widest transition-colors truncate ${filterTeacherId === t.id ? 'text-[#fcd34d] bg-white/5' : 'text-white/70 hover:text-white hover:bg-white/5'}`}>
                            {t.first_name} {t.last_name}
                          </button>
                        ))}
@@ -344,28 +342,22 @@ const AdminCalendar = () => {
             </div>
           </div>
 
-          {/* 8-Column Grid Headers */}
-          <div className="grid grid-cols-[80px_repeat(7,_1fr)] gap-3 px-6 lg:px-8 py-4 bg-white/5 border-b border-white/5 relative z-20 shrink-0">
-            <div className="invisible"></div> 
+          {/* 7-Column Grid Headers (Removed the blank invisible corner) */}
+          <div className="grid grid-cols-7 gap-2 lg:gap-3 px-4 lg:px-6 py-4 bg-white/5 border-b border-white/5 relative z-20 shrink-0">
             {dayNames.map((day, idx) => (
-              <div key={day} className="flex items-center justify-center gap-2">
-                <span className="text-[11px] font-bold text-white/50 tracking-widest">{day}</span>
-                <span className="text-[11px] font-black text-white">{weekDates[idx].getDate()}</span>
+              <div key={day} className="flex items-center justify-center gap-1.5">
+                <span className="text-[10px] lg:text-[11px] font-bold text-white/50 tracking-widest">{day}</span>
+                <span className="text-[10px] lg:text-[11px] font-black text-white">{weekDates[idx].getDate()}</span>
               </div>
             ))}
           </div>
 
-          {/* Scrollable Slots Area */}
+          {/* Scrollable Slots Area (Moved times inside slots) */}
           <div className="flex-1 overflow-y-auto custom-scrollbar relative z-20 min-h-0">
-            <div className="p-6 lg:p-8 min-w-[750px]">
-              <div className="grid grid-cols-[80px_repeat(7,_1fr)] gap-3">
+            <div className="p-4 lg:p-6 w-full min-w-0">
+              <div className="grid grid-cols-7 gap-2 lg:gap-3">
                 {times.map((time, tIdx) => (
                   <React.Fragment key={time}>
-                    
-                    <div className="flex items-center justify-end pr-4 text-[11px] font-black text-white/50 tracking-wider select-none">
-                      {time}
-                    </div>
-
                     {dayNames.map((_, dIdx) => {
                       const dateStr = getLocalDateString(weekDates[dIdx]);
                       const slotData = sessions.find(s => {
@@ -381,16 +373,21 @@ const AdminCalendar = () => {
                         <div 
                           key={`${dIdx}-${tIdx}`} 
                           onClick={() => handleSlotClick(dIdx, tIdx, slotData)}
-                          className={`h-16 rounded-xl border flex flex-col items-center justify-center cursor-pointer transition-all relative group hover:scale-[1.02] relative z-30 ${getSlotStyle(slotData, false)}`}
+                          className={`h-16 rounded-xl border flex flex-col items-center justify-center cursor-pointer transition-all relative group hover:scale-[1.02] z-30 overflow-hidden ${getSlotStyle(slotData, false)}`}
                         >
+                          {/* Inner Time Label */}
+                          <span className="absolute top-1 left-2 text-[7px] lg:text-[8px] font-black opacity-40 uppercase tracking-tighter pointer-events-none">
+                            {time}
+                          </span>
+
                           {!slotData ? (
                             <div className="absolute inset-0 flex items-center justify-center bg-white/10 opacity-0 group-hover:opacity-100 rounded-xl transition-opacity pointer-events-none">
                                <span className="text-[9px] font-black text-white tracking-widest">+ ABRIR</span>
                             </div>
                           ) : (
-                            <div className="flex flex-col items-center justify-center text-center leading-tight p-1 overflow-hidden z-10 pointer-events-none w-full">
-                              <span className="text-[10px] font-black truncate w-full px-1">{slotData.student?.first_name || 'Estudiante'}</span>
-                              <span className="text-[8px] opacity-80 mt-1 truncate w-full px-1">U{slotData.unit || '?'} • {slotData.teacher?.first_name || 'Prof.'}</span>
+                            <div className="flex flex-col items-center justify-center text-center leading-tight p-1 overflow-hidden z-10 pointer-events-none w-full mt-2">
+                              <span className="text-[9px] md:text-[10px] font-black truncate w-full px-1">{slotData.student?.first_name || 'Estudiante'}</span>
+                              <span className="text-[7px] md:text-[8px] opacity-80 mt-0.5 truncate w-full px-1">U{slotData.unit || '?'} • {slotData.teacher?.first_name || 'Prof.'}</span>
                             </div>
                           )}
                         </div>
