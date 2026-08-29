@@ -224,11 +224,11 @@ const AdminCalendar = () => {
   };
 
   return (
-    <div className="w-full h-[calc(100vh-100px)] min-h-[700px] p-2 md:p-6 font-montserrat flex flex-col gap-4 lg:gap-6 animate-fade-in relative z-10 overflow-hidden">
+    <div className="w-full h-[calc(100vh-100px)] min-h-[700px] p-2 md:p-6 font-montserrat flex flex-col gap-4 lg:gap-6 animate-fade-in relative z-10 overflow-visible">
       <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-[#fcd34d]/5 blur-[120px] rounded-full pointer-events-none z-0"></div>
 
-      {/* TOP NAVIGATION ROW */}
-      <div className="flex justify-end w-full shrink-0 relative z-20">
+      {/* TOP NAVIGATION ROW - Posición Absoluta para subir a nivel del Header (CALENDARS) */}
+      <div className="absolute -top-12 lg:-top-16 right-2 lg:right-6 z-50 flex justify-end shrink-0">
          <div className="flex items-center gap-4 lg:gap-6 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-full p-2 px-6 shadow-xl bg-clip-padding">
            <div className="flex items-center gap-2 lg:gap-3">
              <button onClick={() => handleWeekChange(-1)} className="text-white/40 hover:text-white transition-colors p-2 cursor-pointer relative z-30"><svg className="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg></button>
@@ -244,22 +244,23 @@ const AdminCalendar = () => {
          </div>
       </div>
 
-      {/* MAIN CONTENT SPLIT ROW */}
-      <div className="flex flex-col xl:flex-row gap-6 lg:gap-8 flex-1 min-h-0 relative z-20">
+      {/* MAIN CONTENT SPLIT ROW - Ahora sube perfectamente hasta arriba */}
+      <div className="flex flex-col xl:flex-row gap-6 lg:gap-8 flex-1 min-h-0 relative z-20 mt-4 lg:mt-0">
         
         {/* LEFT COLUMN */}
         <div className="w-full xl:w-[30%] flex flex-col gap-6 h-full shrink-0">
           
-          {/* Ring Chart Card */}
-          <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-8 flex flex-col items-center justify-center shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] bg-clip-padding shrink-0 transform-gpu">
-            <div className="relative w-36 h-36 flex items-center justify-center mb-2">
-              <svg className="w-full h-full transform -rotate-90 overflow-visible" viewBox="0 0 140 140">
-                <circle cx="70" cy="70" r="50" fill="none" stroke="#ffffff10" strokeWidth="8" />
-                <circle cx="70" cy="70" r="50" fill="none" stroke="#fcd34d" strokeWidth="8" strokeDasharray="314.16" strokeDashoffset="31.41" className="drop-shadow-[0_0_12px_rgba(252,211,77,0.7)]" />
+          {/* Ring Chart Card - Enlarged size & proportions */}
+          <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-6 lg:p-8 flex flex-col items-center justify-center shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] bg-clip-padding shrink-0 transform-gpu">
+            <div className="relative w-48 h-48 lg:w-56 lg:h-56 flex items-center justify-center mb-2">
+              <svg className="w-full h-full transform -rotate-90 overflow-visible" viewBox="0 0 180 180">
+                {/* cx/cy = 90 (center of 180), r = 75. 2*PI*75 = 471.24 */}
+                <circle cx="90" cy="90" r="75" fill="none" stroke="#ffffff10" strokeWidth="12" />
+                <circle cx="90" cy="90" r="75" fill="none" stroke="#fcd34d" strokeWidth="12" strokeDasharray="471.24" strokeDashoffset="47.12" className="drop-shadow-[0_0_15px_rgba(252,211,77,0.7)]" />
               </svg>
-              <span className="absolute text-3xl font-black text-white drop-shadow-md">90%</span>
+              <span className="absolute text-4xl lg:text-5xl font-black text-white drop-shadow-md">90%</span>
             </div>
-            <p className="text-[11px] font-black text-white/90 uppercase tracking-widest text-center mt-2">STUDENTS BOOKED</p>
+            <p className="text-[11px] lg:text-xs font-black text-white/90 uppercase tracking-widest text-center mt-2">STUDENTS BOOKED</p>
           </div>
 
           {/* Upcoming Sessions Card */}
@@ -303,23 +304,24 @@ const AdminCalendar = () => {
         {/* RIGHT COLUMN: Calendar Grid */}
         <div className="w-full xl:w-[70%] flex flex-col h-full bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] bg-clip-padding overflow-hidden relative transform-gpu">
           
-          {/* Header containing Tabs (Resized to fit exactly) */}
+          {/* Header containing Tabs (Resized to stretch and fill perfectly) */}
           <div className="flex flex-col xl:flex-row justify-between items-center p-4 lg:p-6 border-b border-white/10 gap-4 relative z-40 shrink-0">
-            <div className="flex gap-1 lg:gap-2 bg-black/20 p-1 lg:p-1.5 rounded-full border border-white/5 overflow-x-auto w-full md:w-auto shadow-inner relative no-scrollbar">
+            {/* Added w-full and completely restructured the buttons to use flex-1 */}
+            <div className="flex w-full gap-1 lg:gap-2 bg-black/20 p-1.5 lg:p-2 rounded-full border border-white/5 shadow-inner relative">
               {['OVERALL', 'LIVE LABS', 'TUTORING', 'SOCIALS'].map(tab => (
                 <button 
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`px-3 lg:px-4 py-1.5 lg:py-2 rounded-full text-[8px] lg:text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap cursor-pointer ${activeTab === tab ? 'bg-white/20 text-white shadow-md' : 'text-white/40 hover:text-white/80'}`}
+                  className={`flex-1 px-2 py-2 lg:py-2.5 rounded-full text-[9px] lg:text-[11px] font-black uppercase tracking-widest transition-all whitespace-nowrap cursor-pointer text-center ${activeTab === tab ? 'bg-white/20 text-white shadow-md' : 'text-white/40 hover:text-white/80'}`}
                 >
                   {tab}
                 </button>
               ))}
 
-              <div className="relative">
+              <div className="relative flex-1">
                 <button 
                   onClick={() => setShowTeacherDropdown(!showTeacherDropdown)}
-                  className={`px-3 lg:px-4 py-1.5 lg:py-2 rounded-full text-[8px] lg:text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${filterTeacherId !== 'ALL' || showTeacherDropdown ? 'bg-white/20 text-white shadow-md' : 'text-white/40 hover:text-white/80'}`}
+                  className={`w-full h-full flex items-center justify-center gap-1.5 px-2 py-2 lg:py-2.5 rounded-full text-[9px] lg:text-[11px] font-black uppercase tracking-widest transition-all whitespace-nowrap cursor-pointer ${filterTeacherId !== 'ALL' || showTeacherDropdown ? 'bg-white/20 text-white shadow-md' : 'text-white/40 hover:text-white/80'}`}
                 >
                   TEACHERS {filterTeacherId !== 'ALL' && <span className="bg-[#fcd34d] text-[#08203e] px-1 rounded-full text-[7px] ml-0.5 flex items-center justify-center">✓</span>}
                 </button>
@@ -342,7 +344,7 @@ const AdminCalendar = () => {
             </div>
           </div>
 
-          {/* 7-Column Grid Headers (Removed the blank invisible corner) */}
+          {/* 7-Column Grid Headers */}
           <div className="grid grid-cols-7 gap-2 lg:gap-3 px-4 lg:px-6 py-4 bg-white/5 border-b border-white/5 relative z-20 shrink-0">
             {dayNames.map((day, idx) => (
               <div key={day} className="flex items-center justify-center gap-1.5">
@@ -352,7 +354,7 @@ const AdminCalendar = () => {
             ))}
           </div>
 
-          {/* Scrollable Slots Area (Moved times inside slots) */}
+          {/* Scrollable Slots Area */}
           <div className="flex-1 overflow-y-auto custom-scrollbar relative z-20 min-h-0">
             <div className="p-4 lg:p-6 w-full min-w-0">
               <div className="grid grid-cols-7 gap-2 lg:gap-3">
