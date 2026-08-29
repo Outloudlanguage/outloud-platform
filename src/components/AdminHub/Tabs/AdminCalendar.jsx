@@ -12,9 +12,13 @@ const AdminCalendar = () => {
   // Database States
   const [sessions, setSessions] = useState([]);
   const [teachers, setTeachers] = useState([]);
+  const [allStudents, setAllStudents] = useState([]);
   const [upcomingActivities, setUpcomingActivities] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [bookedPercentage, setBookedPercentage] = useState(0);
+  
+  // Unbooked Modal State
+  const [showUnbookedModal, setShowUnbookedModal] = useState(false);
   
   // Assignment States
   const [selectedTeacherId, setSelectedTeacherId] = useState('');
@@ -69,6 +73,7 @@ const AdminCalendar = () => {
   // --- 2. DATA FETCHING ---
   const fetchCalendarData = async () => {
     try {
+      // Fetch Teachers
       const { data: teachersData } = await supabase
         .from('profiles')
         .select('id, first_name, last_name')
@@ -79,6 +84,15 @@ const AdminCalendar = () => {
         if (teachersData.length > 0) setSelectedTeacherId(teachersData[0].id);
       }
 
+      // Fetch All Students (used for the unbooked list)
+      const { data: studentsData } = await supabase
+        .from('profiles')
+        .select('*') 
+        .eq('role', 'Student');
+        
+      if (studentsData) setAllStudents(studentsData);
+
+      // Fetch Upcoming Activities
       const { data: upcomingData } = await supabase
         .from('live_sessions')
         .select(`
@@ -92,6 +106,7 @@ const AdminCalendar = () => {
 
       if (upcomingData) setUpcomingActivities(upcomingData);
 
+      // Fetch Calendar Grid Sessions
       const startDate = weekDates[0];
       const endDate = new Date(weekDates[6]);
       endDate.setHours(23, 59, 59, 999);
@@ -230,10 +245,17 @@ const AdminCalendar = () => {
     return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
   };
 
-  // Ring Chart Mathematical Logic
+  // --- 4. RING CHART & UNBOOKED LOGIC ---
   const circleRadius = 75;
-  const circleCircumference = 2 * Math.PI * circleRadius; // ~471.24
+  const circleCircumference = 2 * Math.PI * circleRadius;
   const strokeDashoffset = circleCircumference - (bookedPercentage / 100) * circleCircumference;
+
+  // Derive unbooked students by comparing all students to those who have a 'booked' or 'completed' session
+  const bookedStudentIds = sessions
+    .filter(s => s.student_id && (s.status === 'booked' || s.status === 'completed'))
+    .map(s => s.student_id);
+  
+  const unbookedStudents = allStudents.filter(st => !bookedStudentIds.includes(st.id));
 
   return (
     <div className="w-full h-[calc(100vh-100px)] min-h-[700px] p-2 md:p-6 font-montserrat flex flex-col gap-4 lg:gap-6 animate-fade-in relative z-10 overflow-visible">
@@ -262,8 +284,11 @@ const AdminCalendar = () => {
         {/* LEFT COLUMN */}
         <div className="w-full xl:w-[30%] flex flex-col gap-6 h-full shrink-0">
           
-          {/* Ring Chart Card - Scaled down */}
-          <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-6 flex flex-col items-center justify-center shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] bg-clip-padding shrink-0 transform-gpu">
+          {/* Ring Chart Card - Converted to Button with Larger Text */}
+          <button 
+            onClick={() => setShowUnbookedModal(true)}
+            className="w-full bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-6 lg:p-8 flex flex-col items-center justify-center shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] bg-clip-padding shrink-0 transform-gpu cursor-pointer hover:bg-white/10 hover:border-white/20 transition-all hover:scale-[1.02] active:scale-95 group"
+          >
             <div className="relative w-32 h-32 lg:w-40 lg:h-40 flex items-center justify-center mb-2">
               <svg className="w-full h-full transform -rotate-90 overflow-visible" viewBox="0 0 180 180">
                 <circle cx="90" cy="90" r="75" fill="none" stroke="#ffffff10" strokeWidth="12" />
@@ -276,10 +301,17 @@ const AdminCalendar = () => {
               </svg>
               <span className="absolute text-3xl lg:text-4xl font-black text-white drop-shadow-md">{bookedPercentage}%</span>
             </div>
-            <p className="text-[10px] lg:text-[11px] font-black text-white/90 uppercase tracking-widest text-center mt-2">STUDENTS BOOKED</p>
-          </div>
+            
+            {/* The increased text size */}
+            <p className="text-sm lg:text-base font-black text-white uppercase tracking-widest text-center mt-3">
+              STUDENTS BOOKED
+            </p>
+            <p className="text-[9px] text-white/40 group-hover:text-white/70 uppercase tracking-widest mt-1.5 font-bold transition-colors">
+              Click to view list
+            </p>
+          </button>
 
-          {/* Upcoming Sessions Card - Automatically taller because of flex-1 */}
+          {/* Upcoming Sessions Card */}
           <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-6 lg:p-8 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] bg-clip-padding flex-1 flex flex-col min-h-0 transform-gpu">
             <h3 className="text-xl font-black text-white mb-6 text-center uppercase tracking-widest drop-shadow-sm shrink-0">Upcoming</h3>
             
@@ -392,7 +424,6 @@ const AdminCalendar = () => {
                           onClick={() => handleSlotClick(dIdx, tIdx, slotData)}
                           className={`h-16 rounded-xl border flex flex-col items-center justify-center cursor-pointer transition-all relative group hover:scale-[1.02] z-30 overflow-hidden ${getSlotStyle(slotData, false)}`}
                         >
-                          {/* Inner Time Label */}
                           <span className="absolute top-1 left-2 text-[7px] lg:text-[8px] font-black opacity-40 uppercase tracking-tighter pointer-events-none">
                             {time}
                           </span>
@@ -418,7 +449,7 @@ const AdminCalendar = () => {
         </div>
       </div>
 
-      {/* --- THE MODAL --- */}
+      {/* --- SLOT MODAL --- */}
       {selectedSlot && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
           <div className="bg-[#070b19]/95 border border-white/20 rounded-[2rem] shadow-2xl w-full max-w-md p-8 relative">
@@ -497,6 +528,50 @@ const AdminCalendar = () => {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* --- UNBOOKED STUDENTS MODAL --- */}
+      {showUnbookedModal && (
+        <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-[#070b19]/95 border border-white/20 rounded-[2rem] shadow-2xl w-full max-w-lg p-6 lg:p-8 relative flex flex-col max-h-[80vh]">
+            <button 
+              onClick={() => setShowUnbookedModal(false)} 
+              className="absolute top-6 right-6 text-white/50 hover:text-white cursor-pointer"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            
+            <h3 className="text-xl font-black text-white uppercase tracking-widest mb-1">
+              Unbooked Students
+            </h3>
+            <p className="text-xs text-white/60 mb-6">List of students without active bookings this week.</p>
+            
+            <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-3">
+              {unbookedStudents.length === 0 ? (
+                <div className="text-center py-10">
+                  <div className="w-12 h-12 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-3 border border-emerald-500/50">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
+                  </div>
+                  <p className="text-white/70 text-xs font-bold uppercase tracking-widest">All students are booked!</p>
+                </div>
+              ) : (
+                unbookedStudents.map(student => (
+                  <div key={student.id} className="bg-white/5 border border-white/10 p-4 rounded-2xl flex items-center justify-between hover:bg-white/10 transition-colors">
+                    <div className="flex flex-col">
+                      <span className="font-bold text-white text-sm">{student.first_name} {student.last_name}</span>
+                    </div>
+                    <div className="text-right flex flex-col">
+                      <span className="text-[9px] text-white/50 uppercase tracking-widest font-bold">Current Lesson</span>
+                      <span className="text-[#fcd34d] font-black text-sm">Unit {student.current_unit || student.unit || student.level || '?'}</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
       )}
