@@ -448,10 +448,17 @@ useEffect(() => {
   const chatEndRefStudent = useRef(null);
   const chatEndRefStaff = useRef(null);
 
-  // Forum States
+ // Forum States
   const [forumLevelFilter, setForumLevelFilter] = useState('A1');
   const [forumPost, setForumPost] = useState(null);
   const [forumReplies, setForumReplies] = useState([]);
+  
+  // Forum Composer States
+  const [forumTitleInput, setForumTitleInput] = useState('');
+  const [forumContentInput, setForumContentInput] = useState('');
+  const [forumImageUrlInput, setForumImageUrlInput] = useState('');
+  const [showForumImageInput, setShowForumImageInput] = useState(false);
+  const [isPublishingForum, setIsPublishingForum] = useState(false);
 
   // 1. Fetch Info Board & Forum Data
   useEffect(() => {
@@ -531,6 +538,40 @@ useEffect(() => {
   // ==========================================
   // COMMUNICATION MUTATIONS (CRUD)
   // ==========================================
+  const handlePublishForumPost = async () => {
+    if (!forumTitleInput.trim() || !forumContentInput.trim()) return alert('Título y contenido son obligatorios.');
+    setIsPublishingForum(true);
+    try {
+      const { data, error } = await supabase.from('forum_posts').insert({
+        title: forumTitleInput.trim().toUpperCase(),
+        content: forumContentInput.trim(),
+        target_level: forumLevelFilter,
+        image_url: forumImageUrlInput || null,
+        author_name: 'Outloud Admin'
+      }).select().single();
+      
+      if (error) throw error;
+      
+      setForumPost(data);
+      setForumTitleInput(''); setForumContentInput(''); setForumImageUrlInput(''); setShowForumImageInput(false);
+    } catch (error) { 
+      console.error(error); 
+      alert("Error publicando tema del foro"); 
+    } finally { 
+      setIsPublishingForum(false); 
+    }
+  };
+
+  const handleDeleteForumPost = async () => {
+    if (!window.confirm("¿Eliminar este tema del foro y todas sus respuestas? Esta acción es irreversible.")) return;
+    try {
+      await supabase.from('forum_posts').delete().eq('id', forumPost.id);
+      setForumPost(null);
+      setForumReplies([]);
+    } catch (error) { 
+      console.error(error); 
+    }
+  };
   const handlePublishAnnouncement = async () => {
     if (!postContent.trim() || !postCategory) return alert('Contenido y categoría son obligatorios.');
     setIsPublishing(true);
@@ -1184,6 +1225,7 @@ const renderCommunications = () => (
       )}
     </div>
   );
+
   const renderFinances = () => (
     <div className="grid grid-cols-12 gap-8 w-full max-w-[1500px] h-[calc(100vh-160px)] animate-fade-in relative z-10">
       <div className="col-span-3 flex flex-col gap-8 h-full justify-center">
