@@ -430,102 +430,162 @@ useEffect(() => {
   }, [activeModule, directoryTab]);
 
 // ==========================================
-  // COMMUNICATIONS MODULE STATES
+  // COMMUNICATIONS MODULE STATES & LISTENERS
   // ==========================================
   const [activeCommsTab, setActiveCommsTab] = useState('General');
   const [announcements, setAnnouncements] = useState([]);
   const [postContent, setPostContent] = useState('');
   const [postCategory, setPostCategory] = useState('');
+  const [postImageUrl, setPostImageUrl] = useState('');
+  const [showImageInput, setShowImageInput] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
 
   // Chat States
+  const [chatMessages, setChatMessages] = useState({ student: [], staff: [] });
   const [chatFilters, setChatFilters] = useState({ student: 'ALL', staff: 'ALL' });
   const [chatLocks, setChatLocks] = useState({ student: false, staff: false });
   const [chatInputs, setChatInputs] = useState({ student: '', staff: '', forum: '' });
+  const chatEndRefStudent = useRef(null);
+  const chatEndRefStaff = useRef(null);
 
-  // Forum State
+  // Forum States
   const [forumLevelFilter, setForumLevelFilter] = useState('A1');
   const [forumPost, setForumPost] = useState(null);
   const [forumReplies, setForumReplies] = useState([]);
 
-  // Fetch Announcements whenever the tab changes
+  // 1. Fetch Info Board & Forum Data
   useEffect(() => {
     if (activeModule !== 'COMMUNICATIONS') return;
     
     const fetchCommsData = async () => {
       try {
         if (!['Chat', 'Forum'].includes(activeCommsTab)) {
-          // 1. Fetch Info Board Data
           const targetAudience = activeCommsTab === 'Staff' ? 'STAFF_ONLY' : 
                                  activeCommsTab === 'General' ? 'EVERYONE_WITH_STAFF' : 
                                  `LEVEL_${activeCommsTab}`;
           const { data } = await supabase.from('announcements')
-            .select('*')
-            .eq('audience', targetAudience)
-            .order('created_at', { ascending: false });
+            .select('*').eq('audience', targetAudience).order('created_at', { ascending: false });
           setAnnouncements(data || []);
         } 
         else if (activeCommsTab === 'Forum') {
-          // 2. Fetch Forum Post & Replies for the selected level
           const { data: postData } = await supabase.from('forum_posts')
-            .select('*').eq('target_level', forumLevelFilter).single();
-          setForumPost(postData);
+            .select('*').eq('target_level', forumLevelFilter).maybeSingle();
+          setForumPost(postData || null);
 
           if (postData) {
+            // Joins profiles to get the replier's name and avatar
             const { data: repliesData } = await supabase.from('forum_replies')
-              .select('*').eq('post_id', postData.id).order('created_at', { ascending: false });
+              .select('*, author:profiles!author_id(first_name, last_name, avatar_url, level)')
+              .eq('thread_id', postData.id).order('created_at', { ascending: false });
             setForumReplies(repliesData || []);
           } else {
             setForumReplies([]);
           }
         }
       } catch (err) {
-        console.error("Error fetching comms data:", err);
+        console.error("Fetch Error:", err);
       }
     };
     fetchCommsData();
   }, [activeModule, activeCommsTab, forumLevelFilter]);
 
-  // Publish New Announcement
+  // 2. Real-time Chat Monitor
+  useEffect(() => {
+    if (activeModule !== 'COMMUNICATIONS' || activeCommsTab !== 'Chat') return;
+
+    const fetchChats = async () => {
+      const { data } = await supabase.from('messages')
+        .select('*').order('created_at', { ascending: true }).limit(150);
+      if (data) {
+        setChatMessages({
+          student: data.filter(m => m.channel === 'STUDENT'),
+          staff: data.filter(m => m.channel === 'STAFF')
+        });
+        setTimeout(() => chatEndRefStudent.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+        setTimeout(() => chatEndRefStaff.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+      }
+    };
+    fetchChats();
+
+    const chatChannel = supabase.channel('admin_chat_monitor')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+        const newMsg = payload.new;
+        if (newMsg.channel === 'STUDENT') {
+          setChatMessages(p => ({ ...p, student: [...p.student, newMsg] }));
+          setTimeout(() => chatEndRefStudent.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+        } else if (newMsg.channel === 'STAFF') {
+          setChatMessages(p => ({ ...p, staff: [...p.staff, newMsg] }));
+          setTimeout(() => chatEndRefStaff.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+        }
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'messages' }, payload => {
+        setChatMessages(p => ({
+          student: p.student.filter(m => m.id !== payload.old.id),
+          staff: p.staff.filter(m => m.id !== payload.old.id)
+        }));
+      }).subscribe();
+
+    return () => { supabase.removeChannel(chatChannel); };
+  }, [activeModule, activeCommsTab]);
+
+  // ==========================================
+  // COMMUNICATION MUTATIONS (CRUD)
+  // ==========================================
   const handlePublishAnnouncement = async () => {
-    if (!postContent.trim() || !postCategory) return alert('Debes incluir contenido y categoría.');
+    if (!postContent.trim() || !postCategory) return alert('Contenido y categoría son obligatorios.');
     setIsPublishing(true);
-    
-    const targetAudience = activeCommsTab === 'Staff' ? 'STAFF_ONLY' : 
-                           activeCommsTab === 'General' ? 'EVERYONE_WITH_STAFF' : 
-                           `LEVEL_${activeCommsTab}`;
+    const targetAudience = activeCommsTab === 'Staff' ? 'STAFF_ONLY' : activeCommsTab === 'General' ? 'EVERYONE_WITH_STAFF' : `LEVEL_${activeCommsTab}`;
     try {
-      const { error } = await supabase.from('announcements').insert({
-        title: postCategory.toUpperCase(),
-        content: postContent.trim(),
-        audience: targetAudience,
-        category: postCategory
-      });
-      if (error) throw error;
-      setPostContent('');
-      setPostCategory('');
-      
-      // Auto-refresh feed
+      await supabase.from('announcements').insert({ title: postCategory.toUpperCase(), content: postContent.trim(), audience: targetAudience, category: postCategory, image_url: postImageUrl || null });
+      setPostContent(''); setPostCategory(''); setPostImageUrl(''); setShowImageInput(false);
       const { data } = await supabase.from('announcements').select('*').eq('audience', targetAudience).order('created_at', { ascending: false });
       setAnnouncements(data || []);
-    } catch (error) {
-      console.error(error);
-      alert('Error publicando anuncio');
-    } finally {
-      setIsPublishing(false);
-    }
+    } catch (error) { console.error(error); alert("Error publicando anuncio"); } finally { setIsPublishing(false); }
   };
 
-  // Chat Master Kill-Switch Toggle (Updates DB settings)
+  const handleDeleteAnnouncement = async (id) => {
+    if (!window.confirm("¿Eliminar este anuncio?")) return;
+    await supabase.from('announcements').delete().eq('id', id);
+    setAnnouncements(prev => prev.filter(a => a.id !== id));
+  };
+
+  const handleAdminChatSend = async (e, channelType) => {
+    e.preventDefault();
+    const content = chatInputs[channelType];
+    if (!content.trim()) return;
+    try {
+      await supabase.from('messages').insert({ sender_name: 'Outloud Admin', sender_role: 'Admin', content: content.trim(), channel: channelType.toUpperCase() });
+      setChatInputs(p => ({ ...p, [channelType]: '' }));
+    } catch (error) { console.error(error); alert("Error enviando mensaje"); }
+  };
+
+  const handleDeleteChatMessage = async (id) => {
+    if (!window.confirm("¿Eliminar mensaje de la base de datos?")) return;
+    await supabase.from('messages').delete().eq('id', id);
+  };
+
+  const handleSendForumReply = async (e) => {
+    e.preventDefault();
+    if (!chatInputs.forum.trim() || !forumPost) return;
+    try {
+      await supabase.from('forum_replies').insert({ thread_id: forumPost.id, content: chatInputs.forum.trim() });
+      setChatInputs(p => ({ ...p, forum: '' }));
+      const { data } = await supabase.from('forum_replies').select('*, author:profiles!author_id(first_name, last_name, avatar_url, level)').eq('thread_id', forumPost.id).order('created_at', { ascending: false });
+      setForumReplies(data || []);
+    } catch (error) { console.error(error); alert("Error enviando respuesta al foro"); }
+  };
+
+  const handleDeleteForumReply = async (id) => {
+    if (!window.confirm("¿Eliminar esta respuesta del foro?")) return;
+    await supabase.from('forum_replies').delete().eq('id', id);
+    setForumReplies(prev => prev.filter(r => r.id !== id));
+  };
+
   const handleToggleChatLock = async (channel) => {
     const newValue = !chatLocks[channel];
     setChatLocks(prev => ({ ...prev, [channel]: newValue }));
-    try {
-      // Assuming you have an app_settings table to enforce the lockdown logic on the student hub
-      await supabase.from('app_settings').update({ [`${channel}_chat_locked`]: newValue }).eq('id', 1);
-    } catch (error) {
-      console.error(`Failed to lock ${channel} chat`, error);
-    }
+    try { await supabase.from('app_settings').update({ [`${channel}_chat_locked`]: newValue }).eq('id', 1); } 
+    catch (error) { console.error(error); }
   };
 
   // ----------------------------------------------------
@@ -866,17 +926,23 @@ const renderCommunications = () => (
             <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
             <div className="p-8 flex flex-col z-10">
               <div className="flex gap-4 mb-6">
-                <button 
-                  onClick={() => { setMediaTarget({ id: null, type: 'image' }); setActiveModal('media_upload'); }}
-                  className="w-32 h-32 bg-white/10 border-2 border-dashed border-white/30 rounded-2xl flex flex-col items-center justify-center text-white hover:bg-white/20 transition-colors shrink-0 cursor-pointer"
-                >
-                  <span className="text-5xl font-light leading-none mb-2">+</span>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-center leading-tight">UPLOAD<br/>IMAGE</span>
-                </button>
+                {!showImageInput ? (
+                  <button onClick={() => setShowImageInput(true)} className="w-32 h-32 bg-white/10 border-2 border-dashed border-white/30 rounded-2xl flex flex-col items-center justify-center text-white hover:bg-white/20 transition-colors shrink-0 cursor-pointer">
+                    <span className="text-5xl font-light leading-none mb-2">+</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-center leading-tight">UPLOAD<br/>IMAGE</span>
+                  </button>
+                ) : (
+                  <div className="w-32 h-32 bg-black/40 border border-white/20 rounded-2xl flex flex-col items-center justify-center text-white p-2 shrink-0 relative">
+                    <button onClick={() => { setShowImageInput(false); setPostImageUrl(''); }} className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full text-[10px] font-bold cursor-pointer hover:scale-110">✕</button>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-[#fcd34d] mb-2">Image URL</span>
+                    <input type="text" value={postImageUrl} onChange={(e) => setPostImageUrl(e.target.value)} placeholder="https://..." className="w-full bg-white/10 rounded p-2 text-xs outline-none focus:border-[#fcd34d] border border-transparent" />
+                  </div>
+                )}
+                
                 <textarea 
                   value={postContent}
                   onChange={(e) => setPostContent(e.target.value)}
-                  placeholder="Choose your filter and start typing here." 
+                  placeholder="Escribe el anuncio aquí..." 
                   className="flex-1 bg-white/5 border border-white/20 rounded-2xl p-4 text-white resize-none focus:outline-none focus:border-[#fcd34d] placeholder-white/30 shadow-inner"
                 />
               </div>
@@ -884,11 +950,7 @@ const renderCommunications = () => (
                 <div className="flex-1">
                   <AdminDropdown placeholder="CATEGORY" options={['Website Functionality', 'General Information', 'Academy Rules', 'Upcoming Events', 'Promos & Discounts', 'Financial Data']} value={postCategory} onChange={setPostCategory} />
                 </div>
-                <button 
-                  onClick={handlePublishAnnouncement}
-                  disabled={isPublishing}
-                  className="flex-1 bg-white/20 hover:bg-[#fcd34d] hover:text-[#08203e] text-white font-black rounded-xl uppercase tracking-widest transition-colors shadow-lg disabled:opacity-50 cursor-pointer"
-                >
+                <button onClick={handlePublishAnnouncement} disabled={isPublishing} className="flex-1 bg-white/20 hover:bg-[#fcd34d] hover:text-[#08203e] text-white font-black rounded-xl uppercase tracking-widest transition-colors shadow-lg disabled:opacity-50 cursor-pointer">
                   {isPublishing ? '...' : 'PUBLISH'}
                 </button>
               </div>
@@ -903,10 +965,17 @@ const renderCommunications = () => (
                 <div className="text-center text-white/40 font-bold uppercase tracking-widest text-sm py-10">No hay anuncios activos para este filtro.</div>
               ) : (
                 announcements.map((ann) => (
-                  <div key={ann.id} className="bg-white/10 border border-white/20 rounded-2xl p-6 relative group hover:bg-white/20 transition-colors text-center shadow-md">
-                    <button className="absolute top-4 right-4 w-8 h-8 bg-red-500/20 rounded-full flex items-center justify-center text-red-400 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500 hover:text-white cursor-pointer">✕</button>
-                    <h4 className="text-lg font-black uppercase tracking-widest mb-3 text-white drop-shadow-sm">{ann.title}</h4>
-                    <p className="text-xs text-white/80 leading-relaxed font-medium px-8">{ann.content}</p>
+                  <div key={ann.id} className="bg-white/10 border border-white/20 rounded-2xl p-6 flex items-center gap-6 relative group hover:bg-white/20 transition-colors shadow-md">
+                    <button onClick={() => handleDeleteAnnouncement(ann.id)} className="absolute top-4 right-4 w-8 h-8 bg-red-500/20 rounded-full flex items-center justify-center text-red-400 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500 hover:text-white cursor-pointer z-20">✕</button>
+                    {ann.image_url && (
+                      <div className="w-32 h-32 rounded-xl overflow-hidden shrink-0 border border-white/30 shadow-md">
+                        <img src={ann.image_url} alt="Cover" className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                    <div className="flex flex-col">
+                      <h4 className="text-lg font-black uppercase tracking-widest mb-2 text-white drop-shadow-sm">{ann.title}</h4>
+                      <p className="text-xs text-white/80 leading-relaxed font-medium pr-8">{ann.content}</p>
+                    </div>
                   </div>
                 ))
               )}
@@ -920,42 +989,68 @@ const renderCommunications = () => (
       {/* ======================================= */}
       {activeCommsTab === 'Chat' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 flex-1 min-h-0">
+          
           {/* Students Panel */}
           <div className="relative border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col h-full group">
             <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
             
-            <div className="flex justify-between items-center p-6 border-b border-white/10 z-10">
+            <div className="flex justify-between items-center p-6 border-b border-white/10 z-10 shrink-0">
               <h3 className="font-black text-white text-lg tracking-widest uppercase drop-shadow-md">Students Chat</h3>
               <div className="flex items-center gap-4">
                 <select value={chatFilters.student} onChange={e => setChatFilters(p => ({...p, student: e.target.value}))} className="bg-white/10 text-white text-[10px] font-black uppercase rounded-lg px-2 py-1 outline-none border border-white/20 cursor-pointer">
                   <option value="ALL">All Levels</option>
                   <option value="A1">A1 Only</option>
                   <option value="A2">A2 Only</option>
+                  <option value="B1">B1 Only</option>
+                  <option value="B2">B2 Only</option>
+                  <option value="C1">C1 Only</option>
+                  <option value="C2">C2 Only</option>
                 </select>
-                {/* Kill Switch */}
                 <button onClick={() => handleToggleChatLock('student')} className={`w-12 h-6 rounded-full relative transition-colors border border-white/20 shadow-inner cursor-pointer ${chatLocks.student ? 'bg-red-500/80' : 'bg-emerald-500/80'}`}>
                   <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all ${chatLocks.student ? 'left-7' : 'left-1'}`}></div>
                 </button>
               </div>
             </div>
 
-            <div className="flex-1 p-6 overflow-y-auto custom-scrollbar flex flex-col justify-center items-center gap-6 z-10">
-              <span className="text-white/40 font-bold uppercase tracking-widest text-xs">Waiting for live messages...</span>
+            <div className="flex-1 p-6 overflow-y-auto custom-scrollbar flex flex-col gap-6 z-10">
+              {chatMessages.student.length === 0 ? (
+                <div className="h-full flex items-center justify-center"><span className="text-white/40 font-bold uppercase tracking-widest text-xs">Waiting for live messages...</span></div>
+              ) : (
+                chatMessages.student.map(msg => {
+                  const isAdmin = msg.sender_role?.includes('Admin');
+                  const isTeacher = msg.sender_role === 'Teacher';
+                  // Simple local filter logic (assuming sender_role might hold level info for students eventually, or you just show all for now)
+                  return (
+                    <div key={msg.id} className={`group bg-[#4b6bfb]/20 backdrop-blur-md rounded-3xl p-5 border w-[85%] relative mt-2 ${isAdmin ? 'border-[#fcd34d] bg-[#fcd34d]/10 ml-auto' : isTeacher ? 'border-emerald-400/50 bg-emerald-500/10' : 'border-blue-400/30 ml-4'}`}>
+                      <button onClick={() => handleDeleteChatMessage(msg.id)} className="absolute -top-3 -right-3 w-8 h-8 bg-red-500 text-white rounded-full text-xs font-black opacity-0 group-hover:opacity-100 transition-opacity z-20 shadow-xl cursor-pointer hover:scale-110">✕</button>
+                      <img src={`https://ui-avatars.com/api/?name=${msg.sender_name}&background=random`} className="absolute -left-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full border-2 border-white object-cover shadow-lg" alt="User" />
+                      <div className="pl-6">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`font-black text-[11px] uppercase tracking-widest ${isAdmin ? 'text-[#fcd34d]' : 'text-white'}`}>{msg.sender_name}</span>
+                          <span className={`text-[8px] font-black px-2 py-0.5 rounded uppercase ${isAdmin ? 'bg-red-500 text-white' : isTeacher ? 'bg-emerald-500 text-white' : 'bg-[#fcd34d] text-[#08203e]'}`}>{msg.sender_role}</span>
+                        </div>
+                        <p className={`text-sm font-medium leading-relaxed ${msg.is_reported ? 'text-red-400 italic' : 'text-white/90'}`}>{msg.is_reported ? '⚠️ Mensaje Reportado: ' + msg.content : msg.content}</p>
+                      </div>
+                    </div>
+                  )
+                })
+              )}
+              <div ref={chatEndRefStudent} />
             </div>
 
-            <div className="p-6 border-t border-white/10 z-10 relative">
+            <form onSubmit={(e) => handleAdminChatSend(e, 'student')} className="p-6 border-t border-white/10 z-10 relative shrink-0">
               <input type="text" placeholder="Admin Override Message..." value={chatInputs.student} onChange={(e) => setChatInputs(p => ({...p, student: e.target.value}))} className="w-full bg-black/40 border border-white/20 rounded-full pl-6 pr-12 py-4 text-sm text-white focus:outline-none focus:border-[#fcd34d] shadow-inner" />
-              <button className="absolute right-10 top-1/2 -translate-y-1/2 text-white/50 hover:text-[#fcd34d] hover:scale-110 transition-transform cursor-pointer">
-                <svg className="w-5 h-5 transform rotate-45 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+              <button type="submit" disabled={!chatInputs.student.trim()} className="absolute right-10 top-1/2 -translate-y-1/2 text-white/50 hover:text-[#fcd34d] hover:scale-110 transition-transform cursor-pointer disabled:opacity-50 disabled:hover:scale-100">
+                <svg className="w-5 h-5 transform rotate-45" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
               </button>
-            </div>
+            </form>
           </div>
 
           {/* Staff Panel */}
           <div className="relative border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col h-full group">
             <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
             
-            <div className="flex justify-between items-center p-6 border-b border-white/10 z-10">
+            <div className="flex justify-between items-center p-6 border-b border-white/10 z-10 shrink-0">
               <h3 className="font-black text-[#fcd34d] text-lg tracking-widest uppercase drop-shadow-md">Staff Chat</h3>
               <div className="flex items-center gap-4">
                 <select value={chatFilters.staff} onChange={e => setChatFilters(p => ({...p, staff: e.target.value}))} className="bg-white/10 text-white text-[10px] font-black uppercase rounded-lg px-2 py-1 outline-none border border-white/20 cursor-pointer">
@@ -963,23 +1058,39 @@ const renderCommunications = () => (
                   <option value="T1">Teachers</option>
                   <option value="A1">Admins</option>
                 </select>
-                {/* Kill Switch */}
                 <button onClick={() => handleToggleChatLock('staff')} className={`w-12 h-6 rounded-full relative transition-colors border border-white/20 shadow-inner cursor-pointer ${chatLocks.staff ? 'bg-red-500/80' : 'bg-emerald-500/80'}`}>
                   <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all ${chatLocks.staff ? 'left-7' : 'left-1'}`}></div>
                 </button>
               </div>
             </div>
 
-            <div className="flex-1 p-6 overflow-y-auto custom-scrollbar flex flex-col justify-center items-center gap-6 z-10">
-              <span className="text-white/40 font-bold uppercase tracking-widest text-xs">Waiting for live messages...</span>
+            <div className="flex-1 p-6 overflow-y-auto custom-scrollbar flex flex-col gap-6 z-10">
+              {chatMessages.staff.length === 0 ? (
+                <div className="h-full flex items-center justify-center"><span className="text-white/40 font-bold uppercase tracking-widest text-xs">Waiting for live messages...</span></div>
+              ) : (
+                chatMessages.staff.map(msg => (
+                  <div key={msg.id} className={`group bg-[#1e293b]/60 backdrop-blur-md rounded-3xl p-5 border w-[85%] relative mt-2 ${msg.sender_role?.includes('Admin') ? 'border-[#fcd34d] ml-auto' : 'border-white/10 ml-4'}`}>
+                    <button onClick={() => handleDeleteChatMessage(msg.id)} className="absolute -top-3 -right-3 w-8 h-8 bg-red-500 text-white rounded-full text-xs font-black opacity-0 group-hover:opacity-100 transition-opacity z-20 shadow-xl cursor-pointer hover:scale-110">✕</button>
+                    <img src={`https://ui-avatars.com/api/?name=${msg.sender_name}&background=random`} className={`absolute -left-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full border-2 object-cover shadow-lg ${msg.sender_role?.includes('Admin') ? 'border-[#fcd34d]' : 'border-emerald-400'}`} alt="User" />
+                    <div className="pl-6">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-black text-white text-[11px] uppercase tracking-widest">{msg.sender_name}</span>
+                        <span className={`text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-widest border ${msg.sender_role?.includes('Admin') ? 'bg-red-500 text-white border-red-400' : 'bg-emerald-500 text-white border-emerald-400'}`}>{msg.sender_role}</span>
+                      </div>
+                      <p className="text-white/80 text-sm font-medium leading-relaxed">{msg.content}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+              <div ref={chatEndRefStaff} />
             </div>
 
-            <div className="p-6 border-t border-white/10 z-10 relative">
+            <form onSubmit={(e) => handleAdminChatSend(e, 'staff')} className="p-6 border-t border-white/10 z-10 relative shrink-0">
               <input type="text" placeholder="Internal Staff Message..." value={chatInputs.staff} onChange={(e) => setChatInputs(p => ({...p, staff: e.target.value}))} className="w-full bg-black/40 border border-white/20 rounded-full pl-6 pr-12 py-4 text-sm text-white focus:outline-none focus:border-[#fcd34d] shadow-inner" />
-              <button className="absolute right-10 top-1/2 -translate-y-1/2 text-white/50 hover:text-[#fcd34d] hover:scale-110 transition-transform cursor-pointer">
+              <button type="submit" disabled={!chatInputs.staff.trim()} className="absolute right-10 top-1/2 -translate-y-1/2 text-white/50 hover:text-[#fcd34d] hover:scale-110 transition-transform cursor-pointer disabled:opacity-50 disabled:hover:scale-100">
                 <svg className="w-5 h-5 transform rotate-45 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
               </button>
-            </div>
+            </form>
           </div>
         </div>
       )}
@@ -995,23 +1106,26 @@ const renderCommunications = () => (
             <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
             
             <div className="p-8 flex flex-col h-full z-10">
-              <div className="flex justify-between items-center mb-6">
+              <div className="flex justify-between items-center mb-6 shrink-0">
                 {forumPost ? (
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full border-2 border-[#fcd34d] bg-white/10 flex items-center justify-center font-black text-[#fcd34d] shadow-md">
+                    <div className="w-12 h-12 rounded-full border-2 border-[#fcd34d] bg-white/10 flex items-center justify-center font-black text-[#fcd34d] shadow-md uppercase">
                        {forumPost.author_name?.charAt(0) || 'A'}
                     </div>
                     <div>
                       <h4 className="font-black text-white text-xs uppercase tracking-widest">{forumPost.author_name || 'Admin'}</h4>
-                      <span className="bg-[#fcd34d] text-[#08203e] text-[8px] font-black px-2 py-0.5 rounded uppercase">Teacher</span>
+                      <span className="bg-[#fcd34d] text-[#08203e] text-[8px] font-black px-2 py-0.5 rounded uppercase">Staff</span>
                     </div>
                   </div>
                 ) : <div />}
-                {/* Level Filter Dropdown replaces standard ... menu */}
+                
                 <select value={forumLevelFilter} onChange={(e) => setForumLevelFilter(e.target.value)} className="bg-white/10 text-white text-xs font-black uppercase rounded-lg px-3 py-2 outline-none border border-white/20 cursor-pointer">
                   <option value="A1">Level A1</option>
                   <option value="A2">Level A2</option>
                   <option value="B1">Level B1</option>
+                  <option value="B2">Level B2</option>
+                  <option value="C1">Level C1</option>
+                  <option value="C2">Level C2</option>
                 </select>
               </div>
 
@@ -1020,21 +1134,21 @@ const renderCommunications = () => (
                   {forumPost?.title || 'NO POST FOUND'}
                 </h2>
                 {forumPost?.image_url && (
-                  <div className="w-full h-48 bg-black/40 rounded-2xl border border-white/10 mb-4 overflow-hidden shadow-inner">
+                  <div className="w-full h-48 bg-black/40 rounded-2xl border border-white/10 mb-4 overflow-hidden shadow-inner shrink-0">
                     <img src={forumPost.image_url} className="w-full h-full object-cover opacity-80" alt="Post" />
                   </div>
                 )}
                 <p className="text-sm text-white/80 font-medium leading-relaxed">
-                  {forumPost?.content || "No active post available for the selected level. Use the composer on the Info Board to publish one."}
+                  {forumPost?.content || "There is no active forum post for this specific level. Students cannot comment until a post is created."}
                 </p>
               </div>
 
-              <div className="relative mt-auto">
-                <input type="text" placeholder="Post a reply..." className="w-full bg-black/40 border border-white/20 rounded-full pl-6 pr-12 py-4 text-sm text-white focus:outline-none focus:border-[#fcd34d] shadow-inner" disabled={!forumPost} />
-                <button className="absolute right-6 top-1/2 -translate-y-1/2 text-white/50 hover:text-[#fcd34d] transition-colors cursor-pointer disabled:opacity-50" disabled={!forumPost}>
+              <form onSubmit={handleSendForumReply} className="relative mt-auto shrink-0">
+                <input type="text" placeholder="Post an admin reply..." value={chatInputs.forum} onChange={(e) => setChatInputs(p => ({...p, forum: e.target.value}))} className="w-full bg-black/40 border border-white/20 rounded-full pl-6 pr-12 py-4 text-sm text-white focus:outline-none focus:border-[#fcd34d] shadow-inner disabled:opacity-50" disabled={!forumPost} />
+                <button type="submit" className="absolute right-6 top-1/2 -translate-y-1/2 text-white/50 hover:text-[#fcd34d] transition-colors cursor-pointer disabled:opacity-50" disabled={!forumPost || !chatInputs.forum.trim()}>
                   <svg className="w-5 h-5 transform rotate-45 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
                 </button>
-              </div>
+              </form>
             </div>
           </div>
 
@@ -1045,20 +1159,25 @@ const renderCommunications = () => (
                 <span className="font-bold uppercase tracking-widest text-sm">No replies yet.</span>
               </div>
             ) : (
-              forumReplies.map(reply => (
-                <div key={reply.id} className="relative border border-white/10 bg-white/5 backdrop-blur-xl rounded-3xl p-6 shadow-xl w-[90%] mb-4 flex items-start gap-4 hover:bg-white/10 transition-colors group">
-                  <button className="absolute top-4 right-4 text-white/30 opacity-0 group-hover:opacity-100 hover:text-red-400 transition-all font-black cursor-pointer">✕</button>
-                  <img src={reply.author_avatar || `https://ui-avatars.com/api/?name=${reply.author_name}&background=random`} className="w-12 h-12 rounded-full border-2 border-white object-cover shrink-0" alt="User" />
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="font-black text-white text-[11px] uppercase tracking-widest">{reply.author_name}</span>
+              forumReplies.map(reply => {
+                const author = reply.author || {};
+                const isA1 = author.level?.includes('A1');
+                return (
+                  <div key={reply.id} className="relative border border-white/10 bg-white/5 backdrop-blur-xl rounded-3xl p-6 shadow-xl w-[90%] mb-2 flex items-start gap-4 hover:bg-white/10 transition-colors group">
+                    <button onClick={() => handleDeleteForumReply(reply.id)} className="absolute top-4 right-4 w-8 h-8 bg-red-500/20 text-red-400 opacity-0 group-hover:opacity-100 hover:bg-red-500 hover:text-white transition-all font-black rounded-full cursor-pointer flex items-center justify-center">✕</button>
+                    <img src={author.avatar_url || `https://ui-avatars.com/api/?name=${author.first_name || 'User'}&background=random`} className="w-12 h-12 rounded-full border-2 border-white object-cover shrink-0" alt="User" />
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="font-black text-white text-[11px] uppercase tracking-widest">{author.first_name} {author.last_name}</span>
+                        <span className={`text-white text-[9px] font-black px-2 py-0.5 rounded border ${isA1 ? 'bg-blue-500 border-blue-400' : 'bg-emerald-500 border-emerald-400'}`}>{author.level ? author.level.split(':')[0] : 'User'}</span>
+                      </div>
+                      <p className={`text-sm font-medium leading-relaxed pr-8 ${reply.is_flagged ? 'text-red-400 italic' : 'text-white/90'}`}>
+                        {reply.is_flagged ? '⚠️ Mensaje Marcado: ' + reply.content : reply.content}
+                      </p>
                     </div>
-                    <p className="text-white/90 text-sm font-medium leading-relaxed pr-8">
-                      {reply.content}
-                    </p>
                   </div>
-                </div>
-              ))
+                )
+              })
             )}
           </div>
         </div>
