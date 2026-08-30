@@ -1142,8 +1142,8 @@ const renderCommunications = () => (
       {activeCommsTab === 'Forum' && (
         <div className="grid grid-cols-12 gap-8 flex-1 min-h-0">
           
-          {/* Active Post (Left Panel) */}
-          <div className="col-span-5 relative border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col h-full">
+          {/* Active Post OR Composer (Left Panel) */}
+          <div className="col-span-5 relative border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col h-full group">
             <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
             
             <div className="p-8 flex flex-col h-full z-10">
@@ -1151,14 +1151,18 @@ const renderCommunications = () => (
                 {forumPost ? (
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-full border-2 border-[#fcd34d] bg-white/10 flex items-center justify-center font-black text-[#fcd34d] shadow-md uppercase">
-                       {forumPost.author_name?.charAt(0) || 'A'}
+                       {forumPost.author_name?.charAt(0) || 'O'}
                     </div>
                     <div>
                       <h4 className="font-black text-white text-xs uppercase tracking-widest">{forumPost.author_name || 'Admin'}</h4>
                       <span className="bg-[#fcd34d] text-[#08203e] text-[8px] font-black px-2 py-0.5 rounded uppercase">Staff</span>
                     </div>
                   </div>
-                ) : <div />}
+                ) : (
+                  <div className="flex items-center gap-4">
+                     <h3 className="font-black text-[#fcd34d] text-lg tracking-widest uppercase drop-shadow-md">Create Topic</h3>
+                  </div>
+                )}
                 
                 <select value={forumLevelFilter} onChange={(e) => setForumLevelFilter(e.target.value)} className="bg-white/10 text-white text-xs font-black uppercase rounded-lg px-3 py-2 outline-none border border-white/20 cursor-pointer">
                   <option value="A1">Level A1</option>
@@ -1170,32 +1174,75 @@ const renderCommunications = () => (
                 </select>
               </div>
 
-              <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 mb-4">
-                <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-4">
-                  {forumPost?.title || 'NO POST FOUND'}
-                </h2>
-                {forumPost?.image_url && (
-                  <div className="w-full h-48 bg-black/40 rounded-2xl border border-white/10 mb-4 overflow-hidden shadow-inner shrink-0">
-                    <img src={forumPost.image_url} className="w-full h-full object-cover opacity-80" alt="Post" />
+              {forumPost ? (
+                <>
+                  <button onClick={handleDeleteForumPost} className="absolute top-8 right-[120px] w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center text-red-400 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500 hover:text-white cursor-pointer z-20 shadow-xl" title="Delete Topic">✕</button>
+                  <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 mb-4">
+                    <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-4">
+                      {forumPost.title}
+                    </h2>
+                    {forumPost.image_url && (
+                      <div className="w-full h-48 bg-black/40 rounded-2xl border border-white/10 mb-4 overflow-hidden shadow-inner shrink-0">
+                        <img src={forumPost.image_url} className="w-full h-full object-cover opacity-80" alt="Post" />
+                      </div>
+                    )}
+                    <p className="text-sm text-white/80 font-medium leading-relaxed">
+                      {forumPost.content}
+                    </p>
                   </div>
-                )}
-                <p className="text-sm text-white/80 font-medium leading-relaxed">
-                  {forumPost?.content || "There is no active forum post for this specific level. Students cannot comment until a post is created."}
-                </p>
-              </div>
 
-              <form onSubmit={handleSendForumReply} className="relative mt-auto shrink-0">
-                <input type="text" placeholder="Post an admin reply..." value={chatInputs.forum} onChange={(e) => setChatInputs(p => ({...p, forum: e.target.value}))} className="w-full bg-black/40 border border-white/20 rounded-full pl-6 pr-12 py-4 text-sm text-white focus:outline-none focus:border-[#fcd34d] shadow-inner disabled:opacity-50" disabled={!forumPost} />
-                <button type="submit" className="absolute right-6 top-1/2 -translate-y-1/2 text-white/50 hover:text-[#fcd34d] transition-colors cursor-pointer disabled:opacity-50" disabled={!forumPost || !chatInputs.forum.trim()}>
-                  <svg className="w-5 h-5 transform rotate-45 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
-                </button>
-              </form>
+                  <form onSubmit={handleSendForumReply} className="relative mt-auto shrink-0">
+                    <input type="text" placeholder="Post an admin reply..." value={chatInputs.forum} onChange={(e) => setChatInputs(p => ({...p, forum: e.target.value}))} className="w-full bg-black/40 border border-white/20 rounded-full pl-6 pr-12 py-4 text-sm text-white focus:outline-none focus:border-[#fcd34d] shadow-inner disabled:opacity-50" />
+                    <button type="submit" className="absolute right-6 top-1/2 -translate-y-1/2 text-white/50 hover:text-[#fcd34d] transition-colors cursor-pointer disabled:opacity-50" disabled={!chatInputs.forum.trim()}>
+                      <svg className="w-5 h-5 transform rotate-45 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+                    </button>
+                  </form>
+                </>
+              ) : (
+                <div className="flex flex-col flex-1 min-h-0">
+                  <input 
+                    type="text" 
+                    placeholder="TOPIC TITLE..." 
+                    value={forumTitleInput} 
+                    onChange={(e) => setForumTitleInput(e.target.value)} 
+                    className="w-full bg-white/5 border border-white/20 rounded-2xl p-4 text-white focus:outline-none focus:border-[#fcd34d] placeholder-white/30 shadow-inner font-black uppercase tracking-widest mb-4 shrink-0"
+                  />
+                  <div className="flex gap-4 flex-1 min-h-0 mb-6">
+                    {!showForumImageInput ? (
+                      <button onClick={() => setShowForumImageInput(true)} className="w-32 bg-white/10 border-2 border-dashed border-white/30 rounded-2xl flex flex-col items-center justify-center text-white hover:bg-white/20 transition-colors shrink-0 cursor-pointer">
+                        <span className="text-5xl font-light leading-none mb-2">+</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-center leading-tight">UPLOAD<br/>IMAGE</span>
+                      </button>
+                    ) : (
+                      <div className="w-32 bg-black/40 border border-white/20 rounded-2xl flex flex-col items-center justify-center text-white p-2 shrink-0 relative">
+                        <button onClick={() => { setShowForumImageInput(false); setForumImageUrlInput(''); }} className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full text-[10px] font-bold cursor-pointer hover:scale-110">✕</button>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-[#fcd34d] mb-2">Image URL</span>
+                        <input type="text" value={forumImageUrlInput} onChange={(e) => setForumImageUrlInput(e.target.value)} placeholder="https://..." className="w-full bg-white/10 rounded p-2 text-xs outline-none focus:border-[#fcd34d] border border-transparent" />
+                      </div>
+                    )}
+                    
+                    <textarea 
+                      value={forumContentInput}
+                      onChange={(e) => setForumContentInput(e.target.value)}
+                      placeholder="Escribe el contenido del foro aquí..." 
+                      className="flex-1 bg-white/5 border border-white/20 rounded-2xl p-4 text-white resize-none focus:outline-none focus:border-[#fcd34d] placeholder-white/30 shadow-inner"
+                    />
+                  </div>
+                  <button onClick={handlePublishForumPost} disabled={isPublishingForum} className="w-full mt-auto bg-[#fcd34d] hover:bg-white text-[#08203e] font-black rounded-xl py-4 uppercase tracking-widest transition-colors shadow-lg disabled:opacity-50 cursor-pointer shrink-0">
+                    {isPublishingForum ? '...' : 'PUBLISH TOPIC'}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Replies Feed (Right Panel) */}
           <div className="col-span-7 flex flex-col gap-4 overflow-y-auto custom-scrollbar h-full pl-2">
-            {forumReplies.length === 0 ? (
+            {!forumPost ? (
+              <div className="flex flex-col items-center justify-center h-full text-white/40">
+                <span className="font-bold uppercase tracking-widest text-sm text-center px-8">No topic active for {forumLevelFilter}.<br/>Create one to allow replies.</span>
+              </div>
+            ) : forumReplies.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-white/40">
                 <span className="font-bold uppercase tracking-widest text-sm">No replies yet.</span>
               </div>
@@ -1225,7 +1272,7 @@ const renderCommunications = () => (
       )}
     </div>
   );
-
+  
   const renderFinances = () => (
     <div className="grid grid-cols-12 gap-8 w-full max-w-[1500px] h-[calc(100vh-160px)] animate-fade-in relative z-10">
       <div className="col-span-3 flex flex-col gap-8 h-full justify-center">
