@@ -20,8 +20,8 @@ import StudentManagerModal from './components/AdminHub/Tabs/StudentManagerModal'
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import StatisticsHub from './components/StatisticsHub';
-import CommercialFunnelModule from './CommercialFunnelModule';
-import ProfitMarginAnalysis from './ProfitMarginAnalysis';
+import CommercialFunnelModule from './statistics_engines/CommercialFunnelModule';
+import ProfitMarginAnalysis from './statistics_engines/ProfitMarginAnalysis';
 
 
 // ==========================================
