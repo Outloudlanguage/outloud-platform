@@ -429,6 +429,105 @@ useEffect(() => {
     }
   }, [activeModule, directoryTab]);
 
+// ==========================================
+  // COMMUNICATIONS MODULE STATES
+  // ==========================================
+  const [activeCommsTab, setActiveCommsTab] = useState('General');
+  const [announcements, setAnnouncements] = useState([]);
+  const [postContent, setPostContent] = useState('');
+  const [postCategory, setPostCategory] = useState('');
+  const [isPublishing, setIsPublishing] = useState(false);
+
+  // Chat States
+  const [chatFilters, setChatFilters] = useState({ student: 'ALL', staff: 'ALL' });
+  const [chatLocks, setChatLocks] = useState({ student: false, staff: false });
+  const [chatInputs, setChatInputs] = useState({ student: '', staff: '', forum: '' });
+
+  // Forum State
+  const [forumLevelFilter, setForumLevelFilter] = useState('A1');
+  const [forumPost, setForumPost] = useState(null);
+  const [forumReplies, setForumReplies] = useState([]);
+
+  // Fetch Announcements whenever the tab changes
+  useEffect(() => {
+    if (activeModule !== 'COMMUNICATIONS') return;
+    
+    const fetchCommsData = async () => {
+      try {
+        if (!['Chat', 'Forum'].includes(activeCommsTab)) {
+          // 1. Fetch Info Board Data
+          const targetAudience = activeCommsTab === 'Staff' ? 'STAFF_ONLY' : 
+                                 activeCommsTab === 'General' ? 'EVERYONE_WITH_STAFF' : 
+                                 `LEVEL_${activeCommsTab}`;
+          const { data } = await supabase.from('announcements')
+            .select('*')
+            .eq('audience', targetAudience)
+            .order('created_at', { ascending: false });
+          setAnnouncements(data || []);
+        } 
+        else if (activeCommsTab === 'Forum') {
+          // 2. Fetch Forum Post & Replies for the selected level
+          const { data: postData } = await supabase.from('forum_posts')
+            .select('*').eq('target_level', forumLevelFilter).single();
+          setForumPost(postData);
+
+          if (postData) {
+            const { data: repliesData } = await supabase.from('forum_replies')
+              .select('*').eq('post_id', postData.id).order('created_at', { ascending: false });
+            setForumReplies(repliesData || []);
+          } else {
+            setForumReplies([]);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching comms data:", err);
+      }
+    };
+    fetchCommsData();
+  }, [activeModule, activeCommsTab, forumLevelFilter]);
+
+  // Publish New Announcement
+  const handlePublishAnnouncement = async () => {
+    if (!postContent.trim() || !postCategory) return alert('Debes incluir contenido y categoría.');
+    setIsPublishing(true);
+    
+    const targetAudience = activeCommsTab === 'Staff' ? 'STAFF_ONLY' : 
+                           activeCommsTab === 'General' ? 'EVERYONE_WITH_STAFF' : 
+                           `LEVEL_${activeCommsTab}`;
+    try {
+      const { error } = await supabase.from('announcements').insert({
+        title: postCategory.toUpperCase(),
+        content: postContent.trim(),
+        audience: targetAudience,
+        category: postCategory
+      });
+      if (error) throw error;
+      setPostContent('');
+      setPostCategory('');
+      
+      // Auto-refresh feed
+      const { data } = await supabase.from('announcements').select('*').eq('audience', targetAudience).order('created_at', { ascending: false });
+      setAnnouncements(data || []);
+    } catch (error) {
+      console.error(error);
+      alert('Error publicando anuncio');
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  // Chat Master Kill-Switch Toggle (Updates DB settings)
+  const handleToggleChatLock = async (channel) => {
+    const newValue = !chatLocks[channel];
+    setChatLocks(prev => ({ ...prev, [channel]: newValue }));
+    try {
+      // Assuming you have an app_settings table to enforce the lockdown logic on the student hub
+      await supabase.from('app_settings').update({ [`${channel}_chat_locked`]: newValue }).eq('id', 1);
+    } catch (error) {
+      console.error(`Failed to lock ${channel} chat`, error);
+    }
+  };
+
   // ----------------------------------------------------
   // PRESERVED CONTENT EDITING STATE & LOGIC
   // ----------------------------------------------------
@@ -740,61 +839,232 @@ const renderAccounts = () => (
   );
 
 
-  const renderCommunications = () => (
+const renderCommunications = () => (
     <div className="flex flex-col w-full max-w-[1500px] h-[calc(100vh-160px)] animate-fade-in relative z-10">
+      
       {/* Sub Navigation */}
-      <div className="flex bg-white/5 backdrop-blur-xl rounded-full p-2 mb-8 shadow-2xl w-fit mx-auto border border-white/10 overflow-x-auto max-w-full">
-        {['General', 'Staff', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'Chat', 'Forum'].map((tab, i) => (
-          <button key={tab} className={`px-8 py-3 rounded-full font-black text-sm uppercase tracking-widest transition-all ${i===0 ? 'bg-[#fcd34d] text-[#08203e] shadow-md scale-105' : 'text-white/60 hover:text-white hover:bg-white/10'}`}>
+      <div className="flex bg-white/5 backdrop-blur-xl rounded-full p-2 mb-8 shadow-2xl w-fit mx-auto border border-white/10 overflow-x-auto max-w-full relative z-20">
+        {['General', 'Staff', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'Chat', 'Forum'].map((tab) => (
+          <button 
+            key={tab} 
+            onClick={() => setActiveCommsTab(tab)}
+            className={`px-6 md:px-8 py-3 rounded-full font-black text-xs md:text-sm uppercase tracking-widest transition-all whitespace-nowrap ${activeCommsTab === tab ? 'bg-[#fcd34d] text-[#08203e] shadow-md scale-105' : 'text-white/60 hover:text-white hover:bg-white/10'}`}
+          >
             {tab}
           </button>
         ))}
       </div>
 
-      {/* Communications Content Layout */}
-      <div className="grid grid-cols-12 gap-8 flex-1 overflow-hidden">
-        {/* Composer Left */}
-        <div className="col-span-5 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-8 shadow-2xl flex flex-col h-fit">
-          <div className="flex gap-4 mb-6">
-            <button className="w-32 h-32 bg-white/10 border-2 border-dashed border-white/30 rounded-2xl flex flex-col items-center justify-center text-white hover:bg-white/20 transition-colors shrink-0">
-              <span className="text-5xl font-light leading-none mb-2">+</span>
-              <span className="text-[10px] font-black uppercase tracking-widest text-center leading-tight">UPLOAD<br/>IMAGE</span>
-            </button>
-            <textarea placeholder="Choose your filter and start typing here." className="flex-1 bg-white/5 border border-white/20 rounded-2xl p-4 text-white resize-none focus:outline-none focus:border-[#fcd34d] placeholder-white/30"></textarea>
-          </div>
-          <div className="flex gap-4">
-            <AdminDropdown placeholder="CATEGORY" options={['Website Functionality', 'General Information', 'Academy Rules', 'Upcoming Events', 'Promos & Discounts', 'Financial Data']} value="" onChange={()=>{}} />
-            <button className="flex-1 bg-white/20 hover:bg-[#fcd34d] hover:text-[#08203e] text-white font-black rounded-xl uppercase tracking-widest transition-colors shadow-lg">
-              PUBLISH
-            </button>
-          </div>
-        </div>
-
-        {/* Feed Right */}
-        <div className="col-span-7 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-8 shadow-2xl overflow-y-auto custom-scrollbar flex flex-col gap-4">
+      {/* ======================================= */}
+      {/* INFO BOARD VIEW (General, Staff, A1...) */}
+      {/* ======================================= */}
+      {!['Chat', 'Forum'].includes(activeCommsTab) && (
+        <div className="grid grid-cols-12 gap-8 flex-1 min-h-0">
           
-          <div className="bg-white/10 border border-white/20 rounded-2xl p-6 flex items-center gap-6 relative group hover:bg-white/20 transition-colors">
-            <button className="absolute top-4 right-4 w-8 h-8 bg-white/10 rounded-full flex items-center justify-center text-white/50 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white/30 hover:text-white">✏️</button>
-            <div className="w-32 h-32 rounded-xl overflow-hidden shrink-0 border border-white/30 shadow-md">
-              <img src="https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&q=80&w=400" alt="Game Night" className="w-full h-full object-cover" />
-            </div>
-            <div className="flex flex-col">
-              <h4 className="text-lg font-black uppercase tracking-widest mb-2 text-white drop-shadow-sm">SOCIAL CLUB: GAME NIGHT</h4>
-              <p className="text-xs text-white/80 leading-relaxed font-medium pr-8">We're happy to announce that very soon we will be hosting our live game-night. Don't miss it, check out the calendar, look for the green box and claim your spot.</p>
+          {/* Composer Left */}
+          <div className="col-span-5 relative border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col h-fit">
+            <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
+            <div className="p-8 flex flex-col z-10">
+              <div className="flex gap-4 mb-6">
+                <button 
+                  onClick={() => { setMediaTarget({ id: null, type: 'image' }); setActiveModal('media_upload'); }}
+                  className="w-32 h-32 bg-white/10 border-2 border-dashed border-white/30 rounded-2xl flex flex-col items-center justify-center text-white hover:bg-white/20 transition-colors shrink-0 cursor-pointer"
+                >
+                  <span className="text-5xl font-light leading-none mb-2">+</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-center leading-tight">UPLOAD<br/>IMAGE</span>
+                </button>
+                <textarea 
+                  value={postContent}
+                  onChange={(e) => setPostContent(e.target.value)}
+                  placeholder="Choose your filter and start typing here." 
+                  className="flex-1 bg-white/5 border border-white/20 rounded-2xl p-4 text-white resize-none focus:outline-none focus:border-[#fcd34d] placeholder-white/30 shadow-inner"
+                />
+              </div>
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <AdminDropdown placeholder="CATEGORY" options={['Website Functionality', 'General Information', 'Academy Rules', 'Upcoming Events', 'Promos & Discounts', 'Financial Data']} value={postCategory} onChange={setPostCategory} />
+                </div>
+                <button 
+                  onClick={handlePublishAnnouncement}
+                  disabled={isPublishing}
+                  className="flex-1 bg-white/20 hover:bg-[#fcd34d] hover:text-[#08203e] text-white font-black rounded-xl uppercase tracking-widest transition-colors shadow-lg disabled:opacity-50 cursor-pointer"
+                >
+                  {isPublishing ? '...' : 'PUBLISH'}
+                </button>
+              </div>
             </div>
           </div>
 
-          <div className="bg-white/10 border border-white/20 rounded-2xl p-6 relative group hover:bg-white/20 transition-colors text-center">
-            <button className="absolute top-4 right-4 w-8 h-8 bg-white/10 rounded-full flex items-center justify-center text-white/50 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white/30 hover:text-white">✏️</button>
-            <h4 className="text-lg font-black uppercase tracking-widest mb-3 text-white drop-shadow-sm">DID YOU CHECK THE OPEN FORUM?</h4>
-            <p className="text-xs text-white/80 leading-relaxed font-medium px-8">The latest post on the open forum is already being commented on. Everyone is waiting for you to share your opinion; go and see it for yourself, and remember, be friendly to everyone. Happy posting!</p>
+          {/* Feed Right */}
+          <div className="col-span-7 relative border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col">
+            <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
+            <div className="p-8 flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-4 z-10">
+              {announcements.length === 0 ? (
+                <div className="text-center text-white/40 font-bold uppercase tracking-widest text-sm py-10">No hay anuncios activos para este filtro.</div>
+              ) : (
+                announcements.map((ann) => (
+                  <div key={ann.id} className="bg-white/10 border border-white/20 rounded-2xl p-6 relative group hover:bg-white/20 transition-colors text-center shadow-md">
+                    <button className="absolute top-4 right-4 w-8 h-8 bg-red-500/20 rounded-full flex items-center justify-center text-red-400 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500 hover:text-white cursor-pointer">✕</button>
+                    <h4 className="text-lg font-black uppercase tracking-widest mb-3 text-white drop-shadow-sm">{ann.title}</h4>
+                    <p className="text-xs text-white/80 leading-relaxed font-medium px-8">{ann.content}</p>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
-
         </div>
-      </div>
+      )}
+
+      {/* ======================================= */}
+      {/* CHAT MODERATOR VIEW                     */}
+      {/* ======================================= */}
+      {activeCommsTab === 'Chat' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 flex-1 min-h-0">
+          {/* Students Panel */}
+          <div className="relative border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col h-full group">
+            <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
+            
+            <div className="flex justify-between items-center p-6 border-b border-white/10 z-10">
+              <h3 className="font-black text-white text-lg tracking-widest uppercase drop-shadow-md">Students Chat</h3>
+              <div className="flex items-center gap-4">
+                <select value={chatFilters.student} onChange={e => setChatFilters(p => ({...p, student: e.target.value}))} className="bg-white/10 text-white text-[10px] font-black uppercase rounded-lg px-2 py-1 outline-none border border-white/20 cursor-pointer">
+                  <option value="ALL">All Levels</option>
+                  <option value="A1">A1 Only</option>
+                  <option value="A2">A2 Only</option>
+                </select>
+                {/* Kill Switch */}
+                <button onClick={() => handleToggleChatLock('student')} className={`w-12 h-6 rounded-full relative transition-colors border border-white/20 shadow-inner cursor-pointer ${chatLocks.student ? 'bg-red-500/80' : 'bg-emerald-500/80'}`}>
+                  <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all ${chatLocks.student ? 'left-7' : 'left-1'}`}></div>
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 p-6 overflow-y-auto custom-scrollbar flex flex-col justify-center items-center gap-6 z-10">
+              <span className="text-white/40 font-bold uppercase tracking-widest text-xs">Waiting for live messages...</span>
+            </div>
+
+            <div className="p-6 border-t border-white/10 z-10 relative">
+              <input type="text" placeholder="Admin Override Message..." value={chatInputs.student} onChange={(e) => setChatInputs(p => ({...p, student: e.target.value}))} className="w-full bg-black/40 border border-white/20 rounded-full pl-6 pr-12 py-4 text-sm text-white focus:outline-none focus:border-[#fcd34d] shadow-inner" />
+              <button className="absolute right-10 top-1/2 -translate-y-1/2 text-white/50 hover:text-[#fcd34d] hover:scale-110 transition-transform cursor-pointer">
+                <svg className="w-5 h-5 transform rotate-45 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+              </button>
+            </div>
+          </div>
+
+          {/* Staff Panel */}
+          <div className="relative border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col h-full group">
+            <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
+            
+            <div className="flex justify-between items-center p-6 border-b border-white/10 z-10">
+              <h3 className="font-black text-[#fcd34d] text-lg tracking-widest uppercase drop-shadow-md">Staff Chat</h3>
+              <div className="flex items-center gap-4">
+                <select value={chatFilters.staff} onChange={e => setChatFilters(p => ({...p, staff: e.target.value}))} className="bg-white/10 text-white text-[10px] font-black uppercase rounded-lg px-2 py-1 outline-none border border-white/20 cursor-pointer">
+                  <option value="ALL">All Staff</option>
+                  <option value="T1">Teachers</option>
+                  <option value="A1">Admins</option>
+                </select>
+                {/* Kill Switch */}
+                <button onClick={() => handleToggleChatLock('staff')} className={`w-12 h-6 rounded-full relative transition-colors border border-white/20 shadow-inner cursor-pointer ${chatLocks.staff ? 'bg-red-500/80' : 'bg-emerald-500/80'}`}>
+                  <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all ${chatLocks.staff ? 'left-7' : 'left-1'}`}></div>
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 p-6 overflow-y-auto custom-scrollbar flex flex-col justify-center items-center gap-6 z-10">
+              <span className="text-white/40 font-bold uppercase tracking-widest text-xs">Waiting for live messages...</span>
+            </div>
+
+            <div className="p-6 border-t border-white/10 z-10 relative">
+              <input type="text" placeholder="Internal Staff Message..." value={chatInputs.staff} onChange={(e) => setChatInputs(p => ({...p, staff: e.target.value}))} className="w-full bg-black/40 border border-white/20 rounded-full pl-6 pr-12 py-4 text-sm text-white focus:outline-none focus:border-[#fcd34d] shadow-inner" />
+              <button className="absolute right-10 top-1/2 -translate-y-1/2 text-white/50 hover:text-[#fcd34d] hover:scale-110 transition-transform cursor-pointer">
+                <svg className="w-5 h-5 transform rotate-45 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================= */}
+      {/* FORUM MODERATOR VIEW                    */}
+      {/* ======================================= */}
+      {activeCommsTab === 'Forum' && (
+        <div className="grid grid-cols-12 gap-8 flex-1 min-h-0">
+          
+          {/* Active Post (Left Panel) */}
+          <div className="col-span-5 relative border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col h-full">
+            <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
+            
+            <div className="p-8 flex flex-col h-full z-10">
+              <div className="flex justify-between items-center mb-6">
+                {forumPost ? (
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full border-2 border-[#fcd34d] bg-white/10 flex items-center justify-center font-black text-[#fcd34d] shadow-md">
+                       {forumPost.author_name?.charAt(0) || 'A'}
+                    </div>
+                    <div>
+                      <h4 className="font-black text-white text-xs uppercase tracking-widest">{forumPost.author_name || 'Admin'}</h4>
+                      <span className="bg-[#fcd34d] text-[#08203e] text-[8px] font-black px-2 py-0.5 rounded uppercase">Teacher</span>
+                    </div>
+                  </div>
+                ) : <div />}
+                {/* Level Filter Dropdown replaces standard ... menu */}
+                <select value={forumLevelFilter} onChange={(e) => setForumLevelFilter(e.target.value)} className="bg-white/10 text-white text-xs font-black uppercase rounded-lg px-3 py-2 outline-none border border-white/20 cursor-pointer">
+                  <option value="A1">Level A1</option>
+                  <option value="A2">Level A2</option>
+                  <option value="B1">Level B1</option>
+                </select>
+              </div>
+
+              <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 mb-4">
+                <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-4">
+                  {forumPost?.title || 'NO POST FOUND'}
+                </h2>
+                {forumPost?.image_url && (
+                  <div className="w-full h-48 bg-black/40 rounded-2xl border border-white/10 mb-4 overflow-hidden shadow-inner">
+                    <img src={forumPost.image_url} className="w-full h-full object-cover opacity-80" alt="Post" />
+                  </div>
+                )}
+                <p className="text-sm text-white/80 font-medium leading-relaxed">
+                  {forumPost?.content || "No active post available for the selected level. Use the composer on the Info Board to publish one."}
+                </p>
+              </div>
+
+              <div className="relative mt-auto">
+                <input type="text" placeholder="Post a reply..." className="w-full bg-black/40 border border-white/20 rounded-full pl-6 pr-12 py-4 text-sm text-white focus:outline-none focus:border-[#fcd34d] shadow-inner" disabled={!forumPost} />
+                <button className="absolute right-6 top-1/2 -translate-y-1/2 text-white/50 hover:text-[#fcd34d] transition-colors cursor-pointer disabled:opacity-50" disabled={!forumPost}>
+                  <svg className="w-5 h-5 transform rotate-45 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Replies Feed (Right Panel) */}
+          <div className="col-span-7 flex flex-col gap-4 overflow-y-auto custom-scrollbar h-full pl-2">
+            {forumReplies.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-white/40">
+                <span className="font-bold uppercase tracking-widest text-sm">No replies yet.</span>
+              </div>
+            ) : (
+              forumReplies.map(reply => (
+                <div key={reply.id} className="relative border border-white/10 bg-white/5 backdrop-blur-xl rounded-3xl p-6 shadow-xl w-[90%] mb-4 flex items-start gap-4 hover:bg-white/10 transition-colors group">
+                  <button className="absolute top-4 right-4 text-white/30 opacity-0 group-hover:opacity-100 hover:text-red-400 transition-all font-black cursor-pointer">✕</button>
+                  <img src={reply.author_avatar || `https://ui-avatars.com/api/?name=${reply.author_name}&background=random`} className="w-12 h-12 rounded-full border-2 border-white object-cover shrink-0" alt="User" />
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="font-black text-white text-[11px] uppercase tracking-widest">{reply.author_name}</span>
+                    </div>
+                    <p className="text-white/90 text-sm font-medium leading-relaxed pr-8">
+                      {reply.content}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
-
   const renderFinances = () => (
     <div className="grid grid-cols-12 gap-8 w-full max-w-[1500px] h-[calc(100vh-160px)] animate-fade-in relative z-10">
       <div className="col-span-3 flex flex-col gap-8 h-full justify-center">
