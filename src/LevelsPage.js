@@ -360,7 +360,7 @@ const DesktopLevelsPage = ({ onReturnHome }) => {
           <div className="w-1/2 flex flex-col justify-center h-full min-h-0 relative">
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.03]">
               <img
-                src="https://i.postimg.cc/fyvnv4XT/Diseno-sin-titulo-(14).png"
+                src="https://i.postimg.cc/W4wH7P4n/Diseno-sin-titulo-(24).png"
                 alt="Watermark"
                 className="w-1/2 object-contain invert brightness-0"
               />

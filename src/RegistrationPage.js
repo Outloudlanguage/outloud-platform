@@ -303,7 +303,7 @@ const DesktopRegistration = ({
       <div className="relative z-10 flex-grow w-full max-w-[90rem] mx-auto bg-white/10 backdrop-blur-2xl border border-white/20 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] p-6 lg:p-10 flex flex-col mb-8">
         <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none rounded-[2.5rem]"></div>
         <div className="absolute inset-0 flex items-center justify-center opacity-[0.02] pointer-events-none z-0 overflow-hidden">
-          <img src="https://i.postimg.cc/fyvnv4XT/Diseno-sin-titulo-(14).png" alt="Watermark" className="w-[500px] h-[500px] object-contain invert brightness-0" />
+          <img src="https://i.postimg.cc/W4wH7P4n/Diseno-sin-titulo-(24).png" alt="Watermark" className="w-[500px] h-[500px] object-contain invert brightness-0" />
         </div>
 
         <div className="text-center mb-10 shrink-0 relative z-10">
