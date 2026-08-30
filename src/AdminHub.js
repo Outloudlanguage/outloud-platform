@@ -20,7 +20,6 @@ import StudentManagerModal from './components/AdminHub/Tabs/StudentManagerModal'
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import StatisticsHub from './components/StatisticsHub';
-import React, { useState, useEffect } from 'react';
 import { supabase } from '../SupabaseClient';
 import CommercialFunnelModule from './CommercialFunnelModule';
 import ProfitMarginAnalysis from './ProfitMarginAnalysis';
