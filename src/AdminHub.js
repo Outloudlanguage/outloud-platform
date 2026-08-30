@@ -1038,7 +1038,7 @@ const renderCommunications = () => (
             <div className="flex justify-between items-center p-6 border-b border-white/10 z-10 shrink-0">
               <h3 className="font-black text-white text-lg tracking-widest uppercase drop-shadow-md">Students Chat</h3>
               <div className="flex items-center gap-4">
-                <select value={chatFilters.student} onChange={e => setChatFilters(p => ({...p, student: e.target.value}))} className="bg-white/10 text-white text-[10px] font-black uppercase rounded-lg px-2 py-1 outline-none border border-white/20 cursor-pointer appearance-none">
+                <select value={chatFilters.student} onChange={e => setChatFilters(p => ({...p, student: e.target.value}))} className="bg-white/10 text-white text-[10px] font-black uppercase rounded-lg pl-3 pr-8 py-2 outline-none border border-white/20 cursor-pointer appearance-none">
                   <option className="bg-[#0f172a] text-white" value="ALL">All Levels</option>
                   <option className="bg-[#0f172a] text-white" value="A1">A1 Only</option>
                   <option className="bg-[#0f172a] text-white" value="A2">A2 Only</option>
@@ -1093,7 +1093,7 @@ const renderCommunications = () => (
             <div className="flex justify-between items-center p-6 border-b border-white/10 z-10 shrink-0">
               <h3 className="font-black text-[#fcd34d] text-lg tracking-widest uppercase drop-shadow-md">Staff Chat</h3>
               <div className="flex items-center gap-4">
-                <select value={chatFilters.staff} onChange={e => setChatFilters(p => ({...p, staff: e.target.value}))} className="bg-white/10 text-white text-[10px] font-black uppercase rounded-lg px-2 py-1 outline-none border border-white/20 cursor-pointer appearance-none">
+                <select value={chatFilters.staff} onChange={e => setChatFilters(p => ({...p, staff: e.target.value}))} className="bg-white/10 text-white text-[10px] font-black uppercase rounded-lg pl-3 pr-8 py-2 outline-none border border-white/20 cursor-pointer appearance-none">
                   <option className="bg-[#0f172a] text-white" value="ALL">All Staff</option>
                   <option className="bg-[#0f172a] text-white" value="T1">Teachers</option>
                   <option className="bg-[#0f172a] text-white" value="A1">Admins</option>
@@ -1163,7 +1163,7 @@ const renderCommunications = () => (
                   </div>
                 )}
                 
-                <select value={forumLevelFilter} onChange={(e) => setForumLevelFilter(e.target.value)} className="bg-white/10 text-white text-xs font-black uppercase rounded-lg px-3 py-2 outline-none border border-white/20 cursor-pointer appearance-none">
+                <select value={forumLevelFilter} onChange={(e) => setForumLevelFilter(e.target.value)} className="bg-white/10 text-white text-xs font-black uppercase rounded-lg pl-4 pr-10 py-2 outline-none border border-white/20 cursor-pointer appearance-none">
                   <option className="bg-[#0f172a] text-white" value="A1">Level A1</option>
                   <option className="bg-[#0f172a] text-white" value="A2">Level A2</option>
                   <option className="bg-[#0f172a] text-white" value="B1">Level B1</option>
@@ -1206,14 +1206,14 @@ const renderCommunications = () => (
                     onChange={(e) => setForumTitleInput(e.target.value)} 
                     className="w-full bg-white/5 border border-white/20 rounded-2xl p-4 text-white focus:outline-none focus:border-[#fcd34d] placeholder-white/30 shadow-inner font-black uppercase tracking-widest mb-4 shrink-0"
                   />
-                  <div className="flex gap-4 flex-1 min-h-0 mb-6">
+                  <div className="flex flex-col gap-4 flex-1 min-h-0 mb-6">
                     {!showForumImageInput ? (
-                      <button onClick={() => setShowForumImageInput(true)} className="w-32 bg-white/10 border-2 border-dashed border-white/30 rounded-2xl flex flex-col items-center justify-center text-white hover:bg-white/20 transition-colors shrink-0 cursor-pointer">
+                      <button onClick={() => setShowForumImageInput(true)} className="w-64 h-32 bg-white/10 border-2 border-dashed border-white/30 rounded-2xl flex flex-col items-center justify-center text-white hover:bg-white/20 transition-colors shrink-0 cursor-pointer">
                         <span className="text-5xl font-light leading-none mb-2">+</span>
                         <span className="text-[10px] font-black uppercase tracking-widest text-center leading-tight">UPLOAD<br/>IMAGE</span>
                       </button>
                     ) : (
-                      <div className="w-32 bg-black/40 border border-white/20 rounded-2xl flex flex-col items-center justify-center text-white p-2 shrink-0 relative">
+                      <div className="w-64 h-32 bg-black/40 border border-white/20 rounded-2xl flex flex-col items-center justify-center text-white p-4 shrink-0 relative">
                         <button onClick={() => { setShowForumImageInput(false); setForumImageUrlInput(''); }} className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full text-[10px] font-bold cursor-pointer hover:scale-110">✕</button>
                         <span className="text-[9px] font-black uppercase tracking-widest text-[#fcd34d] mb-2">Image URL</span>
                         <input type="text" value={forumImageUrlInput} onChange={(e) => setForumImageUrlInput(e.target.value)} placeholder="https://..." className="w-full bg-white/10 rounded p-2 text-xs outline-none focus:border-[#fcd34d] border border-transparent" />
@@ -1224,7 +1224,7 @@ const renderCommunications = () => (
                       value={forumContentInput}
                       onChange={(e) => setForumContentInput(e.target.value)}
                       placeholder="Escribe el contenido del foro aquí..." 
-                      className="flex-1 bg-white/5 border border-white/20 rounded-2xl p-4 text-white resize-none focus:outline-none focus:border-[#fcd34d] placeholder-white/30 shadow-inner min-h-[300px]"
+                      className="w-full flex-1 bg-white/5 border border-white/20 rounded-2xl p-4 text-white resize-none focus:outline-none focus:border-[#fcd34d] placeholder-white/30 shadow-inner min-h-[300px]"
                     />
                   </div>
                   <button onClick={handlePublishForumPost} disabled={isPublishingForum} className="w-full mt-auto bg-[#fcd34d] hover:bg-white text-[#08203e] font-black rounded-xl py-4 uppercase tracking-widest transition-colors shadow-lg disabled:opacity-50 cursor-pointer shrink-0">
