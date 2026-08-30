@@ -1013,7 +1013,7 @@ const renderAccounts = () => (
             {!isPreviewMode && (
               <div className="fixed top-0 left-28 right-0 z-[150] bg-[#070b19]/90 backdrop-blur-xl border-b border-white/10 shadow-2xl flex items-center px-8 py-4 gap-6">
                 <div className="flex items-center gap-4 shrink-0 border-r border-white/10 pr-6">
-                  <img src="https://i.postimg.cc/43zTZQhx/Diseno-sin-titulo-(20).png" alt="Outloud Logo" className="h-8 object-contain opacity-100" />
+                  <img src="https://i.postimg.cc/W4wH7P4n/Diseno-sin-titulo-(24).png" alt="Outloud Logo" className="h-8 object-contain opacity-100" />
                   <span className="text-xl font-light text-white tracking-widest uppercase">CONTENTS</span>
                 </div>
                 

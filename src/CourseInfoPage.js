@@ -25,7 +25,7 @@ const MobileCourseInfo = ({
         <div className="flex flex-row justify-between items-center w-full mb-8">
           <div className="flex items-center space-x-3">
             <img 
-              src="https://i.postimg.cc/43zTZQhx/Diseno-sin-titulo-(20).png" 
+              src="https://i.postimg.cc/W4wH7P4n/Diseno-sin-titulo-(24).png"
               alt="Outloud Logo" 
               className="h-8 object-contain opacity-90 drop-shadow-md" 
             />
@@ -230,7 +230,7 @@ const DesktopCourseInfo = ({
           <div className="flex items-center flex-1 min-w-0">
             <div className="flex-none flex items-center">
               <img 
-                src="https://i.postimg.cc/43zTZQhx/Diseno-sin-titulo-(20).png" 
+                src="https://i.postimg.cc/W4wH7P4n/Diseno-sin-titulo-(24).png" 
                 alt="Outloud Logo" 
                 className="h-10 md:h-12 lg:h-14 object-contain opacity-90 drop-shadow-md" 
               />

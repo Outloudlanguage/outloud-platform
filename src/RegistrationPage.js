@@ -124,7 +124,7 @@ const MobileRegistration = ({
       {/* COMPACT MOBILE HEADER */}
       <div className="relative z-10 flex flex-row justify-between items-center w-full mb-6 shrink-0">
         <div className="flex items-center">
-          <img src="https://i.postimg.cc/43zTZQhx/Diseno-sin-titulo-(20).png" alt="Outloud Logo" className="h-8 object-contain shrink-0 opacity-90 drop-shadow-md" />
+          <img src="https://i.postimg.cc/W4wH7P4n/Diseno-sin-titulo-(24).png" alt="Outloud Logo" className="h-8 object-contain shrink-0 opacity-90 drop-shadow-md" />
         </div>
         <button onClick={onReturnHome} className="flex items-center space-x-1.5 text-white/90 font-bold font-montserrat hover:text-[#fcd34d] transition-colors bg-white/10 px-3 py-1.5 rounded-full border border-white/20 backdrop-blur-md">
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -282,7 +282,7 @@ const DesktopRegistration = ({
       {/* Desktop Header */}
       <div className="relative z-10 flex flex-row justify-between items-center w-full max-w-[90rem] mx-auto mb-6 shrink-0">
         <div className="flex items-center">
-          <img src="https://i.postimg.cc/43zTZQhx/Diseno-sin-titulo-(20).png" alt="Outloud Logo" className="h-10 lg:h-12 object-contain shrink-0 opacity-90 drop-shadow-md" />
+          <img src="https://i.postimg.cc/W4wH7P4n/Diseno-sin-titulo-(24).png" alt="Outloud Logo" className="h-10 lg:h-12 object-contain shrink-0 opacity-90 drop-shadow-md" />
           <div className="mx-4 h-8 w-[2px] bg-white/30 shrink-0"></div>
           <span className="text-base lg:text-xl font-light text-white/80 font-montserrat whitespace-nowrap tracking-wide">Online Platform</span>
         </div>

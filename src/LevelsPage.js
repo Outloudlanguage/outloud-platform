@@ -122,7 +122,7 @@ const MobileLevelsPage = ({ onReturnHome }) => {
       {/* Mobile Compact Header */}
       <div className="relative z-10 flex flex-row justify-between items-center w-full px-5 py-6 shrink-0 mb-2">
         <div className="flex items-center space-x-3">
-          <img src="https://i.postimg.cc/43zTZQhx/Diseno-sin-titulo-(20).png" alt="Outloud Logo" className="h-8 object-contain opacity-90 drop-shadow-md" />
+          <img src="https://i.postimg.cc/W4wH7P4n/Diseno-sin-titulo-(24).png" alt="Outloud Logo" className="h-8 object-contain opacity-90 drop-shadow-md" />
           <div className="h-6 w-[1px] bg-white/30"></div>
           <span className="text-xs font-light text-white/80 font-montserrat whitespace-nowrap tracking-wide">Online Platform</span>
         </div>
@@ -277,7 +277,7 @@ const DesktopLevelsPage = ({ onReturnHome }) => {
       <div className="relative z-10 flex flex-row justify-between items-center w-full max-w-[90rem] mx-auto mb-4 lg:mb-6 shrink-0">
         <div className="flex items-center">
           <img
-            src="https://i.postimg.cc/43zTZQhx/Diseno-sin-titulo-(20).png"
+            src="https://i.postimg.cc/W4wH7P4n/Diseno-sin-titulo-(24).png"
             alt="Outloud Logo"
             className="h-10 lg:h-12 object-contain opacity-90 drop-shadow-md shrink-0"
           />

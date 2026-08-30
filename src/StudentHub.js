@@ -173,7 +173,7 @@ const DesktopView = ({ student, onReturnHome, onStartActivity, isFetching, activ
         
         {/* HEADER */}
         <div className="flex items-center gap-4 mb-10 pl-2">
-          <img src="https://i.postimg.cc/43zTZQhx/Diseno-sin-titulo-(20).png" alt="Outloud Logo" className="h-12 lg:h-14 object-contain opacity-100" />
+          <img src="https://i.postimg.cc/W4wH7P4n/Diseno-sin-titulo-(24).png" alt="Outloud Logo" className="h-12 lg:h-14 object-contain opacity-100" />
           <div className="h-10 w-[2px] bg-white/40"></div>
           <span className="text-2xl lg:text-3xl font-light text-white tracking-wide">Online Platform</span>
         </div>
@@ -290,7 +290,7 @@ const MobileView = ({ student, onReturnHome, onStartActivity, isFetching, active
 
       {/* HEADER */}
       <div className="p-5 flex items-center gap-3 border-b border-white/10 bg-black/10 backdrop-blur-md sticky top-0 z-40">
-        <img src="https://i.postimg.cc/43zTZQhx/Diseno-sin-titulo-(20).png" alt="Outloud Logo" className="h-8 sm:h-10 object-contain opacity-100" />
+        <img src="https://i.postimg.cc/W4wH7P4n/Diseno-sin-titulo-(24).png" alt="Outloud Logo" className="h-8 sm:h-10 object-contain opacity-100" />
         <div className="h-6 w-[1px] bg-white/40"></div>
         <span className="text-base sm:text-lg font-light text-white tracking-wide">Online Platform</span>
       </div>
