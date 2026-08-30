@@ -963,8 +963,8 @@ const renderCommunications = () => (
         <div className="grid grid-cols-12 gap-8 flex-1 min-h-0">
           
           {/* Composer Left */}
-          <div className="col-span-5 relative border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col h-fit">
-            <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
+          <div className="col-span-5 relative border border-white/10 rounded-[2.5rem] shadow-2xl flex flex-col h-fit">
+            <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10 rounded-[3rem]" />
             <div className="p-8 flex flex-col z-10">
               <div className="flex gap-4 mb-6">
                 {!showImageInput ? (
@@ -1038,14 +1038,14 @@ const renderCommunications = () => (
             <div className="flex justify-between items-center p-6 border-b border-white/10 z-10 shrink-0">
               <h3 className="font-black text-white text-lg tracking-widest uppercase drop-shadow-md">Students Chat</h3>
               <div className="flex items-center gap-4">
-                <select value={chatFilters.student} onChange={e => setChatFilters(p => ({...p, student: e.target.value}))} className="bg-white/10 text-white text-[10px] font-black uppercase rounded-lg px-2 py-1 outline-none border border-white/20 cursor-pointer">
-                  <option value="ALL">All Levels</option>
-                  <option value="A1">A1 Only</option>
-                  <option value="A2">A2 Only</option>
-                  <option value="B1">B1 Only</option>
-                  <option value="B2">B2 Only</option>
-                  <option value="C1">C1 Only</option>
-                  <option value="C2">C2 Only</option>
+                <select value={chatFilters.student} onChange={e => setChatFilters(p => ({...p, student: e.target.value}))} className="bg-white/10 text-white text-[10px] font-black uppercase rounded-lg px-2 py-1 outline-none border border-white/20 cursor-pointer appearance-none">
+                  <option className="bg-[#0f172a] text-white" value="ALL">All Levels</option>
+                  <option className="bg-[#0f172a] text-white" value="A1">A1 Only</option>
+                  <option className="bg-[#0f172a] text-white" value="A2">A2 Only</option>
+                  <option className="bg-[#0f172a] text-white" value="B1">B1 Only</option>
+                  <option className="bg-[#0f172a] text-white" value="B2">B2 Only</option>
+                  <option className="bg-[#0f172a] text-white" value="C1">C1 Only</option>
+                  <option className="bg-[#0f172a] text-white" value="C2">C2 Only</option>
                 </select>
                 <button onClick={() => handleToggleChatLock('student')} className={`w-12 h-6 rounded-full relative transition-colors border border-white/20 shadow-inner cursor-pointer ${chatLocks.student ? 'bg-red-500/80' : 'bg-emerald-500/80'}`}>
                   <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all ${chatLocks.student ? 'left-7' : 'left-1'}`}></div>
@@ -1060,7 +1060,6 @@ const renderCommunications = () => (
                 chatMessages.student.map(msg => {
                   const isAdmin = msg.sender_role?.includes('Admin');
                   const isTeacher = msg.sender_role === 'Teacher';
-                  // Simple local filter logic (assuming sender_role might hold level info for students eventually, or you just show all for now)
                   return (
                     <div key={msg.id} className={`group bg-[#4b6bfb]/20 backdrop-blur-md rounded-3xl p-5 border w-[85%] relative mt-2 ${isAdmin ? 'border-[#fcd34d] bg-[#fcd34d]/10 ml-auto' : isTeacher ? 'border-emerald-400/50 bg-emerald-500/10' : 'border-blue-400/30 ml-4'}`}>
                       <button onClick={() => handleDeleteChatMessage(msg.id)} className="absolute -top-3 -right-3 w-8 h-8 bg-red-500 text-white rounded-full text-xs font-black opacity-0 group-hover:opacity-100 transition-opacity z-20 shadow-xl cursor-pointer hover:scale-110">✕</button>
@@ -1094,10 +1093,10 @@ const renderCommunications = () => (
             <div className="flex justify-between items-center p-6 border-b border-white/10 z-10 shrink-0">
               <h3 className="font-black text-[#fcd34d] text-lg tracking-widest uppercase drop-shadow-md">Staff Chat</h3>
               <div className="flex items-center gap-4">
-                <select value={chatFilters.staff} onChange={e => setChatFilters(p => ({...p, staff: e.target.value}))} className="bg-white/10 text-white text-[10px] font-black uppercase rounded-lg px-2 py-1 outline-none border border-white/20 cursor-pointer">
-                  <option value="ALL">All Staff</option>
-                  <option value="T1">Teachers</option>
-                  <option value="A1">Admins</option>
+                <select value={chatFilters.staff} onChange={e => setChatFilters(p => ({...p, staff: e.target.value}))} className="bg-white/10 text-white text-[10px] font-black uppercase rounded-lg px-2 py-1 outline-none border border-white/20 cursor-pointer appearance-none">
+                  <option className="bg-[#0f172a] text-white" value="ALL">All Staff</option>
+                  <option className="bg-[#0f172a] text-white" value="T1">Teachers</option>
+                  <option className="bg-[#0f172a] text-white" value="A1">Admins</option>
                 </select>
                 <button onClick={() => handleToggleChatLock('staff')} className={`w-12 h-6 rounded-full relative transition-colors border border-white/20 shadow-inner cursor-pointer ${chatLocks.staff ? 'bg-red-500/80' : 'bg-emerald-500/80'}`}>
                   <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all ${chatLocks.staff ? 'left-7' : 'left-1'}`}></div>
@@ -1143,8 +1142,8 @@ const renderCommunications = () => (
         <div className="grid grid-cols-12 gap-8 flex-1 min-h-0">
           
           {/* Active Post OR Composer (Left Panel) */}
-          <div className="col-span-5 relative border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col h-full group">
-            <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
+          <div className="col-span-8 relative border border-white/10 rounded-[2.5rem] shadow-2xl flex flex-col h-full group">
+            <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10 rounded-[3rem]" />
             
             <div className="p-8 flex flex-col h-full z-10">
               <div className="flex justify-between items-center mb-6 shrink-0">
@@ -1164,13 +1163,13 @@ const renderCommunications = () => (
                   </div>
                 )}
                 
-                <select value={forumLevelFilter} onChange={(e) => setForumLevelFilter(e.target.value)} className="bg-white/10 text-white text-xs font-black uppercase rounded-lg px-3 py-2 outline-none border border-white/20 cursor-pointer">
-                  <option value="A1">Level A1</option>
-                  <option value="A2">Level A2</option>
-                  <option value="B1">Level B1</option>
-                  <option value="B2">Level B2</option>
-                  <option value="C1">Level C1</option>
-                  <option value="C2">Level C2</option>
+                <select value={forumLevelFilter} onChange={(e) => setForumLevelFilter(e.target.value)} className="bg-white/10 text-white text-xs font-black uppercase rounded-lg px-3 py-2 outline-none border border-white/20 cursor-pointer appearance-none">
+                  <option className="bg-[#0f172a] text-white" value="A1">Level A1</option>
+                  <option className="bg-[#0f172a] text-white" value="A2">Level A2</option>
+                  <option className="bg-[#0f172a] text-white" value="B1">Level B1</option>
+                  <option className="bg-[#0f172a] text-white" value="B2">Level B2</option>
+                  <option className="bg-[#0f172a] text-white" value="C1">Level C1</option>
+                  <option className="bg-[#0f172a] text-white" value="C2">Level C2</option>
                 </select>
               </div>
 
@@ -1225,7 +1224,7 @@ const renderCommunications = () => (
                       value={forumContentInput}
                       onChange={(e) => setForumContentInput(e.target.value)}
                       placeholder="Escribe el contenido del foro aquí..." 
-                      className="flex-1 bg-white/5 border border-white/20 rounded-2xl p-4 text-white resize-none focus:outline-none focus:border-[#fcd34d] placeholder-white/30 shadow-inner"
+                      className="flex-1 bg-white/5 border border-white/20 rounded-2xl p-4 text-white resize-none focus:outline-none focus:border-[#fcd34d] placeholder-white/30 shadow-inner min-h-[300px]"
                     />
                   </div>
                   <button onClick={handlePublishForumPost} disabled={isPublishingForum} className="w-full mt-auto bg-[#fcd34d] hover:bg-white text-[#08203e] font-black rounded-xl py-4 uppercase tracking-widest transition-colors shadow-lg disabled:opacity-50 cursor-pointer shrink-0">
@@ -1237,7 +1236,7 @@ const renderCommunications = () => (
           </div>
 
           {/* Replies Feed (Right Panel) */}
-          <div className="col-span-7 flex flex-col gap-4 overflow-y-auto custom-scrollbar h-full pl-2">
+          <div className="col-span-4 flex flex-col gap-4 overflow-y-auto custom-scrollbar h-full pl-2">
             {!forumPost ? (
               <div className="flex flex-col items-center justify-center h-full text-white/40">
                 <span className="font-bold uppercase tracking-widest text-sm text-center px-8">No topic active for {forumLevelFilter}.<br/>Create one to allow replies.</span>
@@ -1272,7 +1271,7 @@ const renderCommunications = () => (
       )}
     </div>
   );
-  
+
   const renderFinances = () => (
     <div className="grid grid-cols-12 gap-8 w-full max-w-[1500px] h-[calc(100vh-160px)] animate-fade-in relative z-10">
       <div className="col-span-3 flex flex-col gap-8 h-full justify-center">
