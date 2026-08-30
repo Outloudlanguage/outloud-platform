@@ -20,6 +20,11 @@ import StudentManagerModal from './components/AdminHub/Tabs/StudentManagerModal'
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import StatisticsHub from './components/StatisticsHub';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../SupabaseClient';
+import CommercialFunnelModule from './CommercialFunnelModule';
+import ProfitMarginAnalysis from './ProfitMarginAnalysis';
+
 
 // ==========================================
 // DEDICATED PROVISIONING MODAL
@@ -1272,10 +1277,6 @@ const renderCommunications = () => (
     </div>
   );
 
-import React, { useState, useEffect } from 'react';
-import { supabase } from '../SupabaseClient';
-import CommercialFunnelModule from './CommercialFunnelModule';
-import ProfitMarginAnalysis from './ProfitMarginAnalysis';
 
 // ==========================================
 // NEW ENGINE: OVERHEAD & SERVICES TRACKER
@@ -1433,7 +1434,6 @@ const FinancesPage = () => {
   );
 };
 
-export default FinancesPage;
 
   const renderSettings = () => (
     <div className="flex items-center justify-center w-full h-[calc(100vh-160px)] animate-fade-in relative z-10">
