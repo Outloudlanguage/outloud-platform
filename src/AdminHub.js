@@ -1272,84 +1272,168 @@ const renderCommunications = () => (
     </div>
   );
 
-  const renderFinances = () => (
-    <div className="grid grid-cols-12 gap-8 w-full max-w-[1500px] h-[calc(100vh-160px)] animate-fade-in relative z-10">
-      <div className="col-span-3 flex flex-col gap-8 h-full justify-center">
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 shadow-2xl flex flex-col items-center relative h-[45%] justify-center">
-          <div className="relative w-40 h-40 flex items-center justify-center shrink-0 mb-4">
-            <svg className="w-full h-full transform -rotate-90 drop-shadow-[0_0_15px_rgba(252,211,77,0.8)]" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.1)" strokeWidth="10" fill="transparent" />
-              <circle cx="50" cy="50" r="40" stroke="#fcd34d" strokeWidth="10" fill="transparent" strokeDasharray={2 * Math.PI * 40} strokeDashoffset={(2 * Math.PI * 40) - (90 / 100) * (2 * Math.PI * 40)} strokeLinecap="round" />
-            </svg>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-4xl font-black text-white drop-shadow-md">90%</span>
-            </div>
-          </div>
-          <h3 className="text-white/90 font-black text-lg tracking-widest uppercase text-center mt-2">Renewals</h3>
-        </div>
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../SupabaseClient';
+import CommercialFunnelModule from './CommercialFunnelModule';
+import ProfitMarginAnalysis from './ProfitMarginAnalysis';
 
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 shadow-2xl flex flex-col items-center relative h-[45%] justify-center">
-          <div className="relative w-40 h-40 flex items-center justify-center shrink-0 mb-4 cursor-pointer hover:scale-105 transition-transform group">
-            <svg className="w-full h-full transform -rotate-90 drop-shadow-[0_0_15px_rgba(59,130,246,0.8)]" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.1)" strokeWidth="10" fill="transparent" />
-              <circle cx="50" cy="50" r="40" stroke="#3b82f6" strokeWidth="10" fill="transparent" strokeDasharray={2 * Math.PI * 40} strokeDashoffset={(2 * Math.PI * 40) - (45 / 100) * (2 * Math.PI * 40)} strokeLinecap="round" className="group-hover:stroke-blue-400 transition-colors" />
-            </svg>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-4xl font-black text-white drop-shadow-md">45%</span>
-            </div>
-          </div>
-          <h3 className="text-white/90 font-black text-lg tracking-widest uppercase text-center mt-2 whitespace-nowrap">Profit Margin</h3>
+// ==========================================
+// NEW ENGINE: OVERHEAD & SERVICES TRACKER
+// ==========================================
+const OverheadExpensesModule = () => {
+  const [loading, setLoading] = useState(true);
+  const [expenses, setExpenses] = useState([]);
+  const [totalOverhead, setTotalOverhead] = useState(0);
+
+  useEffect(() => {
+    const fetchOverhead = async () => {
+      try {
+        setLoading(true);
+        // Map this to a new table: 'operating_expenses'
+        const { data, error } = await supabase
+          .from('operating_expenses')
+          .select('service_name, monthly_cost, category')
+          .order('monthly_cost', { ascending: false });
+
+        // Fallback mock data if table doesn't exist yet
+        const displayData = data && data.length > 0 ? data : [
+          { service_name: 'Supabase (Database)', monthly_cost: 25, category: 'Infrastructure' },
+          { service_name: 'Cloudflare (Hosting/CDN)', monthly_cost: 20, category: 'Infrastructure' },
+          { service_name: 'Meta Ads (Marketing)', monthly_cost: 350, category: 'Marketing' },
+          { service_name: 'Zoom Pro (Teacher Accs)', monthly_cost: 150, category: 'Software' },
+          { service_name: 'Stripe/Bank Fees', monthly_cost: 85, category: 'Financial' }
+        ];
+
+        setExpenses(displayData);
+        setTotalOverhead(displayData.reduce((sum, item) => sum + item.monthly_cost, 0));
+      } catch (error) {
+        console.error("Error fetching overhead:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOverhead();
+  }, []);
+
+  if (loading) return <div className="p-8 text-white/50 text-center font-bold tracking-widest bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem]">LOADING OVERHEAD...</div>;
+
+  return (
+    <div className="flex flex-col w-full h-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 shadow-2xl">
+      <div className="mb-6 flex justify-between items-end border-b border-white/10 pb-4 shrink-0">
+        <div>
+          <h3 className="text-2xl font-black tracking-widest uppercase text-white">Overhead Costs</h3>
+          <p className="text-sm font-bold text-red-400 uppercase tracking-wide">Recurring Digital & SaaS Expenses</p>
+        </div>
+        <div className="text-right">
+          <p className="text-xs text-white/50 uppercase font-bold tracking-wider">Total Monthly</p>
+          <p className="text-4xl font-black text-red-400">${totalOverhead}</p>
         </div>
       </div>
-
-      <div className="col-span-6 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-8 shadow-2xl flex flex-col h-full items-center justify-center">
-        {/* MOCKUP BAR CHART FOR EXPECTED VS COLLECTED */}
-        <div className="flex gap-6 mb-10 w-full justify-center">
-          <div className="flex items-center gap-2"><span className="w-4 h-4 rounded-full bg-slate-600"></span><span className="text-sm font-bold text-white/70">Expected</span></div>
-          <div className="flex items-center gap-2"><span className="w-4 h-4 rounded-full bg-[#fcd34d]"></span><span className="text-sm font-bold text-white/70">Collected</span></div>
-          <div className="flex items-center gap-2"><span className="w-4 h-4 rounded-full bg-red-400"></span><span className="text-sm font-bold text-white/70">Paid</span></div>
-        </div>
-        <div className="w-full h-[60%] flex items-end justify-center gap-10 px-8 border-b border-l border-white/20 pb-4 relative">
-          <div className="absolute -left-10 top-0 text-xs font-bold text-white/40">3,000</div>
-          <div className="absolute -left-10 top-1/2 text-xs font-bold text-white/40">1,500</div>
-          
-          <div className="flex items-end gap-2 h-full">
-            <div className="w-12 bg-slate-600 rounded-t-lg h-[80%] hover:brightness-110 transition-all cursor-pointer"></div>
-            <div className="w-12 bg-[#fcd34d] rounded-t-lg h-[40%] hover:brightness-110 transition-all cursor-pointer shadow-[0_0_15px_rgba(252,211,77,0.3)]"></div>
-            <div className="w-12 bg-red-400 rounded-t-lg h-[20%] hover:brightness-110 transition-all cursor-pointer"></div>
+      
+      <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 flex flex-col gap-3">
+        {expenses.map((expense, idx) => (
+          <div key={idx} className="flex justify-between items-center bg-white/5 border border-white/10 p-4 rounded-xl hover:bg-white/10 transition-colors">
+            <div className="flex flex-col">
+              <span className="font-bold text-white tracking-wide">{expense.service_name}</span>
+              <span className="text-[10px] font-black uppercase text-white/40 tracking-widest">{expense.category}</span>
+            </div>
+            <span className="font-black text-white/80">${expense.monthly_cost}</span>
           </div>
-          <div className="flex items-end gap-2 h-full">
-            <div className="w-12 bg-slate-600 rounded-t-lg h-[85%] hover:brightness-110 transition-all cursor-pointer"></div>
-            <div className="w-12 bg-[#fcd34d] rounded-t-lg h-[82%] hover:brightness-110 transition-all cursor-pointer shadow-[0_0_15px_rgba(252,211,77,0.3)]"></div>
-            <div className="w-12 bg-red-400 rounded-t-lg h-[35%] hover:brightness-110 transition-all cursor-pointer"></div>
-          </div>
-          <div className="flex items-end gap-2 h-full">
-            <div className="w-12 bg-slate-600 rounded-t-lg h-[75%] hover:brightness-110 transition-all cursor-pointer"></div>
-            <div className="w-12 bg-[#fcd34d] rounded-t-lg h-[70%] hover:brightness-110 transition-all cursor-pointer shadow-[0_0_15px_rgba(252,211,77,0.3)]"></div>
-            <div className="w-12 bg-red-400 rounded-t-lg h-[30%] hover:brightness-110 transition-all cursor-pointer"></div>
-          </div>
-        </div>
-        <div className="w-full flex justify-center gap-32 mt-4 text-white/70 font-bold uppercase tracking-widest text-sm pr-12">
-          <span>Ene</span><span>Feb</span><span>Mar</span>
-        </div>
-      </div>
-
-      <div className="col-span-3 flex flex-col gap-6 h-full justify-center">
-        <div className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center">
-          <h4 className="text-white font-black text-xl tracking-widest uppercase drop-shadow-md">Gross Revenue</h4>
-          <span className="text-5xl font-black text-[#fcd34d] mt-2 drop-shadow-lg">$5,230</span>
-        </div>
-        <div className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-white/10 transition-colors">
-          <h4 className="text-white font-black text-xl tracking-widest uppercase drop-shadow-md text-center leading-tight">Payroll<br/>Liability</h4>
-          <span className="text-5xl font-black text-red-400 mt-2 drop-shadow-lg">$1,180</span>
-        </div>
-        <div className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center">
-          <h4 className="text-white font-black text-xl tracking-widest uppercase drop-shadow-md">Net Profit</h4>
-          <span className="text-5xl font-black text-green-400 mt-2 drop-shadow-lg">$3,370</span>
-        </div>
+        ))}
       </div>
     </div>
   );
+};
+
+// ==========================================
+// MAIN PAGE LAYOUT: FINANCES
+// ==========================================
+const FinancesPage = () => {
+  // These states would ideally be lifted from the child engines if you want the parent to calculate the right-column totals dynamically.
+  // For now, they are mocked to show the structure.
+  const totals = { gross: 5230, payroll: 1180, overhead: 630, net: 3420 };
+
+  return (
+    <div className="flex flex-col gap-8 w-full max-w-[1500px] min-h-[calc(100vh-160px)] animate-fade-in relative z-10 pb-10">
+      
+      {/* ROW 1: THE "NOW" (Hard Financials) */}
+      <div className="grid grid-cols-12 gap-8 h-[450px]">
+        
+        {/* Left: Circular KPIs */}
+        <div className="col-span-3 flex flex-col gap-6 h-full justify-center">
+          <div className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center relative">
+            <div className="relative w-32 h-32 flex items-center justify-center shrink-0 mb-2">
+              <svg className="w-full h-full transform -rotate-90 drop-shadow-[0_0_15px_rgba(252,211,77,0.8)]" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.1)" strokeWidth="10" fill="transparent" />
+                <circle cx="50" cy="50" r="40" stroke="#fcd34d" strokeWidth="10" fill="transparent" strokeDasharray={2 * Math.PI * 40} strokeDashoffset={(2 * Math.PI * 40) - (90 / 100) * (2 * Math.PI * 40)} strokeLinecap="round" />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-3xl font-black text-white drop-shadow-md">90%</span>
+              </div>
+            </div>
+            <h3 className="text-white/90 font-black text-sm tracking-widest uppercase text-center mt-2">Renewals</h3>
+          </div>
+
+          <div className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center relative group cursor-pointer">
+            <div className="relative w-32 h-32 flex items-center justify-center shrink-0 mb-2">
+              <svg className="w-full h-full transform -rotate-90 drop-shadow-[0_0_15px_rgba(59,130,246,0.8)]" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.1)" strokeWidth="10" fill="transparent" />
+                <circle cx="50" cy="50" r="40" stroke="#3b82f6" strokeWidth="10" fill="transparent" strokeDasharray={2 * Math.PI * 40} strokeDashoffset={(2 * Math.PI * 40) - (65 / 100) * (2 * Math.PI * 40)} strokeLinecap="round" className="group-hover:stroke-blue-400 transition-colors" />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-3xl font-black text-white drop-shadow-md">65%</span>
+              </div>
+            </div>
+            <h3 className="text-white/90 font-black text-sm tracking-widest uppercase text-center mt-2 whitespace-nowrap">Net Margin</h3>
+          </div>
+        </div>
+
+        {/* Center: Profit Margin Analysis Engine */}
+        <div className="col-span-6 h-full">
+          <ProfitMarginAnalysis />
+        </div>
+
+        {/* Right: 4-Metric Stack */}
+        <div className="col-span-3 flex flex-col gap-4 h-full justify-between">
+          <div className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-4 shadow-2xl flex flex-col items-center justify-center">
+            <h4 className="text-white/70 font-black text-sm tracking-widest uppercase">Gross Revenue</h4>
+            <span className="text-3xl font-black text-[#fcd34d] mt-1">${totals.gross}</span>
+          </div>
+          <div className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-4 shadow-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-white/10 transition-colors">
+            <h4 className="text-white/70 font-black text-sm tracking-widest uppercase">Payroll Liability</h4>
+            <span className="text-3xl font-black text-red-400 mt-1">-${totals.payroll}</span>
+          </div>
+          <div className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-4 shadow-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-white/10 transition-colors">
+            <h4 className="text-white/70 font-black text-sm tracking-widest uppercase text-center leading-tight">Digital Overhead</h4>
+            <span className="text-3xl font-black text-orange-400 mt-1">-${totals.overhead}</span>
+          </div>
+          <div className="flex-1 bg-[#10b981]/20 backdrop-blur-xl border border-[#10b981]/40 rounded-[2rem] p-4 shadow-2xl flex flex-col items-center justify-center">
+            <h4 className="text-white font-black text-sm tracking-widest uppercase">Net Profit</h4>
+            <span className="text-4xl font-black text-[#10b981] mt-1 drop-shadow-md">${totals.net}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ROW 2: THE "FUTURE & LEAKS" (Acquisition & Operations) */}
+      <div className="grid grid-cols-12 gap-8 h-[450px]">
+        
+        {/* Left: Commercial Funnel Engine */}
+        <div className="col-span-6 h-full">
+          <CommercialFunnelModule />
+        </div>
+
+        {/* Right: Overhead/SaaS Breakdown Engine */}
+        <div className="col-span-6 h-full">
+          <OverheadExpensesModule />
+        </div>
+        
+      </div>
+    </div>
+  );
+};
+
+export default FinancesPage;
 
   const renderSettings = () => (
     <div className="flex items-center justify-center w-full h-[calc(100vh-160px)] animate-fade-in relative z-10">
