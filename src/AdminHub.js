@@ -1561,7 +1561,7 @@ const FinancesPage = () => {
         )}
       {activeModule === 'CALENDARS' && <AdminCalendar/>}
         {activeModule === 'COMMUNICATIONS' && renderCommunications()}
-        {activeModule === 'FINANCES' && renderFinances()}
+        {activeModule === 'FINANCES' && <FinancesPage />}
         {activeModule === 'SETTINGS' && renderSettings()}
         
         {/* ==========================================
