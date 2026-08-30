@@ -55,7 +55,7 @@ const MobileLogin = ({ onLogin, onInfoClick }) => {
 
       <div className="relative z-10 flex flex-col h-full min-h-screen p-6">
         <div className="flex items-center space-x-3 mb-8 mt-4">
-          <img src="https://i.postimg.cc/43zTZQhx/Diseno-sin-titulo-(20).png" alt="Outloud Logo" className="h-11 object-contain drop-shadow-md opacity-90" />
+          <img src="https://i.postimg.cc/W4wH7P4n/Diseno-sin-titulo-(24).png" alt="Outloud Logo" className="h-11 object-contain drop-shadow-md opacity-90" />
           <div className="h-8 w-[1px] bg-white/30"></div>
           <span className="text-sm font-light text-white/80 tracking-wide whitespace-nowrap">Online Platform</span>
         </div>
@@ -63,7 +63,7 @@ const MobileLogin = ({ onLogin, onInfoClick }) => {
         {/* TRUE DARK GLASSMORPHISM CONTAINER */}
         <div className="w-full max-w-sm mx-auto bg-white/10 backdrop-blur-2xl border border-white/20 rounded-[2rem] shadow-[0_0_35px_rgba(252,211,77,0.2)] p-8 relative overflow-hidden flex flex-col">
           <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none z-0">
-            <img src="https://i.postimg.cc/fyvnv4XT/Diseno-sin-titulo-(14).png" alt="Watermark" className="w-64 h-64 object-contain invert brightness-0" />
+            <img src="https://i.postimg.cc/KvGtQpRD/Diseno-sin-titulo-(25).png" alt="Watermark" className="w-64 h-64 object-contain invert brightness-0" />
           </div>
 
           <div className="relative z-10">
@@ -235,7 +235,7 @@ const DesktopLogin = ({ onLogin, onInfoClick }) => {
 
         <div className="w-full max-w-[26rem] flex flex-col relative z-10 -mt-4">
           <div className="flex items-center justify-start w-full mb-6 shrink-0 gap-4">
-            <img src="https://i.postimg.cc/43zTZQhx/Diseno-sin-titulo-(20).png" alt="Outloud Logo" className="h-10 md:h-12 object-contain opacity-90" />
+            <img src="https://i.postimg.cc/W4wH7P4n/Diseno-sin-titulo-(24).png" alt="Outloud Logo" className="h-10 md:h-12 object-contain opacity-90" />
             <div className="h-8 w-[1px] bg-white/30 shrink-0"></div>
             <span className="text-sm md:text-base font-light text-white/80 tracking-wide whitespace-nowrap">Online Platform</span>
           </div>
@@ -243,7 +243,7 @@ const DesktopLogin = ({ onLogin, onInfoClick }) => {
           {/* TRUE DARK GLASSMORPHISM CONTAINER */}
           <div className="relative w-full rounded-[2rem] bg-white/10 px-8 py-10 shadow-[0_0_35px_rgba(252,211,77,0.2)] flex flex-col backdrop-blur-2xl border border-white/20 shrink-0">
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.03] overflow-hidden rounded-[2rem]">
-              <img src="https://i.postimg.cc/fyvnv4XT/Diseno-sin-titulo-(14).png" alt="Monogram Watermark" className="w-[75%] object-contain invert brightness-0" />
+              <img src="https://i.postimg.cc/KvGtQpRD/Diseno-sin-titulo-(25).png" alt="Monogram Watermark" className="w-[75%] object-contain invert brightness-0" />
             </div>
             
             <div className="relative z-10 flex flex-col">
@@ -322,7 +322,7 @@ const DesktopLogin = ({ onLogin, onInfoClick }) => {
         <div className="absolute left-0 top-0 bottom-0 w-[60%] bg-[#070b19]/80 backdrop-blur-sm flex flex-col items-center justify-center text-center px-10 lg:px-14 shadow-[20px_0_40px_rgba(0,0,0,0.5)] border-r border-white/5">
           <div className="mb-8 flex flex-col items-center">
             {/* Stacked logo inverted to white */}
-            <img src="https://i.postimg.cc/gjMxxhnD/Agregar-algo-de-texto-(7).png" alt="Outloud Stacked Logo" className="w-48 md:w-56 object-contain drop-shadow-lg brightness-0 invert opacity-90" />
+            <img src="https://i.postimg.cc/PxnwD2g5/Agregar-un-titulo.png" alt="Outloud Stacked Logo" className="w-48 md:w-56 object-contain drop-shadow-lg brightness-0 invert opacity-90" />
           </div>
           <h1 className="text-[1.5rem] md:text-[1.8rem] lg:text-[2.2rem] font-light tracking-[0.1em] leading-[1.4] text-white drop-shadow-md w-full">
             YOUR JOURNEY<br/>TO SUCCESS<br/>STARTS TODAY
