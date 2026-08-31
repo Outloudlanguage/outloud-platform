@@ -1364,13 +1364,15 @@ const OverheadExpensesModule = ({ onOverheadUpdate }) => {
            <div className="text-center text-white/40 font-bold tracking-widest text-sm mt-4 uppercase">No expenses recorded yet.</div>
         ) : (
           expenses.map((expense, idx) => (
-            <div key={expense.id || idx} className="group relative flex justify-between items-center bg-white/5 border border-white/10 p-4 rounded-xl hover:bg-white/10 transition-colors">
-              <button onClick={() => handleDeleteExpense(expense.id)} className="absolute -left-2 -top-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center font-black opacity-0 group-hover:opacity-100 transition-opacity shadow-lg text-xs hover:scale-110 z-10">✕</button>
+            <div key={expense.id || idx} className="group flex justify-between items-center bg-white/5 border border-white/10 p-4 rounded-xl hover:bg-white/10 transition-colors overflow-hidden">
               <div className="flex flex-col">
                 <span className="font-bold text-white tracking-wide">{expense.service_name}</span>
                 <span className="text-[10px] font-black uppercase text-white/40 tracking-widest">{expense.category}</span>
               </div>
-              <span className="font-black text-white/80">${Number(expense.monthly_cost).toLocaleString()}</span>
+              <div className="flex items-center gap-4">
+                <span className="font-black text-white/80">${Number(expense.monthly_cost).toLocaleString()}</span>
+                <button onClick={() => handleDeleteExpense(expense.id)} className="w-8 h-8 bg-red-500/20 hover:bg-red-500 text-red-500 hover:text-white rounded-lg flex items-center justify-center font-black opacity-0 group-hover:opacity-100 transition-all text-xs z-10">✕</button>
+              </div>
             </div>
           ))
         )}
@@ -1412,6 +1414,11 @@ const FinancesPage = () => {
   const [payroll, setPayroll] = useState(0);
   const [overhead, setOverhead] = useState(0);
 
+  // Renewals Modal State & Live Calculation
+  const [showRenewalsModal, setShowRenewalsModal] = useState(false);
+  const [pendingRenewals, setPendingRenewals] = useState([]); // Blank state for real database fetch later
+  const renewalRate = pendingRenewals.length > 0 ? 0 : 0; // Dynamic 0% until wired
+
   const netProfit = revenue - payroll - overhead;
   const netMarginPercentage = revenue > 0 ? ((netProfit / revenue) * 100).toFixed(1) : 0;
 
@@ -1423,18 +1430,18 @@ const FinancesPage = () => {
         
         {/* Left: Circular KPIs */}
         <div className="col-span-3 flex flex-col gap-6 h-full justify-center">
-          <div className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center relative">
+          <button onClick={() => setShowRenewalsModal(true)} className="flex-1 w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center relative group hover:bg-white/10 transition-all cursor-pointer">
             <div className="relative w-32 h-32 flex items-center justify-center shrink-0 mb-2">
               <svg className="w-full h-full transform -rotate-90 drop-shadow-[0_0_15px_rgba(252,211,77,0.8)]" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.1)" strokeWidth="10" fill="transparent" />
-                <circle cx="50" cy="50" r="40" stroke="#fcd34d" strokeWidth="10" fill="transparent" strokeDasharray={2 * Math.PI * 40} strokeDashoffset={(2 * Math.PI * 40) - (90 / 100) * (2 * Math.PI * 40)} strokeLinecap="round" />
+                <circle cx="50" cy="50" r="40" stroke="#fcd34d" strokeWidth="10" fill="transparent" strokeDasharray={2 * Math.PI * 40} strokeDashoffset={(2 * Math.PI * 40) - (renewalRate / 100) * (2 * Math.PI * 40)} strokeLinecap="round" className="group-hover:stroke-yellow-300 transition-colors" />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-3xl font-black text-white drop-shadow-md">90%</span>
+                <span className="text-3xl font-black text-white drop-shadow-md">{renewalRate}%</span>
               </div>
             </div>
             <h3 className="text-white/90 font-black text-sm tracking-widest uppercase text-center mt-2">Renewals</h3>
-          </div>
+          </button>
 
           <div className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center relative group cursor-pointer">
             <div className="relative w-32 h-32 flex items-center justify-center shrink-0 mb-2">
@@ -1490,6 +1497,40 @@ const FinancesPage = () => {
         </div>
         
       </div>
+
+      {/* FLOATING RENEWALS MODAL */}
+      {showRenewalsModal && (
+        <div className="fixed inset-0 z-[500] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-[#08203e] border border-white/20 rounded-[2rem] w-full max-w-2xl p-8 shadow-2xl flex flex-col max-h-[80vh] animate-fade-in">
+            <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
+              <div>
+                <h3 className="text-2xl font-black tracking-widest uppercase text-white">Pending Renewals</h3>
+                <p className="text-sm font-bold text-[#fcd34d] uppercase tracking-wide">Students ready for next level</p>
+              </div>
+              <button onClick={() => setShowRenewalsModal(false)} className="text-white/50 hover:text-white text-3xl font-black transition-colors">✕</button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto custom-scrollbar">
+              {pendingRenewals.length === 0 ? (
+                <div className="text-center text-white/40 font-bold tracking-widest text-sm py-12 uppercase">No pending renewals at this time.</div>
+              ) : (
+                pendingRenewals.map((student, i) => (
+                   <div key={i} className="bg-white/5 p-4 rounded-xl border border-white/10 mb-3 flex justify-between items-center">
+                      <div>
+                        <h4 className="text-white font-bold">{student.name}</h4>
+                        <p className="text-white/50 text-xs uppercase tracking-wider">{student.contact}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[#fcd34d] font-black text-sm">FINISHED: {student.completedLevel}</p>
+                        <button className="mt-2 bg-[#fcd34d] text-[#08203e] px-4 py-1 rounded font-black text-xs uppercase tracking-widest hover:scale-105 transition-transform">Contact</button>
+                      </div>
+                   </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
