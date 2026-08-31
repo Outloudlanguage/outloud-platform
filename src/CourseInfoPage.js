@@ -63,7 +63,7 @@ const MobileCourseInfo = ({
               <div className="w-[42%] flex flex-col items-center justify-center text-center pr-3 shrink-0 border-r border-white/10 relative z-10">
                 <div className="h-16 w-16 mx-auto flex items-center justify-center mb-2 shrink-0">
                   <img
-                    src="https://i.postimg.cc/LssD8BWw/Agregar-algo-de-texto-(14).png"
+                    src="https://i.postimg.cc/wMf4YWfP/4(9).png"
                     alt="Inmersión Total Icon"
                     className="w-full h-full object-contain brightness-0 invert opacity-90 drop-shadow-md"
                   />
@@ -113,7 +113,7 @@ const MobileCourseInfo = ({
               <div className="w-[42%] flex flex-col items-center justify-center text-center pr-3 shrink-0 border-r border-white/10 relative z-10">
                 <div className="h-16 w-16 mx-auto flex items-center justify-center mb-2 shrink-0">
                   <img
-                    src="https://i.postimg.cc/mDJHRQff/6(2).png"
+                    src="https://i.postimg.cc/GhtSxC9d/5(8).png"
                     alt="Acceso 24/7 Icon"
                     className="w-full h-full object-contain brightness-0 invert opacity-90 drop-shadow-md"
                   />
@@ -159,7 +159,7 @@ const MobileCourseInfo = ({
               <div className="w-[42%] flex flex-col items-center justify-center text-center pr-3 shrink-0 border-r border-white/10 relative z-10">
                 <div className="h-16 w-16 mx-auto flex items-center justify-center mb-2 shrink-0">
                   <img
-                    src="https://i.postimg.cc/LXn1rxWs/7(3).png"
+                    src="https://i.postimg.cc/Bv7gmh6D/Diseno-sin-titulo-(29).png"
                     alt="Clases En Vivo Icon"
                     className="w-full h-full object-contain brightness-0 invert opacity-90 drop-shadow-md"
                   />
@@ -271,7 +271,7 @@ const DesktopCourseInfo = ({
               {/* Optically Balanced Icon Container */}
               <div className="h-20 w-20 xl:h-24 xl:w-24 mx-auto flex items-center justify-center mb-2 lg:mb-3 shrink-0 relative z-10">
                 <img
-                  src="https://i.postimg.cc/LssD8BWw/Agregar-algo-de-texto-(14).png"
+                  src="https://i.postimg.cc/wMf4YWfP/4(9).png"
                   alt="Inmersión Total Icon"
                   className="w-full h-full object-contain brightness-0 invert opacity-90 drop-shadow-lg"
                 />
@@ -323,7 +323,7 @@ const DesktopCourseInfo = ({
               {/* Optically Balanced Icon Container */}
               <div className="h-20 w-20 xl:h-24 xl:w-24 mx-auto flex items-center justify-center mb-2 lg:mb-3 shrink-0 relative z-10">
                 <img
-                  src="https://i.postimg.cc/mDJHRQff/6(2).png"
+                  src="https://i.postimg.cc/GhtSxC9d/5(8).png"
                   alt="Acceso 24/7 Icon"
                   className="w-full h-full object-contain brightness-0 invert opacity-90 drop-shadow-lg"
                 />
@@ -375,7 +375,7 @@ const DesktopCourseInfo = ({
               {/* Optically Balanced Icon Container */}
               <div className="h-20 w-20 xl:h-24 xl:w-24 mx-auto flex items-center justify-center mb-2 lg:mb-3 shrink-0 relative z-10">
                 <img
-                  src="https://i.postimg.cc/LXn1rxWs/7(3).png"
+                  src="https://i.postimg.cc/Bv7gmh6D/Diseno-sin-titulo-(29).png"
                   alt="Clases En Vivo Icon"
                   className="w-full h-full object-contain brightness-0 invert opacity-90 drop-shadow-lg"
                 />
