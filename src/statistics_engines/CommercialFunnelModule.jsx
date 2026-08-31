@@ -35,11 +35,6 @@ const CommercialFunnelModule = () => {
           visitors = funnel.length;
           leads = funnel.filter(f => f.form_filled).length;
           conversions = funnel.filter(f => f.converted_to_student).length;
-        } else {
-          // Fallback UI data
-          visitors = 4200;
-          leads = 850;
-          conversions = 310;
         }
 
         setChartData([

@@ -34,33 +34,20 @@ const ProfitMarginAnalysis = () => {
           .from('teacher_class_logs')
           .select('login_time, logout_time, users(hourly_rate)');
 
-        let totalRev = 0;
+let totalRev = 0;
         let totalCost = 0;
-        
-        // Month bucketing logic (mocked for structural stability, replace with date parsing logic if needed)
-        let monthlyData = [
-          { month: 'Jan', revenue: 24000, cost: 8400 },
-          { month: 'Feb', revenue: 25500, cost: 8900 },
-          { month: 'Mar', revenue: 27000, cost: 9100 },
-          { month: 'Apr', revenue: 26800, cost: 8800 },
-          { month: 'May', revenue: 29000, cost: 9500 },
-          { month: 'Jun', revenue: 31000, cost: 10200 } // Current month mock
-        ];
 
-        // Process live data if available to override mocks
-        if (payments && payments.length > 0 && logs && logs.length > 0) {
-            // Processing logic would map timestamps to actual months here
+        if (payments && payments.length > 0) {
             totalRev = payments.reduce((sum, p) => sum + Number(p.amount), 0);
+        }
+        if (logs && logs.length > 0) {
             totalCost = logs.reduce((sum, log) => {
                 const hours = (new Date(log.logout_time) - new Date(log.login_time)) / 3600000;
                 return sum + (hours * (log.users?.hourly_rate || 3));
             }, 0);
-        } else {
-            totalRev = 31000;
-            totalCost = 10200;
         }
 
-        setChartData(monthlyData);
+        setChartData([]);
         const marginCalc = totalRev > 0 ? (((totalRev - totalCost) / totalRev) * 100).toFixed(1) : 0;
         setMetrics({ revenue: totalRev, payroll: totalCost, margin: marginCalc });
 

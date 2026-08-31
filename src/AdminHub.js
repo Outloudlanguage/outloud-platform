@@ -1277,45 +1277,74 @@ const renderCommunications = () => (
 
 
 // ==========================================
-// NEW ENGINE: OVERHEAD & SERVICES TRACKER
+// UPGRADED ENGINE: EDITABLE OVERHEAD TRACKER
 // ==========================================
-const OverheadExpensesModule = () => {
+const OverheadExpensesModule = ({ onOverheadUpdate }) => {
   const [loading, setLoading] = useState(true);
   const [expenses, setExpenses] = useState([]);
   const [totalOverhead, setTotalOverhead] = useState(0);
+  const [isAdding, setIsAdding] = useState(false);
+  const [newExpense, setNewExpense] = useState({ service_name: '', category: 'Software', monthly_cost: '' });
+
+  const fetchOverhead = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('operating_expenses')
+        .select('id, service_name, monthly_cost, category')
+        .order('monthly_cost', { ascending: false });
+
+      // If table is empty, start with a clean slate array
+      const displayData = data && data.length > 0 ? data : [];
+      const calculatedTotal = displayData.reduce((sum, item) => sum + Number(item.monthly_cost), 0);
+      
+      setExpenses(displayData);
+      setTotalOverhead(calculatedTotal);
+      
+      // SEND LIVE OVERHEAD DATA TO PARENT
+      if (onOverheadUpdate) {
+        onOverheadUpdate(calculatedTotal);
+      }
+    } catch (error) {
+      console.error("Error fetching overhead:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchOverhead = async () => {
-      try {
-        setLoading(true);
-        // Map this to a new table: 'operating_expenses'
-        const { data, error } = await supabase
-          .from('operating_expenses')
-          .select('service_name, monthly_cost, category')
-          .order('monthly_cost', { ascending: false });
-
-        // Fallback mock data if table doesn't exist yet
-        const displayData = data && data.length > 0 ? data : [
-          { service_name: 'Supabase (Database)', monthly_cost: 25, category: 'Infrastructure' },
-          { service_name: 'Cloudflare (Hosting/CDN)', monthly_cost: 20, category: 'Infrastructure' },
-          { service_name: 'Meta Ads (Marketing)', monthly_cost: 350, category: 'Marketing' },
-          { service_name: 'Zoom Pro (Teacher Accs)', monthly_cost: 150, category: 'Software' },
-          { service_name: 'Stripe/Bank Fees', monthly_cost: 85, category: 'Financial' }
-        ];
-
-        setExpenses(displayData);
-        setTotalOverhead(displayData.reduce((sum, item) => sum + item.monthly_cost, 0));
-      } catch (error) {
-        console.error("Error fetching overhead:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchOverhead();
   }, []);
 
-  if (loading) return <div className="p-8 text-white/50 text-center font-bold tracking-widest bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem]">LOADING OVERHEAD...</div>;
+  const handleAddExpense = async (e) => {
+    e.preventDefault();
+    if (!newExpense.service_name || !newExpense.monthly_cost) return;
+    
+    try {
+      await supabase.from('operating_expenses').insert([{
+        service_name: newExpense.service_name,
+        category: newExpense.category,
+        monthly_cost: Number(newExpense.monthly_cost)
+      }]);
+      setNewExpense({ service_name: '', category: 'Software', monthly_cost: '' });
+      setIsAdding(false);
+      fetchOverhead(); // Refresh the list
+    } catch (err) {
+      console.error("Error adding expense:", err);
+    }
+  };
+
+  const handleDeleteExpense = async (id) => {
+    if (!window.confirm("Are you sure you want to remove this expense?")) return;
+    try {
+      await supabase.from('operating_expenses').delete().eq('id', id);
+      fetchOverhead(); // Refresh the list
+    } catch (err) {
+      console.error("Error deleting expense:", err);
+    }
+  };
+
+  if (loading && expenses.length === 0) return <div className="p-8 text-white/50 text-center font-bold tracking-widest bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem]">LOADING OVERHEAD...</div>;
 
   return (
     <div className="flex flex-col w-full h-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 shadow-2xl">
@@ -1326,20 +1355,50 @@ const OverheadExpensesModule = () => {
         </div>
         <div className="text-right">
           <p className="text-xs text-white/50 uppercase font-bold tracking-wider">Total Monthly</p>
-          <p className="text-4xl font-black text-red-400">${totalOverhead}</p>
+          <p className="text-4xl font-black text-red-400">${totalOverhead.toLocaleString()}</p>
         </div>
       </div>
       
       <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 flex flex-col gap-3">
-        {expenses.map((expense, idx) => (
-          <div key={idx} className="flex justify-between items-center bg-white/5 border border-white/10 p-4 rounded-xl hover:bg-white/10 transition-colors">
-            <div className="flex flex-col">
-              <span className="font-bold text-white tracking-wide">{expense.service_name}</span>
-              <span className="text-[10px] font-black uppercase text-white/40 tracking-widest">{expense.category}</span>
+        {expenses.length === 0 ? (
+           <div className="text-center text-white/40 font-bold tracking-widest text-sm mt-4 uppercase">No expenses recorded yet.</div>
+        ) : (
+          expenses.map((expense, idx) => (
+            <div key={expense.id || idx} className="group relative flex justify-between items-center bg-white/5 border border-white/10 p-4 rounded-xl hover:bg-white/10 transition-colors">
+              <button onClick={() => handleDeleteExpense(expense.id)} className="absolute -left-2 -top-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center font-black opacity-0 group-hover:opacity-100 transition-opacity shadow-lg text-xs hover:scale-110 z-10">✕</button>
+              <div className="flex flex-col">
+                <span className="font-bold text-white tracking-wide">{expense.service_name}</span>
+                <span className="text-[10px] font-black uppercase text-white/40 tracking-widest">{expense.category}</span>
+              </div>
+              <span className="font-black text-white/80">${Number(expense.monthly_cost).toLocaleString()}</span>
             </div>
-            <span className="font-black text-white/80">${expense.monthly_cost}</span>
-          </div>
-        ))}
+          ))
+        )}
+      </div>
+
+      <div className="mt-6 pt-4 border-t border-white/10 shrink-0">
+        {!isAdding ? (
+          <button onClick={() => setIsAdding(true)} className="w-full py-3 bg-white/10 hover:bg-[#fcd34d] text-white hover:text-[#08203e] font-black text-xs tracking-widest uppercase rounded-xl transition-colors">
+            + Add New Expense
+          </button>
+        ) : (
+          <form onSubmit={handleAddExpense} className="flex flex-col gap-3 bg-black/40 p-4 rounded-xl border border-white/10">
+            <input type="text" placeholder="Service Name (e.g. Zoom)" value={newExpense.service_name} onChange={e => setNewExpense({...newExpense, service_name: e.target.value})} className="bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#fcd34d]" required />
+            <div className="flex gap-3">
+                <select value={newExpense.category} onChange={e => setNewExpense({...newExpense, category: e.target.value})} className="flex-1 bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#fcd34d] appearance-none">
+                    <option className="bg-[#0f172a]" value="Software">Software</option>
+                    <option className="bg-[#0f172a]" value="Infrastructure">Infrastructure</option>
+                    <option className="bg-[#0f172a]" value="Marketing">Marketing</option>
+                    <option className="bg-[#0f172a]" value="Financial">Financial</option>
+                </select>
+                <input type="number" placeholder="Cost $" value={newExpense.monthly_cost} onChange={e => setNewExpense({...newExpense, monthly_cost: e.target.value})} className="w-24 bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#fcd34d]" required min="0" step="0.01" />
+            </div>
+            <div className="flex gap-2 mt-2">
+                <button type="button" onClick={() => setIsAdding(false)} className="flex-1 py-2 text-white/50 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors">Cancel</button>
+                <button type="submit" className="flex-1 py-2 bg-[#fcd34d] text-[#08203e] rounded-lg text-xs font-black uppercase tracking-widest hover:scale-105 transition-transform">Save</button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );
@@ -1349,15 +1408,18 @@ const OverheadExpensesModule = () => {
 // MAIN PAGE LAYOUT: FINANCES
 // ==========================================
 const FinancesPage = () => {
-  // These states would ideally be lifted from the child engines if you want the parent to calculate the right-column totals dynamically.
-  // For now, they are mocked to show the structure.
-  const totals = { gross: 5230, payroll: 1180, overhead: 630, net: 3420 };
+  const [revenue, setRevenue] = useState(0);
+  const [payroll, setPayroll] = useState(0);
+  const [overhead, setOverhead] = useState(0);
+
+  const netProfit = revenue - payroll - overhead;
+  const netMarginPercentage = revenue > 0 ? ((netProfit / revenue) * 100).toFixed(1) : 0;
 
   return (
     <div className="flex flex-col gap-8 w-full max-w-[1500px] min-h-[calc(100vh-160px)] animate-fade-in relative z-10 pb-10">
       
       {/* ROW 1: THE "NOW" (Hard Financials) */}
-      <div className="grid grid-cols-12 gap-8 h-[450px]">
+     <div className="grid grid-cols-12 gap-8 h-auto min-h-[450px]">
         
         {/* Left: Circular KPIs */}
         <div className="col-span-3 flex flex-col gap-6 h-full justify-center">
@@ -1378,10 +1440,10 @@ const FinancesPage = () => {
             <div className="relative w-32 h-32 flex items-center justify-center shrink-0 mb-2">
               <svg className="w-full h-full transform -rotate-90 drop-shadow-[0_0_15px_rgba(59,130,246,0.8)]" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.1)" strokeWidth="10" fill="transparent" />
-                <circle cx="50" cy="50" r="40" stroke="#3b82f6" strokeWidth="10" fill="transparent" strokeDasharray={2 * Math.PI * 40} strokeDashoffset={(2 * Math.PI * 40) - (65 / 100) * (2 * Math.PI * 40)} strokeLinecap="round" className="group-hover:stroke-blue-400 transition-colors" />
+                <circle cx="50" cy="50" r="40" stroke="#3b82f6" strokeWidth="10" fill="transparent" strokeDasharray={2 * Math.PI * 40} strokeDashoffset={(2 * Math.PI * 40) - (netMarginPercentage / 100) * (2 * Math.PI * 40)} strokeLinecap="round" className="group-hover:stroke-blue-400 transition-colors" />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-3xl font-black text-white drop-shadow-md">65%</span>
+                <span className="text-3xl font-black text-white drop-shadow-md">{netMarginPercentage}%</span>
               </div>
             </div>
             <h3 className="text-white/90 font-black text-sm tracking-widest uppercase text-center mt-2 whitespace-nowrap">Net Margin</h3>
@@ -1390,32 +1452,32 @@ const FinancesPage = () => {
 
         {/* Center: Profit Margin Analysis Engine */}
         <div className="col-span-6 h-full">
-          <ProfitMarginAnalysis />
+          <ProfitMarginAnalysis onMetricsUpdate={(m) => { setRevenue(m.revenue); setPayroll(m.payroll); }} />
         </div>
 
         {/* Right: 4-Metric Stack */}
         <div className="col-span-3 flex flex-col gap-4 h-full justify-between">
           <div className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-4 shadow-2xl flex flex-col items-center justify-center">
             <h4 className="text-white/70 font-black text-sm tracking-widest uppercase">Gross Revenue</h4>
-            <span className="text-3xl font-black text-[#fcd34d] mt-1">${totals.gross}</span>
+            <span className="text-3xl font-black text-[#fcd34d] mt-1">${revenue.toLocaleString()}</span>
           </div>
           <div className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-4 shadow-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-white/10 transition-colors">
             <h4 className="text-white/70 font-black text-sm tracking-widest uppercase">Payroll Liability</h4>
-            <span className="text-3xl font-black text-red-400 mt-1">-${totals.payroll}</span>
+            <span className="text-3xl font-black text-red-400 mt-1">-${payroll.toLocaleString()}</span>
           </div>
           <div className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-4 shadow-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-white/10 transition-colors">
             <h4 className="text-white/70 font-black text-sm tracking-widest uppercase text-center leading-tight">Digital Overhead</h4>
-            <span className="text-3xl font-black text-orange-400 mt-1">-${totals.overhead}</span>
+            <span className="text-3xl font-black text-orange-400 mt-1">-${overhead.toLocaleString()}</span>
           </div>
           <div className="flex-1 bg-[#10b981]/20 backdrop-blur-xl border border-[#10b981]/40 rounded-[2rem] p-4 shadow-2xl flex flex-col items-center justify-center">
             <h4 className="text-white font-black text-sm tracking-widest uppercase">Net Profit</h4>
-            <span className="text-4xl font-black text-[#10b981] mt-1 drop-shadow-md">${totals.net}</span>
+            <span className="text-4xl font-black text-[#10b981] mt-1 drop-shadow-md">${netProfit.toLocaleString()}</span>
           </div>
         </div>
       </div>
 
       {/* ROW 2: THE "FUTURE & LEAKS" (Acquisition & Operations) */}
-      <div className="grid grid-cols-12 gap-8 h-[450px]">
+      <div className="grid grid-cols-12 gap-8 h-auto min-h-[450px]">
         
         {/* Left: Commercial Funnel Engine */}
         <div className="col-span-6 h-full">
@@ -1424,7 +1486,7 @@ const FinancesPage = () => {
 
         {/* Right: Overhead/SaaS Breakdown Engine */}
         <div className="col-span-6 h-full">
-          <OverheadExpensesModule />
+          <OverheadExpensesModule onOverheadUpdate={setOverhead} />
         </div>
         
       </div>
