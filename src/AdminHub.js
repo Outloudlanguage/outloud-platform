@@ -525,6 +525,46 @@ const EVAL_DEDUCTIONS = [
 ];
 
 const EvaluatorModule = ({ onBack }) => {
+  // --- ASSESSMENT DATA ---
+  const EVAL_QUESTIONS = {
+    'A1-A2': [
+      { id: 1, text: "What is your name, and where do you live?" },
+      { id: 2, text: "Can you describe your typical morning routine?" },
+      { id: 3, text: "What is your favorite type of food, and why do you like it?" },
+      { id: 4, text: "Tell me about the members of your family or the people you live with." },
+      { id: 5, text: "What do you usually do on the weekends for fun?" },
+      { id: 6, text: "Describe the room you are in right now using at least five adjectives." },
+      { id: 7, text: "How was the weather yesterday, and how did it affect your plans?" },
+      { id: 8, text: "What is a skill you would like to learn in the future?" },
+      { id: 9, text: "Tell me about a place you visited recently that you enjoyed." },
+      { id: 10, text: "If you have a guest visiting your city for one day, where would you take them?" }
+    ],
+    'B1-B2': [
+      { id: 11, text: "Think of a project you recently completed. What was the most challenging part?" },
+      { id: 12, text: "How do you think technology has changed the way we communicate with our friends?" },
+      { id: 13, text: "If you could live in any other time period in history, which one would you choose?" },
+      { id: 14, text: "Describe a book or a movie that had a significant impact on your way of thinking." },
+      { id: 15, text: "In your opinion, what are the qualities of a good leader in a professional environment?" },
+      { id: 16, text: "If you were given an unlimited budget to start a small business, what would you create?" },
+      { id: 17, text: "How do you stay organized when you have many different tasks to handle at once?" },
+      { id: 18, text: "Do you prefer working in a team or working independently? Explain your preference." },
+      { id: 19, text: "What are the pros and cons of living in a large city versus a small rural town?" },
+      { id: 20, text: "Tell me about a time you had to solve a difficult problem. How did you approach it?" }
+    ],
+    'C1-C2': [
+      { id: 21, text: "To what extent do you believe that a person's language shapes their perception of reality?" },
+      { id: 22, text: "How should a society balance the need for public security with the right to individual privacy?" },
+      { id: 23, text: "Discuss the role of 'tradition' in a rapidly modernizing world. Is it a weight or an anchor?" },
+      { id: 24, text: "If you had to explain the concept of 'justice' to someone, what examples would you use?" },
+      { id: 25, text: "How does the rise of artificial intelligence challenge our traditional definitions of creativity?" },
+      { id: 26, text: "Analyze the impact of social media on the 'collective attention span' of the modern generation." },
+      { id: 27, text: "Some argue that travel narrows the mind rather than broadening it by reinforcing stereotypes. What is your take?" },
+      { id: 28, text: "Discuss the ethical implications of genetic engineering in the 21st century." },
+      { id: 29, text: "In literature or film, do you find 'flawed' protagonists more compelling than 'perfect' heroes? Why?" },
+      { id: 30, text: "If you could solve one global crisis instantly, which would it be, and what would the long-term consequences look like?" }
+    ]
+  };
+
   const PARALINGUISTIC_DATA = [
     { title: "1. Pronunciation & Phonology", items: [ { id: 'p1', label: "Unintelligible Sounds", val: 1 }, { id: 'p2', label: "Word Stress Errors", val: 1 }, { id: 'p3', label: "Severe Accent Interference", val: 2 } ] },
     { title: "2. Fluency & Flow", items: [ { id: 'f1', label: "Excessive Fillers (um/uh/like)", val: 1 }, { id: 'f2', label: "Unnatural Pausing Patterns", val: 1 }, { id: 'f3', label: "Fragmented Thought Streams", val: 2 } ] },
@@ -533,16 +573,19 @@ const EvaluatorModule = ({ onBack }) => {
     { title: "5. Strategic Competence", items: [ { id: 's1', label: "Complete Lack of Self-Correction", val: 1 }, { id: 's2', label: "Inability to Circumlocute", val: 1 }, { id: 's3', label: "Cohesion Failure / Lost Thread", val: 2 } ] }
   ];
 
+  // --- STATE ---
   const [selectedCandidate, setSelectedCandidate] = useState(null);
   const [activeTab, setActiveTab] = useState('A1-A2');
   const [qScores, setQScores] = useState(Array.from({ length: 30 }, (_, i) => i + 1).reduce((acc, curr) => ({ ...acc, [curr]: false }), {}));
   const [deductions, setDeductions] = useState({});
 
+  // Mock List
   const [candidates] = useState([
     { id: 1, name: 'Jesús Gabriel Sequea', phone: '+58 412 123 4567', email: 'jesus@outloud.com', writtenScore: 42, date: 'Today, 10:30 AM' },
     { id: 2, name: 'Maria Rodriguez', phone: '+58 414 987 6543', email: 'maria@example.com', writtenScore: 35, date: 'Yesterday, 3:15 PM' },
   ]);
 
+  // --- LOGIC & MATH ---
   const sec3Score = Object.values(qScores).filter(v => v === true).length;
   const totalDeductions = Object.entries(deductions).reduce((total, [id, isChecked]) => {
     if (isChecked) {
@@ -563,6 +606,7 @@ const EvaluatorModule = ({ onBack }) => {
   else if (finalScore100 >= 80 && finalScore100 <= 89) profileData = { tier: "B2 (Upper Intermediate)", color: "text-emerald-400" };
   else if (finalScore100 >= 90) profileData = { tier: "C1 / C2 (Advanced / Proficient)", color: "text-[#fcd34d]" };
 
+  // --- RENDER CANDIDATE LIST ---
   if (!selectedCandidate) {
     return (
       <div className="flex flex-col w-full h-[calc(100vh-160px)] animate-fade-in relative z-10">
@@ -579,7 +623,7 @@ const EvaluatorModule = ({ onBack }) => {
           <div className="relative w-full h-full flex flex-col p-8 overflow-y-auto custom-scrollbar">
             <div className="grid grid-cols-1 gap-4">
               {candidates.map(cand => (
-                <div key={cand.id} className="bg-black/30 border border-white/10 rounded-2xl p-6 flex justify-between items-center hover:bg-white/10 transition-colors group">
+                <div key={cand.id} className="bg-black/30 border border-white/10 rounded-2xl p-6 flex justify-between items-center hover:bg-white/10 transition-colors group cursor-pointer">
                   <div className="flex flex-col">
                     <h3 className="text-lg font-black text-white uppercase tracking-widest group-hover:text-[#fcd34d] transition-colors">{cand.name}</h3>
                     <div className="text-xs font-medium text-white/50 mt-1 flex gap-4">
@@ -604,10 +648,13 @@ const EvaluatorModule = ({ onBack }) => {
     );
   }
 
+  // --- RENDER LIVE ASSESSMENT DASHBOARD ---
   return (
     <div className="flex flex-col w-full h-[calc(100vh-160px)] animate-fade-in relative z-10">
+      
+      {/* Top Header */}
       <div className="flex items-center gap-4 mb-6 shrink-0">
-        <button onClick={() => setSelectedCandidate(null)} className="w-10 h-10 bg-white/10 hover:bg-[#fcd34d] text-white hover:text-[#08203e] rounded-full flex items-center justify-center font-black transition-all">←</button>
+        <button onClick={() => setSelectedCandidate(null)} className="w-10 h-10 bg-white/10 hover:bg-[#fcd34d] text-white hover:text-[#08203e] rounded-full flex items-center justify-center font-black transition-all shadow-md">←</button>
         <div className="flex-1 flex justify-between items-end">
           <div>
             <h2 className="text-2xl font-black uppercase tracking-widest text-[#fcd34d] drop-shadow-md">Evaluating: {selectedCandidate.name}</h2>
@@ -616,7 +663,7 @@ const EvaluatorModule = ({ onBack }) => {
               <span>📧 {selectedCandidate.email}</span>
             </div>
           </div>
-          <div className="text-right bg-white/5 px-4 py-2 rounded-xl border border-white/10">
+          <div className="text-right bg-white/5 px-5 py-2.5 rounded-xl border border-white/10 shadow-inner">
             <p className="text-[10px] font-black uppercase text-white/50 tracking-widest">Prior Written Score</p>
             <p className="text-lg font-black text-emerald-400">{writtenScore} <span className="text-sm text-white/40">/ 50</span></p>
           </div>
@@ -624,28 +671,36 @@ const EvaluatorModule = ({ onBack }) => {
       </div>
 
       <div className="flex gap-6 flex-1 min-h-0">
-        {/* LEFT PANEL: QUESTIONS */}
-        <div className="flex-[1.4] relative rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl flex flex-col">
+        
+        {/* ========================================== */}
+        {/* LEFT PANEL: QUESTION RUNNER                */}
+        {/* ========================================== */}
+        <div className="flex-[1.4] relative rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl flex flex-col h-full">
           <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
-          <div className="relative w-full h-full flex flex-col p-6 min-h-0">
+          <div className="relative w-full h-full flex flex-col p-6 overflow-y-auto custom-scrollbar">
+            
             <div className="flex gap-3 border-b border-white/10 pb-4 mb-4 shrink-0">
-              {['A1-A2', 'B1-B2', 'C1-C2'].map(tab => (
-                <button key={tab} onClick={() => setActiveTab(tab)} className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-md ${activeTab === tab ? 'bg-[#fcd34d] text-[#08203e] scale-105' : 'bg-black/40 text-white/60 hover:text-white hover:bg-white/10 border border-white/10'}`}>{tab}</button>
+              {Object.keys(EVAL_QUESTIONS).map(tab => (
+                <button key={tab} onClick={() => setActiveTab(tab)} className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-md ${activeTab === tab ? 'bg-[#fcd34d] text-[#08203e] scale-105' : 'bg-black/40 text-white/60 hover:text-white hover:bg-white/10 border border-white/10'}`}>
+                  {tab}
+                </button>
               ))}
             </div>
+
             <div className="flex justify-between items-center bg-black/40 border border-white/10 rounded-xl px-5 py-3 mb-4 shrink-0 shadow-inner">
               <div className="text-xs font-bold text-white/70 uppercase tracking-widest">Content Score: <span className="text-emerald-400 font-black text-base ml-1">{sec3Score}</span> / 30</div>
               <div className="text-xs font-bold text-white/70 uppercase tracking-widest">Quality Score: <span className="text-[#fcd34d] font-black text-base ml-1">{sec4Score}</span> / 20</div>
             </div>
-            <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 flex flex-col gap-3">
+
+            <div className="flex flex-col gap-3 shrink-0">
               {EVAL_QUESTIONS[activeTab].map(q => {
                 const isRight = qScores[q.id];
                 return (
                   <div key={q.id} className={`flex justify-between items-center gap-4 p-4 rounded-xl border transition-all ${isRight ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-black/20 border-white/10'}`}>
                     <div className="text-sm font-medium text-white/90 leading-relaxed flex-1"><b className="text-[#fcd34d] mr-2">{q.id}.</b> {q.text}</div>
                     <div className="flex gap-1.5 bg-black/40 p-1.5 rounded-lg shrink-0">
-                      <button onClick={() => setQScores(prev => ({...prev, [q.id]: false}))} className={`px-3 py-1.5 rounded text-[10px] font-black uppercase tracking-wider transition-all ${!isRight ? 'bg-red-500 text-white shadow-md' : 'text-white/40 hover:text-white'}`}>Wrong</button>
-                      <button onClick={() => setQScores(prev => ({...prev, [q.id]: true}))} className={`px-3 py-1.5 rounded text-[10px] font-black uppercase tracking-wider transition-all ${isRight ? 'bg-emerald-500 text-white shadow-md' : 'text-white/40 hover:text-white'}`}>Right</button>
+                      <button onClick={() => setQScores(prev => ({...prev, [q.id]: false}))} className={`px-3 py-1.5 rounded text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${!isRight ? 'bg-red-500 text-white shadow-md' : 'text-white/40 hover:text-white'}`}>Wrong</button>
+                      <button onClick={() => setQScores(prev => ({...prev, [q.id]: true}))} className={`px-3 py-1.5 rounded text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${isRight ? 'bg-emerald-500 text-white shadow-md' : 'text-white/40 hover:text-white'}`}>Right</button>
                     </div>
                   </div>
                 );
@@ -654,38 +709,38 @@ const EvaluatorModule = ({ onBack }) => {
           </div>
         </div>
 
-        {/* RIGHT PANEL: SPLIT STACK */}
-        <div className="flex-1 flex flex-col gap-6 min-h-0">
+        {/* ========================================== */}
+        {/* RIGHT PANEL: SINGLE SCROLLABLE CONTAINER   */}
+        {/* ========================================== */}
+        <div className="flex-1 relative rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl flex flex-col h-full">
+          <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
           
-          {/* TOP: CHECKLIST CONTAINER */}
-          <div className="flex-1 relative rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl flex flex-col min-h-0">
-            <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
-            <div className="relative w-full h-full flex flex-col p-6 min-h-0">
-              <h3 className="text-sm font-black uppercase tracking-widest text-[#fcd34d] mb-4 shrink-0">Section 4: Paralinguistic Deductions</h3>
-              
-              <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-2 flex flex-col gap-4">
-                {PARALINGUISTIC_DATA.map((cat, idx) => (
-                  <div key={idx} className="bg-black/30 border border-white/10 rounded-xl p-4 shadow-inner shrink-0">
-                    <div className="text-xs font-black text-white border-b border-white/10 pb-2 mb-3 tracking-wide">{cat.title}</div>
-                    <div className="flex flex-col gap-2.5">
-                      {cat.items.map(item => (
-                        <label key={item.id} className="flex items-center gap-3 cursor-pointer group">
-                          <input type="checkbox" checked={deductions[item.id] || false} onChange={(e) => setDeductions(prev => ({...prev, [item.id]: e.target.checked}))} className="w-4 h-4 rounded border-white/20 bg-black/40 text-red-500 focus:ring-red-500 focus:ring-offset-0 cursor-pointer" />
-                          <span className="text-xs font-medium text-white/80 group-hover:text-white transition-colors">{item.label}</span>
-                          <span className="ml-auto text-xs font-black text-red-400 bg-red-500/10 px-2 py-0.5 rounded">-{item.val}</span>
-                        </label>
-                      ))}
-                    </div>
+          <div className="relative w-full h-full flex flex-col p-6 overflow-y-auto custom-scrollbar">
+            
+            <h3 className="text-sm font-black uppercase tracking-widest text-[#fcd34d] mb-4 shrink-0">
+              Section 4: Paralinguistic Deductions
+            </h3>
+            
+            {/* The Checklists */}
+            <div className="flex flex-col gap-4 mb-6 shrink-0">
+              {PARALINGUISTIC_DATA.map((cat, idx) => (
+                <div key={idx} className="bg-black/30 border border-white/10 rounded-xl p-4 shadow-inner">
+                  <div className="text-xs font-black text-white border-b border-white/10 pb-2 mb-3 tracking-wide">{cat.title}</div>
+                  <div className="flex flex-col gap-2.5">
+                    {cat.items.map(item => (
+                      <label key={item.id} className="flex items-center gap-3 cursor-pointer group">
+                        <input type="checkbox" checked={deductions[item.id] || false} onChange={(e) => setDeductions(prev => ({...prev, [item.id]: e.target.checked}))} className="w-4 h-4 rounded border-white/20 bg-black/40 text-red-500 focus:ring-red-500 focus:ring-offset-0 cursor-pointer" />
+                        <span className="text-xs font-medium text-white/80 group-hover:text-white transition-colors">{item.label}</span>
+                        <span className="ml-auto text-xs font-black text-red-400 bg-red-500/10 px-2 py-0.5 rounded">-{item.val}</span>
+                      </label>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
-          </div>
 
-          {/* BOTTOM: FINAL SCORE CONTAINER */}
-          <div className="shrink-0 relative rounded-[2rem] border-2 border-[#fcd34d] overflow-hidden shadow-2xl flex flex-col">
-            <div className="absolute -inset-4 bg-[#08203e]/90 backdrop-blur-xl -z-10" />
-            <div className="relative w-full flex flex-col p-6 items-center text-center z-10">
+            {/* The Score Box (Pushed to bottom via mt-auto) */}
+            <div className="mt-auto shrink-0 bg-[#08203e] border-2 border-[#fcd34d] rounded-[1.5rem] p-6 text-center shadow-2xl flex flex-col items-center">
               <div className="text-[10px] font-black uppercase tracking-widest text-white/50 mb-1">Final CEFR Placement Score</div>
               <div className="flex items-baseline gap-2 mb-2">
                 <div className="text-5xl font-black text-white drop-shadow-md">{finalScore100}</div>
@@ -703,9 +758,10 @@ const EvaluatorModule = ({ onBack }) => {
                 Submit & Assign Level
               </button>
             </div>
-          </div>
 
+          </div>
         </div>
+
       </div>
     </div>
   );
