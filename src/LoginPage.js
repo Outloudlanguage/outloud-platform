@@ -4,7 +4,7 @@ import { supabase } from './SupabaseClient';
 // =========================================
 // 1. MOBILE & TABLET PORTRAIT UI
 // =========================================
-const MobileLogin = ({ onLogin, onInfoClick }) => {
+const MobileLogin = ({ onLogin, onInfoClick, onPlacementClick }) => {
   const [credentials, setCredentials] = useState({ username: '', password: '' });
   const [authError, setAuthError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -137,7 +137,7 @@ const MobileLogin = ({ onLogin, onInfoClick }) => {
                 OBTENER MÁS INFORMACIÓN
               </button>
               <p className="text-[11px] text-white/70">
-                Take a placement test <button className="font-bold text-[#fcd34d] hover:underline">here.</button>
+                Take a placement test <button type="button" onClick={(e) => { e.preventDefault(); if (onPlacementClick) onPlacementClick(); }} className="font-bold text-[#fcd34d] hover:underline cursor-pointer">here.</button>
               </p>
             </div>
           </div>
@@ -158,7 +158,7 @@ const MobileLogin = ({ onLogin, onInfoClick }) => {
 // =========================================
 // 2. DESKTOP & PC UI
 // =========================================
-const DesktopLogin = ({ onLogin, onInfoClick }) => {
+const DesktopLogin = ({ onLogin, onInfoClick, onPlacementClick }) => {
   const [credentials, setCredentials] = useState({ username: '', password: '' });
   const [authError, setAuthError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -303,7 +303,7 @@ const DesktopLogin = ({ onLogin, onInfoClick }) => {
                     OBTENER MÁS INFORMACIÓN
                   </a>
                   <p className="text-[11px] text-white/70">
-                    Take a placement test <a href="#" onClick={handleDevClick} className="font-bold text-[#fcd34d] hover:underline">here.</a>
+                    Take a placement test <a href="#" onClick={(e) => { e.preventDefault(); if (onPlacementClick) onPlacementClick(); }} className="font-bold text-[#fcd34d] hover:underline cursor-pointer">here.</a>
                   </p>
                 </div>
               </form>

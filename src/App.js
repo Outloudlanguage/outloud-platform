@@ -9,6 +9,7 @@ import FreeLesson from './FreeLesson';
 import AdminHub from './AdminHub';
 import StudentHub from './StudentHub';
 import TeacherHub from './TeacherHub'; // <-- NEW: Imported the Teacher Hub
+import PlacementTest from './components/PlacementTest'; // <-- NEW: Placement Test
 
 // ==========================================
 // RBAC & LOCALIZATION WRAPPER COMPONENT
@@ -153,6 +154,7 @@ export default function App() {
         <LoginPage
           onLogin={handleLoginSuccess}
           onInfoClick={() => navigate('info')}
+          onPlacementClick={() => navigate('placement-test')}
         />
       )}
 
@@ -188,6 +190,11 @@ export default function App() {
           onReturnHome={() => navigate('login')} 
           onReturnToRegister={() => navigate('register')} 
         />
+      )}
+
+      {/* NEW: Placement Test Route (Public) */}
+      {currentPage === 'placement-test' && (
+        <PlacementTest />
       )}
 
       {/* PROTECTED ROUTES */}
