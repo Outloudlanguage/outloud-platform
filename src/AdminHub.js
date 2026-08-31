@@ -579,13 +579,63 @@ const EvaluatorModule = ({ onBack }) => {
   const [qScores, setQScores] = useState(Array.from({ length: 30 }, (_, i) => i + 1).reduce((acc, curr) => ({ ...acc, [curr]: false }), {}));
   const [deductions, setDeductions] = useState({});
 
-  // Mock List
-  const [candidates] = useState([
-    { id: 1, name: 'Jesús Gabriel Sequea', phone: '+58 412 123 4567', email: 'jesus@outloud.com', writtenScore: 42, date: 'Today, 10:30 AM' },
-    { id: 2, name: 'Maria Rodriguez', phone: '+58 414 987 6543', email: 'maria@example.com', writtenScore: 35, date: 'Yesterday, 3:15 PM' },
-  ]);
+  const [candidates, setCandidates] = useState([]);
+  const [isLoadingCandidates, setIsLoadingCandidates] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // --- LOGIC & MATH ---
+  const fetchCandidates = async () => {
+    setIsLoadingCandidates(true);
+    try {
+      const { data, error } = await supabase
+        .from('placement_assessments')
+        .select('*')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: true });
+      
+      if (error) throw error;
+      if (data) {
+        setCandidates(data.map(c => ({
+          id: c.id,
+          name: `${c.first_name} ${c.last_name}`,
+          phone: c.phone || 'N/A',
+          email: c.email,
+          writtenScore: c.written_score,
+          date: new Date(c.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+        })));
+      }
+    } catch (err) {
+      console.error("Error fetching candidates:", err);
+    } finally {
+      setIsLoadingCandidates(false);
+    }
+  };
+
+  useEffect(() => { fetchCandidates(); }, []);
+
+  const handleFinalSubmit = async () => {
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase.from('placement_assessments').update({
+        oral_score: oralScore,
+        final_level: profileData.tier,
+        status: 'completed'
+      }).eq('id', selectedCandidate.id);
+      
+      if (error) throw error;
+      
+      alert(`Successfully assigned ${selectedCandidate.name} to level ${profileData.tier}!`);
+      setSelectedCandidate(null);
+      setQScores({});
+      setDeductions({});
+      fetchCandidates();
+    } catch (err) {
+      console.error("Error updating assessment:", err);
+      alert("Error saving evaluation.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const sec3Score = Object.values(qScores).filter(v => v === true).length;
   const totalDeductions = Object.entries(deductions).reduce((total, [id, isChecked]) => {
     if (isChecked) {
@@ -621,9 +671,18 @@ const EvaluatorModule = ({ onBack }) => {
         <div className="flex-1 relative rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl flex flex-col">
           <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
           <div className="relative w-full h-full flex flex-col p-8 overflow-y-auto custom-scrollbar">
-            <div className="grid grid-cols-1 gap-4">
-              {candidates.map(cand => (
-                <div key={cand.id} className="bg-black/30 border border-white/10 rounded-2xl p-6 flex justify-between items-center hover:bg-white/10 transition-colors group cursor-pointer">
+            {isLoadingCandidates ? (
+              <div className="h-full flex items-center justify-center text-white/50 font-black uppercase tracking-widest text-sm">
+                Loading pending assessments...
+              </div>
+            ) : candidates.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-white/50 font-black uppercase tracking-widest text-sm">
+                No pending assessments found.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-4">
+                {candidates.map(cand => (
+                  <div key={cand.id} className="bg-black/30 border border-white/10 rounded-2xl p-6 flex justify-between items-center hover:bg-white/10 transition-colors group cursor-pointer">
                   <div className="flex flex-col">
                     <h3 className="text-lg font-black text-white uppercase tracking-widest group-hover:text-[#fcd34d] transition-colors">{cand.name}</h3>
                     <div className="text-xs font-medium text-white/50 mt-1 flex gap-4">
@@ -642,6 +701,7 @@ const EvaluatorModule = ({ onBack }) => {
                 </div>
               ))}
             </div>
+            )}
           </div>
         </div>
       </div>
@@ -754,8 +814,8 @@ const EvaluatorModule = ({ onBack }) => {
               <div className={`text-sm font-black uppercase tracking-widest ${profileData.color} bg-black/40 px-4 py-2 rounded-lg w-full shadow-inner`}>
                 {profileData.tier}
               </div>
-              <button onClick={() => alert(`Assigned ${selectedCandidate.name} to level ${profileData.tier}`)} className="w-full mt-4 bg-emerald-500 hover:bg-emerald-400 text-white font-black text-xs py-3 rounded-xl uppercase tracking-widest transition-colors shadow-lg cursor-pointer">
-                Submit & Assign Level
+              <button onClick={handleFinalSubmit} disabled={isSubmitting} className="w-full mt-4 bg-emerald-500 hover:bg-emerald-400 text-white font-black text-xs py-3 rounded-xl uppercase tracking-widest transition-colors shadow-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                {isSubmitting ? 'PROCESSING...' : 'SUBMIT & ASSIGN LEVEL'}
               </button>
             </div>
 

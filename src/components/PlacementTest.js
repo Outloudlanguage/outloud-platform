@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { supabase } from '../SupabaseClient'; // Ensure path is correct for your structure
 
 // ==========================================
 // MOCK DATA (Expand with your exact questions)
@@ -92,6 +93,28 @@ const PlacementTest = () => {
     setAnswers({});
     setCheatWarnings(0);
     setCurrentSection(0);
+  };
+
+  const handleSubmitExam = async () => {
+    setCurrentSection(4); 
+    
+    // Calculates a 1-point score per answered MCQ
+    const mcqScore = Object.entries(answers).filter(([id]) => parseInt(id) <= 30).length;
+
+    try {
+      const { error } = await supabase.from('placement_assessments').insert({
+        first_name: candidateInfo.firstName,
+        last_name: candidateInfo.lastName,
+        email: candidateInfo.email,
+        phone: candidateInfo.phone,
+        written_score: mcqScore,
+        status: 'pending'
+      });
+      if (error) throw error;
+    } catch (err) {
+      console.error("Database Error:", err);
+      alert("Error securely transmitting your exam. Please contact support.");
+    }
   };
 
   const renderRegistration = () => (
@@ -230,7 +253,7 @@ const PlacementTest = () => {
         <button onClick={() => setCurrentSection(2)} className="text-white/50 hover:text-white font-bold uppercase tracking-widest text-xs px-6 py-3 transition-colors">
           Back
         </button>
-        <button onClick={() => setCurrentSection(4)} className="bg-emerald-500 text-white font-black px-10 py-4 rounded-full uppercase tracking-widest hover:bg-emerald-400 transition-colors shadow-[0_0_20px_rgba(16,185,129,0.3)]">
+        <button onClick={handleSubmitExam} className="bg-emerald-500 text-white font-black px-10 py-4 rounded-full uppercase tracking-widest hover:bg-emerald-400 transition-colors shadow-[0_0_20px_rgba(16,185,129,0.3)] cursor-pointer">
           Submit Exam
         </button>
       </div>
