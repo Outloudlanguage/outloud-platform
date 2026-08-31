@@ -525,12 +525,19 @@ const EVAL_DEDUCTIONS = [
 ];
 
 const EvaluatorModule = ({ onBack }) => {
+  const PARALINGUISTIC_DATA = [
+    { title: "1. Pronunciation & Phonology", items: [ { id: 'p1', label: "Unintelligible Sounds", val: 1 }, { id: 'p2', label: "Word Stress Errors", val: 1 }, { id: 'p3', label: "Severe Accent Interference", val: 2 } ] },
+    { title: "2. Fluency & Flow", items: [ { id: 'f1', label: "Excessive Fillers (um/uh/like)", val: 1 }, { id: 'f2', label: "Unnatural Pausing Patterns", val: 1 }, { id: 'f3', label: "Fragmented Thought Streams", val: 2 } ] },
+    { title: "3. Intonation & Prosody", items: [ { id: 'i1', label: "Monotone Delivery Profile", val: 1 }, { id: 'i2', label: "Question/Statement Confusion", val: 1 }, { id: 'i3', label: "Syllable-Timed Robotic Rhythm", val: 2 } ] },
+    { title: "4. Grammatical & Lexical Precision", items: [ { id: 'g1', label: "Explicit Vocabulary Search Fatigue", val: 1 }, { id: 'g2', label: "Basic Agreement Slips (he/she/s)", val: 1 }, { id: 'g3', label: "Severe Lexical Range Deficit", val: 2 } ] },
+    { title: "5. Strategic Competence", items: [ { id: 's1', label: "Complete Lack of Self-Correction", val: 1 }, { id: 's2', label: "Inability to Circumlocute", val: 1 }, { id: 's3', label: "Cohesion Failure / Lost Thread", val: 2 } ] }
+  ];
+
   const [selectedCandidate, setSelectedCandidate] = useState(null);
   const [activeTab, setActiveTab] = useState('A1-A2');
   const [qScores, setQScores] = useState(Array.from({ length: 30 }, (_, i) => i + 1).reduce((acc, curr) => ({ ...acc, [curr]: false }), {}));
   const [deductions, setDeductions] = useState({});
 
-  // Mock Data (will be replaced by Supabase fetch later)
   const [candidates] = useState([
     { id: 1, name: 'Jesús Gabriel Sequea', phone: '+58 412 123 4567', email: 'jesus@outloud.com', writtenScore: 42, date: 'Today, 10:30 AM' },
     { id: 2, name: 'Maria Rodriguez', phone: '+58 414 987 6543', email: 'maria@example.com', writtenScore: 35, date: 'Yesterday, 3:15 PM' },
@@ -539,7 +546,7 @@ const EvaluatorModule = ({ onBack }) => {
   const sec3Score = Object.values(qScores).filter(v => v === true).length;
   const totalDeductions = Object.entries(deductions).reduce((total, [id, isChecked]) => {
     if (isChecked) {
-      const item = EVAL_DEDUCTIONS.flatMap(c => c.items).find(i => i.id === id);
+      const item = PARALINGUISTIC_DATA.flatMap(c => c.items).find(i => i.id === id);
       return total + (item ? item.val : 0);
     }
     return total;
@@ -566,7 +573,6 @@ const EvaluatorModule = ({ onBack }) => {
             <p className="text-xs font-bold text-[#fcd34d] uppercase tracking-widest mt-1">Pending Placement Assessments</p>
           </div>
         </div>
-        
         <div className="flex-1 bg-white/5 border border-white/10 backdrop-blur-xl rounded-[2rem] p-8 shadow-2xl overflow-y-auto custom-scrollbar">
           <div className="grid grid-cols-1 gap-4">
             {candidates.map(cand => (
@@ -614,9 +620,10 @@ const EvaluatorModule = ({ onBack }) => {
       </div>
 
       <div className="flex gap-6 flex-1 min-h-0">
+        {/* LEFT PANEL */}
         <div className="flex-[1.4] bg-white/5 border border-white/10 backdrop-blur-xl rounded-[2rem] p-6 flex flex-col shadow-2xl overflow-hidden relative">
           <div className="flex gap-3 border-b border-white/10 pb-4 mb-4 shrink-0">
-            {Object.keys(EVAL_QUESTIONS).map(tab => (
+            {['A1-A2', 'B1-B2', 'C1-C2'].map(tab => (
               <button key={tab} onClick={() => setActiveTab(tab)} className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-md ${activeTab === tab ? 'bg-[#fcd34d] text-[#08203e] scale-105' : 'bg-black/40 text-white/60 hover:text-white hover:bg-white/10 border border-white/10'}`}>{tab}</button>
             ))}
           </div>
@@ -640,17 +647,13 @@ const EvaluatorModule = ({ onBack }) => {
           </div>
         </div>
 
-        <div className="flex-1 bg-white/5 border border-white/10 backdrop-blur-xl rounded-[2rem] p-6 flex flex-col shadow-2xl overflow-hidden relative">
+        {/* RIGHT PANEL - FIX APPLIED HERE */}
+        <div className="flex-1 bg-white/5 border border-white/10 backdrop-blur-xl rounded-[2rem] p-6 flex flex-col shadow-2xl relative overflow-hidden">
           <h3 className="text-sm font-black uppercase tracking-widest text-[#fcd34d] mb-4 shrink-0">Section 4: Paralinguistic Deductions</h3>
           
+          {/* Scrollable Checklists */}
           <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-2 flex flex-col gap-4 mb-4">
-            {[
-              { title: "1. Pronunciation & Phonology", items: [ { id: 'p1', label: "Unintelligible Sounds", val: 1 }, { id: 'p2', label: "Word Stress Errors", val: 1 }, { id: 'p3', label: "Severe Accent Interference", val: 2 } ] },
-              { title: "2. Fluency & Flow", items: [ { id: 'f1', label: "Excessive Fillers (um/uh/like)", val: 1 }, { id: 'f2', label: "Unnatural Pausing Patterns", val: 1 }, { id: 'f3', label: "Fragmented Thought Streams", val: 2 } ] },
-              { title: "3. Intonation & Prosody", items: [ { id: 'i1', label: "Monotone Delivery Profile", val: 1 }, { id: 'i2', label: "Question/Statement Confusion", val: 1 }, { id: 'i3', label: "Syllable-Timed Robotic Rhythm", val: 2 } ] },
-              { title: "4. Grammatical & Lexical Precision", items: [ { id: 'g1', label: "Explicit Vocabulary Search Fatigue", val: 1 }, { id: 'g2', label: "Basic Agreement Slips (he/she/s)", val: 1 }, { id: 'g3', label: "Severe Lexical Range Deficit", val: 2 } ] },
-              { title: "5. Strategic Competence", items: [ { id: 's1', label: "Complete Lack of Self-Correction", val: 1 }, { id: 's2', label: "Inability to Circumlocute", val: 1 }, { id: 's3', label: "Cohesion Failure / Lost Thread", val: 2 } ] }
-            ].map((cat, idx) => (
+            {PARALINGUISTIC_DATA.map((cat, idx) => (
               <div key={idx} className="bg-black/30 border border-white/10 rounded-xl p-4 shadow-inner shrink-0">
                 <div className="text-xs font-black text-white border-b border-white/10 pb-2 mb-3 tracking-wide">{cat.title}</div>
                 <div className="flex flex-col gap-2.5">
@@ -666,7 +669,8 @@ const EvaluatorModule = ({ onBack }) => {
             ))}
           </div>
 
-          <div className="mt-4 shrink-0 bg-[#08203e] border-2 border-[#fcd34d] rounded-[1.5rem] p-6 text-center shadow-2xl relative z-10 flex flex-col items-center">
+          {/* Locked Score Box */}
+          <div className="shrink-0 bg-[#08203e] border-2 border-[#fcd34d] rounded-[1.5rem] p-6 text-center shadow-2xl flex flex-col items-center">
             <div className="text-[10px] font-black uppercase tracking-widest text-white/50 mb-1">Final CEFR Placement Score</div>
             <div className="flex items-baseline gap-2 mb-2">
               <div className="text-5xl font-black text-white drop-shadow-md">{finalScore100}</div>
@@ -680,7 +684,6 @@ const EvaluatorModule = ({ onBack }) => {
             <div className={`text-sm font-black uppercase tracking-widest ${profileData.color} bg-black/40 px-4 py-2 rounded-lg w-full`}>
               {profileData.tier}
             </div>
-            
             <button onClick={() => alert(`Assigned ${selectedCandidate.name} to level ${profileData.tier}`)} className="w-full mt-4 bg-emerald-500 hover:bg-emerald-400 text-white font-black text-xs py-3 rounded-xl uppercase tracking-widest transition-colors shadow-lg cursor-pointer">
               Submit & Assign Level
             </button>
