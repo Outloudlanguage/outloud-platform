@@ -573,27 +573,32 @@ const EvaluatorModule = ({ onBack }) => {
             <p className="text-xs font-bold text-[#fcd34d] uppercase tracking-widest mt-1">Pending Placement Assessments</p>
           </div>
         </div>
-        <div className="flex-1 bg-white/5 border border-white/10 backdrop-blur-xl rounded-[2rem] p-8 shadow-2xl overflow-y-auto custom-scrollbar">
-          <div className="grid grid-cols-1 gap-4">
-            {candidates.map(cand => (
-              <div key={cand.id} className="bg-black/30 border border-white/10 rounded-2xl p-6 flex justify-between items-center hover:bg-white/10 transition-colors group">
-                <div className="flex flex-col">
-                  <h3 className="text-lg font-black text-white uppercase tracking-widest group-hover:text-[#fcd34d] transition-colors">{cand.name}</h3>
-                  <div className="text-xs font-medium text-white/50 mt-1 flex gap-4">
-                    <span>📧 {cand.email}</span>
-                    <span>📱 {cand.phone}</span>
-                    <span>🗓️ {cand.date}</span>
+        
+        {/* LIST VIEW CLIPPING MASK FIX */}
+        <div className="flex-1 relative rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl flex flex-col">
+          <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
+          <div className="relative w-full h-full flex flex-col p-8 overflow-y-auto custom-scrollbar">
+            <div className="grid grid-cols-1 gap-4">
+              {candidates.map(cand => (
+                <div key={cand.id} className="bg-black/30 border border-white/10 rounded-2xl p-6 flex justify-between items-center hover:bg-white/10 transition-colors group">
+                  <div className="flex flex-col">
+                    <h3 className="text-lg font-black text-white uppercase tracking-widest group-hover:text-[#fcd34d] transition-colors">{cand.name}</h3>
+                    <div className="text-xs font-medium text-white/50 mt-1 flex gap-4">
+                      <span>📧 {cand.email}</span>
+                      <span>📱 {cand.phone}</span>
+                      <span>🗓️ {cand.date}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-6">
+                    <div className="text-right">
+                      <p className="text-[10px] font-black uppercase text-white/40 tracking-widest">Written Score</p>
+                      <p className="text-xl font-black text-emerald-400">{cand.writtenScore} <span className="text-sm text-white/40">/ 50</span></p>
+                    </div>
+                    <button onClick={() => setSelectedCandidate(cand)} className="bg-[#fcd34d] text-[#08203e] px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-transform shadow-lg">Evaluate</button>
                   </div>
                 </div>
-                <div className="flex items-center gap-6">
-                  <div className="text-right">
-                    <p className="text-[10px] font-black uppercase text-white/40 tracking-widest">Written Score</p>
-                    <p className="text-xl font-black text-emerald-400">{cand.writtenScore} <span className="text-sm text-white/40">/ 50</span></p>
-                  </div>
-                  <button onClick={() => setSelectedCandidate(cand)} className="bg-[#fcd34d] text-[#08203e] px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-transform shadow-lg">Evaluate</button>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -620,73 +625,77 @@ const EvaluatorModule = ({ onBack }) => {
       </div>
 
       <div className="flex gap-6 flex-1 min-h-0">
-        {/* LEFT PANEL */}
-        <div className="flex-[1.4] bg-white/5 border border-white/10 backdrop-blur-xl rounded-[2rem] p-6 flex flex-col shadow-2xl overflow-hidden relative">
-          <div className="flex gap-3 border-b border-white/10 pb-4 mb-4 shrink-0">
-            {['A1-A2', 'B1-B2', 'C1-C2'].map(tab => (
-              <button key={tab} onClick={() => setActiveTab(tab)} className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-md ${activeTab === tab ? 'bg-[#fcd34d] text-[#08203e] scale-105' : 'bg-black/40 text-white/60 hover:text-white hover:bg-white/10 border border-white/10'}`}>{tab}</button>
-            ))}
-          </div>
-          <div className="flex justify-between items-center bg-black/40 border border-white/10 rounded-xl px-5 py-3 mb-4 shrink-0 shadow-inner">
-            <div className="text-xs font-bold text-white/70 uppercase tracking-widest">Content Score: <span className="text-emerald-400 font-black text-base ml-1">{sec3Score}</span> / 30</div>
-            <div className="text-xs font-bold text-white/70 uppercase tracking-widest">Quality Score: <span className="text-[#fcd34d] font-black text-base ml-1">{sec4Score}</span> / 20</div>
-          </div>
-          <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 flex flex-col gap-3">
-            {EVAL_QUESTIONS[activeTab].map(q => {
-              const isRight = qScores[q.id];
-              return (
-                <div key={q.id} className={`flex justify-between items-center gap-4 p-4 rounded-xl border transition-all ${isRight ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-black/20 border-white/10'}`}>
-                  <div className="text-sm font-medium text-white/90 leading-relaxed flex-1"><b className="text-[#fcd34d] mr-2">{q.id}.</b> {q.text}</div>
-                  <div className="flex gap-1.5 bg-black/40 p-1.5 rounded-lg shrink-0">
-                    <button onClick={() => setQScores(prev => ({...prev, [q.id]: false}))} className={`px-3 py-1.5 rounded text-[10px] font-black uppercase tracking-wider transition-all ${!isRight ? 'bg-red-500 text-white shadow-md' : 'text-white/40 hover:text-white'}`}>Wrong</button>
-                    <button onClick={() => setQScores(prev => ({...prev, [q.id]: true}))} className={`px-3 py-1.5 rounded text-[10px] font-black uppercase tracking-wider transition-all ${isRight ? 'bg-emerald-500 text-white shadow-md' : 'text-white/40 hover:text-white'}`}>Right</button>
+        {/* LEFT PANEL CLIPPING MASK FIX */}
+        <div className="flex-[1.4] relative rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl flex flex-col">
+          <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
+          <div className="relative w-full h-full flex flex-col p-6 min-h-0">
+            <div className="flex gap-3 border-b border-white/10 pb-4 mb-4 shrink-0">
+              {['A1-A2', 'B1-B2', 'C1-C2'].map(tab => (
+                <button key={tab} onClick={() => setActiveTab(tab)} className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-md ${activeTab === tab ? 'bg-[#fcd34d] text-[#08203e] scale-105' : 'bg-black/40 text-white/60 hover:text-white hover:bg-white/10 border border-white/10'}`}>{tab}</button>
+              ))}
+            </div>
+            <div className="flex justify-between items-center bg-black/40 border border-white/10 rounded-xl px-5 py-3 mb-4 shrink-0 shadow-inner">
+              <div className="text-xs font-bold text-white/70 uppercase tracking-widest">Content Score: <span className="text-emerald-400 font-black text-base ml-1">{sec3Score}</span> / 30</div>
+              <div className="text-xs font-bold text-white/70 uppercase tracking-widest">Quality Score: <span className="text-[#fcd34d] font-black text-base ml-1">{sec4Score}</span> / 20</div>
+            </div>
+            <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 flex flex-col gap-3">
+              {EVAL_QUESTIONS[activeTab].map(q => {
+                const isRight = qScores[q.id];
+                return (
+                  <div key={q.id} className={`flex justify-between items-center gap-4 p-4 rounded-xl border transition-all ${isRight ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-black/20 border-white/10'}`}>
+                    <div className="text-sm font-medium text-white/90 leading-relaxed flex-1"><b className="text-[#fcd34d] mr-2">{q.id}.</b> {q.text}</div>
+                    <div className="flex gap-1.5 bg-black/40 p-1.5 rounded-lg shrink-0">
+                      <button onClick={() => setQScores(prev => ({...prev, [q.id]: false}))} className={`px-3 py-1.5 rounded text-[10px] font-black uppercase tracking-wider transition-all ${!isRight ? 'bg-red-500 text-white shadow-md' : 'text-white/40 hover:text-white'}`}>Wrong</button>
+                      <button onClick={() => setQScores(prev => ({...prev, [q.id]: true}))} className={`px-3 py-1.5 rounded text-[10px] font-black uppercase tracking-wider transition-all ${isRight ? 'bg-emerald-500 text-white shadow-md' : 'text-white/40 hover:text-white'}`}>Right</button>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
 
-        {/* RIGHT PANEL - FIX APPLIED HERE */}
-        <div className="flex-1 bg-white/5 border border-white/10 backdrop-blur-xl rounded-[2rem] p-6 flex flex-col shadow-2xl relative overflow-hidden">
-          <h3 className="text-sm font-black uppercase tracking-widest text-[#fcd34d] mb-4 shrink-0">Section 4: Paralinguistic Deductions</h3>
-          
-          {/* Scrollable Checklists */}
-          <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-2 flex flex-col gap-4 mb-4">
-            {PARALINGUISTIC_DATA.map((cat, idx) => (
-              <div key={idx} className="bg-black/30 border border-white/10 rounded-xl p-4 shadow-inner shrink-0">
-                <div className="text-xs font-black text-white border-b border-white/10 pb-2 mb-3 tracking-wide">{cat.title}</div>
-                <div className="flex flex-col gap-2.5">
-                  {cat.items.map(item => (
-                    <label key={item.id} className="flex items-center gap-3 cursor-pointer group">
-                      <input type="checkbox" checked={deductions[item.id] || false} onChange={(e) => setDeductions(prev => ({...prev, [item.id]: e.target.checked}))} className="w-4 h-4 rounded border-white/20 bg-black/40 text-red-500 focus:ring-red-500 cursor-pointer" />
-                      <span className="text-xs font-medium text-white/80 group-hover:text-white transition-colors">{item.label}</span>
-                      <span className="ml-auto text-xs font-black text-red-400 bg-red-500/10 px-2 py-0.5 rounded">-{item.val}</span>
-                    </label>
-                  ))}
+        {/* RIGHT PANEL CLIPPING MASK FIX */}
+        <div className="flex-1 relative rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl flex flex-col">
+          <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
+          <div className="relative w-full h-full flex flex-col p-6 min-h-0">
+            <h3 className="text-sm font-black uppercase tracking-widest text-[#fcd34d] mb-4 shrink-0 relative z-10">Section 4: Paralinguistic Deductions</h3>
+            
+            <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-2 flex flex-col gap-4 mb-4 relative z-10">
+              {PARALINGUISTIC_DATA.map((cat, idx) => (
+                <div key={idx} className="bg-black/30 border border-white/10 rounded-xl p-4 shadow-inner shrink-0">
+                  <div className="text-xs font-black text-white border-b border-white/10 pb-2 mb-3 tracking-wide">{cat.title}</div>
+                  <div className="flex flex-col gap-2.5">
+                    {cat.items.map(item => (
+                      <label key={item.id} className="flex items-center gap-3 cursor-pointer group">
+                        <input type="checkbox" checked={deductions[item.id] || false} onChange={(e) => setDeductions(prev => ({...prev, [item.id]: e.target.checked}))} className="w-4 h-4 rounded border-white/20 bg-black/40 text-red-500 focus:ring-red-500 focus:ring-offset-0 cursor-pointer" />
+                        <span className="text-xs font-medium text-white/80 group-hover:text-white transition-colors">{item.label}</span>
+                        <span className="ml-auto text-xs font-black text-red-400 bg-red-500/10 px-2 py-0.5 rounded">-{item.val}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
 
-          {/* Locked Score Box */}
-          <div className="shrink-0 bg-[#08203e] border-2 border-[#fcd34d] rounded-[1.5rem] p-6 text-center shadow-2xl flex flex-col items-center">
-            <div className="text-[10px] font-black uppercase tracking-widest text-white/50 mb-1">Final CEFR Placement Score</div>
-            <div className="flex items-baseline gap-2 mb-2">
-              <div className="text-5xl font-black text-white drop-shadow-md">{finalScore100}</div>
-              <div className="text-2xl font-black text-white/40">/ 100</div>
+            <div className="shrink-0 bg-[#08203e] border-2 border-[#fcd34d] rounded-[1.5rem] p-6 text-center shadow-2xl flex flex-col items-center relative z-10">
+              <div className="text-[10px] font-black uppercase tracking-widest text-white/50 mb-1">Final CEFR Placement Score</div>
+              <div className="flex items-baseline gap-2 mb-2">
+                <div className="text-5xl font-black text-white drop-shadow-md">{finalScore100}</div>
+                <div className="text-2xl font-black text-white/40">/ 100</div>
+              </div>
+              <div className="flex items-center gap-4 text-[10px] font-bold text-white/40 mb-3 border-t border-white/10 pt-2 w-full justify-center">
+                <span>Written: {writtenScore}</span>
+                <span>+</span>
+                <span>Oral: {oralScore}</span>
+              </div>
+              <div className={`text-sm font-black uppercase tracking-widest ${profileData.color} bg-black/40 px-4 py-2 rounded-lg w-full`}>
+                {profileData.tier}
+              </div>
+              <button onClick={() => alert(`Assigned ${selectedCandidate.name} to level ${profileData.tier}`)} className="w-full mt-4 bg-emerald-500 hover:bg-emerald-400 text-white font-black text-xs py-3 rounded-xl uppercase tracking-widest transition-colors shadow-lg cursor-pointer">
+                Submit & Assign Level
+              </button>
             </div>
-            <div className="flex items-center gap-4 text-[10px] font-bold text-white/40 mb-3 border-t border-white/10 pt-2 w-full justify-center">
-              <span>Written: {writtenScore}</span>
-              <span>+</span>
-              <span>Oral: {oralScore}</span>
-            </div>
-            <div className={`text-sm font-black uppercase tracking-widest ${profileData.color} bg-black/40 px-4 py-2 rounded-lg w-full`}>
-              {profileData.tier}
-            </div>
-            <button onClick={() => alert(`Assigned ${selectedCandidate.name} to level ${profileData.tier}`)} className="w-full mt-4 bg-emerald-500 hover:bg-emerald-400 text-white font-black text-xs py-3 rounded-xl uppercase tracking-widest transition-colors shadow-lg cursor-pointer">
-              Submit & Assign Level
-            </button>
           </div>
         </div>
       </div>
