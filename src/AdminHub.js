@@ -289,48 +289,36 @@ const handleProvision = async (e) => {
 
 
 // ==========================================
-// PAN & ZOOM IMAGE COMPONENT (UPGRADED)
+// PAN & ZOOM IMAGE COMPONENT (RESIZABLE CONTAINER)
 // ==========================================
 const PanZoomImage = ({ src, data, onSave, isPreview, wrapperClass = "w-full h-64" }) => {
   const [zoom, setZoom] = useState(data?.zoom || 1);
   const [pan, setPan] = useState({ x: data?.panX || 0, y: data?.panY || 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
-  
-  // Refs for scroll locking and debounce performance
+
+  // Container Resize State
+  const [containerSize, setContainerSize] = useState({
+    width: data?.containerWidth || null,
+    height: data?.containerHeight || null
+  });
   const containerRef = useRef(null);
-  const saveTimeoutRef = useRef(null);
 
   useEffect(() => {
     setZoom(data?.zoom || 1);
     setPan({ x: data?.panX || 0, y: data?.panY || 0 });
-  }, [data?.zoom, data?.panX, data?.panY]);
+    setContainerSize({ width: data?.containerWidth || null, height: data?.containerHeight || null });
+  }, [data?.zoom, data?.panX, data?.panY, data?.containerWidth, data?.containerHeight]);
 
-  // Native wheel listener to prevent page scrolling & debounce saves
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container || isPreview) return;
+  // --- INNER IMAGE ZOOM LOGIC ---
+  const handleZoom = (amount) => {
+    if (isPreview) return;
+    const newZoom = Math.max(0.1, Math.min(zoom + amount, 5));
+    setZoom(newZoom);
+    if (onSave) onSave({ zoom: newZoom, panX: pan.x, panY: pan.y, containerWidth: containerSize.width, containerHeight: containerSize.height });
+  };
 
-    const handleNativeWheel = (e) => {
-      e.preventDefault(); // Locks page scroll natively
-      setZoom(prevZoom => {
-        // Lowered minimum zoom to 0.1 so users can shrink images to fit boxes
-        const newZoom = Math.max(0.1, Math.min(prevZoom + (e.deltaY < 0 ? 0.1 : -0.1), 10));
-        
-        // Debounce the save to prevent lagging out the Undo History
-        if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-        saveTimeoutRef.current = setTimeout(() => {
-          if (onSave) onSave({ zoom: newZoom, panX: pan.x, panY: pan.y });
-        }, 300);
-
-        return newZoom;
-      });
-    };
-
-    container.addEventListener('wheel', handleNativeWheel, { passive: false });
-    return () => container.removeEventListener('wheel', handleNativeWheel);
-  }, [isPreview, pan.x, pan.y, onSave]);
-
+  // --- INNER IMAGE PAN LOGIC ---
   const handlePointerDown = (e) => {
     if (isPreview) return;
     setIsDragging(true);
@@ -346,12 +334,62 @@ const PanZoomImage = ({ src, data, onSave, isPreview, wrapperClass = "w-full h-6
   const handlePointerUp = (e) => {
     if (isPreview) return;
     setIsDragging(false);
-    if (onSave) onSave({ zoom, panX: pan.x, panY: pan.y });
+    if (onSave) onSave({ zoom, panX: pan.x, panY: pan.y, containerWidth: containerSize.width, containerHeight: containerSize.height });
     e.target.releasePointerCapture(e.pointerId);
   };
 
+  // --- CONTAINER RESIZE LOGIC ---
+  const handleResizeDown = (e) => {
+    if (isPreview) return;
+    e.stopPropagation(); // Prevent panning while resizing
+    const startX = e.clientX || (e.touches && e.touches[0].clientX);
+    const startY = e.clientY || (e.touches && e.touches[0].clientY);
+    const startWidth = containerRef.current.offsetWidth;
+    const startHeight = containerRef.current.offsetHeight;
+
+    const handleResizeMove = (moveEvent) => {
+       const clientX = moveEvent.clientX || (moveEvent.touches && moveEvent.touches[0].clientX);
+       const clientY = moveEvent.clientY || (moveEvent.touches && moveEvent.touches[0].clientY);
+       
+       // Apply minimum bounds so the image doesn't collapse into nothing
+       const newWidth = Math.max(100, startWidth + (clientX - startX));
+       const newHeight = Math.max(100, startHeight + (clientY - startY));
+       
+       setContainerSize({ width: newWidth, height: newHeight });
+    };
+
+    const handleResizeUp = () => {
+       document.removeEventListener('pointermove', handleResizeMove);
+       document.removeEventListener('pointerup', handleResizeUp);
+       document.removeEventListener('touchmove', handleResizeMove);
+       document.removeEventListener('touchend', handleResizeUp);
+       
+       // Save exact new container dimensions to database
+       if (onSave) {
+          onSave({ 
+             zoom, panX: pan.x, panY: pan.y, 
+             containerWidth: containerRef.current.offsetWidth, 
+             containerHeight: containerRef.current.offsetHeight 
+          });
+       }
+    };
+
+    document.addEventListener('pointermove', handleResizeMove);
+    document.addEventListener('pointerup', handleResizeUp);
+    document.addEventListener('touchmove', handleResizeMove, { passive: false });
+    document.addEventListener('touchend', handleResizeUp);
+  };
+
   return (
-    <div ref={containerRef} className={`overflow-hidden relative bg-black/20 ${wrapperClass}`}>
+    <div 
+      ref={containerRef}
+      className={`overflow-hidden relative bg-black/20 group ${!containerSize.width ? wrapperClass : 'rounded-2xl shadow-xl'}`}
+      style={{
+         width: containerSize.width ? `${containerSize.width}px` : undefined,
+         height: containerSize.height ? `${containerSize.height}px` : undefined,
+         margin: '0 auto' // Keeps element centered naturally
+      }}
+    >
       <img 
         src={src} 
         alt="media" 
@@ -364,9 +402,43 @@ const PanZoomImage = ({ src, data, onSave, isPreview, wrapperClass = "w-full h-6
         onPointerCancel={handlePointerUp}
         style={{ transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)` }} 
       />
+
+      {/* Inner Image Zoom Buttons */}
       {!isPreview && (
-        <div className="absolute bottom-2 right-2 bg-black/80 backdrop-blur-md text-white text-[9px] font-black px-3 py-1.5 rounded-md pointer-events-none uppercase tracking-widest shadow-md z-10">
-          Scroll: Zoom | Drag: Pan
+        <div className="absolute top-3 right-3 flex flex-col gap-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button 
+            onClick={(e) => { e.stopPropagation(); handleZoom(0.2); }} 
+            className="w-8 h-8 bg-[#08203e]/80 backdrop-blur-md text-white rounded-lg flex items-center justify-center font-black hover:bg-[#fcd34d] hover:text-[#08203e] shadow-lg border border-white/20 transition-colors cursor-pointer"
+            title="Zoom Image In"
+          >
+            +
+          </button>
+          <button 
+            onClick={(e) => { e.stopPropagation(); handleZoom(-0.2); }} 
+            className="w-8 h-8 bg-[#08203e]/80 backdrop-blur-md text-white rounded-lg flex items-center justify-center font-black hover:bg-[#fcd34d] hover:text-[#08203e] shadow-lg border border-white/20 transition-colors cursor-pointer"
+            title="Zoom Image Out"
+          >
+            -
+          </button>
+        </div>
+      )}
+      
+      {/* Container Resize Drag Handle */}
+      {!isPreview && (
+        <div 
+          onPointerDown={handleResizeDown}
+          className="absolute bottom-0 right-0 w-8 h-8 z-30 cursor-nwse-resize flex items-end justify-end p-2 opacity-0 group-hover:opacity-100 transition-opacity"
+          title="Drag to resize container"
+        >
+          <svg className="w-4 h-4 text-white drop-shadow-[0_0_2px_rgba(0,0,0,0.8)] pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 21h6v-6M21 21l-7-7" />
+          </svg>
+        </div>
+      )}
+
+      {!isPreview && (
+        <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-md text-white/70 text-[9px] font-black px-2 py-1 rounded pointer-events-none uppercase tracking-widest shadow-md opacity-0 group-hover:opacity-100 transition-opacity z-10">
+          DRAG: PAN | CORNER: RESIZE
         </div>
       )}
     </div>
