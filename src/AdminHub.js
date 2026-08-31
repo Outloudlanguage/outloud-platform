@@ -664,6 +664,40 @@ useEffect(() => {
 
   useEffect(() => { setSelectedUnit(''); }, [selectedLevel]);
 
+  // FETCH SAVED CONTENT BLUEPRINTS
+  useEffect(() => {
+    const loadBlueprint = async () => {
+      if (!selectedLevel || !selectedUnit || !contentType) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('content_blueprints')
+          .select('*')
+          .eq('level', selectedLevel)
+          .eq('unit', selectedUnit)
+          .eq('content_type', contentType)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (data) {
+          setCanvasElements(data.blueprint_data?.elements || []);
+          if (contentType === 'Lesson') setLessonScreens(data.screens || [Date.now()]);
+          else setWorkbookScreens(data.screens || [Date.now()]);
+        } else {
+          // Clean slate if nothing is saved yet
+          setCanvasElements([]);
+          if (contentType === 'Lesson') setLessonScreens([Date.now()]);
+          else setWorkbookScreens([Date.now()]);
+        }
+      } catch (err) {
+        console.error("Error loading blueprint:", err);
+      }
+    };
+
+    loadBlueprint();
+  }, [selectedLevel, selectedUnit, contentType]);
+
   useEffect(() => {
     if (contentType === 'Lesson') setActiveScreenId(lessonScreens[0]);
     else setActiveScreenId(workbookScreens[0]);
@@ -804,7 +838,7 @@ useEffect(() => {
     setIsSaving(true);
     const syncedElements = canvasElements.map(el => {
       if (el.type === 'text') {
-        const liveNode = document.querySelector(`#element-${el.id} .rich-text-content`);
+        const liveNode = document.getElementById(`element-${el.id}`);
         if (liveNode) return { ...el, htmlContent: liveNode.innerHTML };
       }
       return el;
