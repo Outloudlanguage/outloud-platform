@@ -23,8 +23,6 @@ Paragraph 2: Historically, the way we lived was quite different. In ancient time
 // ==========================================
 const PlacementTest = () => {
   const [currentSection, setCurrentSection] = useState(0); 
-  // 0: Registration, 1: Rules, 2: MCQ, 3: Written, 4: Submitting
-  
   const [candidateInfo, setCandidateInfo] = useState({ firstName: '', lastName: '', phone: '', email: '' });
   const [answers, setAnswers] = useState({});
   
@@ -35,11 +33,9 @@ const PlacementTest = () => {
 
   // --- ANTI-CHEAT ENGINE ---
   useEffect(() => {
-    // Only engage strict proctoring while actively taking the test (Sections 2 & 3)
     if (currentSection < 2 || currentSection > 3) return;
 
     const handleBlur = () => {
-      // Start 20-second doom timer when they leave the tab
       blurTimeoutRef.current = setTimeout(() => {
         triggerFail("You left the test window for more than 20 seconds.");
       }, 20000);
@@ -61,7 +57,6 @@ const PlacementTest = () => {
     };
 
     const handleKeyDown = (e) => {
-      // Intercept Screenshot & Copy shortcuts (PrintScreen, Win+Shift+S, Cmd+Shift+3/4/5, Ctrl+C/P)
       if (
         e.key === 'PrintScreen' || 
         (e.metaKey && e.shiftKey) || 
@@ -76,7 +71,7 @@ const PlacementTest = () => {
       }
     };
 
-    const handleContextMenu = (e) => e.preventDefault(); // Block right-click
+    const handleContextMenu = (e) => e.preventDefault();
 
     window.addEventListener('blur', handleBlur);
     window.addEventListener('focus', handleFocus);
@@ -96,10 +91,9 @@ const PlacementTest = () => {
     alert(`TEST VOIDED: ${reason} Your progress has been erased.`);
     setAnswers({});
     setCheatWarnings(0);
-    setCurrentSection(0); // Kick back to start
+    setCurrentSection(0);
   };
 
-  // --- COMPONENT RENDERERS ---
   const renderRegistration = () => (
     <div className="flex flex-col gap-6 animate-fade-in mt-10">
       <div className="bg-white/10 backdrop-blur-xl border border-white/20 border-t-8 border-t-[#fcd34d] rounded-2xl p-8 shadow-2xl">
@@ -278,7 +272,11 @@ const PlacementTest = () => {
               <svg className="w-12 h-12 text-emerald-500" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path></svg>
             </div>
             <h2 className="text-3xl font-black text-white uppercase tracking-widest mb-4">Exam Submitted</h2>
-            <p className="text-white/60">Your written and grammar components have been securely transmitted.<br/>The oral assessment tools will be initiated next.</p>
+            <p className="text-white/60">
+              Your written and grammar components have been securely transmitted.<br/><br/>
+              A live session will be programmed with you to complete the assessment.<br/>
+              Our academic team will contact you shortly to book your interview.
+            </p>
           </div>
         )}
       </div>
