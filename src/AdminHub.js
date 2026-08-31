@@ -1347,60 +1347,65 @@ const OverheadExpensesModule = ({ onOverheadUpdate }) => {
   if (loading && expenses.length === 0) return <div className="p-8 text-white/50 text-center font-bold tracking-widest bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem]">LOADING OVERHEAD...</div>;
 
   return (
-    <div className="flex flex-col w-full h-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 shadow-2xl">
-      <div className="mb-6 flex justify-between items-end border-b border-white/10 pb-4 shrink-0">
-        <div>
-          <h3 className="text-2xl font-black tracking-widest uppercase text-white">Overhead Costs</h3>
-          <p className="text-sm font-bold text-red-400 uppercase tracking-wide">Recurring Digital & SaaS Expenses</p>
+    <div className="relative w-full h-full rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl">
+      <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
+      <div className="relative w-full h-full flex flex-col p-8">
+        
+        <div className="mb-6 flex justify-between items-end border-b border-white/10 pb-4 shrink-0">
+          <div>
+            <h3 className="text-2xl font-black tracking-widest uppercase text-white">Overhead Costs</h3>
+            <p className="text-sm font-bold text-red-400 uppercase tracking-wide">Recurring Digital & SaaS Expenses</p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-white/50 uppercase font-bold tracking-wider">Total Monthly</p>
+            <p className="text-4xl font-black text-red-400">${totalOverhead.toLocaleString()}</p>
+          </div>
         </div>
-        <div className="text-right">
-          <p className="text-xs text-white/50 uppercase font-bold tracking-wider">Total Monthly</p>
-          <p className="text-4xl font-black text-red-400">${totalOverhead.toLocaleString()}</p>
+        
+        <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 flex flex-col gap-3">
+          {expenses.length === 0 ? (
+             <div className="text-center text-white/40 font-bold tracking-widest text-sm mt-4 uppercase">No expenses recorded yet.</div>
+          ) : (
+            expenses.map((expense, idx) => (
+              <div key={expense.id || idx} className="group flex justify-between items-center bg-white/5 border border-white/10 p-4 rounded-xl hover:bg-white/10 transition-colors overflow-hidden">
+                <div className="flex flex-col">
+                  <span className="font-bold text-white tracking-wide">{expense.service_name}</span>
+                  <span className="text-[10px] font-black uppercase text-white/40 tracking-widest">{expense.category}</span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="font-black text-white/80">${Number(expense.monthly_cost).toLocaleString()}</span>
+                  <button onClick={() => handleDeleteExpense(expense.id)} className="w-8 h-8 bg-red-500/20 hover:bg-red-500 text-red-500 hover:text-white rounded-lg flex items-center justify-center font-black opacity-0 group-hover:opacity-100 transition-all text-xs z-10">✕</button>
+                </div>
+              </div>
+            ))
+          )}
         </div>
-      </div>
-      
-      <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 flex flex-col gap-3">
-        {expenses.length === 0 ? (
-           <div className="text-center text-white/40 font-bold tracking-widest text-sm mt-4 uppercase">No expenses recorded yet.</div>
-        ) : (
-          expenses.map((expense, idx) => (
-            <div key={expense.id || idx} className="group flex justify-between items-center bg-white/5 border border-white/10 p-4 rounded-xl hover:bg-white/10 transition-colors overflow-hidden">
-              <div className="flex flex-col">
-                <span className="font-bold text-white tracking-wide">{expense.service_name}</span>
-                <span className="text-[10px] font-black uppercase text-white/40 tracking-widest">{expense.category}</span>
-              </div>
-              <div className="flex items-center gap-4">
-                <span className="font-black text-white/80">${Number(expense.monthly_cost).toLocaleString()}</span>
-                <button onClick={() => handleDeleteExpense(expense.id)} className="w-8 h-8 bg-red-500/20 hover:bg-red-500 text-red-500 hover:text-white rounded-lg flex items-center justify-center font-black opacity-0 group-hover:opacity-100 transition-all text-xs z-10">✕</button>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
 
-      <div className="mt-6 pt-4 border-t border-white/10 shrink-0">
-        {!isAdding ? (
-          <button onClick={() => setIsAdding(true)} className="w-full py-3 bg-white/10 hover:bg-[#fcd34d] text-white hover:text-[#08203e] font-black text-xs tracking-widest uppercase rounded-xl transition-colors">
-            + Add New Expense
-          </button>
-        ) : (
-          <form onSubmit={handleAddExpense} className="flex flex-col gap-3 bg-black/40 p-4 rounded-xl border border-white/10">
-            <input type="text" placeholder="Service Name (e.g. Zoom)" value={newExpense.service_name} onChange={e => setNewExpense({...newExpense, service_name: e.target.value})} className="bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#fcd34d]" required />
-            <div className="flex gap-3">
-                <select value={newExpense.category} onChange={e => setNewExpense({...newExpense, category: e.target.value})} className="flex-1 bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#fcd34d] appearance-none">
-                    <option className="bg-[#0f172a]" value="Software">Software</option>
-                    <option className="bg-[#0f172a]" value="Infrastructure">Infrastructure</option>
-                    <option className="bg-[#0f172a]" value="Marketing">Marketing</option>
-                    <option className="bg-[#0f172a]" value="Financial">Financial</option>
-                </select>
-                <input type="number" placeholder="Cost $" value={newExpense.monthly_cost} onChange={e => setNewExpense({...newExpense, monthly_cost: e.target.value})} className="w-24 bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#fcd34d]" required min="0" step="0.01" />
-            </div>
-            <div className="flex gap-2 mt-2">
-                <button type="button" onClick={() => setIsAdding(false)} className="flex-1 py-2 text-white/50 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors">Cancel</button>
-                <button type="submit" className="flex-1 py-2 bg-[#fcd34d] text-[#08203e] rounded-lg text-xs font-black uppercase tracking-widest hover:scale-105 transition-transform">Save</button>
-            </div>
-          </form>
-        )}
+        <div className="mt-6 pt-4 border-t border-white/10 shrink-0">
+          {!isAdding ? (
+            <button onClick={() => setIsAdding(true)} className="w-full py-3 bg-white/10 hover:bg-[#fcd34d] text-white hover:text-[#08203e] font-black text-xs tracking-widest uppercase rounded-xl transition-colors">
+              + Add New Expense
+            </button>
+          ) : (
+            <form onSubmit={handleAddExpense} className="flex flex-col gap-3 bg-black/40 p-4 rounded-xl border border-white/10">
+              <input type="text" placeholder="Service Name (e.g. Zoom)" value={newExpense.service_name} onChange={e => setNewExpense({...newExpense, service_name: e.target.value})} className="bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#fcd34d]" required />
+              <div className="flex gap-3">
+                  <select value={newExpense.category} onChange={e => setNewExpense({...newExpense, category: e.target.value})} className="flex-1 bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#fcd34d] appearance-none">
+                      <option className="bg-[#0f172a]" value="Software">Software</option>
+                      <option className="bg-[#0f172a]" value="Infrastructure">Infrastructure</option>
+                      <option className="bg-[#0f172a]" value="Marketing">Marketing</option>
+                      <option className="bg-[#0f172a]" value="Financial">Financial</option>
+                  </select>
+                  <input type="number" placeholder="Cost $" value={newExpense.monthly_cost} onChange={e => setNewExpense({...newExpense, monthly_cost: e.target.value})} className="w-24 bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#fcd34d]" required min="0" step="0.01" />
+              </div>
+              <div className="flex gap-2 mt-2">
+                  <button type="button" onClick={() => setIsAdding(false)} className="flex-1 py-2 text-white/50 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors">Cancel</button>
+                  <button type="submit" className="flex-1 py-2 bg-[#fcd34d] text-[#08203e] rounded-lg text-xs font-black uppercase tracking-widest hover:scale-105 transition-transform">Save</button>
+              </div>
+            </form>
+          )}
+        </div>
+
       </div>
     </div>
   );
@@ -1428,33 +1433,43 @@ const FinancesPage = () => {
       {/* ROW 1: THE "NOW" (Hard Financials) */}
      <div className="grid grid-cols-12 gap-8 h-auto min-h-[450px]">
         
-        {/* Left: Circular KPIs */}
+       {/* Left: Circular KPIs */}
         <div className="col-span-3 flex flex-col gap-6 h-full justify-center">
-          <button onClick={() => setShowRenewalsModal(true)} className="flex-1 w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center relative group hover:bg-white/10 transition-all cursor-pointer">
-            <div className="relative w-32 h-32 flex items-center justify-center shrink-0 mb-2">
-              <svg className="w-full h-full transform -rotate-90 drop-shadow-[0_0_15px_rgba(252,211,77,0.8)]" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.1)" strokeWidth="10" fill="transparent" />
-                <circle cx="50" cy="50" r="40" stroke="#fcd34d" strokeWidth="10" fill="transparent" strokeDasharray={2 * Math.PI * 40} strokeDashoffset={(2 * Math.PI * 40) - (renewalRate / 100) * (2 * Math.PI * 40)} strokeLinecap="round" className="group-hover:stroke-yellow-300 transition-colors" />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-3xl font-black text-white drop-shadow-md">{renewalRate}%</span>
+          
+          {/* RENEWALS BUTTON - Clipped Wrapper */}
+          <button onClick={() => setShowRenewalsModal(true)} className="flex-1 w-full relative rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl cursor-pointer group hover:bg-white/5 transition-all text-left">
+            <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
+            <div className="relative w-full h-full flex flex-col items-center justify-center p-6">
+              <div className="relative w-32 h-32 flex items-center justify-center shrink-0 mb-2">
+                <svg className="w-full h-full transform -rotate-90 drop-shadow-[0_0_15px_rgba(252,211,77,0.8)]" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.1)" strokeWidth="10" fill="transparent" />
+                  <circle cx="50" cy="50" r="40" stroke="#fcd34d" strokeWidth="10" fill="transparent" strokeDasharray={2 * Math.PI * 40} strokeDashoffset={(2 * Math.PI * 40) - (renewalRate / 100) * (2 * Math.PI * 40)} strokeLinecap="round" className="group-hover:stroke-yellow-300 transition-colors" />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-3xl font-black text-white drop-shadow-md">{renewalRate}%</span>
+                </div>
               </div>
+              <h3 className="text-white/90 font-black text-sm tracking-widest uppercase text-center mt-2">Renewals</h3>
             </div>
-            <h3 className="text-white/90 font-black text-sm tracking-widest uppercase text-center mt-2">Renewals</h3>
           </button>
 
-          <div className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center relative group cursor-pointer">
-            <div className="relative w-32 h-32 flex items-center justify-center shrink-0 mb-2">
-              <svg className="w-full h-full transform -rotate-90 drop-shadow-[0_0_15px_rgba(59,130,246,0.8)]" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.1)" strokeWidth="10" fill="transparent" />
-                <circle cx="50" cy="50" r="40" stroke="#3b82f6" strokeWidth="10" fill="transparent" strokeDasharray={2 * Math.PI * 40} strokeDashoffset={(2 * Math.PI * 40) - (netMarginPercentage / 100) * (2 * Math.PI * 40)} strokeLinecap="round" className="group-hover:stroke-blue-400 transition-colors" />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-3xl font-black text-white drop-shadow-md">{netMarginPercentage}%</span>
+          {/* NET MARGIN CARD - Clipped Wrapper */}
+          <div className="flex-1 relative rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl cursor-pointer group">
+            <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
+            <div className="relative w-full h-full flex flex-col items-center justify-center p-6">
+              <div className="relative w-32 h-32 flex items-center justify-center shrink-0 mb-2">
+                <svg className="w-full h-full transform -rotate-90 drop-shadow-[0_0_15px_rgba(59,130,246,0.8)]" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.1)" strokeWidth="10" fill="transparent" />
+                  <circle cx="50" cy="50" r="40" stroke="#3b82f6" strokeWidth="10" fill="transparent" strokeDasharray={2 * Math.PI * 40} strokeDashoffset={(2 * Math.PI * 40) - (netMarginPercentage / 100) * (2 * Math.PI * 40)} strokeLinecap="round" className="group-hover:stroke-blue-400 transition-colors" />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-3xl font-black text-white drop-shadow-md">{netMarginPercentage}%</span>
+                </div>
               </div>
+              <h3 className="text-white/90 font-black text-sm tracking-widest uppercase text-center mt-2 whitespace-nowrap">Net Margin</h3>
             </div>
-            <h3 className="text-white/90 font-black text-sm tracking-widest uppercase text-center mt-2 whitespace-nowrap">Net Margin</h3>
           </div>
+          
         </div>
 
         {/* Center: Profit Margin Analysis Engine */}
@@ -1464,21 +1479,36 @@ const FinancesPage = () => {
 
         {/* Right: 4-Metric Stack */}
         <div className="col-span-3 flex flex-col gap-4 h-full justify-between">
-          <div className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-4 shadow-2xl flex flex-col items-center justify-center">
-            <h4 className="text-white/70 font-black text-sm tracking-widest uppercase">Gross Revenue</h4>
-            <span className="text-3xl font-black text-[#fcd34d] mt-1">${revenue.toLocaleString()}</span>
+          <div className="flex-1 relative rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl">
+            <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
+            <div className="relative w-full h-full flex flex-col items-center justify-center p-4">
+              <h4 className="text-white/70 font-black text-sm tracking-widest uppercase">Gross Revenue</h4>
+              <span className="text-3xl font-black text-[#fcd34d] mt-1">${revenue.toLocaleString()}</span>
+            </div>
           </div>
-          <div className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-4 shadow-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-white/10 transition-colors">
-            <h4 className="text-white/70 font-black text-sm tracking-widest uppercase">Payroll Liability</h4>
-            <span className="text-3xl font-black text-red-400 mt-1">-${payroll.toLocaleString()}</span>
+          
+          <div className="flex-1 relative rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl cursor-pointer group hover:bg-white/5 transition-colors">
+            <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
+            <div className="relative w-full h-full flex flex-col items-center justify-center p-4">
+              <h4 className="text-white/70 font-black text-sm tracking-widest uppercase">Payroll Liability</h4>
+              <span className="text-3xl font-black text-red-400 mt-1">-${payroll.toLocaleString()}</span>
+            </div>
           </div>
-          <div className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-4 shadow-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-white/10 transition-colors">
-            <h4 className="text-white/70 font-black text-sm tracking-widest uppercase text-center leading-tight">Digital Overhead</h4>
-            <span className="text-3xl font-black text-orange-400 mt-1">-${overhead.toLocaleString()}</span>
+          
+          <div className="flex-1 relative rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl cursor-pointer group hover:bg-white/5 transition-colors">
+            <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
+            <div className="relative w-full h-full flex flex-col items-center justify-center p-4">
+              <h4 className="text-white/70 font-black text-sm tracking-widest uppercase text-center leading-tight">Digital Overhead</h4>
+              <span className="text-3xl font-black text-orange-400 mt-1">-${overhead.toLocaleString()}</span>
+            </div>
           </div>
-          <div className="flex-1 bg-[#10b981]/20 backdrop-blur-xl border border-[#10b981]/40 rounded-[2rem] p-4 shadow-2xl flex flex-col items-center justify-center">
-            <h4 className="text-white font-black text-sm tracking-widest uppercase">Net Profit</h4>
-            <span className="text-4xl font-black text-[#10b981] mt-1 drop-shadow-md">${netProfit.toLocaleString()}</span>
+          
+          <div className="flex-1 relative rounded-[2rem] border border-[#10b981]/40 overflow-hidden shadow-2xl">
+            <div className="absolute -inset-4 bg-[#10b981]/20 backdrop-blur-xl -z-10" />
+            <div className="relative w-full h-full flex flex-col items-center justify-center p-4">
+              <h4 className="text-white font-black text-sm tracking-widest uppercase">Net Profit</h4>
+              <span className="text-4xl font-black text-[#10b981] mt-1 drop-shadow-md">${netProfit.toLocaleString()}</span>
+            </div>
           </div>
         </div>
       </div>
