@@ -1733,8 +1733,12 @@ const FinancesPage = () => {
               {/* CONTENT LEFT NAVIGATION (Filters) */}
               {!isPreviewMode && (
                 <div className="w-56 shrink-0 flex flex-col gap-4 py-8 pr-8 border-r border-white/10 h-[calc(100vh-80px)] overflow-y-auto custom-scrollbar sticky top-20">
-                  <AdminDropdown placeholder="LEVEL" options={LEVEL_OPTIONS} value={selectedLevel} onChange={setSelectedLevel} />
-                  <AdminDropdown placeholder="UNIT" options={unitOptions} value={selectedUnit} onChange={setSelectedUnit} />
+                  <div className="relative z-[60]">
+                    <AdminDropdown placeholder="LEVEL" options={LEVEL_OPTIONS} value={selectedLevel} onChange={setSelectedLevel} />
+                  </div>
+                  <div className="relative z-[50]">
+                    <AdminDropdown placeholder="UNIT" options={unitOptions} value={selectedUnit} onChange={setSelectedUnit} />
+                  </div>
                   <div className="h-px w-full bg-white/10 my-2"></div>
                   {['Lesson', 'Workbook', 'Manuals', 'Cue Cards'].map(type => (
                     <button key={type} onClick={() => setContentType(type)} className={`w-full py-4 px-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-md ${contentType === type ? 'bg-[#fcd34d] text-[#08203e] scale-105' : 'bg-white/10 text-white border border-white/20 hover:bg-white/20'}`}>
@@ -1826,18 +1830,39 @@ const FinancesPage = () => {
                                 {el.type === 'text' && (
                                   <div className={`w-full max-w-5xl bg-white/10 backdrop-blur-xl rounded-[2rem] p-8 border border-white/20 shadow-2xl text-center mb-6 relative ${focusedTextId === el.id ? 'z-[100]' : 'z-10'}`} onFocus={() => setFocusedTextId(el.id)}>
                                      {!isPreviewMode && focusedTextId === el.id && (
-                                       <div className="absolute -top-16 left-1/2 -translate-x-1/2 bg-[#070b19]/95 backdrop-blur-xl border border-white/20 rounded-2xl p-2 flex items-center gap-2 shadow-2xl whitespace-nowrap text-white z-[100]">
-                                          <button onMouseDown={(e)=>{e.preventDefault(); formatText('bold')}} className="px-4 py-2 font-bold hover:bg-white/10 rounded-xl">B</button>
-                                          <button onMouseDown={(e)=>{e.preventDefault(); formatText('italic')}} className="px-4 py-2 italic hover:bg-white/10 rounded-xl">I</button>
-                                          <button onMouseDown={(e)=>{e.preventDefault(); formatText('underline')}} className="px-4 py-2 underline hover:bg-white/10 rounded-xl">U</button>
-                                          <div className="w-px h-6 bg-white/20 my-auto mx-2"></div>
-                                          <input type="color" onInput={(e)=>formatText('foreColor', e.target.value)} className="w-8 h-8 rounded-lg cursor-pointer bg-transparent border-0 p-0" />
-                                          <select onChange={(e)=>formatText('fontName', e.target.value)} className="bg-[#070b19] border border-white/20 rounded-xl px-3 py-2 text-sm outline-none ml-2">
+                                       <div className="absolute -top-16 left-1/2 -translate-x-1/2 bg-[#070b19]/95 backdrop-blur-xl border border-white/20 rounded-2xl p-2 flex items-center gap-1 shadow-2xl whitespace-nowrap text-white z-[100]">
+                                          <button onMouseDown={(e)=>{e.preventDefault(); formatText('bold')}} className="w-8 h-8 flex items-center justify-center font-bold hover:bg-white/10 rounded-lg transition-colors">B</button>
+                                          <button onMouseDown={(e)=>{e.preventDefault(); formatText('italic')}} className="w-8 h-8 flex items-center justify-center italic hover:bg-white/10 rounded-lg transition-colors">I</button>
+                                          <button onMouseDown={(e)=>{e.preventDefault(); formatText('underline')}} className="w-8 h-8 flex items-center justify-center underline hover:bg-white/10 rounded-lg transition-colors">U</button>
+                                          
+                                          <div className="w-px h-6 bg-white/20 my-auto mx-1"></div>
+                                          
+                                          {/* Alignment Tools */}
+                                          <button onMouseDown={(e)=>{e.preventDefault(); formatText('justifyLeft')}} className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-lg transition-colors" title="Align Left">
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h10M4 18h16"/></svg>
+                                          </button>
+                                          <button onMouseDown={(e)=>{e.preventDefault(); formatText('justifyCenter')}} className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-lg transition-colors" title="Align Center">
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M7 12h10M4 18h16"/></svg>
+                                          </button>
+                                          <button onMouseDown={(e)=>{e.preventDefault(); formatText('justifyRight')}} className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-lg transition-colors" title="Align Right">
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M10 12h10M4 18h16"/></svg>
+                                          </button>
+                                          <button onMouseDown={(e)=>{e.preventDefault(); formatText('justifyFull')}} className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-lg transition-colors" title="Justify">
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                                          </button>
+
+                                          <div className="w-px h-6 bg-white/20 my-auto mx-1"></div>
+                                          
+                                          <input type="color" onInput={(e)=>formatText('foreColor', e.target.value)} className="w-8 h-8 rounded-lg cursor-pointer bg-transparent border-0 p-0" title="Text Color" />
+                                          
+                                          <select onChange={(e)=>formatText('fontName', e.target.value)} className="bg-[#070b19] border border-white/20 rounded-xl px-2 py-1.5 text-xs outline-none ml-1 cursor-pointer">
                                              <option value="Montserrat" className="text-white">Montserrat</option>
                                              <option value="Arial" className="text-white">Arial</option>
                                              <option value="Times New Roman" className="text-white">Times New Roman</option>
                                           </select>
-                                          <select onChange={(e)=>formatText('fontSize', e.target.value)} className="bg-[#070b19] border border-white/20 rounded-xl px-3 py-2 text-sm outline-none ml-2">
+                                          
+                                          <select onChange={(e)=>formatText('fontSize', e.target.value)} className="bg-[#070b19] border border-white/20 rounded-xl px-2 py-1.5 text-xs outline-none ml-1 cursor-pointer">
+                                             <option value="1" className="text-white">Tiny</option>
                                              <option value="3" className="text-white">Normal</option>
                                              <option value="5" className="text-white">Large</option>
                                              <option value="7" className="text-white">Huge</option>
