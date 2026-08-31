@@ -289,26 +289,47 @@ const handleProvision = async (e) => {
 
 
 // ==========================================
-// PAN & ZOOM IMAGE COMPONENT (Preserved)
+// PAN & ZOOM IMAGE COMPONENT (UPGRADED)
 // ==========================================
 const PanZoomImage = ({ src, data, onSave, isPreview, wrapperClass = "w-full h-64" }) => {
   const [zoom, setZoom] = useState(data?.zoom || 1);
   const [pan, setPan] = useState({ x: data?.panX || 0, y: data?.panY || 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
+  
+  // Refs for scroll locking and debounce performance
+  const containerRef = useRef(null);
+  const saveTimeoutRef = useRef(null);
 
   useEffect(() => {
     setZoom(data?.zoom || 1);
     setPan({ x: data?.panX || 0, y: data?.panY || 0 });
   }, [data?.zoom, data?.panX, data?.panY]);
 
-  const handleWheel = (e) => {
-    if (isPreview) return;
-    e.preventDefault();
-    const newZoom = Math.max(1, Math.min(zoom + (e.deltaY < 0 ? 0.1 : -0.1), 5));
-    setZoom(newZoom);
-    if (onSave) onSave({ zoom: newZoom, panX: pan.x, panY: pan.y });
-  };
+  // Native wheel listener to prevent page scrolling & debounce saves
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || isPreview) return;
+
+    const handleNativeWheel = (e) => {
+      e.preventDefault(); // Locks page scroll natively
+      setZoom(prevZoom => {
+        // Lowered minimum zoom to 0.1 so users can shrink images to fit boxes
+        const newZoom = Math.max(0.1, Math.min(prevZoom + (e.deltaY < 0 ? 0.1 : -0.1), 10));
+        
+        // Debounce the save to prevent lagging out the Undo History
+        if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = setTimeout(() => {
+          if (onSave) onSave({ zoom: newZoom, panX: pan.x, panY: pan.y });
+        }, 300);
+
+        return newZoom;
+      });
+    };
+
+    container.addEventListener('wheel', handleNativeWheel, { passive: false });
+    return () => container.removeEventListener('wheel', handleNativeWheel);
+  }, [isPreview, pan.x, pan.y, onSave]);
 
   const handlePointerDown = (e) => {
     if (isPreview) return;
@@ -330,13 +351,13 @@ const PanZoomImage = ({ src, data, onSave, isPreview, wrapperClass = "w-full h-6
   };
 
   return (
-    <div className={`overflow-hidden relative bg-black/20 ${wrapperClass}`} onWheel={handleWheel}>
+    <div ref={containerRef} className={`overflow-hidden relative bg-black/20 ${wrapperClass}`}>
       <img 
         src={src} 
         alt="media" 
         draggable="false"
         onContextMenu={(e) => e.preventDefault()}
-        className={`w-full h-full object-cover ${isPreview ? '' : 'cursor-move'} touch-none`}
+        className={`w-full h-full object-cover ${isPreview ? '' : 'cursor-move'} touch-none will-change-transform`}
         onPointerDown={handlePointerDown} 
         onPointerMove={handlePointerMove} 
         onPointerUp={handlePointerUp} 
@@ -344,7 +365,7 @@ const PanZoomImage = ({ src, data, onSave, isPreview, wrapperClass = "w-full h-6
         style={{ transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)` }} 
       />
       {!isPreview && (
-        <div className="absolute bottom-2 right-2 bg-black/80 backdrop-blur-md text-white text-[9px] font-black px-3 py-1.5 rounded-md pointer-events-none uppercase tracking-widest shadow-md">
+        <div className="absolute bottom-2 right-2 bg-black/80 backdrop-blur-md text-white text-[9px] font-black px-3 py-1.5 rounded-md pointer-events-none uppercase tracking-widest shadow-md z-10">
           Scroll: Zoom | Drag: Pan
         </div>
       )}
