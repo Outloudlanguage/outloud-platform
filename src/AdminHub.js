@@ -1847,13 +1847,16 @@ const FinancesPage = () => {
       <div className="fixed top-0 left-0 bottom-0 w-28 border-r border-white/10 bg-[#070b19]/80 backdrop-blur-2xl flex flex-col items-center py-10 gap-6 shrink-0 z-[150] shadow-2xl overflow-y-auto custom-scrollbar">
         
         {/* PROFILE BUTTON WITH DROPDOWN */}
-        <div className="relative">
+        <div>
           <NavIconBtn isProfile avatarUrl={adminProfile.avatarUrl} onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)} />
           
           {isProfileDropdownOpen && (
             <>
-              <div className="fixed inset-0 z-40" onClick={() => setIsProfileDropdownOpen(false)}></div>
-              <div className="absolute left-20 top-0 w-48 bg-[#08203e]/95 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl z-50 flex flex-col py-2 overflow-hidden animate-fade-in">
+              {/* Invisible backdrop with a very high z-index to capture outside clicks */}
+              <div className="fixed inset-0 z-[200]" onClick={() => setIsProfileDropdownOpen(false)}></div>
+              
+              {/* Fixed positioning breaks it out of the sidebar's overflow mask */}
+              <div className="fixed left-32 top-10 w-48 bg-[#08203e]/95 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl z-[250] flex flex-col py-2 overflow-hidden animate-fade-in">
                 <button 
                   onClick={() => { setIsProfileModalOpen(true); setIsProfileDropdownOpen(false); }} 
                   className="px-6 py-3 text-left text-white/80 hover:text-white hover:bg-white/10 font-bold text-xs uppercase tracking-widest transition-colors flex items-center gap-3"
