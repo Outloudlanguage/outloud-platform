@@ -61,11 +61,11 @@ const MobileCourseInfo = ({
               
               {/* Left Col */}
               <div className="w-[42%] flex flex-col items-center justify-center text-center pr-3 shrink-0 border-r border-white/10 relative z-10">
-                <div className="h-16 w-full flex items-center justify-center mb-2">
+                <div className="h-16 w-16 mx-auto flex items-center justify-center mb-2 shrink-0">
                   <img
                     src="https://i.postimg.cc/LssD8BWw/Agregar-algo-de-texto-(14).png"
                     alt="Inmersión Total Icon"
-                    className="h-[80%] w-auto object-contain brightness-0 invert opacity-90 drop-shadow-md"
+                    className="w-full h-full object-contain brightness-0 invert opacity-90 drop-shadow-md"
                   />
                 </div>
                 <p className="text-[8px] font-bold text-[#fcd34d] font-montserrat tracking-widest uppercase leading-tight mb-1">
@@ -111,11 +111,11 @@ const MobileCourseInfo = ({
               
               {/* Left Col */}
               <div className="w-[42%] flex flex-col items-center justify-center text-center pr-3 shrink-0 border-r border-white/10 relative z-10">
-                <div className="h-16 w-full flex items-center justify-center mb-2">
+                <div className="h-16 w-16 mx-auto flex items-center justify-center mb-2 shrink-0">
                   <img
                     src="https://i.postimg.cc/mDJHRQff/6(2).png"
                     alt="Acceso 24/7 Icon"
-                    className="h-[100%] w-auto object-contain brightness-0 invert opacity-90 drop-shadow-md"
+                    className="w-full h-full object-contain brightness-0 invert opacity-90 drop-shadow-md"
                   />
                 </div>
                 <p className="text-[8px] font-bold text-[#fcd34d] font-montserrat tracking-widest uppercase leading-tight mb-1">
@@ -157,11 +157,11 @@ const MobileCourseInfo = ({
               
               {/* Left Col */}
               <div className="w-[42%] flex flex-col items-center justify-center text-center pr-3 shrink-0 border-r border-white/10 relative z-10">
-                <div className="h-16 w-full flex items-center justify-center mb-2">
+                <div className="h-16 w-16 mx-auto flex items-center justify-center mb-2 shrink-0">
                   <img
                     src="https://i.postimg.cc/LXn1rxWs/7(3).png"
                     alt="Clases En Vivo Icon"
-                    className="h-[80%] w-auto object-contain brightness-0 invert opacity-90 drop-shadow-md"
+                    className="w-full h-full object-contain brightness-0 invert opacity-90 drop-shadow-md"
                   />
                 </div>
                 <p className="text-[8px] font-bold text-[#fcd34d] font-montserrat tracking-widest uppercase leading-tight mb-1">
@@ -269,11 +269,11 @@ const DesktopCourseInfo = ({
               <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none"></div>
               
               {/* Optically Balanced Icon Container */}
-              <div className="h-[4.5rem] xl:h-[5.5rem] w-full flex items-center justify-center mb-2 lg:mb-3 shrink-0 relative z-10">
+              <div className="h-20 w-20 xl:h-24 xl:w-24 mx-auto flex items-center justify-center mb-2 lg:mb-3 shrink-0 relative z-10">
                 <img
                   src="https://i.postimg.cc/LssD8BWw/Agregar-algo-de-texto-(14).png"
                   alt="Inmersión Total Icon"
-                  className="h-[80%] w-auto object-contain brightness-0 invert opacity-90 drop-shadow-lg"
+                  className="w-full h-full object-contain brightness-0 invert opacity-90 drop-shadow-lg"
                 />
               </div>
               
@@ -291,8 +291,8 @@ const DesktopCourseInfo = ({
                 </div>
               </div>
               
-              {/* Flex-Grow Text Container */}
-              <div className="flex flex-col flex-grow w-full justify-start relative z-10">
+              {/* Flex-Grow Text Container with Scrollbar */}
+              <div className="flex flex-col flex-grow w-full justify-start relative z-10 overflow-y-auto custom-scrollbar pr-2">
                 <p className="text-[10.5px] lg:text-[11.5px] xl:text-[13px] text-white/90 font-montserrat text-justify leading-snug xl:leading-[1.5]">
                   Olvídate de la teoría rígida. Hemos diseñado un aprendizaje
                   libre de distracciones, interactivo y directo, basado en{' '}
@@ -321,11 +321,11 @@ const DesktopCourseInfo = ({
               <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none"></div>
 
               {/* Optically Balanced Icon Container */}
-              <div className="h-[4.5rem] xl:h-[5.5rem] w-full flex items-center justify-center mb-2 lg:mb-3 shrink-0 relative z-10">
+              <div className="h-20 w-20 xl:h-24 xl:w-24 mx-auto flex items-center justify-center mb-2 lg:mb-3 shrink-0 relative z-10">
                 <img
                   src="https://i.postimg.cc/mDJHRQff/6(2).png"
                   alt="Acceso 24/7 Icon"
-                  className="h-[100%] w-auto object-contain brightness-0 invert opacity-90 drop-shadow-lg"
+                  className="w-full h-full object-contain brightness-0 invert opacity-90 drop-shadow-lg"
                 />
               </div>
               
@@ -343,8 +343,8 @@ const DesktopCourseInfo = ({
                 </div>
               </div>
               
-              {/* Flex-Grow Text Container */}
-              <div className="flex flex-col flex-grow w-full justify-start relative z-10">
+              {/* Flex-Grow Text Container with Scrollbar */}
+              <div className="flex flex-col flex-grow w-full justify-start relative z-10 overflow-y-auto custom-scrollbar pr-2">
                 <p className="text-[10.5px] lg:text-[11.5px] xl:text-[13px] text-white/90 font-montserrat text-justify leading-snug xl:leading-[1.5]">
                   Accede cuando y donde quieras a lecciones dinámicas, audios,
                   chats, foros,{' '}
@@ -373,11 +373,11 @@ const DesktopCourseInfo = ({
               <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none"></div>
 
               {/* Optically Balanced Icon Container */}
-              <div className="h-[4.5rem] xl:h-[5.5rem] w-full flex items-center justify-center mb-2 lg:mb-3 shrink-0 relative z-10">
+              <div className="h-20 w-20 xl:h-24 xl:w-24 mx-auto flex items-center justify-center mb-2 lg:mb-3 shrink-0 relative z-10">
                 <img
                   src="https://i.postimg.cc/LXn1rxWs/7(3).png"
                   alt="Clases En Vivo Icon"
-                  className="h-[80%] w-auto object-contain brightness-0 invert opacity-90 drop-shadow-lg"
+                  className="w-full h-full object-contain brightness-0 invert opacity-90 drop-shadow-lg"
                 />
               </div>
               
@@ -395,8 +395,8 @@ const DesktopCourseInfo = ({
                 </div>
               </div>
               
-              {/* Flex-Grow Text Container */}
-              <div className="flex flex-col flex-grow w-full justify-start relative z-10">
+              {/* Flex-Grow Text Container with Scrollbar */}
+              <div className="flex flex-col flex-grow w-full justify-start relative z-10 overflow-y-auto custom-scrollbar pr-2">
                 <p className="text-[10.5px] lg:text-[11.5px] xl:text-[13px] text-white/90 font-montserrat text-justify leading-snug xl:leading-[1.5]">
                   Agenda sesiones individuales o grupales con un{' '}
                   <strong className="font-extrabold text-[#fcd34d]">profesor en vivo</strong>{' '}
