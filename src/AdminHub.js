@@ -1765,6 +1765,33 @@ const FinancesPage = () => {
         }
       `}</style>
 
+      {/* PROFILE DROPDOWN MENU (Rendered globally to avoid Sidebar Clipping) */}
+      {isProfileDropdownOpen && (
+        <div className="fixed inset-0 z-[500] pointer-events-none">
+          {/* Clickable Backdrop */}
+          <div className="absolute inset-0 pointer-events-auto" onClick={() => setIsProfileDropdownOpen(false)}></div>
+          
+          {/* Dropdown Box */}
+          <div className="absolute left-32 top-10 w-48 bg-[#08203e]/95 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl flex flex-col py-2 overflow-hidden animate-fade-in pointer-events-auto">
+            <button 
+              onClick={() => { setIsProfileModalOpen(true); setIsProfileDropdownOpen(false); }} 
+              className="px-6 py-3 text-left text-white/80 hover:text-white hover:bg-white/10 font-bold text-xs uppercase tracking-widest transition-colors flex items-center gap-3 cursor-pointer"
+            >
+              <svg className="w-4 h-4 text-[#fcd34d]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+              Edit Profile
+            </button>
+            <div className="h-px w-full bg-white/10 my-1"></div>
+            <button 
+              onClick={() => { alert('Logging out...'); setIsProfileDropdownOpen(false); }} 
+              className="px-6 py-3 text-left text-red-400 hover:text-white hover:bg-red-500/20 font-bold text-xs uppercase tracking-widest transition-colors flex items-center gap-3 cursor-pointer"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+              Log Out
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* PROFILE EDIT MODAL */}
       {isProfileModalOpen && (
         <div className="fixed inset-0 z-[400] flex items-center justify-center bg-black/80 backdrop-blur-md px-4 animate-fade-in font-montserrat">
@@ -1846,36 +1873,8 @@ const FinancesPage = () => {
       {/* SIDEBAR NAVIGATION */}
       <div className="fixed top-0 left-0 bottom-0 w-28 border-r border-white/10 bg-[#070b19]/80 backdrop-blur-2xl flex flex-col items-center py-10 gap-6 shrink-0 z-[150] shadow-2xl overflow-y-auto custom-scrollbar">
         
-        {/* PROFILE BUTTON WITH DROPDOWN */}
-        <div>
-          <NavIconBtn isProfile avatarUrl={adminProfile.avatarUrl} onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)} />
-          
-          {isProfileDropdownOpen && (
-            <>
-              {/* Invisible backdrop with a very high z-index to capture outside clicks */}
-              <div className="fixed inset-0 z-[200]" onClick={() => setIsProfileDropdownOpen(false)}></div>
-              
-              {/* Fixed positioning breaks it out of the sidebar's overflow mask */}
-              <div className="fixed left-32 top-10 w-48 bg-[#08203e]/95 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl z-[250] flex flex-col py-2 overflow-hidden animate-fade-in">
-                <button 
-                  onClick={() => { setIsProfileModalOpen(true); setIsProfileDropdownOpen(false); }} 
-                  className="px-6 py-3 text-left text-white/80 hover:text-white hover:bg-white/10 font-bold text-xs uppercase tracking-widest transition-colors flex items-center gap-3"
-                >
-                  <svg className="w-4 h-4 text-[#fcd34d]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                  Edit Profile
-                </button>
-                <div className="h-px w-full bg-white/10 my-1"></div>
-                <button 
-                  onClick={() => { alert('Logging out...'); setIsProfileDropdownOpen(false); }} 
-                  className="px-6 py-3 text-left text-red-400 hover:text-white hover:bg-red-500/20 font-bold text-xs uppercase tracking-widest transition-colors flex items-center gap-3"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-                  Log Out
-                </button>
-              </div>
-            </>
-          )}
-        </div>
+        {/* PROFILE BUTTON */}
+        <NavIconBtn isProfile avatarUrl={adminProfile.avatarUrl} onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)} />
         
         <div className="w-12 h-px bg-white/10 my-2 shrink-0"></div>
         <NavIconBtn iconUrl={navIcons.accounts} active={activeModule === 'ACCOUNTS'} onClick={() => { setActiveModule('ACCOUNTS'); setAccountsView('OVERVIEW'); }} />
