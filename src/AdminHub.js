@@ -457,12 +457,12 @@ const navIcons = {
   settings: "https://i.postimg.cc/cLwZTVyP/1(9).png"
 };
 
-const NavIconBtn = ({ iconUrl, active, onClick, hasNotification, isProfile }) => (
+const NavIconBtn = ({ iconUrl, active, onClick, hasNotification, isProfile, avatarUrl }) => (
   <button onClick={onClick} className={`relative w-14 h-14 md:w-16 md:h-16 flex items-center justify-center rounded-2xl transition-all ${active ? 'bg-white/10 border border-white/20 shadow-inner' : 'hover:bg-white/5 border border-transparent'}`}>
     {hasNotification && <div className="absolute top-3 right-3 w-2.5 h-2.5 bg-red-500 rounded-full border border-[#070b19] z-10 animate-pulse"></div>}
     {isProfile ? (
       <div className="w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden border-2 border-white/50 bg-gray-300">
-        <img src="https://i.pravatar.cc/150?img=32" alt="Admin" className="w-full h-full object-cover" />
+        <img src={avatarUrl || "https://i.pravatar.cc/150?img=32"} alt="Admin" className="w-full h-full object-cover" />
       </div>
     ) : (
       <img src={iconUrl} alt="Nav Icon" className={`w-8 h-8 md:w-9 md:h-9 object-contain transition-all duration-300 ${active ? 'opacity-100 scale-110 drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]' : 'opacity-50 grayscale hover:grayscale-0 hover:opacity-80'}`} />
@@ -476,6 +476,17 @@ const NavIconBtn = ({ iconUrl, active, onClick, hasNotification, isProfile }) =>
 const AdminHub = () => {
   const [activeModule, setActiveModule] = useState('ACCOUNTS');
   const [accountsView, setAccountsView] = useState('OVERVIEW');
+  
+  // Profile Settings State
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [adminProfile, setAdminProfile] = useState({
+    firstName: 'Jesus',
+    lastName: 'Sequea',
+    role: 'Admin',
+    password: '••••••••',
+    avatarUrl: ''
+  });
 
   const [directoryTab, setDirectoryTab] = useState('students');
   const [directoryUsers, setDirectoryUsers] = useState([]);
@@ -1754,9 +1765,61 @@ const FinancesPage = () => {
         }
       `}</style>
 
+      {/* PROFILE EDIT MODAL */}
+      {isProfileModalOpen && (
+        <div className="fixed inset-0 z-[400] flex items-center justify-center bg-black/80 backdrop-blur-md px-4 animate-fade-in font-montserrat">
+          <div className="bg-[#070b19]/95 border border-[#fcd34d]/30 rounded-[2rem] p-8 max-w-lg w-full shadow-[0_0_40px_rgba(252,211,77,0.15)] relative flex flex-col">
+            <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4 shrink-0">
+              <div>
+                <h2 className="text-2xl font-black text-white uppercase tracking-widest">My Profile</h2>
+                <p className="text-[10px] text-[#fcd34d] font-bold uppercase tracking-widest mt-1">Admin Settings</p>
+              </div>
+              <button onClick={() => setIsProfileModalOpen(false)} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/50 hover:bg-white/10 hover:text-white transition-all">✕</button>
+            </div>
+
+            <div className="flex flex-col gap-6">
+              <div className="flex gap-4 items-center border-b border-white/10 pb-6">
+                <div className="w-20 h-20 rounded-full border-2 border-[#fcd34d] overflow-hidden bg-black/40 flex items-center justify-center shrink-0 shadow-lg">
+                  <img src={adminProfile.avatarUrl || "https://i.pravatar.cc/150?img=32"} alt="Profile" className="w-full h-full object-cover" />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-[10px] text-[#fcd34d] font-bold uppercase mb-1">Avatar URL</label>
+                  <input type="text" value={adminProfile.avatarUrl} onChange={e => setAdminProfile({...adminProfile, avatarUrl: e.target.value})} placeholder="Paste image link..." className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2 text-white text-sm outline-none focus:border-[#fcd34d]" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">First Name</label>
+                  <input type="text" value={adminProfile.firstName} onChange={e => setAdminProfile({...adminProfile, firstName: e.target.value})} className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-[#fcd34d]" />
+                </div>
+                <div>
+                  <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Last Name</label>
+                  <input type="text" value={adminProfile.lastName} onChange={e => setAdminProfile({...adminProfile, lastName: e.target.value})} className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-[#fcd34d]" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Company Status</label>
+                  <input type="text" value={adminProfile.role} disabled className="w-full bg-white/5 border border-transparent rounded-xl px-3 py-2.5 text-white/50 text-sm cursor-not-allowed font-bold" />
+                </div>
+                <div>
+                  <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Password</label>
+                  <input type="password" value={adminProfile.password} onChange={e => setAdminProfile({...adminProfile, password: e.target.value})} className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-[#fcd34d]" />
+                </div>
+              </div>
+              
+              <button onClick={() => { setIsProfileModalOpen(false); alert('Profile settings saved successfully.'); }} className="w-full mt-4 py-4 bg-[#fcd34d] hover:bg-white text-[#08203e] font-black tracking-widest text-xs uppercase rounded-xl transition-all shadow-[0_0_20px_rgba(252,211,77,0.3)] hover:scale-[1.02]">
+                Save Profile
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {isProvisioningModalOpen && (
         <ProvisioningModal 
-          isOpen={isProvisioningModalOpen} 
           onClose={() => setIsProvisioningModalOpen(false)} 
           supabase={supabase} 
           onSuccess={() => fetchDirectory(directoryTab)} 
@@ -1782,7 +1845,35 @@ const FinancesPage = () => {
 
       {/* SIDEBAR NAVIGATION */}
       <div className="fixed top-0 left-0 bottom-0 w-28 border-r border-white/10 bg-[#070b19]/80 backdrop-blur-2xl flex flex-col items-center py-10 gap-6 shrink-0 z-[150] shadow-2xl overflow-y-auto custom-scrollbar">
-        <NavIconBtn isProfile />
+        
+        {/* PROFILE BUTTON WITH DROPDOWN */}
+        <div className="relative">
+          <NavIconBtn isProfile avatarUrl={adminProfile.avatarUrl} onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)} />
+          
+          {isProfileDropdownOpen && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setIsProfileDropdownOpen(false)}></div>
+              <div className="absolute left-20 top-0 w-48 bg-[#08203e]/95 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl z-50 flex flex-col py-2 overflow-hidden animate-fade-in">
+                <button 
+                  onClick={() => { setIsProfileModalOpen(true); setIsProfileDropdownOpen(false); }} 
+                  className="px-6 py-3 text-left text-white/80 hover:text-white hover:bg-white/10 font-bold text-xs uppercase tracking-widest transition-colors flex items-center gap-3"
+                >
+                  <svg className="w-4 h-4 text-[#fcd34d]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                  Edit Profile
+                </button>
+                <div className="h-px w-full bg-white/10 my-1"></div>
+                <button 
+                  onClick={() => { alert('Logging out...'); setIsProfileDropdownOpen(false); }} 
+                  className="px-6 py-3 text-left text-red-400 hover:text-white hover:bg-red-500/20 font-bold text-xs uppercase tracking-widest transition-colors flex items-center gap-3"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                  Log Out
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+        
         <div className="w-12 h-px bg-white/10 my-2 shrink-0"></div>
         <NavIconBtn iconUrl={navIcons.accounts} active={activeModule === 'ACCOUNTS'} onClick={() => { setActiveModule('ACCOUNTS'); setAccountsView('OVERVIEW'); }} />
         <NavIconBtn iconUrl={navIcons.calendar} active={activeModule === 'CALENDARS'} onClick={() => setActiveModule('CALENDARS')} />
