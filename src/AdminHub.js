@@ -642,9 +642,16 @@ const EvaluatorModule = ({ onBack }) => {
 
         <div className="flex-1 bg-white/5 border border-white/10 backdrop-blur-xl rounded-[2rem] p-6 flex flex-col shadow-2xl overflow-hidden relative">
           <h3 className="text-sm font-black uppercase tracking-widest text-[#fcd34d] mb-4 shrink-0">Section 4: Paralinguistic Deductions</h3>
-          <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 flex flex-col gap-4">
-            {EVAL_DEDUCTIONS.map((cat, idx) => (
-              <div key={idx} className="bg-black/30 border border-white/10 rounded-xl p-4 shadow-inner">
+          
+          <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-2 flex flex-col gap-4 mb-4">
+            {[
+              { title: "1. Pronunciation & Phonology", items: [ { id: 'p1', label: "Unintelligible Sounds", val: 1 }, { id: 'p2', label: "Word Stress Errors", val: 1 }, { id: 'p3', label: "Severe Accent Interference", val: 2 } ] },
+              { title: "2. Fluency & Flow", items: [ { id: 'f1', label: "Excessive Fillers (um/uh/like)", val: 1 }, { id: 'f2', label: "Unnatural Pausing Patterns", val: 1 }, { id: 'f3', label: "Fragmented Thought Streams", val: 2 } ] },
+              { title: "3. Intonation & Prosody", items: [ { id: 'i1', label: "Monotone Delivery Profile", val: 1 }, { id: 'i2', label: "Question/Statement Confusion", val: 1 }, { id: 'i3', label: "Syllable-Timed Robotic Rhythm", val: 2 } ] },
+              { title: "4. Grammatical & Lexical Precision", items: [ { id: 'g1', label: "Explicit Vocabulary Search Fatigue", val: 1 }, { id: 'g2', label: "Basic Agreement Slips (he/she/s)", val: 1 }, { id: 'g3', label: "Severe Lexical Range Deficit", val: 2 } ] },
+              { title: "5. Strategic Competence", items: [ { id: 's1', label: "Complete Lack of Self-Correction", val: 1 }, { id: 's2', label: "Inability to Circumlocute", val: 1 }, { id: 's3', label: "Cohesion Failure / Lost Thread", val: 2 } ] }
+            ].map((cat, idx) => (
+              <div key={idx} className="bg-black/30 border border-white/10 rounded-xl p-4 shadow-inner shrink-0">
                 <div className="text-xs font-black text-white border-b border-white/10 pb-2 mb-3 tracking-wide">{cat.title}</div>
                 <div className="flex flex-col gap-2.5">
                   {cat.items.map(item => (
