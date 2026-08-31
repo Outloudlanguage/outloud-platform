@@ -1022,7 +1022,7 @@ useEffect(() => {
         .select('*').order('created_at', { ascending: true }).limit(150);
       if (data) {
         setChatMessages({
-          student: data.filter(m => m.channel === 'STUDENT'),
+          student: data.filter(m => m.channel !== 'STAFF'),
           staff: data.filter(m => m.channel === 'STAFF')
         });
         setTimeout(() => chatEndRefStudent.current?.scrollIntoView({ behavior: 'smooth' }), 100);
@@ -1034,7 +1034,7 @@ useEffect(() => {
     const chatChannel = supabase.channel('admin_chat_monitor')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
         const newMsg = payload.new;
-        if (newMsg.channel === 'STUDENT') {
+        if (newMsg.channel !== 'STAFF') {
           setChatMessages(p => ({ ...p, student: [...p.student, newMsg] }));
           setTimeout(() => chatEndRefStudent.current?.scrollIntoView({ behavior: 'smooth' }), 100);
         } else if (newMsg.channel === 'STAFF') {
@@ -1492,7 +1492,7 @@ const renderAccounts = () => (
 
 
 const renderCommunications = () => (
-    <div className="flex flex-col w-full max-w-[1500px] h-[calc(100vh-160px)] animate-fade-in relative z-10">
+    <div className="flex flex-col w-full max-w-[1500px] min-h-[85vh] animate-fade-in relative z-10">
       
       {/* Sub Navigation */}
       <div className="flex bg-white/5 backdrop-blur-xl rounded-full p-2 mb-8 shadow-2xl w-fit mx-auto border border-white/10 overflow-x-auto max-w-full relative z-20">
@@ -1580,7 +1580,7 @@ const renderCommunications = () => (
       {/* CHAT MODERATOR VIEW                     */}
       {/* ======================================= */}
       {activeCommsTab === 'Chat' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 flex-1 min-h-0">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 flex-1 min-h-[600px]">
           
           {/* Students Panel */}
           <div className="relative border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col h-full group">
@@ -1605,20 +1605,21 @@ const renderCommunications = () => (
             </div>
 
             <div className="flex-1 p-6 overflow-y-auto custom-scrollbar flex flex-col gap-6 z-10">
-              {chatMessages.student.length === 0 ? (
+              {chatMessages.student.filter(m => chatFilters.student === 'ALL' || m.channel === chatFilters.student || m.channel === 'GLOBAL').length === 0 ? (
                 <div className="h-full flex items-center justify-center"><span className="text-white/40 font-bold uppercase tracking-widest text-xs">Waiting for live messages...</span></div>
               ) : (
-                chatMessages.student.map(msg => {
+                chatMessages.student.filter(m => chatFilters.student === 'ALL' || m.channel === chatFilters.student || m.channel === 'GLOBAL').map(msg => {
                   const isAdmin = msg.sender_role?.includes('Admin');
                   const isTeacher = msg.sender_role === 'Teacher';
                   return (
                     <div key={msg.id} className={`group bg-[#4b6bfb]/20 backdrop-blur-md rounded-3xl p-5 border w-[85%] relative mt-2 ${isAdmin ? 'border-[#fcd34d] bg-[#fcd34d]/10 ml-auto' : isTeacher ? 'border-emerald-400/50 bg-emerald-500/10' : 'border-blue-400/30 ml-4'}`}>
                       <button onClick={() => handleDeleteChatMessage(msg.id)} className="absolute -top-3 -right-3 w-8 h-8 bg-red-500 text-white rounded-full text-xs font-black opacity-0 group-hover:opacity-100 transition-opacity z-20 shadow-xl cursor-pointer hover:scale-110">✕</button>
-                      <img src={`https://ui-avatars.com/api/?name=${msg.sender_name}&background=random`} className="absolute -left-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full border-2 border-white object-cover shadow-lg" alt="User" />
+                      <img src={msg.avatar_url || `https://ui-avatars.com/api/?name=${msg.sender_name}&background=random`} className={`absolute -left-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full border-2 object-cover shadow-lg ${isAdmin ? 'border-[#fcd34d]' : 'border-white'}`} alt="User" />
                       <div className="pl-6">
                         <div className="flex items-center gap-2 mb-1">
                           <span className={`font-black text-[11px] uppercase tracking-widest ${isAdmin ? 'text-[#fcd34d]' : 'text-white'}`}>{msg.sender_name}</span>
                           <span className={`text-[8px] font-black px-2 py-0.5 rounded uppercase ${isAdmin ? 'bg-red-500 text-white' : isTeacher ? 'bg-emerald-500 text-white' : 'bg-[#fcd34d] text-[#08203e]'}`}>{msg.sender_role}</span>
+                          <span className="text-white/40 text-[8px] font-bold ml-2">[{msg.channel}]</span>
                         </div>
                         <p className={`text-sm font-medium leading-relaxed ${msg.is_reported ? 'text-red-400 italic' : 'text-white/90'}`}>{msg.is_reported ? '⚠️ Mensaje Reportado: ' + msg.content : msg.content}</p>
                       </div>
@@ -2279,6 +2280,7 @@ const FinancesPage = () => {
 
       {isProvisioningModalOpen && (
         <ProvisioningModal 
+          isOpen={isProvisioningModalOpen}
           onClose={() => setIsProvisioningModalOpen(false)} 
           supabase={supabase} 
           onSuccess={() => fetchDirectory(directoryTab)} 
