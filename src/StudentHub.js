@@ -96,12 +96,17 @@ const MainActionCard = ({ title, iconType, isFetching, isActive, onClick, score 
   );
 };
 
-const PillButton = ({ title, hasNotification }) => (
-  <button className="relative w-full py-4 px-2 bg-white/10 backdrop-blur-md hover:bg-white/20 border border-white/20 rounded-xl text-center text-[10px] sm:text-xs text-white transition-all shadow-md active:scale-95">
+const PillButton = ({ title, hasNotification, isActive, onClick }) => (
+  <button 
+    onClick={onClick}
+    className={`relative w-full py-4 px-2 backdrop-blur-md rounded-xl text-center text-[10px] sm:text-xs transition-all shadow-md active:scale-95 border ${isActive ? 'bg-[#fcd34d] border-[#fcd34d] text-[#08203e] font-black scale-105' : 'bg-white/10 hover:bg-white/20 border-white/20 text-white'}`}
+  >
     {hasNotification && <div className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,1)]"></div>}
     {title}
   </button>
 );
+
+const INFO_CATEGORIES = ['Website Functionality', 'General Information', 'Academy Rules', 'Upcoming Events', 'Promos & Discounts', 'Financial Data'];
 
 const NavIconBtn = ({ iconSvg, active, onClick, hasNotification, isProfile, avatarUrl }) => (
   <button onClick={onClick} className={`relative w-14 h-14 md:w-16 md:h-16 flex items-center justify-center rounded-2xl transition-all ${active ? 'bg-white/20 border border-white/40 shadow-inner' : 'hover:bg-white/10 border border-transparent'}`}>
@@ -136,7 +141,8 @@ const navIcons = {
 // ==========================================
 // 2. DESKTOP VIEW
 // ==========================================
-const DesktopView = ({ student, onReturnHome, onStartActivity, isFetching, activeLiveSession }) => {
+const DesktopView = ({ student, onReturnHome, onStartActivity, isFetching, activeLiveSession, announcements = [], activeCategory, setActiveCategory }) => {
+  const filteredAnnouncements = activeCategory ? announcements.filter(a => a.category === activeCategory) : announcements;
   const currentUnit = Number(student?.unit) || 1;
   const totalUnits = 12; 
   let progressPercentage = Math.round((Math.max(0, currentUnit - 1) / totalUnits) * 100);
@@ -230,31 +236,36 @@ const DesktopView = ({ student, onReturnHome, onStartActivity, isFetching, activ
           {/* RIGHT COLUMN: Info Board & Feed */}
           <div className="col-span-5 flex flex-col gap-6 h-full bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] p-6 shadow-2xl overflow-hidden">
             <div className="grid grid-cols-3 gap-4 shrink-0">
-              <PillButton title="Website Functionality" />
-              <PillButton title="General Information" />
-              <PillButton title="Academy Rules" />
-              <PillButton title="Upcoming Events" />
-              <PillButton title="Promos & Discounts" />
-              <PillButton title="Financial Data" hasNotification />
+              {INFO_CATEGORIES.map(cat => (
+                <PillButton 
+                  key={cat} 
+                  title={cat} 
+                  isActive={activeCategory === cat} 
+                  onClick={() => setActiveCategory(activeCategory === cat ? null : cat)} 
+                />
+              ))}
             </div>
 
             <div className="flex-1 flex flex-col gap-4 mt-4 overflow-y-auto custom-scrollbar pr-2 pb-4">
-              {/* SOCIAL CLUB CARD */}
-              <div className="bg-white/10 border border-white/20 rounded-2xl p-4 flex items-center gap-4 hover:bg-white/20 transition-colors cursor-pointer">
-                <div className="w-24 h-24 rounded-xl overflow-hidden shrink-0 border border-white/30 shadow-md">
-                  <img src="https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&q=80&w=400" alt="Game Night" className="w-full h-full object-cover" />
+              {filteredAnnouncements.length === 0 ? (
+                <div className="text-center text-white/50 font-bold tracking-widest text-xs py-10 uppercase">
+                  No announcements to display.
                 </div>
-                <div className="flex flex-col">
-                  <h4 className="text-sm font-black uppercase tracking-widest mb-1 text-white drop-shadow-sm">Social Club: Game Night</h4>
-                  <p className="text-[10px] text-white/80 leading-relaxed font-medium">We're happy to announce that very soon we will be hosting our live game-night. Don't miss it, check out the calendar, look for the green box and claim your spot.</p>
-                </div>
-              </div>
-
-              {/* FORUM BANNER */}
-              <div className="bg-white/10 border border-white/20 rounded-2xl p-5 hover:bg-white/20 transition-colors cursor-pointer text-center">
-                <h4 className="text-sm font-black uppercase tracking-widest mb-2 text-white drop-shadow-sm">Did you check the open forum?</h4>
-                <p className="text-[10px] text-white/80 leading-relaxed font-medium">The latest post on the open forum is already being commented on. Everyone is waiting for you to share your opinion; go and see it for yourself, and remember, be friendly to everyone. Happy posting!</p>
-              </div>
+              ) : (
+                filteredAnnouncements.map(ann => (
+                  <div key={ann.id} className="bg-white/10 border border-white/20 rounded-2xl p-4 md:p-5 flex flex-col sm:flex-row items-center gap-4 hover:bg-white/20 transition-colors shadow-md">
+                    {ann.image_url && (
+                      <div className="w-full sm:w-24 h-32 sm:h-24 rounded-xl overflow-hidden shrink-0 border border-white/30 shadow-sm">
+                        <img src={ann.image_url} alt="Cover" className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                    <div className="flex flex-col text-center sm:text-left w-full">
+                      <h4 className="text-sm font-black uppercase tracking-widest mb-1 text-white drop-shadow-sm">{ann.title}</h4>
+                      <p className="text-[10px] md:text-xs text-white/80 leading-relaxed font-medium whitespace-pre-wrap">{ann.content}</p>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
@@ -267,7 +278,8 @@ const DesktopView = ({ student, onReturnHome, onStartActivity, isFetching, activ
 // ==========================================
 // 3. MOBILE VIEW
 // ==========================================
-const MobileView = ({ student, onReturnHome, onStartActivity, isFetching, activeLiveSession }) => {
+const MobileView = ({ student, onReturnHome, onStartActivity, isFetching, activeLiveSession, announcements = [], activeCategory, setActiveCategory }) => {
+  const filteredAnnouncements = activeCategory ? announcements.filter(a => a.category === activeCategory) : announcements;
   const currentUnit = Number(student?.unit) || 1;
   const totalUnits = 12; 
   let progressPercentage = Math.round((Math.max(0, currentUnit - 1) / totalUnits) * 100);
@@ -322,29 +334,36 @@ const MobileView = ({ student, onReturnHome, onStartActivity, isFetching, active
         <div className="flex flex-col gap-4 bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] p-4 shadow-2xl mt-2 sm:mt-4">
           {/* PILLS */}
           <div className="grid grid-cols-2 gap-2 sm:gap-3">
-            <PillButton title="Website Functionality" />
-            <PillButton title="General Information" />
-            <PillButton title="Upcoming Events" />
-            <PillButton title="Promos & Discounts" />
-            <PillButton title="Academy Rules" />
-            <PillButton title="Financial Data" hasNotification />
+            {INFO_CATEGORIES.map(cat => (
+              <PillButton 
+                key={cat} 
+                title={cat} 
+                isActive={activeCategory === cat} 
+                onClick={() => setActiveCategory(activeCategory === cat ? null : cat)} 
+              />
+            ))}
           </div>
 
-          {/* SOCIAL CLUB CARD */}
-          <div className="bg-white/10 border border-white/20 rounded-2xl p-4 flex flex-col sm:flex-row items-center gap-4 mt-2">
-            <div className="w-full sm:w-24 h-32 sm:h-24 rounded-xl overflow-hidden shrink-0 border border-white/30">
-              <img src="https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&q=80&w=400" alt="Game Night" className="w-full h-full object-cover" />
-            </div>
-            <div className="flex flex-col text-center sm:text-left">
-              <h4 className="text-sm font-black uppercase tracking-widest mb-1 text-white">Social Club: Game Night</h4>
-              <p className="text-[10px] text-white/80 leading-relaxed font-medium">We're happy to announce that very soon we will be hosting our live game-night. Don't miss it, check out the calendar.</p>
-            </div>
-          </div>
-
-          {/* FORUM BANNER */}
-          <div className="bg-white/10 border border-white/20 rounded-2xl p-5 text-center">
-            <h4 className="text-sm font-black uppercase tracking-widest mb-2 text-white">Did you check the open forum?</h4>
-            <p className="text-[10px] text-white/80 leading-relaxed font-medium">The latest post on the open forum is already being commented on. Everyone is waiting for you to share your opinion; go and see it for yourself!</p>
+          <div className="flex flex-col gap-4 mt-2">
+            {filteredAnnouncements.length === 0 ? (
+              <div className="text-center text-white/50 font-bold tracking-widest text-xs py-6 uppercase">
+                No announcements to display.
+              </div>
+            ) : (
+              filteredAnnouncements.map(ann => (
+                <div key={ann.id} className="bg-white/10 border border-white/20 rounded-2xl p-4 flex flex-col sm:flex-row items-center gap-4 mt-2 hover:bg-white/20 transition-colors">
+                  {ann.image_url && (
+                    <div className="w-full sm:w-24 h-32 sm:h-24 rounded-xl overflow-hidden shrink-0 border border-white/30">
+                      <img src={ann.image_url} alt="Cover" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <div className="flex flex-col text-center sm:text-left">
+                    <h4 className="text-sm font-black uppercase tracking-widest mb-1 text-white">{ann.title}</h4>
+                    <p className="text-[10px] text-white/80 leading-relaxed font-medium whitespace-pre-wrap">{ann.content}</p>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
@@ -456,17 +475,26 @@ const StudentCalendar = ({ student, filterType, onConfirm, onCancel }) => {
 
   useEffect(() => {
     const fetchAvailability = async () => {
+      if (!student) return;
+
+      // Extracts "A1" from "A1: Básico 1" to match standard calendar formats
+      const baseLevel = student.level ? student.level.split(':')[0].trim() : 'A1';
+
       const { data, error } = await supabase
         .from('live_sessions')
         .select('*')
-        .eq('status', 'available');
+        .eq('status', 'available')
+        .eq('class_type', filterType) // Only shows the specific class they clicked (e.g., Live Lab, Tutoring)
+        .eq('level', baseLevel)       // Strictly matches their current CEFR level
+        .eq('unit', student.unit || 1); // Strictly matches their current unit
         
       if (!error && data) {
         setAvailableSlots(data);
       }
     };
+    
     fetchAvailability();
-  }, []);
+  }, [student, filterType]);
 
   const getWeekDates = (offsetWeeks) => {
     const today = new Date();
@@ -629,12 +657,31 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
   // Community Panel State
   const [showCommunity, setShowCommunity] = useState(false);
   const [communityTab, setCommunityTab] = useState('CHAT');
+  
+  const [announcements, setAnnouncements] = useState([]);
+  const [activeCategory, setActiveCategory] = useState(null);
+
+  const fetchAnnouncements = async (levelFullStr) => {
+    if (!levelFullStr) return;
+    const levelCode = levelFullStr.split(':')[0].trim();
+    try {
+      const { data, error } = await supabase
+        .from('announcements')
+        .select('*')
+        .or(`audience.eq.EVERYONE_WITH_STAFF,audience.eq.LEVEL_${levelCode}`)
+        .order('created_at', { ascending: false });
+      if (!error && data) setAnnouncements(data);
+    } catch (err) {
+      console.error("Error fetching announcements:", err);
+    }
+  };
 
   useEffect(() => {
     if (preloadedStudent) {
       setStudentData(preloadedStudent);
       setLoading(false);
       fetchUpcomingSession(preloadedStudent.id);
+      fetchAnnouncements(preloadedStudent.level);
     } else {
       fetchStudentProfile();
     }
@@ -647,6 +694,7 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
       const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
       setStudentData(profile);
       fetchUpcomingSession(profile.id);
+      fetchAnnouncements(profile.level);
     } catch (err) {
       console.error("Error loading student profile:", err);
     } finally {
@@ -790,10 +838,16 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
       )}
       
       <div className="hidden md:block">
-        <DesktopView student={studentData} onReturnHome={onReturnHome} onStartActivity={handleStartActivity} isFetching={isFetching} activeLiveSession={activeLiveSession} />
+        <DesktopView 
+          student={studentData} onReturnHome={onReturnHome} onStartActivity={handleStartActivity} isFetching={isFetching} activeLiveSession={activeLiveSession} 
+          announcements={announcements} activeCategory={activeCategory} setActiveCategory={setActiveCategory}
+        />
       </div>
       <div className="block md:hidden">
-        <MobileView student={studentData} onReturnHome={onReturnHome} onStartActivity={handleStartActivity} isFetching={isFetching} activeLiveSession={activeLiveSession} />
+        <MobileView 
+          student={studentData} onReturnHome={onReturnHome} onStartActivity={handleStartActivity} isFetching={isFetching} activeLiveSession={activeLiveSession} 
+          announcements={announcements} activeCategory={activeCategory} setActiveCategory={setActiveCategory}
+        />
       </div>
     </>
   );
