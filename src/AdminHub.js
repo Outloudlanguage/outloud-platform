@@ -461,8 +461,12 @@ const NavIconBtn = ({ iconUrl, active, onClick, hasNotification, isProfile, avat
   <button onClick={onClick} className={`relative w-14 h-14 md:w-16 md:h-16 flex items-center justify-center rounded-2xl transition-all ${active ? 'bg-white/10 border border-white/20 shadow-inner' : 'hover:bg-white/5 border border-transparent'}`}>
     {hasNotification && <div className="absolute top-3 right-3 w-2.5 h-2.5 bg-red-500 rounded-full border border-[#070b19] z-10 animate-pulse"></div>}
     {isProfile ? (
-      <div className="w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden border-2 border-white/50 bg-gray-300">
-        <img src={avatarUrl || "https://i.pravatar.cc/150?img=32"} alt="Admin" className="w-full h-full object-cover" />
+      <div className="w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden border-2 border-white/50 bg-black/40 flex items-center justify-center">
+        {avatarUrl ? (
+          <img src={avatarUrl} alt="Admin" className="w-full h-full object-cover" />
+        ) : (
+          <svg className="w-6 h-6 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+        )}
       </div>
     ) : (
       <img src={iconUrl} alt="Nav Icon" className={`w-8 h-8 md:w-9 md:h-9 object-contain transition-all duration-300 ${active ? 'opacity-100 scale-110 drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]' : 'opacity-50 grayscale hover:grayscale-0 hover:opacity-80'}`} />
@@ -480,13 +484,65 @@ const AdminHub = () => {
   // Profile Settings State
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [adminProfile, setAdminProfile] = useState({
-    firstName: 'Jesus',
-    lastName: 'Sequea',
+    id: null,
+    firstName: '',
+    lastName: '',
     role: 'Admin',
     password: '••••••••',
     avatarUrl: ''
   });
+
+  // Fetch true admin data on load
+  useEffect(() => {
+    const loadMyProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+        if (data) {
+          setAdminProfile({
+            id: user.id,
+            firstName: data.first_name || '',
+            lastName: data.last_name || '',
+            role: data.role || 'Admin',
+            password: '••••••••', // Masked for security
+            avatarUrl: data.avatar_url || ''
+          });
+        }
+      }
+    };
+    loadMyProfile();
+  }, []);
+
+  // Write changes permanently to Supabase
+  const handleSaveAdminProfile = async () => {
+    if (!adminProfile.id) return alert("Error: No active user session found.");
+    setIsSavingProfile(true);
+    try {
+      const updates = {
+        first_name: adminProfile.firstName.trim(),
+        last_name: adminProfile.lastName.trim(),
+        avatar_url: adminProfile.avatarUrl.trim() || null
+      };
+      
+      // Update the password in profiles if changed
+      if (adminProfile.password !== '••••••••' && adminProfile.password.trim() !== '') {
+        updates.assigned_password = adminProfile.password.trim();
+      }
+      
+      const { error } = await supabase.from('profiles').update(updates).eq('id', adminProfile.id);
+      if (error) throw error;
+      
+      alert('Profile settings saved permanently!');
+      setIsProfileModalOpen(false);
+    } catch (err) {
+      console.error(err);
+      alert("Error saving profile: " + err.message);
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
 
   const [directoryTab, setDirectoryTab] = useState('students');
   const [directoryUsers, setDirectoryUsers] = useState([]);
@@ -1807,7 +1863,11 @@ const FinancesPage = () => {
             <div className="flex flex-col gap-6">
               <div className="flex gap-4 items-center border-b border-white/10 pb-6">
                 <div className="w-20 h-20 rounded-full border-2 border-[#fcd34d] overflow-hidden bg-black/40 flex items-center justify-center shrink-0 shadow-lg">
-                  <img src={adminProfile.avatarUrl || "https://i.pravatar.cc/150?img=32"} alt="Profile" className="w-full h-full object-cover" />
+                  {adminProfile.avatarUrl ? (
+                    <img src={adminProfile.avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    <svg className="w-10 h-10 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                  )}
                 </div>
                 <div className="flex-1">
                   <label className="block text-[10px] text-[#fcd34d] font-bold uppercase mb-1">Avatar URL</label>
@@ -1837,8 +1897,8 @@ const FinancesPage = () => {
                 </div>
               </div>
               
-              <button onClick={() => { setIsProfileModalOpen(false); alert('Profile settings saved successfully.'); }} className="w-full mt-4 py-4 bg-[#fcd34d] hover:bg-white text-[#08203e] font-black tracking-widest text-xs uppercase rounded-xl transition-all shadow-[0_0_20px_rgba(252,211,77,0.3)] hover:scale-[1.02]">
-                Save Profile
+              <button onClick={handleSaveAdminProfile} disabled={isSavingProfile} className="w-full mt-4 py-4 bg-[#fcd34d] hover:bg-white text-[#08203e] font-black tracking-widest text-xs uppercase rounded-xl transition-all shadow-[0_0_20px_rgba(252,211,77,0.3)] hover:scale-[1.02] disabled:opacity-50">
+                {isSavingProfile ? 'SAVING...' : 'SAVE PROFILE'}
               </button>
             </div>
           </div>
