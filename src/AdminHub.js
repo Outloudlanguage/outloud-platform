@@ -574,7 +574,6 @@ const EvaluatorModule = ({ onBack }) => {
           </div>
         </div>
         
-        {/* LIST VIEW CLIPPING MASK FIX */}
         <div className="flex-1 relative rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl flex flex-col">
           <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
           <div className="relative w-full h-full flex flex-col p-8 overflow-y-auto custom-scrollbar">
@@ -625,7 +624,7 @@ const EvaluatorModule = ({ onBack }) => {
       </div>
 
       <div className="flex gap-6 flex-1 min-h-0">
-        {/* LEFT PANEL CLIPPING MASK FIX */}
+        {/* LEFT PANEL: QUESTIONS */}
         <div className="flex-[1.4] relative rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl flex flex-col">
           <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
           <div className="relative w-full h-full flex flex-col p-6 min-h-0">
@@ -655,30 +654,38 @@ const EvaluatorModule = ({ onBack }) => {
           </div>
         </div>
 
-        {/* RIGHT PANEL CLIPPING MASK FIX */}
-        <div className="flex-1 relative rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl flex flex-col">
-          <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
-          <div className="relative w-full h-full flex flex-col p-6 min-h-0">
-            <h3 className="text-sm font-black uppercase tracking-widest text-[#fcd34d] mb-4 shrink-0 relative z-10">Section 4: Paralinguistic Deductions</h3>
-            
-            <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-2 flex flex-col gap-4 mb-4 relative z-10">
-              {PARALINGUISTIC_DATA.map((cat, idx) => (
-                <div key={idx} className="bg-black/30 border border-white/10 rounded-xl p-4 shadow-inner shrink-0">
-                  <div className="text-xs font-black text-white border-b border-white/10 pb-2 mb-3 tracking-wide">{cat.title}</div>
-                  <div className="flex flex-col gap-2.5">
-                    {cat.items.map(item => (
-                      <label key={item.id} className="flex items-center gap-3 cursor-pointer group">
-                        <input type="checkbox" checked={deductions[item.id] || false} onChange={(e) => setDeductions(prev => ({...prev, [item.id]: e.target.checked}))} className="w-4 h-4 rounded border-white/20 bg-black/40 text-red-500 focus:ring-red-500 focus:ring-offset-0 cursor-pointer" />
-                        <span className="text-xs font-medium text-white/80 group-hover:text-white transition-colors">{item.label}</span>
-                        <span className="ml-auto text-xs font-black text-red-400 bg-red-500/10 px-2 py-0.5 rounded">-{item.val}</span>
-                      </label>
-                    ))}
+        {/* RIGHT PANEL: SPLIT STACK */}
+        <div className="flex-1 flex flex-col gap-6 min-h-0">
+          
+          {/* TOP: CHECKLIST CONTAINER */}
+          <div className="flex-1 relative rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl flex flex-col min-h-0">
+            <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
+            <div className="relative w-full h-full flex flex-col p-6 min-h-0">
+              <h3 className="text-sm font-black uppercase tracking-widest text-[#fcd34d] mb-4 shrink-0">Section 4: Paralinguistic Deductions</h3>
+              
+              <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-2 flex flex-col gap-4">
+                {PARALINGUISTIC_DATA.map((cat, idx) => (
+                  <div key={idx} className="bg-black/30 border border-white/10 rounded-xl p-4 shadow-inner shrink-0">
+                    <div className="text-xs font-black text-white border-b border-white/10 pb-2 mb-3 tracking-wide">{cat.title}</div>
+                    <div className="flex flex-col gap-2.5">
+                      {cat.items.map(item => (
+                        <label key={item.id} className="flex items-center gap-3 cursor-pointer group">
+                          <input type="checkbox" checked={deductions[item.id] || false} onChange={(e) => setDeductions(prev => ({...prev, [item.id]: e.target.checked}))} className="w-4 h-4 rounded border-white/20 bg-black/40 text-red-500 focus:ring-red-500 focus:ring-offset-0 cursor-pointer" />
+                          <span className="text-xs font-medium text-white/80 group-hover:text-white transition-colors">{item.label}</span>
+                          <span className="ml-auto text-xs font-black text-red-400 bg-red-500/10 px-2 py-0.5 rounded">-{item.val}</span>
+                        </label>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
+          </div>
 
-            <div className="shrink-0 bg-[#08203e] border-2 border-[#fcd34d] rounded-[1.5rem] p-6 text-center shadow-2xl flex flex-col items-center relative z-10">
+          {/* BOTTOM: FINAL SCORE CONTAINER */}
+          <div className="shrink-0 relative rounded-[2rem] border-2 border-[#fcd34d] overflow-hidden shadow-2xl flex flex-col">
+            <div className="absolute -inset-4 bg-[#08203e]/90 backdrop-blur-xl -z-10" />
+            <div className="relative w-full flex flex-col p-6 items-center text-center z-10">
               <div className="text-[10px] font-black uppercase tracking-widest text-white/50 mb-1">Final CEFR Placement Score</div>
               <div className="flex items-baseline gap-2 mb-2">
                 <div className="text-5xl font-black text-white drop-shadow-md">{finalScore100}</div>
@@ -689,7 +696,7 @@ const EvaluatorModule = ({ onBack }) => {
                 <span>+</span>
                 <span>Oral: {oralScore}</span>
               </div>
-              <div className={`text-sm font-black uppercase tracking-widest ${profileData.color} bg-black/40 px-4 py-2 rounded-lg w-full`}>
+              <div className={`text-sm font-black uppercase tracking-widest ${profileData.color} bg-black/40 px-4 py-2 rounded-lg w-full shadow-inner`}>
                 {profileData.tier}
               </div>
               <button onClick={() => alert(`Assigned ${selectedCandidate.name} to level ${profileData.tier}`)} className="w-full mt-4 bg-emerald-500 hover:bg-emerald-400 text-white font-black text-xs py-3 rounded-xl uppercase tracking-widest transition-colors shadow-lg cursor-pointer">
@@ -697,6 +704,7 @@ const EvaluatorModule = ({ onBack }) => {
               </button>
             </div>
           </div>
+
         </div>
       </div>
     </div>
