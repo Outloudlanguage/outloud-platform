@@ -27,13 +27,13 @@ import ProfitMarginAnalysis from './statistics_engines/ProfitMarginAnalysis';
 // ==========================================
 // DEDICATED PROVISIONING MODAL
 // ==========================================
-const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess }) => {
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
+const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess, initialData }) => {
+  const [firstName, setFirstName] = useState(initialData?.firstName || '');
+  const [lastName, setLastName] = useState(initialData?.lastName || '');
+  const [email, setEmail] = useState(initialData?.email || '');
   const [password, setPassword] = useState('');
-  const [phone, setPhone] = useState('');
-  const [role, setRole] = useState('Student');
+  const [phone, setPhone] = useState(initialData?.phone || '');
+  const [role, setRole] = useState(initialData?.role || 'Student');
   const [isProcessing, setIsProcessing] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState('');
 
@@ -524,64 +524,25 @@ const EVAL_DEDUCTIONS = [
   { title: "5. Strategic Competence", items: [ { id: 's1', label: "Complete Lack of Self-Correction", val: 1 }, { id: 's2', label: "Inability to Circumlocute", val: 1 }, { id: 's3', label: "Cohesion Failure / Lost Thread", val: 2 } ] }
 ];
 
-const EvaluatorModule = ({ onBack }) => {
-  // --- ASSESSMENT DATA ---
-  const EVAL_QUESTIONS = {
-    'A1-A2': [
-      { id: 1, text: "What is your name, and where do you live?" },
-      { id: 2, text: "Can you describe your typical morning routine?" },
-      { id: 3, text: "What is your favorite type of food, and why do you like it?" },
-      { id: 4, text: "Tell me about the members of your family or the people you live with." },
-      { id: 5, text: "What do you usually do on the weekends for fun?" },
-      { id: 6, text: "Describe the room you are in right now using at least five adjectives." },
-      { id: 7, text: "How was the weather yesterday, and how did it affect your plans?" },
-      { id: 8, text: "What is a skill you would like to learn in the future?" },
-      { id: 9, text: "Tell me about a place you visited recently that you enjoyed." },
-      { id: 10, text: "If you have a guest visiting your city for one day, where would you take them?" }
-    ],
-    'B1-B2': [
-      { id: 11, text: "Think of a project you recently completed. What was the most challenging part?" },
-      { id: 12, text: "How do you think technology has changed the way we communicate with our friends?" },
-      { id: 13, text: "If you could live in any other time period in history, which one would you choose?" },
-      { id: 14, text: "Describe a book or a movie that had a significant impact on your way of thinking." },
-      { id: 15, text: "In your opinion, what are the qualities of a good leader in a professional environment?" },
-      { id: 16, text: "If you were given an unlimited budget to start a small business, what would you create?" },
-      { id: 17, text: "How do you stay organized when you have many different tasks to handle at once?" },
-      { id: 18, text: "Do you prefer working in a team or working independently? Explain your preference." },
-      { id: 19, text: "What are the pros and cons of living in a large city versus a small rural town?" },
-      { id: 20, text: "Tell me about a time you had to solve a difficult problem. How did you approach it?" }
-    ],
-    'C1-C2': [
-      { id: 21, text: "To what extent do you believe that a person's language shapes their perception of reality?" },
-      { id: 22, text: "How should a society balance the need for public security with the right to individual privacy?" },
-      { id: 23, text: "Discuss the role of 'tradition' in a rapidly modernizing world. Is it a weight or an anchor?" },
-      { id: 24, text: "If you had to explain the concept of 'justice' to someone, what examples would you use?" },
-      { id: 25, text: "How does the rise of artificial intelligence challenge our traditional definitions of creativity?" },
-      { id: 26, text: "Analyze the impact of social media on the 'collective attention span' of the modern generation." },
-      { id: 27, text: "Some argue that travel narrows the mind rather than broadening it by reinforcing stereotypes. What is your take?" },
-      { id: 28, text: "Discuss the ethical implications of genetic engineering in the 21st century." },
-      { id: 29, text: "In literature or film, do you find 'flawed' protagonists more compelling than 'perfect' heroes? Why?" },
-      { id: 30, text: "If you could solve one global crisis instantly, which would it be, and what would the long-term consequences look like?" }
-    ]
-  };
-
-  const PARALINGUISTIC_DATA = [
-    { title: "1. Pronunciation & Phonology", items: [ { id: 'p1', label: "Unintelligible Sounds", val: 1 }, { id: 'p2', label: "Word Stress Errors", val: 1 }, { id: 'p3', label: "Severe Accent Interference", val: 2 } ] },
-    { title: "2. Fluency & Flow", items: [ { id: 'f1', label: "Excessive Fillers (um/uh/like)", val: 1 }, { id: 'f2', label: "Unnatural Pausing Patterns", val: 1 }, { id: 'f3', label: "Fragmented Thought Streams", val: 2 } ] },
-    { title: "3. Intonation & Prosody", items: [ { id: 'i1', label: "Monotone Delivery Profile", val: 1 }, { id: 'i2', label: "Question/Statement Confusion", val: 1 }, { id: 'i3', label: "Syllable-Timed Robotic Rhythm", val: 2 } ] },
-    { title: "4. Grammatical & Lexical Precision", items: [ { id: 'g1', label: "Explicit Vocabulary Search Fatigue", val: 1 }, { id: 'g2', label: "Basic Agreement Slips (he/she/s)", val: 1 }, { id: 'g3', label: "Severe Lexical Range Deficit", val: 2 } ] },
-    { title: "5. Strategic Competence", items: [ { id: 's1', label: "Complete Lack of Self-Correction", val: 1 }, { id: 's2', label: "Inability to Circumlocute", val: 1 }, { id: 's3', label: "Cohesion Failure / Lost Thread", val: 2 } ] }
-  ];
-
-  // --- STATE ---
-  const [selectedCandidate, setSelectedCandidate] = useState(null);
-  const [activeTab, setActiveTab] = useState('A1-A2');
-  const [qScores, setQScores] = useState(Array.from({ length: 30 }, (_, i) => i + 1).reduce((acc, curr) => ({ ...acc, [curr]: false }), {}));
+const EvaluatorModule = ({ onBack, onOnboard }) => {
+// ... 
   const [deductions, setDeductions] = useState({});
 
   const [candidates, setCandidates] = useState([]);
   const [isLoadingCandidates, setIsLoadingCandidates] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [viewingAnswers, setViewingAnswers] = useState(null);
+
+  const handleDeleteCandidate = async (id) => {
+    if (!window.confirm("Are you sure you want to permanently delete this assessment?")) return;
+    try {
+      await supabase.from('placement_assessments').delete().eq('id', id);
+      fetchCandidates();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete candidate.");
+    }
+  };
 
   const fetchCandidates = async () => {
     setIsLoadingCandidates(true);
@@ -600,6 +561,7 @@ const EvaluatorModule = ({ onBack }) => {
           phone: c.phone || 'N/A',
           email: c.email,
           writtenScore: c.written_score,
+          rawAnswers: c.raw_answers,
           date: new Date(c.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
         })));
       }
@@ -691,12 +653,29 @@ const EvaluatorModule = ({ onBack }) => {
                       <span>🗓️ {cand.date}</span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-6">
-                    <div className="text-right">
+                  <div className="flex items-center gap-4">
+                    <div className="text-right mr-2">
                       <p className="text-[10px] font-black uppercase text-white/40 tracking-widest">Written Score</p>
-                      <p className="text-xl font-black text-emerald-400">{cand.writtenScore} <span className="text-sm text-white/40">/ 50</span></p>
+                      <p className="text-xl font-black text-emerald-400 leading-none">{cand.writtenScore} <span className="text-sm text-white/40">/ 50</span></p>
                     </div>
-                    <button onClick={() => setSelectedCandidate(cand)} className="bg-[#fcd34d] text-[#08203e] px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-transform shadow-lg">Evaluate</button>
+                    
+                    <button onClick={(e) => { e.stopPropagation(); setViewingAnswers(cand); }} className="w-10 h-10 rounded-full bg-white/10 hover:bg-blue-500 text-white flex items-center justify-center transition-all shadow-md" title="View Answers">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                    </button>
+                    
+                    <button onClick={(e) => { e.stopPropagation(); onOnboard({ firstName: cand.name.split(' ')[0], lastName: cand.name.split(' ').slice(1).join(' '), email: cand.email, phone: cand.phone, role: 'Student' }); }} className="w-10 h-10 rounded-full bg-white/10 hover:bg-emerald-500 text-white flex items-center justify-center transition-all shadow-md" title="Onboard as Student">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l9-5-9-5-9 5 9 5z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" /></svg>
+                    </button>
+                    
+                    <button onClick={(e) => { e.stopPropagation(); onOnboard({ firstName: cand.name.split(' ')[0], lastName: cand.name.split(' ').slice(1).join(' '), email: cand.email, phone: cand.phone, role: 'Teacher' }); }} className="w-10 h-10 rounded-full bg-white/10 hover:bg-purple-500 text-white flex items-center justify-center transition-all shadow-md" title="Onboard as Teacher">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                    </button>
+                    
+                    <button onClick={(e) => { e.stopPropagation(); handleDeleteCandidate(cand.id); }} className="w-10 h-10 rounded-full bg-white/10 hover:bg-red-500 text-white flex items-center justify-center transition-all shadow-md" title="Delete Candidate">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    </button>
+
+                    <button onClick={(e) => { e.stopPropagation(); setSelectedCandidate(cand); }} className="bg-[#fcd34d] text-[#08203e] px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-transform shadow-lg ml-2">Evaluate</button>
                   </div>
                 </div>
               ))}
@@ -704,6 +683,37 @@ const EvaluatorModule = ({ onBack }) => {
             )}
           </div>
         </div>
+
+        {/* VIEW ANSWERS MODAL */}
+        {viewingAnswers && (
+          <div className="fixed inset-0 z-[500] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+            <div className="bg-[#070b19] border border-white/20 rounded-[2rem] w-full max-w-3xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden">
+              <div className="flex justify-between items-center p-8 border-b border-white/10 shrink-0">
+                <div>
+                  <h3 className="text-2xl font-black tracking-widest uppercase text-white">Answers: {viewingAnswers.name}</h3>
+                  <p className="text-sm font-bold text-[#fcd34d] uppercase tracking-wide">Raw Evaluation Data</p>
+                </div>
+                <button onClick={() => setViewingAnswers(null)} className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full text-white/50 hover:text-white font-black transition-colors flex items-center justify-center">✕</button>
+              </div>
+              <div className="flex-1 overflow-y-auto custom-scrollbar p-8 flex flex-col gap-6">
+                {!viewingAnswers.rawAnswers ? (
+                  <div className="text-center text-white/40 uppercase tracking-widest font-bold py-10 leading-relaxed">
+                    No raw answers found.<br/><br/>
+                    <span className="text-xs normal-case font-medium">(Ensure the 'raw_answers' JSONB column exists in the database and the Edge Function is explicitly saving the payload to it.)</span>
+                  </div>
+                ) : (
+                  Object.entries(viewingAnswers.rawAnswers).map(([qId, ans]) => (
+                    <div key={qId} className="bg-white/5 border border-white/10 rounded-xl p-4">
+                      <div className="text-[#fcd34d] font-black text-xs uppercase tracking-widest mb-2">Question {qId}</div>
+                      <div className="text-white/90 text-sm font-medium leading-relaxed">{ans}</div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     );
   }
@@ -903,6 +913,7 @@ const AdminHub = () => {
   const [isLoadingDirectory, setIsLoadingDirectory] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [isProvisioningModalOpen, setIsProvisioningModalOpen] = useState(false);
+  const [provisioningInitialData, setProvisioningInitialData] = useState(null);
 
   // --- NEW STATS STATES ---
   const [activeStudentsPct, setActiveStudentsPct] = useState(0);
@@ -1064,7 +1075,8 @@ useEffect(() => {
         content: forumContentInput.trim(),
         target_level: forumLevelFilter,
         image_url: forumImageUrlInput || null,
-        author_name: 'Outloud Admin'
+        author_name: adminProfile.firstName ? `${adminProfile.firstName} ${adminProfile.lastName}`.trim() : 'Outloud Admin',
+        author_id: adminProfile.id
       }).select().single();
       
       if (error) throw error;
@@ -1073,7 +1085,7 @@ useEffect(() => {
       setForumTitleInput(''); setForumContentInput(''); setForumImageUrlInput(''); setShowForumImageInput(false);
     } catch (error) { 
       console.error(error); 
-      alert("Error publicando tema del foro"); 
+      alert("Error publicando tema del foro: " + error.message); 
     } finally { 
       setIsPublishingForum(false); 
     }
@@ -1126,11 +1138,20 @@ useEffect(() => {
     e.preventDefault();
     if (!chatInputs.forum.trim() || !forumPost) return;
     try {
-      await supabase.from('forum_replies').insert({ thread_id: forumPost.id, content: chatInputs.forum.trim() });
+      const { error } = await supabase.from('forum_replies').insert({ 
+        thread_id: forumPost.id, 
+        content: chatInputs.forum.trim(),
+        author_id: adminProfile.id 
+      });
+      if (error) throw error;
+      
       setChatInputs(p => ({ ...p, forum: '' }));
       const { data } = await supabase.from('forum_replies').select('*, author:profiles!author_id(first_name, last_name, avatar_url, level)').eq('thread_id', forumPost.id).order('created_at', { ascending: false });
       setForumReplies(data || []);
-    } catch (error) { console.error(error); alert("Error enviando respuesta al foro"); }
+    } catch (error) { 
+      console.error(error); 
+      alert("Error enviando respuesta al foro: " + error.message); 
+    }
   };
 
   const handleDeleteForumReply = async (id) => {
@@ -1663,7 +1684,7 @@ const renderCommunications = () => (
                 chatMessages.staff.map(msg => (
                   <div key={msg.id} className={`group bg-[#1e293b]/60 backdrop-blur-md rounded-3xl p-5 border w-[85%] relative mt-2 ${msg.sender_role?.includes('Admin') ? 'border-[#fcd34d] ml-auto' : 'border-white/10 ml-4'}`}>
                     <button onClick={() => handleDeleteChatMessage(msg.id)} className="absolute -top-3 -right-3 w-8 h-8 bg-red-500 text-white rounded-full text-xs font-black opacity-0 group-hover:opacity-100 transition-opacity z-20 shadow-xl cursor-pointer hover:scale-110">✕</button>
-                    <img src={`https://ui-avatars.com/api/?name=${msg.sender_name}&background=random`} className={`absolute -left-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full border-2 object-cover shadow-lg ${msg.sender_role?.includes('Admin') ? 'border-[#fcd34d]' : 'border-emerald-400'}`} alt="User" />
+                    <img src={msg.avatar_url || `https://ui-avatars.com/api/?name=${msg.sender_name}&background=random`} className={`absolute -left-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full border-2 object-cover shadow-lg ${msg.sender_role?.includes('Admin') ? 'border-[#fcd34d]' : 'border-emerald-400'}`} alt="User" />
                     <div className="pl-6">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-black text-white text-[11px] uppercase tracking-widest">{msg.sender_name}</span>
@@ -2117,7 +2138,13 @@ const FinancesPage = () => {
 
   const renderSettings = () => {
     if (settingsView === 'EVALUATOR') {
-      return <EvaluatorModule onBack={() => setSettingsView('MENU')} />;
+      return <EvaluatorModule 
+        onBack={() => setSettingsView('MENU')} 
+        onOnboard={(data) => {
+          setProvisioningInitialData(data);
+          setIsProvisioningModalOpen(true);
+        }} 
+      />;
     }
 
     return (
@@ -2284,6 +2311,7 @@ const FinancesPage = () => {
           onClose={() => setIsProvisioningModalOpen(false)} 
           supabase={supabase} 
           onSuccess={() => fetchDirectory(directoryTab)} 
+          initialData={provisioningInitialData}
         />
       )}
 

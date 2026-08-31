@@ -82,6 +82,7 @@ serve(async (req) => {
       email: candidateInfo.email,
       phone: candidateInfo.phone,
       written_score: finalWrittenScore,
+      raw_answers: answers,
       status: 'pending'
     });
 
