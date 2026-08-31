@@ -147,28 +147,20 @@ const PlacementTest = () => {
     setCurrentSection(0);
   };
 
-  const handleSubmitExam = async () => {
+ const handleSubmitExam = async () => {
     setIsSubmitting(true);
-    
-    // Calculates a 1-point score per answered MCQ 
-    // Modify this later to check against a definitive answer key
-    const mcqScore = Object.entries(answers).filter(([id]) => parseInt(id) <= 30).length;
-
     try {
-      const { error } = await supabase.from('placement_assessments').insert({
-        first_name: candidateInfo.firstName,
-        last_name: candidateInfo.lastName,
-        email: candidateInfo.email,
-        phone: candidateInfo.phone,
-        written_score: mcqScore,
-        status: 'pending'
+      const { data, error } = await supabase.functions.invoke('grade-placement', {
+        body: { candidateInfo, answers }
       });
+
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
       
       setCurrentSection(4); 
     } catch (err) {
-      console.error("Database Error:", err);
-      alert("Error securely transmitting your exam. Please contact support.");
+      console.error("Transmission Error:", err);
+      alert("Error securely processing your exam. Please contact support.");
     } finally {
       setIsSubmitting(false);
     }
