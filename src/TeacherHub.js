@@ -456,12 +456,9 @@ const MobileView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onRe
 };
 
 // ==========================================
-// 4.5 EMBEDDED JITSI ROOM (Heartbeat Monitor)
+// 4.5 NEW TAB JITSI CONTROLLER (Heartbeat Monitor)
 // ==========================================
 const JitsiRoom = ({ session, teacher, onLeave }) => {
-  const containerRef = useRef(null);
-  const apiRef = useRef(null);
-
   useEffect(() => {
     // 1. Mark class as started in the database
     const startSession = async () => {
@@ -473,59 +470,40 @@ const JitsiRoom = ({ session, teacher, onLeave }) => {
     };
     startSession();
 
-    // 2. Load Jitsi External API Script
-    const script = document.createElement('script');
-    script.src = 'https://meet.jit.si/external_api.js';
-    script.async = true;
-    script.onload = () => {
-      const domain = 'meet.jit.si';
-      const options = {
-        roomName: `OLA-Unit${session.unit}-${session.id}`,
-        width: '100%',
-        height: '100%',
-        parentNode: containerRef.current,
-        userInfo: { displayName: `Prof. ${teacher?.first_name}` },
-        configOverwrite: { prejoinPageEnabled: false, startWithAudioMuted: false, startWithVideoMuted: false },
-        interfaceConfigOverwrite: { TOOLBAR_BUTTONS: ['microphone', 'camera', 'desktop', 'chat', 'raisehand', 'hangup'] }
-      };
-      
-      apiRef.current = new window.JitsiMeetExternalAPI(domain, options);
-      
-      // When teacher clicks the red Hangup button
-      apiRef.current.addListener('videoConferenceLeft', async () => {
-        await supabase.from('live_sessions').update({ 
-          status: 'completed', 
-          ended_at: new Date().toISOString() 
-        }).eq('id', session.id);
-        onLeave();
-      });
-    };
-    document.body.appendChild(script);
+    // 2. Open Jitsi in a new tab (bypasses 5-minute iframe limit)
+    const roomUrl = `https://meet.jit.si/OLA-Unit${session.unit}-${session.id}`;
+    window.open(roomUrl, '_blank');
 
-    // 3. The 30-Second Heartbeat Engine
+    // 3. The 30-Second Heartbeat Engine runs in this background tab
     const heartbeat = setInterval(async () => {
       await supabase.from('live_sessions').update({ 
         last_ping_at: new Date().toISOString() 
       }).eq('id', session.id);
     }, 30000);
 
-    return () => {
-      clearInterval(heartbeat);
-      if (apiRef.current) apiRef.current.dispose();
-      document.body.removeChild(script);
-    };
-  }, [session, teacher, onLeave]);
+    return () => clearInterval(heartbeat);
+  }, [session, teacher]);
+
+  const handleEndClass = async () => {
+    await supabase.from('live_sessions').update({ 
+      status: 'completed', 
+      ended_at: new Date().toISOString() 
+    }).eq('id', session.id);
+    onLeave();
+  };
 
   return (
-    <div className="fixed inset-0 z-[400] flex flex-col bg-[#070b19]">
-      <div className="flex justify-between items-center px-6 py-4 bg-black/40 border-b border-white/10 shrink-0">
-        <div className="flex items-center gap-4">
-          <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-          <span className="text-white font-black tracking-widest uppercase">LIVE: Unit {session.unit} • {session.student_name}</span>
-        </div>
-        <button onClick={onLeave} className="text-xs font-black bg-white/10 hover:bg-red-500 text-white px-4 py-2 rounded-lg transition-colors uppercase tracking-widest">Force Quit</button>
+    <div className="fixed inset-0 z-[400] flex items-center justify-center bg-[#070b19]/95 backdrop-blur-md p-4">
+      <div className="bg-white/5 border border-white/10 rounded-[2rem] p-10 max-w-md w-full text-center shadow-2xl flex flex-col items-center">
+        <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse mb-6 shadow-[0_0_15px_#ef4444]"></div>
+        <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-2">Class in Progress</h2>
+        <p className="text-sm font-medium text-white/70 mb-8 leading-relaxed">
+          Your video room has opened in a new tab. <strong className="text-white">Do not close this window!</strong> The system is actively monitoring your connection for payroll.
+        </p>
+        <button onClick={handleEndClass} className="w-full py-4 bg-red-500 hover:bg-red-400 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-[0_0_20px_rgba(239,68,68,0.4)] hover:scale-105">
+          End Class & Grade Student
+        </button>
       </div>
-      <div ref={containerRef} className="flex-1 w-full h-full bg-black"></div>
     </div>
   );
 };

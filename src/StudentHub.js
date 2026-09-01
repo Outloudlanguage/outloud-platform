@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './SupabaseClient';
 import StudentPlayer from './StudentPlayer';
 import CommunityPanel from './components/CommunityPanel'; 
@@ -438,58 +438,33 @@ const MobileView = ({ student, onReturnHome, onStartActivity, isFetching, active
 };
 
 // ==========================================
-// 3.5 EMBEDDED JITSI ROOM (Student)
+// 3.5 NEW TAB JITSI CONTROLLER (Student)
 // ==========================================
 const JitsiRoom = ({ session, student, onLeave }) => {
-  const containerRef = useRef(null);
-  const apiRef = useRef(null);
-
   useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://meet.jit.si/external_api.js';
-    script.async = true;
-    script.onload = () => {
-      const domain = 'meet.jit.si';
-      const options = {
-        roomName: `OLA-Unit${session.unit}-${session.id}`,
-        width: '100%',
-        height: '100%',
-        parentNode: containerRef.current,
-        userInfo: { displayName: `${student?.first_name || 'Student'} ${student?.last_name || ''}` },
-        configOverwrite: { prejoinPageEnabled: false, startWithAudioMuted: false, startWithVideoMuted: false },
-        interfaceConfigOverwrite: { TOOLBAR_BUTTONS: ['microphone', 'camera', 'desktop', 'chat', 'raisehand', 'hangup'] }
-      };
-      
-      apiRef.current = new window.JitsiMeetExternalAPI(domain, options);
-      
-      apiRef.current.addListener('videoConferenceLeft', () => {
-        onLeave();
-      });
-    };
-    document.body.appendChild(script);
-
-    return () => {
-      if (apiRef.current) apiRef.current.dispose();
-      document.body.removeChild(script);
-    };
-  }, [session, student, onLeave]);
+    // Open Jitsi in a new tab passively
+    const roomUrl = `https://meet.jit.si/OLA-Unit${session.unit}-${session.id}`;
+    window.open(roomUrl, '_blank');
+  }, [session, student]);
 
   return (
-    <div className="fixed inset-0 z-[500] flex flex-col bg-[#070b19]">
-      <div className="flex justify-between items-center px-6 py-4 bg-black/40 border-b border-white/10 shrink-0">
-        <div className="flex items-center gap-4">
-          <div className="w-3 h-3 bg-emerald-400 rounded-full animate-pulse"></div>
-          <span className="text-white font-black tracking-widest uppercase">LIVE: Unit {session.unit}</span>
-        </div>
-        <button onClick={onLeave} className="text-xs font-black bg-white/10 hover:bg-red-500 text-white px-4 py-2 rounded-lg transition-colors uppercase tracking-widest">Leave Class</button>
+    <div className="fixed inset-0 z-[500] flex items-center justify-center bg-[#070b19]/95 backdrop-blur-md p-4">
+      <div className="bg-white/5 border border-white/10 rounded-[2rem] p-10 max-w-md w-full text-center shadow-2xl flex flex-col items-center">
+        <div className="w-4 h-4 bg-emerald-400 rounded-full animate-pulse mb-6 shadow-[0_0_15px_#34d399]"></div>
+        <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-2">Class in Progress</h2>
+        <p className="text-sm font-medium text-white/70 mb-8 leading-relaxed">
+          Your video room has opened in a new tab. When your class is finished, you can close the video tab and click the button below.
+        </p>
+        <button onClick={onLeave} className="w-full py-4 bg-white/10 hover:bg-white/20 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all border border-white/20 hover:scale-105">
+          Return to Dashboard
+        </button>
       </div>
-      <div ref={containerRef} className="flex-1 w-full h-full bg-black"></div>
     </div>
   );
 };
 
 // ==========================================
-// 4. THE GATEKEEPER (Evaluation Modal)
+// 5. THE GATEKEEPER (Evaluation Modal)
 // ==========================================
 const EvaluationCrossroad = ({ data, onProceed, onRetry, onScheduleLive, onScheduleComplementary, onScheduleTutoring }) => {
   const { type, scores, fails, unit, level, average, passed } = data;
@@ -555,7 +530,7 @@ const EvaluationCrossroad = ({ data, onProceed, onRetry, onScheduleLive, onSched
 };
 
 // ==========================================
-// 5. THE LIVE CALENDAR BRIDGE
+// 6. THE LIVE CALENDAR BRIDGE
 // ==========================================
 const StudentCalendar = ({ student, filterType, onConfirm, onCancel }) => {
   const [currentWeekOffset, setCurrentWeekOffset] = useState(0);
@@ -743,7 +718,7 @@ const StudentCalendar = ({ student, filterType, onConfirm, onCancel }) => {
 };
 
 // ==========================================
-// 6. MAIN ROUTER COMPONENT (Traffic Cop)
+// 7. MAIN ROUTER COMPONENT (Traffic Cop)
 // ==========================================
 const StudentHub = ({ onReturnHome, preloadedStudent }) => {
   const [studentData, setStudentData] = useState(null);
