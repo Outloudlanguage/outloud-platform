@@ -456,6 +456,81 @@ const MobileView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onRe
 };
 
 // ==========================================
+// 4.5 EMBEDDED JITSI ROOM (Heartbeat Monitor)
+// ==========================================
+const JitsiRoom = ({ session, teacher, onLeave }) => {
+  const containerRef = useRef(null);
+  const apiRef = useRef(null);
+
+  useEffect(() => {
+    // 1. Mark class as started in the database
+    const startSession = async () => {
+      await supabase.from('live_sessions').update({ 
+        status: 'in_progress', 
+        started_at: new Date().toISOString(),
+        last_ping_at: new Date().toISOString()
+      }).eq('id', session.id);
+    };
+    startSession();
+
+    // 2. Load Jitsi External API Script
+    const script = document.createElement('script');
+    script.src = 'https://meet.jit.si/external_api.js';
+    script.async = true;
+    script.onload = () => {
+      const domain = 'meet.jit.si';
+      const options = {
+        roomName: `OLA-Unit${session.unit}-${session.id}`,
+        width: '100%',
+        height: '100%',
+        parentNode: containerRef.current,
+        userInfo: { displayName: `Prof. ${teacher?.first_name}` },
+        configOverwrite: { prejoinPageEnabled: false, startWithAudioMuted: false, startWithVideoMuted: false },
+        interfaceConfigOverwrite: { TOOLBAR_BUTTONS: ['microphone', 'camera', 'desktop', 'chat', 'raisehand', 'hangup'] }
+      };
+      
+      apiRef.current = new window.JitsiMeetExternalAPI(domain, options);
+      
+      // When teacher clicks the red Hangup button
+      apiRef.current.addListener('videoConferenceLeft', async () => {
+        await supabase.from('live_sessions').update({ 
+          status: 'completed', 
+          ended_at: new Date().toISOString() 
+        }).eq('id', session.id);
+        onLeave();
+      });
+    };
+    document.body.appendChild(script);
+
+    // 3. The 30-Second Heartbeat Engine
+    const heartbeat = setInterval(async () => {
+      await supabase.from('live_sessions').update({ 
+        last_ping_at: new Date().toISOString() 
+      }).eq('id', session.id);
+    }, 30000);
+
+    return () => {
+      clearInterval(heartbeat);
+      if (apiRef.current) apiRef.current.dispose();
+      document.body.removeChild(script);
+    };
+  }, [session, teacher, onLeave]);
+
+  return (
+    <div className="fixed inset-0 z-[400] flex flex-col bg-[#070b19]">
+      <div className="flex justify-between items-center px-6 py-4 bg-black/40 border-b border-white/10 shrink-0">
+        <div className="flex items-center gap-4">
+          <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+          <span className="text-white font-black tracking-widest uppercase">LIVE: Unit {session.unit} • {session.student_name}</span>
+        </div>
+        <button onClick={onLeave} className="text-xs font-black bg-white/10 hover:bg-red-500 text-white px-4 py-2 rounded-lg transition-colors uppercase tracking-widest">Force Quit</button>
+      </div>
+      <div ref={containerRef} className="flex-1 w-full h-full bg-black"></div>
+    </div>
+  );
+};
+
+// ==========================================
 // 5. EVALUATION MODAL (Gatekeeper)
 // ==========================================
 const EvaluationModal = ({ isOpen, onClose, pendingClasses, onGradeSubmitted, teacherId }) => {
@@ -833,6 +908,8 @@ const TeacherHub = ({ onReturnHome }) => {
     }
   };
 
+  const [activeJitsiSession, setActiveJitsiSession] = useState(null);
+
   const handleAction = async (actionType) => {
     if (actionType === 'Calendar') {
       setIsRosterOpen(true);
@@ -848,31 +925,17 @@ const TeacherHub = ({ onReturnHome }) => {
     }
 
     if (actionType === 'Live' && nextClass) {
-      setIsLaunching(true);
-      try {
-        const { data, error } = await supabase.functions.invoke('create-zoom-meeting', {
-          body: { 
-            sessionId: nextClass.id,
-            topic: `Outloud Unit ${nextClass.unit} - ${nextClass.student_name}`
-          }
-        });
-
-        const launchUrl = data?.startUrl || `https://meet.jit.si/OLA-${nextClass.id}`;
-        window.open(launchUrl, '_blank');
-
-        await supabase.from('live_sessions').update({ status: 'completed' }).eq('id', nextClass.id);
-        
-        setPendingEvaluations(prev => [...prev, nextClass]);
-        setNextClass(null);
-        setIsEvalModalOpen(true);
-
-      } catch (err) {
-        console.error("Error launching class:", err);
-        alert("Hubo un error al iniciar la clase virtual.");
-      } finally {
-        setIsLaunching(false);
-      }
+      // Mount the embedded Jitsi component instead of an external redirect
+      setActiveJitsiSession(nextClass);
     }
+  };
+
+  const handleJitsiLeave = () => {
+    const completedClass = activeJitsiSession;
+    setActiveJitsiSession(null);
+    setPendingEvaluations(prev => [...prev, completedClass]);
+    setNextClass(null);
+    setIsEvalModalOpen(true);
   };
 
   const removeEvaluatedClass = (classId) => setPendingEvaluations(prev => prev.filter(c => c.id !== classId));
@@ -881,6 +944,14 @@ const TeacherHub = ({ onReturnHome }) => {
 
   return (
     <>
+      {activeJitsiSession && (
+        <JitsiRoom 
+          session={activeJitsiSession} 
+          teacher={teacherData} 
+          onLeave={handleJitsiLeave} 
+        />
+      )}
+
       <CommunityPanel 
         isOpen={showCommunity} 
         onClose={() => setShowCommunity(false)} 

@@ -944,6 +944,8 @@ const AdminHub = () => {
   // --- NEW STATS STATES ---
   const [activeStudentsPct, setActiveStudentsPct] = useState(0);
   const [upcomingActivities, setUpcomingActivities] = useState([]);
+  const [showSubModal, setShowSubModal] = useState(false);
+  const [droppedSessionTarget, setDroppedSessionTarget] = useState(null);
 
   const fetchDashboardStats = async () => {
     try {
@@ -954,7 +956,14 @@ const AdminHub = () => {
       if (totalStudents > 0) setActiveStudentsPct(Math.round((activeStudents / totalStudents) * 100));
       else setActiveStudentsPct(0); 
 
-      const { data: activities } = await supabase.from('live_sessions').select('id, title, class_type, scheduled_at').gte('scheduled_at', new Date().toISOString()).not('teacher_id', 'is', null).order('scheduled_at', { ascending: true }).limit(5);
+      // Fetch booked and in-progress classes, bringing in the heartbeat and teacher details
+      const { data: activities } = await supabase
+        .from('live_sessions')
+        .select('id, title, class_type, scheduled_at, status, last_ping_at, teacher_id, teacher:profiles!teacher_id(first_name, last_name)')
+        .in('status', ['booked', 'in_progress'])
+        .not('teacher_id', 'is', null)
+        .order('scheduled_at', { ascending: true })
+        .limit(5);
       setUpcomingActivities(activities || []);
     } catch (err) {
       console.error("Dashboard Stats Fetch Error:", err);
@@ -980,6 +989,12 @@ useEffect(() => {
     if (activeModule === 'ACCOUNTS') {
       fetchDirectory(directoryTab);
       fetchDashboardStats();
+      
+      // The 30-Second Heartbeat Monitor
+      const interval = setInterval(() => {
+         fetchDashboardStats();
+      }, 30000);
+      return () => clearInterval(interval);
     }
   }, [activeModule, directoryTab]);
 
@@ -1453,16 +1468,48 @@ const renderAccounts = () => (
         {/* LIVE ACTIVITIES WIDGET */}
         <div className="h-[60%] bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col">
           <h3 className="text-white font-black text-2xl tracking-wide mb-4 drop-shadow-md shrink-0 w-full text-center">Activities</h3>
-          <ul className="space-y-4 text-xs font-medium text-white/90 flex-1 overflow-y-auto custom-scrollbar pr-2 mb-4">
+          <ul className="space-y-3 text-xs font-medium text-white/90 flex-1 overflow-y-auto custom-scrollbar pr-2 mb-4">
             {upcomingActivities.length === 0 ? (
               <li className="text-center text-white/40 uppercase tracking-widest font-bold mt-4">No upcoming live sessions</li>
             ) : (
-              upcomingActivities.map(act => (
-                <li key={act.id} className="flex items-center gap-3 overflow-hidden">
-                  <svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                  <span className="truncate">{new Date(act.scheduled_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}: {act.title || act.class_type}</span>
-                </li>
-              ))
+              upcomingActivities.map(act => {
+                const isLive = act.status === 'in_progress';
+                let isDropped = false;
+                
+                // Calculate if the ping is older than 2 minutes (120,000 ms)
+                if (isLive && act.last_ping_at) {
+                  const pingTime = new Date(act.last_ping_at).getTime();
+                  const now = new Date().getTime();
+                  if (now - pingTime > 120000) isDropped = true; 
+                }
+
+                return (
+                  <li key={act.id} className={`flex items-center gap-3 overflow-hidden p-3 rounded-xl border transition-colors ${isDropped ? 'bg-red-500/20 border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.2)]' : isLive ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-white/5 border-transparent'}`}>
+                    {isDropped ? (
+                      <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse shrink-0 shadow-[0_0_8px_#ef4444]"></div>
+                    ) : isLive ? (
+                      <div className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse shrink-0"></div>
+                    ) : (
+                      <svg className="w-4 h-4 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                    )}
+                    
+                    <div className="flex-1 flex flex-col truncate">
+                      <span className={`font-bold truncate ${isDropped ? 'text-red-400' : isLive ? 'text-emerald-400' : 'text-white'}`}>
+                        {new Date(act.scheduled_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}: {act.title || act.class_type}
+                      </span>
+                      <span className="text-[10px] text-white/50 font-bold tracking-widest uppercase">
+                        Prof. {act.teacher?.first_name} {act.teacher?.last_name}
+                      </span>
+                    </div>
+
+                    {isDropped && (
+                      <button onClick={() => { setDroppedSessionTarget(act); setShowSubModal(true); }} className="bg-red-500 hover:bg-red-400 text-white text-[9px] font-black uppercase px-3 py-1.5 rounded-lg shadow-md shrink-0 transition-colors">
+                        SOS: REASSIGN
+                      </button>
+                    )}
+                  </li>
+                );
+              })
             )}
           </ul>
           <button className="w-full py-4 px-6 bg-[#e2e8f0] text-[#0f172a] hover:bg-white font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-start gap-4 shadow-xl transition-all hover:scale-105 shrink-0 mt-auto">
@@ -2921,6 +2968,45 @@ const FinancesPage = () => {
               <button onClick={handleAddMedia} className="bg-[#fcd34d] text-[#08203e] font-black px-8 py-4 rounded-full text-sm w-1/2 hover:scale-105 transition-transform shadow-[0_0_20px_rgba(252,211,77,0.4)]">ADD MEDIA</button>
             </div>
           </div>
+        </div>
+      )}
+
+      {showSubModal && (
+        <div className="fixed inset-0 z-[500] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in font-montserrat">
+           <div className="bg-[#070b19]/95 border border-red-500/50 rounded-[2rem] p-8 max-w-md w-full shadow-[0_0_40px_rgba(239,68,68,0.2)]">
+              <h3 className="text-xl font-black text-red-400 uppercase tracking-widest mb-2">Assign Substitute</h3>
+              <p className="text-xs font-medium text-white/70 mb-6 leading-relaxed">Prof. {droppedSessionTarget?.teacher?.first_name} {droppedSessionTarget?.teacher?.last_name} has lost connection. Assign an available teacher to immediately inherit this active session.</p>
+              
+              <div className="flex flex-col gap-4">
+                <select id="sub-teacher-select" className="w-full bg-black/40 border border-white/20 rounded-xl px-4 py-3 text-white text-sm font-bold outline-none focus:border-[#fcd34d] cursor-pointer appearance-none">
+                  <option value="" className="bg-[#0f172a] text-white/50">Select a substitute teacher...</option>
+                  {directoryUsers.filter(u => u.role === 'Teacher' && u.id !== droppedSessionTarget?.teacher_id).map(t => (
+                    <option key={t.id} value={t.id} className="bg-[#0f172a] text-white">Prof. {t.first_name} {t.last_name}</option>
+                  ))}
+                </select>
+                
+                <div className="flex gap-3 mt-4">
+                  <button onClick={() => setShowSubModal(false)} className="flex-1 py-4 bg-white/10 hover:bg-white/20 text-white text-xs font-bold uppercase tracking-widest rounded-xl transition-colors">Cancel</button>
+                  <button onClick={async () => {
+                    const subId = document.getElementById('sub-teacher-select').value;
+                    if (!subId) return alert('Please select a teacher from the list.');
+                    
+                    // Reset the session to 'booked', update the teacher ID, and clear the heartbeat
+                    await supabase.from('live_sessions').update({
+                      teacher_id: subId,
+                      original_teacher_id: droppedSessionTarget.teacher_id,
+                      status: 'booked',
+                      last_ping_at: null
+                    }).eq('id', droppedSessionTarget.id);
+                    
+                    setShowSubModal(false);
+                    setDroppedSessionTarget(null);
+                    fetchDashboardStats();
+                    alert('Substitute dispatched successfully. The class is now on their roster.');
+                  }} className="flex-1 py-4 bg-red-500 hover:bg-red-400 text-white text-xs font-black uppercase tracking-widest rounded-xl transition-colors shadow-[0_0_15px_rgba(239,68,68,0.4)]">Dispatch Sub</button>
+                </div>
+              </div>
+           </div>
         </div>
       )}
     </div>
