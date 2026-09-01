@@ -95,12 +95,17 @@ const MainActionCard = ({ title, iconSrc, isFetching, isActive, onClick, subtitl
   );
 };
 
-const PillButton = ({ title, hasNotification, onClick }) => (
-  <button onClick={onClick} className="relative w-full py-4 px-2 bg-white/10 backdrop-blur-md hover:bg-white/20 border border-white/20 rounded-xl text-center text-[10px] sm:text-xs text-white transition-all shadow-md active:scale-95">
+const PillButton = ({ title, hasNotification, isActive, onClick }) => (
+  <button 
+    onClick={onClick}
+    className={`relative w-full py-4 px-2 backdrop-blur-md rounded-xl text-center text-[10px] sm:text-xs transition-all shadow-md active:scale-95 border ${isActive ? 'bg-[#fcd34d] border-[#fcd34d] text-[#08203e] font-black scale-105' : 'bg-white/10 hover:bg-white/20 border-white/20 text-white'}`}
+  >
     {hasNotification && <div className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,1)]"></div>}
     {title}
   </button>
 );
+
+const INFO_CATEGORIES = ['Website Functionality', 'General Information', 'Academy Rules', 'Upcoming Events', 'Promos & Discounts', 'Financial Data'];
 
 const NavIconBtn = ({ iconSvg, active, onClick, hasNotification, isProfile, avatarUrl }) => (
   <button onClick={onClick} className={`relative w-14 h-14 md:w-16 md:h-16 flex items-center justify-center rounded-2xl transition-all ${active ? 'bg-white/20 border border-white/40 shadow-inner' : 'hover:bg-white/10 border border-transparent'}`}>
@@ -162,8 +167,9 @@ const ProfileOverlay = ({ isOpen, onClose, teacher, pendingCount, onOpenEvaluati
 // ==========================================
 // 3. DESKTOP VIEW
 // ==========================================
-const DesktopView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onReturnHome, onAction, onRequestSub, onOpenProfileMenu, isLaunching, hasNewStaffBoard, latestAnnouncement, latestForumPost }) => {
+const DesktopView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onReturnHome, onAction, onRequestSub, onOpenProfileMenu, isLaunching, hasNewStaffBoard, announcements = [], activeCategory, setActiveCategory, latestForumPost }) => {
   const goal = payrollStats?.monthlyGoal || 100;
+  const filteredAnnouncements = activeCategory ? announcements.filter(a => a.category === activeCategory) : announcements;
   const acquired = payrollStats?.current || 0;
 
   return (
@@ -251,32 +257,36 @@ const DesktopView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onR
           {/* RIGHT COLUMN: Info Board & Feed */}
           <div className="col-span-5 flex flex-col gap-6 h-full bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] p-6 shadow-2xl overflow-hidden">
             <div className="grid grid-cols-3 gap-4 shrink-0">
-              <PillButton title="Teacher Manual" onClick={() => onAction('Manual')} />
-              <PillButton title="Class Tools" onClick={() => onAction('Tools')} />
-              <PillButton title="Class Chat" onClick={() => onAction('Community_CHAT')} />
-              <PillButton title="Staff Board" onClick={() => onAction('Community_BOARD')} hasNotification={hasNewStaffBoard} />
-              <PillButton title="Open Forum" onClick={() => onAction('Community_BOARD')} />
-              <PillButton title="Request Sub" onClick={onRequestSub} />
+              {INFO_CATEGORIES.map(cat => (
+                <PillButton 
+                  key={cat} 
+                  title={cat} 
+                  isActive={activeCategory === cat} 
+                  onClick={() => setActiveCategory(activeCategory === cat ? null : cat)} 
+                />
+              ))}
             </div>
 
             <div className="flex-1 flex flex-col gap-4 mt-4 overflow-y-auto custom-scrollbar pr-2 pb-4">
-                {/* DYNAMIC ANNOUNCEMENT CARD */}
-                {latestAnnouncement ? (
-                  <div onClick={() => onAction('Community_BOARD')} className="bg-white/10 border border-white/20 rounded-2xl p-4 flex flex-col xl:flex-row items-center gap-4 hover:bg-white/20 transition-all hover:scale-[1.02] cursor-pointer shadow-md">
-                    {latestAnnouncement.image_url && (
-                      <div className="w-full xl:w-24 h-32 xl:h-24 rounded-xl overflow-hidden shrink-0 border border-white/30 shadow-sm">
-                        <img src={latestAnnouncement.image_url} alt="Announcement" className="w-full h-full object-cover" />
-                      </div>
-                    )}
-                    <div className="flex flex-col w-full text-center xl:text-left">
-                      <h4 className="text-sm font-black uppercase tracking-widest mb-1 text-[#fcd34d] drop-shadow-sm truncate">{latestAnnouncement.title}</h4>
-                      <p className="text-[10px] text-white/80 leading-relaxed font-medium line-clamp-3">{latestAnnouncement.content}</p>
-                    </div>
+                {/* DYNAMIC ANNOUNCEMENT FEED */}
+                {filteredAnnouncements.length === 0 ? (
+                  <div className="text-center text-white/50 font-bold tracking-widest text-xs py-6 uppercase">
+                    No announcements to display.
                   </div>
                 ) : (
-                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center justify-center text-white/30 text-[10px] font-bold uppercase tracking-widest min-h-[100px]">
-                    No recent announcements
-                  </div>
+                  filteredAnnouncements.map(ann => (
+                    <div key={ann.id} onClick={() => onAction('Community_BOARD')} className="bg-white/10 border border-white/20 rounded-2xl p-4 flex flex-col xl:flex-row items-center gap-4 hover:bg-white/20 transition-all hover:scale-[1.02] cursor-pointer shadow-md">
+                      {ann.image_url && (
+                        <div className="w-full xl:w-24 h-32 xl:h-24 rounded-xl overflow-hidden shrink-0 border border-white/30 shadow-sm">
+                          <img src={ann.image_url} alt="Announcement" className="w-full h-full object-cover" />
+                        </div>
+                      )}
+                      <div className="flex flex-col w-full text-center xl:text-left">
+                        <h4 className="text-sm font-black uppercase tracking-widest mb-1 text-[#fcd34d] drop-shadow-sm truncate">{ann.title}</h4>
+                        <p className="text-[10px] text-white/80 leading-relaxed font-medium line-clamp-3">{ann.content}</p>
+                      </div>
+                    </div>
+                  ))
                 )}
 
                 {/* DYNAMIC FORUM BANNER */}
@@ -303,8 +313,9 @@ const DesktopView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onR
 // ==========================================
 // 4. MOBILE VIEW
 // ==========================================
-const MobileView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onReturnHome, onAction, onRequestSub, onOpenProfileMenu, isLaunching, hasNewStaffBoard, latestAnnouncement, latestForumPost }) => {
+const MobileView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onReturnHome, onAction, onRequestSub, onOpenProfileMenu, isLaunching, hasNewStaffBoard, announcements = [], activeCategory, setActiveCategory, latestForumPost }) => {
   const goal = payrollStats?.monthlyGoal || 100;
+  const filteredAnnouncements = activeCategory ? announcements.filter(a => a.category === activeCategory) : announcements;
   const acquired = payrollStats?.current || 0;
 
   return (
@@ -367,32 +378,38 @@ const MobileView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onRe
         <div className="flex flex-col gap-4 bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] p-4 shadow-2xl mt-2 sm:mt-4">
           {/* PILLS */}
           <div className="grid grid-cols-2 gap-2 sm:gap-3">
-            <PillButton title="Teacher Manual" onClick={() => onAction('Manual')} />
-            <PillButton title="Class Tools" onClick={() => onAction('Tools')} />
-            <PillButton title="Class Chat" onClick={() => onAction('Community_CHAT')} />
-            <PillButton title="Staff Board" onClick={() => onAction('Community_BOARD')} hasNotification={hasNewStaffBoard} />
-            <PillButton title="Open Forum" onClick={() => onAction('Community_BOARD')} />
-            <PillButton title="Request Sub" onClick={onRequestSub} />
+            {INFO_CATEGORIES.map(cat => (
+              <PillButton 
+                key={cat} 
+                title={cat} 
+                isActive={activeCategory === cat} 
+                onClick={() => setActiveCategory(activeCategory === cat ? null : cat)} 
+              />
+            ))}
           </div>
 
-          {/* DYNAMIC ANNOUNCEMENT CARD */}
-          {latestAnnouncement ? (
-            <div onClick={() => onAction('Community_BOARD')} className="bg-white/10 border border-white/20 rounded-2xl p-4 flex flex-col sm:flex-row items-center gap-4 mt-2 hover:bg-white/20 transition-all cursor-pointer shadow-md">
-              {latestAnnouncement.image_url && (
-                <div className="w-full sm:w-24 h-32 sm:h-24 rounded-xl overflow-hidden shrink-0 border border-white/30">
-                  <img src={latestAnnouncement.image_url} alt="Announcement" className="w-full h-full object-cover" />
-                </div>
-              )}
-              <div className="flex flex-col text-center sm:text-left">
-                <h4 className="text-sm font-black uppercase tracking-widest mb-1 text-[#fcd34d] truncate">{latestAnnouncement.title}</h4>
-                <p className="text-[10px] text-white/80 leading-relaxed font-medium line-clamp-3">{latestAnnouncement.content}</p>
+          {/* DYNAMIC ANNOUNCEMENT FEED */}
+          <div className="flex flex-col gap-4 mt-2">
+            {filteredAnnouncements.length === 0 ? (
+              <div className="text-center text-white/50 font-bold tracking-widest text-xs py-6 uppercase">
+                No announcements to display.
               </div>
-            </div>
-          ) : (
-             <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center justify-center text-white/30 text-[10px] font-bold uppercase tracking-widest min-h-[100px] mt-2">
-                No recent announcements
-             </div>
-          )}
+            ) : (
+              filteredAnnouncements.map(ann => (
+                <div key={ann.id} onClick={() => onAction('Community_BOARD')} className="bg-white/10 border border-white/20 rounded-2xl p-4 flex flex-col sm:flex-row items-center gap-4 mt-2 hover:bg-white/20 transition-colors shadow-md cursor-pointer">
+                  {ann.image_url && (
+                    <div className="w-full sm:w-24 h-32 sm:h-24 rounded-xl overflow-hidden shrink-0 border border-white/30">
+                      <img src={ann.image_url} alt="Cover" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <div className="flex flex-col text-center sm:text-left w-full">
+                    <h4 className="text-sm font-black uppercase tracking-widest mb-1 text-[#fcd34d] truncate">{ann.title}</h4>
+                    <p className="text-[10px] text-white/80 leading-relaxed font-medium line-clamp-3">{ann.content}</p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
 
           {/* DYNAMIC FORUM BANNER */}
           {latestForumPost ? (
@@ -701,7 +718,8 @@ const TeacherHub = ({ onReturnHome }) => {
   const [hasNewStaffBoard, setHasNewStaffBoard] = useState(false);
   
   // Real-time Feed States
-  const [latestAnnouncement, setLatestAnnouncement] = useState(null);
+  const [announcements, setAnnouncements] = useState([]);
+  const [activeCategory, setActiveCategory] = useState(null);
   const [latestForumPost, setLatestForumPost] = useState(null);
 
   // Community Panel State
@@ -792,14 +810,13 @@ const TeacherHub = ({ onReturnHome }) => {
 
       setPayrollStats({ current: loggedHours || 0, monthlyGoal: 80 });
 
-      // 4. Fetch Latest Announcement
+      // 4. Fetch All Announcements for Staff
       const { data: annData } = await supabase
         .from('announcements')
         .select('*')
         .in('audience', ['EVERYONE_WITH_STAFF', 'STAFF_ONLY'])
-        .order('created_at', { ascending: false })
-        .limit(1);
-      if (annData && annData.length > 0) setLatestAnnouncement(annData[0]);
+        .order('created_at', { ascending: false });
+      if (annData) setAnnouncements(annData);
 
       // 5. Fetch Latest Forum Post
       const { data: forumData } = await supabase
@@ -907,7 +924,9 @@ const TeacherHub = ({ onReturnHome }) => {
               onOpenProfileMenu={() => setIsProfileMenuOpen(true)} 
               isLaunching={isLaunching}
               hasNewStaffBoard={hasNewStaffBoard}
-              latestAnnouncement={latestAnnouncement}
+              announcements={announcements}
+              activeCategory={activeCategory}
+              setActiveCategory={setActiveCategory}
               latestForumPost={latestForumPost}
             />
           </div>
@@ -923,7 +942,9 @@ const TeacherHub = ({ onReturnHome }) => {
               onOpenProfileMenu={() => setIsProfileMenuOpen(true)} 
               isLaunching={isLaunching} 
               hasNewStaffBoard={hasNewStaffBoard}
-              latestAnnouncement={latestAnnouncement}
+              announcements={announcements}
+              activeCategory={activeCategory}
+              setActiveCategory={setActiveCategory}
               latestForumPost={latestForumPost}
             />
           </div>
