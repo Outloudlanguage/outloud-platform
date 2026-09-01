@@ -414,33 +414,51 @@ const MobileView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onRe
 // ==========================================
 const EvaluationModal = ({ isOpen, onClose, pendingClasses, onGradeSubmitted, teacherId }) => {
   const [activeClassIndex, setActiveClassIndex] = useState(0);
-  const [scores, setScores] = useState({ q1: 0, q2: 0, q3: 0, q4: 0 });
+  const [scores, setScores] = useState({ listening: 0, speaking: 0, reading: 0, writing: 0, grammar: 0 });
+  const [deductions, setDeductions] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen || pendingClasses.length === 0) return null;
 
   const currentEvaluation = pendingClasses[activeClassIndex];
-  const totalScore = scores.q1 + scores.q2 + scores.q3 + scores.q4;
-  const isPassed = totalScore >= 13;
-  const isComplete = scores.q1 > 0 && scores.q2 > 0 && scores.q3 > 0 && scores.q4 > 0;
 
   const criteria = [
-    { id: 'q1', title: 'Core Comprehension', desc: 'Demonstrates clear understanding of the lesson’s target structures and vocabulary.' },
-    { id: 'q2', title: 'Contextual Application', desc: 'Accurately adapts and applies the target language to new, unscripted scenarios.' },
-    { id: 'q3', title: 'Independent Production', desc: 'Generates the target language autonomously with minimal teacher elicitation.' },
-    { id: 'q4', title: 'Verbal Proficiency', desc: 'Exhibits appropriate pronunciation, cadence, and overall verbal fluidity.' }
+    { id: 'listening', title: 'Listening', desc: 'Aural comprehension and responsiveness to live instructions.' },
+    { id: 'speaking', title: 'Speaking', desc: 'Verbal fluency, pronunciation, and conversational interaction.' },
+    { id: 'reading', title: 'Reading', desc: 'Textual interpretation and reading comprehension.' },
+    { id: 'writing', title: 'Writing', desc: 'Structural output, spelling, and sentence formulation.' },
+    { id: 'grammar', title: 'Grammar', desc: 'Syntactic accuracy and target structure application.' }
   ];
+
+  const deductionOptions = [
+    { id: 'd1', label: 'Pronunciation / L1 Interference', penalty: 0.5 },
+    { id: 'd2', label: 'Minor Grammatical Slips', penalty: 0.5 },
+    { id: 'd3', label: 'Over-reliance on Fillers (Uh/Um)', penalty: 0.5 },
+    { id: 'd4', label: 'Hesitation / Pacing Issues', penalty: 0.5 },
+    { id: 'd5', label: 'Incomplete Task Fulfillment', penalty: 1.0 },
+    { id: 'd6', label: 'Severe Lexical Range Deficit', penalty: 1.0 }
+  ];
+
+  const baseScore = Object.values(scores).reduce((a, b) => a + b, 0);
+  const deductionTotal = deductionOptions.reduce((total, opt) => deductions[opt.id] ? total + opt.penalty : total, 0);
+  const finalScore = Math.max(0, baseScore - deductionTotal);
+
+  const isPassed = finalScore >= 13.5;
+  const isComplete = scores.listening > 0 && scores.speaking > 0 && scores.reading > 0 && scores.writing > 0 && scores.grammar > 0;
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
+      const activeDeds = deductionOptions.filter(d => deductions[d.id]).map(d => d.label).join(', ');
+      const notes = `L:${scores.listening}/4 | S:${scores.speaking}/4 | R:${scores.reading}/4 | W:${scores.writing}/4 | G:${scores.grammar}/4. Deductions: ${activeDeds || 'None'}.`;
+
       await supabase.from('academic_records').insert({
         student_id: currentEvaluation.student_id,
         teacher_id: teacherId,
         unit: currentEvaluation.unit,
         activity_type: 'Live Class',
-        score_percentage: (totalScore / 20) * 100,
-        teacher_notes: `Q1:${scores.q1} Q2:${scores.q2} Q3:${scores.q3} Q4:${scores.q4}`
+        score_percentage: (finalScore / 20) * 100, // Saves in 100% format for global average consistency
+        teacher_notes: notes
       });
 
       await supabase.from('live_sessions').update({ is_graded: true }).eq('id', currentEvaluation.id);
@@ -460,7 +478,8 @@ const EvaluationModal = ({ isOpen, onClose, pendingClasses, onGradeSubmitted, te
         }).eq('id', currentEvaluation.student_id);
       }
 
-      setScores({ q1: 0, q2: 0, q3: 0, q4: 0 });
+      setScores({ listening: 0, speaking: 0, reading: 0, writing: 0, grammar: 0 });
+      setDeductions({});
       onGradeSubmitted(currentEvaluation.id);
       if (pendingClasses.length <= 1) onClose();
       setIsSubmitting(false);
@@ -474,25 +493,29 @@ const EvaluationModal = ({ isOpen, onClose, pendingClasses, onGradeSubmitted, te
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in font-montserrat overflow-y-auto">
-      <div className="relative w-full max-w-2xl bg-[#070b19]/95 border border-white/20 rounded-[2rem] shadow-[0_25px_50px_rgba(0,0,0,0.5)] flex flex-col overflow-hidden my-8">
-        <div className="p-6 border-b border-white/10 bg-white/5 relative z-10">
+      <div className="relative w-full max-w-3xl bg-[#070b19]/95 border border-white/20 rounded-[2rem] shadow-[0_25px_50px_rgba(0,0,0,0.5)] flex flex-col overflow-hidden my-8">
+        
+        <div className="p-6 md:p-8 border-b border-white/10 bg-white/5 relative z-10 shrink-0">
           <div className="flex justify-between items-start mb-2">
-            <h2 className="text-2xl font-black text-[#fcd34d] uppercase tracking-widest drop-shadow-md">Live Class Evaluation</h2>
+            <h2 className="text-xl md:text-2xl font-black text-[#fcd34d] uppercase tracking-widest drop-shadow-md">Live Class Evaluation</h2>
             {pendingClasses.length > 1 && <span className="bg-red-500 text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow-md uppercase tracking-widest animate-pulse">{pendingClasses.length} Pending</span>}
           </div>
           <p className="text-sm text-white/70">Student: <strong className="text-white text-lg">{currentEvaluation.student_name}</strong> • Unit {currentEvaluation.unit}</p>
         </div>
 
-        <div className="p-6 space-y-6 relative z-10">
+        <div className="p-6 md:p-8 space-y-6 relative z-10 flex-1 overflow-y-auto custom-scrollbar">
+          <h3 className="text-xs font-black text-[#fcd34d] uppercase tracking-widest border-b border-white/10 pb-2 mb-4">5 Core Competencies (4 pts each)</h3>
           {criteria.map((crit) => (
-            <div key={crit.id} className="bg-black/30 border border-white/10 rounded-xl p-4">
-              <h3 className="text-sm font-black text-white uppercase tracking-widest mb-1">{crit.title}</h3>
-              <p className="text-[10px] text-white/50 mb-3">{crit.desc}</p>
-              <div className="flex gap-2">
-                {[1, 2, 3, 4, 5].map((val) => (
+            <div key={crit.id} className="bg-black/30 border border-white/10 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex-1">
+                <h3 className="text-sm font-black text-white uppercase tracking-widest mb-1">{crit.title}</h3>
+                <p className="text-[10px] text-white/50">{crit.desc}</p>
+              </div>
+              <div className="flex gap-2 w-full md:w-auto">
+                {[1, 2, 3, 4].map((val) => (
                   <button
                     key={val} onClick={() => setScores(prev => ({ ...prev, [crit.id]: val }))}
-                    className={`flex-1 py-2 rounded-lg text-xs font-black transition-all ${scores[crit.id] === val ? 'bg-[#fcd34d] text-[#08203e] shadow-[0_0_10px_rgba(252,211,77,0.4)] scale-105' : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white border border-white/10'}`}
+                    className={`flex-1 md:w-12 h-10 rounded-lg text-xs font-black transition-all ${scores[crit.id] === val ? 'bg-[#fcd34d] text-[#08203e] shadow-[0_0_10px_rgba(252,211,77,0.4)] scale-105' : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white border border-white/10'}`}
                   >
                     {val}
                   </button>
@@ -500,27 +523,39 @@ const EvaluationModal = ({ isOpen, onClose, pendingClasses, onGradeSubmitted, te
               </div>
             </div>
           ))}
+
+          <h3 className="text-xs font-black text-red-400 uppercase tracking-widest border-b border-red-500/20 pb-2 mt-8 mb-4">Paralinguistic Deductions</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-red-500/5 border border-red-500/20 rounded-xl p-5 shadow-inner">
+            {deductionOptions.map(opt => (
+              <label key={opt.id} className="flex items-center gap-3 cursor-pointer group">
+                <input type="checkbox" checked={deductions[opt.id] || false} onChange={e => setDeductions(prev => ({...prev, [opt.id]: e.target.checked}))} className="w-5 h-5 rounded border-white/20 bg-black/40 text-red-500 focus:ring-red-500 focus:ring-offset-0 cursor-pointer" />
+                <span className="text-xs font-medium text-white/80 group-hover:text-white transition-colors flex-1">{opt.label}</span>
+                <span className="text-red-400 font-black text-[10px] bg-red-500/10 px-2 py-0.5 rounded">-{opt.penalty}</span>
+              </label>
+            ))}
+          </div>
         </div>
 
-        <div className="p-6 bg-black/40 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-6 relative z-10">
-          <div className="flex items-center gap-4">
+        <div className="p-6 md:p-8 bg-black/40 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-6 relative z-10 shrink-0">
+          <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-start">
             <div className="flex flex-col">
               <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest">Final Score</span>
-              <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest">Threshold: 13/20</span>
+              <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest">Pass/Fail Threshold: 13.5</span>
             </div>
-            <div className={`text-4xl font-black drop-shadow-md ${totalScore === 0 ? 'text-white/20' : isPassed ? 'text-emerald-400' : 'text-red-400'}`}>{totalScore}/20</div>
+            <div className={`text-5xl font-black drop-shadow-md ${finalScore === 0 ? 'text-white/20' : isPassed ? 'text-emerald-400' : 'text-red-400'}`}>{finalScore.toFixed(1)}</div>
           </div>
           
-          <div className="flex gap-3 w-full sm:w-auto">
-            <button onClick={onClose} className="flex-1 sm:flex-none px-6 py-3.5 bg-white/5 hover:bg-white/10 text-white font-bold text-xs uppercase rounded-xl transition-colors">Postpone</button>
+          <div className="flex gap-3 w-full md:w-auto">
+            <button onClick={onClose} className="flex-1 md:flex-none px-6 py-4 bg-white/5 hover:bg-white/10 text-white font-bold text-xs uppercase rounded-xl transition-colors">Postpone</button>
             <button 
               disabled={!isComplete || isSubmitting} onClick={handleSubmit} 
-              className={`flex-1 sm:flex-none px-6 py-3.5 font-black text-xs uppercase rounded-xl shadow-lg transition-all ${!isComplete ? 'bg-white/10 text-white/30 cursor-not-allowed' : isPassed ? 'bg-emerald-400 text-[#08203e] shadow-[0_0_15px_rgba(52,211,153,0.4)] hover:bg-emerald-300' : 'bg-red-500 text-white shadow-[0_0_15px_rgba(239,68,68,0.4)] hover:bg-red-400'}`}
+              className={`flex-[2] md:flex-none px-8 py-4 font-black text-xs uppercase rounded-xl shadow-lg transition-all ${!isComplete ? 'bg-white/10 text-white/30 cursor-not-allowed' : isPassed ? 'bg-emerald-400 text-[#08203e] shadow-[0_0_20px_rgba(52,211,153,0.3)] hover:bg-emerald-300' : 'bg-red-500 text-white shadow-[0_0_20px_rgba(239,68,68,0.3)] hover:bg-red-400'}`}
             >
               {isSubmitting ? 'Saving...' : isPassed ? 'APPROVE STUDENT' : 'FAIL & REQUIRE TUTORING'}
             </button>
           </div>
         </div>
+
       </div>
     </div>
   );

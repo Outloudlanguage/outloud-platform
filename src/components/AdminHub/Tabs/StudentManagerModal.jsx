@@ -2,9 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { LEVEL_OPTIONS } from '../../../constants/adminConfigs';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import { useRef } from 'react';
 
 const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, onSuccess }) => {
+  const reportRef = useRef(null);
   const [activeTab, setActiveTab] = useState('INFO_PERSONAL');
+  const userRole = userData?.role || 'Student';
 
   // ==========================================
   // TAB 1: INFO PERSONAL (Provisioning, Creds, Overrides)
@@ -30,7 +35,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   const [unitOverride, setUnitOverride] = useState(1);
 
   // ==========================================
-  // TAB 2: FINANZAS (Cohorts, Proration, Credits, Payments)
+  // TAB 2: FINANZAS (Students)
   // ==========================================
   const getDefaultCohort = () => new Date().getDate() <= 15 ? 15 : 30;
   const [cohort, setCohort] = useState(15);
@@ -41,11 +46,20 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   const [payRef, setPayRef] = useState('');
 
   // ==========================================
-  // TAB 3: ESTADISTICAS (Reporting Engine)
+  // TAB 3: ESTADISTICAS (Students)
   // ==========================================
   const [academicHistory, setAcademicHistory] = useState([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // ==========================================
+  // TEACHER PAYROLL ENGINE STATES
+  // ==========================================
+  const [pendingClasses, setPendingClasses] = useState([]);
+  const [pendingShifts, setPendingShifts] = useState([]);
+  const [payrollCadence, setPayrollCadence] = useState('Monthly');
+  const [payrollRef, setPayrollRef] = useState('');
+  const [isFetchingPayroll, setIsFetchingPayroll] = useState(false);
 
   // DYNAMIC TIERED PRICING MAPPED FROM INSTRUCTIONS
   const MONTHLY_PRICES = { A1: 20, A2: 20, B1: 30, B2: 30, C1: 50, C2: 50 };
@@ -85,10 +99,113 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   }, [userData]);
 
   useEffect(() => {
-    if (isOpen && !isPending && userData?.id && activeTab === 'ESTADISTICAS' && !userData.id.startsWith('mock')) {
-      fetchAcademicHistory();
+    if (isOpen && !isPending && userData?.id && !userData.id.startsWith('mock')) {
+      if (activeTab === 'ESTADISTICAS' && userRole === 'Student') {
+        fetchAcademicHistory();
+      }
+      if (activeTab === 'PAYROLL' && userRole === 'Teacher') {
+        fetchTeacherPayroll();
+      }
     }
-  }, [isOpen, isPending, userData, activeTab]);
+  }, [isOpen, isPending, userData, activeTab, userRole]);
+
+  // ==========================================
+  // TEACHER PAYROLL LOGIC
+  // ==========================================
+  const fetchTeacherPayroll = async () => {
+    setIsFetchingPayroll(true);
+    try {
+      // 1. Fetch un-paid completed classes
+      const { data: classes } = await supabase.from('live_sessions')
+        .select('*')
+        .eq('teacher_id', userData.id)
+        .eq('is_paid_out', false)
+        .eq('status', 'completed'); 
+        
+      // 2. Fetch un-paid daily retainers
+      const { data: shifts } = await supabase.from('teacher_shifts')
+        .select('*')
+        .eq('teacher_id', userData.id)
+        .eq('is_paid_out', false);
+        
+      setPendingClasses(classes || []);
+      setPendingShifts(shifts || []);
+      setPayrollCadence(userData.payroll_cadence || 'Monthly');
+    } catch (e) {
+      console.error("Error fetching payroll:", e);
+    } finally {
+      setIsFetchingPayroll(false);
+    }
+  };
+
+  const handleSaveCadence = async (newCadence) => {
+    setPayrollCadence(newCadence);
+    try {
+      await supabase.from('profiles').update({ payroll_cadence: newCadence }).eq('id', userData.id);
+    } catch (e) { console.error("Error saving cadence", e); }
+  };
+
+  // Payroll Calculation Variables
+  let totalPayroll = 0;
+  let nightClassesCount = 0;
+  let dayClassesCount = 0;
+  let noShowCount = 0;
+
+  pendingClasses.forEach(cls => {
+    if (cls.student_no_show) {
+      totalPayroll += 2;
+      noShowCount++;
+    } else {
+      const date = new Date(cls.scheduled_at);
+      const hour = date.getHours(); 
+      const durationHrs = (cls.duration_minutes || 60) / 60;
+      
+      if (hour >= 18) {
+        totalPayroll += (4 * durationHrs);
+        nightClassesCount++;
+      } else {
+        totalPayroll += (3 * durationHrs);
+        dayClassesCount++;
+      }
+    }
+  });
+
+  const shiftCount = pendingShifts.length;
+  totalPayroll += (shiftCount * 2);
+
+  const handleMarkAsPaid = async (e) => {
+    e.preventDefault();
+    if (!payrollRef) return alert("Por favor, ingresa un número de referencia.");
+    
+    setIsProcessing(true);
+    try {
+      if (pendingClasses.length > 0) {
+        const classIds = pendingClasses.map(c => c.id);
+        await supabase.from('live_sessions').update({ is_paid_out: true }).in('id', classIds);
+      }
+      
+      if (pendingShifts.length > 0) {
+        const shiftIds = pendingShifts.map(s => s.id);
+        await supabase.from('teacher_shifts').update({ is_paid_out: true }).in('id', shiftIds);
+      }
+      
+      await supabase.from('financial_logs').insert({
+        student_id: userData.id, 
+        type: 'payroll_payout',
+        description: `Teacher Payout - Cadence: ${payrollCadence} | Ref: ${payrollRef}`,
+        amount: totalPayroll
+      });
+      
+      alert("¡Nómina liquidada exitosamente!");
+      setPayrollRef('');
+      fetchTeacherPayroll(); // Refresh to clear UI
+    } catch (err) {
+      console.error(err);
+      alert("Hubo un error liquidando la nómina.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   // ==========================================
   // ACADEMIC LOGIC
@@ -111,12 +228,25 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
     }
   };
 
-  const handleGenerateReport = () => {
+  const handleGenerateReport = async () => {
+    if (!reportRef.current) return;
     setIsGenerating(true);
-    setTimeout(() => {
+    try {
+      const canvas = await html2canvas(reportRef.current, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`Outloud_Report_${userData.first_name || 'Student'}_${new Date().toISOString().split('T')[0]}.pdf`);
+    } catch (error) {
+      console.error("PDF Generation Error:", error);
+      alert("Hubo un error generando el reporte PDF.");
+    } finally {
       setIsGenerating(false);
-      alert(`Reporte académico generado para ${userData?.first_name} ${userData?.last_name}. (La descarga de PDF se conectará aquí).`);
-    }, 2000);
+    }
   };
 
   const handleSaveOverrides = async () => {
@@ -136,7 +266,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   };
 
   // ==========================================
-  // FINANCIAL LOGIC
+  // FINANCIAL LOGIC (STUDENTS)
   // ==========================================
   const getBaseLevel = (lvlString) => lvlString ? lvlString.split(':')[0].trim() : 'A1';
 
@@ -280,42 +410,45 @@ const handleProvisionAccount = async () => {
           password: provPassword, 
           firstName: provFirstName.trim(), 
           lastName: provLastName.trim(),
-          role: 'Student', 
-          level: levelOverride,
-          unit: unitOverride
+          role: userData.role || 'Student', 
+          level: userRole === 'Student' ? levelOverride : 'Staff',
+          unit: userRole === 'Student' ? unitOverride : 1
         }
       });
       
       if (invokeError) throw new Error(`Fallo de Conexión: ${invokeError.message}`);
       if (data?.error) throw new Error(`Error de Autenticación: ${data.error}`);
 
-      // Extract the exact ID of the newly created user
       const newUserId = data?.user?.id;
       if (!newUserId) throw new Error("No se pudo obtener el ID del usuario desde la función.");
 
-      // 2. THE MASTER UPDATE: React forces all data into the database directly.
+      // 2. THE MASTER UPDATE
       const updates = {
           email: cleanEmail,
           first_name: provFirstName.trim(),
           last_name: provLastName.trim(),
           whatsapp: provPhone || null,
           avatar_url: provAvatarUrl.trim() || null,
-          cohort: cohort,
           assigned_password: provPassword,
           status: 'active',
-          available_credits: 0,
-          level: levelOverride,
-          unit: unitOverride
+          role: userData.role || 'Student'
       };
+
+      if (userRole === 'Student') {
+        updates.cohort = cohort;
+        updates.available_credits = 0;
+        updates.level = levelOverride;
+        updates.unit = unitOverride;
+      }
 
       const { error: profileError } = await supabase.from('profiles').update(updates).eq('id', newUserId); 
         
       if (profileError) throw new Error(`Fallo actualizando perfil en BD: ${profileError.message}`);
 
-      // 3. Approve Registration
+      // 3. Approve Registration (if applicable)
       await supabase.from('registrations').update({ status: 'approved' }).eq('id', userData.id);
 
-      alert('Cuenta aprovisionada exitosamente. El estudiante ya está activo en el directorio.');
+      alert(`Cuenta de ${userRole} aprovisionada exitosamente. El usuario ya está activo en el directorio.`);
       if (onSuccess) onSuccess();
       onClose();
     } catch (error) {
@@ -364,7 +497,7 @@ const handleProvisionAccount = async () => {
 
   const handleKillSwitch = async (newStatus) => {
     const isConfirm = window.confirm(
-      newStatus === 'suspended' ? '¿Estás seguro de que deseas SUSPENDER el acceso de este estudiante?' : '¿Deseas REACTIVAR el acceso de este estudiante?'
+      newStatus === 'suspended' ? `¿Estás seguro de que deseas SUSPENDER el acceso de este ${userRole}?` : `¿Deseas REACTIVAR el acceso de este ${userRole}?`
     );
     if (!isConfirm) return;
 
@@ -391,6 +524,28 @@ const handleProvisionAccount = async () => {
   const handleOverlayClick = (e) => {
     if (e.target.id === 'modal-overlay') onClose();
   };
+
+  // DYNAMIC TABS BASED ON ROLE
+  const getTabsForRole = () => {
+    if (userRole === 'Admin') {
+      return [{ id: 'INFO_PERSONAL', label: 'Info Personal & Control' }];
+    }
+    if (userRole === 'Teacher') {
+      return [
+        { id: 'INFO_PERSONAL', label: 'Info Personal & Control' },
+        { id: 'PAYROLL', label: 'Nómina & Desglose' },
+        { id: 'TEACHER_STATS', label: 'Estadísticas del Profesor' }
+      ];
+    }
+    // Default to Student
+    return [
+      { id: 'INFO_PERSONAL', label: 'Info Personal & Control' },
+      { id: 'FINANZAS', label: 'Manejo de Finanzas' },
+      { id: 'ESTADISTICAS', label: 'Estadísticas del Alumno' }
+    ];
+  };
+
+  const activeTabs = getTabsForRole();
 
   if (!isOpen || !userData) return null;
 
@@ -429,7 +584,8 @@ const handleProvisionAccount = async () => {
           <div className="flex items-center gap-5 overflow-hidden w-full pr-4">
             <div className="relative shrink-0">
               <img 
-                src={userData.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.first_name || userData.full_name || 'U')}&background=random&color=fff`} alt="Profile Avatar" 
+                src={userData.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.first_name || userData.full_name || 'U')}&background=random&color=fff`} 
+                alt="Profile Avatar" 
                 className={`w-16 h-16 md:w-20 md:h-20 rounded-full object-cover border-2 shadow-lg ${isPending ? 'border-amber-400' : accountStatus === 'suspended' ? 'border-red-500 opacity-50 grayscale' : 'border-white/20'}`}
               />
               {isPending && <div className="absolute -bottom-2 -right-2 bg-amber-400 text-[#08203e] text-[9px] font-black uppercase px-2 py-1 rounded-md shadow-md animate-pulse">PENDING</div>}
@@ -440,9 +596,15 @@ const handleProvisionAccount = async () => {
                 {userData.full_name || `${userData.first_name || ''} ${userData.last_name || ''}`.trim() || 'Sin Nombre'}
               </h2>
               <p className="text-xs md:text-sm text-white/60 font-semibold mt-1 truncate">{userData.email} {userData.whatsapp ? `• ${userData.whatsapp}` : ''}</p>
-              {!isPending && (
+              
+              {!isPending && userRole === 'Student' && (
                 <p className="text-[10px] text-[#fcd34d] font-bold uppercase tracking-widest mt-1">
                   NIVEL: {levelOverride.split(':')[0]} • CRÉDITOS: <span className="text-white">{credits}</span>
+                </p>
+              )}
+              {!isPending && userRole !== 'Student' && (
+                <p className="text-[10px] text-blue-400 font-bold uppercase tracking-widest mt-1">
+                  ROLE: {userRole}
                 </p>
               )}
             </div>
@@ -453,11 +615,7 @@ const handleProvisionAccount = async () => {
         </div>
 
         <div className="relative z-10 flex flex-wrap border-b border-white/10 bg-black/20 shrink-0">
-          {[
-            { id: 'INFO_PERSONAL', label: 'Info Personal & Control' },
-            { id: 'FINANZAS', label: 'Manejo de Finanzas' },
-            { id: 'ESTADISTICAS', label: 'Estadísticas del Alumno' }
-          ].map((tab) => (
+          {activeTabs.map((tab) => (
             <button
               key={tab.id} onClick={() => setActiveTab(tab.id)}
               className={`flex-1 py-4 px-2 text-[10px] md:text-xs font-black uppercase tracking-widest transition-all border-b-2 ${
@@ -470,14 +628,17 @@ const handleProvisionAccount = async () => {
         </div>
 
         <div className="relative z-10 flex-grow overflow-y-auto custom-scrollbar p-6 md:p-8">
+          {/* ==========================================
+              TAB 1: INFO PERSONAL (Universal)
+          ========================================== */}
           {activeTab === 'INFO_PERSONAL' && (
             <div className="animate-fade-in space-y-6">
               {isPending && (
                 <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-6 mb-8 transition-all shadow-inner">
                   <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-4 border-b border-amber-500/20 pb-4">
                     <div>
-                      <h4 className="text-amber-400 font-black tracking-widest text-sm uppercase">Aprobación de Cuenta</h4>
-                      <p className="text-xs text-amber-200/70 mt-1">Verifica la información y asigna las credenciales maestras para activar a este estudiante.</p>
+                      <h4 className="text-amber-400 font-black tracking-widest text-sm uppercase">Aprobación de Cuenta ({userRole})</h4>
+                      <p className="text-xs text-amber-200/70 mt-1">Verifica la información y asigna las credenciales maestras para activar.</p>
                     </div>
                   </div>
 
@@ -539,33 +700,35 @@ const handleProvisionAccount = async () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 pt-6 border-t border-amber-500/20">
-                    <div>
-                      <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Nivel Inicial</label>
-                      <select value={levelOverride} onChange={e => setLevelOverride(e.target.value)} className="w-full bg-black/40 border border-amber-500/30 rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-amber-400 cursor-pointer appearance-none">
-                        {LEVEL_OPTIONS.map(l => <option key={l} value={l}>{l.split(':')[0]}</option>)}
-                      </select>
+                  {userRole === 'Student' && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 pt-6 border-t border-amber-500/20">
+                      <div>
+                        <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Nivel Inicial</label>
+                        <select value={levelOverride} onChange={e => setLevelOverride(e.target.value)} className="w-full bg-black/40 border border-amber-500/30 rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-amber-400 cursor-pointer appearance-none">
+                          {LEVEL_OPTIONS.map(l => <option key={l} value={l}>{l.split(':')[0]}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Unidad</label>
+                        <input type="number" min="1" max="12" value={unitOverride} onChange={e => setUnitOverride(parseInt(e.target.value))} className="w-full bg-black/40 border border-amber-500/30 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-amber-400" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Día de Corte</label>
+                        <select value={cohort} onChange={e => setCohort(parseInt(e.target.value))} className="w-full bg-black/40 border border-amber-500/30 rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-amber-400 cursor-pointer appearance-none">
+                          <option value={15}>15 del mes</option>
+                          <option value={30}>30 del mes</option>
+                        </select>
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Unidad</label>
-                      <input type="number" min="1" max="12" value={unitOverride} onChange={e => setUnitOverride(parseInt(e.target.value))} className="w-full bg-black/40 border border-amber-500/30 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-amber-400" />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Día de Corte</label>
-                      <select value={cohort} onChange={e => setCohort(parseInt(e.target.value))} className="w-full bg-black/40 border border-amber-500/30 rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-amber-400 cursor-pointer appearance-none">
-                        <option value={15}>15 del mes</option>
-                        <option value={30}>30 del mes</option>
-                      </select>
-                    </div>
-                  </div>
+                  )}
 
                   <button onClick={handleProvisionAccount} disabled={isProcessing} className="w-full mt-6 py-4 bg-amber-400 hover:bg-white text-[#08203e] font-black tracking-widest text-xs uppercase rounded-xl transition-all shadow-[0_0_20px_rgba(251,191,36,0.4)] disabled:opacity-50 hover:scale-[1.02]">
-                    {isProcessing ? 'PROCESANDO EN BD...' : 'CONFIRMAR Y ACTIVAR ESTUDIANTE'}
+                    {isProcessing ? 'PROCESANDO EN BD...' : 'CONFIRMAR Y ACTIVAR USUARIO'}
                   </button>
                 </div>
               )}
 
-              {!isPending && (
+              {!isPending && userRole === 'Student' && (
                 <div className="bg-white/5 border border-white/10 rounded-2xl p-6 relative overflow-hidden">
                   <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-4">
                     <h4 className="text-xs font-black text-[#fcd34d] uppercase tracking-widest">Academic Overrides (God Mode)</h4>
@@ -632,17 +795,24 @@ const handleProvisionAccount = async () => {
                 </div>
               )}
 
-              <h3 className="text-xs font-black text-[#fcd34d] uppercase tracking-widest mb-4 border-b border-white/10 pb-2 mt-8">Respuestas de Registro</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-black/20 border border-white/10 rounded-xl p-4 shadow-inner overflow-hidden"><p className="text-[10px] text-white/50 font-bold uppercase mb-1">Motivo del Curso</p><p className="text-sm text-white font-semibold truncate">{userData.reason || 'No especificado'}</p></div>
-                <div className="bg-black/20 border border-white/10 rounded-xl p-4 shadow-inner overflow-hidden"><p className="text-[10px] text-white/50 font-bold uppercase mb-1">Meta de Fluidez</p><p className="text-sm text-white font-semibold truncate">{userData.fluent_time || 'No especificado'}</p></div>
-                <div className="bg-black/20 border border-white/10 rounded-xl p-4 shadow-inner overflow-hidden"><p className="text-[10px] text-white/50 font-bold uppercase mb-1">Categoría de Interés</p><p className="text-sm text-white font-semibold truncate">{userData.interest || 'No especificado'}</p></div>
-                <div className="bg-black/20 border border-white/10 rounded-xl p-4 shadow-inner overflow-hidden"><p className="text-[10px] text-white/50 font-bold uppercase mb-1">Fecha de Registro</p><p className="text-sm text-white font-semibold truncate">{new Date(userData.created_at || Date.now()).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</p></div>
-              </div>
+              {userRole === 'Student' && (
+                <>
+                  <h3 className="text-xs font-black text-[#fcd34d] uppercase tracking-widest mb-4 border-b border-white/10 pb-2 mt-8">Respuestas de Registro</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-black/20 border border-white/10 rounded-xl p-4 shadow-inner overflow-hidden"><p className="text-[10px] text-white/50 font-bold uppercase mb-1">Motivo del Curso</p><p className="text-sm text-white font-semibold truncate">{userData.reason || 'No especificado'}</p></div>
+                    <div className="bg-black/20 border border-white/10 rounded-xl p-4 shadow-inner overflow-hidden"><p className="text-[10px] text-white/50 font-bold uppercase mb-1">Meta de Fluidez</p><p className="text-sm text-white font-semibold truncate">{userData.fluent_time || 'No especificado'}</p></div>
+                    <div className="bg-black/20 border border-white/10 rounded-xl p-4 shadow-inner overflow-hidden"><p className="text-[10px] text-white/50 font-bold uppercase mb-1">Categoría de Interés</p><p className="text-sm text-white font-semibold truncate">{userData.interest || 'No especificado'}</p></div>
+                    <div className="bg-black/20 border border-white/10 rounded-xl p-4 shadow-inner overflow-hidden"><p className="text-[10px] text-white/50 font-bold uppercase mb-1">Fecha de Registro</p><p className="text-sm text-white font-semibold truncate">{new Date(userData.created_at || Date.now()).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</p></div>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
-          {activeTab === 'FINANZAS' && (
+          {/* ==========================================
+              TAB 2: FINANZAS (For Students)
+          ========================================== */}
+          {activeTab === 'FINANZAS' && userRole === 'Student' && (
             <div className="animate-fade-in space-y-6">
               {!isPending ? (
                 <>
@@ -736,7 +906,10 @@ const handleProvisionAccount = async () => {
             </div>
           )}
 
-          {activeTab === 'ESTADISTICAS' && (
+          {/* ==========================================
+              TAB 3: ESTADISTICAS (For Students)
+          ========================================== */}
+          {activeTab === 'ESTADISTICAS' && userRole === 'Student' && (
             <div className="animate-fade-in space-y-6">
               {!isPending ? (
                 <>
@@ -784,8 +957,169 @@ const handleProvisionAccount = async () => {
             </div>
           )}
 
+          {/* ==========================================
+              TAB 4: PAYROLL (For Teachers)
+          ========================================== */}
+          {activeTab === 'PAYROLL' && userRole === 'Teacher' && (
+            <div className="animate-fade-in space-y-6">
+              <div className="flex justify-between items-center border-b border-white/10 pb-4">
+                 <h3 className="text-xs font-black text-[#fcd34d] uppercase tracking-widest">Nómina y Compensación</h3>
+                 <div className="flex items-center gap-2">
+                   <span className="text-[10px] text-white/50 uppercase font-bold">Frecuencia:</span>
+                   <select 
+                      value={payrollCadence} 
+                      onChange={(e) => handleSaveCadence(e.target.value)} 
+                      className="bg-white/10 border border-white/20 rounded-lg px-2 py-1 text-xs font-bold text-white outline-none focus:border-[#fcd34d] cursor-pointer appearance-none"
+                   >
+                     <option value="Weekly" className="bg-[#070b19]">Semanal</option>
+                     <option value="Bi-Weekly" className="bg-[#070b19]">Quincenal</option>
+                     <option value="Monthly" className="bg-[#070b19]">Mensual</option>
+                   </select>
+                 </div>
+              </div>
+              
+              {isFetchingPayroll ? (
+                 <div className="py-12 flex justify-center"><div className="w-8 h-8 border-4 border-[#fcd34d] border-t-transparent rounded-full animate-spin"></div></div>
+              ) : (
+                 <>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                      <div className="bg-[#08203e] border border-[#fcd34d]/50 rounded-2xl p-6 shadow-[0_0_15px_rgba(252,211,77,0.2)] flex flex-col justify-center items-center text-center">
+                        <span className="text-[10px] text-white/50 uppercase font-bold tracking-widest mb-1">Monto a Pagar</span>
+                        <span className="text-4xl font-black text-[#fcd34d]">${totalPayroll.toFixed(2)}</span>
+                        <span className="text-[9px] text-white/40 uppercase mt-2 font-black tracking-widest">Ciclo Pendiente</span>
+                      </div>
+                      
+                      <div className="md:col-span-2 bg-white/5 border border-white/10 rounded-2xl p-6 shadow-md flex flex-col justify-center">
+                        <h4 className="text-[10px] text-white/50 uppercase font-bold tracking-widest mb-4 border-b border-white/10 pb-2">Desglose de Horas</h4>
+                        <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+                           <div className="flex justify-between items-center"><span className="text-xs text-white/80 font-bold uppercase tracking-wider">Día ($3/hr)</span><span className="text-sm font-black text-white bg-white/10 px-3 py-1 rounded-lg">{dayClassesCount}</span></div>
+                           <div className="flex justify-between items-center"><span className="text-xs text-white/80 font-bold uppercase tracking-wider">Noche ($4/hr)</span><span className="text-sm font-black text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-lg">{nightClassesCount}</span></div>
+                           <div className="flex justify-between items-center"><span className="text-xs text-white/80 font-bold uppercase tracking-wider">No-Shows ($2/clase)</span><span className="text-sm font-black text-orange-400 bg-orange-500/10 px-3 py-1 rounded-lg">{noShowCount}</span></div>
+                           <div className="flex justify-between items-center"><span className="text-xs text-white/80 font-bold uppercase tracking-wider">Guardias ($2/día)</span><span className="text-sm font-black text-blue-400 bg-blue-500/10 px-3 py-1 rounded-lg">{shiftCount}</span></div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-black/30 border border-emerald-500/30 rounded-2xl p-6 shadow-inner">
+                       <h4 className="text-emerald-400 font-black uppercase tracking-widest mb-2">Liquidar Ciclo</h4>
+                       <p className="text-xs text-white/60 mb-6 font-medium">Ingresa el número de referencia para marcar estas clases y guardias como pagadas, enviando el registro contable a la base de datos.</p>
+                       <form onSubmit={handleMarkAsPaid} className="flex flex-col md:flex-row gap-4">
+                          <input type="text" value={payrollRef} onChange={(e)=>setPayrollRef(e.target.value)} placeholder="N° de Referencia (Ej. Zelle 9823)" className="flex-1 bg-black/40 border border-white/20 rounded-xl px-4 py-4 text-white text-sm font-bold outline-none focus:border-emerald-400 shadow-inner" required />
+                          <button type="submit" disabled={isProcessing || totalPayroll === 0} className="bg-emerald-500 hover:bg-emerald-400 text-[#070b19] font-black text-xs uppercase tracking-widest px-8 py-4 rounded-xl shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all disabled:opacity-50 hover:scale-105 active:scale-95 shrink-0">Marcar como Pagado</button>
+                       </form>
+                    </div>
+                 </>
+              )}
+            </div>
+          )}
+
+          {/* ==========================================
+              TAB 5: TEACHER_STATS (For Teachers)
+          ========================================== */}
+          {activeTab === 'TEACHER_STATS' && userRole === 'Teacher' && (
+            <div className="animate-fade-in space-y-6">
+              <div className="flex justify-between items-end border-b border-white/10 pb-2 mb-4">
+                <h3 className="text-xs font-black text-[#fcd34d] uppercase tracking-widest">Rendimiento Académico</h3>
+              </div>
+              <div className="py-12 text-center text-xs font-bold text-white/40 uppercase tracking-widest bg-black/20 rounded-2xl border border-white/10 shadow-inner">
+                Las estadísticas históricas de calidad y volumen del profesor estarán disponibles en la próxima actualización del motor analítico.
+              </div>
+            </div>
+          )}
+
         </div>
       </div>
+
+      {/* ==========================================
+          HIDDEN PDF REPORT TEMPLATE (A4 Proportions)
+      ========================================== */}
+      <div className="absolute -left-[9999px] top-0 pointer-events-none">
+        <div ref={reportRef} className="w-[800px] min-h-[1131px] bg-white text-[#08203e] p-12 font-montserrat flex flex-col">
+          
+          {/* Header */}
+          <div className="flex justify-between items-end border-b-4 border-[#fcd34d] pb-6 mb-8">
+            <div>
+              <h1 className="text-4xl font-black uppercase tracking-widest text-[#08203e]">Outloud</h1>
+              <p className="text-sm font-bold tracking-widest uppercase text-gray-500 mt-1">Language Academy</p>
+            </div>
+            <div className="text-right">
+              <h2 className="text-2xl font-black uppercase text-[#08203e]">{userData.full_name || `${userData.first_name} ${userData.last_name}`}</h2>
+              <p className="text-sm font-bold text-gray-500 uppercase tracking-widest mt-1">Nivel Actual: {levelOverride.split(':')[0]} • Unidad {userData.unit || 1}</p>
+            </div>
+          </div>
+
+          {/* Academic Summary */}
+          <h3 className="text-lg font-black uppercase tracking-widest bg-[#08203e] text-white px-4 py-2 mb-6">Resumen Académico</h3>
+          <div className="grid grid-cols-3 gap-6 mb-10">
+            <div className="border-l-4 border-[#fcd34d] pl-4">
+              <p className="text-[10px] font-bold uppercase text-gray-400 tracking-widest">Puntaje Promedio</p>
+              <p className="text-3xl font-black">{userData.lesson_score || 0}%</p>
+            </div>
+            <div className="border-l-4 border-emerald-400 pl-4">
+              <p className="text-[10px] font-bold uppercase text-gray-400 tracking-widest">Estado</p>
+              <p className="text-xl font-black mt-2 text-emerald-600">Activo</p>
+            </div>
+            <div className="border-l-4 border-blue-400 pl-4">
+              <p className="text-[10px] font-bold uppercase text-gray-400 tracking-widest">Fecha de Emisión</p>
+              <p className="text-sm font-bold mt-3">{new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+            </div>
+          </div>
+
+          {/* Teacher Evaluations Log */}
+          <h3 className="text-lg font-black uppercase tracking-widest bg-[#08203e] text-white px-4 py-2 mb-6">Registro de Evaluaciones (Clases en Vivo)</h3>
+          {academicHistory.length === 0 ? (
+            <p className="text-sm font-bold text-gray-400 italic">No hay registros de evaluaciones disponibles para este periodo.</p>
+          ) : (
+            <div className="flex flex-col gap-4">
+              {academicHistory.map(record => {
+                // Real-time Spanish translation for database-stored system notes
+                const notasTraducidas = (record.teacher_notes || 'Sin observaciones.')
+                  .replace('Deductions:', 'Deducciones:')
+                  .replace('None', 'Ninguna')
+                  .replace('Minor Grammatical Slips', 'Errores Gramaticales Menores')
+                  .replace('Pronunciation / L1 Interference', 'Pronunciación / Interferencia L1')
+                  .replace('Over-reliance on Fillers (Uh/Um)', 'Uso Excesivo de Muletillas')
+                  .replace('Hesitation / Pacing Issues', 'Dudas / Problemas de Ritmo')
+                  .replace('Incomplete Task Fulfillment', 'Tarea Incompleta')
+                  .replace('Severe Lexical Range Deficit', 'Déficit Léxico Severo');
+
+                const tipoActividad = record.activity_type === 'Live Class' ? 'Clase en Vivo' : 
+                                      record.activity_type === 'Workbook' ? 'Libro de Práctica' : 
+                                      record.activity_type === 'Lesson' ? 'Lección Multimedia' : 
+                                      record.activity_type;
+
+                return (
+                  <div key={record.id} className="border border-gray-200 rounded-lg p-5 bg-gray-50">
+                    <div className="flex justify-between items-center border-b border-gray-200 pb-3 mb-3">
+                      <span className="font-black uppercase text-[#08203e]">Unidad {record.unit} • {tipoActividad} • {new Date(record.created_at).toLocaleDateString('es-ES')}</span>
+                      <span className={`font-black px-3 py-1 rounded text-sm ${record.score_percentage >= 75 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                        Calificación: {Math.round(record.score_percentage)} / 100
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-4 gap-4">
+                      <div className="col-span-1">
+                        <span className="block text-[10px] font-bold uppercase text-gray-400 tracking-widest">Evaluador</span>
+                        <span className="text-sm font-bold text-[#08203e]">{record.teacher ? `${record.teacher.first_name} ${record.teacher.last_name}` : 'Sistema Automático'}</span>
+                      </div>
+                      <div className="col-span-3">
+                        <span className="block text-[10px] font-bold uppercase text-gray-400 tracking-widest">Notas del Profesor & Deducciones</span>
+                        <span className="text-sm font-medium text-gray-700 leading-relaxed">{notasTraducidas}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Footer Validation */}
+          <div className="mt-auto pt-8 border-t-2 border-gray-200 text-center">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Documento oficial generado automáticamente por Outloud Language Academy.</p>
+          </div>
+
+        </div>
+      </div>
+
     </div>
   );
 };
