@@ -475,7 +475,7 @@ const StudentCalendar = ({ student, filterType, onConfirm, onCancel }) => {
 
   useEffect(() => {
     const fetchAvailability = async () => {
-      if (!student) return;
+      if (!student || !filterType) return;
 
       // Extracts "A1" from "A1: Básico 1" to match standard calendar formats
       const baseLevel = student.level ? student.level.split(':')[0].trim() : 'A1';
@@ -489,7 +489,20 @@ const StudentCalendar = ({ student, filterType, onConfirm, onCancel }) => {
         .eq('unit', student.unit || 1); // Strictly matches their current unit
         
       if (!error && data) {
-        setAvailableSlots(data);
+        // Map the database timestamp into the visual strings the calendar grid expects
+        const mappedData = data.map(slot => {
+          if (slot.scheduled_at && !slot.session_date) {
+            const d = new Date(slot.scheduled_at);
+            return {
+              ...slot,
+              session_date: d.toISOString().split('T')[0],
+              // Formats as "9:00 AM" to snap perfectly into your UI grid
+              time_slot: d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).replace(/^0/, '')
+            };
+          }
+          return slot;
+        });
+        setAvailableSlots(mappedData);
       }
     };
     

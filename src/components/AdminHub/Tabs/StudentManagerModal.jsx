@@ -224,7 +224,6 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
 
       const { error: ledgerError } = await supabase.from('student_payments').insert({
         student_id: userData.id,
-        payment_type: payType === 'Mensualidad' ? 'Monthly Subscription' : 'Extra Credits',
         amount: payAmount,
         reference_number: payRef,
         status: 'verified' 
@@ -430,7 +429,7 @@ const handleProvisionAccount = async () => {
           <div className="flex items-center gap-5 overflow-hidden w-full pr-4">
             <div className="relative shrink-0">
               <img 
-                src={userData.avatar_url || 'https://i.pravatar.cc/150'} alt="Profile Avatar" 
+                src={userData.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.first_name || userData.full_name || 'U')}&background=random&color=fff`} alt="Profile Avatar" 
                 className={`w-16 h-16 md:w-20 md:h-20 rounded-full object-cover border-2 shadow-lg ${isPending ? 'border-amber-400' : accountStatus === 'suspended' ? 'border-red-500 opacity-50 grayscale' : 'border-white/20'}`}
               />
               {isPending && <div className="absolute -bottom-2 -right-2 bg-amber-400 text-[#08203e] text-[9px] font-black uppercase px-2 py-1 rounded-md shadow-md animate-pulse">PENDING</div>}

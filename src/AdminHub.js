@@ -85,8 +85,8 @@ const handleProvision = async (e) => {
           firstName: firstName.trim(),
           lastName: lastName.trim(),
           role: role,
-          level: role === 'Student' ? provLevel : null,
-          unit: role === 'Student' ? provUnit : null
+          level: role === 'Student' ? provLevel : 'Staff',
+          unit: role === 'Student' ? provUnit : 1
         }
       });
 
@@ -1490,7 +1490,7 @@ const renderAccounts = () => (
             directoryUsers.map((user, i) => (
               <div key={user.id} className="bg-black/30 border border-white/10 rounded-2xl p-4 flex items-center justify-between hover:bg-black/40 transition-colors cursor-pointer group" onClick={() => setSelectedStudent(user)}>
                 <div className="flex items-center gap-4 truncate">
-                  <img src={user.avatar_url || `https://i.pravatar.cc/150?img=${i+10}`} className="w-12 h-12 rounded-full border-2 border-white/20 group-hover:border-[#fcd34d] transition-colors object-cover shadow-md shrink-0" alt="User" />
+                  <img src={user.avatar_url || `https://ui-avatars.com/api/?name=${user.first_name || 'U'}+${user.last_name || ''}&background=random&color=fff`} className="w-12 h-12 rounded-full border-2 border-white/20 group-hover:border-[#fcd34d] transition-colors object-cover shadow-md shrink-0" alt="User" />
                   <h4 className="font-bold text-lg text-white group-hover:text-[#fcd34d] transition-colors truncate">{user.first_name || 'Nuevo'} {user.last_name || `Usuario`}</h4>
                 </div>
                 <div className="flex items-center gap-4 shrink-0">
