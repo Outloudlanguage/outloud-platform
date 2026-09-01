@@ -139,14 +139,57 @@ const navIcons = {
 };
 
 // ==========================================
-// 2. DESKTOP VIEW
+// 2. CURRICULUM LOGIC & OVERLAYS
+// ==========================================
+const getProgressData = (student) => {
+  const currentUnit = Number(student?.unit) || 1;
+  const baseLevel = student?.level ? student.level.split(':')[0].trim() : 'A1';
+  const bounds = {
+    'A1': { start: 1, end: 12 }, 'A2': { start: 13, end: 24 },
+    'B1': { start: 25, end: 36 }, 'B2': { start: 37, end: 48 },
+    'C1': { start: 49, end: 70 }, 'C2': { start: 71, end: 92 }
+  }[baseLevel] || { start: 1, end: 12 };
+  
+  const levelTotalUnits = bounds.end - bounds.start + 1;
+  // Calculate percentage based on completed units within the current level bounds
+  const unitsCompletedInLevel = Math.max(0, currentUnit - bounds.start);
+  let progressPercentage = Math.round((unitsCompletedInLevel / levelTotalUnits) * 100);
+  if (isNaN(progressPercentage)) progressPercentage = 0;
+  
+  return { progressPercentage, currentUnit, levelTotalUnits };
+};
+
+const LevelCompleteOverlay = ({ student }) => {
+  if (!student?.level_completed) return null;
+  const baseLevel = student.level ? student.level.split(':')[0].trim() : 'A1';
+  
+  return (
+    <div className="fixed inset-0 z-[400] flex items-center justify-center p-4 bg-[#070b19]/95 backdrop-blur-3xl animate-fade-in font-montserrat">
+      <div className="absolute inset-0 pointer-events-none overflow-hidden flex justify-center items-center">
+         <div className="w-[800px] h-[800px] bg-[#fcd34d]/10 rounded-full blur-[120px] mix-blend-screen"></div>
+      </div>
+      <div className="bg-white/10 border border-[#fcd34d]/50 rounded-[3rem] p-10 md:p-16 max-w-2xl w-full shadow-[0_0_50px_rgba(252,211,77,0.2)] flex flex-col items-center text-center relative z-10">
+        <div className="w-24 h-24 bg-[#fcd34d] text-[#08203e] rounded-full flex items-center justify-center mb-8 shadow-[0_0_30px_rgba(252,211,77,0.6)]">
+          <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
+        </div>
+        <h1 className="text-4xl md:text-5xl font-black text-white uppercase tracking-widest mb-4 drop-shadow-md">LEVEL {baseLevel} COMPLETE!</h1>
+        <p className="text-lg text-white/80 font-medium mb-8 leading-relaxed">
+          Congratulations on mastering this level! You are now ready to advance. To unlock the next level's curriculum and resume your progress, please process your enrollment renewal.
+        </p>
+        <a href="https://wa.me/584226885683" target="_blank" rel="noreferrer" className="w-full md:w-auto px-10 py-5 bg-[#fcd34d] hover:bg-white text-[#08203e] font-black text-sm uppercase tracking-widest rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-[0_10px_30px_rgba(252,211,77,0.3)]">
+          CONTACT SUPPORT TO RENEW
+        </a>
+      </div>
+    </div>
+  );
+};
+
+// ==========================================
+// 3. DESKTOP VIEW
 // ==========================================
 const DesktopView = ({ student, onReturnHome, onStartActivity, isFetching, activeLiveSession, announcements = [], activeCategory, setActiveCategory }) => {
   const filteredAnnouncements = activeCategory ? announcements.filter(a => a.category === activeCategory) : announcements;
-  const currentUnit = Number(student?.unit) || 1;
-  const totalUnits = 12; 
-  let progressPercentage = Math.round((Math.max(0, currentUnit - 1) / totalUnits) * 100);
-  if (isNaN(progressPercentage)) progressPercentage = 0;
+  const { progressPercentage, currentUnit, levelTotalUnits } = getProgressData(student);
 
   const lessonScore = student?.lesson_score || 0;
   const workbookScore = student?.workbook_score || 0;
@@ -190,7 +233,7 @@ const DesktopView = ({ student, onReturnHome, onStartActivity, isFetching, activ
           {/* LEFT COLUMN: Status & Agenda */}
           <div className="col-span-3 flex flex-col gap-6 h-full">
             <div className="flex-[0.4]">
-              <ProgressCard percentage={progressPercentage} currentUnit={currentUnit} totalUnits={totalUnits} />
+              <ProgressCard percentage={progressPercentage} currentUnit={currentUnit} totalUnits={levelTotalUnits} />
             </div>
             <div className="flex-[0.6]">
               <ActivitiesCard activeLiveSession={activeLiveSession} />
@@ -276,14 +319,11 @@ const DesktopView = ({ student, onReturnHome, onStartActivity, isFetching, activ
 };
 
 // ==========================================
-// 3. MOBILE VIEW
+// 4. MOBILE VIEW
 // ==========================================
 const MobileView = ({ student, onReturnHome, onStartActivity, isFetching, activeLiveSession, announcements = [], activeCategory, setActiveCategory }) => {
   const filteredAnnouncements = activeCategory ? announcements.filter(a => a.category === activeCategory) : announcements;
-  const currentUnit = Number(student?.unit) || 1;
-  const totalUnits = 12; 
-  let progressPercentage = Math.round((Math.max(0, currentUnit - 1) / totalUnits) * 100);
-  if (isNaN(progressPercentage)) progressPercentage = 0;
+  const { progressPercentage, currentUnit, levelTotalUnits } = getProgressData(student);
 
   const lessonScore = student?.lesson_score || 0;
   const workbookScore = student?.workbook_score || 0;
@@ -313,7 +353,7 @@ const MobileView = ({ student, onReturnHome, onStartActivity, isFetching, active
         {/* ROW 1: Completion & Activities */}
         <div className="grid grid-cols-2 gap-3 sm:gap-4">
           <div className="h-60 sm:h-64">
-            <ProgressCard percentage={progressPercentage} currentUnit={currentUnit} totalUnits={totalUnits} />
+            <ProgressCard percentage={progressPercentage} currentUnit={currentUnit} totalUnits={levelTotalUnits} />
           </div>
           <div className="h-60 sm:h-64">
             <ActivitiesCard activeLiveSession={activeLiveSession} />
@@ -598,7 +638,7 @@ const StudentCalendar = ({ student, filterType, onConfirm, onCancel }) => {
            <h2 className="text-3xl font-black text-white uppercase tracking-widest drop-shadow-md">SCHEDULE A LESSON</h2>
            <p className="text-white/80 font-medium text-sm leading-relaxed mb-4">
              CHOOSE AN AVAILABLE DATE FOR YOUR NEXT {filterType}.<br/><br/>
-             Only the <span className="font-black text-[#fcd34d]">YELLOW</span> blocks are currently available for your level.
+             Only the <span className="font-black text-[#fcd34d]">YELLOW</span> blocks are currently available for <strong className="text-white">UNIT {student?.unit || 1}</strong>.
            </p>
            
            <div className="flex flex-col gap-4">
@@ -822,6 +862,8 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
 
   return (
     <>
+      <LevelCompleteOverlay student={studentData} />
+
       <CommunityPanel 
         isOpen={showCommunity} 
         onClose={() => setShowCommunity(false)} 

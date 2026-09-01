@@ -42,6 +42,20 @@ const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess, initialData }
   const [provUnit, setProvUnit] = useState(1);
   const [provCohort, setProvCohort] = useState(15);
 
+  useEffect(() => {
+    const base = provLevel ? provLevel.split(':')[0].trim() : 'A1';
+    const bounds = {
+      'A1': { start: 1, end: 12 }, 'A2': { start: 13, end: 24 },
+      'B1': { start: 25, end: 36 }, 'B2': { start: 37, end: 48 },
+      'C1': { start: 49, end: 70 }, 'C2': { start: 71, end: 92 }
+    }[base] || { start: 1, end: 12 };
+    
+    // Auto-correct the selected unit if it falls outside the new level's boundaries
+    if (provUnit < bounds.start || provUnit > bounds.end) {
+      setProvUnit(bounds.start);
+    }
+  }, [provLevel]);
+
   // Financial States (No screenshots required)
   const MONTHLY_PRICES = { A1: 20, A2: 20, B1: 30, B2: 30, C1: 50, C2: 50 };
   const [payMethod, setPayMethod] = useState('Zelle');
@@ -230,7 +244,19 @@ const handleProvision = async (e) => {
                     </div>
                     <div>
                       <label className="block text-[9px] text-white/50 font-bold uppercase mb-1">Unidad</label>
-                      <input type="number" min="1" max="12" value={provUnit} onChange={e => setProvUnit(parseInt(e.target.value))} className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2.5 text-white text-xs outline-none focus:border-[#fcd34d]" />
+                      <select value={provUnit} onChange={e => setProvUnit(parseInt(e.target.value))} className="w-full bg-black/40 border border-white/20 rounded-xl px-2 py-2.5 text-white text-xs outline-none focus:border-[#fcd34d] cursor-pointer appearance-none">
+                        {(() => {
+                          const base = provLevel ? provLevel.split(':')[0].trim() : 'A1';
+                          const bounds = {
+                            'A1': { start: 1, end: 12 }, 'A2': { start: 13, end: 24 },
+                            'B1': { start: 25, end: 36 }, 'B2': { start: 37, end: 48 },
+                            'C1': { start: 49, end: 70 }, 'C2': { start: 71, end: 92 }
+                          }[base] || { start: 1, end: 12 };
+                          return Array.from({ length: bounds.end - bounds.start + 1 }, (_, i) => bounds.start + i).map(u => (
+                            <option key={u} value={u} className="bg-[#0f172a] text-white">Unidad {u}</option>
+                          ));
+                        })()}
+                      </select>
                     </div>
                     <div>
                       <label className="block text-[9px] text-white/50 font-bold uppercase mb-1">Cohorte</label>
@@ -1238,9 +1264,17 @@ useEffect(() => {
     else setActiveScreenId(workbookScreens[0]);
   }, [contentType, lessonScreens, workbookScreens]);
 
-  const unitOptions = selectedLevel && LEVEL_UNIT_MAP[selectedLevel] 
-    ? Array.from({ length: LEVEL_UNIT_MAP[selectedLevel].end - LEVEL_UNIT_MAP[selectedLevel].start + 1 }, (_, i) => `Unit ${LEVEL_UNIT_MAP[selectedLevel].start + i}`)
-    : [];
+  const unitOptions = (() => {
+    if (!selectedLevel) return [];
+    const base = selectedLevel.split(':')[0].trim();
+    const bounds = {
+      'A1': { start: 1, end: 12 }, 'A2': { start: 13, end: 24 },
+      'B1': { start: 25, end: 36 }, 'B2': { start: 37, end: 48 },
+      'C1': { start: 49, end: 70 }, 'C2': { start: 71, end: 92 }
+    }[base];
+    if (!bounds) return [];
+    return Array.from({ length: bounds.end - bounds.start + 1 }, (_, i) => `Unit ${bounds.start + i}`);
+  })();
 
   const toolOptions = ['Lesson', 'Manuals', 'Cue Cards'].includes(contentType) ? LESSON_TOOLS : WORKBOOK_TOOLS;
 
@@ -1991,8 +2025,28 @@ const FinancesPage = () => {
 
   // Renewals Modal State & Live Calculation
   const [showRenewalsModal, setShowRenewalsModal] = useState(false);
-  const [pendingRenewals, setPendingRenewals] = useState([]); // Blank state for real database fetch later
-  const renewalRate = pendingRenewals.length > 0 ? 0 : 0; // Dynamic 0% until wired
+  const [pendingRenewals, setPendingRenewals] = useState([]); 
+
+  useEffect(() => {
+    const fetchPendingRenewals = async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, whatsapp, level, unit')
+        .eq('level_completed', true);
+        
+      if (data) {
+        setPendingRenewals(data.map(s => ({
+          name: `${s.first_name || ''} ${s.last_name || ''}`.trim(),
+          contact: s.whatsapp || '',
+          completedLevel: `${s.level?.split(':')[0] || 'A1'} (Unit ${s.unit})`
+        })));
+      }
+    };
+    fetchPendingRenewals();
+  }, []);
+
+  // Visual metric: 10% per pending student, capping at 100%
+  const renewalRate = Math.min(pendingRenewals.length * 10, 100); 
 
   const netProfit = revenue - payroll - overhead;
   const netMarginPercentage = revenue > 0 ? ((netProfit / revenue) * 100).toFixed(1) : 0;
@@ -2122,7 +2176,11 @@ const FinancesPage = () => {
                       </div>
                       <div className="text-right">
                         <p className="text-[#fcd34d] font-black text-sm">FINISHED: {student.completedLevel}</p>
-                        <button className="mt-2 bg-[#fcd34d] text-[#08203e] px-4 py-1 rounded font-black text-xs uppercase tracking-widest hover:scale-105 transition-transform">Contact</button>
+                        {student.contact ? (
+                          <a href={`https://wa.me/${student.contact.replace(/\D/g,'')}`} target="_blank" rel="noreferrer" className="mt-2 inline-block bg-[#fcd34d] text-[#08203e] px-4 py-1.5 rounded font-black text-xs uppercase tracking-widest hover:scale-105 transition-transform">Contact</a>
+                        ) : (
+                          <span className="mt-2 inline-block bg-white/10 text-white/40 px-4 py-1.5 rounded font-black text-xs uppercase tracking-widest">No Phone</span>
+                        )}
                       </div>
                    </div>
                 ))

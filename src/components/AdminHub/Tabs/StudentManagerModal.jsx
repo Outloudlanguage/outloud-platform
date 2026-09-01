@@ -340,6 +340,63 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
     return nextMonth.toISOString().split('T')[0];
   };
 
+  const handleProcessRenewal = async (e) => {
+    e.preventDefault();
+    if (!payRef) { alert("Debes incluir un número de referencia de pago."); return; }
+
+    setIsProcessing(true);
+    try {
+      if (userData.id.startsWith('mock')) {
+         alert("Simulación de renovación en datos de prueba exitosa.");
+         setIsProcessing(false);
+         return;
+      }
+
+      const currentBase = getBaseLevel(levelOverride);
+      const nextLevelInfo = {
+        'A1': { level: 'A2: Básico 2', unit: 13 },
+        'A2': { level: 'B1: Intermedio 1', unit: 25 },
+        'B1': { level: 'B2: Intermedio 2', unit: 37 },
+        'B2': { level: 'C1: Avanzado 1', unit: 49 },
+        'C1': { level: 'C2: Avanzado 2', unit: 71 },
+        'C2': { level: 'C2: Avanzado 2', unit: 92 } // Cap/Graduate
+      }[currentBase] || { level: 'A2: Básico 2', unit: 13 };
+
+      const { error: ledgerError } = await supabase.from('student_payments').insert({
+        student_id: userData.id,
+        amount: payAmount,
+        reference_number: payRef,
+        status: 'verified' 
+      });
+      if (ledgerError) throw ledgerError;
+
+      const newCredits = credits + 4;
+      const updates = { 
+        available_credits: newCredits,
+        level_completed: false,
+        level: nextLevelInfo.level,
+        unit: nextLevelInfo.unit,
+        next_billing_date: calculateNextBillingDate()
+      };
+
+      const { error: profileError } = await supabase.from('profiles').update(updates).eq('id', userData.id);
+      if (profileError) throw profileError;
+
+      setCredits(newCredits);
+      setLevelOverride(nextLevelInfo.level);
+      setUnitOverride(nextLevelInfo.unit);
+      
+      alert(`¡Renovación de Nivel Exitosa!\nEl estudiante ha sido promovido a ${nextLevelInfo.level} (Unidad ${nextLevelInfo.unit}) y se agregaron 4 créditos.`);
+      setPayRef('');
+      if (onSuccess) onSuccess();
+    } catch (error) {
+      console.error("Renewal Error:", error);
+      alert("Hubo un error procesando la renovación en la base de datos.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const handlePaymentSubmit = async (e) => {
     e.preventDefault();
     if (!payRef) { alert("Debes incluir un número de referencia de pago."); return; }
@@ -598,9 +655,16 @@ const handleProvisionAccount = async () => {
               <p className="text-xs md:text-sm text-white/60 font-semibold mt-1 truncate">{userData.email} {userData.whatsapp ? `• ${userData.whatsapp}` : ''}</p>
               
               {!isPending && userRole === 'Student' && (
-                <p className="text-[10px] text-[#fcd34d] font-bold uppercase tracking-widest mt-1">
-                  NIVEL: {levelOverride.split(':')[0]} • CRÉDITOS: <span className="text-white">{credits}</span>
-                </p>
+                <div className="flex flex-col gap-1 mt-1">
+                  <p className="text-[10px] text-[#fcd34d] font-bold uppercase tracking-widest">
+                    NIVEL: {levelOverride.split(':')[0]} • CRÉDITOS: <span className="text-white">{credits}</span>
+                  </p>
+                  {userData.level_completed && (
+                    <span className="bg-amber-500 text-[#08203e] text-[9px] font-black uppercase px-2 py-0.5 rounded w-fit animate-pulse shadow-md">
+                      Nivel Completado - Esperando Renovación
+                    </span>
+                  )}
+                </div>
               )}
               {!isPending && userRole !== 'Student' && (
                 <p className="text-[10px] text-blue-400 font-bold uppercase tracking-widest mt-1">
@@ -865,37 +929,66 @@ const handleProvisionAccount = async () => {
                     </div>
                   </div>
 
-                  <div className="bg-black/30 border border-emerald-500/30 rounded-2xl p-6 md:p-8 shadow-inner">
-                    <h3 className="text-emerald-400 font-black uppercase tracking-widest mb-2">Registrar Pago Manual</h3>
-                    <p className="text-xs text-white/60 mb-6 font-medium">Sube el comprobante y el número de referencia para verificar el pago y aplicar los créditos automáticamente.</p>
-                    
-                    <form onSubmit={handlePaymentSubmit} className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Tipo de Compra</label>
-                          <select value={payType} onChange={handlePayTypeChange} className="w-full bg-[#070b19] border border-white/20 rounded-xl px-4 py-3 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-emerald-400 appearance-none cursor-pointer">
-                            <option value="Mensualidad">Suscripción Mensual (+4 Créditos)</option>
-                            <option value="Extra">Créditos Extra (+2 Créditos por $12)</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Monto a Verificar (USD)</label>
-                          <div className="relative">
-                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50 font-black">$</span>
-                            <input type="number" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} className="w-full bg-[#070b19] border border-white/20 rounded-xl pl-8 pr-4 py-3 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-emerald-400" required />
+                  <div className={`bg-black/30 border rounded-2xl p-6 md:p-8 shadow-inner ${userData.level_completed ? 'border-amber-500/50' : 'border-emerald-500/30'}`}>
+                    {userData.level_completed ? (
+                      <>
+                        <h3 className="text-amber-400 font-black uppercase tracking-widest mb-2">Procesar Renovación de Nivel</h3>
+                        <p className="text-xs text-white/60 mb-6 font-medium">El estudiante aprobó el nivel {getBaseLevel(levelOverride)}. Registra el pago de renovación para promoverlo al siguiente nivel, reactivar sus créditos y desbloquear su cuenta.</p>
+                        
+                        <form onSubmit={handleProcessRenewal} className="space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Monto de Renovación (USD)</label>
+                              <div className="relative">
+                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50 font-black">$</span>
+                                <input type="number" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} className="w-full bg-[#070b19] border border-white/20 rounded-xl pl-8 pr-4 py-3 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-amber-400" required />
+                              </div>
+                            </div>
+                            <div>
+                              <label className="block text-[9px] text-white/50 font-bold uppercase mb-1">Referencia (Zelle / Pago Móvil)</label>
+                              <input type="text" value={payRef} onChange={e => setPayRef(e.target.value)} placeholder="Ej: REF-923847" className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-3 text-white text-xs outline-none focus:border-amber-400" required />
+                            </div>
                           </div>
-                        </div>
-                      </div>
 
-                  <div className="mb-3">
-                      <label className="block text-[9px] text-white/50 font-bold uppercase mb-1">Número de Referencia (Zelle / Pago Móvil)</label>
-                      <input type="text" value={payRef} onChange={e => setPayRef(e.target.value)} placeholder="Ej: REF-923847" className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-[#fcd34d]" required />
-                    </div>
+                          <button type="submit" disabled={isProcessing} className="w-full py-4 mt-auto bg-amber-400 hover:bg-white text-[#08203e] font-black tracking-widest text-xs uppercase rounded-xl transition-all shadow-[0_0_20px_rgba(251,191,36,0.3)] disabled:opacity-50 hover:scale-[1.02]">
+                            {isProcessing ? 'Procesando...' : `Renovar Nivel y Cobrar $${payAmount}`}
+                          </button>
+                        </form>
+                      </>
+                    ) : (
+                      <>
+                        <h3 className="text-emerald-400 font-black uppercase tracking-widest mb-2">Registrar Pago Manual</h3>
+                        <p className="text-xs text-white/60 mb-6 font-medium">Sube el comprobante y el número de referencia para verificar el pago y aplicar los créditos automáticamente.</p>
+                        
+                        <form onSubmit={handlePaymentSubmit} className="space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Tipo de Compra</label>
+                              <select value={payType} onChange={handlePayTypeChange} className="w-full bg-[#070b19] border border-white/20 rounded-xl px-4 py-3 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-emerald-400 appearance-none cursor-pointer">
+                                <option value="Mensualidad">Suscripción Mensual (+4 Créditos)</option>
+                                <option value="Extra">Créditos Extra (+2 Créditos por $12)</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Monto a Verificar (USD)</label>
+                              <div className="relative">
+                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50 font-black">$</span>
+                                <input type="number" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} className="w-full bg-[#070b19] border border-white/20 rounded-xl pl-8 pr-4 py-3 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-emerald-400" required />
+                              </div>
+                            </div>
+                          </div>
 
-                    <button type="submit" disabled={isProcessing} className="w-full py-4 mt-auto bg-[#fcd34d] hover:bg-white text-[#08203e] font-black tracking-widest text-xs uppercase rounded-xl transition-all shadow-[0_0_20px_rgba(252,211,77,0.3)] disabled:opacity-50 hover:scale-[1.02]">
-                      {isProcessing ? 'Verificando y Aplicando...' : `Confirmar Pago de $${payAmount}`}
-                    </button>
-                  </form>
+                          <div className="mb-3">
+                            <label className="block text-[9px] text-white/50 font-bold uppercase mb-1">Número de Referencia (Zelle / Pago Móvil)</label>
+                            <input type="text" value={payRef} onChange={e => setPayRef(e.target.value)} placeholder="Ej: REF-923847" className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-[#fcd34d]" required />
+                          </div>
+
+                          <button type="submit" disabled={isProcessing} className="w-full py-4 mt-auto bg-[#fcd34d] hover:bg-white text-[#08203e] font-black tracking-widest text-xs uppercase rounded-xl transition-all shadow-[0_0_20px_rgba(252,211,77,0.3)] disabled:opacity-50 hover:scale-[1.02]">
+                            {isProcessing ? 'Verificando y Aplicando...' : `Confirmar Pago de $${payAmount}`}
+                          </button>
+                        </form>
+                      </>
+                    )}
                   </div>
                 </>
               ) : (

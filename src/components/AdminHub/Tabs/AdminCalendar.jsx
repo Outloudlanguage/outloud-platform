@@ -23,6 +23,7 @@ const AdminCalendar = () => {
   // Assignment States
   const [selectedTeacherId, setSelectedTeacherId] = useState('');
   const [selectedClassType, setSelectedClassType] = useState('Unit Class');
+  const [selectedUnit, setSelectedUnit] = useState(1);
 
   const dayNames = ['LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB', 'DOM'];
   
@@ -186,13 +187,14 @@ const AdminCalendar = () => {
       const finalTimestamp = new Date(year, month, date, hours, parseInt(minutes, 10), 0).toISOString();
 
       const { error } = await supabase.from('live_sessions').insert({
-        title: selectedClassType, 
+        title: selectedClassType === 'Unit Class' ? `Unit ${selectedUnit}` : selectedClassType, 
         target_level: 'ALL', 
         scheduled_at: finalTimestamp,
         teacher_id: selectedTeacherId,
         class_type: selectedClassType,
         status: 'available',
-        duration_minutes: 60 
+        duration_minutes: 60,
+        unit: selectedClassType === 'Unit Class' ? selectedUnit : null
       });
       
       if (error) throw error;
@@ -243,6 +245,7 @@ const AdminCalendar = () => {
     if (!currentData && teachers.length > 0) {
       setSelectedTeacherId(teachers[0].id);
       setSelectedClassType(activeTab === 'SOCIALS' ? 'Social Activity' : activeTab === 'TUTORING' ? '1-on-1 Tutoring' : 'Unit Class');
+      setSelectedUnit(1);
     }
   };
 
@@ -455,6 +458,11 @@ const AdminCalendar = () => {
                               <div className="absolute inset-0 flex items-center justify-center bg-white/10 opacity-0 group-hover:opacity-100 rounded-xl transition-opacity pointer-events-none">
                                  <span className="text-[9px] font-black text-white tracking-widest">+ ABRIR</span>
                               </div>
+                            ) : slotData.status === 'available' ? (
+                              <div className="flex flex-col items-center justify-center text-center leading-tight p-1 overflow-hidden z-10 pointer-events-none w-full mt-2">
+                                <span className="text-[9px] md:text-[10px] font-black text-emerald-400 truncate w-full px-1 uppercase">{slotData.class_type === 'Unit Class' ? `Unidad ${slotData.unit}` : slotData.class_type}</span>
+                                <span className="text-[7px] md:text-[8px] opacity-80 mt-0.5 truncate w-full px-1 text-white">{slotData.teacher?.first_name || 'Prof.'}</span>
+                              </div>
                             ) : (
                               <div className="flex flex-col items-center justify-center text-center leading-tight p-1 overflow-hidden z-10 pointer-events-none w-full mt-2">
                                 <span className="text-[9px] md:text-[10px] font-black truncate w-full px-1">{slotData.student?.first_name || 'Estudiante'}</span>
@@ -510,7 +518,9 @@ const AdminCalendar = () => {
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                 </div>
                 <div>
-                  <h4 className="text-lg font-black text-white uppercase tracking-widest">Bloque Disponible</h4>
+                  <h4 className="text-lg font-black text-white uppercase tracking-widest">
+                    {selectedSlot.data.class_type === 'Unit Class' ? `Unidad ${selectedSlot.data.unit} Disponible` : `${selectedSlot.data.class_type} Disponible`}
+                  </h4>
                   <p className="text-xs text-white/60 mt-2">Profesor Asignado: <span className="font-bold text-white">{selectedSlot.data.teacher?.first_name} {selectedSlot.data.teacher?.last_name}</span></p>
                 </div>
                 <button disabled={isProcessing} onClick={handleCloseBlock} className="w-full py-3.5 bg-white/10 hover:bg-white/20 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all border border-white/20 cursor-pointer">
@@ -545,6 +555,28 @@ const AdminCalendar = () => {
                       <option value="1-on-1 Tutoring" className="text-slate-900">1-on-1 Tutoring</option>
                       <option value="Social Activity" className="text-slate-900">Social Activity</option>
                     </select>
+                    {selectedClassType === 'Unit Class' && (
+                      <select 
+                        value={selectedUnit} 
+                        onChange={(e) => setSelectedUnit(parseInt(e.target.value))}
+                        className="w-full p-3 bg-emerald-500/20 border border-emerald-500/50 rounded-xl text-xs font-black text-emerald-400 uppercase tracking-widest focus:outline-none appearance-none text-center cursor-pointer relative z-40"
+                      >
+                        {[
+                          { label: 'A1', start: 1, end: 12 },
+                          { label: 'A2', start: 13, end: 24 },
+                          { label: 'B1', start: 25, end: 36 },
+                          { label: 'B2', start: 37, end: 48 },
+                          { label: 'C1', start: 49, end: 70 },
+                          { label: 'C2', start: 71, end: 92 }
+                        ].map(lvl => (
+                          <optgroup key={lvl.label} label={`NIVEL ${lvl.label}`} className="text-slate-500 font-black bg-white">
+                            {Array.from({ length: lvl.end - lvl.start + 1 }, (_, i) => lvl.start + i).map(unit => (
+                              <option key={unit} value={unit} className="text-slate-900 font-bold">Unidad {unit}</option>
+                            ))}
+                          </optgroup>
+                        ))}
+                      </select>
+                    )}
                   </div>
                 </div>
                 <button disabled={isProcessing} onClick={handleOpenBlock} className="w-full mt-4 py-3.5 bg-[#fcd34d] hover:bg-white text-[#08203e] font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-[0_0_15px_rgba(252,211,77,0.4)] cursor-pointer">

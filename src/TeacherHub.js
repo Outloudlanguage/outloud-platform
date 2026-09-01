@@ -123,7 +123,6 @@ const SocialButton = ({ src, url }) => (
   </a>
 );
 
-// SVGs for Teacher Nav (Swapped Live/Calendar for Manual/Tools)
 const navIcons = {
   manual: <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>,
   tools: <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.83-5.83M15.17 11.42L21 5.58a2.652 2.652 0 00-3.75-3.75l-5.83 5.83m-1.5 1.5l-4.58 4.58a2.652 2.652 0 01-3.75-3.75l4.58-4.58" /></svg>,
@@ -178,7 +177,7 @@ const DesktopView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onR
         <div className="absolute inset-0 bg-[#070b19]/40"></div>
       </div>
 
-      {/* SIDEBAR NAVIGATION (Modified for Teachers) */}
+      {/* SIDEBAR NAVIGATION */}
       <div className="w-28 border-r border-white/10 bg-black/20 backdrop-blur-2xl flex flex-col items-center py-10 gap-6 shrink-0 z-10 shadow-2xl">
         <NavIconBtn isProfile avatarUrl={teacher?.avatar_url} onClick={onOpenProfileMenu} hasNotification={pendingEvaluations.length > 0} />
         <div className="w-12 h-px bg-white/10 my-2"></div>
@@ -425,7 +424,7 @@ const MobileView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onRe
 
       </div>
 
-      {/* FIXED BOTTOM NAVIGATION (Modified for Teachers) */}
+      {/* FIXED BOTTOM NAVIGATION */}
       <div className="fixed bottom-0 left-0 right-0 h-20 sm:h-24 bg-white/10 backdrop-blur-2xl border-t border-white/20 flex items-center justify-between px-2 sm:px-4 z-50 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
         <NavIconBtn isProfile avatarUrl={teacher?.avatar_url} onClick={onOpenProfileMenu} hasNotification={pendingEvaluations.length > 0} />
         <NavIconBtn iconSvg={navIcons.manual} onClick={() => onAction('Manual')} />
@@ -487,7 +486,7 @@ const EvaluationModal = ({ isOpen, onClose, pendingClasses, onGradeSubmitted, te
         teacher_id: teacherId,
         unit: currentEvaluation.unit,
         activity_type: 'Live Class',
-        score_percentage: (finalScore / 20) * 100, // Saves in 100% format for global average consistency
+        score_percentage: (finalScore / 20) * 100, 
         teacher_notes: notes
       });
 
@@ -496,12 +495,26 @@ const EvaluationModal = ({ isOpen, onClose, pendingClasses, onGradeSubmitted, te
       const { data: studentProfile } = await supabase.from('profiles').select('unit, unit_fail_count').eq('id', currentEvaluation.student_id).single();
       
       if (isPassed) {
-        await supabase.from('profiles').update({
-          unit: (studentProfile.unit || 1) + 1,
-          lesson_score: 0,
-          workbook_score: 0,
-          unit_fail_count: 0
-        }).eq('id', currentEvaluation.student_id);
+        const CAPSTONE_UNITS = [12, 24, 36, 48, 70, 92];
+        const isCapstone = CAPSTONE_UNITS.includes(currentEvaluation.unit);
+
+        if (isCapstone) {
+          // RENEWAL GATE: Freeze the unit and flag for admin renewal
+          await supabase.from('profiles').update({
+            level_completed: true,
+            lesson_score: 0,
+            workbook_score: 0,
+            unit_fail_count: 0
+          }).eq('id', currentEvaluation.student_id);
+        } else {
+          // STANDARD ADVANCEMENT
+          await supabase.from('profiles').update({
+            unit: (studentProfile.unit || 1) + 1,
+            lesson_score: 0,
+            workbook_score: 0,
+            unit_fail_count: 0
+          }).eq('id', currentEvaluation.student_id);
+        }
       } else {
         await supabase.from('profiles').update({
           unit_fail_count: (studentProfile.unit_fail_count || 0) + 1
@@ -592,6 +605,84 @@ const EvaluationModal = ({ isOpen, onClose, pendingClasses, onGradeSubmitted, te
 };
 
 // ==========================================
+// 5.5 TEACHER ROSTER MODAL
+// ==========================================
+const TeacherRosterModal = ({ isOpen, onClose, teacherId }) => {
+  const [sessions, setSessions] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!isOpen || !teacherId) return;
+    const fetchRoster = async () => {
+      setLoading(true);
+      const now = new Date();
+      const nextWeek = new Date(now.getTime() + (7 * 24 * 60 * 60 * 1000));
+      
+      const { data } = await supabase
+        .from('live_sessions')
+        .select(`*, student:profiles!student_id(first_name, last_name)`)
+        .eq('teacher_id', teacherId)
+        .gte('scheduled_at', now.toISOString())
+        .lte('scheduled_at', nextWeek.toISOString())
+        .order('scheduled_at', { ascending: true });
+        
+      if (data) setSessions(data);
+      setLoading(false);
+    };
+    fetchRoster();
+  }, [isOpen, teacherId]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in font-montserrat">
+      <div className="relative w-full max-w-2xl bg-[#070b19]/95 border border-white/20 rounded-[2rem] shadow-[0_25px_50px_rgba(0,0,0,0.5)] flex flex-col max-h-[85vh] overflow-hidden my-8">
+        <div className="p-6 md:p-8 border-b border-white/10 flex justify-between items-center bg-white/5 shrink-0">
+          <h2 className="text-xl md:text-2xl font-black text-[#fcd34d] uppercase tracking-widest drop-shadow-md">My 7-Day Schedule</h2>
+          <button onClick={onClose} className="text-white/50 hover:text-white transition-colors">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+        <div className="p-6 md:p-8 flex-1 overflow-y-auto custom-scrollbar">
+          {loading ? (
+            <div className="flex justify-center py-10"><div className="w-10 h-10 border-4 border-[#fcd34d] border-t-transparent rounded-full animate-spin"></div></div>
+          ) : sessions.length === 0 ? (
+            <div className="text-center text-white/40 font-bold uppercase tracking-widest py-10">No classes scheduled for the next 7 days.</div>
+          ) : (
+            <div className="flex flex-col gap-4">
+              {sessions.map(s => {
+                const d = new Date(s.scheduled_at);
+                const isBooked = s.status === 'booked' || s.status === 'completed';
+                return (
+                  <div key={s.id} className={`p-5 rounded-2xl border flex items-center justify-between shadow-md transition-transform hover:scale-[1.02] ${isBooked ? 'bg-[#fcd34d]/10 border-[#fcd34d]/30' : 'bg-white/5 border-white/10'}`}>
+                    <div className="flex flex-col">
+                      <span className={`font-black uppercase tracking-widest text-sm ${isBooked ? 'text-[#fcd34d]' : 'text-emerald-400'}`}>
+                        {d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} @ {d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                      </span>
+                      <span className="text-white/80 text-xs font-bold mt-1.5">
+                        {isBooked ? `Student: ${s.student?.first_name || 'Estudiante'} ${s.student?.last_name || ''}` : 'Open Slot (Available)'}
+                      </span>
+                    </div>
+                    <div className="text-right flex flex-col items-end">
+                      <span className="text-[10px] font-black text-white/50 uppercase tracking-widest">{s.class_type}</span>
+                      {isBooked ? (
+                        <span className="bg-[#fcd34d] text-[#08203e] text-[9px] font-black px-2.5 py-1 rounded mt-1.5 uppercase tracking-widest shadow-sm">Booked</span>
+                      ) : (
+                        <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[9px] font-black px-2.5 py-1 rounded mt-1.5 uppercase tracking-widest">Available</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ==========================================
 // 6. MAIN ROUTER COMPONENT
 // ==========================================
 const TeacherHub = ({ onReturnHome }) => {
@@ -604,6 +695,7 @@ const TeacherHub = ({ onReturnHome }) => {
   const [isEvalModalOpen, setIsEvalModalOpen] = useState(false);
   const [isLaunching, setIsLaunching] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [isRosterOpen, setIsRosterOpen] = useState(false); // Controls the Calendar
 
   // Dynamic Notification State (defaults to false)
   const [hasNewStaffBoard, setHasNewStaffBoard] = useState(false);
@@ -628,42 +720,28 @@ const TeacherHub = ({ onReturnHome }) => {
       const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
       setTeacherData(profile);
 
-      // 1. Secure Local Time Calculation
       const now = new Date();
-      const localOffset = now.getTimezoneOffset() * 60000;
-      const localNow = new Date(now.getTime() - localOffset);
-      const todayStr = localNow.toISOString().split('T')[0];
-      const firstDayOfMonth = new Date(localNow.getFullYear(), localNow.getMonth(), 1).toISOString().split('T')[0];
+      
+      // Calculate first day of the month for logged hours safely
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      
+      // Fetch classes from the last 24 hours to cover timezone overlaps
+      const twentyFourHoursAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000)).toISOString();
 
-      // 2. Fetch all upcoming classes safely handling capitalized statuses
+      // 1. Fetch all upcoming classes USING scheduled_at (Schema fix)
       const { data: upcoming, error: upcomingError } = await supabase
         .from('live_sessions')
         .select(`*, student:profiles!student_id(first_name, last_name)`)
         .eq('teacher_id', session.user.id)
         .in('status', ['booked', 'Booked', 'BOOKED'])
-        .gte('session_date', todayStr);
+        .gte('scheduled_at', twentyFourHoursAgo);
 
       if (upcomingError) console.error("Database Fetch Error:", upcomingError);
 
       if (upcoming && upcoming.length > 0) {
         const sortedClasses = upcoming.map(cls => {
-          // Robust Time Parser for "9:00 AM" -> "09:00:00"
-          const timeStr = cls.time_slot || "12:00 AM";
-          const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
-          let hours = 0;
-          let mins = "00";
-          
-          if (match) {
-            hours = parseInt(match[1], 10);
-            mins = match[2];
-            const modifier = match[3].toUpperCase();
-            if (hours === 12) hours = 0;
-            if (modifier === 'PM') hours += 12;
-          }
-          
-          const paddedHours = hours.toString().padStart(2, '0');
-          const classDateTime = new Date(`${cls.session_date}T${paddedHours}:${mins}:00`);
-          
+          // Safely parse the real database timestamp
+          const classDateTime = cls.scheduled_at ? new Date(cls.scheduled_at) : new Date();
           return { ...cls, parsedDate: classDateTime };
         })
         // Allow classes that started up to 1 hour ago to remain active
@@ -677,12 +755,12 @@ const TeacherHub = ({ onReturnHome }) => {
             student_id: next.student_id,
             student_name: `${next.student?.first_name || 'Estudiante'} ${next.student?.last_name || ''}`.trim(),
             unit: next.unit || 1,
-            date: next.parsedDate.toISOString() // Provides a safe string for React rendering
+            date: next.parsedDate.toISOString() 
           });
         }
       }
 
-      // 3. Fetch Pending Gradings
+      // 2. Fetch Pending Gradings USING scheduled_at
       const { data: pending } = await supabase
         .from('live_sessions')
         .select(`*, student:profiles!student_id(first_name, last_name)`)
@@ -691,26 +769,30 @@ const TeacherHub = ({ onReturnHome }) => {
         .eq('is_graded', false);
 
       if (pending) {
-        setPendingEvaluations(pending.map(p => ({
-          id: p.id,
-          student_id: p.student_id,
-          student_name: `${p.student?.first_name || 'Estudiante'} ${p.student?.last_name || ''}`.trim(),
-          unit: p.unit || 1,
-          date: `${p.session_date} ${p.time_slot}`
-        })));
+        setPendingEvaluations(pending.map(p => {
+          const d = p.scheduled_at ? new Date(p.scheduled_at) : new Date();
+          return {
+            id: p.id,
+            student_id: p.student_id,
+            student_name: `${p.student?.first_name || 'Estudiante'} ${p.student?.last_name || ''}`.trim(),
+            unit: p.unit || 1,
+            // Visually reconstruct the date/time string for the UI
+            date: `${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} at ${d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`
+          };
+        }));
       }
 
-      // 4. Fetch Logged Hours
+      // 3. Fetch Logged Hours USING scheduled_at
       const { count: loggedHours } = await supabase
         .from('live_sessions')
         .select('*', { count: 'exact', head: true })
         .eq('teacher_id', session.user.id)
         .in('status', ['completed', 'Completed', 'COMPLETED'])
-        .gte('session_date', firstDayOfMonth);
+        .gte('scheduled_at', firstDayOfMonth);
 
       setPayrollStats({ current: loggedHours || 0, monthlyGoal: 80 });
 
-      // 5. Fetch Latest Announcement
+      // 4. Fetch Latest Announcement
       const { data: annData } = await supabase
         .from('announcements')
         .select('*')
@@ -719,7 +801,7 @@ const TeacherHub = ({ onReturnHome }) => {
         .limit(1);
       if (annData && annData.length > 0) setLatestAnnouncement(annData[0]);
 
-      // 6. Fetch Latest Forum Post
+      // 5. Fetch Latest Forum Post
       const { data: forumData } = await supabase
         .from('forum_posts')
         .select('*')
@@ -735,6 +817,11 @@ const TeacherHub = ({ onReturnHome }) => {
   };
 
   const handleAction = async (actionType) => {
+    if (actionType === 'Calendar') {
+      setIsRosterOpen(true);
+      return;
+    }
+
     // Community Routing
     if (actionType.startsWith('Community_')) {
       setCommunityTab(actionType.split('_')[1]);
@@ -790,6 +877,12 @@ const TeacherHub = ({ onReturnHome }) => {
         onClose={() => setIsEvalModalOpen(false)} 
         pendingClasses={pendingEvaluations} 
         onGradeSubmitted={removeEvaluatedClass} 
+        teacherId={teacherData?.id} 
+      />
+
+      <TeacherRosterModal 
+        isOpen={isRosterOpen} 
+        onClose={() => setIsRosterOpen(false)} 
         teacherId={teacherData?.id} 
       />
 
