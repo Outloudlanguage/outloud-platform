@@ -163,7 +163,7 @@ const ProfileOverlay = ({ isOpen, onClose, teacher, pendingCount, onOpenEvaluati
 // ==========================================
 // 3. DESKTOP VIEW
 // ==========================================
-const DesktopView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onReturnHome, onAction, onRequestSub, onOpenProfileMenu, isLaunching, hasNewStaffBoard }) => {
+const DesktopView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onReturnHome, onAction, onRequestSub, onOpenProfileMenu, isLaunching, hasNewStaffBoard, latestAnnouncement, latestForumPost }) => {
   const goal = payrollStats?.monthlyGoal || 100;
   const acquired = payrollStats?.current || 0;
 
@@ -261,23 +261,38 @@ const DesktopView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onR
             </div>
 
             <div className="flex-1 flex flex-col gap-4 mt-4 overflow-y-auto custom-scrollbar pr-2 pb-4">
-              {/* SOCIAL CLUB CARD */}
-              <div className="bg-white/10 border border-white/20 rounded-2xl p-4 flex items-center gap-4 hover:bg-white/20 transition-colors cursor-pointer">
-                <div className="w-24 h-24 rounded-xl overflow-hidden shrink-0 border border-white/30 shadow-md">
-                  <img src="https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&q=80&w=400" alt="Game Night" className="w-full h-full object-cover" />
-                </div>
-                <div className="flex flex-col">
-                  <h4 className="text-sm font-black uppercase tracking-widest mb-1 text-white drop-shadow-sm">Social Club: Game Night</h4>
-                  <p className="text-[10px] text-white/80 leading-relaxed font-medium">We're happy to announce that very soon we will be hosting our live game-night. Don't miss it, check out the calendar, look for the green box and claim your spot.</p>
-                </div>
-              </div>
+                {/* DYNAMIC ANNOUNCEMENT CARD */}
+                {latestAnnouncement ? (
+                  <div onClick={() => onAction('Community_BOARD')} className="bg-white/10 border border-white/20 rounded-2xl p-4 flex flex-col xl:flex-row items-center gap-4 hover:bg-white/20 transition-all hover:scale-[1.02] cursor-pointer shadow-md">
+                    {latestAnnouncement.image_url && (
+                      <div className="w-full xl:w-24 h-32 xl:h-24 rounded-xl overflow-hidden shrink-0 border border-white/30 shadow-sm">
+                        <img src={latestAnnouncement.image_url} alt="Announcement" className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                    <div className="flex flex-col w-full text-center xl:text-left">
+                      <h4 className="text-sm font-black uppercase tracking-widest mb-1 text-[#fcd34d] drop-shadow-sm truncate">{latestAnnouncement.title}</h4>
+                      <p className="text-[10px] text-white/80 leading-relaxed font-medium line-clamp-3">{latestAnnouncement.content}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center justify-center text-white/30 text-[10px] font-bold uppercase tracking-widest min-h-[100px]">
+                    No recent announcements
+                  </div>
+                )}
 
-              {/* FORUM BANNER */}
-              <div className="bg-white/10 border border-white/20 rounded-2xl p-5 hover:bg-white/20 transition-colors cursor-pointer text-center">
-                <h4 className="text-sm font-black uppercase tracking-widest mb-2 text-white drop-shadow-sm">Did you check the open forum?</h4>
-                <p className="text-[10px] text-white/80 leading-relaxed font-medium">The latest post on the open forum is already being commented on. Everyone is waiting for you to share your opinion; go and see it for yourself, and remember, be friendly to everyone. Happy posting!</p>
+                {/* DYNAMIC FORUM BANNER */}
+                {latestForumPost ? (
+                  <div onClick={() => onAction('Community_BOARD')} className="bg-white/10 border border-white/20 rounded-2xl p-5 hover:bg-white/20 transition-all hover:scale-[1.02] cursor-pointer text-center shadow-md">
+                    <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest mb-1 block">Latest Forum Topic</span>
+                    <h4 className="text-sm font-black uppercase tracking-widest mb-2 text-white drop-shadow-sm truncate">{latestForumPost.title}</h4>
+                    <p className="text-[10px] text-white/80 leading-relaxed font-medium line-clamp-2">{latestForumPost.content}</p>
+                  </div>
+                ) : (
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-5 text-center text-white/30 text-[10px] font-bold uppercase tracking-widest min-h-[100px]">
+                    No active forum topics
+                  </div>
+                )}
               </div>
-            </div>
           </div>
 
         </div>
@@ -289,7 +304,7 @@ const DesktopView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onR
 // ==========================================
 // 4. MOBILE VIEW
 // ==========================================
-const MobileView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onReturnHome, onAction, onRequestSub, onOpenProfileMenu, isLaunching, hasNewStaffBoard }) => {
+const MobileView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onReturnHome, onAction, onRequestSub, onOpenProfileMenu, isLaunching, hasNewStaffBoard, latestAnnouncement, latestForumPost }) => {
   const goal = payrollStats?.monthlyGoal || 100;
   const acquired = payrollStats?.current || 0;
 
@@ -361,22 +376,37 @@ const MobileView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onRe
             <PillButton title="Request Sub" onClick={onRequestSub} />
           </div>
 
-          {/* SOCIAL CLUB CARD */}
-          <div className="bg-white/10 border border-white/20 rounded-2xl p-4 flex flex-col sm:flex-row items-center gap-4 mt-2">
-            <div className="w-full sm:w-24 h-32 sm:h-24 rounded-xl overflow-hidden shrink-0 border border-white/30">
-              <img src="https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&q=80&w=400" alt="Game Night" className="w-full h-full object-cover" />
+          {/* DYNAMIC ANNOUNCEMENT CARD */}
+          {latestAnnouncement ? (
+            <div onClick={() => onAction('Community_BOARD')} className="bg-white/10 border border-white/20 rounded-2xl p-4 flex flex-col sm:flex-row items-center gap-4 mt-2 hover:bg-white/20 transition-all cursor-pointer shadow-md">
+              {latestAnnouncement.image_url && (
+                <div className="w-full sm:w-24 h-32 sm:h-24 rounded-xl overflow-hidden shrink-0 border border-white/30">
+                  <img src={latestAnnouncement.image_url} alt="Announcement" className="w-full h-full object-cover" />
+                </div>
+              )}
+              <div className="flex flex-col text-center sm:text-left">
+                <h4 className="text-sm font-black uppercase tracking-widest mb-1 text-[#fcd34d] truncate">{latestAnnouncement.title}</h4>
+                <p className="text-[10px] text-white/80 leading-relaxed font-medium line-clamp-3">{latestAnnouncement.content}</p>
+              </div>
             </div>
-            <div className="flex flex-col text-center sm:text-left">
-              <h4 className="text-sm font-black uppercase tracking-widest mb-1 text-white">Social Club: Game Night</h4>
-              <p className="text-[10px] text-white/80 leading-relaxed font-medium">We're happy to announce that very soon we will be hosting our live game-night. Don't miss it, check out the calendar.</p>
-            </div>
-          </div>
+          ) : (
+             <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center justify-center text-white/30 text-[10px] font-bold uppercase tracking-widest min-h-[100px] mt-2">
+                No recent announcements
+             </div>
+          )}
 
-          {/* FORUM BANNER */}
-          <div className="bg-white/10 border border-white/20 rounded-2xl p-5 text-center">
-            <h4 className="text-sm font-black uppercase tracking-widest mb-2 text-white">Did you check the open forum?</h4>
-            <p className="text-[10px] text-white/80 leading-relaxed font-medium">The latest post on the open forum is already being commented on. Everyone is waiting for you to share your opinion; go and see it for yourself!</p>
-          </div>
+          {/* DYNAMIC FORUM BANNER */}
+          {latestForumPost ? (
+            <div onClick={() => onAction('Community_BOARD')} className="bg-white/10 border border-white/20 rounded-2xl p-5 text-center hover:bg-white/20 transition-all cursor-pointer shadow-md">
+              <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest mb-1 block">Latest Forum Topic</span>
+              <h4 className="text-sm font-black uppercase tracking-widest mb-2 text-white truncate">{latestForumPost.title}</h4>
+              <p className="text-[10px] text-white/80 leading-relaxed font-medium line-clamp-2">{latestForumPost.content}</p>
+            </div>
+          ) : (
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 text-center text-white/30 text-[10px] font-bold uppercase tracking-widest min-h-[100px]">
+              No active forum topics
+            </div>
+          )}
         </div>
 
         {/* SOCIALS & SUPPORT */}
@@ -577,6 +607,10 @@ const TeacherHub = ({ onReturnHome }) => {
 
   // Dynamic Notification State (defaults to false)
   const [hasNewStaffBoard, setHasNewStaffBoard] = useState(false);
+  
+  // Real-time Feed States
+  const [latestAnnouncement, setLatestAnnouncement] = useState(null);
+  const [latestForumPost, setLatestForumPost] = useState(null);
 
   // Community Panel State
   const [showCommunity, setShowCommunity] = useState(false);
@@ -594,60 +628,107 @@ const TeacherHub = ({ onReturnHome }) => {
       const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
       setTeacherData(profile);
 
-      const currentDate = new Date();
-      const todayStr = currentDate.toISOString().split('T')[0];
-      const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).toISOString().split('T')[0];
+      // 1. Secure Local Time Calculation
+      const now = new Date();
+      const localOffset = now.getTimezoneOffset() * 60000;
+      const localNow = new Date(now.getTime() - localOffset);
+      const todayStr = localNow.toISOString().split('T')[0];
+      const firstDayOfMonth = new Date(localNow.getFullYear(), localNow.getMonth(), 1).toISOString().split('T')[0];
 
-      // Fetch Real Next Class
-      const { data: upcoming } = await supabase
+      // 2. Fetch all upcoming classes safely handling capitalized statuses
+      const { data: upcoming, error: upcomingError } = await supabase
         .from('live_sessions')
         .select(`*, student:profiles!student_id(first_name, last_name)`)
         .eq('teacher_id', session.user.id)
-        .eq('status', 'booked')
-        .gte('session_date', todayStr)
-        .order('session_date', { ascending: true })
-        .limit(1);
+        .in('status', ['booked', 'Booked', 'BOOKED'])
+        .gte('session_date', todayStr);
+
+      if (upcomingError) console.error("Database Fetch Error:", upcomingError);
 
       if (upcoming && upcoming.length > 0) {
-        setNextClass({
-          id: upcoming[0].id,
-          student_id: upcoming[0].student_id,
-          student_name: `${upcoming[0].student?.first_name || ''} ${upcoming[0].student?.last_name || ''}`.trim(),
-          unit: upcoming[0].unit,
-          date: `${upcoming[0].session_date}T${upcoming[0].time_slot.replace(' AM', ':00').replace(' PM', ':00')}`
-        });
+        const sortedClasses = upcoming.map(cls => {
+          // Robust Time Parser for "9:00 AM" -> "09:00:00"
+          const timeStr = cls.time_slot || "12:00 AM";
+          const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+          let hours = 0;
+          let mins = "00";
+          
+          if (match) {
+            hours = parseInt(match[1], 10);
+            mins = match[2];
+            const modifier = match[3].toUpperCase();
+            if (hours === 12) hours = 0;
+            if (modifier === 'PM') hours += 12;
+          }
+          
+          const paddedHours = hours.toString().padStart(2, '0');
+          const classDateTime = new Date(`${cls.session_date}T${paddedHours}:${mins}:00`);
+          
+          return { ...cls, parsedDate: classDateTime };
+        })
+        // Allow classes that started up to 1 hour ago to remain active
+        .filter(cls => cls.parsedDate.getTime() >= (now.getTime() - (60 * 60 * 1000)))
+        .sort((a, b) => a.parsedDate - b.parsedDate);
+
+        if (sortedClasses.length > 0) {
+          const next = sortedClasses[0];
+          setNextClass({
+            id: next.id,
+            student_id: next.student_id,
+            student_name: `${next.student?.first_name || 'Estudiante'} ${next.student?.last_name || ''}`.trim(),
+            unit: next.unit || 1,
+            date: next.parsedDate.toISOString() // Provides a safe string for React rendering
+          });
+        }
       }
 
-      // Fetch Real Pending Gradings
+      // 3. Fetch Pending Gradings
       const { data: pending } = await supabase
         .from('live_sessions')
         .select(`*, student:profiles!student_id(first_name, last_name)`)
         .eq('teacher_id', session.user.id)
-        .eq('status', 'completed')
+        .in('status', ['completed', 'Completed', 'COMPLETED'])
         .eq('is_graded', false);
 
       if (pending) {
         setPendingEvaluations(pending.map(p => ({
           id: p.id,
           student_id: p.student_id,
-          student_name: `${p.student?.first_name || ''} ${p.student?.last_name || ''}`.trim(),
-          unit: p.unit,
+          student_name: `${p.student?.first_name || 'Estudiante'} ${p.student?.last_name || ''}`.trim(),
+          unit: p.unit || 1,
           date: `${p.session_date} ${p.time_slot}`
         })));
       }
 
-      // FETCH REAL LOGGED HOURS
+      // 4. Fetch Logged Hours
       const { count: loggedHours } = await supabase
         .from('live_sessions')
         .select('*', { count: 'exact', head: true })
         .eq('teacher_id', session.user.id)
-        .eq('status', 'completed')
+        .in('status', ['completed', 'Completed', 'COMPLETED'])
         .gte('session_date', firstDayOfMonth);
 
       setPayrollStats({ current: loggedHours || 0, monthlyGoal: 80 });
 
+      // 5. Fetch Latest Announcement
+      const { data: annData } = await supabase
+        .from('announcements')
+        .select('*')
+        .in('audience', ['EVERYONE_WITH_STAFF', 'STAFF_ONLY'])
+        .order('created_at', { ascending: false })
+        .limit(1);
+      if (annData && annData.length > 0) setLatestAnnouncement(annData[0]);
+
+      // 6. Fetch Latest Forum Post
+      const { data: forumData } = await supabase
+        .from('forum_posts')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(1);
+      if (forumData && forumData.length > 0) setLatestForumPost(forumData[0]);
+
     } catch (err) {
-      console.error("Error loading teacher dashboard:", err);
+      console.error("Critical Dashboard Error:", err);
     } finally {
       setLoading(false);
     }
@@ -722,33 +803,37 @@ const TeacherHub = ({ onReturnHome }) => {
       />
 
       <div className="hidden md:block">
-        <DesktopView 
-          teacher={teacherData} 
-          nextClass={nextClass} 
-          payrollStats={payrollStats} 
-          pendingEvaluations={pendingEvaluations} 
-          onReturnHome={onReturnHome} 
-          onAction={handleAction} 
-          onRequestSub={() => setIsSubModalOpen(true)} 
-          onOpenProfileMenu={() => setIsProfileMenuOpen(true)} 
-          isLaunching={isLaunching}
-          hasNewStaffBoard={hasNewStaffBoard}
-        />
-      </div>
-      <div className="block md:hidden">
-        <MobileView 
-          teacher={teacherData} 
-          nextClass={nextClass} 
-          payrollStats={payrollStats} 
-          pendingEvaluations={pendingEvaluations} 
-          onReturnHome={onReturnHome} 
-          onAction={handleAction} 
-          onRequestSub={() => setIsSubModalOpen(true)} 
-          onOpenProfileMenu={() => setIsProfileMenuOpen(true)} 
-          isLaunching={isLaunching} 
-          hasNewStaffBoard={hasNewStaffBoard}
-        />
-      </div>
+            <DesktopView 
+              teacher={teacherData} 
+              nextClass={nextClass} 
+              payrollStats={payrollStats} 
+              pendingEvaluations={pendingEvaluations} 
+              onReturnHome={onReturnHome} 
+              onAction={handleAction} 
+              onRequestSub={() => setIsSubModalOpen(true)} 
+              onOpenProfileMenu={() => setIsProfileMenuOpen(true)} 
+              isLaunching={isLaunching}
+              hasNewStaffBoard={hasNewStaffBoard}
+              latestAnnouncement={latestAnnouncement}
+              latestForumPost={latestForumPost}
+            />
+          </div>
+          <div className="block md:hidden">
+            <MobileView 
+              teacher={teacherData} 
+              nextClass={nextClass} 
+              payrollStats={payrollStats} 
+              pendingEvaluations={pendingEvaluations} 
+              onReturnHome={onReturnHome} 
+              onAction={handleAction} 
+              onRequestSub={() => setIsSubModalOpen(true)} 
+              onOpenProfileMenu={() => setIsProfileMenuOpen(true)} 
+              isLaunching={isLaunching} 
+              hasNewStaffBoard={hasNewStaffBoard}
+              latestAnnouncement={latestAnnouncement}
+              latestForumPost={latestForumPost}
+            />
+          </div>
     </>
   );
 };
