@@ -441,24 +441,99 @@ const MobileView = ({ student, onReturnHome, onStartActivity, isFetching, active
 // 3.5 NEW TAB JITSI CONTROLLER (Student)
 // ==========================================
 const JitsiRoom = ({ session, student, onLeave }) => {
+  const [alertState, setAlertState] = useState('active'); 
+
   useEffect(() => {
-    // Open Jitsi in a new tab passively
     const roomUrl = `https://meet.jit.si/OLA-Unit${session.unit}-${session.id}`;
     window.open(roomUrl, '_blank');
-  }, [session, student]);
+
+    const monitor = setInterval(async () => {
+      const { data } = await supabase.from('live_sessions')
+        .select('last_ping_at, status')
+        .eq('id', session.id)
+        .single();
+
+      if (data) {
+        // If an admin manually cancels or reassigns the class, boot the student
+        if (data.status !== 'in_progress') {
+           setAlertState('admin_handled');
+           return;
+        }
+
+        if (data.last_ping_at) {
+          const msSincePing = Date.now() - new Date(data.last_ping_at).getTime();
+          
+          if (msSincePing > 600000 && alertState !== 'terminated') {
+            // 10 MINUTES: Teacher MIA. Just update UI, no database/refund action.
+            setAlertState('terminated');
+            new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play().catch(()=>{});
+          } 
+          else if (msSincePing > 45000 && msSincePing <= 600000 && alertState !== 'warning') {
+            // 45 SECONDS: Display Technical Difficulties
+            setAlertState('warning');
+            new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play().catch(()=>{});
+          }
+          else if (msSincePing <= 45000 && alertState === 'warning') {
+            // Teacher Reconnected safely
+            setAlertState('active');
+          }
+        }
+      }
+    }, 10000); 
+
+    return () => clearInterval(monitor);
+  }, [session, alertState]);
 
   return (
     <div className="fixed inset-0 z-[500] flex items-center justify-center bg-[#070b19]/95 backdrop-blur-md p-4">
-      <div className="bg-white/5 border border-white/10 rounded-[2rem] p-10 max-w-md w-full text-center shadow-2xl flex flex-col items-center">
-        <div className="w-4 h-4 bg-emerald-400 rounded-full animate-pulse mb-6 shadow-[0_0_15px_#34d399]"></div>
-        <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-2">Class in Progress</h2>
-        <p className="text-sm font-medium text-white/70 mb-8 leading-relaxed">
-          Your video room has opened in a new tab. When your class is finished, you can close the video tab and click the button below.
-        </p>
-        <button onClick={onLeave} className="w-full py-4 bg-white/10 hover:bg-white/20 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all border border-white/20 hover:scale-105">
-          Return to Dashboard
-        </button>
-      </div>
+      {alertState === 'active' && (
+        <div className="bg-white/5 border border-white/10 rounded-[2rem] p-10 max-w-md w-full text-center shadow-2xl flex flex-col items-center">
+          <div className="w-4 h-4 bg-emerald-400 rounded-full animate-pulse mb-6 shadow-[0_0_15px_#34d399]"></div>
+          <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-2">Class in Progress</h2>
+          <p className="text-sm font-medium text-white/70 mb-8 leading-relaxed">
+            Your video room has opened in a new tab. When your class is finished, close the video tab and click below.
+          </p>
+          <button onClick={onLeave} className="w-full py-4 bg-white/10 hover:bg-white/20 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all border border-white/20 hover:scale-105">
+            Return to Dashboard
+          </button>
+        </div>
+      )}
+
+      {alertState === 'warning' && (
+        <div className="bg-[#fcd34d]/10 border border-[#fcd34d]/50 rounded-[2rem] p-10 max-w-md w-full text-center shadow-[0_0_50px_rgba(252,211,77,0.2)] flex flex-col items-center animate-fade-in">
+          <div className="w-8 h-8 bg-[#fcd34d] rounded-full animate-pulse mb-6 shadow-[0_0_25px_#fcd34d]"></div>
+          <h2 className="text-2xl font-black text-[#fcd34d] uppercase tracking-widest mb-2 drop-shadow-md">Connection Lost</h2>
+          <p className="text-sm font-medium text-white/90 mb-8 leading-relaxed">
+            Your teacher is experiencing technical difficulties. Please stay in the room. Our admins have been alerted and are assigning a substitute.
+          </p>
+        </div>
+      )}
+
+      {alertState === 'terminated' && (
+        <div className="bg-red-500/10 border border-red-500/50 rounded-[2rem] p-10 max-w-md w-full text-center shadow-[0_0_50px_rgba(239,68,68,0.2)] flex flex-col items-center animate-fade-in">
+          <div className="w-8 h-8 bg-red-500 rounded-full mb-6 shadow-[0_0_25px_#ef4444]"></div>
+          <h2 className="text-2xl font-black text-red-400 uppercase tracking-widest mb-2 drop-shadow-md">Session Interrupted</h2>
+          <p className="text-sm font-medium text-white/90 mb-8 leading-relaxed">
+            The connection could not be restored. Please close your video tab. An administrator will contact you shortly to verify your attendance and arrange a manual rebooking.
+          </p>
+          <button onClick={onLeave} className="w-full py-4 bg-red-500 hover:bg-red-400 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-[0_0_20px_rgba(239,68,68,0.4)] hover:scale-105">
+            Acknowledge
+          </button>
+        </div>
+      )}
+
+      {alertState === 'admin_handled' && (
+        <div className="bg-blue-500/10 border border-blue-500/50 rounded-[2rem] p-10 max-w-md w-full text-center shadow-[0_0_50px_rgba(59,130,246,0.2)] flex flex-col items-center animate-fade-in">
+          <div className="w-8 h-8 bg-blue-500 rounded-full mb-6 shadow-[0_0_25px_#3b82f6]"></div>
+          <h2 className="text-2xl font-black text-blue-400 uppercase tracking-widest mb-2 drop-shadow-md">Session Updated</h2>
+          <p className="text-sm font-medium text-white/90 mb-8 leading-relaxed">
+            This session has been modified by an administrator. Please return to your dashboard.
+          </p>
+          <button onClick={onLeave} className="w-full py-4 bg-blue-500 hover:bg-blue-400 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-[0_0_20px_rgba(59,130,246,0.4)] hover:scale-105">
+            Return to Dashboard
+          </button>
+        </div>
+      )}
     </div>
   );
 };

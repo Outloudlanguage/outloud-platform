@@ -946,6 +946,7 @@ const AdminHub = () => {
   const [upcomingActivities, setUpcomingActivities] = useState([]);
   const [showSubModal, setShowSubModal] = useState(false);
   const [droppedSessionTarget, setDroppedSessionTarget] = useState(null);
+  const alarmedSessions = useRef(new Set()); // Prevents infinite alarm looping
 
   const fetchDashboardStats = async () => {
     try {
@@ -964,7 +965,24 @@ const AdminHub = () => {
         .not('teacher_id', 'is', null)
         .order('scheduled_at', { ascending: true })
         .limit(5);
+      
       setUpcomingActivities(activities || []);
+
+      // Trigger the Admin Siren for new drops (> 2 mins)
+      if (activities) {
+        const now = new Date().getTime();
+        activities.forEach(act => {
+          if (act.status === 'in_progress' && act.last_ping_at) {
+            const msSincePing = now - new Date(act.last_ping_at).getTime();
+            if (msSincePing > 120000 && !alarmedSessions.current.has(act.id)) {
+              alarmedSessions.current.add(act.id);
+              // Play severe alarm sound
+              new Audio('https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3').play().catch(()=>{});
+            }
+          }
+        });
+      }
+
     } catch (err) {
       console.error("Dashboard Stats Fetch Error:", err);
     }
@@ -1475,18 +1493,19 @@ const renderAccounts = () => (
               upcomingActivities.map(act => {
                 const isLive = act.status === 'in_progress';
                 let isDropped = false;
+                let isCritical = false;
                 
-                // Calculate if the ping is older than 2 minutes (120,000 ms)
+                // Calculate if the ping is older than 2 mins (120k ms) and 10 mins (600k ms)
                 if (isLive && act.last_ping_at) {
-                  const pingTime = new Date(act.last_ping_at).getTime();
-                  const now = new Date().getTime();
-                  if (now - pingTime > 120000) isDropped = true; 
+                  const msSincePing = new Date().getTime() - new Date(act.last_ping_at).getTime();
+                  if (msSincePing > 120000) isDropped = true; 
+                  if (msSincePing > 600000) isCritical = true;
                 }
 
                 return (
-                  <li key={act.id} className={`flex items-center gap-3 overflow-hidden p-3 rounded-xl border transition-colors ${isDropped ? 'bg-red-500/20 border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.2)]' : isLive ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-white/5 border-transparent'}`}>
+                  <li key={act.id} className={`flex items-center gap-3 overflow-hidden p-3 rounded-xl border transition-colors ${isCritical ? 'bg-red-900/40 border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.5)]' : isDropped ? 'bg-red-500/20 border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.2)]' : isLive ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-white/5 border-transparent'}`}>
                     {isDropped ? (
-                      <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse shrink-0 shadow-[0_0_8px_#ef4444]"></div>
+                      <div className={`w-3 h-3 rounded-full bg-red-500 shrink-0 shadow-[0_0_8px_#ef4444] ${isCritical ? 'animate-ping' : 'animate-pulse'}`}></div>
                     ) : isLive ? (
                       <div className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse shrink-0"></div>
                     ) : (
@@ -1498,13 +1517,13 @@ const renderAccounts = () => (
                         {new Date(act.scheduled_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}: {act.title || act.class_type}
                       </span>
                       <span className="text-[10px] text-white/50 font-bold tracking-widest uppercase">
-                        Prof. {act.teacher?.first_name} {act.teacher?.last_name}
+                        Prof. {act.teacher?.first_name} {act.teacher?.last_name} {isCritical && "- MIA > 10 MIN"}
                       </span>
                     </div>
 
                     {isDropped && (
-                      <button onClick={() => { setDroppedSessionTarget(act); setShowSubModal(true); }} className="bg-red-500 hover:bg-red-400 text-white text-[9px] font-black uppercase px-3 py-1.5 rounded-lg shadow-md shrink-0 transition-colors">
-                        SOS: REASSIGN
+                      <button onClick={() => { setDroppedSessionTarget({...act, isCritical}); setShowSubModal(true); }} className={`hover:bg-red-400 text-white text-[9px] font-black uppercase px-3 py-1.5 rounded-lg shadow-md shrink-0 transition-colors ${isCritical ? 'bg-red-600' : 'bg-red-500'}`}>
+                        {isCritical ? 'RESOLVE' : 'SOS: REASSIGN'}
                       </button>
                     )}
                   </li>
@@ -2973,9 +2992,12 @@ const FinancesPage = () => {
 
       {showSubModal && (
         <div className="fixed inset-0 z-[500] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in font-montserrat">
-           <div className="bg-[#070b19]/95 border border-red-500/50 rounded-[2rem] p-8 max-w-md w-full shadow-[0_0_40px_rgba(239,68,68,0.2)]">
-              <h3 className="text-xl font-black text-red-400 uppercase tracking-widest mb-2">Assign Substitute</h3>
-              <p className="text-xs font-medium text-white/70 mb-6 leading-relaxed">Prof. {droppedSessionTarget?.teacher?.first_name} {droppedSessionTarget?.teacher?.last_name} has lost connection. Assign an available teacher to immediately inherit this active session.</p>
+           <div className={`bg-[#070b19]/95 border rounded-[2rem] p-8 max-w-md w-full ${droppedSessionTarget?.isCritical ? 'border-red-500 shadow-[0_0_60px_rgba(239,68,68,0.4)]' : 'border-red-500/50 shadow-[0_0_40px_rgba(239,68,68,0.2)]'}`}>
+              <h3 className="text-xl font-black text-red-400 uppercase tracking-widest mb-2">{droppedSessionTarget?.isCritical ? 'Critical: Session Lost' : 'Assign Substitute'}</h3>
+              <p className="text-xs font-medium text-white/70 mb-6 leading-relaxed">
+                Prof. {droppedSessionTarget?.teacher?.first_name} {droppedSessionTarget?.teacher?.last_name} has been missing for over {droppedSessionTarget?.isCritical ? '10 minutes' : '2 minutes'}. 
+                {droppedSessionTarget?.isCritical ? " You may still dispatch a substitute, or manually cancel the class to process a manual refund." : " Assign an available teacher to immediately inherit this active session."}
+              </p>
               
               <div className="flex flex-col gap-4">
                 <select id="sub-teacher-select" className="w-full bg-black/40 border border-white/20 rounded-xl px-4 py-3 text-white text-sm font-bold outline-none focus:border-[#fcd34d] cursor-pointer appearance-none">
@@ -2986,12 +3008,11 @@ const FinancesPage = () => {
                 </select>
                 
                 <div className="flex gap-3 mt-4">
-                  <button onClick={() => setShowSubModal(false)} className="flex-1 py-4 bg-white/10 hover:bg-white/20 text-white text-xs font-bold uppercase tracking-widest rounded-xl transition-colors">Cancel</button>
+                  <button onClick={() => setShowSubModal(false)} className="flex-1 py-3 bg-white/10 hover:bg-white/20 text-white text-[10px] font-bold uppercase tracking-widest rounded-xl transition-colors">Cancel</button>
                   <button onClick={async () => {
                     const subId = document.getElementById('sub-teacher-select').value;
                     if (!subId) return alert('Please select a teacher from the list.');
                     
-                    // Reset the session to 'booked', update the teacher ID, and clear the heartbeat
                     await supabase.from('live_sessions').update({
                       teacher_id: subId,
                       original_teacher_id: droppedSessionTarget.teacher_id,
@@ -3002,9 +3023,29 @@ const FinancesPage = () => {
                     setShowSubModal(false);
                     setDroppedSessionTarget(null);
                     fetchDashboardStats();
-                    alert('Substitute dispatched successfully. The class is now on their roster.');
-                  }} className="flex-1 py-4 bg-red-500 hover:bg-red-400 text-white text-xs font-black uppercase tracking-widest rounded-xl transition-colors shadow-[0_0_15px_rgba(239,68,68,0.4)]">Dispatch Sub</button>
+                    alert('Substitute dispatched successfully.');
+                  }} className="flex-1 py-3 bg-red-500 hover:bg-red-400 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-colors shadow-md">Dispatch Sub</button>
                 </div>
+
+                {droppedSessionTarget?.isCritical && (
+                  <div className="mt-4 border-t border-red-500/20 pt-4">
+                    <button onClick={async () => {
+                      if (!window.confirm("Are you sure? This will cancel the class entirely so you can manually manage the refund and rebooking with the student.")) return;
+                      
+                      await supabase.from('live_sessions').update({
+                        status: 'cancelled',
+                        ended_at: new Date().toISOString()
+                      }).eq('id', droppedSessionTarget.id);
+
+                      setShowSubModal(false);
+                      setDroppedSessionTarget(null);
+                      fetchDashboardStats();
+                      alert('Class cancelled. Please contact the student to process their manual refund/rebooking.');
+                    }} className="w-full py-4 bg-transparent border border-red-500 text-red-500 hover:bg-red-500 hover:text-white text-xs font-black uppercase tracking-widest rounded-xl transition-colors">
+                      Manual Cancel & Refund
+                    </button>
+                  </div>
+                )}
               </div>
            </div>
         </div>
