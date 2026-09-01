@@ -132,10 +132,15 @@ const AdminCalendar = () => {
           const ampm = hours >= 12 ? 'pm' : 'am';
           hours = hours % 12;
           hours = hours ? hours : 12; 
-          const mins = String(d.getMinutes()).padStart(2, '0');
-          const timeStr = `${hours}:${mins} ${ampm}`;
           
-          return { ...session, session_date: dateStr, time_slot: timeStr };
+          // Snap to the grid: Force minutes to '00' so it drops into the correct UI bucket
+          const timeStr = `${hours}:00 ${ampm}`;
+          
+          // Preserve the exact precise time for the modal display
+          const exactMins = String(d.getMinutes()).padStart(2, '0');
+          const exactTimeStr = `${hours}:${exactMins} ${ampm}`;
+          
+          return { ...session, session_date: dateStr, time_slot: timeStr, exact_time: exactTimeStr };
         });
         setSessions(mappedSessions);
 
@@ -490,7 +495,9 @@ const AdminCalendar = () => {
             <h3 className="text-xl font-black text-white uppercase tracking-widest mb-1">
               {selectedSlot.date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
             </h3>
-            <p className="text-[#fcd34d] font-black text-2xl tracking-widest mb-6">{selectedSlot.timeStr}</p>
+            <p className="text-[#fcd34d] font-black text-2xl tracking-widest mb-6">
+              {selectedSlot.data?.exact_time || selectedSlot.timeStr}
+            </p>
 
             {selectedSlot.data?.status === 'booked' || selectedSlot.data?.status === 'completed' ? (
               <div className="space-y-4">
