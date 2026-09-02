@@ -96,6 +96,15 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
           totalEarned += 1;
         }
       } 
+      else if (el.type === 'fill_in_the_blank' && el.data?.correctAnswer) {
+        totalPossible += 1;
+        // Automatically strips out accidental quotation marks to prevent false negatives
+        const cleanTarget = el.data.correctAnswer.replace(/["']/g, '').trim().toLowerCase();
+        const cleanAnswer = (studentAnswers[el.id] || '').replace(/["']/g, '').trim().toLowerCase();
+        if (cleanAnswer === cleanTarget) {
+          totalEarned += 1;
+        }
+      }
       else if (el.type === 'multiple_selection') {
         el.data.options?.forEach(opt => {
           if (opt.isCorrect) {
@@ -232,6 +241,33 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
                   <div className="w-full bg-white/10 backdrop-blur-xl rounded-[2rem] border border-white/20 p-8 flex flex-col gap-6 shadow-2xl h-full justify-between animate-slide-up">
                     
                     {el.data?.imageUrl && <img src={el.data.imageUrl} alt="Visual Prompt" className="w-full h-64 object-cover rounded-2xl shadow-inner mb-4" />}
+{el.type === 'fill_in_the_blank' && el.data && (() => {
+                       const rawText = el.data.text || el.data.sentence || el.data.questionHtml || el.data.prompt || '';
+                       const parts = rawText.split(/(_+)/);
+                       
+                       return (
+                          <div className="w-full h-full flex flex-col justify-center items-center mt-4">
+                             <div className="text-lg md:text-xl font-medium text-white leading-[3rem] text-center w-full break-words">
+                                {parts.map((part, i) => {
+                                   if (part.includes('_')) {
+                                      const blankWidth = Math.max(80, part.length * 15);
+                                      return (
+                                         <input 
+                                            key={i}
+                                            type="text"
+                                            value={studentAnswers[el.id] || ''}
+                                            onChange={(e) => setStudentAnswers(prev => ({...prev, [el.id]: e.target.value}))}
+                                            className="mx-2 px-4 py-1 bg-black/40 border-b-2 border-t-0 border-x-0 border-white/50 focus:border-[#fcd34d] text-center text-[#fcd34d] font-black outline-none transition-colors shadow-inner rounded-t-md"
+                                            style={{ width: `${blankWidth}px`, maxWidth: '100%' }}
+                                         />
+                                      );
+                                   }
+                                   return <span key={i} dangerouslySetInnerHTML={{ __html: part }} />;
+                                })}
+                             </div>
+                          </div>
+                       );
+                    })()}
 
                     {el.type === 'short_answer' && el.data && (
                       <>

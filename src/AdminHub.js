@@ -2787,11 +2787,34 @@ const FinancesPage = () => {
                                         </>
                                      )}
 
-                                     {el.type === 'fill_in_the_blank' && el.data && (
-                                        <div className="w-full h-full flex flex-col justify-end mt-4">
-                                           {renderFormattedText(el, isPreviewMode)}
-                                        </div>
-                                     )}
+                                     {el.type === 'fill_in_the_blank' && el.data && (() => {
+                                        const rawText = el.data.text || el.data.sentence || el.data.questionHtml || el.data.prompt || '';
+                                        const parts = rawText.split(/(_+)/); // Splits keeping the underscores intact
+                                        
+                                        return (
+                                           <div className="w-full h-full flex flex-col justify-center items-center mt-4">
+                                              <div className="text-lg md:text-xl font-medium text-white leading-[3rem] text-center w-full break-words">
+                                                 {parts.map((part, i) => {
+                                                    if (part.includes('_')) {
+                                                       const blankWidth = Math.max(80, part.length * 15);
+                                                       return (
+                                                          <input 
+                                                             key={i}
+                                                             type="text"
+                                                             disabled={!isPreviewMode}
+                                                             value={studentAnswers[el.id] || ''}
+                                                             onChange={(e) => setStudentAnswers(prev => ({...prev, [el.id]: e.target.value}))}
+                                                             className="mx-2 px-4 py-1 bg-black/40 border-b-2 border-t-0 border-x-0 border-white/50 focus:border-[#fcd34d] text-center text-[#fcd34d] font-black outline-none transition-colors shadow-inner rounded-t-md"
+                                                             style={{ width: `${blankWidth}px`, maxWidth: '100%' }}
+                                                          />
+                                                       );
+                                                    }
+                                                    return <span key={i} dangerouslySetInnerHTML={{ __html: part }} />;
+                                                 })}
+                                              </div>
+                                           </div>
+                                        );
+                                     })()}
 
                                      {el.type === 'multiple_selection' && el.data && (
                                         <>
