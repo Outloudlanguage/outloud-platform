@@ -1033,6 +1033,38 @@ useEffect(() => {
       return () => clearInterval(interval);
     }
   }, [activeModule, directoryTab]);
+  // --- MASTER ALARM TRIGGER ---
+  useEffect(() => {
+    if (Notification.permission === 'default') Notification.requestPermission();
+    
+    let shouldPlaySiren = false;
+    const now = new Date().getTime();
+
+    upcomingActivities.forEach(act => {
+      if (act.status === 'in_progress' && act.last_ping_at) {
+        const pingStr = act.last_ping_at.endsWith('Z') ? act.last_ping_at : act.last_ping_at + 'Z';
+        const msSincePing = now - new Date(pingStr).getTime();
+        
+        // 120,000 = 2 mins. If true, FORCE modal open immediately.
+        if (msSincePing > 120000 && !alarmedSessions.current.has(act.id)) {
+          alarmedSessions.current.add(act.id);
+          
+          setDroppedSessionTarget({...act, isCritical: msSincePing > 600000});
+          setShowSubModal(true); // Pops the modal overlay on screen
+          shouldPlaySiren = true;
+
+          // Force OS Push Notification
+          if (Notification.permission === 'granted') {
+            new Notification("⚠️ ALERTA CRÍTICA", { body: `El Prof. ${act.teacher?.first_name} se ha desconectado de la sala. Asigna un suplente inmediatamente.` });
+          }
+        }
+      }
+    });
+
+    if (shouldPlaySiren) {
+      new Audio('https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg').play().catch(()=>{});
+    }
+  }, [upcomingActivities]);
 
 // ==========================================
   // COMMUNICATIONS MODULE STATES & LISTENERS

@@ -441,54 +441,48 @@ const MobileView = ({ student, onReturnHome, onStartActivity, isFetching, active
 // 3.5 NEW TAB JITSI CONTROLLER (Student)
 // ==========================================
 const JitsiRoom = ({ session, student, onLeave }) => {
-  const [alertState, setAlertState] = useState('active'); 
+  const [alertState, setAlertState] = useState('active');
+  const lastSeenPing = useRef(null);
+  const missedTicks = useRef(0);
 
   useEffect(() => {
-    // Request Browser Push Notification Permissions
-    if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+    // 1. Force Browser OS Notifications Permission
+    if (Notification.permission === 'default') {
       Notification.requestPermission();
     }
 
-    // Open Jitsi passively & forcefully bypass the Moderator splash screen
     const roomUrl = `https://meet.jit.si/OLA-Unit${session.unit}-${session.id}#config.prejoinPageEnabled=false`;
     window.open(roomUrl, '_blank');
 
     const monitor = setInterval(async () => {
-      const { data } = await supabase.from('live_sessions')
-        .select('last_ping_at, status')
-        .eq('id', session.id)
-        .single();
+      const { data } = await supabase.from('live_sessions').select('last_ping_at, status').eq('id', session.id).single();
 
       if (data) {
-        // If an admin manually cancels or reassigns the class, boot the student
         if (data.status !== 'in_progress') {
            setAlertState('admin_handled');
            return;
         }
 
         if (data.last_ping_at) {
-          const pingStr = data.last_ping_at.endsWith('Z') ? data.last_ping_at : data.last_ping_at + 'Z';
-          const msSincePing = Date.now() - new Date(pingStr).getTime();
-          
-          if (msSincePing > 600000 && alertState !== 'terminated') {
-            // 10 MINUTES: Teacher MIA. Just update UI, no database/refund action.
-            setAlertState('terminated');
-            new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play().catch(()=>{});
-            if (Notification.permission === 'granted') {
-              new Notification("Sesión Interrumpida", { body: "No se pudo restaurar la conexión. Un administrador te contactará para reprogramar tu clase." });
-            }
-          } 
-          else if (msSincePing > 45000 && msSincePing <= 600000 && alertState !== 'warning') {
-            // 45 SECONDS: Display Technical Difficulties
-            setAlertState('warning');
-            new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play().catch(()=>{});
-            if (Notification.permission === 'granted') {
-              new Notification("Conexión Perdida", { body: "Tu profesor tiene problemas técnicos. Mantente en la sala, lo estamos resolviendo." });
-            }
+          // TICK COUNTER LOGIC (Immune to clock drift)
+          if (lastSeenPing.current === data.last_ping_at) {
+            missedTicks.current += 1;
+          } else {
+            lastSeenPing.current = data.last_ping_at;
+            missedTicks.current = 0;
+            if (alertState !== 'active') setAlertState('active'); // Teacher returned
           }
-          else if (msSincePing <= 45000 && alertState === 'warning') {
-            // Teacher Reconnected safely
-            setAlertState('active');
+
+          // 1 tick = 10 seconds. 4 ticks = ~45 seconds. 60 ticks = 10 minutes.
+          if (missedTicks.current >= 60 && alertState !== 'terminated') {
+            setAlertState('terminated');
+            if (Notification.permission === 'granted') new Notification("Sesión Interrumpida", { body: "La conexión no pudo ser restaurada. Un admin te contactará." });
+            new Audio('https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg').play().catch(()=>{});
+          } 
+          else if (missedTicks.current >= 4 && missedTicks.current < 60 && alertState !== 'warning') {
+            setAlertState('warning');
+            if (Notification.permission === 'granted') new Notification("Conexión Perdida", { body: "Tu profesor tiene problemas técnicos. Mantente en la sala." });
+            new Audio('https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg').play().catch(()=>{});
           }
         }
       }
