@@ -199,12 +199,15 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
       <div className="flex-1 w-full max-w-[80rem] mx-auto p-6 md:p-12 relative z-10 flex flex-col pb-32">
         <div className="flex flex-wrap justify-center gap-8 w-full">
           
-          {/* MEDIA STANDALONE BLOCK */}
-          {contentElements.filter(el => ['video', 'image', 'audio'].includes(el.type)).length > 0 && (
-            <div className="w-full flex flex-col items-center gap-8 mb-8">
-              {contentElements.filter(el => ['video', 'image', 'audio'].includes(el.type)).map(el => (
-                <div key={el.id} className={`w-full ${el.type === 'video' ? 'max-w-5xl' : 'max-w-3xl'} bg-black/40 rounded-[2rem] overflow-hidden border border-white/20 shadow-2xl animate-fade-in relative`}>
-                  {el.type === 'video' && <iframe src={extractVideoUrl(el.url)} className="w-full aspect-video border-none" allow="encrypted-media; picture-in-picture" allowFullScreen />}
+          {/* UNIFIED SEQUENTIAL RENDER BLOCK */}
+          {contentElements.map(el => {
+            const isMedia = ['video', 'image', 'audio'].includes(el.type);
+            const isCard = ['short_answer', 'multiple_selection', 'slider_bar', 'fill_in_the_blank', 'drag_and_drop', 'crossword', 'word_search'].includes(el.type);
+            
+            if (isMedia) {
+              return (
+                <div key={el.id} className={`w-full ${el.type === 'video' ? 'max-w-5xl' : 'max-w-3xl'} bg-black/40 rounded-[2rem] overflow-hidden border border-white/20 shadow-2xl animate-fade-in relative mb-8 mx-auto`}>
+                  {el.type === 'video' && <iframe src={extractVideoUrl(el.url)} className="w-full aspect-video border-none" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;" allowFullScreen />}
                   {el.type === 'image' && <img src={el.url || el.data?.imageUrl} alt="Content" className="w-full h-auto max-h-[600px] object-contain rounded-[2rem]" />}
                   {el.type === 'audio' && (
                     <div className="p-8 w-full flex flex-col items-center">
@@ -213,14 +216,9 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
                     </div>
                   )}
                 </div>
-              ))}
-            </div>
-          )}
+              );
+            }
 
-          {/* INTERACTIVE CARDS & TEXT */}
-          {contentElements.filter(el => !['video', 'image', 'audio'].includes(el.type)).map(el => {
-            const isCard = ['short_answer', 'multiple_selection', 'slider_bar', 'fill_in_the_blank', 'drag_and_drop', 'crossword', 'word_search'].includes(el.type);
-            
             return (
               <div key={el.id} className={`relative flex flex-col ${isCard && el.type !== 'drag_and_drop' && el.type !== 'crossword' && el.type !== 'word_search' ? 'w-full md:w-[calc(50%-16px)]' : 'w-full flex-col items-center'}`}>
                 

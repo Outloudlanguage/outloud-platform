@@ -23,6 +23,17 @@ import StatisticsHub from './components/StatisticsHub';
 import CommercialFunnelModule from './statistics_engines/CommercialFunnelModule';
 import ProfitMarginAnalysis from './statistics_engines/ProfitMarginAnalysis';
 
+// ==========================================
+// Safe URL Extractor for Cloudflare IFrames
+// ==========================================
+const extractVideoUrl = (rawInput) => {
+  if (!rawInput) return '';
+  if (rawInput.includes('<iframe') && rawInput.includes('src=')) {
+    const match = rawInput.match(/src=["'](.*?)["']/);
+    if (match && match[1]) return match[1];
+  }
+  return rawInput;
+};
 
 // ==========================================
 // DEDICATED PROVISIONING MODAL
@@ -2636,41 +2647,40 @@ const FinancesPage = () => {
                         {/* Container for content */}
                         <div className="flex flex-wrap justify-center gap-6 w-full relative z-10 flex-grow content-start pointer-events-auto">
                           
-                          {/* MEDIA STANDALONE BLOCK */}
-                          {contentElements.filter(el => ['video', 'image', 'audio'].includes(el.type)).length > 0 && (
-                            <div className="w-full flex flex-col items-center gap-6 mb-6">
-                              {contentElements.filter(el => ['video', 'image', 'audio'].includes(el.type)).map(el => (
-                                 <div key={el.id} className={`w-full ${el.type === 'video' ? 'max-w-4xl' : 'max-w-3xl'} bg-black/40 rounded-[2rem] overflow-hidden border border-white/20 shadow-2xl animate-fade-in relative`}>
-                                    {!isPreviewMode && <button onClick={() => handleDeleteElement(el.id)} className="absolute top-4 right-4 w-10 h-10 bg-red-500 text-white rounded-full flex items-center justify-center font-bold shadow-xl z-50 hover:scale-110 transition-transform">✕</button>}
-                                    
-                                    {el.type === 'video' && <video src={el.url} controls controlsList="nodownload" onContextMenu={(e) => e.preventDefault()} className="w-full aspect-video object-contain" />}
-                                    
-                                    {el.type === 'image' && <PanZoomImage src={el.url} data={el.data} onSave={(d) => handleSaveData(el.id, { ...el.data, ...d })} isPreview={isPreviewMode} wrapperClass="w-full h-[400px] md:h-[500px]" />}
-                                    
-                                    {el.type === 'audio' && (
-                                       <div className="p-8 w-full flex flex-col items-center">
-                                          {!isPreviewMode && !el.data?.imageUrl && (
-                                             <div onClick={() => { setMediaTarget({ id: el.id, type: 'image' }); setActiveModal('media_upload'); }} className="w-full h-24 bg-white/10 border-2 border-dashed border-white/20 rounded-2xl flex items-center justify-center text-white/50 cursor-pointer hover:bg-white/20 hover:text-white transition-all mb-6">
-                                               <span className="text-xs font-bold uppercase tracking-widest">+ Add Image (Optional)</span>
-                                             </div>
-                                          )}
-                                          {el.data?.imageUrl && (
-                                             <div className="w-full relative mb-6">
-                                               <PanZoomImage src={el.data.imageUrl} data={el.data} onSave={(d) => handleSaveData(el.id, { ...el.data, ...d })} isPreview={isPreviewMode} wrapperClass="w-full h-[300px] rounded-2xl" />
-                                               {!isPreviewMode && <button onClick={() => handleRemoveMedia(el.id, 'image')} className="absolute top-3 right-3 w-10 h-10 bg-red-500 text-white rounded-full flex items-center justify-center font-bold shadow-xl z-50 hover:scale-110 transition-transform">✕</button>}
-                                             </div>
-                                          )}
-                                          <audio src={el.url} controls controlsList="nodownload" onContextMenu={(e) => e.preventDefault()} className="w-full" />
-                                       </div>
-                                    )}
-                                 </div>
-                              ))}
-                            </div>
-                          )}
-
-                          {contentElements.filter(el => !['video', 'image', 'audio'].includes(el.type)).map(el => {
+                          {/* UNIFIED SEQUENTIAL RENDER BLOCK */}
+                          {contentElements.map(el => {
+                            const isMedia = ['video', 'image', 'audio'].includes(el.type);
                             const isCard = ['short_answer', 'multiple_selection', 'slider_bar', 'fill_in_the_blank', 'record_compare'].includes(el.type);
                             
+                            if (isMedia) {
+                              return (
+                                <div key={el.id} className={`w-full ${el.type === 'video' ? 'max-w-5xl' : 'max-w-3xl'} bg-black/40 rounded-[2rem] overflow-hidden border border-white/20 shadow-2xl animate-fade-in relative mx-auto mb-6`}>
+                                  {!isPreviewMode && <button onClick={() => handleDeleteElement(el.id)} className="absolute top-4 right-4 w-10 h-10 bg-red-500 text-white rounded-full flex items-center justify-center font-bold shadow-xl z-50 hover:scale-110 transition-transform">✕</button>}
+                                  
+                                  {el.type === 'video' && <iframe src={extractVideoUrl(el.url)} className="w-full aspect-video border-none" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;" allowFullScreen />}
+                                  
+                                  {el.type === 'image' && <PanZoomImage src={el.url} data={el.data} onSave={(d) => handleSaveData(el.id, { ...el.data, ...d })} isPreview={isPreviewMode} wrapperClass="w-full h-[400px] md:h-[500px]" />}
+                                  
+                                  {el.type === 'audio' && (
+                                     <div className="p-8 w-full flex flex-col items-center">
+                                        {!isPreviewMode && !el.data?.imageUrl && (
+                                           <div onClick={() => { setMediaTarget({ id: el.id, type: 'image' }); setActiveModal('media_upload'); }} className="w-full h-24 bg-white/10 border-2 border-dashed border-white/20 rounded-2xl flex items-center justify-center text-white/50 cursor-pointer hover:bg-white/20 hover:text-white transition-all mb-6">
+                                             <span className="text-xs font-bold uppercase tracking-widest">+ Add Image (Optional)</span>
+                                           </div>
+                                        )}
+                                        {el.data?.imageUrl && (
+                                           <div className="w-full relative mb-6">
+                                             <PanZoomImage src={el.data.imageUrl} data={el.data} onSave={(d) => handleSaveData(el.id, { ...el.data, ...d })} isPreview={isPreviewMode} wrapperClass="w-full h-[300px] rounded-2xl" />
+                                             {!isPreviewMode && <button onClick={() => handleRemoveMedia(el.id, 'image')} className="absolute top-3 right-3 w-10 h-10 bg-red-500 text-white rounded-full flex items-center justify-center font-bold shadow-xl z-50 hover:scale-110 transition-transform">✕</button>}
+                                           </div>
+                                        )}
+                                        <audio src={el.url} controls controlsList="nodownload" onContextMenu={(e) => e.preventDefault()} className="w-full" />
+                                     </div>
+                                  )}
+                                </div>
+                              );
+                            }
+
                             return (
                               <div key={el.id} className={`relative flex flex-col group ${isCard ? 'w-full md:w-[calc(50%-12px)]' : 'w-full flex-col items-center'}`}>
                                 
