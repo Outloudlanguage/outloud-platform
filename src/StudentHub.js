@@ -444,7 +444,8 @@ const JitsiRoom = ({ session, student, onLeave }) => {
   const [alertState, setAlertState] = useState('active'); 
 
   useEffect(() => {
-const roomUrl = `https://meet.jit.si/OLA-Unit${session.unit}-${session.id}#config.prejoinPageEnabled=false`;
+    // Open Jitsi passively & forcefully bypass the Moderator splash screen
+    const roomUrl = `https://meet.jit.si/OLA-Unit${session.unit}-${session.id}#config.prejoinPageEnabled=false`;
     window.open(roomUrl, '_blank');
 
     const monitor = setInterval(async () => {
@@ -490,12 +491,12 @@ const roomUrl = `https://meet.jit.si/OLA-Unit${session.unit}-${session.id}#confi
       {alertState === 'active' && (
         <div className="bg-white/5 border border-white/10 rounded-[2rem] p-10 max-w-md w-full text-center shadow-2xl flex flex-col items-center">
           <div className="w-4 h-4 bg-emerald-400 rounded-full animate-pulse mb-6 shadow-[0_0_15px_#34d399]"></div>
-          <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-2">Class in Progress</h2>
+          <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-2">Clase en Curso</h2>
           <p className="text-sm font-medium text-white/70 mb-8 leading-relaxed">
-            Your video room has opened in a new tab. When your class is finished, close the video tab and click below.
+            Tu sala de video se ha abierto en una nueva pestaña. Cuando termines, cierra la pestaña de video y haz clic abajo.
           </p>
           <button onClick={onLeave} className="w-full py-4 bg-white/10 hover:bg-white/20 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all border border-white/20 hover:scale-105">
-            Return to Dashboard
+            Volver al Inicio
           </button>
         </div>
       )}
@@ -503,9 +504,9 @@ const roomUrl = `https://meet.jit.si/OLA-Unit${session.unit}-${session.id}#confi
       {alertState === 'warning' && (
         <div className="bg-[#fcd34d]/10 border border-[#fcd34d]/50 rounded-[2rem] p-10 max-w-md w-full text-center shadow-[0_0_50px_rgba(252,211,77,0.2)] flex flex-col items-center animate-fade-in">
           <div className="w-8 h-8 bg-[#fcd34d] rounded-full animate-pulse mb-6 shadow-[0_0_25px_#fcd34d]"></div>
-          <h2 className="text-2xl font-black text-[#fcd34d] uppercase tracking-widest mb-2 drop-shadow-md">Connection Lost</h2>
+          <h2 className="text-2xl font-black text-[#fcd34d] uppercase tracking-widest mb-2 drop-shadow-md">Conexión Perdida</h2>
           <p className="text-sm font-medium text-white/90 mb-8 leading-relaxed">
-            Your teacher is experiencing technical difficulties. Please stay in the room. Our admins have been alerted and are assigning a substitute.
+            Tu profesor está experimentando dificultades técnicas. Por favor, mantente en la sala. Nuestros administradores han sido notificados.
           </p>
         </div>
       )}
@@ -513,12 +514,12 @@ const roomUrl = `https://meet.jit.si/OLA-Unit${session.unit}-${session.id}#confi
       {alertState === 'terminated' && (
         <div className="bg-red-500/10 border border-red-500/50 rounded-[2rem] p-10 max-w-md w-full text-center shadow-[0_0_50px_rgba(239,68,68,0.2)] flex flex-col items-center animate-fade-in">
           <div className="w-8 h-8 bg-red-500 rounded-full mb-6 shadow-[0_0_25px_#ef4444]"></div>
-          <h2 className="text-2xl font-black text-red-400 uppercase tracking-widest mb-2 drop-shadow-md">Session Interrupted</h2>
+          <h2 className="text-2xl font-black text-red-400 uppercase tracking-widest mb-2 drop-shadow-md">Sesión Interrumpida</h2>
           <p className="text-sm font-medium text-white/90 mb-8 leading-relaxed">
-            The connection could not be restored. Please close your video tab. An administrator will contact you shortly to verify your attendance and arrange a manual rebooking.
+            No se pudo restaurar la conexión. Por favor cierra tu pestaña de video. Un administrador te contactará para reprogramar tu clase.
           </p>
           <button onClick={onLeave} className="w-full py-4 bg-red-500 hover:bg-red-400 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-[0_0_20px_rgba(239,68,68,0.4)] hover:scale-105">
-            Acknowledge
+            Entendido
           </button>
         </div>
       )}
@@ -526,12 +527,12 @@ const roomUrl = `https://meet.jit.si/OLA-Unit${session.unit}-${session.id}#confi
       {alertState === 'admin_handled' && (
         <div className="bg-blue-500/10 border border-blue-500/50 rounded-[2rem] p-10 max-w-md w-full text-center shadow-[0_0_50px_rgba(59,130,246,0.2)] flex flex-col items-center animate-fade-in">
           <div className="w-8 h-8 bg-blue-500 rounded-full mb-6 shadow-[0_0_25px_#3b82f6]"></div>
-          <h2 className="text-2xl font-black text-blue-400 uppercase tracking-widest mb-2 drop-shadow-md">Session Updated</h2>
+          <h2 className="text-2xl font-black text-blue-400 uppercase tracking-widest mb-2 drop-shadow-md">Sesión Actualizada</h2>
           <p className="text-sm font-medium text-white/90 mb-8 leading-relaxed">
-            This session has been modified by an administrator. Please return to your dashboard.
+            Esta sesión ha sido modificada por un administrador. Por favor regresa a tu panel principal.
           </p>
           <button onClick={onLeave} className="w-full py-4 bg-blue-500 hover:bg-blue-400 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-[0_0_20px_rgba(59,130,246,0.4)] hover:scale-105">
-            Return to Dashboard
+            Volver al Inicio
           </button>
         </div>
       )}
@@ -898,18 +899,17 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
     }
     if (type === 'LiveClass') {
       if (activeLiveSession) {
-        // Live verification: Has the teacher actually started it?
         setIsFetching(true);
         const { data } = await supabase.from('live_sessions').select('status').eq('id', activeLiveSession.id).single();
         setIsFetching(false);
         
         if (data && data.status !== 'in_progress') {
-          alert("The teacher hasn't opened the room yet. Please wait a moment for them to start the class before joining.");
+          alert("El profesor está abriendo la sala. Por favor, intenta de nuevo en unos segundos.");
           return;
         }
         setActiveJitsiSession(activeLiveSession);
       } else {
-        alert("You do not have an active class scheduled right now.");
+        alert("No tienes ninguna clase activa programada en este momento.");
       }
       return;
     }

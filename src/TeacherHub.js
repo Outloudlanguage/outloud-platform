@@ -460,21 +460,11 @@ const MobileView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onRe
 // ==========================================
 const JitsiRoom = ({ session, teacher, onLeave }) => {
   useEffect(() => {
-    // 1. Mark class as started in the database
-    const startSession = async () => {
-      await supabase.from('live_sessions').update({ 
-        status: 'in_progress', 
-        started_at: new Date().toISOString(),
-        last_ping_at: new Date().toISOString()
-      }).eq('id', session.id);
-    };
-    startSession();
-
-    // 2. Open Jitsi in a new tab (bypasses 5-minute iframe limit)
-    const roomUrl = `https://meet.jit.si/OLA-Unit${session.unit}-${session.id}`;
+    // 1. Open Jitsi in a new tab & bypass the prejoin screen
+    const roomUrl = `https://meet.jit.si/OLA-Unit${session.unit}-${session.id}#config.prejoinPageEnabled=false`;
     window.open(roomUrl, '_blank');
 
-    // 3. The 30-Second Heartbeat Engine runs in this background tab
+    // 2. The 30-Second Heartbeat Engine runs in this background tab
     const heartbeat = setInterval(async () => {
       await supabase.from('live_sessions').update({ 
         last_ping_at: new Date().toISOString() 
@@ -903,7 +893,18 @@ const TeacherHub = ({ onReturnHome }) => {
     }
 
     if (actionType === 'Live' && nextClass) {
-      // Mount the embedded Jitsi component instead of an external redirect
+      setIsLaunching(true);
+      
+      // 1. Force the database to update FIRST so the student is allowed in immediately
+      await supabase.from('live_sessions').update({ 
+        status: 'in_progress', 
+        started_at: new Date().toISOString(),
+        last_ping_at: new Date().toISOString()
+      }).eq('id', nextClass.id);
+      
+      setIsLaunching(false);
+      
+      // 2. Mount the Jitsi Controller now that the database is officially updated
       setActiveJitsiSession(nextClass);
     }
   };
