@@ -895,14 +895,19 @@ const TeacherHub = ({ onReturnHome }) => {
     if (actionType === 'Live' && nextClass) {
       setIsLaunching(true);
       
-      // 1. Force the database to update FIRST so the student is allowed in immediately
-      await supabase.from('live_sessions').update({ 
+      // 1. Force the database to update FIRST (Removed 'started_at' to prevent silent crashes)
+      const { error } = await supabase.from('live_sessions').update({ 
         status: 'in_progress', 
-        started_at: new Date().toISOString(),
         last_ping_at: new Date().toISOString()
       }).eq('id', nextClass.id);
       
       setIsLaunching(false);
+
+      // Failsafe: Alert the teacher if the database actively rejected the update
+      if (error) {
+        alert("Database Error: Could not start the class. " + error.message);
+        return;
+      }
       
       // 2. Mount the Jitsi Controller now that the database is officially updated
       setActiveJitsiSession(nextClass);

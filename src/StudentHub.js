@@ -900,13 +900,19 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
     if (type === 'LiveClass') {
       if (activeLiveSession) {
         setIsFetching(true);
-        const { data } = await supabase.from('live_sessions').select('status').eq('id', activeLiveSession.id).single();
+        const { data, error } = await supabase.from('live_sessions').select('status').eq('id', activeLiveSession.id).single();
         setIsFetching(false);
         
+        if (error) {
+          alert("Error de conexión al verificar la sala: " + error.message);
+          return;
+        }
+
         if (data && data.status !== 'in_progress') {
           alert("El profesor está abriendo la sala. Por favor, intenta de nuevo en unos segundos.");
           return;
         }
+        
         setActiveJitsiSession(activeLiveSession);
       } else {
         alert("No tienes ninguna clase activa programada en este momento.");
