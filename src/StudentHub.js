@@ -444,6 +444,11 @@ const JitsiRoom = ({ session, student, onLeave }) => {
   const [alertState, setAlertState] = useState('active'); 
 
   useEffect(() => {
+    // Request Browser Push Notification Permissions
+    if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+      Notification.requestPermission();
+    }
+
     // Open Jitsi passively & forcefully bypass the Moderator splash screen
     const roomUrl = `https://meet.jit.si/OLA-Unit${session.unit}-${session.id}#config.prejoinPageEnabled=false`;
     window.open(roomUrl, '_blank');
@@ -469,11 +474,17 @@ const JitsiRoom = ({ session, student, onLeave }) => {
             // 10 MINUTES: Teacher MIA. Just update UI, no database/refund action.
             setAlertState('terminated');
             new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play().catch(()=>{});
+            if (Notification.permission === 'granted') {
+              new Notification("Sesión Interrumpida", { body: "No se pudo restaurar la conexión. Un administrador te contactará para reprogramar tu clase." });
+            }
           } 
           else if (msSincePing > 45000 && msSincePing <= 600000 && alertState !== 'warning') {
             // 45 SECONDS: Display Technical Difficulties
             setAlertState('warning');
             new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play().catch(()=>{});
+            if (Notification.permission === 'granted') {
+              new Notification("Conexión Perdida", { body: "Tu profesor tiene problemas técnicos. Mantente en la sala, lo estamos resolviendo." });
+            }
           }
           else if (msSincePing <= 45000 && alertState === 'warning') {
             // Teacher Reconnected safely

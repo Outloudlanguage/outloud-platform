@@ -460,12 +460,19 @@ const MobileView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onRe
 // ==========================================
 const JitsiRoom = ({ session, teacher, onLeave }) => {
   useEffect(() => {
-    // 1. Open Jitsi in a new tab & bypass the prejoin screen
+    // 1. Open Jitsi in a new tab & capture the window reference
     const roomUrl = `https://meet.jit.si/OLA-Unit${session.unit}-${session.id}#config.prejoinPageEnabled=false`;
-    window.open(roomUrl, '_blank');
+    const jitsiTab = window.open(roomUrl, '_blank');
 
-    // 2. The 30-Second Heartbeat Engine runs in this background tab
+    // 2. The 30-Second Heartbeat Engine
     const heartbeat = setInterval(async () => {
+      // CRITICAL FIX: If the teacher closed the video tab, kill the heartbeat!
+      if (jitsiTab && jitsiTab.closed) {
+        clearInterval(heartbeat);
+        return;
+      }
+
+      // Otherwise, ping Supabase to prove the teacher is still connected
       await supabase.from('live_sessions').update({ 
         last_ping_at: new Date().toISOString() 
       }).eq('id', session.id);

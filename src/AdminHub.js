@@ -983,10 +983,19 @@ const AdminHub = () => {
               // 1. Force the Substitute Modal to appear on screen instantly
               setDroppedSessionTarget({...act, isCritical: msSincePing > 600000});
               setShowSubModal(true);
+
+              // 2. Browser OS Push Notification (appears over other tabs/apps)
+              if (Notification.permission === 'granted') {
+                new Notification("CRITICAL: Teacher Disconnected", { body: `Prof. ${act.teacher?.first_name} has lost connection. Reassign immediately.` });
+              } else if (Notification.permission !== 'denied') {
+                Notification.requestPermission().then(permission => {
+                  if (permission === 'granted') new Notification("CRITICAL: Teacher Disconnected", { body: `Prof. ${act.teacher?.first_name} has lost connection.` });
+                });
+              }
               
-              // 2. Play severe alarm sound (Failsafe: Even if browser blocks audio, modal is already visible)
+              // 3. Play severe alarm sound (Failsafe: Even if browser blocks audio, modal is already visible)
               const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3');
-              audio.play().catch(e => console.log('Audio blocked by browser, but visual modal opened successfully.'));
+              audio.play().catch(e => console.log('Audio blocked by browser.'));
             }
           }
         });
