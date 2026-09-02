@@ -1373,7 +1373,7 @@ useEffect(() => {
   const toolOptions = ['Lesson', 'Manuals', 'Cue Cards'].includes(contentType) ? LESSON_TOOLS : WORKBOOK_TOOLS;
 
   const handleToolSelect = (tool) => {
-    if (tool === 'Video') setActiveModal('video');
+    if (tool === 'Video') { setMediaTarget({ id: null, type: 'video' }); setActiveModal('video'); }
     else if (tool === 'Image') { setMediaTarget({ id: null, type: 'image' }); setActiveModal('media_upload'); }
     else if (tool === 'Audio') { setMediaTarget({ id: null, type: 'audio' }); setActiveModal('media_upload'); }
     else if (tool === 'Record & Compare') spawnInteractiveElement('record_compare');
