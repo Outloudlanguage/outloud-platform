@@ -968,16 +968,25 @@ const AdminHub = () => {
       
       setUpcomingActivities(activities || []);
 
-      // Trigger the Admin Siren for new drops (> 2 mins)
+      // Trigger the Admin Siren & FORCE UI MODAL for new drops (> 2 mins)
       if (activities) {
         const now = new Date().getTime();
         activities.forEach(act => {
           if (act.status === 'in_progress' && act.last_ping_at) {
-            const msSincePing = now - new Date(act.last_ping_at).getTime();
+            // Ensure timezone consistency
+            const pingStr = act.last_ping_at.endsWith('Z') ? act.last_ping_at : act.last_ping_at + 'Z';
+            const msSincePing = now - new Date(pingStr).getTime();
+            
             if (msSincePing > 120000 && !alarmedSessions.current.has(act.id)) {
               alarmedSessions.current.add(act.id);
-              // Play severe alarm sound
-              new Audio('https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3').play().catch(()=>{});
+              
+              // 1. Force the Substitute Modal to appear on screen instantly
+              setDroppedSessionTarget({...act, isCritical: msSincePing > 600000});
+              setShowSubModal(true);
+              
+              // 2. Play severe alarm sound (Failsafe: Even if browser blocks audio, modal is already visible)
+              const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3');
+              audio.play().catch(e => console.log('Audio blocked by browser, but visual modal opened successfully.'));
             }
           }
         });

@@ -444,7 +444,7 @@ const JitsiRoom = ({ session, student, onLeave }) => {
   const [alertState, setAlertState] = useState('active'); 
 
   useEffect(() => {
-    const roomUrl = `https://meet.jit.si/OLA-Unit${session.unit}-${session.id}`;
+const roomUrl = `https://meet.jit.si/OLA-Unit${session.unit}-${session.id}#config.prejoinPageEnabled=false`;
     window.open(roomUrl, '_blank');
 
     const monitor = setInterval(async () => {
@@ -461,7 +461,8 @@ const JitsiRoom = ({ session, student, onLeave }) => {
         }
 
         if (data.last_ping_at) {
-          const msSincePing = Date.now() - new Date(data.last_ping_at).getTime();
+          const pingStr = data.last_ping_at.endsWith('Z') ? data.last_ping_at : data.last_ping_at + 'Z';
+          const msSincePing = Date.now() - new Date(pingStr).getTime();
           
           if (msSincePing > 600000 && alertState !== 'terminated') {
             // 10 MINUTES: Teacher MIA. Just update UI, no database/refund action.
@@ -897,6 +898,15 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
     }
     if (type === 'LiveClass') {
       if (activeLiveSession) {
+        // Live verification: Has the teacher actually started it?
+        setIsFetching(true);
+        const { data } = await supabase.from('live_sessions').select('status').eq('id', activeLiveSession.id).single();
+        setIsFetching(false);
+        
+        if (data && data.status !== 'in_progress') {
+          alert("The teacher hasn't opened the room yet. Please wait a moment for them to start the class before joining.");
+          return;
+        }
         setActiveJitsiSession(activeLiveSession);
       } else {
         alert("You do not have an active class scheduled right now.");

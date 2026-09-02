@@ -493,17 +493,17 @@ const JitsiRoom = ({ session, teacher, onLeave }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[400] flex items-center justify-center bg-[#070b19]/95 backdrop-blur-md p-4">
-      <div className="bg-white/5 border border-white/10 rounded-[2rem] p-10 max-w-md w-full text-center shadow-2xl flex flex-col items-center">
-        <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse mb-6 shadow-[0_0_15px_#ef4444]"></div>
-        <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-2">Class in Progress</h2>
-        <p className="text-sm font-medium text-white/70 mb-8 leading-relaxed">
-          Your video room has opened in a new tab. <strong className="text-white">Do not close this window!</strong> The system is actively monitoring your connection for payroll.
-        </p>
-        <button onClick={handleEndClass} className="w-full py-4 bg-red-500 hover:bg-red-400 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-[0_0_20px_rgba(239,68,68,0.4)] hover:scale-105">
-          End Class & Grade Student
-        </button>
+    <div className="fixed bottom-6 right-6 z-[9999] bg-[#070b19]/95 backdrop-blur-xl border border-red-500/50 shadow-[0_0_40px_rgba(239,68,68,0.3)] rounded-[2rem] p-6 max-w-sm w-full text-center flex flex-col items-center animate-slide-up">
+      <div className="flex items-center gap-3 mb-3">
+        <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse shadow-[0_0_15px_#ef4444]"></div>
+        <h2 className="text-base font-black text-white uppercase tracking-widest">Class in Progress</h2>
       </div>
+      <p className="text-xs font-medium text-white/70 mb-5 leading-relaxed">
+        Your video is in a new tab. You can safely browse the platform tools here.
+      </p>
+      <button onClick={handleEndClass} className="w-full py-3 bg-red-500 hover:bg-red-400 text-white font-black text-[10px] uppercase tracking-widest rounded-xl transition-all shadow-[0_0_20px_rgba(239,68,68,0.4)] hover:scale-105">
+        End Class & Grade
+      </button>
     </div>
   );
 };
