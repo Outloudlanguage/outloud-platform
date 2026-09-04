@@ -2788,33 +2788,54 @@ const FinancesPage = () => {
                                      )}
 
                                      {el.type === 'fill_in_the_blank' && el.data && (() => {
-                                        const rawText = el.data.text || el.data.sentence || el.data.questionHtml || el.data.prompt || '';
-                                        const parts = rawText.split(/(_+)/); // Splits keeping the underscores intact
-                                        
-                                        return (
-                                           <div className="w-full h-full flex flex-col justify-center items-center mt-4">
-                                              <div className="text-lg md:text-xl font-medium text-white leading-[3rem] text-center w-full break-words">
-                                                 {parts.map((part, i) => {
-                                                    if (part.includes('_')) {
-                                                       const blankWidth = Math.max(80, part.length * 15);
-                                                       return (
-                                                          <input 
-                                                             key={i}
-                                                             type="text"
-                                                             disabled={!isPreviewMode}
-                                                             value={studentAnswers[el.id] || ''}
-                                                             onChange={(e) => setStudentAnswers(prev => ({...prev, [el.id]: e.target.value}))}
-                                                             className="mx-2 px-4 py-1 bg-black/40 border-b-2 border-t-0 border-x-0 border-white/50 focus:border-[#fcd34d] text-center text-[#fcd34d] font-black outline-none transition-colors shadow-inner rounded-t-md"
-                                                             style={{ width: `${blankWidth}px`, maxWidth: '100%' }}
-                                                          />
-                                                       );
-                                                    }
-                                                    return <span key={i} dangerouslySetInnerHTML={{ __html: part }} />;
-                                                 })}
-                                              </div>
-                                           </div>
-                                        );
-                                     })()}
+    const rawText = el.data.templateText || '';
+    if (!rawText) return <div className="text-white/40 text-center w-full mt-auto font-bold uppercase tracking-widest text-xs">No template text provided. Update block.</div>;
+    
+    const parts = rawText.split(/(_+)/);
+    let blankIndex = 0; 
+    
+    return (
+       <div className="w-full h-full flex flex-col justify-center items-center mt-4">
+          <div 
+            className="text-center w-full break-words leading-[3rem]"
+            style={{
+              color: el.data.t_textColor || '#ffffff',
+              fontSize: el.data.t_fontSize ? `${el.data.t_fontSize}px` : '18px',
+              fontFamily: el.data.t_fontFamily || 'Montserrat',
+              fontWeight: el.data.t_isBold ? 'bold' : 'normal',
+              fontStyle: el.data.t_isItalic ? 'italic' : 'normal',
+              textDecoration: el.data.t_isUnderline ? 'underline' : 'none'
+            }}
+          >
+             {parts.map((part, i) => {
+                if (part.includes('_')) {
+                   const currentBlankIndex = blankIndex++;
+                   const blankWidth = Math.max(60, Math.min(part.length * 15, 300));
+                   return (
+                      <input 
+                         key={i}
+                         type="text"
+                         disabled={!isPreviewMode}
+                         placeholder={isPreviewMode ? "" : part}
+                         value={studentAnswers[`${el.id}_${currentBlankIndex}`] || ''}
+                         onChange={(e) => setStudentAnswers(prev => ({...prev, [`${el.id}_${currentBlankIndex}`]: e.target.value}))}
+                         className="mx-2 px-3 py-1 bg-black/40 border-b-2 border-t-0 border-x-0 border-white/50 focus:border-[#fcd34d] text-center outline-none transition-colors shadow-inner rounded-t-md"
+                         style={{ 
+                           width: `${blankWidth}px`, 
+                           color: el.data.a_textColor || '#fcd34d',
+                           fontWeight: el.data.a_isBold ? 'bold' : 'normal',
+                           fontStyle: el.data.a_isItalic ? 'italic' : 'normal',
+                           textDecoration: el.data.a_isUnderline ? 'underline' : 'none'
+                         }}
+                      />
+                   );
+                }
+                return <span key={i} dangerouslySetInnerHTML={{ __html: part }} />;
+             })}
+          </div>
+       </div>
+    );
+})()}
 
                                      {el.type === 'multiple_selection' && el.data && (
                                         <>

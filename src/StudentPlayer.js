@@ -96,14 +96,18 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
           totalEarned += 1;
         }
       } 
-      else if (el.type === 'fill_in_the_blank' && el.data?.correctAnswer) {
-        totalPossible += 1;
-        // Automatically strips out accidental quotation marks to prevent false negatives
-        const cleanTarget = el.data.correctAnswer.replace(/["']/g, '').trim().toLowerCase();
-        const cleanAnswer = (studentAnswers[el.id] || '').replace(/["']/g, '').trim().toLowerCase();
-        if (cleanAnswer === cleanTarget) {
-          totalEarned += 1;
-        }
+      else if (el.type === 'fill_in_the_blank' && el.data?.answerText) {
+        const targetWords = el.data.answerText.split(',').map(w => w.replace(/["']/g, '').trim().toLowerCase());
+        
+        targetWords.forEach((targetWord, index) => {
+          if (targetWord) {
+            totalPossible += 1;
+            const studentAns = (studentAnswers[`${el.id}_${index}`] || '').replace(/["']/g, '').trim().toLowerCase();
+            if (studentAns === targetWord) {
+              totalEarned += 1;
+            }
+          }
+        });
       }
       else if (el.type === 'multiple_selection') {
         el.data.options?.forEach(opt => {
@@ -117,19 +121,16 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
         el.data.items?.forEach((item, idx) => {
           if (item.studentViewText) {
             totalPossible += 1;
-            // Awards points if they placed it ANYWHERE (Completion check for basic DnD)
             if (Object.values(dndAnswers).includes(item.studentViewText)) totalEarned += 1;
           }
         });
       }
       else if (el.type === 'slider_bar') {
         totalPossible += 1;
-        // Grants participation points for interacting with the slider
         if (studentAnswers[el.id] !== undefined) totalEarned += 1;
       }
     });
 
-    // If there were no graded elements (just reading/video), grant 100% completion.
     const percentage = totalPossible > 0 ? Math.round((totalEarned / totalPossible) * 100) : 100;
     
     return {
@@ -175,7 +176,7 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
   return (
     <div className="fixed inset-0 z-[500] flex flex-col bg-[#070b19] text-white font-montserrat overflow-y-auto custom-scrollbar">
       
-      {/* 13(7).jpg Background Mirror */}
+      {/* Background Mirror */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-[#08203e]/40 blur-[120px] rounded-full mix-blend-screen"></div>
         <div className="absolute bottom-[-20%] left-[-10%] w-[80%] h-[80%] bg-[#ca8a04]/10 blur-[150px] rounded-full mix-blend-screen"></div>
@@ -208,7 +209,6 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
       <div className="flex-1 w-full max-w-[80rem] mx-auto p-6 md:p-12 relative z-10 flex flex-col pb-32">
         <div className="flex flex-wrap justify-center gap-8 w-full">
           
-          {/* UNIFIED SEQUENTIAL RENDER BLOCK */}
           {contentElements.map(el => {
             const isMedia = ['video', 'image', 'audio'].includes(el.type);
             const isCard = ['short_answer', 'multiple_selection', 'slider_bar', 'fill_in_the_blank', 'drag_and_drop', 'crossword', 'word_search'].includes(el.type);
@@ -241,24 +241,45 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
                   <div className="w-full bg-white/10 backdrop-blur-xl rounded-[2rem] border border-white/20 p-8 flex flex-col gap-6 shadow-2xl h-full justify-between animate-slide-up">
                     
                     {el.data?.imageUrl && <img src={el.data.imageUrl} alt="Visual Prompt" className="w-full h-64 object-cover rounded-2xl shadow-inner mb-4" />}
-{el.type === 'fill_in_the_blank' && el.data && (() => {
-                       const rawText = el.data.text || el.data.sentence || el.data.questionHtml || el.data.prompt || '';
+
+                    {el.type === 'fill_in_the_blank' && el.data && (() => {
+                       const rawText = el.data.templateText || '';
+                       if (!rawText) return null;
+                       
                        const parts = rawText.split(/(_+)/);
+                       let blankIndex = 0;
                        
                        return (
                           <div className="w-full h-full flex flex-col justify-center items-center mt-4">
-                             <div className="text-lg md:text-xl font-medium text-white leading-[3rem] text-center w-full break-words">
+                             <div 
+                               className="text-center w-full break-words leading-[3rem]"
+                               style={{
+                                 color: el.data.t_textColor || '#ffffff',
+                                 fontSize: el.data.t_fontSize ? `${el.data.t_fontSize}px` : '18px',
+                                 fontFamily: el.data.t_fontFamily || 'Montserrat',
+                                 fontWeight: el.data.t_isBold ? 'bold' : 'normal',
+                                 fontStyle: el.data.t_isItalic ? 'italic' : 'normal',
+                                 textDecoration: el.data.t_isUnderline ? 'underline' : 'none'
+                               }}
+                             >
                                 {parts.map((part, i) => {
                                    if (part.includes('_')) {
-                                      const blankWidth = Math.max(80, part.length * 15);
+                                      const currentBlankIndex = blankIndex++;
+                                      const blankWidth = Math.max(60, Math.min(part.length * 15, 300));
                                       return (
                                          <input 
                                             key={i}
                                             type="text"
-                                            value={studentAnswers[el.id] || ''}
-                                            onChange={(e) => setStudentAnswers(prev => ({...prev, [el.id]: e.target.value}))}
-                                            className="mx-2 px-4 py-1 bg-black/40 border-b-2 border-t-0 border-x-0 border-white/50 focus:border-[#fcd34d] text-center text-[#fcd34d] font-black outline-none transition-colors shadow-inner rounded-t-md"
-                                            style={{ width: `${blankWidth}px`, maxWidth: '100%' }}
+                                            value={studentAnswers[`${el.id}_${currentBlankIndex}`] || ''}
+                                            onChange={(e) => setStudentAnswers(prev => ({...prev, [`${el.id}_${currentBlankIndex}`]: e.target.value}))}
+                                            className="mx-2 px-3 py-1 bg-black/40 border-b-2 border-t-0 border-x-0 border-white/50 focus:border-[#fcd34d] text-center outline-none transition-colors shadow-inner rounded-t-md"
+                                            style={{ 
+                                              width: `${blankWidth}px`, 
+                                              color: el.data.a_textColor || '#fcd34d',
+                                              fontWeight: el.data.a_isBold ? 'bold' : 'normal',
+                                              fontStyle: el.data.a_isItalic ? 'italic' : 'normal',
+                                              textDecoration: el.data.a_isUnderline ? 'underline' : 'none'
+                                            }}
                                          />
                                       );
                                    }
