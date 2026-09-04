@@ -459,7 +459,17 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
                         </div>
                       </div>
                     )}
-
+{el.type === 'record_compare' && el.data?.audioUrl && (
+   <div className="w-full flex flex-col justify-center items-center mt-8 space-y-4 px-4 pb-8">
+      <span className="text-white/40 uppercase font-black tracking-widest text-xs">Target Audio</span>
+      <audio 
+         src={el.data.audioUrl} 
+         controls 
+         controlsList="nodownload" 
+         className="w-full max-w-md rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.5)]"
+      />
+   </div>
+)}
                   </div>
                 )}
               </div>
