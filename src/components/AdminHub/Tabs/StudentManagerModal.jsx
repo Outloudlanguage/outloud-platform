@@ -253,7 +253,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
     setIsProcessing(true);
     try {
       if (userData.id.startsWith('mock')) { if(onSuccess) onSuccess(); return; }
-      const { error } = await supabase.from('profiles').update({ level: levelOverride, unit: unitOverride }).eq('id', userData.id);
+      const { error } = await supabase.from('profiles').update({ level: getBaseLevel(levelOverride), unit: unitOverride }).eq('id', userData.id);
       if (error) throw error;
       alert("Overrides Académicos Guardados Exitosamente.");
       if (onSuccess) onSuccess();
@@ -374,7 +374,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
       const updates = { 
         available_credits: newCredits,
         level_completed: false,
-        level: nextLevelInfo.level,
+        level: getBaseLevel(nextLevelInfo.level),
         unit: nextLevelInfo.unit,
         next_billing_date: calculateNextBillingDate()
       };
@@ -468,7 +468,7 @@ const handleProvisionAccount = async () => {
           firstName: provFirstName.trim(), 
           lastName: provLastName.trim(),
           role: userData.role || 'Student', 
-          level: userRole === 'Student' ? levelOverride : 'Staff',
+          level: userRole === 'Student' ? getBaseLevel(levelOverride) : 'Staff',
           unit: userRole === 'Student' ? unitOverride : 1
         }
       });
@@ -494,7 +494,7 @@ const handleProvisionAccount = async () => {
       if (userRole === 'Student') {
         updates.cohort = cohort;
         updates.available_credits = 0;
-        updates.level = levelOverride;
+        updates.level = getBaseLevel(levelOverride);
         updates.unit = unitOverride;
       }
 

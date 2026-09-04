@@ -52,7 +52,7 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
         const { data, error: fetchError } = await supabase
           .from('content_blueprints') 
           .select('*')
-          .eq('level', student.level || 'A1: Básico 1')
+          .eq('level', student.level || 'A1')
           .eq('unit', student.unit || 1)
           .eq('content_type', activityType)
           .maybeSingle();
