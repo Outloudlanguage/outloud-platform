@@ -49,12 +49,22 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
   useEffect(() => {
     const fetchLesson = async () => {
       try {
+        // 1. Normalize the Level
+        let rawLevel = student?.level || 'A1';
+        let queryLevel = rawLevel === 'Staff' 
+            ? 'A1' 
+            : rawLevel.split(':')[0].trim(); 
+
+        // 2. Normalize the Unit
+        const queryUnit = String(student?.unit || '1');
+
+        // 3. Execute the Fetch
         const { data, error: fetchError } = await supabase
           .from('content_blueprints') 
           .select('*')
-          .eq('level', student.level || 'A1')
-          .eq('unit', student.unit || 1)
-          .eq('content_type', activityType)
+          .eq('level', queryLevel) 
+          .eq('unit', queryUnit)   
+          .ilike('content_type', activityType)
           .maybeSingle();
 
         if (fetchError) throw fetchError;
