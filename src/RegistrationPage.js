@@ -474,7 +474,8 @@ const RegistrationPage = ({ onReturnHome, onFreeTrialClick }) => {
       alert('¡Inscripción enviada con éxito! / Registration submitted successfully!');
       onReturnHome();
     } catch (error) {
-      console.error('Database Pipeline Error:', error);
+      // Extracts the specific error message from the Supabase error object
+      console.error('Database Pipeline Error:', error.message || error);
       alert('Hubo un error al procesar la inscripción. Intente de nuevo.');
     } finally {
       setIsSubmitting(false);
