@@ -407,7 +407,6 @@ const DesktopRegistration = ({
 // =========================================
 const RegistrationPage = ({ onReturnHome, onFreeTrialClick }) => {
   const [isMobile, setIsMobile] = useState(false);
-  const DISCORD_WEBHOOK_URL = 'https://discordapp.com/api/webhooks/1534265478179196928/8R96hVzk1NqYi_F-dAzTpeUjnJa5DyXSFWQ338FQGwnKK9FztZt5l7ECE2bZcqhS0fwb';
 
   const [formData, setFormData] = useState({
     fullName: '', email: '', phone: '', reason: '', fluentTime: '', interest: '', investTime: '', referralToggle: false, refName: '', refPhone: '',
@@ -454,7 +453,6 @@ const RegistrationPage = ({ onReturnHome, onFreeTrialClick }) => {
 
     setIsSubmitting(true);
     try {
-      // INJECTED DATA: Now explicitly includes invest_time to prevent the 500 rejection error
       const insertPayload = {
         full_name: formData.fullName,
         email: formData.email,
@@ -466,40 +464,17 @@ const RegistrationPage = ({ onReturnHome, onFreeTrialClick }) => {
         status: 'pending' 
       };
 
-      const { data: supabaseData, error: supabaseError } = await supabase
+      // Removed .select().single() so anonymous users can insert without RLS read errors
+      const { error: supabaseError } = await supabase
         .from('registrations')
-        .insert([insertPayload])
-        .select('id')
-        .single();
+        .insert([insertPayload]);
         
       if (supabaseError) throw supabaseError;
-      const formattedSubmissionId = `Submission #${String(supabaseData.id).padStart(3, '0')}`;
 
-      const discordPayload = {
-        username: 'OLA Registry Hub',
-        avatar_url: 'https://i.postimg.cc/fyvnv4XT/Diseno-sin-titulo-(14).png',
-        embeds: [{
-          title: `🎓 Nuevo Estudiante Registrado | ${formattedSubmissionId}`,
-          description: `Se ha recibido una nueva planilla de inscripción de **${formData.fullName}**.`,
-          color: 1461973,
-          fields: [
-            { name: '👤 SECTION 1: PERSONAL INFO', value: `**Email:** ${formData.email}\n**WhatsApp:** ${formData.phone}`, inline: false },
-            { name: '🎯 SECTION 2: COURSE GOALS', value: `**Motivo:** ${formData.reason.substring(3)}\n**Meta de fluidez:** ${formData.fluentTime.substring(3)}\n**Interés principal:** ${formData.interest.substring(3)}\n**Tiempo disponible:** ${formData.investTime.substring(3)}`, inline: false },
-          ],
-          footer: { text: 'Outloud Language Academy • Official Registry', icon_url: 'https://i.postimg.cc/fyvnv4XT/Diseno-sin-titulo-(14).png' },
-          timestamp: new Date().toISOString(),
-        }],
-      };
-
-      if (formData.referralToggle && (formData.refName || formData.refPhone)) {
-        discordPayload.embeds[0].fields.push({ name: '🤝 REFERRAL INFO', value: `**Refirió a:** ${formData.refName || 'N/A'}\n**Teléfono del referido:** ${formData.refPhone || 'N/A'}`, inline: false });
-      }
-
-      await fetch(DISCORD_WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(discordPayload) });
       alert('¡Inscripción enviada con éxito! / Registration submitted successfully!');
       onReturnHome();
     } catch (error) {
-      console.error('Database or Discord Pipeline Error:', error);
+      console.error('Database Pipeline Error:', error);
       alert('Hubo un error al procesar la inscripción. Intente de nuevo.');
     } finally {
       setIsSubmitting(false);
