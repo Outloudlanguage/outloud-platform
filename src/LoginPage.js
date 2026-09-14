@@ -147,9 +147,8 @@ const MobileLogin = ({ onLogin, onInfoClick, onPlacementClick }) => {
 
         <div className="mt-auto pt-10 pb-6 flex justify-center w-full">
           <h1 className="text-white text-[32px] font-light tracking-widest leading-[1.2] text-center drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">
-            YOUR JOURNEY<br/>
-            TO SUCCESS<br/>
-            STARTS TODAY
+            FORWARD<br/>
+            TOGETHER
           </h1>
         </div>
       </div>
@@ -329,7 +328,7 @@ const DesktopLogin = ({ onLogin, onInfoClick, onPlacementClick }) => {
             <img src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/OUTLOUD%20(4).png" alt="Outloud Stacked Logo" className="w-48 md:w-56 object-contain drop-shadow-lg brightness-0 invert opacity-90" />
           </div>
           <h1 className="text-[1.5rem] md:text-[1.8rem] lg:text-[2.2rem] font-light tracking-[0.1em] leading-[1.4] text-white drop-shadow-md w-full">
-            YOUR JOURNEY<br/>TO SUCCESS<br/>STARTS TODAY
+            FORWARD<br/> TOGETHER
           </h1>
         </div>
       </div>
