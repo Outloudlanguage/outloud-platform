@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './SupabaseClient';
 
 const extractVideoUrl = (rawInput) => {
@@ -19,6 +19,15 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
 
   const [studentAnswers, setStudentAnswers] = useState({});
   const [dndAnswers, setDndAnswers] = useState({});
+  
+  // Tracking & Penalty States
+  const [videoWatched, setVideoWatched] = useState(false);
+  const [recordState, setRecordState] = useState('idle'); // idle -> recording -> recorded -> comparing -> retry
+  
+  // Audio Refs
+  const mediaRecorderRef = useRef(null);
+  const userAudioRef = useRef(null);
+  const targetAudioRef = useRef(null);
 
   const safeParse = (data, fallback) => {
     if (!data) return fallback;
@@ -42,7 +51,6 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
       try {
         let rawLevel = student?.level || 'A1';
         let queryLevel = rawLevel === 'Staff' ? 'A1' : rawLevel.split(':')[0].trim(); 
-
         let rawUnit = String(student?.unit || '1').trim();
         let queryUnit = rawUnit.toLowerCase().startsWith('unit') ? rawUnit : `Unit ${rawUnit}`;
 
@@ -66,11 +74,9 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
         });
 
         if (structuredScreens.length === 0) throw new Error("This blueprint is completely empty.");
-
         setAllElements(elementsArr);
         setScreensData(structuredScreens);
       } catch (err) {
-        console.error("Fetch error:", err);
         setError(`Error loading content: ${err.message}`);
       } finally {
         setLoading(false);
@@ -79,9 +85,24 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
     fetchLesson();
   }, [activityType, student]);
 
+  // Listen for Bunny.net / Cloudflare video completion to remove penalty
+  useEffect(() => {
+    const handleMessage = (e) => {
+      try {
+        const data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
+        if (data && (data.event === 'ended' || data.type === 'ended' || data.event === 'videoEnded')) {
+          setVideoWatched(true);
+        }
+      } catch(err) {}
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
   const calculateFinalScores = () => {
     let totalPossible = 0;
     let totalEarned = 0;
+    let hasVideo = allElements.some(el => el.type === 'video');
 
     allElements.forEach(el => {
       if (el.type === 'short_answer' && el.data?.correctAnswer) {
@@ -120,7 +141,9 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
       }
     });
 
-    const percentage = totalPossible > 0 ? Math.round((totalEarned / totalPossible) * 100) : 100;
+    // Apply 20% penalty if a video exists but was not fully watched
+    const penaltyMultiplier = (hasVideo && !videoWatched) ? 0.8 : 1;
+    let percentage = totalPossible > 0 ? Math.round((totalEarned / totalPossible) * 100 * penaltyMultiplier) : (hasVideo && !videoWatched ? 80 : 100);
     
     return {
       Listening: percentage,
@@ -133,6 +156,12 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
   };
 
   const handleContinueClick = () => {
+    // Reset audio state when changing screens
+    if (mediaRecorderRef.current && recordState === 'recording') mediaRecorderRef.current.stop();
+    setRecordState('idle');
+    if (targetAudioRef.current) targetAudioRef.current.pause();
+    if (userAudioRef.current) userAudioRef.current.pause();
+
     if (currentStep < screensData.length - 1) {
       setCurrentStep(prev => prev + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -142,20 +171,46 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
     }
   };
 
-  // True HTML5 Drag and Drop Handlers
-  const handleDragStart = (e, word) => {
-    e.dataTransfer.setData('text/plain', word);
-  };
-  
-  const handleDragOver = (e) => {
-    e.preventDefault();
-  };
-  
+  const handleDragStart = (e, word) => e.dataTransfer.setData('text/plain', word);
+  const handleDragOver = (e) => e.preventDefault();
   const handleDrop = (e, zoneId) => {
     e.preventDefault();
     const word = e.dataTransfer.getData('text/plain');
-    if (word) {
-      setDndAnswers(prev => ({ ...prev, [zoneId]: word }));
+    if (word) setDndAnswers(prev => ({ ...prev, [zoneId]: word }));
+  };
+
+  // Full Recording & Compare Cycle
+  const handleRecordAction = async (targetAudioUrl) => {
+    if (recordState === 'idle' || recordState === 'retry') {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorderRef.current = new MediaRecorder(stream);
+        let chunks = [];
+        mediaRecorderRef.current.ondataavailable = e => { if(e.data.size > 0) chunks.push(e.data); };
+        mediaRecorderRef.current.onstop = () => {
+          const blob = new Blob(chunks, { type: 'audio/webm' });
+          userAudioRef.current = new Audio(URL.createObjectURL(blob));
+          setRecordState('recorded');
+          stream.getTracks().forEach(t => t.stop());
+        };
+        mediaRecorderRef.current.start();
+        setRecordState('recording');
+      } catch (e) { alert('Microphone access is required for this exercise.'); }
+    } 
+    else if (recordState === 'recording') {
+      mediaRecorderRef.current?.stop();
+    }
+    else if (recordState === 'recorded') {
+      setRecordState('comparing');
+      if (!targetAudioRef.current) targetAudioRef.current = new Audio(targetAudioUrl);
+      targetAudioRef.current.src = targetAudioUrl; 
+      targetAudioRef.current.play();
+      targetAudioRef.current.onended = () => {
+         if (userAudioRef.current) {
+           userAudioRef.current.play();
+           userAudioRef.current.onended = () => setRecordState('retry');
+         } else { setRecordState('retry'); }
+      };
     }
   };
 
@@ -176,8 +231,9 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
   return (
     <div className="fixed inset-0 z-[500] flex flex-col bg-[#070b19] text-white font-montserrat overflow-y-auto custom-scrollbar">
       
-      {/* Background Mirror */}
+      {/* Restored Global Background Image */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <img src="https://i.postimg.cc/PJbrcZdF/Agregar-un-subtitulo-(5).png" alt="Background" className="absolute inset-0 w-full h-full object-cover opacity-20 mix-blend-screen" />
         <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-[#08203e]/40 blur-[120px] rounded-full mix-blend-screen"></div>
         <div className="absolute bottom-[-20%] left-[-10%] w-[80%] h-[80%] bg-[#ca8a04]/10 blur-[150px] rounded-full mix-blend-screen"></div>
       </div>
@@ -205,13 +261,11 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
         </div>
       </div>
 
-      {/* Dynamic Content Container */}
       <div className="flex-1 w-full max-w-[80rem] mx-auto p-6 md:p-12 relative z-10 flex flex-col pb-32">
         <div className="flex flex-col items-center gap-10 w-full">
           
           {contentElements.map(el => {
             const isMedia = ['video', 'image', 'audio'].includes(el.type);
-            // ADDED record_compare to properly render images/audio within the glass card
             const isCard = ['short_answer', 'multiple_selection', 'slider_bar', 'fill_in_the_blank', 'drag_and_drop', 'crossword', 'word_search', 'record_compare'].includes(el.type);
             
             if (isMedia) {
@@ -230,21 +284,21 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
             }
 
             return (
-              // Enforced max-w-4xl for a centered, cinematic presentation
               <div key={el.id} className="relative flex flex-col w-full max-w-4xl mx-auto items-center">
                 
+                {/* Dynamically scales down the gigantic hardcoded spans to prevent line breaking */}
                 {el.type === 'text' && (
-                  <div className="w-full bg-white/10 backdrop-blur-2xl rounded-[2.5rem] p-10 md:p-14 border border-white/20 shadow-2xl text-center z-20">
-                    <div dangerouslySetInnerHTML={{__html: el.htmlContent}} className="rich-text-content pointer-events-none drop-shadow-md" />
+                  <div className="w-full bg-white/10 backdrop-blur-2xl rounded-[2.5rem] p-8 md:p-14 border border-white/20 shadow-2xl text-center z-20">
+                    <div dangerouslySetInnerHTML={{__html: el.htmlContent}} className="rich-text-content pointer-events-none drop-shadow-md text-sm md:text-base [&_span]:!text-lg md:[&_span]:!text-2xl [&_span]:!leading-tight [&_span]:!whitespace-normal" />
                   </div>
                 )}
 
                 {isCard && (
                   <div className="w-full bg-white/10 backdrop-blur-xl rounded-[2.5rem] border border-white/20 p-8 md:p-12 flex flex-col gap-6 shadow-2xl h-full justify-between animate-slide-up mt-4">
                     
+                    {/* Visual Prompt Recovery for Record and Compare */}
                     {el.data?.imageUrl && <img src={el.data.imageUrl} alt="Visual Prompt" className="w-full h-80 object-cover rounded-3xl shadow-inner border border-white/10 mb-4" />}
 
-                    {/* Target Audio for Record & Compare */}
                     {el.type === 'record_compare' && el.data?.audioUrl && (
                       <div className="w-full flex flex-col items-center justify-center bg-black/30 p-8 rounded-3xl border border-white/10 shadow-inner mt-4">
                         <span className="text-white/60 font-black uppercase tracking-widest text-xs mb-4">Original Audio</span>
@@ -259,15 +313,7 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
                        let blankIndex = 0;
                        return (
                           <div className="w-full h-full flex flex-col justify-center items-center mt-6">
-                             <div 
-                               className="text-center w-full break-words leading-[4rem]"
-                               style={{
-                                 color: el.data.t_textColor || '#ffffff',
-                                 fontSize: el.data.t_fontSize ? `${el.data.t_fontSize}px` : '22px',
-                                 fontFamily: el.data.t_fontFamily || 'Montserrat',
-                                 fontWeight: el.data.t_isBold ? 'bold' : 'normal'
-                               }}
-                             >
+                             <div className="text-center w-full break-words leading-[4rem]" style={{ color: el.data.t_textColor || '#ffffff', fontSize: el.data.t_fontSize ? `${el.data.t_fontSize}px` : '22px', fontFamily: el.data.t_fontFamily || 'Montserrat', fontWeight: el.data.t_isBold ? 'bold' : 'normal' }}>
                                 {parts.map((part, i) => {
                                    if (part.includes('_')) {
                                       const currentBlankIndex = blankIndex++;
@@ -276,9 +322,18 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
                                          <input 
                                             key={i}
                                             type="text"
+                                            autoCapitalize="none"
+                                            autoCorrect="off"
+                                            spellCheck="false"
                                             value={studentAnswers[`${el.id}_${currentBlankIndex}`] || ''}
-                                            onChange={(e) => setStudentAnswers(prev => ({...prev, [`${el.id}_${currentBlankIndex}`]: e.target.value}))}
-                                            // Forced text-white and vibrant amber border for ultimate legibility
+                                            onChange={(e) => {
+                                              let val = e.target.value;
+                                              // Forces lowercase unless it is the very first word in the sentence
+                                              if (i > 0 || (parts[0] && parts[0].trim().length > 0)) {
+                                                if (val.length > 0) val = val.charAt(0).toLowerCase() + val.slice(1);
+                                              }
+                                              setStudentAnswers(prev => ({...prev, [`${el.id}_${currentBlankIndex}`]: val}));
+                                            }}
                                             className="mx-3 px-4 py-2 bg-black/50 border-b-4 border-t-0 border-x-0 border-white/50 focus:border-[#fcd34d] text-center outline-none transition-colors shadow-inner rounded-t-xl text-white font-bold"
                                             style={{ width: `${blankWidth}px` }}
                                          />
@@ -317,7 +372,6 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
                       </div>
                     )}
 
-                    {/* True HTML5 Drag and Drop Engine */}
                     {el.type === 'drag_and_drop' && el.data && (
                       <div className="flex flex-col gap-12 w-full mt-6">
                         <div className="grid grid-cols-2 gap-8 w-full">
@@ -327,10 +381,10 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
                               <div 
                                 onDragOver={handleDragOver}
                                 onDrop={(e) => handleDrop(e, `${el.id}_${idx}`)}
-                                className={`w-full min-h-[90px] border-2 border-dashed rounded-2xl bg-black/30 backdrop-blur-md flex items-center justify-center transition-all shadow-inner border-white/40`}
+                                className="w-full min-h-[90px] border-2 border-dashed rounded-2xl bg-black/30 backdrop-blur-md flex items-center justify-center transition-all shadow-inner border-white/40"
                               >
                                 {dndAnswers[`${el.id}_${idx}`] ? (
-                                  <div onClick={(e) => { e.stopPropagation(); setDndAnswers(prev => { const copy = {...prev}; delete copy[`${el.id}_${idx}`]; return copy; })}} className="px-8 py-5 bg-[#fcd34d] text-[#08203e] rounded-xl font-black text-lg shadow-xl w-[90%] text-center hover:scale-105 active:scale-95 transition-transform truncate cursor-pointer">
+                                  <div onClick={(e) => { e.stopPropagation(); setDndAnswers(prev => { const copy = {...prev}; delete copy[`${el.id}_${idx}`]; return copy; })}} className="px-4 py-3 bg-[#fcd34d] text-[#08203e] rounded-xl font-black text-sm md:text-lg shadow-xl w-[90%] text-center hover:scale-105 active:scale-95 transition-transform cursor-pointer">
                                     {dndAnswers[`${el.id}_${idx}`]}
                                   </div>
                                 ) : <span className="text-xs uppercase font-black tracking-widest text-white/40">DROP HERE</span>}
@@ -350,57 +404,40 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
                                   key={`bank-${idx}`} 
                                   draggable
                                   onDragStart={(e) => handleDragStart(e, item.studentViewText)}
-                                  className="px-10 py-5 border-2 rounded-xl font-black text-lg shadow-xl cursor-grab active:cursor-grabbing transition-transform hover:-translate-y-1 bg-white/10 hover:bg-white/20 text-white border-white/20 backdrop-blur-sm"
+                                  className="px-6 py-4 border-2 rounded-xl font-black text-sm md:text-lg shadow-xl cursor-grab active:cursor-grabbing transition-transform hover:-translate-y-1 bg-white/10 hover:bg-white/20 text-white border-white/20 backdrop-blur-sm"
                                 >
                                   {item.studentViewText}
                                 </div>
                               );
                             })}
-                            {Object.keys(dndAnswers).length === el.data.items.filter(i=>i.imageUrl).length && <span className="text-green-400 font-black text-xl tracking-widest uppercase py-4 drop-shadow-md">All items placed!</span>}
+                            {Object.keys(dndAnswers).length === el.data.items.filter(i=>i.imageUrl).length && <span className="text-green-400 font-black text-xl tracking-widest uppercase py-4 drop-shadow-md w-full text-center block">All items placed!</span>}
                           </div>
                         </div>
                       </div>
                     )}
 
-                    {/* Word Search Grid */}
-                    {el.type === 'word_search' && el.data && (
-                      <div className="flex flex-col md:flex-row gap-10">
-                        <div className="flex-1 flex flex-col gap-8">
-                          <div dangerouslySetInnerHTML={{ __html: el.data.promptHtml }} className="w-full whitespace-pre-wrap break-words border-b border-white/20 pb-6 mb-4 drop-shadow-md text-xl" />
-                          <div className="flex gap-6">
-                            <ul className="flex-1 flex flex-col gap-4 list-none pl-2">
-                              {el.data.targetWords?.slice(0, Math.ceil(el.data.targetWords.length / 2)).map((w, i) => <li key={`w1-${i}`} className="text-lg font-bold text-white/90 tracking-widest flex items-center gap-4"><span className="w-3 h-3 rounded-full bg-[#fcd34d] shadow-[0_0_10px_#fcd34d]"></span>{w}</li>)}
-                            </ul>
-                            <ul className="flex-1 flex flex-col gap-4 list-none pl-2">
-                              {el.data.targetWords?.slice(Math.ceil(el.data.targetWords.length / 2)).map((w, i) => <li key={`w2-${i}`} className="text-lg font-bold text-white/90 tracking-widest flex items-center gap-4"><span className="w-3 h-3 rounded-full bg-[#fcd34d] shadow-[0_0_10px_#fcd34d]"></span>{w}</li>)}
-                            </ul>
-                          </div>
-                        </div>
-                        <div className="flex-[2] bg-black/40 rounded-3xl border border-white/10 p-8 flex justify-center items-center shadow-inner overflow-x-auto">
-                          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${el.data.size || 10}, 1fr)`, borderWidth: '4px', borderStyle: 'solid', borderColor: el.data.lineColor, backgroundColor: el.data.cellColor }} className="shadow-2xl aspect-square min-w-[400px] w-full max-w-[600px] rounded-2xl overflow-hidden">
-                            {el.data.grid?.map((row, rIdx) => 
-                              row.map((char, cIdx) => {
-                                const cellId = `${el.id}_${rIdx}_${cIdx}`;
-                                const isSelected = (studentAnswers[`${el.id}_cells`] || []).includes(cellId);
-                                return (
-                                  <div 
-                                    key={cellId} 
-                                    onClick={() => setStudentAnswers(prev => {
-                                       const current = prev[`${el.id}_cells`] || [];
-                                       return { ...prev, [`${el.id}_cells`]: current.includes(cellId) ? current.filter(c => c !== cellId) : [...current, cellId] };
-                                    })}
-                                    style={{ color: el.data.textColor, fontSize: `${el.data.fontSize}px`, fontFamily: el.data.fontFamily, fontWeight: el.data.isBold ? 'bold' : 'normal', borderRight: cIdx < (el.data.size - 1) ? `1px solid ${el.data.lineColor}` : 'none', borderBottom: rIdx < (el.data.size - 1) ? `1px solid ${el.data.lineColor}` : 'none', backgroundColor: isSelected ? 'rgba(252, 211, 77, 0.6)' : 'transparent', cursor: 'pointer' }}
-                                    className="flex items-center justify-center transition-colors hover:bg-white/20 select-none aspect-square"
-                                  >
-                                    {char}
-                                  </div>
-                                )
-                              })
+                    {el.type === 'slider_bar' && el.data && (() => {
+                      const isVert = el.data.orientation === 'vertical';
+                      const opts = el.data.options || [];
+                      const maxIdx = Math.max(0, opts.length - 1);
+                      const currentIdx = studentAnswers[el.id] !== undefined ? parseInt(studentAnswers[el.id]) : Math.floor(maxIdx / 2);
+                      const activeOpt = opts[currentIdx] || {};
+                      const pct = maxIdx === 0 ? 50 : (currentIdx / maxIdx) * 100;
+                      return (
+                        <div className="w-full flex flex-col h-full min-h-[200px] justify-end relative pb-8 mt-6">
+                          <div className="absolute w-full h-full flex flex-col items-center justify-center">
+                            <div className="absolute flex items-center justify-center rounded-full shadow-inner overflow-hidden" style={{ backgroundColor: el.data.barColor || 'rgba(255,255,255,0.2)', width: isVert ? `${el.data.barThickness}px` : '100%', height: isVert ? '100%' : `${el.data.barThickness}px` }}></div>
+                            <input type="range" min="0" max={maxIdx} step="1" value={currentIdx} onChange={(e) => setStudentAnswers(prev => ({...prev, [el.id]: e.target.value}))} className="absolute custom-slider w-full h-full z-10 cursor-pointer" style={{ '--thumb-color': el.data.handleColor || '#fcd34d', transform: isVert ? 'rotate(-90deg)' : 'none', WebkitAppearance: 'none', background: 'transparent' }} />
+                            { !isVert && (
+                              <div className="absolute flex flex-col items-center transition-all duration-200 pointer-events-none z-0" style={{ left: `${pct}%`, bottom: 'calc(50% + 25px)', transform: 'translateX(-50%)' }}>
+                                <div className="bg-white text-[#08203e] px-6 py-3 rounded-xl shadow-2xl font-black text-base">{activeOpt.text}</div>
+                                <div className="w-0 h-0 border-solid" style={{ borderWidth: '10px 8px 0 8px', borderColor: 'white transparent transparent transparent' }} />
+                              </div>
                             )}
                           </div>
                         </div>
-                      </div>
-                    )}
+                      );
+                    })()}
 
                   </div>
                 )}
@@ -409,17 +446,28 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
           })}
         </div>
 
-        {/* BOTTOM ACTION DOCK */}
-        <div className="w-full mt-auto pt-20 flex justify-center items-center gap-8 relative z-50">
+        {/* BOTTOM ACTION DOCK WITH ANTI-OVERFLOW WRAPPER */}
+        <div className="w-full mt-auto pt-20 flex flex-col sm:flex-row justify-center items-center gap-4 px-4 relative z-50">
           {dockElements.map(el => {
-            if (el.type === 'record_compare') return (
-              <div key={el.id} className="bg-white/10 backdrop-blur-xl border border-white/20 text-white font-black px-12 py-6 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center gap-4 cursor-pointer hover:bg-white/20 transition-all uppercase tracking-widest text-lg hover:scale-105 active:scale-95">
-                <div className="w-4 h-4 rounded-full bg-red-500 animate-pulse shadow-[0_0_15px_#ef4444]"></div>
-                RECORD AUDIO
-              </div>
-            );
+            if (el.type === 'record_compare') {
+              const btnConfig = {
+                idle: { text: "RECORD AUDIO", class: "bg-white/10 hover:bg-white/20 text-white shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-white/20", icon: <div className="w-4 h-4 rounded-full bg-red-500 animate-pulse shadow-[0_0_15px_#ef4444]"></div> },
+                recording: { text: "RECORDING...", class: "bg-red-500 text-white shadow-[0_0_30px_rgba(239,68,68,0.5)] border-red-400 animate-pulse", icon: null },
+                recorded: { text: "COMPARE", class: "bg-[#5b9bd5] text-white shadow-[0_0_30px_rgba(91,155,213,0.5)] border-blue-400", icon: null },
+                comparing: { text: "COMPARING...", class: "bg-[#5b9bd5] text-white shadow-[0_0_30px_rgba(91,155,213,0.5)] border-blue-400 animate-pulse", icon: null },
+                retry: { text: "RETRY", class: "bg-white/10 hover:bg-white/20 text-white shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-white/20", icon: <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 3.16L3 8" /><path d="M3 3v5h5" /></svg> }
+              };
+              const config = btnConfig[recordState];
+              
+              return (
+                <button key={el.id} onClick={() => handleRecordAction(el.data?.audioUrl)} className={`w-full sm:w-auto backdrop-blur-xl border font-black px-8 py-4 md:px-12 md:py-6 rounded-full flex justify-center items-center gap-4 cursor-pointer transition-all uppercase tracking-widest text-sm md:text-lg hover:scale-105 active:scale-95 ${config.class}`}>
+                  {config.icon}
+                  {config.text}
+                </button>
+              );
+            }
             if (el.type === 'nav_button') return (
-              <button key={el.id} onClick={handleContinueClick} className="bg-[#fcd34d] text-[#08203e] font-black px-16 py-6 rounded-full shadow-[0_0_40px_rgba(252,211,77,0.4)] hover:shadow-[0_0_50px_rgba(252,211,77,0.6)] uppercase tracking-widest hover:scale-105 active:scale-95 transition-all text-xl">
+              <button key={el.id} onClick={handleContinueClick} className="w-full sm:w-auto bg-[#fcd34d] text-[#08203e] font-black px-8 py-4 md:px-16 md:py-6 rounded-full shadow-[0_0_40px_rgba(252,211,77,0.4)] hover:shadow-[0_0_50px_rgba(252,211,77,0.6)] uppercase tracking-widest hover:scale-105 active:scale-95 transition-all text-sm md:text-xl text-center">
                 {el.data?.buttonStyle === 'finish_pill' ? 'IR A CLASE EN VIVO' : 'CONTINUE ➔'}
               </button>
             );

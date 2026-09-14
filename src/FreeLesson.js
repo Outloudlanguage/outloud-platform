@@ -14,20 +14,22 @@ const FreeLesson = ({ onReturnHome, onReturnToRegister }) => {
   };
 
   const handleLessonComplete = (scores) => {
-    // Extracts the score passed up from StudentPlayer
-    const scoreValue = scores?.overall || scores?.totalScore || 100;
-    setFinalScore(scoreValue);
+    // Calculates the average of all tracked scores
+    const scoreValues = Object.values(scores);
+    const average = scoreValues.length > 0 ? Math.round(scoreValues.reduce((a, b) => a + b, 0) / scoreValues.length) : 100;
+    setFinalScore(average);
     setIsCompleted(true);
   };
 
   return (
     <div className="relative w-full min-h-screen bg-[#070b19]">
       
-      {/* 
-        Instead of immediately blurring, we let the player finish. 
-        The modal will overlay cleanly on top.
-      */}
-      <div className={isCompleted ? "pointer-events-none opacity-50 transition-all duration-1000" : "transition-all duration-1000"}>
+      {/* Background Image Restored */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <img src="https://i.postimg.cc/PJbrcZdF/Agregar-un-subtitulo-(5).png" alt="Background" className="absolute inset-0 w-full h-full object-cover opacity-20 mix-blend-screen" />
+      </div>
+
+      <div className={isCompleted ? "pointer-events-none opacity-50 transition-all duration-1000 relative z-10" : "transition-all duration-1000 relative z-10"}>
         <StudentPlayer 
           activityType="Lesson" 
           student={guestStudent} 
@@ -39,16 +41,15 @@ const FreeLesson = ({ onReturnHome, onReturnToRegister }) => {
       {isCompleted && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-[#070b19]/80 backdrop-blur-md animate-fade-in font-montserrat">
           <div className="bg-white/10 border border-white/20 rounded-[2.5rem] p-8 md:p-12 max-w-lg w-full shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col items-center text-center relative overflow-hidden">
-            {/* Neon Accents */}
             <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-blue-900/40 blur-[80px] rounded-full pointer-events-none"></div>
             <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-[#fcd34d]/20 blur-[80px] rounded-full pointer-events-none"></div>
             
             <h2 className="text-3xl md:text-4xl font-black text-white uppercase tracking-widest mb-1 relative z-10">¡Excelente!</h2>
             <p className="text-[#fcd34d] font-bold text-xs md:text-sm uppercase tracking-widest mb-6 relative z-10">Clase de prueba completada</p>
             
-            {/* Dynamic Score Display */}
-            <div className="w-32 h-32 rounded-full border-4 border-[#fcd34d] flex items-center justify-center mb-6 relative z-10 bg-[#08203e]/50 shadow-inner">
-              <span className="text-5xl font-black text-white">{finalScore}%</span>
+            {/* Enlarged Circle to prevent 100% from clipping */}
+            <div className="w-36 h-36 md:w-40 md:h-40 rounded-full border-4 border-[#fcd34d] flex items-center justify-center mb-6 relative z-10 bg-[#08203e]/50 shadow-inner">
+              <span className="text-4xl md:text-5xl font-black text-white">{finalScore}%</span>
             </div>
             
             <p className="text-white/90 font-medium text-sm md:text-base leading-relaxed mb-8 relative z-10 text-balance">
