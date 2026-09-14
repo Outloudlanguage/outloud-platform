@@ -1020,11 +1020,60 @@ const AdminHub = () => {
   const fetchDirectory = async (roleType) => {
     setIsLoadingDirectory(true);
     try {
-     const roleMap = { 'students': 'Student', 'teachers': 'Teacher', 'admins': 'Admin' };
-      const targetRole = roleMap[roleType] || 'student';
-      const { data, error } = await supabase.from('profiles').select('*').eq('role', targetRole);
-      if (error) throw error;
-      setDirectoryUsers(data || []);
+      const roleMap = { 'students': 'Student', 'teachers': 'Teacher', 'admins': 'Admin' };
+      const targetRole = roleMap[roleType] || 'Student';
+
+      let combinedUsers = [];
+
+      // 1. Fetch from Profiles (Active Directory)
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('role', targetRole);
+      
+      if (profilesError) throw profilesError;
+      combinedUsers = profilesData || [];
+
+      // 2. Fetch from Registrations (Pending Leads) ONLY when viewing Students
+      if (roleType === 'students') {
+        const { data: regData, error: regError } = await supabase
+          .from('registrations')
+          .select('*')
+          .eq('status', 'pending');
+          
+        if (regError) throw regError;
+        
+        if (regData && regData.length > 0) {
+          const pendingStudents = regData.map(reg => ({
+            id: reg.id,
+            full_name: reg.full_name,
+            first_name: reg.full_name?.split(' ')[0] || 'Nuevo',
+            last_name: reg.full_name?.split(' ').slice(1).join(' ') || 'Prospecto',
+            email: reg.email,
+            whatsapp: reg.phone,
+            status: 'pending',
+            role: 'Student',
+            reason: reg.reason,
+            fluent_time: reg.fluent_time,
+            interest: reg.interest,
+            created_at: reg.created_at
+          }));
+          
+          combinedUsers = [...pendingStudents, ...combinedUsers];
+        }
+      }
+
+      // 3. Sort logic: Force "pending" status to the top, then sort alphabetically by first name
+      combinedUsers.sort((a, b) => {
+        if (a.status === 'pending' && b.status !== 'pending') return -1;
+        if (a.status !== 'pending' && b.status === 'pending') return 1;
+        
+        const nameA = (a.first_name || '').toLowerCase();
+        const nameB = (b.first_name || '').toLowerCase();
+        return nameA.localeCompare(nameB);
+      });
+
+      setDirectoryUsers(combinedUsers);
     } catch (err) {
       console.error("Directory Fetch Error:", err);
     } finally {
