@@ -99,7 +99,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   }, [userData]);
 
   useEffect(() => {
-    if (isOpen && !isPending && userData?.id && !userData.id.startsWith('mock')) {
+    if (isOpen && !isPending && userData?.id && !String(userData?.id).startsWith('mock')) {
       if (activeTab === 'ESTADISTICAS' && userRole === 'Student') {
         fetchAcademicHistory();
       }
@@ -252,7 +252,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   const handleSaveOverrides = async () => {
     setIsProcessing(true);
     try {
-      if (userData.id.startsWith('mock')) { if(onSuccess) onSuccess(); return; }
+      if (String(userData?.id).startsWith('mock')) { if(onSuccess) onSuccess(); return; }
       const { error } = await supabase.from('profiles').update({ level: getBaseLevel(levelOverride), unit: unitOverride }).eq('id', userData.id);
       if (error) throw error;
       alert("Overrides Académicos Guardados Exitosamente.");
@@ -294,7 +294,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   const handleSaveCohort = async () => {
     setIsProcessing(true);
     try {
-      if (userData.id.startsWith('mock')) { if(onSuccess) onSuccess(); return; }
+      if (String(userData?.id).startsWith('mock')) { if(onSuccess) onSuccess(); return; }
       const today = new Date();
       let nextBilling = new Date(today.getFullYear(), today.getMonth(), cohort);
       if (today.getDate() >= cohort) nextBilling.setMonth(nextBilling.getMonth() + 1);
@@ -318,7 +318,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   const handleRefund = async () => {
     const newCredits = credits + 1;
     setCredits(newCredits);
-    if (userData.id.startsWith('mock')) return;
+    if (String(userData?.id).startsWith('mock')) return;
     try {
       await supabase.from('profiles').update({ available_credits: newCredits }).eq('id', userData.id);
       await supabase.from('financial_logs').insert({
@@ -346,7 +346,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
 
     setIsProcessing(true);
     try {
-      if (userData.id.startsWith('mock')) {
+      if (String(userData?.id).startsWith('mock')) {
          alert("Simulación de renovación en datos de prueba exitosa.");
          setIsProcessing(false);
          return;
@@ -403,7 +403,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
 
     setIsProcessing(true);
     try {
-      if (userData.id.startsWith('mock')) {
+      if (String(userData?.id).startsWith('mock')) {
          alert("Simulación de pago en datos de prueba exitosa.");
          setIsProcessing(false);
          return;
@@ -451,7 +451,7 @@ const handleProvisionAccount = async () => {
     
     setIsProcessing(true);
     try {
-      if (userData?.id?.startsWith('mock')) {
+      if (String(userData?.id).startsWith('mock')) {
         alert('Modo de Prueba: Cuenta simulada aprovisionada exitosamente.');
         if (onSuccess) onSuccess();
         onClose();
@@ -521,7 +521,7 @@ const handleProvisionAccount = async () => {
 
     setIsProcessing(true);
     try {
-      if (userData.id.startsWith('mock')) {
+      if (String(userData?.id).startsWith('mock')) {
          alert("Simulación de cambio de credenciales en datos de prueba exitosa.");
          setIsEditingCreds(false);
          setIsProcessing(false);
@@ -560,7 +560,7 @@ const handleProvisionAccount = async () => {
 
     setIsProcessing(true);
     try {
-      if (userData.id.startsWith('mock')) {
+      if (String(userData?.id).startsWith('mock')) {
          setAccountStatus(newStatus);
          setIsProcessing(false);
          return;
