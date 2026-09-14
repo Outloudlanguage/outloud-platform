@@ -49,21 +49,24 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
   useEffect(() => {
     const fetchLesson = async () => {
       try {
-        // 1. Normalize the Level
+        // 1. Normalize the Level (Extract just "A1", "A2", etc.)
         let rawLevel = student?.level || 'A1';
         let queryLevel = rawLevel === 'Staff' 
             ? 'A1' 
             : rawLevel.split(':')[0].trim(); 
 
-        // 2. Normalize the Unit
-        const queryUnit = String(student?.unit || '1');
+        // 2. Normalize the Unit (Force "Unit X" format to match Admin Hub saves)
+        let rawUnit = String(student?.unit || '1').trim();
+        let queryUnit = rawUnit.toLowerCase().startsWith('unit') 
+            ? rawUnit 
+            : `Unit ${rawUnit}`;
 
-        // 3. Execute the Fetch
+        // 3. Execute the Fetch using fuzzy matching for the level
         const { data, error: fetchError } = await supabase
           .from('content_blueprints') 
           .select('*')
-          .eq('level', queryLevel) 
-          .eq('unit', queryUnit)   
+          .ilike('level', `${queryLevel}%`) 
+          .ilike('unit', queryUnit)   
           .ilike('content_type', activityType)
           .maybeSingle();
 
