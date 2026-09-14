@@ -122,7 +122,9 @@ const MobileLevelsPage = ({ onReturnHome }) => {
       {/* Mobile Compact Header */}
       <div className="relative z-10 flex flex-row justify-between items-center w-full px-5 py-6 shrink-0 mb-2">
         <div className="flex items-center space-x-3">
-          <img src="https://i.postimg.cc/ZnRDb5X6/Copia-de-Outloud-(1920-x-600-px)-(1920-x-500-px).png" alt="Outloud Logo" className="h-8 object-contain opacity-90 drop-shadow-md" />
+          <img src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Copia%20de%20Outloud%20(1920%20x%20600%20px)%20(1920%20x%20500%20px).png
+
+" alt="Outloud Logo" className="h-8 object-contain opacity-90 drop-shadow-md" />
           <div className="h-6 w-[1px] bg-white/30"></div>
           <span className="text-xs font-light text-white/80 font-montserrat whitespace-nowrap tracking-wide">Online Platform</span>
         </div>
@@ -277,7 +279,9 @@ const DesktopLevelsPage = ({ onReturnHome }) => {
       <div className="relative z-10 flex flex-row justify-between items-center w-full max-w-[90rem] mx-auto mb-4 lg:mb-6 shrink-0">
         <div className="flex items-center">
           <img
-            src="https://i.postimg.cc/ZnRDb5X6/Copia-de-Outloud-(1920-x-600-px)-(1920-x-500-px).png"
+            src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Copia%20de%20Outloud%20(1920%20x%20600%20px)%20(1920%20x%20500%20px).png
+
+"
             alt="Outloud Logo"
             className="h-10 lg:h-12 object-contain opacity-90 drop-shadow-md shrink-0"
           />
@@ -360,7 +364,9 @@ const DesktopLevelsPage = ({ onReturnHome }) => {
           <div className="w-1/2 flex flex-col justify-center h-full min-h-0 relative">
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.03]">
               <img
-                src="https://i.postimg.cc/ZnRDb5X6/Copia-de-Outloud-(1920-x-600-px)-(1920-x-500-px).png"
+                src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Copia%20de%20Outloud%20(1920%20x%20600%20px)%20(1920%20x%20500%20px).png
+
+"
                 alt="Watermark"
                 className="w-1/2 object-contain invert brightness-0"
               />

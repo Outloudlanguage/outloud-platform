@@ -199,7 +199,9 @@ const DesktopView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onR
         
         {/* HEADER */}
         <div className="flex items-center gap-4 mb-10 pl-2">
-          <img src="https://i.postimg.cc/ZnRDb5X6/Copia-de-Outloud-(1920-x-600-px)-(1920-x-500-px).png" alt="Outloud Logo" className="h-12 lg:h-14 object-contain opacity-100" />
+          <img src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Copia%20de%20Outloud%20(1920%20x%20600%20px)%20(1920%20x%20500%20px).png
+
+" alt="Outloud Logo" className="h-12 lg:h-14 object-contain opacity-100" />
           <div className="h-10 w-[2px] bg-white/40"></div>
           <span className="text-2xl lg:text-3xl font-light text-white tracking-wide">Teacher Hub</span>
         </div>
@@ -331,7 +333,9 @@ const MobileView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onRe
 
       {/* HEADER */}
       <div className="p-5 flex items-center gap-3 border-b border-white/10 bg-black/10 backdrop-blur-md sticky top-0 z-40">
-        <img src="https://i.postimg.cc/ZnRDb5X6/Copia-de-Outloud-(1920-x-600-px)-(1920-x-500-px).png" alt="Outloud Logo" className="h-8 sm:h-10 object-contain opacity-100" />
+        <img src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Copia%20de%20Outloud%20(1920%20x%20600%20px)%20(1920%20x%20500%20px).png
+
+" alt="Outloud Logo" className="h-8 sm:h-10 object-contain opacity-100" />
         <div className="h-6 w-[1px] bg-white/40"></div>
         <span className="text-base sm:text-lg font-light text-white tracking-wide">Teacher Hub</span>
       </div>
