@@ -44,7 +44,7 @@ const ProtectedRoute = ({ children, allowedRoles, forcedLanguage, isStudentHub =
 
       if (normalizedAllowed.includes(userRole) || userRole === 'GENERAL_MANAGER' || userRole === 'ADMIN') {
         setIsAuthorized(true);
-        applyLocalization(forcedLanguage, isStudentHub);
+        applyLocalization(forcedLanguage);
       } else {
         onUnauthorized();
       }
@@ -55,27 +55,8 @@ const ProtectedRoute = ({ children, allowedRoles, forcedLanguage, isStudentHub =
     checkAuthAndRole();
   }, [allowedRoles, forcedLanguage, isStudentHub, onUnauthorized]);
 
-  const applyLocalization = (lang, blockTranslation) => {
+  const applyLocalization = (lang) => {
     document.documentElement.lang = lang;
-    let metaGoogle = document.querySelector('meta[name="google"]');
-    
-    if (blockTranslation) {
-      document.documentElement.classList.add("notranslate");
-      document.documentElement.setAttribute("translate", "no");
-      
-      if (!metaGoogle) {
-        metaGoogle = document.createElement('meta');
-        metaGoogle.name = "google";
-        document.head.appendChild(metaGoogle);
-      }
-      metaGoogle.content = "notranslate";
-    } else {
-      document.documentElement.classList.remove("notranslate");
-      document.documentElement.removeAttribute("translate");
-      if (metaGoogle) {
-        metaGoogle.remove();
-      }
-    }
   };
 
   if (loading) {
@@ -97,6 +78,23 @@ export default function App() {
     const hash = window.location.hash.replace('#', '');
     return hash || 'login';
   });
+
+  // --- GLOBAL ANTI-TRANSLATION LOCK ---
+  // Runs instantly to strictly forbid Chrome/Safari from translating the app
+  useEffect(() => {
+    document.documentElement.lang = "en";
+    document.documentElement.classList.add("notranslate");
+    document.documentElement.setAttribute("translate", "no");
+    
+    let metaGoogle = document.querySelector('meta[name="google"]');
+    if (!metaGoogle) {
+      metaGoogle = document.createElement('meta');
+      metaGoogle.name = "google";
+      document.head.appendChild(metaGoogle);
+    }
+    metaGoogle.content = "notranslate";
+  }, []);
+  // ------------------------------------
 
   useEffect(() => {
     window.history.replaceState({ page: currentPage }, '', `#${currentPage}`);

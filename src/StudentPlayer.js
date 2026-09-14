@@ -164,7 +164,13 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
 
     if (currentStep < screensData.length - 1) {
       setCurrentStep(prev => prev + 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      // Scroll the specific container instead of the locked browser window
+      const container = document.getElementById('student-player-container');
+      if (container) {
+        container.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' }); // Fallback
+      }
     } else {
       const finalScores = calculateFinalScores();
       onComplete(finalScores);
@@ -229,7 +235,7 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
   const dockElements = currentElements.filter(el => ['nav_button', 'record_compare'].includes(el.type));
 
   return (
-    <div className="fixed inset-0 z-[500] flex flex-col bg-[#070b19] text-white font-montserrat overflow-y-auto custom-scrollbar">
+    <div id="student-player-container" className="fixed inset-0 z-[500] flex flex-col bg-[#070b19] text-white font-montserrat overflow-y-auto custom-scrollbar">
       
       {/* Restored Global Background Image */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
