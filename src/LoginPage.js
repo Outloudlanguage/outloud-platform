@@ -41,7 +41,7 @@ const MobileLogin = ({ onLogin, onInfoClick, onPlacementClick }) => {
         <div 
           className="absolute inset-0 bg-cover bg-no-repeat"
           style={{ 
-            backgroundImage: "url('https://i.postimg.cc/QtmtPdr7/Diseno-sin-titulo-(16).png')",
+            backgroundImage: "url('https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Dise%C3%B1o%20sin%20t%C3%ADtulo%20(16).png')",
             backgroundPosition: "center 20%" 
           }}
         ></div>
@@ -319,7 +319,7 @@ const DesktopLogin = ({ onLogin, onInfoClick, onPlacementClick }) => {
       {/* RIGHT AREA: Photography Canvas */}
       <div className="relative flex w-[55%] bg-[#070b19]">
         <div className="absolute inset-0">
-          <img src="https://i.postimg.cc/P5V486CM/Sin-titulo-(Post-para-Instagram-(45))-(2).png" alt="Student Background" className="h-full w-full object-cover" />
+          <img src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Sin%20t%C3%ADtulo%20(Post%20para%20Instagram%20(45))%20(2).png" alt="Student Background" className="h-full w-full object-cover" />
         </div>
         
         {/* Dark Blue Overlay Fade */}

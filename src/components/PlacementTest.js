@@ -339,7 +339,7 @@ const PlacementTest = () => {
     <div 
       className="relative min-h-screen w-full font-montserrat text-white overflow-hidden flex flex-col items-center pb-20 select-none"
       style={{ 
-        backgroundImage: `linear-gradient(to bottom right, rgba(7,11,25,0.95), rgba(7,11,25,0.85)), url("https://i.postimg.cc/kg4rxNH2/Gemini-Generated-Image-ohtdmbohtdmbohtd.jpg")`, 
+        backgroundImage: `linear-gradient(to bottom right, rgba(7,11,25,0.95), rgba(7,11,25,0.85)), url("https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Gemini_Generated_Image_ohtdmbohtdmbohtd.jfif")`, 
         backgroundSize: 'cover', 
         backgroundPosition: 'center', 
         backgroundAttachment: 'fixed' 
