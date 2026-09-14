@@ -481,6 +481,7 @@ const RegistrationPage = ({ onReturnHome, onFreeTrialClick }) => {
       if (supabaseError) throw supabaseError;
 
       alert('¡Inscripción enviada con éxito! / Registration submitted successfully!');
+      sessionStorage.removeItem('olaRegistrationData'); // Throws away the sticky note
       onReturnHome();
     } catch (error) {
       // Extracts the specific error message from the Supabase error object
