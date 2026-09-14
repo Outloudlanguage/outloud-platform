@@ -124,7 +124,7 @@ const MobileRegistration = ({
       {/* COMPACT MOBILE HEADER */}
       <div className="relative z-10 flex flex-row justify-between items-center w-full mb-6 shrink-0">
         <div className="flex items-center">
-          <img src="https://i.postimg.cc/W4wH7P4n/Diseno-sin-titulo-(24).png" alt="Outloud Logo" className="h-8 object-contain shrink-0 opacity-90 drop-shadow-md" />
+          <img src="https://i.postimg.cc/ZnRDb5X6/Copia-de-Outloud-(1920-x-600-px)-(1920-x-500-px).png" alt="Outloud Logo" className="h-8 object-contain shrink-0 opacity-90 drop-shadow-md" />
         </div>
         <button onClick={onReturnHome} className="flex items-center space-x-1.5 text-white/90 font-bold font-montserrat hover:text-[#fcd34d] transition-colors bg-white/10 px-3 py-1.5 rounded-full border border-white/20 backdrop-blur-md">
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -282,7 +282,7 @@ const DesktopRegistration = ({
       {/* Desktop Header */}
       <div className="relative z-10 flex flex-row justify-between items-center w-full max-w-[90rem] mx-auto mb-6 shrink-0">
         <div className="flex items-center">
-          <img src="https://i.postimg.cc/W4wH7P4n/Diseno-sin-titulo-(24).png" alt="Outloud Logo" className="h-10 lg:h-12 object-contain shrink-0 opacity-90 drop-shadow-md" />
+          <img src="https://i.postimg.cc/ZnRDb5X6/Copia-de-Outloud-(1920-x-600-px)-(1920-x-500-px).png" alt="Outloud Logo" className="h-10 lg:h-12 object-contain shrink-0 opacity-90 drop-shadow-md" />
           <div className="mx-4 h-8 w-[2px] bg-white/30 shrink-0"></div>
           <span className="text-base lg:text-xl font-light text-white/80 font-montserrat whitespace-nowrap tracking-wide">Online Platform</span>
         </div>
@@ -303,7 +303,7 @@ const DesktopRegistration = ({
       <div className="relative z-10 flex-grow w-full max-w-[90rem] mx-auto bg-white/10 backdrop-blur-2xl border border-white/20 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] p-6 lg:p-10 flex flex-col mb-8">
         <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none rounded-[2.5rem]"></div>
         <div className="absolute inset-0 flex items-center justify-center opacity-[0.02] pointer-events-none z-0 overflow-hidden">
-          <img src="https://i.postimg.cc/W4wH7P4n/Diseno-sin-titulo-(24).png" alt="Watermark" className="w-[500px] h-[500px] object-contain invert brightness-0" />
+          <img src="https://i.postimg.cc/ZnRDb5X6/Copia-de-Outloud-(1920-x-600-px)-(1920-x-500-px).png" alt="Watermark" className="w-[500px] h-[500px] object-contain invert brightness-0" />
         </div>
 
         <div className="text-center mb-10 shrink-0 relative z-10">

@@ -247,7 +247,7 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
       {/* Global Navbar */}
       <div className="sticky top-0 h-20 w-full flex items-center justify-between px-6 md:px-12 z-50 shrink-0 border-b border-white/10 bg-[#070b19]/90 backdrop-blur-2xl shadow-xl">
         <div className="flex items-center gap-4">
-          <img src="https://i.postimg.cc/W4wH7P4n/Diseno-sin-titulo-(24).png" alt="Outloud Logo" className="h-8 md:h-10 object-contain drop-shadow-md" />
+          <img src="https://i.postimg.cc/ZnRDb5X6/Copia-de-Outloud-(1920-x-600-px)-(1920-x-500-px).png" alt="Outloud Logo" className="h-8 md:h-10 object-contain drop-shadow-md" />
           <div className="h-6 w-[1px] bg-white/20 hidden md:block"></div>
           <span className="hidden md:block text-sm font-black text-[#fcd34d] uppercase tracking-widest drop-shadow-sm">{activityType} • Unit {student?.unit || 1}</span>
         </div>
