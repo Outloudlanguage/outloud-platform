@@ -408,9 +408,18 @@ const DesktopRegistration = ({
 const RegistrationPage = ({ onReturnHome, onFreeTrialClick }) => {
   const [isMobile, setIsMobile] = useState(false);
 
-  const [formData, setFormData] = useState({
-    fullName: '', email: '', phone: '', reason: '', fluentTime: '', interest: '', investTime: '', referralToggle: false, refName: '', refPhone: '',
+  // Initialize state from sessionStorage so data survives the trip to the Free Lesson
+  const [formData, setFormData] = useState(() => {
+    const savedData = sessionStorage.getItem('olaRegistrationData');
+    return savedData ? JSON.parse(savedData) : {
+      fullName: '', email: '', phone: '', reason: '', fluentTime: '', interest: '', investTime: '', referralToggle: false, refName: '', refPhone: '',
+    };
   });
+
+  // Auto-save to sessionStorage whenever the user types something
+  useEffect(() => {
+    sessionStorage.setItem('olaRegistrationData', JSON.stringify(formData));
+  }, [formData]);
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
