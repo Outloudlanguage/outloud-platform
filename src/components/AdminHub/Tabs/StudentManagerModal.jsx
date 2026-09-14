@@ -516,6 +516,32 @@ const handleProvisionAccount = async () => {
     }
   };
 
+  const handleDeleteLead = async () => {
+    const isConfirm = window.confirm("¿Estás seguro de que deseas eliminar permanentemente a este prospecto? Esta acción no se puede deshacer.");
+    if (!isConfirm) return;
+    
+    setIsProcessing(true);
+    try {
+      if (String(userData?.id).startsWith('mock')) {
+         alert("Simulación de eliminación exitosa.");
+         onClose();
+         return;
+      }
+      
+      const { error } = await supabase.from('registrations').delete().eq('id', userData.id);
+      if (error) throw error;
+      
+      alert("Prospecto descartado exitosamente.");
+      if (onSuccess) onSuccess();
+      onClose();
+    } catch (error) {
+      console.error("Error deleting lead:", error);
+      alert("Hubo un error al intentar eliminar el registro.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const handleUpdateCredentials = async () => {
     if (!editEmail || !editPassword) { alert("El correo y contraseña no pueden estar vacíos."); return; }
 
@@ -786,9 +812,14 @@ const handleProvisionAccount = async () => {
                     </div>
                   )}
 
-                  <button onClick={handleProvisionAccount} disabled={isProcessing} className="w-full mt-6 py-4 bg-amber-400 hover:bg-white text-[#08203e] font-black tracking-widest text-xs uppercase rounded-xl transition-all shadow-[0_0_20px_rgba(251,191,36,0.4)] disabled:opacity-50 hover:scale-[1.02]">
-                    {isProcessing ? 'PROCESANDO EN BD...' : 'CONFIRMAR Y ACTIVAR USUARIO'}
-                  </button>
+                  <div className="flex gap-4 mt-6">
+                    <button onClick={handleDeleteLead} disabled={isProcessing} className="w-1/3 py-4 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white font-black tracking-widest text-xs uppercase rounded-xl transition-all border border-red-500/30 disabled:opacity-50">
+                      DESCARTAR
+                    </button>
+                    <button onClick={handleProvisionAccount} disabled={isProcessing} className="w-2/3 py-4 bg-amber-400 hover:bg-white text-[#08203e] font-black tracking-widest text-xs uppercase rounded-xl transition-all shadow-[0_0_20px_rgba(251,191,36,0.4)] disabled:opacity-50 hover:scale-[1.02]">
+                      {isProcessing ? 'PROCESANDO EN BD...' : 'CONFIRMAR Y ACTIVAR'}
+                    </button>
+                  </div>
                 </div>
               )}
 
