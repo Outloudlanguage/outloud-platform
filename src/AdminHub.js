@@ -2806,21 +2806,35 @@ const FinancesPage = () => {
                                         </div>
                                      )}
 
-                                     {/* Record & Compare Audio Slot */}
+                                     {/* Record & Compare Audio & Transcript Slot */}
                                      {el.type === 'record_compare' && (
-                                        <>
+                                        <div className="flex flex-col gap-4 w-full mb-4">
                                           {!isPreviewMode && !el.data?.audioUrl && (
-                                             <div onClick={() => { setMediaTarget({ id: el.id, type: 'audio' }); setActiveModal('media_upload'); }} className="w-full h-20 bg-white/10 border-2 border-dashed border-white/30 rounded-2xl flex items-center justify-center text-white/50 cursor-pointer hover:bg-white/20 hover:text-white transition-all mb-4">
+                                             <div onClick={() => { setMediaTarget({ id: el.id, type: 'audio' }); setActiveModal('media_upload'); }} className="w-full h-20 bg-white/10 border-2 border-dashed border-white/30 rounded-2xl flex items-center justify-center text-white/50 cursor-pointer hover:bg-white/20 hover:text-white transition-all">
                                                <span className="text-xs font-black uppercase tracking-widest">+ Add Target Audio</span>
                                              </div>
                                           )}
                                           {el.data?.audioUrl && (
-                                             <div className="relative group w-full mb-4">
+                                             <div className="relative group w-full">
                                                <audio src={el.data.audioUrl} controls controlsList="nodownload" onContextMenu={(e) => e.preventDefault()} className="w-full rounded-xl" />
                                                {!isPreviewMode && <button onClick={() => handleRemoveMedia(el.id, 'audio')} className="absolute -top-3 -right-3 w-8 h-8 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center font-bold shadow-xl z-50 hover:scale-110">✕</button>}
                                              </div>
                                           )}
-                                        </>
+                                          
+                                          {/* New Transcript Field */}
+                                          {!isPreviewMode ? (
+                                            <textarea
+                                              placeholder="Escribe la frase aquí para que el alumno pueda leerla al repetir..."
+                                              value={el.data?.transcriptText || ''}
+                                              onChange={(e) => handleSaveData(el.id, { ...el.data, transcriptText: e.target.value })}
+                                              className="w-full bg-black/40 border border-white/20 rounded-xl p-4 text-white text-sm focus:outline-none focus:border-[#fcd34d] resize-none h-24 shadow-inner placeholder-white/30"
+                                            />
+                                          ) : el.data?.transcriptText && (
+                                            <div className="w-full bg-black/30 border border-white/10 rounded-xl p-4 text-center mt-2 shadow-inner">
+                                              <p className="text-white/90 font-medium text-lg leading-relaxed">"{el.data.transcriptText}"</p>
+                                            </div>
+                                          )}
+                                        </div>
                                      )}
 
                                      {el.type === 'record_compare' && !isPreviewMode && (

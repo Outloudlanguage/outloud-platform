@@ -305,10 +305,22 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
                     {/* Visual Prompt Recovery for Record and Compare */}
                     {el.data?.imageUrl && <img src={el.data.imageUrl} alt="Visual Prompt" className="w-full h-80 object-cover rounded-3xl shadow-inner border border-white/10 mb-4" />}
 
-                    {el.type === 'record_compare' && el.data?.audioUrl && (
+                    {/* Target Audio & Transcript for Record & Compare */}
+                    {el.type === 'record_compare' && (
                       <div className="w-full flex flex-col items-center justify-center bg-black/30 p-8 rounded-3xl border border-white/10 shadow-inner mt-4">
-                        <span className="text-white/60 font-black uppercase tracking-widest text-xs mb-4">Original Audio</span>
-                        <audio src={el.data.audioUrl} controls controlsList="nodownload" className="w-full max-w-md" />
+                        {el.data?.transcriptText && (
+                          <div className="w-full text-center mb-6 border-b border-white/10 pb-6">
+                            <p className="text-white font-medium text-2xl lg:text-3xl leading-relaxed drop-shadow-md">
+                              "{el.data.transcriptText}"
+                            </p>
+                          </div>
+                        )}
+                        {el.data?.audioUrl && (
+                          <div className="w-full flex flex-col items-center">
+                            <span className="text-white/60 font-black uppercase tracking-widest text-xs mb-4">Original Audio</span>
+                            <audio src={el.data.audioUrl} controls controlsList="nodownload" className="w-full max-w-md" />
+                          </div>
+                        )}
                       </div>
                     )}
 
