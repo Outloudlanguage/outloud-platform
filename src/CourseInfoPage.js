@@ -26,9 +26,7 @@ const MobileCourseInfo = ({
         <div className="flex flex-row justify-between items-center w-full mb-8">
           <div className="flex items-center space-x-3">
             <img 
-              src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Copia%20de%20Outloud%20(1920%20x%20600%20px)%20(1920%20x%20500%20px).png
-
-"
+              src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Header.png"
               alt="Outloud Logo" 
               className="h-8 object-contain opacity-90 drop-shadow-md" 
             />
@@ -234,9 +232,7 @@ const DesktopCourseInfo = ({
           <div className="flex items-center flex-1 min-w-0">
             <div className="flex-none flex items-center">
               <img 
-                src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Copia%20de%20Outloud%20(1920%20x%20600%20px)%20(1920%20x%20500%20px).png
-
-" 
+                src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Header.png" 
                 alt="Outloud Logo" 
                 className="h-10 md:h-12 lg:h-14 object-contain opacity-90 drop-shadow-md" 
               />

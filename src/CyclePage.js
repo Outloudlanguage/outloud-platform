@@ -72,9 +72,7 @@ const MobileCyclePage = ({ onReturnHome, onRegister }) => {
         <div className="flex flex-row justify-between items-center w-full mb-8">
           <div className="flex items-center space-x-3">
             <img 
-              src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Copia%20de%20Outloud%20(1920%20x%20600%20px)%20(1920%20x%20500%20px).png
-
-" 
+              src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Header.png" 
               alt="Outloud Logo" 
               className="h-8 object-contain opacity-90 drop-shadow-md" 
             />
@@ -231,9 +229,7 @@ const DesktopCyclePage = ({ onReturnHome, onRegister }) => {
       <div className="relative z-10 flex flex-row justify-between items-center w-full max-w-[90rem] mx-auto mb-2 shrink-0">
         <div className="flex items-center">
           <img
-            src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Copia%20de%20Outloud%20(1920%20x%20600%20px)%20(1920%20x%20500%20px).png
-
-"
+            src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Header.png"
             alt="Outloud Logo"
             className="h-10 lg:h-12 object-contain opacity-90 drop-shadow-md shrink-0"
           />

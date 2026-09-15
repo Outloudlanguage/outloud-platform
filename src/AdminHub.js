@@ -2587,9 +2587,7 @@ const FinancesPage = () => {
         {/* HEADER */}
         {activeModule !== 'CONTENTS' && (
           <div className="flex items-center gap-5 mb-10 pl-2 shrink-0">
-            <img src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Copia%20de%20Outloud%20(1920%20x%20600%20px)%20(1920%20x%20500%20px).png
-
-" alt="Outloud Logo" className="h-12 object-contain drop-shadow-md" />
+            <img src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Header.png" alt="Outloud Logo" className="h-12 object-contain drop-shadow-md" />
             <div className="h-10 w-[2px] bg-white/20"></div>
             <span className="text-3xl font-light text-white tracking-widest uppercase drop-shadow-sm">{activeModule}</span>
           </div>
@@ -2623,9 +2621,7 @@ const FinancesPage = () => {
             {!isPreviewMode && (
               <div className="fixed top-0 left-28 right-0 z-[150] bg-[#070b19]/90 backdrop-blur-xl border-b border-white/10 shadow-2xl flex items-center px-8 py-4 gap-6">
                 <div className="flex items-center gap-4 shrink-0 border-r border-white/10 pr-6">
-                  <img src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Copia%20de%20Outloud%20(1920%20x%20600%20px)%20(1920%20x%20500%20px).png
-
-" alt="Outloud Logo" className="h-8 object-contain opacity-100" />
+                  <img src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Header.png" alt="Outloud Logo" className="h-8 object-contain opacity-100" />
                   <span className="text-xl font-light text-white tracking-widest uppercase">CONTENTS</span>
                 </div>
                 

@@ -366,9 +366,7 @@ const PlacementTest = () => {
         
         {/* HEADER BRANDING */}
         <div className="w-full flex justify-center py-10 z-10 relative">
-          <img src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Copia%20de%20Outloud%20(1920%20x%20600%20px)%20(1920%20x%20500%20px).png
-
-" alt="Outloud Logo" className="h-10 md:h-12 object-contain drop-shadow-md" />
+          <img src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Header.png" alt="Outloud Logo" className="h-10 md:h-12 object-contain drop-shadow-md" />
         </div>
 
         <div className="w-full">
