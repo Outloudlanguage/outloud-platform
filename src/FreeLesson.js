@@ -26,7 +26,7 @@ const FreeLesson = ({ onReturnHome, onReturnToRegister }) => {
       
       {/* Background Image Restored */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <img src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Gemini_Generated_Image_ohtdmbohtdmbohtd.jfif" alt="Background" className="absolute inset-0 w-full h-full object-cover object-left md:object-center opacity-40 mix-blend-lighten" />
+        <img src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/267655.jpeg" alt="Background" className="absolute inset-0 w-full h-full object-cover object-left md:object-center opacity-40 mix-blend-lighten" />
       </div>
 
       <div className={isCompleted ? "pointer-events-none opacity-50 transition-all duration-1000 relative z-10" : "transition-all duration-1000 relative z-10"}>

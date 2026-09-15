@@ -178,7 +178,7 @@ const DesktopView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onR
       <div className="absolute inset-0 pointer-events-none z-[-1] overflow-hidden">
         <div 
           className="absolute inset-0 opacity-100 blur-sm scale-[1.05]" 
-          style={{ backgroundImage: `url("https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Gemini_Generated_Image_ohtdmbohtdmbohtd.jfif")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
+          style={{ backgroundImage: `url("https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/267655.jpeg")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
         ></div>
         <div className="absolute inset-0 bg-[#070b19]/40"></div>
       </div>
@@ -326,7 +326,7 @@ const MobileView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onRe
       <div className="absolute inset-0 pointer-events-none z-[-1] overflow-hidden fixed">
         <div 
           className="absolute inset-0 opacity-100 blur-sm scale-[1.05]" 
-          style={{ backgroundImage: `url("https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Gemini_Generated_Image_ohtdmbohtdmbohtd.jfif")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
+          style={{ backgroundImage: `url("https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/267655.jpeg")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
         ></div>
         <div className="absolute inset-0 bg-[#070b19]/40"></div>
       </div>

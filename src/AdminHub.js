@@ -2410,7 +2410,7 @@ const FinancesPage = () => {
     <div 
       className="relative min-h-screen w-full font-montserrat text-white overflow-hidden flex flex-col"
       style={{ 
-        backgroundImage: `linear-gradient(to bottom right, rgba(7,11,25,0.9), rgba(7,11,25,0.65)), url("https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Gemini_Generated_Image_ohtdmbohtdmbohtd.jfif")`, 
+        backgroundImage: `linear-gradient(to bottom right, rgba(7,11,25,0.9), rgba(7,11,25,0.65)), url("https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/267655.jpeg")`, 
         backgroundSize: 'cover', 
         backgroundPosition: 'center', 
         backgroundAttachment: 'fixed' 
