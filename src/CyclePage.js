@@ -60,6 +60,7 @@ const MobileCyclePage = ({ onReturnHome, onRegister }) => {
       
       {/* Neon Wavy Background Simulation */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <img src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/267650.jpeg" alt="Background" className="absolute inset-0 w-full h-full object-cover object-center opacity-40 mix-blend-lighten" />
         <div className="absolute top-[-10%] left-[-20%] w-[80%] h-[50%] bg-blue-900/30 blur-[100px] rounded-full mix-blend-screen"></div>
         <div className="absolute bottom-[20%] right-[-20%] w-[60%] h-[60%] bg-[#fcd34d]/10 blur-[90px] rounded-full mix-blend-screen"></div>
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 10 Q 25 20, 50 10 T 100 10' stroke='%23ffffff' fill='none' stroke-width='0.5'/%3E%3C/svg%3E")`, backgroundSize: '100px 20px' }}></div>
@@ -220,6 +221,7 @@ const DesktopCyclePage = ({ onReturnHome, onRegister }) => {
 
       {/* Neon Wavy Background Simulation */}
       <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+        <img src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/267650.jpeg" alt="Background" className="absolute inset-0 w-full h-full object-cover object-center opacity-40 mix-blend-lighten" />
         <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-blue-900/30 blur-[120px] rounded-full mix-blend-screen"></div>
         <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-[#fcd34d]/10 blur-[100px] rounded-full mix-blend-screen"></div>
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 10 Q 25 20, 50 10 T 100 10' stroke='%23ffffff' fill='none' stroke-width='0.5'/%3E%3C/svg%3E")`, backgroundSize: '100px 20px' }}></div>
