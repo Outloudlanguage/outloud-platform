@@ -145,11 +145,19 @@ const MobileLogin = ({ onLogin, onInfoClick, onPlacementClick }) => {
           </div>
         </div>
 
-        <div className="mt-auto pt-10 pb-6 flex justify-center w-full">
+        <div className="mt-auto pt-6 pb-8 flex flex-col items-center justify-center w-full gap-5">
           <h1 className="text-white text-[32px] font-light tracking-widest leading-[1.2] text-center drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">
             FORWARD<br/>
             TOGETHER
           </h1>
+          <a 
+            href="https://wa.me/584226885683" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="bg-[#08203e] text-white text-[11px] font-bold uppercase tracking-widest px-10 py-3.5 rounded-full shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-white/10 hover:scale-105 active:scale-95 transition-all"
+          >
+            WHATSAPP CHAT
+          </a>
         </div>
       </div>
     </div>
@@ -327,9 +335,17 @@ const DesktopLogin = ({ onLogin, onInfoClick, onPlacementClick }) => {
             {/* Stacked logo inverted to white */}
             <img src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/OUTLOUD%20(4).png" alt="Outloud Stacked Logo" className="w-48 md:w-56 object-contain drop-shadow-lg brightness-0 invert opacity-90" />
           </div>
-          <h1 className="text-[1.5rem] md:text-[1.8rem] lg:text-[2.2rem] font-light tracking-[0.1em] leading-[1.4] text-white drop-shadow-md w-full">
+          <h1 className="text-[1.5rem] md:text-[1.8rem] lg:text-[2.2rem] font-light tracking-[0.1em] leading-[1.4] text-white drop-shadow-md w-full mb-8">
             FORWARD<br/> TOGETHER
           </h1>
+          <a 
+            href="https://wa.me/584226885683" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="bg-[#08203e] text-white text-xs md:text-sm font-bold uppercase tracking-widest px-10 py-4 rounded-full shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-white/10 hover:scale-105 hover:bg-blue-900 active:scale-95 transition-all"
+          >
+            WHATSAPP CHAT
+          </a>
         </div>
       </div>
     </div>
