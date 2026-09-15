@@ -145,7 +145,7 @@ const MobileLogin = ({ onLogin, onInfoClick, onPlacementClick }) => {
           </div>
         </div>
 
-        <div className="mt-auto pt-6 pb-8 flex flex-col items-center justify-center w-full gap-5">
+        <div className="mt-12 mb-12 flex flex-col items-center justify-center w-full gap-5">
           <h1 className="text-white text-[32px] font-light tracking-widest leading-[1.2] text-center drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">
             FORWARD<br/>
             TOGETHER
