@@ -380,6 +380,14 @@ const evaluateElement = (el) => {
 
   if (loading) return <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#070b19]"><div className="w-16 h-16 border-4 border-[#fcd34d] border-t-transparent rounded-full animate-spin"></div></div>;
   
+  if (error) return (
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#070b19] text-white font-montserrat px-6 text-center">
+      <h2 className="text-4xl font-black text-red-500 mb-4 uppercase tracking-widest drop-shadow-md">Content Not Found</h2>
+      <p className="text-red-400 font-bold mb-8">{error}</p>
+      <button onClick={onExit} className="px-8 py-4 border-2 border-white/20 bg-white/5 rounded-2xl hover:bg-white/10 hover:scale-105 transition-all font-black text-xs uppercase tracking-widest shadow-xl">Return to Hub</button>
+    </div>
+  );
+
   // ==========================================
   // MOBILE AUDIO UNLOCK GATEWAY & MAIN RENDER
   // ==========================================
@@ -650,8 +658,9 @@ const evaluateElement = (el) => {
                   );
                 }
                 if (el.type === 'nav_button') {
+                  const isLastScreen = currentStep === screensData.length - 1;
                   let btnClass = "bg-[#fcd34d] text-[#08203e] shadow-[0_0_40px_rgba(252,211,77,0.4)] hover:shadow-[0_0_50px_rgba(252,211,77,0.6)]";
-                  let btnText = el.data?.buttonStyle === 'finish_pill' ? 'IR A CLASE EN VIVO' : 'CONTINUE ➔';
+                  let btnText = isLastScreen ? 'FINISH & SEE GRADES ✓' : 'CONTINUE ➔';
 
                   if (navButtonState === 'correct') {
                     btnClass = "bg-green-500 text-white shadow-[0_0_40px_rgba(34,197,94,0.8)] scale-105";
