@@ -123,13 +123,24 @@ const evaluateElement = (el) => {
       else incorrect++;
     } 
     else if (el.type === 'fill_in_the_blank' && el.data?.answerText) {
-      const targetWords = el.data.answerText.split(',').map(w => cleanStr(w));
-      targetWords.forEach((targetWord, index) => {
-        if (targetWord) {
+      // 1. Split by commas to isolate each blank's answer group
+      const rawGroups = el.data.answerText.split(',');
+      
+      rawGroups.forEach((group, index) => {
+        // 2. Strip ONLY the wrapping quotation marks and edge spaces. 
+        // This preserves internal case sensitivity and symbols (e.g., "don't" stays "don't")
+        const cleanedTarget = group.replace(/^["'\s]+|["'\s]+$/g, '');
+        
+        if (cleanedTarget) {
           possible++;
-          const studentAns = cleanStr(studentAnswers[`${el.id}_${index}`]);
+          // 3. Trim the student's answer to remove accidental trailing spaces, but keep cases/symbols intact
+          const studentAns = (studentAnswers[`${el.id}_${index}`] || '').trim();
+          
+          // Allow multiple correct options per blank separated by / or | (e.g., "is/are")
+          const validOptions = cleanedTarget.split(/[|/]/).map(w => w.trim());
+          
           if (!studentAns) incorrect++;
-          else if (studentAns === targetWord) correct++;
+          else if (validOptions.includes(studentAns)) correct++;
           else incorrect++;
         }
       });
@@ -148,12 +159,15 @@ const evaluateElement = (el) => {
     }
     else if (el.type === 'drag_and_drop') {
       el.data.items?.forEach((item, idx) => {
-        // Prevents distractor words from being graded as missing targets
-        if (item.studentViewText && item.imageUrl) {
+        // Validate against targetText (Correct Answer) instead of studentViewText (Scrambled Option)
+        if (item.targetText && item.imageUrl) {
           possible++;
-          const placed = dndAnswers[`${el.id}_${idx}`];
+          // We use cleanStr here just in case mobile browsers inject invisible spaces during the Drag & Drop event
+          const placed = cleanStr(dndAnswers[`${el.id}_${idx}`]);
+          const target = cleanStr(item.targetText);
+          
           if (!placed) incorrect++;
-          else if (placed === item.studentViewText) correct++;
+          else if (placed === target) correct++;
           else incorrect++;
         }
       });
@@ -376,7 +390,7 @@ const evaluateElement = (el) => {
   return (
     <>
       {/* STABLE AUDIO ELEMENTS: Placed outside the ternary so they NEVER unmount */}
-      <audio ref={correctSoundRef} src="https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3" preload="auto" />
+      <audio ref={correctSoundRef} src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto" />
       <audio ref={incorrectSoundRef} src="https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3" preload="auto" />
 
       {!sessionStarted ? (
