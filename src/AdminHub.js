@@ -3123,7 +3123,7 @@ const FinancesPage = () => {
                                <div key={el.id} className="relative group">
                                  {!isPreviewMode && <button onClick={() => { setEditingElementId(el.id); setActiveModal(el.type); }} className="absolute -top-4 -right-4 w-8 h-8 bg-blue-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity z-50 shadow-lg hover:scale-110">✏️</button>}
                                  <button className="bg-[#fcd34d] text-[#08203e] font-black px-12 py-5 rounded-full shadow-[0_0_30px_rgba(252,211,77,0.4)] uppercase tracking-widest hover:scale-105 active:scale-95 transition-transform text-base">
-                                    {index === activeScreenArray.length - 1 ? 'FINISH & SUBMIT ✓' : 'CONTINUE ⬇'}
+                                    {el.data?.buttonStyle === 'finish_pill' ? 'FINISH' : 'CONTINUE ⬇'}
                                  </button>
                                </div>
                             );

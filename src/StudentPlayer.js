@@ -658,9 +658,8 @@ const evaluateElement = (el) => {
                   );
                 }
                 if (el.type === 'nav_button') {
-                  const isLastScreen = currentStep === screensData.length - 1;
                   let btnClass = "bg-[#fcd34d] text-[#08203e] shadow-[0_0_40px_rgba(252,211,77,0.4)] hover:shadow-[0_0_50px_rgba(252,211,77,0.6)]";
-                  let btnText = isLastScreen ? 'FINISH & SEE GRADES ✓' : 'CONTINUE ➔';
+                  let btnText = el.data?.buttonStyle === 'finish_pill' ? 'FINISH & SEE GRADES ✓' : 'CONTINUE ➔';
 
                   if (navButtonState === 'correct') {
                     btnClass = "bg-green-500 text-white shadow-[0_0_40px_rgba(34,197,94,0.8)] scale-105";
