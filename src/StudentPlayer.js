@@ -10,6 +10,12 @@ const extractVideoUrl = (rawInput) => {
   return rawInput;
 };
 
+// Strips punctuation and spaces for bulletproof string comparison
+const cleanStr = (str) => {
+  if (typeof str !== 'string') return '';
+  return str.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "").trim().toLowerCase();
+};
+
 const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
   const [loading, setLoading] = useState(true);
   const [screensData, setScreensData] = useState([]);
@@ -31,6 +37,7 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
   const correctSoundRef = useRef(null);
   const incorrectSoundRef = useRef(null);
   const [navButtonState, setNavButtonState] = useState('idle'); // 'idle', 'correct', 'incorrect'
+  const [sessionStarted, setSessionStarted] = useState(false); // Mobile Audio Gateway State
 
   const safeParse = (data, fallback) => {
     if (!data) return fallback;
@@ -108,18 +115,19 @@ const evaluateElement = (el) => {
     let incorrect = 0;
 
     if (el.type === 'short_answer' && el.data?.correctAnswer) {
-      possible = 1;
-      const ans = (studentAnswers[el.id] || '').trim().toLowerCase();
+      possible++;
+      const ans = cleanStr(studentAnswers[el.id]);
+      const target = cleanStr(el.data.correctAnswer);
       if (!ans) incorrect++; 
-      else if (ans === el.data.correctAnswer.trim().toLowerCase()) correct++;
+      else if (ans === target) correct++;
       else incorrect++;
     } 
     else if (el.type === 'fill_in_the_blank' && el.data?.answerText) {
-      const targetWords = el.data.answerText.split(',').map(w => w.replace(/["']/g, '').trim().toLowerCase());
+      const targetWords = el.data.answerText.split(',').map(w => cleanStr(w));
       targetWords.forEach((targetWord, index) => {
         if (targetWord) {
           possible++;
-          const studentAns = (studentAnswers[`${el.id}_${index}`] || '').replace(/["']/g, '').trim().toLowerCase();
+          const studentAns = cleanStr(studentAnswers[`${el.id}_${index}`]);
           if (!studentAns) incorrect++;
           else if (studentAns === targetWord) correct++;
           else incorrect++;
@@ -133,14 +141,14 @@ const evaluateElement = (el) => {
           if (studentAnswers[`${el.id}_${opt.id}`]) correct++;
           else incorrect++; 
         } else {
-           if (studentAnswers[`${el.id}_${opt.id}`]) incorrect++; // Deduct 0.5 if they check a wrong box
+          // Penalize guessing
+          if (studentAnswers[`${el.id}_${opt.id}`]) incorrect++; 
         }
       });
     }
     else if (el.type === 'drag_and_drop') {
       el.data.items?.forEach((item, idx) => {
-        // MUST have an image to be considered an actual drop zone.
-        // This prevents distractor words from being graded as missing answers!
+        // Prevents distractor words from being graded as missing targets
         if (item.studentViewText && item.imageUrl) {
           possible++;
           const placed = dndAnswers[`${el.id}_${idx}`];
@@ -154,9 +162,11 @@ const evaluateElement = (el) => {
       const correctIdx = el.data.options.findIndex(opt => opt.isCorrect);
       if (correctIdx !== -1) {
         possible++;
-        const ans = studentAnswers[el.id];
-        if (ans === undefined) incorrect++; 
-        else if (parseInt(ans) === correctIdx) correct++;
+        // Fallback to the middle index if the student didn't touch it
+        const maxIdx = Math.max(0, el.data.options.length - 1);
+        const defaultIdx = Math.floor(maxIdx / 2);
+        const ans = studentAnswers[el.id] !== undefined ? parseInt(studentAnswers[el.id]) : defaultIdx;
+        if (ans === correctIdx) correct++;
         else incorrect++;
       }
     }
@@ -168,7 +178,6 @@ const evaluateElement = (el) => {
             const allSelected = pw.cells.every(c => studentCells.includes(c));
             if (allSelected) correct++; else incorrect++;
          });
-         // Deduct for randomly clicking wrong cells to prevent brute force
          const studentCells = studentAnswers[`${el.id}_cells`] || [];
          const allCorrectCells = el.data.placedWords.flatMap(pw => pw.cells);
          studentCells.forEach(sc => { if (!allCorrectCells.includes(sc)) incorrect++; });
@@ -290,7 +299,7 @@ const evaluateElement = (el) => {
              correctSoundRef.current.play().catch(()=>{});
           }
        }
-       setTimeout(proceedToNext, 1500); // Wait 1.5 seconds to show visual/audio feedback
+       setTimeout(proceedToNext, 2000); // Wait 2 full seconds to clearly see visual feedback
     } else {
        proceedToNext();
     }
@@ -342,291 +351,316 @@ const evaluateElement = (el) => {
     }
   };
 
+  const handleStartSession = () => {
+     // Silently unlocks mobile audio context on first click
+     [correctSoundRef, incorrectSoundRef].forEach(ref => {
+         if (ref.current) {
+             ref.current.play().then(() => {
+                 ref.current.pause();
+                 ref.current.currentTime = 0;
+             }).catch(()=>{});
+         }
+     });
+     setSessionStarted(true);
+  };
+
   if (loading) return <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#070b19]"><div className="w-16 h-16 border-4 border-[#fcd34d] border-t-transparent rounded-full animate-spin"></div></div>;
   
-  if (error) return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#070b19] text-white font-montserrat px-6 text-center">
-      <h2 className="text-4xl font-black text-red-500 mb-4 uppercase tracking-widest drop-shadow-md">Content Not Found</h2>
-      <p className="text-red-400 font-bold mb-8">{error}</p>
-      <button onClick={onExit} className="px-8 py-4 border-2 border-white/20 bg-white/5 rounded-2xl hover:bg-white/10 hover:scale-105 transition-all font-black text-xs uppercase tracking-widest shadow-xl">Return to Hub</button>
-    </div>
-  );
-
+  // ==========================================
+  // MOBILE AUDIO UNLOCK GATEWAY & MAIN RENDER
+  // ==========================================
   const currentElements = screensData[currentStep] || [];
   const contentElements = currentElements.filter(el => !['nav_button'].includes(el.type));
   const dockElements = currentElements.filter(el => ['nav_button', 'record_compare'].includes(el.type));
 
   return (
-    <div id="student-player-container" className="fixed inset-0 z-[500] flex flex-col bg-[#070b19] text-white font-montserrat overflow-y-auto custom-scrollbar">
-      
-      {/* Hidden Audio Feedback Elements */}
+    <>
+      {/* STABLE AUDIO ELEMENTS: Placed outside the ternary so they NEVER unmount */}
       <audio ref={correctSoundRef} src="https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3" preload="auto" />
       <audio ref={incorrectSoundRef} src="https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3" preload="auto" />
-      
-      {/* Restored Global Background Image */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <img src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/267655.jpeg" alt="Background" className="absolute inset-0 w-full h-full object-cover object-left md:object-center opacity-40 mix-blend-lighten" />
-        <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-[#08203e]/40 blur-[120px] rounded-full mix-blend-screen"></div>
-        <div className="absolute bottom-[-20%] left-[-10%] w-[80%] h-[80%] bg-[#ca8a04]/10 blur-[150px] rounded-full mix-blend-screen"></div>
-      </div>
 
-      {/* Global Navbar */}
-      <div className="sticky top-0 h-20 w-full flex items-center justify-between px-6 md:px-12 z-50 shrink-0 border-b border-white/10 bg-[#070b19]/90 backdrop-blur-2xl shadow-xl">
-        <div className="flex items-center gap-4">
-          <img src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Header.png" alt="Outloud Logo" className="h-8 md:h-10 object-contain drop-shadow-md" />
-          <div className="h-6 w-[1px] bg-white/20 hidden md:block"></div>
-          <span className="hidden md:block text-sm font-black text-[#fcd34d] uppercase tracking-widest drop-shadow-sm">{activityType} • Unit {student?.unit || 1}</span>
+      {!sessionStarted ? (
+        <div className="fixed inset-0 z-[600] flex flex-col items-center justify-center bg-[#070b19] text-white font-montserrat px-6 text-center">
+          <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+            <img src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/267655.jpeg" alt="Background" className="absolute inset-0 w-full h-full object-cover object-left md:object-center opacity-40 mix-blend-lighten" />
+          </div>
+          <div className="relative z-10 bg-white/10 backdrop-blur-xl p-10 md:p-16 rounded-[3rem] border border-white/20 shadow-2xl flex flex-col items-center max-w-xl">
+            <h2 className="text-3xl md:text-4xl font-black text-[#fcd34d] mb-4 uppercase tracking-widest drop-shadow-md">READY?</h2>
+            <p className="text-white/80 font-medium mb-10 text-sm md:text-base leading-relaxed">Interactive audio and scoring systems require your permission to initialize. Click below to begin the lesson.</p>
+            <button onClick={handleStartSession} className="w-full bg-[#fcd34d] text-[#08203e] font-black px-12 py-6 rounded-full shadow-[0_0_40px_rgba(252,211,77,0.4)] hover:shadow-[0_0_50px_rgba(252,211,77,0.6)] uppercase tracking-widest hover:scale-105 active:scale-95 transition-all text-lg">
+              START LESSON
+            </button>
+          </div>
         </div>
-
-        <div className="flex items-center gap-6">
-          <div className="hidden sm:flex items-center gap-3 bg-white/10 backdrop-blur-md border border-white/20 rounded-full py-1.5 pl-4 pr-1.5 shadow-[0_0_15px_rgba(255,255,255,0.05)]">
-            <div className="flex flex-col text-right">
-              <span className="text-xs font-bold text-white leading-tight">{student?.first_name} {student?.last_name}</span>
-              <span className="text-[10px] text-[#fcd34d] font-black uppercase tracking-widest">Level {student?.level?.split(':')[0]}</span>
-            </div>
-            <img src={student?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(student?.first_name || 'U')}&background=random&color=fff`} className="w-9 h-9 rounded-full object-cover border border-white/30 shadow-inner" alt="Avatar"/>
+      ) : (
+        <div id="student-player-container" className="fixed inset-0 z-[500] flex flex-col bg-[#070b19] text-white font-montserrat overflow-y-auto custom-scrollbar">
+          
+          {/* Restored Global Background Image */}
+          <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+            <img src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/267655.jpeg" alt="Background" className="absolute inset-0 w-full h-full object-cover object-left md:object-center opacity-40 mix-blend-lighten" />
+            <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-[#08203e]/40 blur-[120px] rounded-full mix-blend-screen"></div>
+            <div className="absolute bottom-[-20%] left-[-10%] w-[80%] h-[80%] bg-[#ca8a04]/10 blur-[150px] rounded-full mix-blend-screen"></div>
           </div>
 
-          <button onClick={onExit} className="text-white/60 hover:text-white transition-all bg-white/5 hover:bg-red-500 hover:border-red-400 p-2 rounded-full border border-white/10 shadow-md">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
-          </button>
-        </div>
-      </div>
+          {/* Global Navbar */}
+          <div className="sticky top-0 h-20 w-full flex items-center justify-between px-6 md:px-12 z-50 shrink-0 border-b border-white/10 bg-[#070b19]/90 backdrop-blur-2xl shadow-xl">
+            <div className="flex items-center gap-4">
+              <img src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Header.png" alt="Outloud Logo" className="h-8 md:h-10 object-contain drop-shadow-md" />
+              <div className="h-6 w-[1px] bg-white/20 hidden md:block"></div>
+              <span className="hidden md:block text-sm font-black text-[#fcd34d] uppercase tracking-widest drop-shadow-sm">{activityType} • Unit {student?.unit || 1}</span>
+            </div>
 
-      <div className="flex-1 w-full max-w-[80rem] mx-auto p-6 md:p-12 relative z-10 flex flex-col pb-32">
-        <div className="flex flex-col items-center gap-10 w-full">
-          
-          {contentElements.map(el => {
-            const isMedia = ['video', 'image', 'audio'].includes(el.type);
-            const isCard = ['short_answer', 'multiple_selection', 'slider_bar', 'fill_in_the_blank', 'drag_and_drop', 'crossword', 'word_search', 'record_compare'].includes(el.type);
-            
-            if (isMedia) {
-              return (
-                <div key={el.id} className={`w-full ${el.type === 'video' ? 'max-w-5xl' : 'max-w-4xl'} bg-black/40 rounded-[2.5rem] overflow-hidden border border-white/20 shadow-2xl animate-fade-in relative mx-auto`}>
-                  {el.type === 'video' && <iframe src={extractVideoUrl(el.url)} className="w-full aspect-video border-none" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;" allowFullScreen />}
-                  {el.type === 'image' && <img src={el.url || el.data?.imageUrl} alt="Content" className="w-full h-auto max-h-[700px] object-contain rounded-[2.5rem]" />}
-                  {el.type === 'audio' && (
-                    <div className="p-10 w-full flex flex-col items-center">
-                      {el.data?.imageUrl && <img src={el.data.imageUrl} alt="Audio Cover" className="w-full max-w-md rounded-3xl shadow-2xl mb-8 border border-white/10" />}
-                      <audio src={el.url || el.data?.audioUrl} controls controlsList="nodownload" className="w-full max-w-2xl" />
-                    </div>
-                  )}
+            <div className="flex items-center gap-6">
+              <div className="hidden sm:flex items-center gap-3 bg-white/10 backdrop-blur-md border border-white/20 rounded-full py-1.5 pl-4 pr-1.5 shadow-[0_0_15px_rgba(255,255,255,0.05)]">
+                <div className="flex flex-col text-right">
+                  <span className="text-xs font-bold text-white leading-tight">{student?.first_name} {student?.last_name}</span>
+                  <span className="text-[10px] text-[#fcd34d] font-black uppercase tracking-widest">Level {student?.level?.split(':')[0]}</span>
                 </div>
-              );
-            }
+                <img src={student?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(student?.first_name || 'U')}&background=random&color=fff`} className="w-9 h-9 rounded-full object-cover border border-white/30 shadow-inner" alt="Avatar"/>
+              </div>
 
-            return (
-              <div key={el.id} className="relative flex flex-col w-full max-w-4xl mx-auto items-center">
+              <button onClick={onExit} className="text-white/60 hover:text-white transition-all bg-white/5 hover:bg-red-500 hover:border-red-400 p-2 rounded-full border border-white/10 shadow-md">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+          </div>
+
+          <div className="flex-1 w-full max-w-[80rem] mx-auto p-6 md:p-12 relative z-10 flex flex-col pb-32">
+            <div className="flex flex-col items-center gap-10 w-full">
+              
+              {contentElements.map(el => {
+                const isMedia = ['video', 'image', 'audio'].includes(el.type);
+                const isCard = ['short_answer', 'multiple_selection', 'slider_bar', 'fill_in_the_blank', 'drag_and_drop', 'crossword', 'word_search', 'record_compare'].includes(el.type);
                 
-                {/* Dynamically scales down the gigantic hardcoded spans to prevent line breaking */}
-                {el.type === 'text' && (
-                  <div className="w-full bg-white/10 backdrop-blur-2xl rounded-[2.5rem] p-8 md:p-14 border border-white/20 shadow-2xl text-center z-20">
-                    <div dangerouslySetInnerHTML={{__html: el.htmlContent}} className="rich-text-content pointer-events-none drop-shadow-md text-sm md:text-base [&_span]:!text-lg md:[&_span]:!text-2xl [&_span]:!leading-tight [&_span]:!whitespace-normal" />
-                  </div>
-                )}
+                if (isMedia) {
+                  return (
+                    <div key={el.id} className={`w-full ${el.type === 'video' ? 'max-w-5xl' : 'max-w-4xl'} bg-black/40 rounded-[2.5rem] overflow-hidden border border-white/20 shadow-2xl animate-fade-in relative mx-auto`}>
+                      {el.type === 'video' && <iframe src={extractVideoUrl(el.url)} className="w-full aspect-video border-none" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;" allowFullScreen />}
+                      {el.type === 'image' && <img src={el.url || el.data?.imageUrl} alt="Content" className="w-full h-auto max-h-[700px] object-contain rounded-[2.5rem]" />}
+                      {el.type === 'audio' && (
+                        <div className="p-10 w-full flex flex-col items-center">
+                          {el.data?.imageUrl && <img src={el.data.imageUrl} alt="Audio Cover" className="w-full max-w-md rounded-3xl shadow-2xl mb-8 border border-white/10" />}
+                          <audio src={el.url || el.data?.audioUrl} controls controlsList="nodownload" className="w-full max-w-2xl" />
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
 
-                {isCard && (
-                  <div className="w-full bg-white/10 backdrop-blur-xl rounded-[2.5rem] border border-white/20 p-8 md:p-12 flex flex-col gap-6 shadow-2xl h-full justify-between animate-slide-up mt-4">
+                return (
+                  <div key={el.id} className="relative flex flex-col w-full max-w-4xl mx-auto items-center">
                     
-                    {/* Visual Prompt Recovery for Record and Compare */}
-                    {el.data?.imageUrl && <img src={el.data.imageUrl} alt="Visual Prompt" className="w-full h-80 object-cover rounded-3xl shadow-inner border border-white/10 mb-4" />}
-
-                    {/* Target Audio & Transcript for Record & Compare */}
-                    {el.type === 'record_compare' && (
-                      <div className="w-full flex flex-col items-center justify-center bg-black/30 p-8 rounded-3xl border border-white/10 shadow-inner mt-4">
-                        {el.data?.transcriptText && (
-                          <div className="w-full text-center mb-6 border-b border-white/10 pb-6">
-                            <p className="text-white font-medium text-2xl lg:text-3xl leading-relaxed drop-shadow-md">
-                              "{el.data.transcriptText}"
-                            </p>
-                          </div>
-                        )}
-                        {el.data?.audioUrl && (
-                          <div className="w-full flex flex-col items-center">
-                            <span className="text-white/60 font-black uppercase tracking-widest text-xs mb-4">Original Audio</span>
-                            <audio src={el.data.audioUrl} controls controlsList="nodownload" className="w-full max-w-md" />
-                          </div>
-                        )}
+                    {/* Dynamically scales down the gigantic hardcoded spans to prevent line breaking */}
+                    {el.type === 'text' && (
+                      <div className="w-full bg-white/10 backdrop-blur-2xl rounded-[2.5rem] p-8 md:p-14 border border-white/20 shadow-2xl text-center z-20">
+                        <div dangerouslySetInnerHTML={{__html: el.htmlContent}} className="rich-text-content pointer-events-none drop-shadow-md text-sm md:text-base [&_span]:!text-lg md:[&_span]:!text-2xl [&_span]:!leading-tight [&_span]:!whitespace-normal" />
                       </div>
                     )}
 
-                    {el.type === 'fill_in_the_blank' && el.data && (() => {
-                       const rawText = el.data.templateText || '';
-                       if (!rawText) return null;
-                       const parts = rawText.split(/(_+)/);
-                       let blankIndex = 0;
-                       return (
-                          <div className="w-full h-full flex flex-col justify-center items-center mt-6">
-                             <div className="text-center w-full break-words leading-[4rem]" style={{ color: el.data.t_textColor || '#ffffff', fontSize: el.data.t_fontSize ? `${el.data.t_fontSize}px` : '22px', fontFamily: el.data.t_fontFamily || 'Montserrat', fontWeight: el.data.t_isBold ? 'bold' : 'normal' }}>
-                                {parts.map((part, i) => {
-                                   if (part.includes('_')) {
-                                      const currentBlankIndex = blankIndex++;
-                                      const blankWidth = Math.max(80, Math.min(part.length * 20, 300));
-                                      return (
-                                         <input 
-                                            key={i}
-                                            type="text"
-                                            autoCapitalize="none"
-                                            autoCorrect="off"
-                                            spellCheck="false"
-                                            value={studentAnswers[`${el.id}_${currentBlankIndex}`] || ''}
-                                            onChange={(e) => setStudentAnswers(prev => ({...prev, [`${el.id}_${currentBlankIndex}`]: e.target.value}))}
-                                            className="mx-3 px-4 py-2 bg-black/50 border-b-4 border-t-0 border-x-0 border-white/50 focus:border-[#fcd34d] text-center outline-none transition-colors shadow-inner rounded-t-xl text-white font-bold"
-                                            style={{ width: `${blankWidth}px` }}
-                                         />
-                                      );
-                                   }
-                                   return <span key={i} dangerouslySetInnerHTML={{ __html: part }} className="drop-shadow-md" />;
-                                })}
-                             </div>
-                          </div>
-                       );
-                    })()}
+                    {isCard && (
+                      <div className="w-full bg-white/10 backdrop-blur-xl rounded-[2.5rem] border border-white/20 p-8 md:p-12 flex flex-col gap-6 shadow-2xl h-full justify-between animate-slide-up mt-4">
+                        
+                        {/* Visual Prompt Recovery for Record and Compare */}
+                        {el.data?.imageUrl && <img src={el.data.imageUrl} alt="Visual Prompt" className="w-full h-80 object-cover rounded-3xl shadow-inner border border-white/10 mb-4" />}
 
-                    {el.type === 'short_answer' && el.data && (
-                      <div className="flex flex-col w-full h-full justify-center">
-                        <div dangerouslySetInnerHTML={{ __html: el.data.questionHtml }} className="w-full break-words text-white mt-2 text-xl font-medium drop-shadow-md mb-6" />
-                        <input type="text" placeholder="Type your answer here..." value={studentAnswers[el.id] || ''} onChange={(e) => setStudentAnswers(prev => ({...prev, [el.id]: e.target.value}))} className="w-full p-6 bg-black/50 border border-white/20 rounded-2xl text-white font-bold focus:ring-2 focus:ring-[#fcd34d] transition-all shadow-inner placeholder-white/30 text-lg outline-none" />
-                      </div>
-                    )}
-
-                    {el.type === 'multiple_selection' && el.data && (
-                      <div className="flex flex-col w-full">
-                        {el.data.promptHtml && <div dangerouslySetInnerHTML={{ __html: el.data.promptHtml }} className="mb-8 mt-2 text-xl font-medium drop-shadow-md" />}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
-                          {el.data.options?.map((opt) => {
-                            const isSelected = studentAnswers[`${el.id}_${opt.id}`] === true;
-                            return (
-                              <button key={opt.id} onClick={() => setStudentAnswers(prev => ({ ...prev, [`${el.id}_${opt.id}`]: !prev[`${el.id}_${opt.id}`] }))} style={{ backgroundColor: isSelected ? '#fcd34d' : 'rgba(0,0,0,0.5)', borderColor: isSelected ? '#ca8a04' : 'rgba(255,255,255,0.2)' }} className="w-full p-6 border-2 rounded-2xl text-left transition-all hover:scale-[1.02] active:scale-95 flex items-center shadow-lg backdrop-blur-sm">
-                                <div className={`w-6 h-6 rounded-full border-2 mr-5 flex items-center justify-center shrink-0 ${isSelected ? 'border-[#08203e]' : 'border-white/40'}`}>
-                                  {isSelected && <div className="w-3 h-3 bg-[#08203e] rounded-full"></div>}
-                                </div>
-                                <div dangerouslySetInnerHTML={{__html: opt.html}} className="pointer-events-none text-lg font-bold" style={{ color: isSelected ? '#08203e' : 'white' }} />
-                              </button>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    )}
-
-                    {el.type === 'drag_and_drop' && el.data && (
-                      <div className="flex flex-col gap-12 w-full mt-6">
-                        <div className="grid grid-cols-2 gap-8 w-full">
-                          {el.data.items.map((item, idx) => item.imageUrl && (
-                            <div key={idx} className="flex flex-col items-center gap-6">
-                              <img src={item.imageUrl} className="w-full aspect-[4/5] rounded-3xl shadow-xl object-cover border border-white/10" alt="DnD Target" />
-                              <div 
-                                onDragOver={handleDragOver}
-                                onDrop={(e) => handleDrop(e, `${el.id}_${idx}`)}
-                                className="w-full min-h-[90px] border-2 border-dashed rounded-2xl bg-black/30 backdrop-blur-md flex items-center justify-center transition-all shadow-inner border-white/40"
-                              >
-                                {dndAnswers[`${el.id}_${idx}`] ? (
-                                  <div onClick={(e) => { e.stopPropagation(); setDndAnswers(prev => { const copy = {...prev}; delete copy[`${el.id}_${idx}`]; return copy; })}} className="px-4 py-3 bg-[#fcd34d] text-[#08203e] rounded-xl font-black text-sm md:text-lg shadow-xl w-[90%] text-center hover:scale-105 active:scale-95 transition-transform cursor-pointer">
-                                    {dndAnswers[`${el.id}_${idx}`]}
-                                  </div>
-                                ) : <span className="text-xs uppercase font-black tracking-widest text-white/40">DROP HERE</span>}
+                        {/* Target Audio & Transcript for Record & Compare */}
+                        {el.type === 'record_compare' && (
+                          <div className="w-full flex flex-col items-center justify-center bg-black/30 p-8 rounded-3xl border border-white/10 shadow-inner mt-4">
+                            {el.data?.transcriptText && (
+                              <div className="w-full text-center mb-6 border-b border-white/10 pb-6">
+                                <p className="text-white font-medium text-2xl lg:text-3xl leading-relaxed drop-shadow-md">
+                                  "{el.data.transcriptText}"
+                                </p>
                               </div>
-                            </div>
-                          ))}
-                        </div>
-                        <div className="w-full bg-black/40 backdrop-blur-2xl p-10 rounded-[2.5rem] border border-white/10 shadow-inner flex flex-col items-center">
-                          <div className="text-center font-black text-[#fcd34d] text-sm uppercase tracking-widest mb-8 drop-shadow-md">Word Bank (Drag to place)</div>
-                          <div className="flex flex-wrap justify-center gap-4 w-full">
-                            {el.data.items.map((item, idx) => {
-                              if (!item.studentViewText) return null;
-                              const isUsed = Object.values(dndAnswers).includes(item.studentViewText);
-                              if (isUsed) return null;
-                              return (
-                                <div 
-                                  key={`bank-${idx}`} 
-                                  draggable
-                                  onDragStart={(e) => handleDragStart(e, item.studentViewText)}
-                                  className="px-6 py-4 border-2 rounded-xl font-black text-sm md:text-lg shadow-xl cursor-grab active:cursor-grabbing transition-transform hover:-translate-y-1 bg-white/10 hover:bg-white/20 text-white border-white/20 backdrop-blur-sm"
-                                >
-                                  {item.studentViewText}
-                                </div>
-                              );
-                            })}
-                            {Object.keys(dndAnswers).length === el.data.items.filter(i=>i.imageUrl).length && <span className="text-green-400 font-black text-xl tracking-widest uppercase py-4 drop-shadow-md w-full text-center block">All items placed!</span>}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {el.type === 'slider_bar' && el.data && (() => {
-                      const isVert = el.data.orientation === 'vertical';
-                      const opts = el.data.options || [];
-                      const maxIdx = Math.max(0, opts.length - 1);
-                      const currentIdx = studentAnswers[el.id] !== undefined ? parseInt(studentAnswers[el.id]) : Math.floor(maxIdx / 2);
-                      const activeOpt = opts[currentIdx] || {};
-                      const pct = maxIdx === 0 ? 50 : (currentIdx / maxIdx) * 100;
-                      return (
-                        <div className="w-full flex flex-col h-full min-h-[200px] justify-end relative pb-8 mt-6">
-                          <div className="absolute w-full h-full flex flex-col items-center justify-center">
-                            <div className="absolute flex items-center justify-center rounded-full shadow-inner overflow-hidden" style={{ backgroundColor: el.data.barColor || 'rgba(255,255,255,0.2)', width: isVert ? `${el.data.barThickness}px` : '100%', height: isVert ? '100%' : `${el.data.barThickness}px` }}></div>
-                            <input type="range" min="0" max={maxIdx} step="1" value={currentIdx} onChange={(e) => setStudentAnswers(prev => ({...prev, [el.id]: e.target.value}))} className="absolute custom-slider w-full h-full z-10 cursor-pointer" style={{ '--thumb-color': el.data.handleColor || '#fcd34d', transform: isVert ? 'rotate(-90deg)' : 'none', WebkitAppearance: 'none', background: 'transparent' }} />
-                            { !isVert && (
-                              <div className="absolute flex flex-col items-center transition-all duration-200 pointer-events-none z-0" style={{ left: `${pct}%`, bottom: 'calc(50% + 25px)', transform: 'translateX(-50%)' }}>
-                                <div className="bg-white text-[#08203e] px-6 py-3 rounded-xl shadow-2xl font-black text-base">{activeOpt.text}</div>
-                                <div className="w-0 h-0 border-solid" style={{ borderWidth: '10px 8px 0 8px', borderColor: 'white transparent transparent transparent' }} />
+                            )}
+                            {el.data?.audioUrl && (
+                              <div className="w-full flex flex-col items-center">
+                                <span className="text-white/60 font-black uppercase tracking-widest text-xs mb-4">Original Audio</span>
+                                <audio src={el.data.audioUrl} controls controlsList="nodownload" className="w-full max-w-md" />
                               </div>
                             )}
                           </div>
-                        </div>
-                      );
-                    })()}
+                        )}
 
+                        {el.type === 'fill_in_the_blank' && el.data && (() => {
+                           const rawText = el.data.templateText || '';
+                           if (!rawText) return null;
+                           const parts = rawText.split(/(_+)/);
+                           let blankIndex = 0;
+                           return (
+                              <div className="w-full h-full flex flex-col justify-center items-center mt-6">
+                                 <div className="text-center w-full break-words leading-[4rem]" style={{ color: el.data.t_textColor || '#ffffff', fontSize: el.data.t_fontSize ? `${el.data.t_fontSize}px` : '22px', fontFamily: el.data.t_fontFamily || 'Montserrat', fontWeight: el.data.t_isBold ? 'bold' : 'normal' }}>
+                                    {parts.map((part, i) => {
+                                       if (part.includes('_')) {
+                                          const currentBlankIndex = blankIndex++;
+                                          const blankWidth = Math.max(80, Math.min(part.length * 20, 300));
+                                          return (
+                                             <input 
+                                                key={i}
+                                                type="text"
+                                                autoCapitalize="none"
+                                                autoCorrect="off"
+                                                spellCheck="false"
+                                                value={studentAnswers[`${el.id}_${currentBlankIndex}`] || ''}
+                                                onChange={(e) => setStudentAnswers(prev => ({...prev, [`${el.id}_${currentBlankIndex}`]: e.target.value}))}
+                                                className="mx-3 px-4 py-2 bg-black/50 border-b-4 border-t-0 border-x-0 border-white/50 focus:border-[#fcd34d] text-center outline-none transition-colors shadow-inner rounded-t-xl text-white font-bold"
+                                                style={{ width: `${blankWidth}px` }}
+                                             />
+                                          );
+                                       }
+                                       return <span key={i} dangerouslySetInnerHTML={{ __html: part }} className="drop-shadow-md" />;
+                                    })}
+                                 </div>
+                              </div>
+                           );
+                        })()}
+
+                        {el.type === 'short_answer' && el.data && (
+                          <div className="flex flex-col w-full h-full justify-center">
+                            <div dangerouslySetInnerHTML={{ __html: el.data.questionHtml }} className="w-full break-words text-white mt-2 text-xl font-medium drop-shadow-md mb-6" />
+                            <input type="text" placeholder="Type your answer here..." value={studentAnswers[el.id] || ''} onChange={(e) => setStudentAnswers(prev => ({...prev, [el.id]: e.target.value}))} className="w-full p-6 bg-black/50 border border-white/20 rounded-2xl text-white font-bold focus:ring-2 focus:ring-[#fcd34d] transition-all shadow-inner placeholder-white/30 text-lg outline-none" />
+                          </div>
+                        )}
+
+                        {el.type === 'multiple_selection' && el.data && (
+                          <div className="flex flex-col w-full">
+                            {el.data.promptHtml && <div dangerouslySetInnerHTML={{ __html: el.data.promptHtml }} className="mb-8 mt-2 text-xl font-medium drop-shadow-md" />}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+                              {el.data.options?.map((opt) => {
+                                const isSelected = studentAnswers[`${el.id}_${opt.id}`] === true;
+                                return (
+                                  <button key={opt.id} onClick={() => setStudentAnswers(prev => ({ ...prev, [`${el.id}_${opt.id}`]: !prev[`${el.id}_${opt.id}`] }))} style={{ backgroundColor: isSelected ? '#fcd34d' : 'rgba(0,0,0,0.5)', borderColor: isSelected ? '#ca8a04' : 'rgba(255,255,255,0.2)' }} className="w-full p-6 border-2 rounded-2xl text-left transition-all hover:scale-[1.02] active:scale-95 flex items-center shadow-lg backdrop-blur-sm">
+                                    <div className={`w-6 h-6 rounded-full border-2 mr-5 flex items-center justify-center shrink-0 ${isSelected ? 'border-[#08203e]' : 'border-white/40'}`}>
+                                      {isSelected && <div className="w-3 h-3 bg-[#08203e] rounded-full"></div>}
+                                    </div>
+                                    <div dangerouslySetInnerHTML={{__html: opt.html}} className="pointer-events-none text-lg font-bold" style={{ color: isSelected ? '#08203e' : 'white' }} />
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                        {el.type === 'drag_and_drop' && el.data && (
+                          <div className="flex flex-col gap-12 w-full mt-6">
+                            <div className="grid grid-cols-2 gap-8 w-full">
+                              {el.data.items.map((item, idx) => item.imageUrl && (
+                                <div key={idx} className="flex flex-col items-center gap-6">
+                                  <img src={item.imageUrl} className="w-full aspect-[4/5] rounded-3xl shadow-xl object-cover border border-white/10" alt="DnD Target" />
+                                  <div 
+                                    onDragOver={handleDragOver}
+                                    onDrop={(e) => handleDrop(e, `${el.id}_${idx}`)}
+                                    className="w-full min-h-[90px] border-2 border-dashed rounded-2xl bg-black/30 backdrop-blur-md flex items-center justify-center transition-all shadow-inner border-white/40"
+                                  >
+                                    {dndAnswers[`${el.id}_${idx}`] ? (
+                                      <div onClick={(e) => { e.stopPropagation(); setDndAnswers(prev => { const copy = {...prev}; delete copy[`${el.id}_${idx}`]; return copy; })}} className="px-4 py-3 bg-[#fcd34d] text-[#08203e] rounded-xl font-black text-sm md:text-lg shadow-xl w-[90%] text-center hover:scale-105 active:scale-95 transition-transform cursor-pointer">
+                                        {dndAnswers[`${el.id}_${idx}`]}
+                                      </div>
+                                    ) : <span className="text-xs uppercase font-black tracking-widest text-white/40">DROP HERE</span>}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                            <div className="w-full bg-black/40 backdrop-blur-2xl p-10 rounded-[2.5rem] border border-white/10 shadow-inner flex flex-col items-center">
+                              <div className="text-center font-black text-[#fcd34d] text-sm uppercase tracking-widest mb-8 drop-shadow-md">Word Bank (Drag to place)</div>
+                              <div className="flex flex-wrap justify-center gap-4 w-full">
+                                {el.data.items.map((item, idx) => {
+                                  if (!item.studentViewText) return null;
+                                  const isUsed = Object.values(dndAnswers).includes(item.studentViewText);
+                                  if (isUsed) return null;
+                                  return (
+                                    <div 
+                                      key={`bank-${idx}`} 
+                                      draggable
+                                      onDragStart={(e) => handleDragStart(e, item.studentViewText)}
+                                      className="px-6 py-4 border-2 rounded-xl font-black text-sm md:text-lg shadow-xl cursor-grab active:cursor-grabbing transition-transform hover:-translate-y-1 bg-white/10 hover:bg-white/20 text-white border-white/20 backdrop-blur-sm"
+                                    >
+                                      {item.studentViewText}
+                                    </div>
+                                  );
+                                })}
+                                {Object.keys(dndAnswers).length === el.data.items.filter(i=>i.imageUrl).length && <span className="text-green-400 font-black text-xl tracking-widest uppercase py-4 drop-shadow-md w-full text-center block">All items placed!</span>}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {el.type === 'slider_bar' && el.data && (() => {
+                          const isVert = el.data.orientation === 'vertical';
+                          const opts = el.data.options || [];
+                          const maxIdx = Math.max(0, opts.length - 1);
+                          const currentIdx = studentAnswers[el.id] !== undefined ? parseInt(studentAnswers[el.id]) : Math.floor(maxIdx / 2);
+                          const activeOpt = opts[currentIdx] || {};
+                          const pct = maxIdx === 0 ? 50 : (currentIdx / maxIdx) * 100;
+                          return (
+                            <div className="w-full flex flex-col h-full min-h-[200px] justify-end relative pb-8 mt-6">
+                              <div className="absolute w-full h-full flex flex-col items-center justify-center">
+                                <div className="absolute flex items-center justify-center rounded-full shadow-inner overflow-hidden" style={{ backgroundColor: el.data.barColor || 'rgba(255,255,255,0.2)', width: isVert ? `${el.data.barThickness}px` : '100%', height: isVert ? '100%' : `${el.data.barThickness}px` }}></div>
+                                <input type="range" min="0" max={maxIdx} step="1" value={currentIdx} onChange={(e) => setStudentAnswers(prev => ({...prev, [el.id]: e.target.value}))} className="absolute custom-slider w-full h-full z-10 cursor-pointer" style={{ '--thumb-color': el.data.handleColor || '#fcd34d', transform: isVert ? 'rotate(-90deg)' : 'none', WebkitAppearance: 'none', background: 'transparent' }} />
+                                { !isVert && (
+                                  <div className="absolute flex flex-col items-center transition-all duration-200 pointer-events-none z-0" style={{ left: `${pct}%`, bottom: 'calc(50% + 25px)', transform: 'translateX(-50%)' }}>
+                                    <div className="bg-white text-[#08203e] px-6 py-3 rounded-xl shadow-2xl font-black text-base">{activeOpt.text}</div>
+                                    <div className="w-0 h-0 border-solid" style={{ borderWidth: '10px 8px 0 8px', borderColor: 'white transparent transparent transparent' }} />
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })()}
+
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            )
-          })}
+                )
+              })}
+            </div>
+
+            {/* BOTTOM ACTION DOCK WITH ANTI-OVERFLOW WRAPPER */}
+            <div className="w-full mt-auto pt-20 flex flex-col sm:flex-row justify-center items-center gap-4 px-4 relative z-50">
+              {dockElements.map(el => {
+                if (el.type === 'record_compare') {
+                  const btnConfig = {
+                    idle: { text: "RECORD AUDIO", class: "bg-white/10 hover:bg-white/20 text-white shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-white/20", icon: <div className="w-4 h-4 rounded-full bg-red-500 animate-pulse shadow-[0_0_15px_#ef4444]"></div> },
+                    recording: { text: "RECORDING...", class: "bg-red-500 text-white shadow-[0_0_30px_rgba(239,68,68,0.5)] border-red-400 animate-pulse", icon: null },
+                    recorded: { text: "COMPARE", class: "bg-[#5b9bd5] text-white shadow-[0_0_30px_rgba(91,155,213,0.5)] border-blue-400", icon: null },
+                    comparing: { text: "COMPARING...", class: "bg-[#5b9bd5] text-white shadow-[0_0_30px_rgba(91,155,213,0.5)] border-blue-400 animate-pulse", icon: null },
+                    retry: { text: "RETRY", class: "bg-white/10 hover:bg-white/20 text-white shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-white/20", icon: <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 3.16L3 8" /><path d="M3 3v5h5" /></svg> }
+                  };
+                  const config = btnConfig[recordState];
+                  
+                  return (
+                    <button key={el.id} onClick={() => handleRecordAction(el.data?.audioUrl, el.id)} className={`w-full sm:w-auto backdrop-blur-xl border font-black px-8 py-4 md:px-12 md:py-6 rounded-full flex justify-center items-center gap-4 cursor-pointer transition-all uppercase tracking-widest text-sm md:text-lg hover:scale-105 active:scale-95 ${config.class}`}>
+                      {config.icon}
+                      {config.text}
+                    </button>
+                  );
+                }
+                if (el.type === 'nav_button') {
+                  let btnClass = "bg-[#fcd34d] text-[#08203e] shadow-[0_0_40px_rgba(252,211,77,0.4)] hover:shadow-[0_0_50px_rgba(252,211,77,0.6)]";
+                  let btnText = el.data?.buttonStyle === 'finish_pill' ? 'IR A CLASE EN VIVO' : 'CONTINUE ➔';
+
+                  if (navButtonState === 'correct') {
+                    btnClass = "bg-green-500 text-white shadow-[0_0_40px_rgba(34,197,94,0.8)] scale-105";
+                    btnText = "CORRECT ✓";
+                  } else if (navButtonState === 'incorrect') {
+                    btnClass = "bg-orange-500 text-white shadow-[0_0_40px_rgba(249,115,22,0.8)] animate-pulse scale-105";
+                    btnText = "INCORRECT ✕";
+                  }
+
+                  return (
+                    <button key={el.id} onClick={handleContinueClick} className={`w-full sm:w-auto font-black px-8 py-4 md:px-16 md:py-6 rounded-full uppercase tracking-widest hover:scale-105 active:scale-95 transition-all text-sm md:text-xl text-center ${btnClass}`}>
+                      {btnText}
+                    </button>
+                  );
+                }
+                return null;
+              })}
+            </div>
+
+          </div>
         </div>
-
-        {/* BOTTOM ACTION DOCK WITH ANTI-OVERFLOW WRAPPER */}
-        <div className="w-full mt-auto pt-20 flex flex-col sm:flex-row justify-center items-center gap-4 px-4 relative z-50">
-          {dockElements.map(el => {
-            if (el.type === 'record_compare') {
-              const btnConfig = {
-                idle: { text: "RECORD AUDIO", class: "bg-white/10 hover:bg-white/20 text-white shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-white/20", icon: <div className="w-4 h-4 rounded-full bg-red-500 animate-pulse shadow-[0_0_15px_#ef4444]"></div> },
-                recording: { text: "RECORDING...", class: "bg-red-500 text-white shadow-[0_0_30px_rgba(239,68,68,0.5)] border-red-400 animate-pulse", icon: null },
-                recorded: { text: "COMPARE", class: "bg-[#5b9bd5] text-white shadow-[0_0_30px_rgba(91,155,213,0.5)] border-blue-400", icon: null },
-                comparing: { text: "COMPARING...", class: "bg-[#5b9bd5] text-white shadow-[0_0_30px_rgba(91,155,213,0.5)] border-blue-400 animate-pulse", icon: null },
-                retry: { text: "RETRY", class: "bg-white/10 hover:bg-white/20 text-white shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-white/20", icon: <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 3.16L3 8" /><path d="M3 3v5h5" /></svg> }
-              };
-              const config = btnConfig[recordState];
-              
-              return (
-                <button key={el.id} onClick={() => handleRecordAction(el.data?.audioUrl, el.id)} className={`w-full sm:w-auto backdrop-blur-xl border font-black px-8 py-4 md:px-12 md:py-6 rounded-full flex justify-center items-center gap-4 cursor-pointer transition-all uppercase tracking-widest text-sm md:text-lg hover:scale-105 active:scale-95 ${config.class}`}>
-                  {config.icon}
-                  {config.text}
-                </button>
-              );
-            }
-            if (el.type === 'nav_button') {
-              let btnClass = "bg-[#fcd34d] text-[#08203e] shadow-[0_0_40px_rgba(252,211,77,0.4)] hover:shadow-[0_0_50px_rgba(252,211,77,0.6)]";
-              let btnText = el.data?.buttonStyle === 'finish_pill' ? 'IR A CLASE EN VIVO' : 'CONTINUE ➔';
-
-              if (navButtonState === 'correct') {
-                btnClass = "bg-green-500 text-white shadow-[0_0_40px_rgba(34,197,94,0.8)] scale-105";
-                btnText = "CORRECT ✓";
-              } else if (navButtonState === 'incorrect') {
-                btnClass = "bg-orange-500 text-white shadow-[0_0_40px_rgba(249,115,22,0.8)] animate-pulse scale-105";
-                btnText = "INCORRECT ✕";
-              }
-
-              return (
-                <button key={el.id} onClick={handleContinueClick} className={`w-full sm:w-auto font-black px-8 py-4 md:px-16 md:py-6 rounded-full uppercase tracking-widest hover:scale-105 active:scale-95 transition-all text-sm md:text-xl text-center ${btnClass}`}>
-                  {btnText}
-                </button>
-              );
-            }
-            return null;
-          })}
-        </div>
-
-      </div>
-    </div>
+      )}
+    </>
   );
 };
 
