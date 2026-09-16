@@ -1081,6 +1081,31 @@ const AdminHub = () => {
     }
   };
 
+  // --- NEW: DELETE USER FUNCTION ---
+  const handleDeleteUser = async (user, e) => {
+    e.stopPropagation(); // Prevents the row click from opening the modal
+    
+    if (!window.confirm(`¿Estás seguro de que deseas eliminar a ${user.first_name}? Esta acción borrará sus datos del directorio.`)) {
+      return;
+    }
+
+    try {
+      if (user.status === 'pending') {
+        const { error } = await supabase.from('registrations').delete().eq('id', user.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('profiles').delete().eq('id', user.id);
+        if (error) throw error;
+      }
+      
+      alert('Usuario eliminado correctamente del directorio.');
+      fetchDirectory(directoryTab); 
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      alert("Hubo un error al eliminar el usuario: " + error.message);
+    }
+  };
+
 useEffect(() => {
     if (activeModule === 'ACCOUNTS') {
       fetchDirectory(directoryTab);
@@ -1709,6 +1734,12 @@ const renderAccounts = () => (
                   ) : (
                     <button onClick={(e) => { e.stopPropagation(); setSelectedStudent(user); }} className="bg-white/10 text-white hover:bg-[#fcd34d] hover:text-[#08203e] px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-md">View as</button>
                   )}
+                  
+                  {/* Delete Button */}
+                  <button onClick={(e) => handleDeleteUser(user, e)} className="w-10 h-10 rounded-xl bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center transition-all shadow-md" title="Delete User">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                  </button>
+
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-white text-xl shadow-inner ${user.level?.includes('A1') ? 'bg-blue-500' : user.level?.includes('C1') ? 'bg-green-500' : 'bg-red-500'}`}>
                     {user.level ? user.level.split(':')[0] : 'A1'}
                   </div>

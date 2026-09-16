@@ -44,6 +44,11 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   const [payType, setPayType] = useState('Mensualidad');
   const [payAmount, setPayAmount] = useState(20);
   const [payRef, setPayRef] = useState('');
+  
+  // NEW: Ledger & Audit States
+  const [provPayRef, setProvPayRef] = useState('');
+  const [paymentHistory, setPaymentHistory] = useState([]);
+  const [isLoadingPayments, setIsLoadingPayments] = useState(false);
 
   // ==========================================
   // TAB 3: ESTADISTICAS (Students)
@@ -106,8 +111,28 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
       if (activeTab === 'PAYROLL' && userRole === 'Teacher') {
         fetchTeacherPayroll();
       }
+      if (activeTab === 'FINANZAS' && userRole === 'Student') {
+        fetchPaymentHistory();
+      }
     }
   }, [isOpen, isPending, userData, activeTab, userRole]);
+
+  const fetchPaymentHistory = async () => {
+    setIsLoadingPayments(true);
+    try {
+      const { data, error } = await supabase
+        .from('student_payments')
+        .select('*')
+        .eq('student_id', userData.id)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setPaymentHistory(data || []);
+    } catch (err) {
+      console.error("Error fetching payments:", err);
+    } finally {
+      setIsLoadingPayments(false);
+    }
+  };
 
   // ==========================================
   // TEACHER PAYROLL LOGIC
@@ -448,6 +473,10 @@ const handleProvisionAccount = async () => {
       alert("Nombres, apellidos, correo y contraseña son obligatorios."); 
       return; 
     }
+    if (userRole === 'Student' && !provPayRef) {
+      alert("Debes incluir un número de referencia de pago para procesar el alta.");
+      return;
+    }
     
     setIsProcessing(true);
     try {
@@ -504,6 +533,17 @@ const handleProvisionAccount = async () => {
 
       // 3. Approve Registration (if applicable)
       await supabase.from('registrations').update({ status: 'approved' }).eq('id', userData.id);
+
+      // 4. Log Initial Enrollment Payment
+      if (userRole === 'Student' && provPayRef) {
+        await supabase.from('student_payments').insert({
+          student_id: newUserId,
+          payment_type: 'Initial Enrollment',
+          amount: MONTHLY_PRICES[getBaseLevel(levelOverride)] || 20,
+          reference_number: provPayRef,
+          status: 'verified'
+        });
+      }
 
       alert(`Cuenta de ${userRole} aprovisionada exitosamente. El usuario ya está activo en el directorio.`);
       if (onSuccess) onSuccess();
@@ -791,7 +831,7 @@ const handleProvisionAccount = async () => {
                   </div>
 
                   {userRole === 'Student' && (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 pt-6 border-t border-amber-500/20">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-amber-500/20">
                       <div>
                         <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Nivel Inicial</label>
                         <select value={levelOverride} onChange={e => setLevelOverride(e.target.value)} className="w-full bg-black/40 border border-amber-500/30 rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-amber-400 cursor-pointer appearance-none">
@@ -808,6 +848,10 @@ const handleProvisionAccount = async () => {
                           <option value={15}>15 del mes</option>
                           <option value={30}>30 del mes</option>
                         </select>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Ref. Pago de Alta</label>
+                        <input type="text" placeholder="Ej: Zelle 1234" value={provPayRef} onChange={(e) => setProvPayRef(e.target.value)} className="w-full bg-black/40 border border-amber-500/30 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-amber-400" />
                       </div>
                     </div>
                   )}
@@ -1019,6 +1063,31 @@ const handleProvisionAccount = async () => {
                           </button>
                         </form>
                       </>
+                    )}
+                  </div>
+
+                  {/* Payment History Audit Section */}
+                  <h3 className="text-xs font-black text-[#fcd34d] uppercase tracking-widest mt-8 mb-4 border-b border-white/10 pb-2">Historial de Pagos</h3>
+                  <div className="bg-black/20 border border-white/10 rounded-2xl p-6 shadow-inner">
+                    {isLoadingPayments ? (
+                      <div className="py-8 flex justify-center"><div className="w-6 h-6 border-2 border-[#fcd34d] border-t-transparent rounded-full animate-spin"></div></div>
+                    ) : paymentHistory.length === 0 ? (
+                      <p className="text-center text-white/40 font-bold text-xs uppercase tracking-widest py-4">No hay pagos registrados.</p>
+                    ) : (
+                      <div className="space-y-3 max-h-64 overflow-y-auto custom-scrollbar pr-2">
+                        {paymentHistory.map(payment => (
+                          <div key={payment.id} className="flex justify-between items-center bg-white/5 border border-white/10 p-4 rounded-xl hover:bg-white/10 transition-colors">
+                            <div>
+                              <p className="text-white font-bold text-sm tracking-wide">{payment.payment_type || 'Mensualidad'}</p>
+                              <p className="text-[10px] text-white/50 uppercase font-black tracking-widest mt-1">Ref: <span className="text-[#fcd34d]">{payment.reference_number}</span> • {new Date(payment.created_at).toLocaleDateString('es-ES')}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-emerald-400 font-black text-lg">${payment.amount}</p>
+                              <p className="text-[9px] text-emerald-400/50 uppercase font-black tracking-widest">{payment.status}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     )}
                   </div>
                 </>
