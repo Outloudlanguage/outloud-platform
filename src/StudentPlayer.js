@@ -24,10 +24,13 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
   const [videoWatched, setVideoWatched] = useState(false);
   const [recordState, setRecordState] = useState('idle'); // idle -> recording -> recorded -> comparing -> retry
   
-  // Audio Refs
+  // Audio Refs & Feedback States
   const mediaRecorderRef = useRef(null);
   const userAudioRef = useRef(null);
   const targetAudioRef = useRef(null);
+  const correctSoundRef = useRef(null);
+  const incorrectSoundRef = useRef(null);
+  const [navButtonState, setNavButtonState] = useState('idle'); // 'idle', 'correct', 'incorrect'
 
   const safeParse = (data, fallback) => {
     if (!data) return fallback;
@@ -99,81 +102,189 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
     return () => window.removeEventListener('message', handleMessage);
   }, []);
 
+const evaluateElement = (el) => {
+    let possible = 0;
+    let correct = 0;
+    let incorrect = 0;
+
+    if (el.type === 'short_answer' && el.data?.correctAnswer) {
+      possible = 1;
+      const ans = (studentAnswers[el.id] || '').trim().toLowerCase();
+      if (!ans) incorrect++; 
+      else if (ans === el.data.correctAnswer.trim().toLowerCase()) correct++;
+      else incorrect++;
+    } 
+    else if (el.type === 'fill_in_the_blank' && el.data?.answerText) {
+      const targetWords = el.data.answerText.split(',').map(w => w.replace(/["']/g, '').trim().toLowerCase());
+      targetWords.forEach((targetWord, index) => {
+        if (targetWord) {
+          possible++;
+          const studentAns = (studentAnswers[`${el.id}_${index}`] || '').replace(/["']/g, '').trim().toLowerCase();
+          if (!studentAns) incorrect++;
+          else if (studentAns === targetWord) correct++;
+          else incorrect++;
+        }
+      });
+    }
+    else if (el.type === 'multiple_selection') {
+      el.data.options?.forEach(opt => {
+        if (opt.isCorrect) {
+          possible++;
+          if (studentAnswers[`${el.id}_${opt.id}`]) correct++;
+          else incorrect++; 
+        } else {
+           if (studentAnswers[`${el.id}_${opt.id}`]) incorrect++; // Deduct 0.5 if they check a wrong box
+        }
+      });
+    }
+    else if (el.type === 'drag_and_drop') {
+      el.data.items?.forEach((item, idx) => {
+        if (item.studentViewText) {
+          possible++;
+          const placed = dndAnswers[`${el.id}_${idx}`];
+          if (!placed) incorrect++;
+          else if (placed === item.studentViewText) correct++;
+          else incorrect++;
+        }
+      });
+    }
+    else if (el.type === 'slider_bar' && el.data?.options) {
+      const correctIdx = el.data.options.findIndex(opt => opt.isCorrect);
+      if (correctIdx !== -1) {
+        possible++;
+        const ans = studentAnswers[el.id];
+        if (ans === undefined) incorrect++; 
+        else if (parseInt(ans) === correctIdx) correct++;
+        else incorrect++;
+      }
+    }
+    else if (el.type === 'word_search') {
+      if (el.data?.placedWords) {
+         el.data.placedWords.forEach(pw => {
+            possible++;
+            const studentCells = studentAnswers[`${el.id}_cells`] || [];
+            const allSelected = pw.cells.every(c => studentCells.includes(c));
+            if (allSelected) correct++; else incorrect++;
+         });
+         // Deduct for randomly clicking wrong cells to prevent brute force
+         const studentCells = studentAnswers[`${el.id}_cells`] || [];
+         const allCorrectCells = el.data.placedWords.flatMap(pw => pw.cells);
+         studentCells.forEach(sc => { if (!allCorrectCells.includes(sc)) incorrect++; });
+      }
+    }
+    else if (el.type === 'crossword' && el.data?.grid) {
+      ['across', 'down'].forEach(dir => {
+         (el.data[dir] || []).forEach(wordObj => {
+            if (wordObj.answer && wordObj.row !== undefined && wordObj.col !== undefined) {
+               possible++;
+               let isWordCorrect = true;
+               for(let i=0; i<wordObj.answer.length; i++) {
+                  const r = dir === 'across' ? wordObj.row : wordObj.row + i;
+                  const c = dir === 'across' ? wordObj.col + i : wordObj.col;
+                  const studentLetter = studentAnswers[`${el.id}_${r}_${c}`] || '';
+                  if (studentLetter.toUpperCase() !== wordObj.answer[i].toUpperCase()) isWordCorrect = false;
+               }
+               if (isWordCorrect) correct++; else incorrect++;
+            }
+         });
+      });
+    }
+    else if (el.type === 'record_compare') {
+       possible++;
+       if (studentAnswers[`${el.id}_recorded`]) correct++; else incorrect++;
+    }
+
+    return { possible, correct, incorrect };
+  };
+
   const calculateFinalScores = () => {
-    let totalPossible = 0;
-    let totalEarned = 0;
-    let hasVideo = allElements.some(el => el.type === 'video');
+    // Strictly adhering to the 6 expected database criteria to prevent crashing
+    const metrics = {
+      Listening: { p: 0, c: 0, i: 0 },
+      Speaking: { p: 0, c: 0, i: 0 },
+      Grammar: { p: 0, c: 0, i: 0 },
+      Writing: { p: 0, c: 0, i: 0 },
+      Reading: { p: 0, c: 0, i: 0 },
+      Comprehension: { p: 0, c: 0, i: 0 },
+    };
+
+    const add = (cat, p, c, i) => {
+       metrics[cat].p += p; metrics[cat].c += c; metrics[cat].i += i;
+    };
 
     allElements.forEach(el => {
-      if (el.type === 'short_answer' && el.data?.correctAnswer) {
-        totalPossible += 1;
-        if ((studentAnswers[el.id] || '').trim().toLowerCase() === el.data.correctAnswer.trim().toLowerCase()) totalEarned += 1;
-      } 
-      else if (el.type === 'fill_in_the_blank' && el.data?.answerText) {
-        const targetWords = el.data.answerText.split(',').map(w => w.replace(/["']/g, '').trim().toLowerCase());
-        targetWords.forEach((targetWord, index) => {
-          if (targetWord) {
-            totalPossible += 1;
-            const studentAns = (studentAnswers[`${el.id}_${index}`] || '').replace(/["']/g, '').trim().toLowerCase();
-            if (studentAns === targetWord) totalEarned += 1;
-          }
-        });
-      }
-      else if (el.type === 'multiple_selection') {
-        el.data.options?.forEach(opt => {
-          if (opt.isCorrect) {
-            totalPossible += 1;
-            if (studentAnswers[`${el.id}_${opt.id}`]) totalEarned += 1;
-          }
-        });
-      } 
-      else if (el.type === 'drag_and_drop') {
-        el.data.items?.forEach((item) => {
-          if (item.studentViewText) {
-            totalPossible += 1;
-            if (Object.values(dndAnswers).includes(item.studentViewText)) totalEarned += 1;
-          }
-        });
-      }
-      else if (el.type === 'slider_bar') {
-        totalPossible += 1;
-        if (studentAnswers[el.id] !== undefined) totalEarned += 1;
-      }
+      const { possible, correct, incorrect } = evaluateElement(el);
+      if (possible === 0) return;
+
+      if (el.type === 'record_compare') { add('Listening', possible, correct, incorrect); add('Speaking', possible, correct, incorrect); }
+      else if (el.type === 'fill_in_the_blank') { add('Grammar', possible, correct, incorrect); add('Writing', possible, correct, incorrect); }
+      else if (el.type === 'drag_and_drop') { add('Reading', possible, correct, incorrect); } // Mapped to Reading
+      else if (el.type === 'short_answer') { add('Writing', possible, correct, incorrect); }
+      else if (el.type === 'multiple_selection') { add('Comprehension', possible, correct, incorrect); add('Reading', possible, correct, incorrect); }
+      else if (el.type === 'slider_bar') { add('Comprehension', possible, correct, incorrect); }
+      else if (el.type === 'word_search' || el.type === 'crossword') { add('Reading', possible, correct, incorrect); } // Mapped to Reading
     });
 
-    // Apply 20% penalty if a video exists but was not fully watched
-    const penaltyMultiplier = (hasVideo && !videoWatched) ? 0.8 : 1;
-    let percentage = totalPossible > 0 ? Math.round((totalEarned / totalPossible) * 100 * penaltyMultiplier) : (hasVideo && !videoWatched ? 80 : 100);
-    
+    const finalize = (cat) => {
+       const m = metrics[cat];
+       if (m.p === 0) return 100; // Default to 100% if category was not tested in this lesson
+       const earned = Math.max(0, m.c - (m.i * 0.5)); // Strict -0.5 points per error
+       return Math.round((earned / m.p) * 100);
+    };
+
     return {
-      Listening: percentage,
-      Reading: percentage,
-      Grammar: percentage,
-      Comprehension: percentage,
-      Speaking: percentage,
-      Writing: percentage
+      Listening: finalize('Listening'),
+      Reading: finalize('Reading'), 
+      Grammar: finalize('Grammar'),
+      Comprehension: finalize('Comprehension'),
+      Speaking: finalize('Speaking'),
+      Writing: finalize('Writing')
     };
   };
 
   const handleContinueClick = () => {
-    // Reset audio state when changing screens
+    if (navButtonState !== 'idle') return; // Prevent spam-clicking
+
     if (mediaRecorderRef.current && recordState === 'recording') mediaRecorderRef.current.stop();
     setRecordState('idle');
     if (targetAudioRef.current) targetAudioRef.current.pause();
     if (userAudioRef.current) userAudioRef.current.pause();
 
-    if (currentStep < screensData.length - 1) {
-      setCurrentStep(prev => prev + 1);
-      // Scroll the specific container instead of the locked browser window
-      const container = document.getElementById('student-player-container');
-      if (container) {
-        container.scrollTo({ top: 0, behavior: 'smooth' });
-      } else {
-        window.scrollTo({ top: 0, behavior: 'smooth' }); // Fallback
-      }
+    const currentElements = screensData[currentStep] || [];
+    const contentElements = currentElements.filter(el => !['nav_button'].includes(el.type));
+    
+    let screenPossible = 0;
+    let screenIncorrect = 0;
+    
+    contentElements.forEach(el => {
+       const { possible, incorrect } = evaluateElement(el);
+       screenPossible += possible;
+       screenIncorrect += incorrect;
+    });
+
+    const proceedToNext = () => {
+       setNavButtonState('idle');
+       if (currentStep < screensData.length - 1) {
+         setCurrentStep(prev => prev + 1);
+         const container = document.getElementById('student-player-container');
+         if (container) container.scrollTo({ top: 0, behavior: 'smooth' });
+         else window.scrollTo({ top: 0, behavior: 'smooth' });
+       } else {
+         onComplete(calculateFinalScores());
+       }
+    };
+
+    if (screenPossible > 0) {
+       if (screenIncorrect > 0) {
+          setNavButtonState('incorrect');
+          if (incorrectSoundRef.current) incorrectSoundRef.current.play().catch(()=>{});
+       } else {
+          setNavButtonState('correct');
+          if (correctSoundRef.current) correctSoundRef.current.play().catch(()=>{});
+       }
+       setTimeout(proceedToNext, 1500); // Wait 1.5 seconds to show visual/audio feedback
     } else {
-      const finalScores = calculateFinalScores();
-      onComplete(finalScores);
+       proceedToNext();
     }
   };
 
@@ -186,7 +297,10 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
   };
 
   // Full Recording & Compare Cycle
-  const handleRecordAction = async (targetAudioUrl) => {
+  const handleRecordAction = async (targetAudioUrl, elId) => {
+    // Log that the student engaged with the element
+    setStudentAnswers(prev => ({ ...prev, [`${elId}_recorded`]: true }));
+
     if (recordState === 'idle' || recordState === 'retry') {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -236,6 +350,10 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
 
   return (
     <div id="student-player-container" className="fixed inset-0 z-[500] flex flex-col bg-[#070b19] text-white font-montserrat overflow-y-auto custom-scrollbar">
+      
+      {/* Hidden Audio Feedback Elements */}
+      <audio ref={correctSoundRef} src="https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3" preload="auto" />
+      <audio ref={incorrectSoundRef} src="https://assets.mixkit.co/active_storage/sfx/2955/2955-preview.mp3" preload="auto" />
       
       {/* Restored Global Background Image */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
@@ -471,17 +589,30 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
               const config = btnConfig[recordState];
               
               return (
-                <button key={el.id} onClick={() => handleRecordAction(el.data?.audioUrl)} className={`w-full sm:w-auto backdrop-blur-xl border font-black px-8 py-4 md:px-12 md:py-6 rounded-full flex justify-center items-center gap-4 cursor-pointer transition-all uppercase tracking-widest text-sm md:text-lg hover:scale-105 active:scale-95 ${config.class}`}>
+                <button key={el.id} onClick={() => handleRecordAction(el.data?.audioUrl, el.id)} className={`w-full sm:w-auto backdrop-blur-xl border font-black px-8 py-4 md:px-12 md:py-6 rounded-full flex justify-center items-center gap-4 cursor-pointer transition-all uppercase tracking-widest text-sm md:text-lg hover:scale-105 active:scale-95 ${config.class}`}>
                   {config.icon}
                   {config.text}
                 </button>
               );
             }
-            if (el.type === 'nav_button') return (
-              <button key={el.id} onClick={handleContinueClick} className="w-full sm:w-auto bg-[#fcd34d] text-[#08203e] font-black px-8 py-4 md:px-16 md:py-6 rounded-full shadow-[0_0_40px_rgba(252,211,77,0.4)] hover:shadow-[0_0_50px_rgba(252,211,77,0.6)] uppercase tracking-widest hover:scale-105 active:scale-95 transition-all text-sm md:text-xl text-center">
-                {el.data?.buttonStyle === 'finish_pill' ? 'IR A CLASE EN VIVO' : 'CONTINUE ➔'}
-              </button>
-            );
+            if (el.type === 'nav_button') {
+              let btnClass = "bg-[#fcd34d] text-[#08203e] shadow-[0_0_40px_rgba(252,211,77,0.4)] hover:shadow-[0_0_50px_rgba(252,211,77,0.6)]";
+              let btnText = el.data?.buttonStyle === 'finish_pill' ? 'IR A CLASE EN VIVO' : 'CONTINUE ➔';
+
+              if (navButtonState === 'correct') {
+                btnClass = "bg-green-500 text-white shadow-[0_0_40px_rgba(34,197,94,0.8)] scale-105";
+                btnText = "¡EXCELENTE! ✓";
+              } else if (navButtonState === 'incorrect') {
+                btnClass = "bg-orange-500 text-white shadow-[0_0_40px_rgba(249,115,22,0.8)] animate-pulse scale-105";
+                btnText = "HAY RESPUESTAS INCORRECTAS ✕";
+              }
+
+              return (
+                <button key={el.id} onClick={handleContinueClick} className={`w-full sm:w-auto font-black px-8 py-4 md:px-16 md:py-6 rounded-full uppercase tracking-widest hover:scale-105 active:scale-95 transition-all text-sm md:text-xl text-center ${btnClass}`}>
+                  {btnText}
+                </button>
+              );
+            }
             return null;
           })}
         </div>
