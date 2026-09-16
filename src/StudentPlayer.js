@@ -139,7 +139,9 @@ const evaluateElement = (el) => {
     }
     else if (el.type === 'drag_and_drop') {
       el.data.items?.forEach((item, idx) => {
-        if (item.studentViewText) {
+        // MUST have an image to be considered an actual drop zone.
+        // This prevents distractor words from being graded as missing answers!
+        if (item.studentViewText && item.imageUrl) {
           possible++;
           const placed = dndAnswers[`${el.id}_${idx}`];
           if (!placed) incorrect++;
@@ -277,10 +279,16 @@ const evaluateElement = (el) => {
     if (screenPossible > 0) {
        if (screenIncorrect > 0) {
           setNavButtonState('incorrect');
-          if (incorrectSoundRef.current) incorrectSoundRef.current.play().catch(()=>{});
+          if (incorrectSoundRef.current) {
+             incorrectSoundRef.current.currentTime = 0; // Fixes mobile replay block
+             incorrectSoundRef.current.play().catch(()=>{});
+          }
        } else {
           setNavButtonState('correct');
-          if (correctSoundRef.current) correctSoundRef.current.play().catch(()=>{});
+          if (correctSoundRef.current) {
+             correctSoundRef.current.currentTime = 0; // Fixes mobile replay block
+             correctSoundRef.current.play().catch(()=>{});
+          }
        }
        setTimeout(proceedToNext, 1500); // Wait 1.5 seconds to show visual/audio feedback
     } else {
@@ -353,7 +361,7 @@ const evaluateElement = (el) => {
       
       {/* Hidden Audio Feedback Elements */}
       <audio ref={correctSoundRef} src="https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3" preload="auto" />
-      <audio ref={incorrectSoundRef} src="https://assets.mixkit.co/active_storage/sfx/2955/2955-preview.mp3" preload="auto" />
+      <audio ref={incorrectSoundRef} src="https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3" preload="auto" />
       
       {/* Restored Global Background Image */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
@@ -601,10 +609,10 @@ const evaluateElement = (el) => {
 
               if (navButtonState === 'correct') {
                 btnClass = "bg-green-500 text-white shadow-[0_0_40px_rgba(34,197,94,0.8)] scale-105";
-                btnText = "¡EXCELENTE! ✓";
+                btnText = "CORRECT ✓";
               } else if (navButtonState === 'incorrect') {
                 btnClass = "bg-orange-500 text-white shadow-[0_0_40px_rgba(249,115,22,0.8)] animate-pulse scale-105";
-                btnText = "HAY RESPUESTAS INCORRECTAS ✕";
+                btnText = "INCORRECT ✕";
               }
 
               return (
