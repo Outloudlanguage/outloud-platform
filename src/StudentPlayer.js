@@ -630,6 +630,90 @@ const evaluateElement = (el) => {
                           );
                         })()}
 
+                        {(el.type === 'crossword' || el.type === 'word_search') && el.data && (
+                           <div className="w-full flex flex-col md:flex-row gap-10 mt-6">
+                             <div className="flex-1 flex flex-col gap-8 max-h-[500px] overflow-y-auto custom-scrollbar pr-6">
+                               {el.type === 'crossword' && (
+                                 <>
+                                   <h3 className="font-black text-[#fcd34d] text-xl uppercase tracking-widest border-b border-white/20 pb-4 drop-shadow-md">Prompts</h3>
+                                   <div className="flex gap-10">
+                                     <div className="flex-1 flex flex-col gap-5">
+                                       <h4 className="text-xs font-black text-white/50 uppercase tracking-widest border-b border-white/10 pb-2">Across</h4>
+                                       {el.data.across?.map(a => <div key={`a-${a.num}`} className="text-base text-white flex gap-4"><span className="font-black text-[#fcd34d]">{a.num}.</span><span className="font-medium opacity-90">{a.prompt}</span></div>)}
+                                     </div>
+                                     <div className="flex-1 flex flex-col gap-5">
+                                       <h4 className="text-xs font-black text-white/50 uppercase tracking-widest border-b border-white/10 pb-2">Down</h4>
+                                       {el.data.down?.map(d => <div key={`d-${d.num}`} className="text-base text-white flex gap-4"><span className="font-black text-[#fcd34d]">{d.num}.</span><span className="font-medium opacity-90">{d.prompt}</span></div>)}
+                                     </div>
+                                   </div>
+                                 </>
+                               )}
+                               {el.type === 'word_search' && (
+                                 <>
+                                   <div dangerouslySetInnerHTML={{ __html: el.data.promptHtml }} className="w-full whitespace-pre-wrap break-words border-b border-white/20 pb-6 mb-4 drop-shadow-md text-xl" />
+                                   <div className="flex gap-6">
+                                     <ul className="flex-1 flex flex-col gap-4 list-none pl-2">
+                                       {el.data.targetWords?.slice(0, Math.ceil(el.data.targetWords.length / 2)).map((w, i) => <li key={`w1-${i}`} className="text-base font-bold text-white/90 tracking-widest flex items-center gap-4"><span className="w-3 h-3 rounded-full bg-[#fcd34d] shadow-[0_0_10px_#fcd34d]"></span>{w}</li>)}
+                                     </ul>
+                                     <ul className="flex-1 flex flex-col gap-4 list-none pl-2">
+                                       {el.data.targetWords?.slice(Math.ceil(el.data.targetWords.length / 2)).map((w, i) => <li key={`w2-${i}`} className="text-base font-bold text-white/90 tracking-widest flex items-center gap-4"><span className="w-3 h-3 rounded-full bg-[#fcd34d] shadow-[0_0_10px_#fcd34d]"></span>{w}</li>)}
+                                     </ul>
+                                   </div>
+                                 </>
+                               )}
+                             </div>
+                             
+                             <div className="flex-[2] bg-black/40 rounded-3xl border border-white/10 p-6 zoom-container flex justify-center items-center min-h-[500px] shadow-inner relative w-full overflow-hidden">
+                                {el.type === 'crossword' && (
+                                  <div style={{ display: 'grid', gridTemplateColumns: `repeat(${el.data.grid[0]?.length || 1}, minmax(35px, 1fr))`, gap: '3px', width: 'fit-content', position: 'relative', zIndex: 10 }}>
+                                    {el.data.grid.map((row, rIdx) => 
+                                      row.map((cell, cIdx) => (
+                                        <div key={`${rIdx}-${cIdx}`} className="relative aspect-square w-10 md:w-12">
+                                          {cell ? (
+                                            <div className="w-full h-full relative">
+                                              {cell.num && <span className="absolute top-1 left-1.5 text-[9px] font-black text-white/90 z-10 pointer-events-none drop-shadow-md">{cell.num}</span>}
+                                              <input 
+                                                type="text" maxLength={1} 
+                                                value={studentAnswers[`${el.id}_${rIdx}_${cIdx}`] || ''}
+                                                onChange={(e) => setStudentAnswers(prev => ({...prev, [`${el.id}_${rIdx}_${cIdx}`]: e.target.value.toUpperCase().replace(/[^A-Z]/g, '')}))}
+                                                style={{ color: el.data.textColor, fontSize: `${el.data.fontSize}px`, fontFamily: el.data.fontFamily, fontWeight: el.data.isBold ? 'bold' : 'normal' }}
+                                                className="w-full h-full text-center uppercase focus:outline-none focus:ring-2 focus:ring-[#fcd34d] transition shadow-inner rounded-md bg-white/10 backdrop-blur-md border border-white/20 text-white font-bold"
+                                              />
+                                            </div>
+                                          ) : <div className="w-full h-full bg-transparent" />}
+                                        </div>
+                                      ))
+                                    )}
+                                  </div>
+                                )}
+
+                                {el.type === 'word_search' && (
+                                  <div style={{ display: 'grid', gridTemplateColumns: `repeat(${el.data.size || 10}, 1fr)`, borderWidth: '4px', borderStyle: 'solid', borderColor: el.data.lineColor, backgroundColor: el.data.cellColor }} className="shadow-2xl max-w-full max-h-full aspect-square w-full rounded-2xl overflow-hidden relative z-10">
+                                    {el.data.grid?.map((row, rIdx) => 
+                                      row.map((char, cIdx) => {
+                                        const cellId = `${el.id}_${rIdx}_${cIdx}`;
+                                        const isSelected = (studentAnswers[`${el.id}_cells`] || []).includes(cellId);
+                                        return (
+                                          <div 
+                                            key={cellId} 
+                                            onClick={() => setStudentAnswers(prev => {
+                                               const current = prev[`${el.id}_cells`] || [];
+                                               return { ...prev, [`${el.id}_cells`]: current.includes(cellId) ? current.filter(c => c !== cellId) : [...current, cellId] };
+                                            })}
+                                            style={{ color: el.data.textColor, fontSize: `${el.data.fontSize}px`, fontFamily: el.data.fontFamily, fontWeight: el.data.isBold ? 'bold' : 'normal', borderRight: cIdx < (el.data.size - 1) ? `1px solid ${el.data.lineColor}` : 'none', borderBottom: rIdx < (el.data.size - 1) ? `1px solid ${el.data.lineColor}` : 'none', backgroundColor: isSelected ? 'rgba(252, 211, 77, 0.6)' : 'transparent', cursor: 'pointer' }}
+                                            className="flex items-center justify-center transition-colors hover:bg-white/20 select-none"
+                                          >
+                                            {char}
+                                          </div>
+                                        )
+                                      })
+                                    )}
+                                  </div>
+                                )}
+                             </div>
+                           </div>
+                        )}
+
                       </div>
                     )}
                   </div>
