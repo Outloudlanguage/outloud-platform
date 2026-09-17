@@ -109,7 +109,7 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
     return () => window.removeEventListener('message', handleMessage);
   }, []);
 
-const evaluateElement = (el) => {
+  const evaluateElement = (el) => {
     let possible = 0;
     let correct = 0;
     let incorrect = 0;
@@ -123,24 +123,15 @@ const evaluateElement = (el) => {
       else incorrect++;
     } 
     else if (el.type === 'fill_in_the_blank' && el.data?.answerText) {
-      // 1. Split by commas to isolate each blank's answer group
       const rawGroups = el.data.answerText.split(',');
-      
       rawGroups.forEach((group, index) => {
-        // 2. Strip ONLY the wrapping quotation marks and edge spaces. 
-        // This preserves internal case sensitivity and symbols (e.g., "don't" stays "don't")
         const cleanedTarget = group.replace(/^["'\s]+|["'\s]+$/g, '');
-        
         if (cleanedTarget) {
           possible++;
-          // 3. Trim the student's answer to remove accidental trailing spaces, but keep cases/symbols intact
           const studentAns = (studentAnswers[`${el.id}_${index}`] || '').trim();
-          
-          // Allow multiple correct options per blank separated by / or | (e.g., "is/are")
           const validOptions = cleanedTarget.split(/[|/]/).map(w => w.trim());
-          
           if (!studentAns) incorrect++;
-          else if (validOptions.includes(studentAns)) correct++;
+          else if (validOptions.some(opt => cleanStr(opt) === cleanStr(studentAns))) correct++;
           else incorrect++;
         }
       });
@@ -152,20 +143,16 @@ const evaluateElement = (el) => {
           if (studentAnswers[`${el.id}_${opt.id}`]) correct++;
           else incorrect++; 
         } else {
-          // Penalize guessing
           if (studentAnswers[`${el.id}_${opt.id}`]) incorrect++; 
         }
       });
     }
     else if (el.type === 'drag_and_drop') {
       el.data.items?.forEach((item, idx) => {
-        // Validate against targetText (Correct Answer) instead of studentViewText (Scrambled Option)
         if (item.targetText && item.imageUrl) {
           possible++;
-          // We use cleanStr here just in case mobile browsers inject invisible spaces during the Drag & Drop event
           const placed = cleanStr(dndAnswers[`${el.id}_${idx}`]);
           const target = cleanStr(item.targetText);
-          
           if (!placed) incorrect++;
           else if (placed === target) correct++;
           else incorrect++;
@@ -176,7 +163,6 @@ const evaluateElement = (el) => {
       const correctIdx = el.data.options.findIndex(opt => opt.isCorrect);
       if (correctIdx !== -1) {
         possible++;
-        // Fallback to the middle index if the student didn't touch it
         const maxIdx = Math.max(0, el.data.options.length - 1);
         const defaultIdx = Math.floor(maxIdx / 2);
         const ans = studentAnswers[el.id] !== undefined ? parseInt(studentAnswers[el.id]) : defaultIdx;
@@ -185,9 +171,10 @@ const evaluateElement = (el) => {
       }
     }
     else if (el.type === 'word_search') {
+      let isGraded = false;
       if (el.data?.placedWords) {
          el.data.placedWords.forEach(pw => {
-            possible++;
+            possible++; isGraded = true;
             const studentCells = studentAnswers[`${el.id}_cells`] || [];
             const allSelected = pw.cells.every(c => studentCells.includes(c));
             if (allSelected) correct++; else incorrect++;
@@ -196,12 +183,14 @@ const evaluateElement = (el) => {
          const allCorrectCells = el.data.placedWords.flatMap(pw => pw.cells);
          studentCells.forEach(sc => { if (!allCorrectCells.includes(sc)) incorrect++; });
       }
+      if (!isGraded) possible++; // Failsafe to trigger screen validation
     }
     else if (el.type === 'crossword' && el.data?.grid) {
+      let isGraded = false;
       ['across', 'down'].forEach(dir => {
          (el.data[dir] || []).forEach(wordObj => {
             if (wordObj.answer && wordObj.row !== undefined && wordObj.col !== undefined) {
-               possible++;
+               possible++; isGraded = true;
                let isWordCorrect = true;
                for(let i=0; i<wordObj.answer.length; i++) {
                   const r = dir === 'across' ? wordObj.row : wordObj.row + i;
@@ -213,6 +202,7 @@ const evaluateElement = (el) => {
             }
          });
       });
+      if (!isGraded) possible++; // Failsafe to trigger screen validation
     }
     else if (el.type === 'record_compare') {
        possible++;
@@ -223,7 +213,6 @@ const evaluateElement = (el) => {
   };
 
   const calculateFinalScores = () => {
-    // Strictly adhering to the 6 expected database criteria to prevent crashing
     const metrics = {
       Listening: { p: 0, c: 0, i: 0 },
       Speaking: { p: 0, c: 0, i: 0 },
@@ -243,17 +232,17 @@ const evaluateElement = (el) => {
 
       if (el.type === 'record_compare') { add('Listening', possible, correct, incorrect); add('Speaking', possible, correct, incorrect); }
       else if (el.type === 'fill_in_the_blank') { add('Grammar', possible, correct, incorrect); add('Writing', possible, correct, incorrect); }
-      else if (el.type === 'drag_and_drop') { add('Reading', possible, correct, incorrect); } // Mapped to Reading
+      else if (el.type === 'drag_and_drop') { add('Reading', possible, correct, incorrect); } 
       else if (el.type === 'short_answer') { add('Writing', possible, correct, incorrect); }
       else if (el.type === 'multiple_selection') { add('Comprehension', possible, correct, incorrect); add('Reading', possible, correct, incorrect); }
       else if (el.type === 'slider_bar') { add('Comprehension', possible, correct, incorrect); }
-      else if (el.type === 'word_search' || el.type === 'crossword') { add('Reading', possible, correct, incorrect); } // Mapped to Reading
+      else if (el.type === 'word_search' || el.type === 'crossword') { add('Reading', possible, correct, incorrect); } 
     });
 
     const finalize = (cat) => {
        const m = metrics[cat];
-       if (m.p === 0) return 100; // Default to 100% if category was not tested in this lesson
-       const earned = Math.max(0, m.c - (m.i * 0.5)); // Strict -0.5 points per error
+       if (m.p === 0) return 100;
+       const earned = Math.max(0, m.c - (m.i * 0.5)); 
        return Math.round((earned / m.p) * 100);
     };
 
@@ -267,8 +256,24 @@ const evaluateElement = (el) => {
     };
   };
 
+  const proceedToNext = () => {
+    setNavButtonState('idle');
+    if (currentStep < screensData.length - 1) {
+      setCurrentStep(prev => prev + 1);
+      const container = document.getElementById('student-player-container');
+      if (container) container.scrollTo({ top: 0, behavior: 'smooth' });
+      else window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      onComplete(calculateFinalScores());
+    }
+  };
+
   const handleContinueClick = () => {
-    if (navButtonState !== 'idle') return; // Prevent spam-clicking
+    // Two-Step Lock: If feedback is already showing, the second click moves to the next screen.
+    if (navButtonState !== 'idle') {
+      proceedToNext();
+      return; 
+    }
 
     if (mediaRecorderRef.current && recordState === 'recording') mediaRecorderRef.current.stop();
     setRecordState('idle');
@@ -287,34 +292,23 @@ const evaluateElement = (el) => {
        screenIncorrect += incorrect;
     });
 
-    const proceedToNext = () => {
-       setNavButtonState('idle');
-       if (currentStep < screensData.length - 1) {
-         setCurrentStep(prev => prev + 1);
-         const container = document.getElementById('student-player-container');
-         if (container) container.scrollTo({ top: 0, behavior: 'smooth' });
-         else window.scrollTo({ top: 0, behavior: 'smooth' });
-       } else {
-         onComplete(calculateFinalScores());
-       }
-    };
-
     if (screenPossible > 0) {
+       // Step 1: Lock screen, show visual feedback, wait for user's second click
        if (screenIncorrect > 0) {
           setNavButtonState('incorrect');
           if (incorrectSoundRef.current) {
-             incorrectSoundRef.current.currentTime = 0; // Fixes mobile replay block
+             incorrectSoundRef.current.currentTime = 0; 
              incorrectSoundRef.current.play().catch(()=>{});
           }
        } else {
           setNavButtonState('correct');
           if (correctSoundRef.current) {
-             correctSoundRef.current.currentTime = 0; // Fixes mobile replay block
+             correctSoundRef.current.currentTime = 0; 
              correctSoundRef.current.play().catch(()=>{});
           }
        }
-       setTimeout(proceedToNext, 2000); // Wait 2 full seconds to clearly see visual feedback
     } else {
+       // Proceed immediately if there's nothing on the screen to grade (Reading only)
        proceedToNext();
     }
   };
@@ -323,13 +317,13 @@ const evaluateElement = (el) => {
   const handleDragOver = (e) => e.preventDefault();
   const handleDrop = (e, zoneId) => {
     e.preventDefault();
+    if (navButtonState !== 'idle') return; // Prevent dropping during feedback
     const word = e.dataTransfer.getData('text/plain');
     if (word) setDndAnswers(prev => ({ ...prev, [zoneId]: word }));
   };
 
-  // Full Recording & Compare Cycle
   const handleRecordAction = async (targetAudioUrl, elId) => {
-    // Log that the student engaged with the element
+    if (navButtonState !== 'idle') return; // Prevent recording during feedback
     setStudentAnswers(prev => ({ ...prev, [`${elId}_recorded`]: true }));
 
     if (recordState === 'idle' || recordState === 'retry') {
@@ -366,7 +360,6 @@ const evaluateElement = (el) => {
   };
 
   const handleStartSession = () => {
-     // Silently unlocks mobile audio context on first click
      [correctSoundRef, incorrectSoundRef].forEach(ref => {
          if (ref.current) {
              ref.current.play().then(() => {
@@ -389,15 +382,15 @@ const evaluateElement = (el) => {
   );
 
   // ==========================================
-  // MOBILE AUDIO UNLOCK GATEWAY & MAIN RENDER
+  // GLOBAL RENDER: FEEDBACK LOGIC CONSTANTS
   // ==========================================
+  const showFeedback = navButtonState !== 'idle';
   const currentElements = screensData[currentStep] || [];
   const contentElements = currentElements.filter(el => !['nav_button'].includes(el.type));
   const dockElements = currentElements.filter(el => ['nav_button', 'record_compare'].includes(el.type));
 
   return (
     <>
-      {/* STABLE AUDIO ELEMENTS: Placed outside the ternary so they NEVER unmount */}
       <audio ref={correctSoundRef} src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto" />
       <audio ref={incorrectSoundRef} src="https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3" preload="auto" />
 
@@ -417,14 +410,12 @@ const evaluateElement = (el) => {
       ) : (
         <div id="student-player-container" className="fixed inset-0 z-[500] flex flex-col bg-[#070b19] text-white font-montserrat overflow-y-auto custom-scrollbar">
           
-          {/* Restored Global Background Image */}
           <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
             <img src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/267655.jpeg" alt="Background" className="absolute inset-0 w-full h-full object-cover object-left md:object-center opacity-40 mix-blend-lighten" />
             <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-[#08203e]/40 blur-[120px] rounded-full mix-blend-screen"></div>
             <div className="absolute bottom-[-20%] left-[-10%] w-[80%] h-[80%] bg-[#ca8a04]/10 blur-[150px] rounded-full mix-blend-screen"></div>
           </div>
 
-          {/* Global Navbar */}
           <div className="sticky top-0 h-20 w-full flex items-center justify-between px-6 md:px-12 z-50 shrink-0 border-b border-white/10 bg-[#070b19]/90 backdrop-blur-2xl shadow-xl">
             <div className="flex items-center gap-4">
               <img src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Header.png" alt="Outloud Logo" className="h-8 md:h-10 object-contain drop-shadow-md" />
@@ -472,7 +463,6 @@ const evaluateElement = (el) => {
                 return (
                   <div key={el.id} className="relative flex flex-col w-full max-w-4xl mx-auto items-center">
                     
-                    {/* Dynamically scales down the gigantic hardcoded spans to prevent line breaking */}
                     {el.type === 'text' && (
                       <div className="w-full bg-white/10 backdrop-blur-2xl rounded-[2.5rem] p-8 md:p-14 border border-white/20 shadow-2xl text-center z-20">
                         <div dangerouslySetInnerHTML={{__html: el.htmlContent}} className="rich-text-content pointer-events-none drop-shadow-md text-sm md:text-base [&_span]:!text-lg md:[&_span]:!text-2xl [&_span]:!leading-tight [&_span]:!whitespace-normal" />
@@ -482,10 +472,8 @@ const evaluateElement = (el) => {
                     {isCard && (
                       <div className="w-full bg-white/10 backdrop-blur-xl rounded-[2.5rem] border border-white/20 p-8 md:p-12 flex flex-col gap-6 shadow-2xl h-full justify-between animate-slide-up mt-4">
                         
-                        {/* Visual Prompt Recovery for Record and Compare */}
                         {el.data?.imageUrl && <img src={el.data.imageUrl} alt="Visual Prompt" className="w-full h-80 object-cover rounded-3xl shadow-inner border border-white/10 mb-4" />}
 
-                        {/* Target Audio & Transcript for Record & Compare */}
                         {el.type === 'record_compare' && (
                           <div className="w-full flex flex-col items-center justify-center bg-black/30 p-8 rounded-3xl border border-white/10 shadow-inner mt-4">
                             {el.data?.transcriptText && (
@@ -509,6 +497,8 @@ const evaluateElement = (el) => {
                            if (!rawText) return null;
                            const parts = rawText.split(/(_+)/);
                            let blankIndex = 0;
+                           const rawGroups = (el.data.answerText || '').split(',');
+                           
                            return (
                               <div className="w-full h-full flex flex-col justify-center items-center mt-6">
                                  <div className="text-center w-full break-words leading-[4rem]" style={{ color: el.data.t_textColor || '#ffffff', fontSize: el.data.t_fontSize ? `${el.data.t_fontSize}px` : '22px', fontFamily: el.data.t_fontFamily || 'Montserrat', fontWeight: el.data.t_isBold ? 'bold' : 'normal' }}>
@@ -516,18 +506,34 @@ const evaluateElement = (el) => {
                                        if (part.includes('_')) {
                                           const currentBlankIndex = blankIndex++;
                                           const blankWidth = Math.max(80, Math.min(part.length * 20, 300));
+                                          
+                                          // Feedback Logic
+                                          const targetGroup = rawGroups[currentBlankIndex] || '';
+                                          const cleanedTarget = targetGroup.replace(/^["'\s]+|["'\s]+$/g, '');
+                                          const validOptions = cleanedTarget.split(/[|/]/).map(w => w.trim());
+                                          const studentAns = (studentAnswers[`${el.id}_${currentBlankIndex}`] || '').trim();
+                                          const isCorrect = validOptions.some(opt => cleanStr(opt) === cleanStr(studentAns));
+                                          
                                           return (
-                                             <input 
-                                                key={i}
-                                                type="text"
-                                                autoCapitalize="none"
-                                                autoCorrect="off"
-                                                spellCheck="false"
-                                                value={studentAnswers[`${el.id}_${currentBlankIndex}`] || ''}
-                                                onChange={(e) => setStudentAnswers(prev => ({...prev, [`${el.id}_${currentBlankIndex}`]: e.target.value}))}
-                                                className="mx-3 px-4 py-2 bg-black/50 border-b-4 border-t-0 border-x-0 border-white/50 focus:border-[#fcd34d] text-center outline-none transition-colors shadow-inner rounded-t-xl text-white font-bold"
-                                                style={{ width: `${blankWidth}px` }}
-                                             />
+                                             <span key={i} className="relative inline-block mx-3">
+                                                {showFeedback && !isCorrect && (
+                                                   <span className="absolute -top-10 left-1/2 -translate-x-1/2 text-green-400 font-black animate-pulse text-sm whitespace-nowrap bg-[#070b19]/90 px-3 py-1.5 rounded-lg border border-green-500/30 shadow-xl z-50">
+                                                     {validOptions[0]}
+                                                   </span>
+                                                )}
+                                                <input 
+                                                   type="text"
+                                                   autoCapitalize="none"
+                                                   autoCorrect="off"
+                                                   spellCheck="false"
+                                                   disabled={showFeedback}
+                                                   value={studentAnswers[`${el.id}_${currentBlankIndex}`] || ''}
+                                                   onChange={(e) => setStudentAnswers(prev => ({...prev, [`${el.id}_${currentBlankIndex}`]: e.target.value}))}
+                                                   className={`px-4 py-2 border-b-4 border-t-0 border-x-0 outline-none transition-colors shadow-inner rounded-t-xl font-bold text-center
+                                                   ${showFeedback ? (isCorrect ? 'bg-green-500/20 border-green-500 text-green-400 animate-pulse' : 'bg-red-500/20 border-red-500 text-red-400 animate-pulse') : 'bg-black/50 border-white/50 text-white focus:border-[#fcd34d]'}`}
+                                                   style={{ width: `${blankWidth}px` }}
+                                                />
+                                             </span>
                                           );
                                        }
                                        return <span key={i} dangerouslySetInnerHTML={{ __html: part }} className="drop-shadow-md" />;
@@ -537,12 +543,33 @@ const evaluateElement = (el) => {
                            );
                         })()}
 
-                        {el.type === 'short_answer' && el.data && (
-                          <div className="flex flex-col w-full h-full justify-center">
-                            <div dangerouslySetInnerHTML={{ __html: el.data.questionHtml }} className="w-full break-words text-white mt-2 text-xl font-medium drop-shadow-md mb-6" />
-                            <input type="text" placeholder="Type your answer here..." value={studentAnswers[el.id] || ''} onChange={(e) => setStudentAnswers(prev => ({...prev, [el.id]: e.target.value}))} className="w-full p-6 bg-black/50 border border-white/20 rounded-2xl text-white font-bold focus:ring-2 focus:ring-[#fcd34d] transition-all shadow-inner placeholder-white/30 text-lg outline-none" />
-                          </div>
-                        )}
+                        {el.type === 'short_answer' && el.data && (() => {
+                          const ans = cleanStr(studentAnswers[el.id]);
+                          const target = cleanStr(el.data.correctAnswer);
+                          const isCorrect = ans === target;
+                          
+                          return (
+                            <div className="flex flex-col w-full h-full justify-center">
+                              <div dangerouslySetInnerHTML={{ __html: el.data.questionHtml }} className="w-full break-words text-white mt-2 text-xl font-medium drop-shadow-md mb-6" />
+                              <div className="relative w-full">
+                                {showFeedback && !isCorrect && (
+                                  <div className="absolute -top-6 left-2 text-green-400 font-black animate-pulse text-sm drop-shadow-md z-50">
+                                    Correct answer: {el.data.correctAnswer}
+                                  </div>
+                                )}
+                                <input 
+                                  type="text" 
+                                  placeholder="Type your answer here..." 
+                                  disabled={showFeedback}
+                                  value={studentAnswers[el.id] || ''} 
+                                  onChange={(e) => setStudentAnswers(prev => ({...prev, [el.id]: e.target.value}))} 
+                                  className={`w-full p-6 border-2 rounded-2xl font-bold transition-all shadow-inner placeholder-white/30 text-lg outline-none
+                                  ${showFeedback ? (isCorrect ? 'bg-green-500/10 border-green-500 text-green-400 animate-pulse' : 'bg-red-500/10 border-red-500 text-red-400 animate-pulse') : 'bg-black/50 border-white/20 text-white focus:border-[#fcd34d]'}`} 
+                                />
+                              </div>
+                            </div>
+                          );
+                        })()}
 
                         {el.type === 'multiple_selection' && el.data && (
                           <div className="flex flex-col w-full">
@@ -550,12 +577,26 @@ const evaluateElement = (el) => {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
                               {el.data.options?.map((opt) => {
                                 const isSelected = studentAnswers[`${el.id}_${opt.id}`] === true;
+                                const isCorrectOpt = opt.isCorrect;
+                                
+                                let btnStyle = { backgroundColor: isSelected ? '#fcd34d' : 'rgba(0,0,0,0.5)', borderColor: isSelected ? '#ca8a04' : 'rgba(255,255,255,0.2)' };
+                                let textColor = isSelected ? '#08203e' : 'white';
+                                let circleClass = isSelected ? 'border-[#08203e]' : 'border-white/40';
+                                let pulseClass = '';
+
+                                if (showFeedback) {
+                                   if (isSelected && isCorrectOpt) { btnStyle = { backgroundColor: 'rgba(34,197,94,0.2)', borderColor: '#22c55e' }; textColor = '#4ade80'; circleClass = 'border-green-400'; pulseClass = 'animate-pulse'; }
+                                   else if (isSelected && !isCorrectOpt) { btnStyle = { backgroundColor: 'rgba(239,68,68,0.2)', borderColor: '#ef4444' }; textColor = '#f87171'; circleClass = 'border-red-400'; pulseClass = 'animate-pulse'; }
+                                   else if (!isSelected && isCorrectOpt) { btnStyle = { backgroundColor: 'rgba(34,197,94,0.1)', borderColor: '#22c55e' }; textColor = '#4ade80'; circleClass = 'border-green-400'; }
+                                   else { btnStyle = { backgroundColor: 'rgba(0,0,0,0.5)', borderColor: 'rgba(255,255,255,0.2)' }; textColor = 'rgba(255,255,255,0.5)'; circleClass = 'border-white/20'; }
+                                }
+
                                 return (
-                                  <button key={opt.id} onClick={() => setStudentAnswers(prev => ({ ...prev, [`${el.id}_${opt.id}`]: !prev[`${el.id}_${opt.id}`] }))} style={{ backgroundColor: isSelected ? '#fcd34d' : 'rgba(0,0,0,0.5)', borderColor: isSelected ? '#ca8a04' : 'rgba(255,255,255,0.2)' }} className="w-full p-6 border-2 rounded-2xl text-left transition-all hover:scale-[1.02] active:scale-95 flex items-center shadow-lg backdrop-blur-sm">
-                                    <div className={`w-6 h-6 rounded-full border-2 mr-5 flex items-center justify-center shrink-0 ${isSelected ? 'border-[#08203e]' : 'border-white/40'}`}>
-                                      {isSelected && <div className="w-3 h-3 bg-[#08203e] rounded-full"></div>}
+                                  <button key={opt.id} disabled={showFeedback} onClick={() => setStudentAnswers(prev => ({ ...prev, [`${el.id}_${opt.id}`]: !prev[`${el.id}_${opt.id}`] }))} style={btnStyle} className={`w-full p-6 border-2 rounded-2xl text-left transition-all hover:scale-[1.02] active:scale-95 flex items-center shadow-lg backdrop-blur-sm ${pulseClass}`}>
+                                    <div className={`w-6 h-6 rounded-full border-2 mr-5 flex items-center justify-center shrink-0 ${circleClass}`}>
+                                      {isSelected && <div className="w-3 h-3 rounded-full" style={{ backgroundColor: showFeedback ? textColor : '#08203e' }}></div>}
                                     </div>
-                                    <div dangerouslySetInnerHTML={{__html: opt.html}} className="pointer-events-none text-lg font-bold" style={{ color: isSelected ? '#08203e' : 'white' }} />
+                                    <div dangerouslySetInnerHTML={{__html: opt.html}} className="pointer-events-none text-lg font-bold" style={{ color: textColor }} />
                                   </button>
                                 )
                               })}
@@ -566,22 +607,38 @@ const evaluateElement = (el) => {
                         {el.type === 'drag_and_drop' && el.data && (
                           <div className="flex flex-col gap-12 w-full mt-6">
                             <div className="grid grid-cols-2 gap-8 w-full">
-                              {el.data.items.map((item, idx) => item.imageUrl && (
-                                <div key={idx} className="flex flex-col items-center gap-6">
-                                  <img src={item.imageUrl} className="w-full aspect-[4/5] rounded-3xl shadow-xl object-cover border border-white/10" alt="DnD Target" />
-                                  <div 
-                                    onDragOver={handleDragOver}
-                                    onDrop={(e) => handleDrop(e, `${el.id}_${idx}`)}
-                                    className="w-full min-h-[90px] border-2 border-dashed rounded-2xl bg-black/30 backdrop-blur-md flex items-center justify-center transition-all shadow-inner border-white/40"
-                                  >
-                                    {dndAnswers[`${el.id}_${idx}`] ? (
-                                      <div onClick={(e) => { e.stopPropagation(); setDndAnswers(prev => { const copy = {...prev}; delete copy[`${el.id}_${idx}`]; return copy; })}} className="px-4 py-3 bg-[#fcd34d] text-[#08203e] rounded-xl font-black text-sm md:text-lg shadow-xl w-[90%] text-center hover:scale-105 active:scale-95 transition-transform cursor-pointer">
-                                        {dndAnswers[`${el.id}_${idx}`]}
-                                      </div>
-                                    ) : <span className="text-xs uppercase font-black tracking-widest text-white/40">DROP HERE</span>}
+                              {el.data.items.map((item, idx) => {
+                                if (!item.imageUrl) return null;
+                                const placed = dndAnswers[`${el.id}_${idx}`];
+                                const target = item.targetText;
+                                const isCorrect = cleanStr(placed) === cleanStr(target);
+                                
+                                let dropClass = "bg-black/30 border-white/40";
+                                let pillClass = "bg-[#fcd34d] text-[#08203e]";
+                                let pulseClass = "";
+
+                                if (showFeedback && placed) {
+                                   if (isCorrect) { dropClass = "bg-green-500/20 border-green-500"; pillClass = "bg-green-500 text-white"; pulseClass = "animate-pulse"; }
+                                   else { dropClass = "bg-red-500/20 border-red-500"; pillClass = "bg-red-500 text-white"; pulseClass = "animate-pulse"; }
+                                }
+
+                                return (
+                                  <div key={idx} className="flex flex-col items-center gap-6">
+                                    <img src={item.imageUrl} className="w-full aspect-[4/5] rounded-3xl shadow-xl object-cover border border-white/10" alt="DnD Target" />
+                                    <div 
+                                      onDragOver={handleDragOver}
+                                      onDrop={(e) => handleDrop(e, `${el.id}_${idx}`)}
+                                      className={`w-full min-h-[90px] border-2 border-dashed rounded-2xl backdrop-blur-md flex items-center justify-center transition-all shadow-inner ${dropClass} ${pulseClass}`}
+                                    >
+                                      {placed ? (
+                                        <div onClick={(e) => { if(!showFeedback) { e.stopPropagation(); setDndAnswers(prev => { const copy = {...prev}; delete copy[`${el.id}_${idx}`]; return copy; })}}} className={`px-4 py-3 rounded-xl font-black text-sm md:text-lg shadow-xl w-[90%] text-center transition-transform cursor-pointer ${showFeedback ? '' : 'hover:scale-105 active:scale-95'} ${pillClass}`}>
+                                          {placed}
+                                        </div>
+                                      ) : <span className="text-xs uppercase font-black tracking-widest text-white/40">DROP HERE</span>}
+                                    </div>
                                   </div>
-                                </div>
-                              ))}
+                                );
+                              })}
                             </div>
                             <div className="w-full bg-black/40 backdrop-blur-2xl p-10 rounded-[2.5rem] border border-white/10 shadow-inner flex flex-col items-center">
                               <div className="text-center font-black text-[#fcd34d] text-sm uppercase tracking-widest mb-8 drop-shadow-md">Word Bank (Drag to place)</div>
@@ -593,7 +650,7 @@ const evaluateElement = (el) => {
                                   return (
                                     <div 
                                       key={`bank-${idx}`} 
-                                      draggable
+                                      draggable={!showFeedback}
                                       onDragStart={(e) => handleDragStart(e, item.studentViewText)}
                                       className="px-6 py-4 border-2 rounded-xl font-black text-sm md:text-lg shadow-xl cursor-grab active:cursor-grabbing transition-transform hover:-translate-y-1 bg-white/10 hover:bg-white/20 text-white border-white/20 backdrop-blur-sm"
                                     >
@@ -614,11 +671,18 @@ const evaluateElement = (el) => {
                           const currentIdx = studentAnswers[el.id] !== undefined ? parseInt(studentAnswers[el.id]) : Math.floor(maxIdx / 2);
                           const activeOpt = opts[currentIdx] || {};
                           const pct = maxIdx === 0 ? 50 : (currentIdx / maxIdx) * 100;
+                          
+                          const correctIdx = opts.findIndex(opt => opt.isCorrect);
+                          const isCorrect = currentIdx === correctIdx;
+                          const barBg = showFeedback ? (isCorrect ? 'rgba(34,197,94,0.5)' : 'rgba(239,68,68,0.5)') : (el.data.barColor || 'rgba(255,255,255,0.2)');
+                          const thumbColor = showFeedback ? (isCorrect ? '#4ade80' : '#f87171') : (el.data.handleColor || '#fcd34d');
+                          const pulseClass = showFeedback ? 'animate-pulse' : '';
+
                           return (
-                            <div className="w-full flex flex-col h-full min-h-[200px] justify-end relative pb-8 mt-6">
+                            <div className={`w-full flex flex-col h-full min-h-[200px] justify-end relative pb-8 mt-6 ${pulseClass}`}>
                               <div className="absolute w-full h-full flex flex-col items-center justify-center">
-                                <div className="absolute flex items-center justify-center rounded-full shadow-inner overflow-hidden" style={{ backgroundColor: el.data.barColor || 'rgba(255,255,255,0.2)', width: isVert ? `${el.data.barThickness}px` : '100%', height: isVert ? '100%' : `${el.data.barThickness}px` }}></div>
-                                <input type="range" min="0" max={maxIdx} step="1" value={currentIdx} onChange={(e) => setStudentAnswers(prev => ({...prev, [el.id]: e.target.value}))} className="absolute custom-slider w-full h-full z-10 cursor-pointer" style={{ '--thumb-color': el.data.handleColor || '#fcd34d', transform: isVert ? 'rotate(-90deg)' : 'none', WebkitAppearance: 'none', background: 'transparent' }} />
+                                <div className="absolute flex items-center justify-center rounded-full shadow-inner overflow-hidden transition-colors" style={{ backgroundColor: barBg, width: isVert ? `${el.data.barThickness}px` : '100%', height: isVert ? '100%' : `${el.data.barThickness}px` }}></div>
+                                <input type="range" min="0" max={maxIdx} step="1" disabled={showFeedback} value={currentIdx} onChange={(e) => setStudentAnswers(prev => ({...prev, [el.id]: e.target.value}))} className="absolute custom-slider w-full h-full z-10 cursor-pointer" style={{ '--thumb-color': thumbColor, transform: isVert ? 'rotate(-90deg)' : 'none', WebkitAppearance: 'none', background: 'transparent' }} />
                                 { !isVert && (
                                   <div className="absolute flex flex-col items-center transition-all duration-200 pointer-events-none z-0" style={{ left: `${pct}%`, bottom: 'calc(50% + 25px)', transform: 'translateX(-50%)' }}>
                                     <div className="bg-white text-[#08203e] px-6 py-3 rounded-xl shadow-2xl font-black text-base">{activeOpt.text}</div>
@@ -667,22 +731,31 @@ const evaluateElement = (el) => {
                                 {el.type === 'crossword' && (
                                   <div style={{ display: 'grid', gridTemplateColumns: `repeat(${el.data.grid[0]?.length || 1}, minmax(35px, 1fr))`, gap: '3px', width: 'fit-content', position: 'relative', zIndex: 10 }}>
                                     {el.data.grid.map((row, rIdx) => 
-                                      row.map((cell, cIdx) => (
-                                        <div key={`${rIdx}-${cIdx}`} className="relative aspect-square w-10 md:w-12">
-                                          {cell ? (
+                                      row.map((cell, cIdx) => {
+                                        if (!cell) return <div key={`${rIdx}-${cIdx}`} className="relative aspect-square w-10 md:w-12 bg-transparent" />;
+                                        
+                                        const studentLetter = studentAnswers[`${el.id}_${rIdx}_${cIdx}`] || '';
+                                        const targetLetter = cell.char || '';
+                                        const isCellFeedback = showFeedback && studentLetter;
+                                        const isCorrect = studentLetter.toUpperCase() === targetLetter.toUpperCase();
+
+                                        return (
+                                          <div key={`${rIdx}-${cIdx}`} className="relative aspect-square w-10 md:w-12">
                                             <div className="w-full h-full relative">
                                               {cell.num && <span className="absolute top-1 left-1.5 text-[9px] font-black text-white/90 z-10 pointer-events-none drop-shadow-md">{cell.num}</span>}
                                               <input 
                                                 type="text" maxLength={1} 
-                                                value={studentAnswers[`${el.id}_${rIdx}_${cIdx}`] || ''}
+                                                disabled={showFeedback}
+                                                value={studentLetter}
                                                 onChange={(e) => setStudentAnswers(prev => ({...prev, [`${el.id}_${rIdx}_${cIdx}`]: e.target.value.toUpperCase().replace(/[^A-Z]/g, '')}))}
                                                 style={{ color: el.data.textColor, fontSize: `${el.data.fontSize}px`, fontFamily: el.data.fontFamily, fontWeight: el.data.isBold ? 'bold' : 'normal' }}
-                                                className="w-full h-full text-center uppercase focus:outline-none focus:ring-2 focus:ring-[#fcd34d] transition shadow-inner rounded-md bg-white/10 backdrop-blur-md border border-white/20 text-white font-bold"
+                                                className={`w-full h-full text-center uppercase focus:outline-none transition shadow-inner rounded-md font-bold
+                                                ${isCellFeedback ? (isCorrect ? 'bg-green-500/20 border-2 border-green-500 text-green-400 animate-pulse' : 'bg-red-500/20 border-2 border-red-500 text-red-400 animate-pulse') : 'bg-white/10 backdrop-blur-md border border-white/20 text-white focus:ring-2 focus:ring-[#fcd34d]'}`}
                                               />
                                             </div>
-                                          ) : <div className="w-full h-full bg-transparent" />}
-                                        </div>
-                                      ))
+                                          </div>
+                                        );
+                                      })
                                     )}
                                   </div>
                                 )}
@@ -693,15 +766,27 @@ const evaluateElement = (el) => {
                                       row.map((char, cIdx) => {
                                         const cellId = `${el.id}_${rIdx}_${cIdx}`;
                                         const isSelected = (studentAnswers[`${el.id}_cells`] || []).includes(cellId);
+                                        const isTargetCell = el.data.placedWords?.some(pw => pw.cells.includes(cellId));
+                                        
+                                        let cellBg = isSelected ? 'rgba(252, 211, 77, 0.6)' : 'transparent';
+                                        let cellClass = "flex items-center justify-center transition-colors select-none";
+                                        let textColor = el.data.textColor;
+                                        
+                                        if (showFeedback) {
+                                           if (isSelected && isTargetCell) { cellBg = 'rgba(34, 197, 94, 0.5)'; cellClass += ' animate-pulse'; textColor = '#4ade80'; }
+                                           else if (isSelected && !isTargetCell) { cellBg = 'rgba(239, 68, 68, 0.5)'; cellClass += ' animate-pulse'; textColor = '#f87171'; }
+                                           else if (!isSelected && isTargetCell) { cellBg = 'rgba(34, 197, 94, 0.2)'; textColor = '#4ade80'; }
+                                        }
+
                                         return (
                                           <div 
                                             key={cellId} 
-                                            onClick={() => setStudentAnswers(prev => {
+                                            onClick={() => !showFeedback && setStudentAnswers(prev => {
                                                const current = prev[`${el.id}_cells`] || [];
                                                return { ...prev, [`${el.id}_cells`]: current.includes(cellId) ? current.filter(c => c !== cellId) : [...current, cellId] };
                                             })}
-                                            style={{ color: el.data.textColor, fontSize: `${el.data.fontSize}px`, fontFamily: el.data.fontFamily, fontWeight: el.data.isBold ? 'bold' : 'normal', borderRight: cIdx < (el.data.size - 1) ? `1px solid ${el.data.lineColor}` : 'none', borderBottom: rIdx < (el.data.size - 1) ? `1px solid ${el.data.lineColor}` : 'none', backgroundColor: isSelected ? 'rgba(252, 211, 77, 0.6)' : 'transparent', cursor: 'pointer' }}
-                                            className="flex items-center justify-center transition-colors hover:bg-white/20 select-none"
+                                            style={{ color: textColor, fontSize: `${el.data.fontSize}px`, fontFamily: el.data.fontFamily, fontWeight: el.data.isBold ? 'bold' : 'normal', borderRight: cIdx < (el.data.size - 1) ? `1px solid ${el.data.lineColor}` : 'none', borderBottom: rIdx < (el.data.size - 1) ? `1px solid ${el.data.lineColor}` : 'none', backgroundColor: cellBg, cursor: showFeedback ? 'default' : 'pointer' }}
+                                            className={cellClass}
                                           >
                                             {char}
                                           </div>
@@ -735,7 +820,7 @@ const evaluateElement = (el) => {
                   const config = btnConfig[recordState];
                   
                   return (
-                    <button key={el.id} onClick={() => handleRecordAction(el.data?.audioUrl, el.id)} className={`w-full sm:w-auto backdrop-blur-xl border font-black px-8 py-4 md:px-12 md:py-6 rounded-full flex justify-center items-center gap-4 cursor-pointer transition-all uppercase tracking-widest text-sm md:text-lg hover:scale-105 active:scale-95 ${config.class}`}>
+                    <button key={el.id} disabled={showFeedback} onClick={() => handleRecordAction(el.data?.audioUrl, el.id)} className={`w-full sm:w-auto backdrop-blur-xl border font-black px-8 py-4 md:px-12 md:py-6 rounded-full flex justify-center items-center gap-4 cursor-pointer transition-all uppercase tracking-widest text-sm md:text-lg ${showFeedback ? 'opacity-50' : 'hover:scale-105 active:scale-95'} ${config.class}`}>
                       {config.icon}
                       {config.text}
                     </button>
@@ -743,14 +828,14 @@ const evaluateElement = (el) => {
                 }
                 if (el.type === 'nav_button') {
                   let btnClass = "bg-[#fcd34d] text-[#08203e] shadow-[0_0_40px_rgba(252,211,77,0.4)] hover:shadow-[0_0_50px_rgba(252,211,77,0.6)]";
-                  let btnText = el.data?.buttonStyle === 'finish_pill' ? 'FINISH & SEE GRADES ✓' : 'CONTINUE ➔';
+                  let btnText = "CONFIRM";
 
                   if (navButtonState === 'correct') {
-                    btnClass = "bg-green-500 text-white shadow-[0_0_40px_rgba(34,197,94,0.8)] scale-105";
-                    btnText = "CORRECT ✓";
+                    btnClass = "bg-green-500 text-white shadow-[0_0_40px_rgba(34,197,94,0.8)] scale-105 animate-pulse";
+                    btnText = el.data?.buttonStyle === 'finish_pill' ? 'FINISH & SEE GRADES ✓' : 'CONTINUE ➔';
                   } else if (navButtonState === 'incorrect') {
-                    btnClass = "bg-orange-500 text-white shadow-[0_0_40px_rgba(249,115,22,0.8)] animate-pulse scale-105";
-                    btnText = "INCORRECT ✕";
+                    btnClass = "bg-red-500 text-white shadow-[0_0_40px_rgba(239,68,68,0.8)] animate-pulse scale-105";
+                    btnText = el.data?.buttonStyle === 'finish_pill' ? 'FINISH & SEE GRADES ➔' : 'CONTINUE ➔';
                   }
 
                   return (
