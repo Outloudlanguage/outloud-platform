@@ -300,6 +300,12 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
              incorrectSoundRef.current.currentTime = 0; 
              incorrectSoundRef.current.play().catch(()=>{});
           }
+          
+          // Forcibly scroll the student back to the top of the screen to review mistakes
+          const container = document.getElementById('student-player-container');
+          if (container) container.scrollTo({ top: 0, behavior: 'smooth' });
+          else window.scrollTo({ top: 0, behavior: 'smooth' });
+          
        } else {
           setNavButtonState('correct');
           if (correctSoundRef.current) {
