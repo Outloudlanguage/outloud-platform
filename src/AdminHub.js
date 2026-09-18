@@ -956,7 +956,7 @@ const AdminHub = () => {
     }
   };
 
-  const [directoryTab, setDirectoryTab] = useState('students');
+const [directoryTab, setDirectoryTab] = useState('students');
   const [directoryUsers, setDirectoryUsers] = useState([]);
   const [isLoadingDirectory, setIsLoadingDirectory] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -964,6 +964,35 @@ const AdminHub = () => {
   const [provisioningInitialData, setProvisioningInitialData] = useState(null);
 
   // --- DIRECTORY SEARCH & FILTER STATES ---
+  const [searchQuery, setSearchQuery] = useState('');
+  const [dirFilters, setDirFilters] = useState({ level: 'ALL', status: 'ALL', cohort: 'ALL', payment: 'ALL' });
+
+  useEffect(() => {
+    setSearchQuery('');
+    setDirFilters({ level: 'ALL', status: 'ALL', cohort: 'ALL', payment: 'ALL' });
+  }, [directoryTab]);
+
+  const getFilteredDirectory = () => {
+    return directoryUsers.filter(user => {
+      const searchStr = searchQuery.toLowerCase();
+      const matchesSearch = !searchQuery || 
+        `${user.first_name || ''} ${user.last_name || ''}`.toLowerCase().includes(searchStr) ||
+        (user.email || '').toLowerCase().includes(searchStr) ||
+        (user.whatsapp || '').includes(searchStr);
+
+      if (directoryTab !== 'students') return matchesSearch;
+
+      const matchesLevel = dirFilters.level === 'ALL' || (user.level && user.level.includes(dirFilters.level));
+      const matchesStatus = dirFilters.status === 'ALL' || user.status === dirFilters.status;
+      const matchesCohort = dirFilters.cohort === 'ALL' || String(user.cohort) === String(dirFilters.cohort);
+      const matchesPayment = dirFilters.payment === 'ALL' || user.payment_status === dirFilters.payment;
+
+      return matchesSearch && matchesLevel && matchesStatus && matchesCohort && matchesPayment;
+    });
+  };
+  const filteredDirectory = getFilteredDirectory();
+
+  // --- NEW STATS STATES ---
   const [searchQuery, setSearchQuery] = useState('');
   const [dirFilters, setDirFilters] = useState({ level: 'ALL', status: 'ALL', cohort: 'ALL', payment: 'ALL' });
 
@@ -1814,43 +1843,89 @@ const renderAccounts = () => (
       </div>
 
       {/* Right Column (Directory) */}
-      <div className="lg:col-span-6 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-6 lg:p-8 shadow-2xl flex flex-col flex-1 min-h-[500px] lg:h-full overflow-hidden">
-        <div className="flex bg-black/20 rounded-2xl p-2 mb-4 shrink-0 shadow-inner">
-          <button onClick={() => setDirectoryTab('students')} className={`flex-1 py-3 rounded-xl font-bold text-sm shadow-md transition-all ${directoryTab === 'students' ? 'bg-white/20 text-white' : 'text-white/50 hover:text-white'}`}>Students</button>
-          <button onClick={() => setDirectoryTab('teachers')} className={`flex-1 py-3 rounded-xl font-bold text-sm shadow-md transition-all ${directoryTab === 'teachers' ? 'bg-white/20 text-white' : 'text-white/50 hover:text-white'}`}>Teachers</button>
-          <button onClick={() => setDirectoryTab('admins')} className={`flex-1 py-3 rounded-xl font-bold text-sm shadow-md transition-all ${directoryTab === 'admins' ? 'bg-white/20 text-white' : 'text-white/50 hover:text-white'}`}>Admin</button>
+      <div className="lg:col-span-6 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-4 lg:p-8 shadow-2xl flex flex-col flex-1 min-h-[500px] lg:h-full overflow-hidden">
+        <div className="flex bg-black/20 rounded-2xl p-1.5 lg:p-2 mb-4 shrink-0 shadow-inner overflow-x-auto custom-scrollbar">
+          <button onClick={() => setDirectoryTab('students')} className={`flex-1 min-w-[80px] py-2 lg:py-3 rounded-xl font-bold text-xs lg:text-sm shadow-md transition-all ${directoryTab === 'students' ? 'bg-white/20 text-white' : 'text-white/50 hover:text-white'}`}>Students</button>
+          <button onClick={() => setDirectoryTab('teachers')} className={`flex-1 min-w-[80px] py-2 lg:py-3 rounded-xl font-bold text-xs lg:text-sm shadow-md transition-all ${directoryTab === 'teachers' ? 'bg-white/20 text-white' : 'text-white/50 hover:text-white'}`}>Teachers</button>
+          <button onClick={() => setDirectoryTab('admins')} className={`flex-1 min-w-[80px] py-2 lg:py-3 rounded-xl font-bold text-xs lg:text-sm shadow-md transition-all ${directoryTab === 'admins' ? 'bg-white/20 text-white' : 'text-white/50 hover:text-white'}`}>Admin</button>
         </div>
         
-        <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 flex flex-col gap-4">
+        {/* SEARCH & FILTERS UI */}
+        <div className="flex flex-col gap-3 mb-4 shrink-0 bg-black/20 p-3 lg:p-4 rounded-2xl border border-white/10 shadow-inner">
+          <div className="relative">
+            <input 
+              type="text" 
+              placeholder="Search by name, email, or phone..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-white/5 border border-white/20 rounded-xl pl-10 lg:pl-12 pr-4 py-2.5 lg:py-3 text-white text-xs lg:text-sm focus:outline-none focus:border-[#fcd34d] transition-colors"
+            />
+            <svg className="absolute left-3 lg:left-4 top-1/2 -translate-y-1/2 w-4 h-4 lg:w-5 lg:h-5 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+          </div>
+          
+          {directoryTab === 'students' && (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+              <select value={dirFilters.level} onChange={e => setDirFilters({...dirFilters, level: e.target.value})} className="bg-white/5 text-white/80 hover:text-white text-[10px] lg:text-xs font-bold uppercase rounded-lg px-2 py-2 outline-none border border-white/10 cursor-pointer appearance-none">
+                <option value="ALL" className="bg-[#0f172a]">All Levels</option>
+                <option value="A1" className="bg-[#0f172a]">Level A1</option>
+                <option value="A2" className="bg-[#0f172a]">Level A2</option>
+                <option value="B1" className="bg-[#0f172a]">Level B1</option>
+                <option value="B2" className="bg-[#0f172a]">Level B2</option>
+                <option value="C1" className="bg-[#0f172a]">Level C1</option>
+                <option value="C2" className="bg-[#0f172a]">Level C2</option>
+              </select>
+              <select value={dirFilters.status} onChange={e => setDirFilters({...dirFilters, status: e.target.value})} className="bg-white/5 text-white/80 hover:text-white text-[10px] lg:text-xs font-bold uppercase rounded-lg px-2 py-2 outline-none border border-white/10 cursor-pointer appearance-none">
+                <option value="ALL" className="bg-[#0f172a]">All Status</option>
+                <option value="pending" className="bg-[#0f172a]">Pending</option>
+                <option value="active" className="bg-[#0f172a]">Active</option>
+              </select>
+              <select value={dirFilters.cohort} onChange={e => setDirFilters({...dirFilters, cohort: e.target.value})} className="bg-white/5 text-white/80 hover:text-white text-[10px] lg:text-xs font-bold uppercase rounded-lg px-2 py-2 outline-none border border-white/10 cursor-pointer appearance-none">
+                <option value="ALL" className="bg-[#0f172a]">All Cohorts</option>
+                <option value="15" className="bg-[#0f172a]">Day 15</option>
+                <option value="30" className="bg-[#0f172a]">Day 30</option>
+              </select>
+              <select value={dirFilters.payment} onChange={e => setDirFilters({...dirFilters, payment: e.target.value})} className="bg-white/5 text-white/80 hover:text-white text-[10px] lg:text-xs font-bold uppercase rounded-lg px-2 py-2 outline-none border border-white/10 cursor-pointer appearance-none">
+                <option value="ALL" className="bg-[#0f172a]">Payments</option>
+                <option value="paid" className="bg-[#0f172a]">Up to Date</option>
+                <option value="past_due" className="bg-[#0f172a]">Past Due</option>
+              </select>
+            </div>
+          )}
+        </div>
+        
+        <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 flex flex-col gap-3">
           {isLoadingDirectory ? (
             <div className="h-full flex items-center justify-center">
               <div className="w-8 h-8 border-4 border-[#fcd34d] border-t-transparent rounded-full animate-spin"></div>
             </div>
-          ) : directoryUsers.length === 0 ? (
+          ) : filteredDirectory.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-white/40">
-              <svg className="w-16 h-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-              <p className="font-bold uppercase tracking-widest text-sm">No {directoryTab} found.</p>
+              <svg className="w-12 h-12 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+              <p className="font-bold uppercase tracking-widest text-xs text-center">No results found.</p>
             </div>
           ) : (
-            directoryUsers.map((user, i) => (
-              <div key={user.id} className="bg-black/30 border border-white/10 rounded-2xl p-4 flex items-center justify-between hover:bg-black/40 transition-colors cursor-pointer group" onClick={() => setSelectedStudent(user)}>
-                <div className="flex items-center gap-4 truncate">
-                  <img src={user.avatar_url || `https://ui-avatars.com/api/?name=${user.first_name || 'U'}+${user.last_name || ''}&background=random&color=fff`} className="w-12 h-12 rounded-full border-2 border-white/20 group-hover:border-[#fcd34d] transition-colors object-cover shadow-md shrink-0" alt="User" />
-                  <h4 className="font-bold text-lg text-white group-hover:text-[#fcd34d] transition-colors truncate">{user.first_name || 'Nuevo'} {user.last_name || `Usuario`}</h4>
+            filteredDirectory.map((user, i) => (
+              <div key={user.id} className={`border rounded-2xl p-3 lg:p-4 flex items-center justify-between transition-colors cursor-pointer group ${user.status === 'pending' ? 'bg-[#fcd34d]/10 border-[#fcd34d]/40 hover:bg-[#fcd34d]/20' : 'bg-black/30 border-white/10 hover:bg-black/40'}`} onClick={() => setSelectedStudent(user)}>
+                <div className="flex items-center gap-3 w-full min-w-0 pr-2">
+                  <img src={user.avatar_url || `https://ui-avatars.com/api/?name=${user.first_name || 'U'}+${user.last_name || ''}&background=random&color=fff`} className={`w-10 h-10 lg:w-12 lg:h-12 rounded-full border-2 ${user.status === 'pending' ? 'border-[#fcd34d]' : 'border-white/20 group-hover:border-[#fcd34d]'} transition-colors object-cover shadow-md shrink-0`} alt="User" />
+                  <h4 className={`font-bold text-sm lg:text-base ${user.status === 'pending' ? 'text-[#fcd34d]' : 'text-white group-hover:text-[#fcd34d]'} transition-colors truncate`}>{user.first_name || 'Nuevo'} {user.last_name || `Usuario`}</h4>
                 </div>
-                <div className="flex items-center gap-4 shrink-0">
-                  {user.status === 'pending' ? (
-                    <button onClick={(e) => { e.stopPropagation(); setSelectedStudent(user); }} className="bg-[#fcd34d] text-[#08203e] px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-md hover:scale-105 transition-transform">Pending</button>
-                  ) : (
-                    <button onClick={(e) => { e.stopPropagation(); setSelectedStudent(user); }} className="bg-white/10 text-white hover:bg-[#fcd34d] hover:text-[#08203e] px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-md">View as</button>
-                  )}
+                <div className="flex items-center gap-2 lg:gap-4 shrink-0">
+                  {/* Hide Pending/View As tags on mobile to save space, rely on amber background */}
+                  <div className="hidden lg:block">
+                    {user.status === 'pending' ? (
+                      <button onClick={(e) => { e.stopPropagation(); setSelectedStudent(user); }} className="bg-[#fcd34d] text-[#08203e] px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-md hover:scale-105 transition-transform">Pending</button>
+                    ) : (
+                      <button onClick={(e) => { e.stopPropagation(); setSelectedStudent(user); }} className="bg-white/10 text-white hover:bg-[#fcd34d] hover:text-[#08203e] px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-md">View as</button>
+                    )}
+                  </div>
                   
                   {/* Delete Button */}
-                  <button onClick={(e) => handleDeleteUser(user, e)} className="w-10 h-10 rounded-xl bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center transition-all shadow-md" title="Delete User">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                  <button onClick={(e) => handleDeleteUser(user, e)} className="w-8 h-8 lg:w-10 lg:h-10 rounded-xl bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center transition-all shadow-md shrink-0" title="Delete User">
+                    <svg className="w-4 h-4 lg:w-5 lg:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                   </button>
 
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-white text-xl shadow-inner ${user.level?.includes('A1') ? 'bg-blue-500' : user.level?.includes('C1') ? 'bg-green-500' : 'bg-red-500'}`}>
+                  <div className={`w-8 h-8 lg:w-12 lg:h-12 rounded-xl flex items-center justify-center font-black text-white text-xs lg:text-base shadow-inner shrink-0 ${user.level?.includes('A1') ? 'bg-blue-500' : user.level?.includes('C1') ? 'bg-green-500' : 'bg-red-500'}`}>
                     {user.level ? user.level.split(':')[0] : 'A1'}
                   </div>
                 </div>
