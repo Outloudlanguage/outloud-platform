@@ -384,22 +384,22 @@ const AdminCalendar = () => {
           {/* Layer 2: Content Container */}
           <div className="relative w-full h-full flex flex-col z-10 min-h-0">
             {/* Header containing Tabs */}
-            <div className="flex flex-col xl:flex-row justify-between items-center p-4 lg:p-6 border-b border-white/10 gap-4 relative z-40 shrink-0">
-              <div className="flex w-full gap-1 lg:gap-2 bg-black/20 p-1.5 lg:p-2 rounded-full border border-white/5 shadow-inner relative">
+            <div className="flex flex-col xl:flex-row justify-between items-center p-4 lg:p-6 border-b border-white/10 gap-4 relative z-40 shrink-0 w-full overflow-hidden">
+              <div className="flex w-full overflow-x-auto gap-1 lg:gap-2 bg-black/20 p-1.5 lg:p-2 rounded-full border border-white/5 shadow-inner relative [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 {['OVERALL', 'LIVE LABS', 'TUTORING', 'SOCIALS'].map(tab => (
                   <button 
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`flex-1 px-2 py-2 lg:py-2.5 rounded-full text-[9px] lg:text-[11px] font-black uppercase tracking-widest transition-all whitespace-nowrap cursor-pointer text-center ${activeTab === tab ? 'bg-white/20 text-white shadow-md' : 'text-white/40 hover:text-white/80'}`}
+                    className={`flex-1 shrink-0 px-4 lg:px-2 py-2 lg:py-2.5 rounded-full text-[9px] lg:text-[11px] font-black uppercase tracking-widest transition-all whitespace-nowrap cursor-pointer text-center ${activeTab === tab ? 'bg-white/20 text-white shadow-md' : 'text-white/40 hover:text-white/80'}`}
                   >
                     {tab}
                   </button>
                 ))}
 
-                <div className="relative flex-1">
+                <div className="relative flex-1 shrink-0">
                   <button 
                     onClick={() => setShowTeacherDropdown(!showTeacherDropdown)}
-                    className={`w-full h-full flex items-center justify-center gap-1.5 px-2 py-2 lg:py-2.5 rounded-full text-[9px] lg:text-[11px] font-black uppercase tracking-widest transition-all whitespace-nowrap cursor-pointer ${filterTeacherId !== 'ALL' || showTeacherDropdown ? 'bg-white/20 text-white shadow-md' : 'text-white/40 hover:text-white/80'}`}
+                    className={`w-full h-full flex items-center justify-center gap-1.5 px-4 lg:px-2 py-2 lg:py-2.5 rounded-full text-[9px] lg:text-[11px] font-black uppercase tracking-widest transition-all whitespace-nowrap cursor-pointer ${filterTeacherId !== 'ALL' || showTeacherDropdown ? 'bg-white/20 text-white shadow-md' : 'text-white/40 hover:text-white/80'}`}
                   >
                     TEACHERS {filterTeacherId !== 'ALL' && <span className="bg-[#fcd34d] text-[#08203e] px-1 rounded-full text-[7px] ml-0.5 flex items-center justify-center">✓</span>}
                   </button>
