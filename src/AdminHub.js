@@ -874,6 +874,8 @@ const EvaluatorModule = ({ onBack, onOnboard }) => {
   );
 };
 
+// MasterCalendarModule removed to restore original AdminCalendar layout.
+
 // ==========================================
 // MAIN ADMIN HUB COMPONENT
 // ==========================================
@@ -1173,6 +1175,7 @@ useEffect(() => {
   const [isPublishing, setIsPublishing] = useState(false);
 
   // Chat States
+  const [mobileChatView, setMobileChatView] = useState('students');
   const [chatMessages, setChatMessages] = useState({ student: [], staff: [] });
   const [chatFilters, setChatFilters] = useState({ student: 'ALL', staff: 'ALL' });
   const [chatLocks, setChatLocks] = useState({ student: false, staff: false });
@@ -1685,13 +1688,13 @@ useEffect(() => {
   // =====================================================
 
 const renderAccounts = () => (
-    <div className="flex flex-col lg:grid lg:grid-cols-12 gap-4 lg:gap-6 w-full max-w-[1500px] min-h-0 lg:h-[calc(100vh-160px)] animate-fade-in pb-20 lg:pb-0">
+    <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6 w-full max-w-[1500px] animate-fade-in lg:h-[calc(100vh-160px)]">
       
       {/* COLUMN 1: Pulse & Live Activities */}
-      <div className="lg:col-span-3 flex flex-row lg:flex-col gap-4 lg:gap-6 shrink-0 lg:h-full overflow-x-auto lg:overflow-visible custom-scrollbar pb-2 lg:pb-0">
+      <div className="lg:col-span-3 flex flex-col gap-6 shrink-0 lg:h-full">
         
         {/* ACTIVE STUDENTS RING */}
-        <div className="h-48 w-48 lg:w-full lg:h-[40%] bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-4 lg:p-6 shadow-2xl flex flex-col items-center justify-center relative overflow-hidden shrink-0">
+        <div className="w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-6 shadow-2xl flex flex-col items-center justify-center relative overflow-hidden shrink-0 lg:h-[40%]">
           <div className="relative w-32 h-32 flex items-center justify-center shrink-0 mb-2">
             <svg className="w-full h-full transform -rotate-90 drop-shadow-[0_0_10px_rgba(252,211,77,0.8)]" viewBox="0 0 100 100">
               <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.1)" strokeWidth="8" fill="transparent" />
@@ -1705,7 +1708,7 @@ const renderAccounts = () => (
         </div>
 
         {/* LIVE ACTIVITIES WIDGET */}
-        <div className="h-[60%] bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col">
+        <div className="w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col flex-1 min-h-[300px] lg:min-h-0">
           <h3 className="text-white font-black text-2xl tracking-wide mb-4 drop-shadow-md shrink-0 w-full text-center">Activities</h3>
           <ul className="space-y-3 text-xs font-medium text-white/90 flex-1 overflow-y-auto custom-scrollbar pr-2 mb-4">
             {upcomingActivities.length === 0 ? (
@@ -1759,39 +1762,30 @@ const renderAccounts = () => (
         </div>
       </div>
 
- {/* Middle Column (Quick Actions) */}
-      <div className="lg:col-span-3 grid grid-cols-2 lg:grid-rows-2 gap-4 lg:gap-6 lg:h-full shrink-0">
+      {/* Middle Column (Quick Actions) */}
+      <div className="lg:col-span-3 grid grid-cols-1 lg:grid-rows-2 gap-6 shrink-0 lg:h-full">
         
-        {/* CREATE CARD - Outer Wrapper (Acts as the frame & clipping mask) */}
-        <div onClick={() => setIsProvisioningModalOpen(true)} className="relative w-full h-40 lg:h-full rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl cursor-pointer group">
-          
-          {/* Layer 1: Oversized Blur (Pushes the buggy edges 16px out of view) */}
+        {/* CREATE CARD */}
+        <div onClick={() => setIsProvisioningModalOpen(true)} className="relative w-full min-h-[160px] lg:h-full rounded-[2.5rem] border border-white/10 overflow-hidden shadow-2xl cursor-pointer group">
           <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
-
-          {/* Layer 2: Content Container */}
           <div className="relative w-full h-full flex flex-col items-center justify-center p-6">
-             <img src="https://i.postimg.cc/ZKPVccsH/4(8).png" alt="Create" className="w-48 h-48 mb-4 object-contain group-hover:scale-110 transition-transform duration-300 drop-shadow-md will-change-transform" />
-             <h3 className="text-white font-black text-xl md:text-2xl tracking-widest uppercase text-center">Create</h3>
+             <img src="https://i.postimg.cc/ZKPVccsH/4(8).png" alt="Create" className="w-16 h-16 lg:w-48 lg:h-48 mb-2 lg:mb-4 object-contain group-hover:scale-110 transition-transform duration-300 drop-shadow-md will-change-transform" />
+             <h3 className="text-white font-black text-base lg:text-2xl tracking-widest uppercase text-center">Create</h3>
           </div>
         </div>
         
-        {/* STATISTICS CARD - Outer Wrapper (Acts as the frame & clipping mask) */}
-        <div onClick={() => setAccountsView('STATISTICS')} className="relative w-full h-full rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl cursor-pointer group">
-          
-          {/* Layer 1: Oversized Blur (Pushes the buggy edges 16px out of view) */}
+        {/* STATISTICS CARD */}
+        <div onClick={() => setAccountsView('STATISTICS')} className="relative w-full min-h-[160px] lg:h-full rounded-[2.5rem] border border-white/10 overflow-hidden shadow-2xl cursor-pointer group">
           <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
-
-          {/* Layer 2: Content Container */}
           <div className="relative w-full h-full flex flex-col items-center justify-center p-6">
-             <img src="https://i.postimg.cc/sxd4PQpm/2(12).png" alt="Statistics" className="w-48 h-48 mb-4 object-contain group-hover:scale-110 transition-transform duration-300 drop-shadow-md will-change-transform" />
-             <h3 className="text-white font-black text-xl md:text-2xl tracking-widest uppercase text-center">Statistics</h3>
+             <img src="https://i.postimg.cc/sxd4PQpm/2(12).png" alt="Statistics" className="w-16 h-16 lg:w-48 lg:h-48 mb-2 lg:mb-4 object-contain group-hover:scale-110 transition-transform duration-300 drop-shadow-md will-change-transform" />
+             <h3 className="text-white font-black text-base lg:text-2xl tracking-widest uppercase text-center">Statistics</h3>
           </div>
         </div>
-
-</div>
+      </div>
 
       {/* Right Column (Directory) */}
-      <div className="lg:col-span-6 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-5 lg:p-8 shadow-2xl flex flex-col h-[600px] lg:h-full overflow-hidden">
+      <div className="lg:col-span-6 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-6 lg:p-8 shadow-2xl flex flex-col flex-1 min-h-[500px] lg:h-full overflow-hidden">
         <div className="flex bg-black/20 rounded-2xl p-2 mb-4 shrink-0 shadow-inner">
           <button onClick={() => setDirectoryTab('students')} className={`flex-1 py-3 rounded-xl font-bold text-sm shadow-md transition-all ${directoryTab === 'students' ? 'bg-white/20 text-white' : 'text-white/50 hover:text-white'}`}>Students</button>
           <button onClick={() => setDirectoryTab('teachers')} className={`flex-1 py-3 rounded-xl font-bold text-sm shadow-md transition-all ${directoryTab === 'teachers' ? 'bg-white/20 text-white' : 'text-white/50 hover:text-white'}`}>Teachers</button>
@@ -1947,10 +1941,18 @@ const renderCommunications = () => (
       {/* CHAT MODERATOR VIEW                     */}
       {/* ======================================= */}
       {activeCommsTab === 'Chat' && (
-        <div className="flex flex-col lg:grid lg:grid-cols-2 gap-4 lg:gap-8 flex-1 min-h-[600px]">
+        <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 lg:gap-8 flex-1 lg:min-h-[600px]">
           
+          {/* Mobile Tab Toggle for Chat */}
+          {isMobile && (
+            <div className="flex bg-black/20 rounded-2xl p-1 shrink-0 shadow-inner w-full mb-2">
+              <button onClick={() => setMobileChatView('students')} className={`flex-1 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all ${mobileChatView === 'students' ? 'bg-[#fcd34d] text-[#08203e] shadow-md' : 'text-white/50 hover:text-white'}`}>Students Chat</button>
+              <button onClick={() => setMobileChatView('staff')} className={`flex-1 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all ${mobileChatView === 'staff' ? 'bg-[#fcd34d] text-[#08203e] shadow-md' : 'text-white/50 hover:text-white'}`}>Staff Chat</button>
+            </div>
+          )}
+
           {/* Students Panel */}
-          <div className="relative border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col h-[50vh] lg:h-full group">
+          <div className={`${isMobile && mobileChatView !== 'students' ? 'hidden' : 'flex'} relative border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl flex-col min-h-[60vh] lg:h-full group`}>
             <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
             
             <div className="flex justify-between items-center p-4 lg:p-6 border-b border-white/10 z-10 shrink-0">
@@ -2006,7 +2008,7 @@ const renderCommunications = () => (
           </div>
 
           {/* Staff Panel */}
-          <div className="relative border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col h-[50vh] lg:h-full group">
+          <div className={`${isMobile && mobileChatView !== 'staff' ? 'hidden' : 'flex'} relative border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl flex-col min-h-[60vh] lg:h-full group`}>
             <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
             
             <div className="flex justify-between items-center p-4 lg:p-6 border-b border-white/10 z-10 shrink-0">
@@ -2058,61 +2060,67 @@ const renderCommunications = () => (
       {/* FORUM MODERATOR VIEW                    */}
       {/* ======================================= */}
       {activeCommsTab === 'Forum' && (
-        <div className="grid grid-cols-12 gap-8 flex-1 min-h-0">
+        <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6 lg:gap-8 flex-1 min-h-0 relative">
           
           {/* Active Post OR Composer (Left Panel) */}
-          <div className="col-span-8 relative border border-white/10 rounded-[2.5rem] shadow-2xl flex flex-col h-full group">
-            <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10 rounded-[3rem]" />
+          <div className={`${isMobile && (!isMobileCommsComposerOpen && !forumPost) ? 'hidden' : 'flex'} ${isMobile && isMobileCommsComposerOpen && !forumPost ? 'fixed inset-0 z-[300] bg-[#070b19]/95 backdrop-blur-3xl p-6 overflow-y-auto flex-col' : 'lg:col-span-8 relative border border-white/10 rounded-[2.5rem] shadow-2xl flex-col lg:h-full group shrink-0'}`}>
+            {!isMobile && <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10 rounded-[3rem]" />}
+            {isMobile && forumPost && <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10 rounded-[3rem]" />}
             
-            <div className="p-8 flex flex-col h-full z-10">
-              <div className="flex justify-between items-center mb-6 shrink-0">
+            <div className={`flex flex-col h-full z-10 w-full ${isMobile && !forumPost ? 'max-w-md mx-auto mt-10' : 'p-6 lg:p-8'}`}>
+              <div className={`flex justify-between items-center shrink-0 ${isMobile && !forumPost ? 'mb-6 border-b border-white/10 pb-4' : 'mb-6'}`}>
                 {forumPost ? (
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full border-2 border-[#fcd34d] bg-white/10 flex items-center justify-center font-black text-[#fcd34d] shadow-md uppercase">
+                    <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full border-2 border-[#fcd34d] bg-white/10 flex items-center justify-center font-black text-[#fcd34d] shadow-md uppercase">
                        {forumPost.author_name?.charAt(0) || 'O'}
                     </div>
                     <div>
-                      <h4 className="font-black text-white text-xs uppercase tracking-widest">{forumPost.author_name || 'Admin'}</h4>
+                      <h4 className="font-black text-white text-[10px] lg:text-xs uppercase tracking-widest">{forumPost.author_name || 'Admin'}</h4>
                       <span className="bg-[#fcd34d] text-[#08203e] text-[8px] font-black px-2 py-0.5 rounded uppercase">Staff</span>
                     </div>
                   </div>
                 ) : (
                   <div className="flex items-center gap-4">
-                     <h3 className="font-black text-[#fcd34d] text-lg tracking-widest uppercase drop-shadow-md">Create Topic</h3>
+                     <h3 className="font-black text-[#fcd34d] text-base lg:text-lg tracking-widest uppercase drop-shadow-md">Create Topic</h3>
                   </div>
                 )}
                 
-                <select value={forumLevelFilter} onChange={(e) => setForumLevelFilter(e.target.value)} className="bg-white/10 text-white text-xs font-black uppercase rounded-lg pl-4 pr-10 py-2 outline-none border border-white/20 cursor-pointer appearance-none">
-                  <option className="bg-[#0f172a] text-white" value="A1">Level A1</option>
-                  <option className="bg-[#0f172a] text-white" value="A2">Level A2</option>
-                  <option className="bg-[#0f172a] text-white" value="B1">Level B1</option>
-                  <option className="bg-[#0f172a] text-white" value="B2">Level B2</option>
-                  <option className="bg-[#0f172a] text-white" value="C1">Level C1</option>
-                  <option className="bg-[#0f172a] text-white" value="C2">Level C2</option>
-                </select>
+                <div className="flex gap-2 items-center">
+                  <select value={forumLevelFilter} onChange={(e) => setForumLevelFilter(e.target.value)} className="bg-white/10 text-white text-[10px] lg:text-xs font-black uppercase rounded-lg pl-3 pr-8 py-2 outline-none border border-white/20 cursor-pointer appearance-none max-w-[100px] lg:max-w-none">
+                    <option className="bg-[#0f172a] text-white" value="A1">Level A1</option>
+                    <option className="bg-[#0f172a] text-white" value="A2">Level A2</option>
+                    <option className="bg-[#0f172a] text-white" value="B1">Level B1</option>
+                    <option className="bg-[#0f172a] text-white" value="B2">Level B2</option>
+                    <option className="bg-[#0f172a] text-white" value="C1">Level C1</option>
+                    <option className="bg-[#0f172a] text-white" value="C2">Level C2</option>
+                  </select>
+                  {isMobile && !forumPost && (
+                    <button onClick={() => setIsMobileCommsComposerOpen(false)} className="w-8 h-8 bg-white/10 hover:bg-red-500 text-white rounded-full flex items-center justify-center font-black transition-colors shrink-0">✕</button>
+                  )}
+                </div>
               </div>
 
               {forumPost ? (
                 <>
-                  <button onClick={handleDeleteForumPost} className="absolute top-8 right-[120px] w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center text-red-400 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500 hover:text-white cursor-pointer z-20 shadow-xl" title="Delete Topic">✕</button>
+                  <button onClick={handleDeleteForumPost} className="absolute top-6 right-6 lg:top-8 lg:right-[120px] w-8 h-8 lg:w-10 lg:h-10 bg-red-500/20 rounded-full flex items-center justify-center text-red-400 lg:opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500 hover:text-white cursor-pointer z-20 shadow-xl" title="Delete Topic">✕</button>
                   <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 mb-4">
-                    <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-4">
+                    <h2 className="text-xl lg:text-2xl font-black text-white uppercase tracking-widest mb-4">
                       {forumPost.title}
                     </h2>
                     {forumPost.image_url && (
-                      <div className="w-full h-48 bg-black/40 rounded-2xl border border-white/10 mb-4 overflow-hidden shadow-inner shrink-0">
+                      <div className="w-full h-40 lg:h-48 bg-black/40 rounded-2xl border border-white/10 mb-4 overflow-hidden shadow-inner shrink-0">
                         <img src={forumPost.image_url} className="w-full h-full object-cover opacity-80" alt="Post" />
                       </div>
                     )}
-                    <p className="text-sm text-white/80 font-medium leading-relaxed">
+                    <p className="text-xs lg:text-sm text-white/80 font-medium leading-relaxed">
                       {forumPost.content}
                     </p>
                   </div>
 
-                  <form onSubmit={handleSendForumReply} className="relative mt-auto shrink-0">
-                    <input type="text" placeholder="Post an admin reply..." value={chatInputs.forum} onChange={(e) => setChatInputs(p => ({...p, forum: e.target.value}))} className="w-full bg-black/40 border border-white/20 rounded-full pl-6 pr-12 py-4 text-sm text-white focus:outline-none focus:border-[#fcd34d] shadow-inner disabled:opacity-50" />
-                    <button type="submit" className="absolute right-6 top-1/2 -translate-y-1/2 text-white/50 hover:text-[#fcd34d] transition-colors cursor-pointer disabled:opacity-50" disabled={!chatInputs.forum.trim()}>
-                      <svg className="w-5 h-5 transform rotate-45 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+                  <form onSubmit={handleSendForumReply} className="relative mt-auto shrink-0 border-t border-white/10 pt-4 lg:pt-0 lg:border-none">
+                    <input type="text" placeholder="Post an admin reply..." value={chatInputs.forum} onChange={(e) => setChatInputs(p => ({...p, forum: e.target.value}))} className="w-full bg-black/40 border border-white/20 rounded-full pl-4 lg:pl-6 pr-10 lg:pr-12 py-3 lg:py-4 text-xs lg:text-sm text-white focus:outline-none focus:border-[#fcd34d] shadow-inner disabled:opacity-50" />
+                    <button type="submit" className="absolute right-4 lg:right-6 top-1/2 -translate-y-1/2 lg:top-1/2 text-white/50 hover:text-[#fcd34d] transition-colors cursor-pointer disabled:opacity-50 mt-2 lg:mt-0" disabled={!chatInputs.forum.trim()}>
+                      <svg className="w-4 h-4 lg:w-5 lg:h-5 transform rotate-45 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
                     </button>
                   </form>
                 </>
@@ -2125,16 +2133,16 @@ const renderCommunications = () => (
                     onChange={(e) => setForumTitleInput(e.target.value)} 
                     className="w-full bg-white/5 border border-white/20 rounded-2xl p-4 text-white focus:outline-none focus:border-[#fcd34d] placeholder-white/30 shadow-inner font-black uppercase tracking-widest mb-4 shrink-0 text-sm"
                   />
-                  <div className="flex flex-col gap-4 flex-1 min-h-0 mb-6">
+                  <div className={`flex flex-col gap-4 flex-1 min-h-0 mb-6 ${isMobile ? 'overflow-y-auto custom-scrollbar' : ''}`}>
                     {!showForumImageInput ? (
-                      <button onClick={() => setShowForumImageInput(true)} className="w-64 h-32 bg-white/10 border-2 border-dashed border-white/30 rounded-2xl flex flex-col items-center justify-center text-white hover:bg-white/20 transition-colors shrink-0 cursor-pointer">
-                        <span className="text-5xl font-light leading-none mb-2">+</span>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-center leading-tight">UPLOAD<br/>IMAGE</span>
+                      <button onClick={() => setShowForumImageInput(true)} className={`${isMobile ? 'w-full h-24' : 'w-64 h-32'} bg-white/10 border-2 border-dashed border-white/30 rounded-2xl flex flex-col items-center justify-center text-white hover:bg-white/20 transition-colors shrink-0 cursor-pointer`}>
+                        <span className={`${isMobile ? 'text-3xl' : 'text-5xl'} font-light leading-none mb-1`}>+</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-center leading-tight">UPLOAD IMAGE</span>
                       </button>
                     ) : (
-                      <div className="w-64 h-32 bg-black/40 border border-white/20 rounded-2xl flex flex-col items-center justify-center text-white p-4 shrink-0 relative">
+                      <div className={`${isMobile ? 'w-full h-24' : 'w-64 h-32'} bg-black/40 border border-white/20 rounded-2xl flex flex-col items-center justify-center text-white p-4 shrink-0 relative`}>
                         <button onClick={() => { setShowForumImageInput(false); setForumImageUrlInput(''); }} className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full text-[10px] font-bold cursor-pointer hover:scale-110">✕</button>
-                        <span className="text-[9px] font-black uppercase tracking-widest text-[#fcd34d] mb-2">Image URL</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-[#fcd34d] mb-1">Image URL</span>
                         <input type="text" value={forumImageUrlInput} onChange={(e) => setForumImageUrlInput(e.target.value)} placeholder="https://..." className="w-full bg-white/10 rounded p-2 text-xs outline-none focus:border-[#fcd34d] border border-transparent" />
                       </div>
                     )}
@@ -2143,10 +2151,10 @@ const renderCommunications = () => (
                       value={forumContentInput}
                       onChange={(e) => setForumContentInput(e.target.value)}
                       placeholder="Escribe el contenido del foro aquí..." 
-                      className="w-full flex-1 bg-white/5 border border-white/20 rounded-2xl p-4 text-white resize-none focus:outline-none focus:border-[#fcd34d] placeholder-white/30 shadow-inner min-h-[300px]"
+                      className={`w-full flex-1 bg-white/5 border border-white/20 rounded-2xl p-4 text-white resize-none focus:outline-none focus:border-[#fcd34d] placeholder-white/30 shadow-inner ${isMobile ? 'min-h-[150px]' : 'min-h-[300px]'}`}
                     />
                   </div>
-                  <button onClick={handlePublishForumPost} disabled={isPublishingForum} className="w-full mt-auto bg-[#fcd34d] hover:bg-white text-[#08203e] font-black rounded-xl py-4 uppercase tracking-widest transition-colors shadow-lg disabled:opacity-50 cursor-pointer shrink-0">
+                  <button onClick={() => { handlePublishForumPost(); setIsMobileCommsComposerOpen(false); }} disabled={isPublishingForum} className={`w-full mt-auto bg-[#fcd34d] hover:bg-white text-[#08203e] font-black rounded-xl py-4 uppercase tracking-widest transition-colors shadow-lg disabled:opacity-50 cursor-pointer shrink-0`}>
                     {isPublishingForum ? '...' : 'PUBLISH TOPIC'}
                   </button>
                 </div>
@@ -2155,13 +2163,20 @@ const renderCommunications = () => (
           </div>
 
           {/* Replies Feed (Right Panel) */}
-          <div className="col-span-4 flex flex-col gap-4 overflow-y-auto custom-scrollbar h-full pl-2">
-            {!forumPost ? (
+          <div className={`${isMobile && (!forumPost || isMobileCommsComposerOpen) ? 'hidden' : 'flex'} lg:col-span-4 flex-col gap-4 overflow-y-auto custom-scrollbar h-[50vh] lg:h-full lg:pl-2 relative`}>
+            {isMobile && forumPost && (
+               <div className="flex justify-between items-center sticky top-0 bg-[#070b19]/90 backdrop-blur-md p-2 z-10 rounded-xl border border-white/10 mb-2">
+                 <button onClick={() => setForumPost(null)} className="text-[#fcd34d] font-black text-xs uppercase tracking-widest">← Back</button>
+                 <span className="text-white font-black text-[10px] uppercase">{forumLevelFilter} Replies</span>
+               </div>
+            )}
+            
+            {!forumPost && !isMobile ? (
               <div className="flex flex-col items-center justify-center h-full text-white/40">
                 <span className="font-bold uppercase tracking-widest text-sm text-center px-8">No topic active for {forumLevelFilter}.<br/>Create one to allow replies.</span>
               </div>
             ) : forumReplies.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-white/40">
+              <div className="flex flex-col items-center justify-center h-full text-white/40 min-h-[150px]">
                 <span className="font-bold uppercase tracking-widest text-sm">No replies yet.</span>
               </div>
             ) : (
@@ -2169,15 +2184,15 @@ const renderCommunications = () => (
                 const author = reply.author || {};
                 const isA1 = author.level?.includes('A1');
                 return (
-                  <div key={reply.id} className="relative border border-white/10 bg-white/5 backdrop-blur-xl rounded-3xl p-6 shadow-xl w-[90%] mb-2 flex items-start gap-4 hover:bg-white/10 transition-colors group">
-                    <button onClick={() => handleDeleteForumReply(reply.id)} className="absolute top-4 right-4 w-8 h-8 bg-red-500/20 text-red-400 opacity-0 group-hover:opacity-100 hover:bg-red-500 hover:text-white transition-all font-black rounded-full cursor-pointer flex items-center justify-center">✕</button>
-                    <img src={author.avatar_url || `https://ui-avatars.com/api/?name=${author.first_name || 'User'}&background=random`} className="w-12 h-12 rounded-full border-2 border-white object-cover shrink-0" alt="User" />
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="font-black text-white text-[11px] uppercase tracking-widest">{author.first_name} {author.last_name}</span>
-                        <span className={`text-white text-[9px] font-black px-2 py-0.5 rounded border ${isA1 ? 'bg-blue-500 border-blue-400' : 'bg-emerald-500 border-emerald-400'}`}>{author.level ? author.level.split(':')[0] : 'User'}</span>
+                  <div key={reply.id} className="relative border border-white/10 bg-white/5 backdrop-blur-xl rounded-2xl lg:rounded-3xl p-4 lg:p-6 shadow-xl w-full lg:w-[90%] mb-2 flex items-start gap-3 lg:gap-4 hover:bg-white/10 transition-colors group shrink-0">
+                    <button onClick={() => handleDeleteForumReply(reply.id)} className="absolute top-2 right-2 lg:top-4 lg:right-4 w-6 h-6 lg:w-8 lg:h-8 bg-red-500/20 text-red-400 lg:opacity-0 group-hover:opacity-100 hover:bg-red-500 hover:text-white transition-all font-black rounded-full cursor-pointer flex items-center justify-center text-[10px] lg:text-sm">✕</button>
+                    <img src={author.avatar_url || `https://ui-avatars.com/api/?name=${author.first_name || 'User'}&background=random`} className="w-10 h-10 lg:w-12 lg:h-12 rounded-full border-2 border-white object-cover shrink-0" alt="User" />
+                    <div className="flex-1 min-w-0 pr-6">
+                      <div className="flex flex-wrap items-center gap-1.5 lg:gap-2 mb-1.5 lg:mb-2">
+                        <span className="font-black text-white text-[9px] lg:text-[11px] uppercase tracking-widest truncate max-w-full">{author.first_name} {author.last_name}</span>
+                        <span className={`text-white text-[7px] lg:text-[9px] font-black px-1.5 lg:px-2 py-0.5 rounded border ${isA1 ? 'bg-blue-500 border-blue-400' : 'bg-emerald-500 border-emerald-400'}`}>{author.level ? author.level.split(':')[0] : 'User'}</span>
                       </div>
-                      <p className={`text-sm font-medium leading-relaxed pr-8 ${reply.is_flagged ? 'text-red-400 italic' : 'text-white/90'}`}>
+                      <p className={`text-xs lg:text-sm font-medium leading-relaxed break-words ${reply.is_flagged ? 'text-red-400 italic' : 'text-white/90'}`}>
                         {reply.is_flagged ? '⚠️ Mensaje Marcado: ' + reply.content : reply.content}
                       </p>
                     </div>
@@ -2186,6 +2201,16 @@ const renderCommunications = () => (
               })
             )}
           </div>
+          
+          {/* Mobile Floating Action Button (FAB) for Forum */}
+          {isMobile && !forumPost && (
+            <button 
+              onClick={() => setIsMobileCommsComposerOpen(true)}
+              className="absolute bottom-6 right-6 w-14 h-14 bg-[#fcd34d] text-[#08203e] rounded-full flex items-center justify-center shadow-[0_10px_25px_rgba(252,211,77,0.5)] z-50 hover:scale-105 active:scale-95 transition-transform"
+            >
+              <span className="text-3xl font-light leading-none mb-1">+</span>
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -2364,16 +2389,16 @@ const FinancesPage = () => {
   const netMarginPercentage = revenue > 0 ? ((netProfit / revenue) * 100).toFixed(1) : 0;
 
   return (
-    <div className="flex flex-col gap-4 lg:gap-8 w-full max-w-[1500px] min-h-[calc(100vh-160px)] animate-fade-in relative z-10 pb-24 lg:pb-10">
+    <div className="flex flex-col gap-6 lg:gap-8 w-full max-w-[1500px] animate-fade-in relative z-10 pb-24 lg:pb-10 lg:h-[calc(100vh-160px)] overflow-y-auto custom-scrollbar pr-0 lg:pr-4">
       
       {/* ROW 1: THE "NOW" (Hard Financials) */}
-     <div className="flex flex-col lg:grid lg:grid-cols-12 gap-4 lg:gap-8 h-auto lg:min-h-[450px]">
+     <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6 lg:gap-8 lg:min-h-[400px] shrink-0">
         
        {/* Left: Circular KPIs */}
-        <div className="lg:col-span-3 flex flex-row lg:flex-col gap-4 lg:gap-6 lg:h-full justify-center">
+        <div className="lg:col-span-3 grid grid-cols-2 lg:flex lg:flex-col gap-4 lg:gap-6 lg:h-full justify-center">
           
           {/* RENEWALS BUTTON - Clipped Wrapper */}
-          <button onClick={() => setShowRenewalsModal(true)} className="flex-1 w-full relative rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl cursor-pointer group hover:bg-white/5 transition-all text-left">
+          <button onClick={() => setShowRenewalsModal(true)} className="w-full aspect-square lg:aspect-auto lg:flex-1 relative rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl cursor-pointer group hover:bg-white/5 transition-all text-left">
             <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
             <div className="relative w-full h-full flex flex-col items-center justify-center p-6">
               <div className="relative w-32 h-32 flex items-center justify-center shrink-0 mb-2">
@@ -2409,13 +2434,13 @@ const FinancesPage = () => {
         </div>
 
         {/* Center: Profit Margin Analysis Engine */}
-        <div className="lg:col-span-6 lg:h-full">
+        <div className="lg:col-span-6 w-full min-h-[350px] lg:h-full">
           <ProfitMarginAnalysis onMetricsUpdate={(m) => { setRevenue(m.revenue); setPayroll(m.payroll); }} />
         </div>
 
         {/* Right: 4-Metric Stack */}
         <div className="lg:col-span-3 grid grid-cols-2 lg:flex lg:flex-col gap-4 lg:h-full justify-between">
-          <div className="flex-1 relative rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl">
+          <div className="w-full aspect-square lg:aspect-auto lg:flex-1 relative rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl">
             <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
             <div className="relative w-full h-full flex flex-col items-center justify-center p-4">
               <h4 className="text-white/70 font-black text-sm tracking-widest uppercase">Gross Revenue</h4>
@@ -2450,15 +2475,15 @@ const FinancesPage = () => {
       </div>
 
       {/* ROW 2: THE "FUTURE & LEAKS" (Acquisition & Operations) */}
-      <div className="flex flex-col lg:grid lg:grid-cols-12 gap-4 lg:gap-8 h-auto lg:min-h-[450px]">
+      <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6 lg:gap-8 lg:min-h-[400px] shrink-0">
         
         {/* Left: Commercial Funnel Engine */}
-        <div className="lg:col-span-6 lg:h-full">
+        <div className="lg:col-span-6 w-full min-h-[400px] lg:h-full">
           <CommercialFunnelModule />
         </div>
 
         {/* Right: Overhead/SaaS Breakdown Engine */}
-        <div className="lg:col-span-6 lg:h-full">
+        <div className="lg:col-span-6 w-full min-h-[400px] lg:h-full">
           <OverheadExpensesModule onOverheadUpdate={setOverhead} />
         </div>
         
@@ -2518,23 +2543,23 @@ const FinancesPage = () => {
     }
 
     return (
-      <div className="flex items-center justify-center w-full h-[calc(100vh-160px)] animate-fade-in relative z-10">
-        <div className="grid grid-cols-4 gap-8 max-w-[1200px] w-full">
+      <div className="flex flex-col items-center w-full animate-fade-in relative z-10 pb-24 lg:pb-0 lg:h-[calc(100vh-160px)] overflow-y-auto custom-scrollbar">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-8 max-w-[1200px] w-full mt-4 lg:mt-0">
           {['Tenants', 'Public logs', 'Shifts', 'Evaluator', 'Reports', 'B2B Clients', 'Resumes', 'Language'].map((setting, i) => (
             <button 
               key={setting} 
               onClick={() => setting === 'Evaluator' ? setSettingsView('EVALUATOR') : null} 
-              className="aspect-square bg-white/5 backdrop-blur-xl border border-white/10 rounded-[3rem] p-6 shadow-2xl flex flex-col items-center justify-center gap-6 hover:bg-white/10 hover:scale-105 transition-all group cursor-pointer"
+              className="aspect-square bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl lg:rounded-[3rem] p-4 lg:p-6 shadow-2xl flex flex-col items-center justify-center gap-3 lg:gap-6 hover:bg-white/10 hover:scale-105 transition-all group cursor-pointer"
             >
-            {i===0 && <svg className="w-32 h-32 text-white group-hover:text-[#fcd34d] transition-colors drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" /></svg>}
-            {i===1 && <svg className="w-32 h-32 text-white group-hover:text-[#fcd34d] transition-colors drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" /></svg>}
-            {i===2 && <svg className="w-32 h-32 text-white group-hover:text-[#fcd34d] transition-colors drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
-            {i===3 && <svg className="w-32 h-32 text-white group-hover:text-[#fcd34d] transition-colors drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" /></svg>}
-            {i===4 && <svg className="w-32 h-32 text-white group-hover:text-[#fcd34d] transition-colors drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>}
-            {i===5 && <svg className="w-32 h-32 text-white group-hover:text-[#fcd34d] transition-colors drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M20.25 14.15v4.25c0 1.094-.787 2.036-1.872 2.18-2.087.277-4.216.42-6.378.42s-4.291-.143-6.378-.42c-1.085-.144-1.872-1.086-1.872-2.18v-4.25m16.5 0a2.18 2.18 0 00.75-1.661V8.706c0-1.081-.768-2.015-1.837-2.175a48.114 48.114 0 00-3.413-.387m4.5 8.006c-.194.165-.42.295-.673.38A23.978 23.978 0 0112 15.75c-2.648 0-5.195-.429-7.577-1.22a2.016 2.016 0 01-.673-.38m0 0A2.18 2.18 0 013 12.489V8.706c0-1.081.768-2.015 1.837-2.175a48.111 48.111 0 013.413-.387m7.5 0V5.25A2.25 2.25 0 0013.5 3h-3a2.25 2.25 0 00-2.25 2.25v.894m7.5 0a48.667 48.667 0 00-7.5 0M12 12.75h.008v.008H12v-.008z" /></svg>}
-            {i===6 && <svg className="w-32 h-32 text-white group-hover:text-[#fcd34d] transition-colors drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" /></svg>}
-            {i===7 && <svg className="w-32 h-32 text-white group-hover:text-[#fcd34d] transition-colors drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 21l5.25-11.25L21 21m-9-3h7.5M3 5.621a48.474 48.474 0 016-.371m0 0c1.12 0 2.233.038 3.334.114M9 5.25V3m3.334 2.364C11.176 10.658 7.69 15.08 3 17.502m9.334-12.138c.896.061 1.785.147 2.666.257m-4.589 8.495a18.023 18.023 0 01-3.827-5.802" /></svg>}
-            <h3 className="text-white font-black text-2xl uppercase tracking-widest">{setting}</h3>
+            {i===0 && <svg className="w-16 h-16 lg:w-32 lg:h-32 text-white group-hover:text-[#fcd34d] transition-colors drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" /></svg>}
+            {i===1 && <svg className="w-16 h-16 lg:w-32 lg:h-32 text-white group-hover:text-[#fcd34d] transition-colors drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" /></svg>}
+            {i===2 && <svg className="w-16 h-16 lg:w-32 lg:h-32 text-white group-hover:text-[#fcd34d] transition-colors drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+            {i===3 && <svg className="w-16 h-16 lg:w-32 lg:h-32 text-white group-hover:text-[#fcd34d] transition-colors drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" /></svg>}
+            {i===4 && <svg className="w-16 h-16 lg:w-32 lg:h-32 text-white group-hover:text-[#fcd34d] transition-colors drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>}
+            {i===5 && <svg className="w-16 h-16 lg:w-32 lg:h-32 text-white group-hover:text-[#fcd34d] transition-colors drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M20.25 14.15v4.25c0 1.094-.787 2.036-1.872 2.18-2.087.277-4.216.42-6.378.42s-4.291-.143-6.378-.42c-1.085-.144-1.872-1.086-1.872-2.18v-4.25m16.5 0a2.18 2.18 0 00.75-1.661V8.706c0-1.081-.768-2.015-1.837-2.175a48.114 48.114 0 00-3.413-.387m4.5 8.006c-.194.165-.42.295-.673.38A23.978 23.978 0 0112 15.75c-2.648 0-5.195-.429-7.577-1.22a2.016 2.016 0 01-.673-.38m0 0A2.18 2.18 0 013 12.489V8.706c0-1.081.768-2.015 1.837-2.175a48.111 48.111 0 013.413-.387m7.5 0V5.25A2.25 2.25 0 0013.5 3h-3a2.25 2.25 0 00-2.25 2.25v.894m7.5 0a48.667 48.667 0 00-7.5 0M12 12.75h.008v.008H12v-.008z" /></svg>}
+            {i===6 && <svg className="w-16 h-16 lg:w-32 lg:h-32 text-white group-hover:text-[#fcd34d] transition-colors drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" /></svg>}
+            {i===7 && <svg className="w-16 h-16 lg:w-32 lg:h-32 text-white group-hover:text-[#fcd34d] transition-colors drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 21l5.25-11.25L21 21m-9-3h7.5M3 5.621a48.474 48.474 0 016-.371m0 0c1.12 0 2.233.038 3.334.114M9 5.25V3m3.334 2.364C11.176 10.658 7.69 15.08 3 17.502m9.334-12.138c.896.061 1.785.147 2.666.257m-4.589 8.495a18.023 18.023 0 01-3.827-5.802" /></svg>}
+            <h3 className="text-white font-black text-sm lg:text-2xl uppercase tracking-widest text-center">{setting}</h3>
           </button>
         ))}
       </div>
@@ -2674,7 +2699,7 @@ const FinancesPage = () => {
             
           </div>
         )}
-      {activeModule === 'CALENDARS' && <AdminCalendar/>}
+        {activeModule === 'CALENDARS' && <AdminCalendar />}
         {activeModule === 'COMMUNICATIONS' && renderCommunications()}
         {activeModule === 'FINANCES' && <FinancesPage />}
         {activeModule === 'SETTINGS' && renderSettings()}
