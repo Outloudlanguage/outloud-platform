@@ -993,35 +993,6 @@ const [directoryTab, setDirectoryTab] = useState('students');
   const filteredDirectory = getFilteredDirectory();
 
   // --- NEW STATS STATES ---
-  const [searchQuery, setSearchQuery] = useState('');
-  const [dirFilters, setDirFilters] = useState({ level: 'ALL', status: 'ALL', cohort: 'ALL', payment: 'ALL' });
-
-  useEffect(() => {
-    setSearchQuery('');
-    setDirFilters({ level: 'ALL', status: 'ALL', cohort: 'ALL', payment: 'ALL' });
-  }, [directoryTab]);
-
-  const getFilteredDirectory = () => {
-    return directoryUsers.filter(user => {
-      const searchStr = searchQuery.toLowerCase();
-      const matchesSearch = !searchQuery || 
-        `${user.first_name || ''} ${user.last_name || ''}`.toLowerCase().includes(searchStr) ||
-        (user.email || '').toLowerCase().includes(searchStr) ||
-        (user.whatsapp || '').includes(searchStr);
-
-      if (directoryTab !== 'students') return matchesSearch;
-
-      const matchesLevel = dirFilters.level === 'ALL' || (user.level && user.level.includes(dirFilters.level));
-      const matchesStatus = dirFilters.status === 'ALL' || user.status === dirFilters.status;
-      const matchesCohort = dirFilters.cohort === 'ALL' || String(user.cohort) === String(dirFilters.cohort);
-      const matchesPayment = dirFilters.payment === 'ALL' || user.payment_status === dirFilters.payment;
-
-      return matchesSearch && matchesLevel && matchesStatus && matchesCohort && matchesPayment;
-    });
-  };
-  const filteredDirectory = getFilteredDirectory();
-
-  // --- NEW STATS STATES ---
   const [activeStudentsPct, setActiveStudentsPct] = useState(0);
   const [upcomingActivities, setUpcomingActivities] = useState([]);
   const [showSubModal, setShowSubModal] = useState(false);
@@ -1905,10 +1876,10 @@ const renderAccounts = () => (
             </div>
           ) : (
             filteredDirectory.map((user, i) => (
-              <div key={user.id} className={`border rounded-2xl p-3 lg:p-4 flex items-center justify-between transition-colors cursor-pointer group ${user.status === 'pending' ? 'bg-[#fcd34d]/10 border-[#fcd34d]/40 hover:bg-[#fcd34d]/20' : 'bg-black/30 border-white/10 hover:bg-black/40'}`} onClick={() => setSelectedStudent(user)}>
+              <div key={user.id} className={`border rounded-2xl p-3 lg:p-4 flex items-center justify-between transition-colors cursor-pointer group ${user.status === 'pending' ? 'bg-[#fcd34d] border-[#fcd34d] hover:bg-yellow-300 shadow-[0_0_20px_rgba(252,211,77,0.2)]' : 'bg-black/30 border-white/10 hover:bg-black/40'}`} onClick={() => setSelectedStudent(user)}>
                 <div className="flex items-center gap-3 w-full min-w-0 pr-2">
-                  <img src={user.avatar_url || `https://ui-avatars.com/api/?name=${user.first_name || 'U'}+${user.last_name || ''}&background=random&color=fff`} className={`w-10 h-10 lg:w-12 lg:h-12 rounded-full border-2 ${user.status === 'pending' ? 'border-[#fcd34d]' : 'border-white/20 group-hover:border-[#fcd34d]'} transition-colors object-cover shadow-md shrink-0`} alt="User" />
-                  <h4 className={`font-bold text-sm lg:text-base ${user.status === 'pending' ? 'text-[#fcd34d]' : 'text-white group-hover:text-[#fcd34d]'} transition-colors truncate`}>{user.first_name || 'Nuevo'} {user.last_name || `Usuario`}</h4>
+                  <img src={user.avatar_url || `https://ui-avatars.com/api/?name=${user.first_name || 'U'}+${user.last_name || ''}&background=random&color=fff`} className={`w-10 h-10 lg:w-12 lg:h-12 rounded-full border-2 ${user.status === 'pending' ? 'border-[#08203e] shadow-sm' : 'border-white/20 group-hover:border-[#fcd34d]'} transition-colors object-cover shadow-md shrink-0`} alt="User" />
+                  <h4 className={`font-bold text-sm lg:text-base ${user.status === 'pending' ? 'text-[#08203e]' : 'text-white group-hover:text-[#fcd34d]'} transition-colors truncate`}>{user.first_name || 'Nuevo'} {user.last_name || `Usuario`}</h4>
                 </div>
                 <div className="flex items-center gap-2 lg:gap-4 shrink-0">
                   {/* Hide Pending/View As tags on mobile to save space, rely on amber background */}
@@ -2823,7 +2794,11 @@ const FinancesPage = () => {
             
           </div>
         )}
-        {activeModule === 'CALENDARS' && <AdminCalendar />}
+        {activeModule === 'CALENDARS' && (
+          <div className="flex-1 w-full h-full relative flex flex-col min-h-0">
+            <AdminCalendar />
+          </div>
+        )}
         {activeModule === 'COMMUNICATIONS' && renderCommunications()}
         {activeModule === 'FINANCES' && <FinancesPage />}
         {activeModule === 'SETTINGS' && renderSettings()}
@@ -2878,7 +2853,7 @@ const FinancesPage = () => {
               {/* MOBILE SETTINGS BOTTOM SHEET */}
               {isMobile && isMobileContentSettingsOpen && !isPreviewMode && (
                 <div className="fixed inset-0 z-[400] flex items-end justify-center bg-black/80 backdrop-blur-sm p-4 pb-24 animate-fade-in" onClick={() => setIsMobileContentSettingsOpen(false)}>
-                  <div className="bg-[#070b19] border border-white/20 rounded-[2rem] w-full p-6 shadow-2xl flex flex-col gap-4 animate-slide-up max-h-[70vh] overflow-y-auto custom-scrollbar" onClick={e => e.stopPropagation()}>
+                  <div className="bg-[#070b19] border border-white/20 rounded-[2rem] w-full p-6 pb-12 shadow-2xl flex flex-col gap-4 animate-slide-up max-h-[70vh] overflow-y-auto custom-scrollbar" onClick={e => e.stopPropagation()}>
                     <div className="flex justify-between items-center border-b border-white/10 pb-4 mb-2">
                       <h3 className="text-lg font-black text-white uppercase tracking-widest">Composer Settings</h3>
                       <button onClick={() => setIsMobileContentSettingsOpen(false)} className="w-8 h-8 bg-white/10 text-white rounded-full font-black">✕</button>
@@ -3430,7 +3405,7 @@ const FinancesPage = () => {
                   
                   {isMobileToolsOpen && (
                     <div className="fixed inset-0 z-[400] flex items-end justify-center bg-black/80 backdrop-blur-sm p-4 pb-24 animate-fade-in" onClick={() => setIsMobileToolsOpen(false)}>
-                      <div className="bg-[#070b19] border border-white/20 rounded-[2rem] w-full p-6 shadow-2xl flex flex-col gap-4 animate-slide-up max-h-[70vh] overflow-y-auto custom-scrollbar" onClick={e => e.stopPropagation()}>
+                      <div className="bg-[#070b19] border border-white/20 rounded-[2rem] w-full p-6 pb-12 shadow-2xl flex flex-col gap-4 animate-slide-up max-h-[70vh] overflow-y-auto custom-scrollbar" onClick={e => e.stopPropagation()}>
                         <div className="flex justify-between items-center border-b border-white/10 pb-4 mb-2 shrink-0">
                           <h3 className="text-lg font-black text-[#fcd34d] uppercase tracking-widest">Add Element</h3>
                           <button onClick={() => setIsMobileToolsOpen(false)} className="w-8 h-8 bg-white/10 text-white rounded-full font-black">✕</button>
