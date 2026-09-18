@@ -328,7 +328,7 @@ const handleProvision = async (e) => {
 // ==========================================
 // PAN & ZOOM IMAGE COMPONENT (RESIZABLE CONTAINER)
 // ==========================================
-const PanZoomImage = ({ src, data, onSave, isPreview, wrapperClass = "w-full h-64" }) => {
+const PanZoomImage = ({ src, data, onSave, isPreview, wrapperClass = "w-full h-64", objectFit = "cover" }) => {
   const [zoom, setZoom] = useState(data?.zoom || 1);
   const [pan, setPan] = useState({ x: data?.panX || 0, y: data?.panY || 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -432,12 +432,12 @@ const PanZoomImage = ({ src, data, onSave, isPreview, wrapperClass = "w-full h-6
         alt="media" 
         draggable="false"
         onContextMenu={(e) => e.preventDefault()}
-        className={`w-full h-full object-cover ${isPreview ? '' : 'cursor-move'} touch-none will-change-transform`}
+        className={`w-full h-full ${isPreview ? '' : 'cursor-move'} touch-none will-change-transform`}
         onPointerDown={handlePointerDown} 
         onPointerMove={handlePointerMove} 
         onPointerUp={handlePointerUp} 
         onPointerCancel={handlePointerUp}
-        style={{ transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)` }} 
+        style={{ objectFit: objectFit, transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)` }} 
       />
 
       {/* Inner Image Zoom Buttons */}
@@ -879,6 +879,15 @@ const EvaluatorModule = ({ onBack, onOnboard }) => {
 // ==========================================
 const AdminHub = () => {
   const [activeModule, setActiveModule] = useState('ACCOUNTS');
+  
+  // Responsive Architecture State
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   const [accountsView, setAccountsView] = useState('OVERVIEW');
   const [settingsView, setSettingsView] = useState('MENU');
   
@@ -1156,6 +1165,7 @@ useEffect(() => {
   // ==========================================
   const [activeCommsTab, setActiveCommsTab] = useState('General');
   const [announcements, setAnnouncements] = useState([]);
+  const [isMobileCommsComposerOpen, setIsMobileCommsComposerOpen] = useState(false);
   const [postContent, setPostContent] = useState('');
   const [postCategory, setPostCategory] = useState('');
   const [postImageUrl, setPostImageUrl] = useState('');
@@ -1364,6 +1374,8 @@ useEffect(() => {
   // ----------------------------------------------------
   // PRESERVED CONTENT EDITING STATE & LOGIC
   // ----------------------------------------------------
+  const [isMobileContentSettingsOpen, setIsMobileContentSettingsOpen] = useState(false);
+  const [isMobileToolsOpen, setIsMobileToolsOpen] = useState(false);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -1673,10 +1685,13 @@ useEffect(() => {
   // =====================================================
 
 const renderAccounts = () => (
-    <div className="grid grid-cols-12 gap-6 w-full max-w-[1500px] h-[calc(100vh-160px)] animate-fade-in">
-      <div className="col-span-3 flex flex-col gap-6 h-full">
+    <div className="flex flex-col lg:grid lg:grid-cols-12 gap-4 lg:gap-6 w-full max-w-[1500px] min-h-0 lg:h-[calc(100vh-160px)] animate-fade-in pb-20 lg:pb-0">
+      
+      {/* COLUMN 1: Pulse & Live Activities */}
+      <div className="lg:col-span-3 flex flex-row lg:flex-col gap-4 lg:gap-6 shrink-0 lg:h-full overflow-x-auto lg:overflow-visible custom-scrollbar pb-2 lg:pb-0">
+        
         {/* ACTIVE STUDENTS RING */}
-        <div className="h-[40%] bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center relative overflow-hidden">
+        <div className="h-48 w-48 lg:w-full lg:h-[40%] bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-4 lg:p-6 shadow-2xl flex flex-col items-center justify-center relative overflow-hidden shrink-0">
           <div className="relative w-32 h-32 flex items-center justify-center shrink-0 mb-2">
             <svg className="w-full h-full transform -rotate-90 drop-shadow-[0_0_10px_rgba(252,211,77,0.8)]" viewBox="0 0 100 100">
               <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.1)" strokeWidth="8" fill="transparent" />
@@ -1744,11 +1759,11 @@ const renderAccounts = () => (
         </div>
       </div>
 
- {/* Middle Column */}
-      <div className="col-span-3 grid grid-rows-2 gap-6 h-full">
+ {/* Middle Column (Quick Actions) */}
+      <div className="lg:col-span-3 grid grid-cols-2 lg:grid-rows-2 gap-4 lg:gap-6 lg:h-full shrink-0">
         
         {/* CREATE CARD - Outer Wrapper (Acts as the frame & clipping mask) */}
-        <div onClick={() => setIsProvisioningModalOpen(true)} className="relative w-full h-full rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl cursor-pointer group">
+        <div onClick={() => setIsProvisioningModalOpen(true)} className="relative w-full h-40 lg:h-full rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl cursor-pointer group">
           
           {/* Layer 1: Oversized Blur (Pushes the buggy edges 16px out of view) */}
           <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
@@ -1773,10 +1788,11 @@ const renderAccounts = () => (
           </div>
         </div>
 
-      </div>
+</div>
 
-      <div className="col-span-6 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-8 shadow-2xl flex flex-col h-full overflow-hidden">
-        <div className="flex bg-black/20 rounded-2xl p-2 mb-6 shrink-0 shadow-inner">
+      {/* Right Column (Directory) */}
+      <div className="lg:col-span-6 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-5 lg:p-8 shadow-2xl flex flex-col h-[600px] lg:h-full overflow-hidden">
+        <div className="flex bg-black/20 rounded-2xl p-2 mb-4 shrink-0 shadow-inner">
           <button onClick={() => setDirectoryTab('students')} className={`flex-1 py-3 rounded-xl font-bold text-sm shadow-md transition-all ${directoryTab === 'students' ? 'bg-white/20 text-white' : 'text-white/50 hover:text-white'}`}>Students</button>
           <button onClick={() => setDirectoryTab('teachers')} className={`flex-1 py-3 rounded-xl font-bold text-sm shadow-md transition-all ${directoryTab === 'teachers' ? 'bg-white/20 text-white' : 'text-white/50 hover:text-white'}`}>Teachers</button>
           <button onClick={() => setDirectoryTab('admins')} className={`flex-1 py-3 rounded-xl font-bold text-sm shadow-md transition-all ${directoryTab === 'admins' ? 'bg-white/20 text-white' : 'text-white/50 hover:text-white'}`}>Admin</button>
@@ -1844,22 +1860,30 @@ const renderCommunications = () => (
       {/* INFO BOARD VIEW (General, Staff, A1...) */}
       {/* ======================================= */}
       {!['Chat', 'Forum'].includes(activeCommsTab) && (
-        <div className="grid grid-cols-12 gap-8 flex-1 min-h-0">
+        <div className="flex flex-col lg:grid lg:grid-cols-12 gap-4 lg:gap-8 flex-1 min-h-0 relative">
           
-          {/* Composer Left */}
-          <div className="col-span-5 relative border border-white/10 rounded-[2.5rem] shadow-2xl flex flex-col h-fit">
-            <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10 rounded-[3rem]" />
-            <div className="p-8 flex flex-col z-10">
-              <div className="flex gap-4 mb-6">
+          {/* Composer Left (Hidden on Mobile unless FAB is clicked) */}
+          <div className={`${isMobile && !isMobileCommsComposerOpen ? 'hidden' : 'flex'} ${isMobile ? 'fixed inset-0 z-[300] bg-[#070b19]/95 backdrop-blur-3xl p-6 overflow-y-auto' : 'lg:col-span-5 relative border border-white/10 rounded-[2.5rem] shadow-2xl flex-col h-fit'}`}>
+            {!isMobile && <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10 rounded-[3rem]" />}
+            <div className={`flex flex-col z-10 w-full ${isMobile ? 'max-w-md mx-auto mt-10' : 'p-8'}`}>
+              
+              {isMobile && (
+                <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
+                  <h3 className="text-xl font-black text-white uppercase tracking-widest">New Announcement</h3>
+                  <button onClick={() => setIsMobileCommsComposerOpen(false)} className="w-10 h-10 bg-white/10 hover:bg-red-500 text-white rounded-full flex items-center justify-center font-black transition-colors">✕</button>
+                </div>
+              )}
+
+              <div className={`flex ${isMobile ? 'flex-col' : ''} gap-4 mb-6`}>
                 {!showImageInput ? (
-                  <button onClick={() => setShowImageInput(true)} className="w-32 h-32 bg-white/10 border-2 border-dashed border-white/30 rounded-2xl flex flex-col items-center justify-center text-white hover:bg-white/20 transition-colors shrink-0 cursor-pointer">
-                    <span className="text-5xl font-light leading-none mb-2">+</span>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-center leading-tight">UPLOAD<br/>IMAGE</span>
+                  <button onClick={() => setShowImageInput(true)} className={`${isMobile ? 'w-full h-24' : 'w-32 h-32'} bg-white/10 border-2 border-dashed border-white/30 rounded-2xl flex flex-col items-center justify-center text-white hover:bg-white/20 transition-colors shrink-0 cursor-pointer`}>
+                    <span className={`${isMobile ? 'text-3xl' : 'text-5xl'} font-light leading-none mb-1`}>+</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-center leading-tight">UPLOAD IMAGE</span>
                   </button>
                 ) : (
-                  <div className="w-32 h-32 bg-black/40 border border-white/20 rounded-2xl flex flex-col items-center justify-center text-white p-2 shrink-0 relative">
+                  <div className={`${isMobile ? 'w-full h-24' : 'w-32 h-32'} bg-black/40 border border-white/20 rounded-2xl flex flex-col items-center justify-center text-white p-2 shrink-0 relative`}>
                     <button onClick={() => { setShowImageInput(false); setPostImageUrl(''); }} className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full text-[10px] font-bold cursor-pointer hover:scale-110">✕</button>
-                    <span className="text-[9px] font-black uppercase tracking-widest text-[#fcd34d] mb-2">Image URL</span>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-[#fcd34d] mb-1">Image URL</span>
                     <input type="text" value={postImageUrl} onChange={(e) => setPostImageUrl(e.target.value)} placeholder="https://..." className="w-full bg-white/10 rounded p-2 text-xs outline-none focus:border-[#fcd34d] border border-transparent" />
                   </div>
                 )}
@@ -1868,14 +1892,14 @@ const renderCommunications = () => (
                   value={postContent}
                   onChange={(e) => setPostContent(e.target.value)}
                   placeholder="Escribe el anuncio aquí..." 
-                  className="flex-1 bg-white/5 border border-white/20 rounded-2xl p-4 text-white resize-none focus:outline-none focus:border-[#fcd34d] placeholder-white/30 shadow-inner"
+                  className={`flex-1 bg-white/5 border border-white/20 rounded-2xl p-4 text-white resize-none focus:outline-none focus:border-[#fcd34d] placeholder-white/30 shadow-inner ${isMobile ? 'min-h-[150px]' : ''}`}
                 />
               </div>
-              <div className="flex gap-4">
+              <div className={`flex ${isMobile ? 'flex-col' : ''} gap-4`}>
                 <div className="flex-1">
                   <AdminDropdown placeholder="CATEGORY" options={['Website Functionality', 'General Information', 'Academy Rules', 'Upcoming Events', 'Promos & Discounts', 'Financial Data']} value={postCategory} onChange={setPostCategory} />
                 </div>
-                <button onClick={handlePublishAnnouncement} disabled={isPublishing} className="flex-1 bg-white/20 hover:bg-[#fcd34d] hover:text-[#08203e] text-white font-black rounded-xl uppercase tracking-widest transition-colors shadow-lg disabled:opacity-50 cursor-pointer">
+                <button onClick={() => { handlePublishAnnouncement(); setIsMobileCommsComposerOpen(false); }} disabled={isPublishing} className={`flex-1 bg-white/20 hover:bg-[#fcd34d] hover:text-[#08203e] text-white font-black rounded-xl uppercase tracking-widest transition-colors shadow-lg disabled:opacity-50 cursor-pointer ${isMobile ? 'py-4' : ''}`}>
                   {isPublishing ? '...' : 'PUBLISH'}
                 </button>
               </div>
@@ -1883,28 +1907,38 @@ const renderCommunications = () => (
           </div>
 
           {/* Feed Right */}
-          <div className="col-span-7 relative border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col">
+          <div className="lg:col-span-7 relative border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col h-[70vh] lg:h-auto">
             <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
-            <div className="p-8 flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-4 z-10">
+            <div className="p-4 lg:p-8 flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-4 z-10 pb-20 lg:pb-8">
               {announcements.length === 0 ? (
                 <div className="text-center text-white/40 font-bold uppercase tracking-widest text-sm py-10">No hay anuncios activos para este filtro.</div>
               ) : (
                 announcements.map((ann) => (
-                  <div key={ann.id} className="bg-white/10 border border-white/20 rounded-2xl p-6 flex items-center gap-6 relative group hover:bg-white/20 transition-colors shadow-md">
-                    <button onClick={() => handleDeleteAnnouncement(ann.id)} className="absolute top-4 right-4 w-8 h-8 bg-red-500/20 rounded-full flex items-center justify-center text-red-400 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500 hover:text-white cursor-pointer z-20">✕</button>
+                  <div key={ann.id} className="bg-white/10 border border-white/20 rounded-2xl p-4 lg:p-6 flex flex-col sm:flex-row items-center gap-4 lg:gap-6 relative group hover:bg-white/20 transition-colors shadow-md">
+                    <button onClick={() => handleDeleteAnnouncement(ann.id)} className="absolute top-4 right-4 w-8 h-8 bg-red-500/20 rounded-full flex items-center justify-center text-red-400 lg:opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500 hover:text-white cursor-pointer z-20">✕</button>
                     {ann.image_url && (
-                      <div className="w-32 h-32 rounded-xl overflow-hidden shrink-0 border border-white/30 shadow-md">
+                      <div className="w-full sm:w-32 h-40 sm:h-32 rounded-xl overflow-hidden shrink-0 border border-white/30 shadow-md">
                         <img src={ann.image_url} alt="Cover" className="w-full h-full object-cover" />
                       </div>
                     )}
-                    <div className="flex flex-col">
-                      <h4 className="text-lg font-black uppercase tracking-widest mb-2 text-white drop-shadow-sm">{ann.title}</h4>
-                      <p className="text-xs text-white/80 leading-relaxed font-medium pr-8">{ann.content}</p>
+                    <div className="flex flex-col w-full text-center sm:text-left">
+                      <h4 className="text-base lg:text-lg font-black uppercase tracking-widest mb-2 text-white drop-shadow-sm pr-8">{ann.title}</h4>
+                      <p className="text-[11px] lg:text-xs text-white/80 leading-relaxed font-medium lg:pr-8">{ann.content}</p>
                     </div>
                   </div>
                 ))
               )}
             </div>
+            
+            {/* Mobile Floating Action Button (FAB) */}
+            {isMobile && (
+              <button 
+                onClick={() => setIsMobileCommsComposerOpen(true)}
+                className="absolute bottom-6 right-6 w-14 h-14 bg-[#fcd34d] text-[#08203e] rounded-full flex items-center justify-center shadow-[0_10px_25px_rgba(252,211,77,0.5)] z-50 hover:scale-105 active:scale-95 transition-transform"
+              >
+                <span className="text-3xl font-light leading-none mb-1">+</span>
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -1913,16 +1947,16 @@ const renderCommunications = () => (
       {/* CHAT MODERATOR VIEW                     */}
       {/* ======================================= */}
       {activeCommsTab === 'Chat' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 flex-1 min-h-[600px]">
+        <div className="flex flex-col lg:grid lg:grid-cols-2 gap-4 lg:gap-8 flex-1 min-h-[600px]">
           
           {/* Students Panel */}
-          <div className="relative border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col h-full group">
+          <div className="relative border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col h-[50vh] lg:h-full group">
             <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
             
-            <div className="flex justify-between items-center p-6 border-b border-white/10 z-10 shrink-0">
-              <h3 className="font-black text-white text-lg tracking-widest uppercase drop-shadow-md">Students Chat</h3>
-              <div className="flex items-center gap-4">
-                <select value={chatFilters.student} onChange={e => setChatFilters(p => ({...p, student: e.target.value}))} className="bg-white/10 text-white text-[10px] font-black uppercase rounded-lg pl-3 pr-8 py-2 outline-none border border-white/20 cursor-pointer appearance-none">
+            <div className="flex justify-between items-center p-4 lg:p-6 border-b border-white/10 z-10 shrink-0">
+              <h3 className="font-black text-white text-base lg:text-lg tracking-widest uppercase drop-shadow-md">Students Chat</h3>
+              <div className="flex items-center gap-3 lg:gap-4">
+                <select value={chatFilters.student} onChange={e => setChatFilters(p => ({...p, student: e.target.value}))} className="bg-white/10 text-white text-[10px] font-black uppercase rounded-lg pl-2 lg:pl-3 pr-6 lg:pr-8 py-2 outline-none border border-white/20 cursor-pointer appearance-none max-w-[100px] lg:max-w-none">
                   <option className="bg-[#0f172a] text-white" value="ALL">All Levels</option>
                   <option className="bg-[#0f172a] text-white" value="A1">A1 Only</option>
                   <option className="bg-[#0f172a] text-white" value="A2">A2 Only</option>
@@ -1931,30 +1965,30 @@ const renderCommunications = () => (
                   <option className="bg-[#0f172a] text-white" value="C1">C1 Only</option>
                   <option className="bg-[#0f172a] text-white" value="C2">C2 Only</option>
                 </select>
-                <button onClick={() => handleToggleChatLock('student')} className={`w-12 h-6 rounded-full relative transition-colors border border-white/20 shadow-inner cursor-pointer ${chatLocks.student ? 'bg-red-500/80' : 'bg-emerald-500/80'}`}>
-                  <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all ${chatLocks.student ? 'left-7' : 'left-1'}`}></div>
+                <button onClick={() => handleToggleChatLock('student')} className={`w-10 lg:w-12 h-5 lg:h-6 rounded-full relative transition-colors border border-white/20 shadow-inner cursor-pointer shrink-0 ${chatLocks.student ? 'bg-red-500/80' : 'bg-emerald-500/80'}`}>
+                  <div className={`w-3.5 lg:w-4 h-3.5 lg:h-4 bg-white rounded-full absolute top-[3px] lg:top-0.5 transition-all ${chatLocks.student ? 'left-6 lg:left-7' : 'left-1'}`}></div>
                 </button>
               </div>
             </div>
 
-            <div className="flex-1 p-6 overflow-y-auto custom-scrollbar flex flex-col gap-6 z-10">
+            <div className="flex-1 p-4 lg:p-6 overflow-y-auto custom-scrollbar flex flex-col gap-4 lg:gap-6 z-10">
               {chatMessages.student.filter(m => chatFilters.student === 'ALL' || m.channel === chatFilters.student || m.channel === 'GLOBAL').length === 0 ? (
-                <div className="h-full flex items-center justify-center"><span className="text-white/40 font-bold uppercase tracking-widest text-xs">Waiting for live messages...</span></div>
+                <div className="h-full flex items-center justify-center"><span className="text-white/40 font-bold uppercase tracking-widest text-xs text-center">Waiting for live messages...</span></div>
               ) : (
                 chatMessages.student.filter(m => chatFilters.student === 'ALL' || m.channel === chatFilters.student || m.channel === 'GLOBAL').map(msg => {
                   const isAdmin = msg.sender_role?.includes('Admin');
                   const isTeacher = msg.sender_role === 'Teacher';
                   return (
-                    <div key={msg.id} className={`group bg-[#4b6bfb]/20 backdrop-blur-md rounded-3xl p-5 border w-[85%] relative mt-2 ${isAdmin ? 'border-[#fcd34d] bg-[#fcd34d]/10 ml-auto' : isTeacher ? 'border-emerald-400/50 bg-emerald-500/10' : 'border-blue-400/30 ml-4'}`}>
-                      <button onClick={() => handleDeleteChatMessage(msg.id)} className="absolute -top-3 -right-3 w-8 h-8 bg-red-500 text-white rounded-full text-xs font-black opacity-0 group-hover:opacity-100 transition-opacity z-20 shadow-xl cursor-pointer hover:scale-110">✕</button>
-                      <img src={msg.avatar_url || `https://ui-avatars.com/api/?name=${msg.sender_name}&background=random`} className={`absolute -left-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full border-2 object-cover shadow-lg ${isAdmin ? 'border-[#fcd34d]' : 'border-white'}`} alt="User" />
-                      <div className="pl-6">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className={`font-black text-[11px] uppercase tracking-widest ${isAdmin ? 'text-[#fcd34d]' : 'text-white'}`}>{msg.sender_name}</span>
-                          <span className={`text-[8px] font-black px-2 py-0.5 rounded uppercase ${isAdmin ? 'bg-red-500 text-white' : isTeacher ? 'bg-emerald-500 text-white' : 'bg-[#fcd34d] text-[#08203e]'}`}>{msg.sender_role}</span>
-                          <span className="text-white/40 text-[8px] font-bold ml-2">[{msg.channel}]</span>
+                    <div key={msg.id} className={`group bg-[#4b6bfb]/20 backdrop-blur-md rounded-3xl p-4 lg:p-5 border w-[90%] lg:w-[85%] relative mt-2 ${isAdmin ? 'border-[#fcd34d] bg-[#fcd34d]/10 ml-auto' : isTeacher ? 'border-emerald-400/50 bg-emerald-500/10' : 'border-blue-400/30 ml-4 lg:ml-4'}`}>
+                      <button onClick={() => handleDeleteChatMessage(msg.id)} className="absolute -top-2 lg:-top-3 -right-2 lg:-right-3 w-6 h-6 lg:w-8 lg:h-8 bg-red-500 text-white rounded-full text-[10px] lg:text-xs font-black lg:opacity-0 group-hover:opacity-100 transition-opacity z-20 shadow-xl cursor-pointer hover:scale-110 flex justify-center items-center">✕</button>
+                      <img src={msg.avatar_url || `https://ui-avatars.com/api/?name=${msg.sender_name}&background=random`} className={`absolute -left-4 lg:-left-6 top-1/2 -translate-y-1/2 w-8 h-8 lg:w-12 lg:h-12 rounded-full border-2 object-cover shadow-lg ${isAdmin ? 'border-[#fcd34d]' : 'border-white'}`} alt="User" />
+                      <div className="pl-4 lg:pl-6">
+                        <div className="flex flex-wrap items-center gap-1.5 lg:gap-2 mb-1">
+                          <span className={`font-black text-[9px] lg:text-[11px] uppercase tracking-widest ${isAdmin ? 'text-[#fcd34d]' : 'text-white'}`}>{msg.sender_name}</span>
+                          <span className={`text-[7px] lg:text-[8px] font-black px-1.5 lg:px-2 py-0.5 rounded uppercase ${isAdmin ? 'bg-red-500 text-white' : isTeacher ? 'bg-emerald-500 text-white' : 'bg-[#fcd34d] text-[#08203e]'}`}>{msg.sender_role}</span>
+                          <span className="text-white/40 text-[7px] lg:text-[8px] font-bold ml-1 lg:ml-2">[{msg.channel}]</span>
                         </div>
-                        <p className={`text-sm font-medium leading-relaxed ${msg.is_reported ? 'text-red-400 italic' : 'text-white/90'}`}>{msg.is_reported ? '⚠️ Mensaje Reportado: ' + msg.content : msg.content}</p>
+                        <p className={`text-xs lg:text-sm font-medium leading-relaxed ${msg.is_reported ? 'text-red-400 italic' : 'text-white/90'}`}>{msg.is_reported ? '⚠️ Mensaje Reportado: ' + msg.content : msg.content}</p>
                       </div>
                     </div>
                   )
@@ -1963,46 +1997,46 @@ const renderCommunications = () => (
               <div ref={chatEndRefStudent} />
             </div>
 
-            <form onSubmit={(e) => handleAdminChatSend(e, 'student')} className="p-6 border-t border-white/10 z-10 relative shrink-0">
-              <input type="text" placeholder="Admin Override Message..." value={chatInputs.student} onChange={(e) => setChatInputs(p => ({...p, student: e.target.value}))} className="w-full bg-black/40 border border-white/20 rounded-full pl-6 pr-12 py-4 text-sm text-white focus:outline-none focus:border-[#fcd34d] shadow-inner" />
-              <button type="submit" disabled={!chatInputs.student.trim()} className="absolute right-10 top-1/2 -translate-y-1/2 text-white/50 hover:text-[#fcd34d] hover:scale-110 transition-transform cursor-pointer disabled:opacity-50 disabled:hover:scale-100">
-                <svg className="w-5 h-5 transform rotate-45" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+            <form onSubmit={(e) => handleAdminChatSend(e, 'student')} className="p-4 lg:p-6 border-t border-white/10 z-10 relative shrink-0">
+              <input type="text" placeholder="Admin Override Message..." value={chatInputs.student} onChange={(e) => setChatInputs(p => ({...p, student: e.target.value}))} className="w-full bg-black/40 border border-white/20 rounded-full pl-4 lg:pl-6 pr-10 lg:pr-12 py-3 lg:py-4 text-xs lg:text-sm text-white focus:outline-none focus:border-[#fcd34d] shadow-inner" />
+              <button type="submit" disabled={!chatInputs.student.trim()} className="absolute right-6 lg:right-10 top-1/2 -translate-y-1/2 text-white/50 hover:text-[#fcd34d] hover:scale-110 transition-transform cursor-pointer disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center">
+                <svg className="w-4 h-4 lg:w-5 lg:h-5 transform rotate-45" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
               </button>
             </form>
           </div>
 
           {/* Staff Panel */}
-          <div className="relative border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col h-full group">
+          <div className="relative border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col h-[50vh] lg:h-full group">
             <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
             
-            <div className="flex justify-between items-center p-6 border-b border-white/10 z-10 shrink-0">
-              <h3 className="font-black text-[#fcd34d] text-lg tracking-widest uppercase drop-shadow-md">Staff Chat</h3>
-              <div className="flex items-center gap-4">
-                <select value={chatFilters.staff} onChange={e => setChatFilters(p => ({...p, staff: e.target.value}))} className="bg-white/10 text-white text-[10px] font-black uppercase rounded-lg pl-3 pr-8 py-2 outline-none border border-white/20 cursor-pointer appearance-none">
+            <div className="flex justify-between items-center p-4 lg:p-6 border-b border-white/10 z-10 shrink-0">
+              <h3 className="font-black text-[#fcd34d] text-base lg:text-lg tracking-widest uppercase drop-shadow-md">Staff Chat</h3>
+              <div className="flex items-center gap-3 lg:gap-4">
+                <select value={chatFilters.staff} onChange={e => setChatFilters(p => ({...p, staff: e.target.value}))} className="bg-white/10 text-white text-[10px] font-black uppercase rounded-lg pl-2 lg:pl-3 pr-6 lg:pr-8 py-2 outline-none border border-white/20 cursor-pointer appearance-none max-w-[100px] lg:max-w-none">
                   <option className="bg-[#0f172a] text-white" value="ALL">All Staff</option>
                   <option className="bg-[#0f172a] text-white" value="T1">Teachers</option>
                   <option className="bg-[#0f172a] text-white" value="A1">Admins</option>
                 </select>
-                <button onClick={() => handleToggleChatLock('staff')} className={`w-12 h-6 rounded-full relative transition-colors border border-white/20 shadow-inner cursor-pointer ${chatLocks.staff ? 'bg-red-500/80' : 'bg-emerald-500/80'}`}>
-                  <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all ${chatLocks.staff ? 'left-7' : 'left-1'}`}></div>
+                <button onClick={() => handleToggleChatLock('staff')} className={`w-10 lg:w-12 h-5 lg:h-6 rounded-full relative transition-colors border border-white/20 shadow-inner cursor-pointer shrink-0 ${chatLocks.staff ? 'bg-red-500/80' : 'bg-emerald-500/80'}`}>
+                  <div className={`w-3.5 lg:w-4 h-3.5 lg:h-4 bg-white rounded-full absolute top-[3px] lg:top-0.5 transition-all ${chatLocks.staff ? 'left-6 lg:left-7' : 'left-1'}`}></div>
                 </button>
               </div>
             </div>
 
-            <div className="flex-1 p-6 overflow-y-auto custom-scrollbar flex flex-col gap-6 z-10">
+            <div className="flex-1 p-4 lg:p-6 overflow-y-auto custom-scrollbar flex flex-col gap-4 lg:gap-6 z-10">
               {chatMessages.staff.length === 0 ? (
-                <div className="h-full flex items-center justify-center"><span className="text-white/40 font-bold uppercase tracking-widest text-xs">Waiting for live messages...</span></div>
+                <div className="h-full flex items-center justify-center"><span className="text-white/40 font-bold uppercase tracking-widest text-xs text-center">Waiting for live messages...</span></div>
               ) : (
                 chatMessages.staff.map(msg => (
-                  <div key={msg.id} className={`group bg-[#1e293b]/60 backdrop-blur-md rounded-3xl p-5 border w-[85%] relative mt-2 ${msg.sender_role?.includes('Admin') ? 'border-[#fcd34d] ml-auto' : 'border-white/10 ml-4'}`}>
-                    <button onClick={() => handleDeleteChatMessage(msg.id)} className="absolute -top-3 -right-3 w-8 h-8 bg-red-500 text-white rounded-full text-xs font-black opacity-0 group-hover:opacity-100 transition-opacity z-20 shadow-xl cursor-pointer hover:scale-110">✕</button>
-                    <img src={msg.avatar_url || `https://ui-avatars.com/api/?name=${msg.sender_name}&background=random`} className={`absolute -left-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full border-2 object-cover shadow-lg ${msg.sender_role?.includes('Admin') ? 'border-[#fcd34d]' : 'border-emerald-400'}`} alt="User" />
-                    <div className="pl-6">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-black text-white text-[11px] uppercase tracking-widest">{msg.sender_name}</span>
-                        <span className={`text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-widest border ${msg.sender_role?.includes('Admin') ? 'bg-red-500 text-white border-red-400' : 'bg-emerald-500 text-white border-emerald-400'}`}>{msg.sender_role}</span>
+                  <div key={msg.id} className={`group bg-[#1e293b]/60 backdrop-blur-md rounded-3xl p-4 lg:p-5 border w-[90%] lg:w-[85%] relative mt-2 ${msg.sender_role?.includes('Admin') ? 'border-[#fcd34d] ml-auto' : 'border-white/10 ml-4 lg:ml-4'}`}>
+                    <button onClick={() => handleDeleteChatMessage(msg.id)} className="absolute -top-2 lg:-top-3 -right-2 lg:-right-3 w-6 h-6 lg:w-8 lg:h-8 bg-red-500 text-white rounded-full text-[10px] lg:text-xs font-black lg:opacity-0 group-hover:opacity-100 transition-opacity z-20 shadow-xl cursor-pointer hover:scale-110 flex items-center justify-center">✕</button>
+                    <img src={msg.avatar_url || `https://ui-avatars.com/api/?name=${msg.sender_name}&background=random`} className={`absolute -left-4 lg:-left-6 top-1/2 -translate-y-1/2 w-8 h-8 lg:w-12 lg:h-12 rounded-full border-2 object-cover shadow-lg ${msg.sender_role?.includes('Admin') ? 'border-[#fcd34d]' : 'border-emerald-400'}`} alt="User" />
+                    <div className="pl-4 lg:pl-6">
+                      <div className="flex flex-wrap items-center gap-1.5 lg:gap-2 mb-1">
+                        <span className="font-black text-white text-[9px] lg:text-[11px] uppercase tracking-widest">{msg.sender_name}</span>
+                        <span className={`text-[7px] lg:text-[8px] font-black px-1.5 lg:px-2 py-0.5 rounded uppercase tracking-widest border ${msg.sender_role?.includes('Admin') ? 'bg-red-500 text-white border-red-400' : 'bg-emerald-500 text-white border-emerald-400'}`}>{msg.sender_role}</span>
                       </div>
-                      <p className="text-white/80 text-sm font-medium leading-relaxed">{msg.content}</p>
+                      <p className="text-white/80 text-xs lg:text-sm font-medium leading-relaxed">{msg.content}</p>
                     </div>
                   </div>
                 ))
@@ -2010,17 +2044,17 @@ const renderCommunications = () => (
               <div ref={chatEndRefStaff} />
             </div>
 
-            <form onSubmit={(e) => handleAdminChatSend(e, 'staff')} className="p-6 border-t border-white/10 z-10 relative shrink-0">
-              <input type="text" placeholder="Internal Staff Message..." value={chatInputs.staff} onChange={(e) => setChatInputs(p => ({...p, staff: e.target.value}))} className="w-full bg-black/40 border border-white/20 rounded-full pl-6 pr-12 py-4 text-sm text-white focus:outline-none focus:border-[#fcd34d] shadow-inner" />
-              <button type="submit" disabled={!chatInputs.staff.trim()} className="absolute right-10 top-1/2 -translate-y-1/2 text-white/50 hover:text-[#fcd34d] hover:scale-110 transition-transform cursor-pointer disabled:opacity-50 disabled:hover:scale-100">
-                <svg className="w-5 h-5 transform rotate-45 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+            <form onSubmit={(e) => handleAdminChatSend(e, 'staff')} className="p-4 lg:p-6 border-t border-white/10 z-10 relative shrink-0">
+              <input type="text" placeholder="Internal Staff Message..." value={chatInputs.staff} onChange={(e) => setChatInputs(p => ({...p, staff: e.target.value}))} className="w-full bg-black/40 border border-white/20 rounded-full pl-4 lg:pl-6 pr-10 lg:pr-12 py-3 lg:py-4 text-xs lg:text-sm text-white focus:outline-none focus:border-[#fcd34d] shadow-inner" />
+              <button type="submit" disabled={!chatInputs.staff.trim()} className="absolute right-6 lg:right-10 top-1/2 -translate-y-1/2 text-white/50 hover:text-[#fcd34d] hover:scale-110 transition-transform cursor-pointer disabled:opacity-50 disabled:hover:scale-100 flex justify-center items-center">
+                <svg className="w-4 h-4 lg:w-5 lg:h-5 transform rotate-45 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
               </button>
             </form>
           </div>
         </div>
       )}
 
-      {/* ======================================= */}
+{/* ======================================= */}
       {/* FORUM MODERATOR VIEW                    */}
       {/* ======================================= */}
       {activeCommsTab === 'Forum' && (
@@ -2089,7 +2123,7 @@ const renderCommunications = () => (
                     placeholder="TOPIC TITLE..." 
                     value={forumTitleInput} 
                     onChange={(e) => setForumTitleInput(e.target.value)} 
-                    className="w-full bg-white/5 border border-white/20 rounded-2xl p-4 text-white focus:outline-none focus:border-[#fcd34d] placeholder-white/30 shadow-inner font-black uppercase tracking-widest mb-4 shrink-0"
+                    className="w-full bg-white/5 border border-white/20 rounded-2xl p-4 text-white focus:outline-none focus:border-[#fcd34d] placeholder-white/30 shadow-inner font-black uppercase tracking-widest mb-4 shrink-0 text-sm"
                   />
                   <div className="flex flex-col gap-4 flex-1 min-h-0 mb-6">
                     {!showForumImageInput ? (
@@ -2330,13 +2364,13 @@ const FinancesPage = () => {
   const netMarginPercentage = revenue > 0 ? ((netProfit / revenue) * 100).toFixed(1) : 0;
 
   return (
-    <div className="flex flex-col gap-8 w-full max-w-[1500px] min-h-[calc(100vh-160px)] animate-fade-in relative z-10 pb-10">
+    <div className="flex flex-col gap-4 lg:gap-8 w-full max-w-[1500px] min-h-[calc(100vh-160px)] animate-fade-in relative z-10 pb-24 lg:pb-10">
       
       {/* ROW 1: THE "NOW" (Hard Financials) */}
-     <div className="grid grid-cols-12 gap-8 h-auto min-h-[450px]">
+     <div className="flex flex-col lg:grid lg:grid-cols-12 gap-4 lg:gap-8 h-auto lg:min-h-[450px]">
         
        {/* Left: Circular KPIs */}
-        <div className="col-span-3 flex flex-col gap-6 h-full justify-center">
+        <div className="lg:col-span-3 flex flex-row lg:flex-col gap-4 lg:gap-6 lg:h-full justify-center">
           
           {/* RENEWALS BUTTON - Clipped Wrapper */}
           <button onClick={() => setShowRenewalsModal(true)} className="flex-1 w-full relative rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl cursor-pointer group hover:bg-white/5 transition-all text-left">
@@ -2375,12 +2409,12 @@ const FinancesPage = () => {
         </div>
 
         {/* Center: Profit Margin Analysis Engine */}
-        <div className="col-span-6 h-full">
+        <div className="lg:col-span-6 lg:h-full">
           <ProfitMarginAnalysis onMetricsUpdate={(m) => { setRevenue(m.revenue); setPayroll(m.payroll); }} />
         </div>
 
         {/* Right: 4-Metric Stack */}
-        <div className="col-span-3 flex flex-col gap-4 h-full justify-between">
+        <div className="lg:col-span-3 grid grid-cols-2 lg:flex lg:flex-col gap-4 lg:h-full justify-between">
           <div className="flex-1 relative rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl">
             <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
             <div className="relative w-full h-full flex flex-col items-center justify-center p-4">
@@ -2416,15 +2450,15 @@ const FinancesPage = () => {
       </div>
 
       {/* ROW 2: THE "FUTURE & LEAKS" (Acquisition & Operations) */}
-      <div className="grid grid-cols-12 gap-8 h-auto min-h-[450px]">
+      <div className="flex flex-col lg:grid lg:grid-cols-12 gap-4 lg:gap-8 h-auto lg:min-h-[450px]">
         
         {/* Left: Commercial Funnel Engine */}
-        <div className="col-span-6 h-full">
+        <div className="lg:col-span-6 lg:h-full">
           <CommercialFunnelModule />
         </div>
 
         {/* Right: Overhead/SaaS Breakdown Engine */}
-        <div className="col-span-6 h-full">
+        <div className="lg:col-span-6 lg:h-full">
           <OverheadExpensesModule onOverheadUpdate={setOverhead} />
         </div>
         
@@ -2510,7 +2544,7 @@ const FinancesPage = () => {
 
   return (
     <div 
-      className="relative min-h-screen w-full font-montserrat text-white overflow-hidden flex flex-col"
+      className="relative min-h-screen w-full font-montserrat text-white overflow-hidden flex flex-col bg-[#070b19]"
       style={{ 
         backgroundImage: `linear-gradient(to bottom right, rgba(7,11,25,0.9), rgba(7,11,25,0.65)), url("https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/267655.jpeg")`, 
         backgroundSize: 'cover', 
@@ -2549,14 +2583,25 @@ const FinancesPage = () => {
         }
       `}</style>
 
+      {/* MOBILE COMPACT HEADER */}
+      {isMobile && (
+        <div className="p-4 flex items-center justify-between border-b border-white/10 bg-black/20 backdrop-blur-md sticky top-0 z-40">
+          <div className="flex items-center gap-3">
+            <img src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Header.png" alt="Outloud Logo" className="h-8 object-contain opacity-100" />
+            <div className="h-6 w-px bg-white/40"></div>
+            <span className="text-base font-light tracking-wide">Admin Hub</span>
+          </div>
+          <div className="flex items-center gap-3">
+             <NavIconBtn isProfile avatarUrl={adminProfile.avatarUrl} onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)} />
+          </div>
+        </div>
+      )}
+
       {/* PROFILE DROPDOWN MENU (Rendered globally to avoid Sidebar Clipping) */}
       {isProfileDropdownOpen && (
         <div className="fixed inset-0 z-[500] pointer-events-none">
-          {/* Clickable Backdrop */}
           <div className="absolute inset-0 pointer-events-auto" onClick={() => setIsProfileDropdownOpen(false)}></div>
-          
-          {/* Dropdown Box */}
-          <div className="absolute left-32 top-10 w-48 bg-[#08203e]/95 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl flex flex-col py-2 overflow-hidden animate-fade-in pointer-events-auto">
+          <div className={`absolute ${isMobile ? 'right-4 top-20' : 'left-32 top-10'} w-48 bg-[#08203e]/95 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl flex flex-col py-2 overflow-hidden animate-fade-in pointer-events-auto`}>
             <button 
               onClick={() => { setIsProfileModalOpen(true); setIsProfileDropdownOpen(false); }} 
               className="px-6 py-3 text-left text-white/80 hover:text-white hover:bg-white/10 font-bold text-xs uppercase tracking-widest transition-colors flex items-center gap-3 cursor-pointer"
@@ -2564,138 +2609,56 @@ const FinancesPage = () => {
               <svg className="w-4 h-4 text-[#fcd34d]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
               Edit Profile
             </button>
-           <div className="h-px w-full bg-white/10 my-1"></div>
-                <button 
-                  onClick={async () => { 
-                    setIsProfileDropdownOpen(false);
-                    try {
-                      await supabase.auth.signOut();
-                      window.location.href = '/'; 
-                    } catch (error) {
-                      console.error("Error logging out:", error);
-                    }
-                  }} 
-                  className="px-6 py-3 text-left text-red-400 hover:text-white hover:bg-red-500/20 font-bold text-xs uppercase tracking-widest transition-colors flex items-center gap-3 cursor-pointer"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-                  Log Out
-                </button>
+            <div className="h-px w-full bg-white/10 my-1"></div>
+            <button 
+              onClick={async () => { 
+                setIsProfileDropdownOpen(false);
+                try {
+                  await supabase.auth.signOut();
+                  window.location.href = '/'; 
+                } catch (error) {
+                  console.error("Error logging out:", error);
+                }
+              }} 
+              className="px-6 py-3 text-left text-red-400 hover:text-white hover:bg-red-500/20 font-bold text-xs uppercase tracking-widest transition-colors flex items-center gap-3 cursor-pointer"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+              Log Out
+            </button>
           </div>
         </div>
       )}
 
-      {/* PROFILE EDIT MODAL */}
-      {isProfileModalOpen && (
-        <div className="fixed inset-0 z-[400] flex items-center justify-center bg-black/80 backdrop-blur-md px-4 animate-fade-in font-montserrat">
-          <div className="bg-[#070b19]/95 border border-[#fcd34d]/30 rounded-[2rem] p-8 max-w-lg w-full shadow-[0_0_40px_rgba(252,211,77,0.15)] relative flex flex-col">
-            <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4 shrink-0">
-              <div>
-                <h2 className="text-2xl font-black text-white uppercase tracking-widest">My Profile</h2>
-                <p className="text-[10px] text-[#fcd34d] font-bold uppercase tracking-widest mt-1">Admin Settings</p>
-              </div>
-              <button onClick={() => setIsProfileModalOpen(false)} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/50 hover:bg-white/10 hover:text-white transition-all">✕</button>
-            </div>
+      {/* ALL MODALS GO HERE (Profile, Provisioning, Preview, Settings) */}
 
-            <div className="flex flex-col gap-6">
-              <div className="flex gap-4 items-center border-b border-white/10 pb-6">
-                <div className="w-20 h-20 rounded-full border-2 border-[#fcd34d] overflow-hidden bg-black/40 flex items-center justify-center shrink-0 shadow-lg">
-                  {adminProfile.avatarUrl ? (
-                    <img src={adminProfile.avatarUrl} alt="Profile" className="w-full h-full object-cover" />
-                  ) : (
-                    <svg className="w-10 h-10 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                  )}
-                </div>
-                <div className="flex-1">
-                  <label className="block text-[10px] text-[#fcd34d] font-bold uppercase mb-1">Avatar URL</label>
-                  <input type="text" value={adminProfile.avatarUrl} onChange={e => setAdminProfile({...adminProfile, avatarUrl: e.target.value})} placeholder="Paste image link..." className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2 text-white text-sm outline-none focus:border-[#fcd34d]" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">First Name</label>
-                  <input type="text" value={adminProfile.firstName} onChange={e => setAdminProfile({...adminProfile, firstName: e.target.value})} className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-[#fcd34d]" />
-                </div>
-                <div>
-                  <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Last Name</label>
-                  <input type="text" value={adminProfile.lastName} onChange={e => setAdminProfile({...adminProfile, lastName: e.target.value})} className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-[#fcd34d]" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Company Status</label>
-                  <input type="text" value={adminProfile.role} disabled className="w-full bg-white/5 border border-transparent rounded-xl px-3 py-2.5 text-white/50 text-sm cursor-not-allowed font-bold" />
-                </div>
-                <div>
-                  <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Password</label>
-                  <input type="password" value={adminProfile.password} onChange={e => setAdminProfile({...adminProfile, password: e.target.value})} className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-[#fcd34d]" />
-                </div>
-              </div>
-              
-              <button onClick={handleSaveAdminProfile} disabled={isSavingProfile} className="w-full mt-4 py-4 bg-[#fcd34d] hover:bg-white text-[#08203e] font-black tracking-widest text-xs uppercase rounded-xl transition-all shadow-[0_0_20px_rgba(252,211,77,0.3)] hover:scale-[1.02] disabled:opacity-50">
-                {isSavingProfile ? 'SAVING...' : 'SAVE PROFILE'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {isProvisioningModalOpen && (
-        <ProvisioningModal 
-          isOpen={isProvisioningModalOpen}
-          onClose={() => setIsProvisioningModalOpen(false)} 
-          supabase={supabase} 
-          onSuccess={() => fetchDirectory(directoryTab)} 
-          initialData={provisioningInitialData}
-        />
-      )}
-
-      {selectedStudent && (
-        <StudentManagerModal 
-            isOpen={!!selectedStudent} 
-            onClose={() => setSelectedStudent(null)} 
-            userData={selectedStudent} 
-            isPending={selectedStudent?.status === 'pending'}
-            supabase={supabase}
-            onSuccess={() => fetchDirectory(directoryTab)}
-        />
-      )}
-
-      {isPreviewMode && (
-        <button onClick={() => setIsPreviewMode(false)} className="fixed top-6 right-6 z-[9999] bg-red-600/90 text-white font-black px-8 py-4 rounded-full shadow-[0_0_20px_rgba(220,38,38,0.6)] uppercase tracking-widest text-sm hover:scale-105 border border-red-500/50 backdrop-blur-md transition-all animate-fade-in">
-          EXIT PREVIEW
-        </button>
-      )}
-
-      {/* SIDEBAR NAVIGATION */}
-      <div className="fixed top-0 left-0 bottom-0 w-28 border-r border-white/10 bg-[#070b19]/80 backdrop-blur-2xl flex flex-col items-center py-10 gap-6 shrink-0 z-[150] shadow-2xl overflow-y-auto custom-scrollbar">
-        
-        {/* PROFILE BUTTON */}
-        <NavIconBtn isProfile avatarUrl={adminProfile.avatarUrl} onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)} />
-        
-        <div className="w-12 h-px bg-white/10 my-2 shrink-0"></div>
-        <NavIconBtn iconUrl={navIcons.accounts} active={activeModule === 'ACCOUNTS'} onClick={() => { setActiveModule('ACCOUNTS'); setAccountsView('OVERVIEW'); }} />
-        <NavIconBtn iconUrl={navIcons.calendar} active={activeModule === 'CALENDARS'} onClick={() => setActiveModule('CALENDARS')} />
-        <NavIconBtn iconUrl={navIcons.content} active={activeModule === 'CONTENTS'} onClick={() => setActiveModule('CONTENTS')} />
-        <NavIconBtn iconUrl={navIcons.communications} active={activeModule === 'COMMUNICATIONS'} onClick={() => setActiveModule('COMMUNICATIONS')} hasNotification />
-        <NavIconBtn iconUrl={navIcons.finances} active={activeModule === 'FINANCES'} onClick={() => setActiveModule('FINANCES')} />
-        <NavIconBtn iconUrl={navIcons.settings} active={activeModule === 'SETTINGS'} onClick={() => setActiveModule('SETTINGS')} />
-      </div>
-
-      {/* MAIN CONTENT AREA */}
-      <div className="flex-1 ml-28 flex flex-col p-8 lg:p-12 overflow-y-auto custom-scrollbar z-10 relative">
-        
-        {/* HEADER */}
-        {activeModule !== 'CONTENTS' && (
-          <div className="flex items-center gap-5 mb-10 pl-2 shrink-0">
-            <img src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Header.png" alt="Outloud Logo" className="h-12 object-contain drop-shadow-md" />
-            <div className="h-10 w-[2px] bg-white/20"></div>
-            <span className="text-3xl font-light text-white tracking-widest uppercase drop-shadow-sm">{activeModule}</span>
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* DESKTOP SIDEBAR NAVIGATION */}
+        {!isMobile && (
+          <div className="w-28 border-r border-white/10 bg-[#070b19]/80 backdrop-blur-2xl flex flex-col items-center py-10 gap-6 shrink-0 z-[150] shadow-2xl overflow-y-auto custom-scrollbar">
+            <NavIconBtn isProfile avatarUrl={adminProfile.avatarUrl} onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)} />
+            <div className="w-12 h-px bg-white/10 my-2 shrink-0"></div>
+            <NavIconBtn iconUrl={navIcons.accounts} active={activeModule === 'ACCOUNTS'} onClick={() => { setActiveModule('ACCOUNTS'); setAccountsView('OVERVIEW'); }} />
+            <NavIconBtn iconUrl={navIcons.calendar} active={activeModule === 'CALENDARS'} onClick={() => setActiveModule('CALENDARS')} />
+            <NavIconBtn iconUrl={navIcons.content} active={activeModule === 'CONTENTS'} onClick={() => setActiveModule('CONTENTS')} />
+            <NavIconBtn iconUrl={navIcons.communications} active={activeModule === 'COMMUNICATIONS'} onClick={() => setActiveModule('COMMUNICATIONS')} hasNotification />
+            <NavIconBtn iconUrl={navIcons.finances} active={activeModule === 'FINANCES'} onClick={() => setActiveModule('FINANCES')} />
+            <NavIconBtn iconUrl={navIcons.settings} active={activeModule === 'SETTINGS'} onClick={() => setActiveModule('SETTINGS')} />
           </div>
         )}
 
-        {/* DYNAMIC MODULE RENDERING */}
+        {/* MAIN CONTENT AREA */}
+        <div className={`flex-1 flex flex-col overflow-y-auto custom-scrollbar z-10 relative ${isMobile ? 'p-4 pb-28' : 'p-8 lg:p-12'}`}>
+          
+          {/* DESKTOP HEADER */}
+          {!isMobile && activeModule !== 'CONTENTS' && (
+            <div className="flex items-center gap-5 mb-10 pl-2 shrink-0">
+              <img src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Header.png" alt="Outloud Logo" className="h-12 object-contain drop-shadow-md" />
+              <div className="h-10 w-[2px] bg-white/20"></div>
+              <span className="text-3xl font-light text-white tracking-widest uppercase drop-shadow-sm">{activeModule}</span>
+            </div>
+          )}
+
+          {/* DYNAMIC MODULE RENDERING */}
         {activeModule === 'ACCOUNTS' && accountsView === 'OVERVIEW' && renderAccounts()}
         {activeModule === 'ACCOUNTS' && accountsView === 'STATISTICS' && (
           <div className="w-full h-full flex flex-col animate-fade-in relative z-10">
@@ -2708,6 +2671,7 @@ const FinancesPage = () => {
             <div className="flex-1 w-full pb-10">
               <StatisticsHub />
             </div>
+            
           </div>
         )}
       {activeModule === 'CALENDARS' && <AdminCalendar/>}
@@ -2721,42 +2685,75 @@ const FinancesPage = () => {
         {activeModule === 'CONTENTS' && (
           <div className="relative z-10 flex flex-col w-full flex-grow">
             {!isPreviewMode && (
-              <div className="fixed top-0 left-28 right-0 z-[150] bg-[#070b19]/90 backdrop-blur-xl border-b border-white/10 shadow-2xl flex items-center px-8 py-4 gap-6">
-                <div className="flex items-center gap-4 shrink-0 border-r border-white/10 pr-6">
-                  <img src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Header.png" alt="Outloud Logo" className="h-8 object-contain opacity-100" />
-                  <span className="text-xl font-light text-white tracking-widest uppercase">CONTENTS</span>
-                </div>
+              <div className={`fixed z-[150] bg-[#070b19]/95 backdrop-blur-xl border-b border-white/10 shadow-2xl flex items-center px-4 lg:px-8 py-3 lg:py-4 gap-3 lg:gap-6 transition-all ${isMobile ? 'top-[73px] left-0 right-0' : 'top-0 left-28 right-0'}`}>
+                {!isMobile && (
+                  <div className="flex items-center gap-4 shrink-0 border-r border-white/10 pr-6">
+                    <img src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Header.png" alt="Outloud Logo" className="h-8 object-contain opacity-100" />
+                    <span className="text-xl font-light text-white tracking-widest uppercase">CONTENTS</span>
+                  </div>
+                )}
                 
-                {/* TOOL CAROUSEL (Hides when using PDF) */}
-                {!['Manuals', 'Cue Cards'].includes(contentType) && (
+                {/* TOOL CAROUSEL (Hides on mobile, moved to FAB Bottom Sheet) */}
+                {!isMobile && !['Manuals', 'Cue Cards'].includes(contentType) && (
                   <div className="flex-1 flex overflow-x-auto custom-scrollbar gap-3 items-center px-4 py-2">
-                    <button className="text-white/50 font-black px-2">&lt;</button>
                     {toolOptions.map(tool => (
                       <button key={tool} onClick={() => handleToolSelect(tool)} className="px-5 py-2.5 bg-white/10 hover:bg-[#fcd34d] hover:text-[#08203e] rounded-xl font-black text-xs uppercase tracking-widest transition-colors whitespace-nowrap border border-white/20 hover:border-transparent shadow-md">
                         {tool}
                       </button>
                     ))}
-                    <button className="text-white/50 font-black px-2">&gt;</button>
                   </div>
                 )}
 
-                <div className={`flex items-center gap-6 shrink-0 border-l border-white/10 pl-6 ${['Manuals', 'Cue Cards'].includes(contentType) ? 'ml-auto border-none' : ''}`}>
-                  <button onClick={() => setIsSaveModalOpen(true)} className="text-white font-black tracking-widest uppercase hover:text-[#fcd34d] transition-colors text-xs">SAVE</button>
-                  {!['Manuals', 'Cue Cards'].includes(contentType) && (
-                    <>
-                      <button onClick={handleUndoWorkspace} className="text-white font-black tracking-widest uppercase hover:text-[#fcd34d] transition-colors text-xs">UNDO</button>
-                      <button onClick={handleDuplicateScreen} className="text-white font-black tracking-widest uppercase hover:text-[#fcd34d] transition-colors text-xs">DUPLICATE</button>
-                    </>
+                <div className={`flex items-center gap-3 lg:gap-6 shrink-0 w-full lg:w-auto overflow-x-auto custom-scrollbar ${isMobile ? 'justify-between' : (!['Manuals', 'Cue Cards'].includes(contentType) ? 'border-l border-white/10 pl-6' : 'ml-auto border-none')}`}>
+                  {isMobile && (
+                    <button onClick={() => setIsMobileContentSettingsOpen(true)} className="flex items-center gap-2 text-white font-black tracking-widest uppercase text-[10px] bg-white/10 px-3 py-2 rounded-lg shrink-0 hover:bg-white/20 transition-colors">
+                      ⚙️ SETTINGS
+                    </button>
                   )}
-                  <button onClick={() => setIsPreviewMode(true)} className="text-white font-black tracking-widest uppercase hover:text-[#fcd34d] transition-colors text-xs">PREVIEW</button>
+                  <div className="flex items-center gap-3 lg:gap-6 shrink-0 ml-auto">
+                    <button onClick={() => setIsSaveModalOpen(true)} className="text-white font-black tracking-widest uppercase hover:text-[#fcd34d] transition-colors text-[10px] lg:text-xs">SAVE</button>
+                    {!['Manuals', 'Cue Cards'].includes(contentType) && (
+                      <>
+                        <button onClick={handleUndoWorkspace} className="text-white font-black tracking-widest uppercase hover:text-[#fcd34d] transition-colors text-[10px] lg:text-xs">UNDO</button>
+                        <button onClick={handleDuplicateScreen} className="text-white font-black tracking-widest uppercase hover:text-[#fcd34d] transition-colors text-[10px] lg:text-xs">DUPLICATE</button>
+                      </>
+                    )}
+                    <button onClick={() => setIsPreviewMode(true)} className="text-white font-black tracking-widest uppercase hover:text-[#fcd34d] transition-colors text-[10px] lg:text-xs">PREVIEW</button>
+                  </div>
                 </div>
               </div>
             )}
               
-            <div className={`flex w-full ${!isPreviewMode ? 'mt-20' : ''}`}>
-              {/* CONTENT LEFT NAVIGATION (Filters) */}
-              {!isPreviewMode && (
-                <div className="w-56 shrink-0 flex flex-col gap-4 py-8 pr-8 border-r border-white/10 h-[calc(100vh-80px)] overflow-y-auto custom-scrollbar sticky top-20">
+            <div className={`flex w-full ${!isPreviewMode ? (isMobile ? 'mt-14' : 'mt-20') : ''}`}>
+              
+              {/* MOBILE SETTINGS BOTTOM SHEET */}
+              {isMobile && isMobileContentSettingsOpen && !isPreviewMode && (
+                <div className="fixed inset-0 z-[400] flex items-end justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in" onClick={() => setIsMobileContentSettingsOpen(false)}>
+                  <div className="bg-[#070b19] border border-white/20 rounded-[2rem] w-full p-6 shadow-2xl flex flex-col gap-4 animate-slide-up" onClick={e => e.stopPropagation()}>
+                    <div className="flex justify-between items-center border-b border-white/10 pb-4 mb-2">
+                      <h3 className="text-lg font-black text-white uppercase tracking-widest">Composer Settings</h3>
+                      <button onClick={() => setIsMobileContentSettingsOpen(false)} className="w-8 h-8 bg-white/10 text-white rounded-full font-black">✕</button>
+                    </div>
+                    <div className="relative z-[60]">
+                      <AdminDropdown placeholder="LEVEL" options={LEVEL_OPTIONS} value={selectedLevel} onChange={setSelectedLevel} />
+                    </div>
+                    <div className="relative z-[50]">
+                      <AdminDropdown placeholder="UNIT" options={unitOptions} value={selectedUnit} onChange={setSelectedUnit} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 mt-2">
+                      {['Lesson', 'Workbook', 'Manuals', 'Cue Cards'].map(type => (
+                        <button key={type} onClick={() => { setContentType(type); setIsMobileContentSettingsOpen(false); }} className={`py-3 px-2 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-md ${contentType === type ? 'bg-[#fcd34d] text-[#08203e] scale-105' : 'bg-white/10 text-white border border-white/20 hover:bg-white/20'}`}>
+                          {type}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* CONTENT LEFT NAVIGATION (Filters - Desktop Only) */}
+              {!isPreviewMode && !isMobile && (
+                <div className="w-56 shrink-0 flex flex-col gap-4 py-8 pr-8 border-r border-white/10 h-[calc(100vh-80px)] overflow-y-auto custom-scrollbar sticky top-20 z-[60]">
                   <div className="relative z-[60]">
                     <AdminDropdown placeholder="LEVEL" options={LEVEL_OPTIONS} value={selectedLevel} onChange={setSelectedLevel} />
                   </div>
@@ -2850,7 +2847,7 @@ const FinancesPage = () => {
                               return (
                                 <div key={el.id} className={`group w-full ${el.type === 'video' ? 'max-w-5xl' : 'max-w-3xl'} bg-black/40 rounded-[2rem] overflow-hidden border border-white/20 shadow-2xl animate-fade-in relative mx-auto mb-6`}>
                                   {!isPreviewMode && (
-                                     <div className="absolute top-4 right-4 z-50 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                     <div className={`absolute top-4 right-4 z-50 flex gap-2 transition-opacity ${isMobile ? 'opacity-100 scale-90' : 'opacity-0 group-hover:opacity-100'}`}>
                                        <button onClick={() => handleDuplicateElement(el.id)} className="w-10 h-10 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-xl hover:scale-110 transition-transform" title="Duplicate Media">📋</button>
                                        <button onClick={() => handleDeleteElement(el.id)} className="w-10 h-10 bg-red-500 text-white rounded-full flex items-center justify-center shadow-xl hover:scale-110 transition-transform" title="Delete Media">✕</button>
                                      </div>
@@ -2885,7 +2882,7 @@ const FinancesPage = () => {
                                 
                                 {/* Admin Overlay Actions */}
                                 {!isPreviewMode && (
-                                   <div className="absolute -top-4 -right-4 z-50 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                   <div className={`absolute -top-4 -right-4 z-50 flex gap-2 transition-opacity ${isMobile ? 'opacity-100 scale-90' : 'opacity-0 group-hover:opacity-100'}`}>
                                      {el.type !== 'text' && <button onClick={() => { setEditingElementId(el.id); setActiveModal(el.type); }} className="w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center shadow-xl hover:scale-110 transition-transform" title="Edit Element">✏️</button>}
                                      <button onClick={() => handleDuplicateElement(el.id)} className="w-10 h-10 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-xl hover:scale-110 transition-transform" title="Duplicate Element">📋</button>
                                      <button onClick={() => handleDeleteElement(el.id)} className="w-10 h-10 bg-red-500 text-white rounded-full flex items-center justify-center shadow-xl hover:scale-110 transition-transform" title="Delete Element">✕</button>
@@ -2943,19 +2940,19 @@ const FinancesPage = () => {
                                 {isCard && (
                                   <div className="w-full bg-white/10 backdrop-blur-xl rounded-[2rem] border border-white/20 p-8 flex flex-col gap-6 shadow-2xl h-full justify-between">
                                      
-                                     {/* Universal Image Uploader for Cards */}
-                                     {!isPreviewMode && !el.data?.imageUrl && (
-                                        <div onClick={() => { setMediaTarget({ id: el.id, type: 'image' }); setActiveModal('media_upload'); }} className="w-full h-40 bg-white/10 border-2 border-dashed border-white/30 rounded-2xl flex flex-col items-center justify-center text-white/50 cursor-pointer hover:bg-white/20 hover:text-white transition-all mb-4">
-                                          <span className="text-5xl mb-2 font-light">+</span>
-                                          <span className="text-xs font-black uppercase tracking-widest text-center px-4">Click to add an image</span>
-                                        </div>
-                                     )}
-                                     {el.data?.imageUrl && (
-                                        <div className="relative mx-auto w-full mb-8 group">
-                                          <PanZoomImage src={el.data.imageUrl} data={el.data} onSave={(d) => handleSaveData(el.id, { ...el.data, ...d })} isPreview={isPreviewMode} wrapperClass="w-full h-72 rounded-2xl" />
-                                          {!isPreviewMode && <button onClick={() => handleRemoveMedia(el.id, 'image')} className="absolute top-3 right-3 w-10 h-10 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center font-bold shadow-xl z-50 hover:scale-110">✕</button>}
-                                        </div>
-                                     )}
+{/* Universal Image Uploader for Cards */}
+                                      {!isPreviewMode && !el.data?.imageUrl && (
+                                         <div onClick={() => { setMediaTarget({ id: el.id, type: 'image' }); setActiveModal('media_upload'); }} className="w-full h-40 bg-white/10 border-2 border-dashed border-white/30 rounded-2xl flex flex-col items-center justify-center text-white/50 cursor-pointer hover:bg-white/20 hover:text-white transition-all mb-4">
+                                           <span className="text-5xl mb-2 font-light">+</span>
+                                           <span className="text-xs font-black uppercase tracking-widest text-center px-4">Click to add an image</span>
+                                         </div>
+                                      )}
+                                      {el.data?.imageUrl && (
+                                         <div className="relative mx-auto w-full mb-8 group">
+                                           <PanZoomImage src={el.data.imageUrl} data={el.data} onSave={(d) => handleSaveData(el.id, { ...el.data, ...d })} isPreview={isPreviewMode} objectFit="contain" wrapperClass="w-full h-auto min-h-[200px] max-h-[40vh] bg-black/20 rounded-2xl flex items-center justify-center border border-white/10" />
+                                           {!isPreviewMode && <button onClick={() => handleRemoveMedia(el.id, 'image')} className="absolute top-3 right-3 w-10 h-10 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center font-bold shadow-xl z-50 hover:scale-110">✕</button>}
+                                         </div>
+                                      )}
 
                                      {/* Record & Compare Audio & Transcript Slot */}
                                      {el.type === 'record_compare' && (
@@ -3099,16 +3096,16 @@ const FinancesPage = () => {
                                 {el.type === 'drag_and_drop' && el.data && (
                                   <div className="w-full max-w-7xl bg-white/10 backdrop-blur-xl rounded-[2rem] border border-white/20 p-8 md:p-10 flex flex-col gap-10 shadow-2xl">
                                      <div className={`grid grid-cols-2 lg:grid-cols-${Math.min(el.data.items.filter(i=>i.imageUrl).length, 4)} gap-8 w-full`}>
-                                       {el.data.items.map((item, idx) => item.imageUrl && (
-                                         <div key={idx} className="flex flex-col items-center gap-6">
-                                           <div className="w-full rounded-2xl overflow-hidden relative group">
-                                             <PanZoomImage src={item.imageUrl} data={item} onSave={(d) => {
-                                                if (isPreviewMode) return;
-                                                const newItems = [...el.data.items];
-                                                newItems[idx] = { ...newItems[idx], ...d };
-                                                handleSaveData(el.id, { ...el.data, items: newItems });
-                                             }} isPreview={isPreviewMode} wrapperClass="w-full aspect-[4/5] rounded-2xl shadow-xl" />
-                                           </div>
+{el.data.items.map((item, idx) => item.imageUrl && (
+                                          <div key={idx} className="flex flex-col items-center gap-6">
+                                            <div className="w-full rounded-2xl overflow-hidden relative group">
+                                              <PanZoomImage src={item.imageUrl} data={item} onSave={(d) => {
+                                                 if (isPreviewMode) return;
+                                                 const newItems = [...el.data.items];
+                                                 newItems[idx] = { ...newItems[idx], ...d };
+                                                 handleSaveData(el.id, { ...el.data, items: newItems });
+                                              }} isPreview={isPreviewMode} objectFit="contain" wrapperClass="w-full aspect-[4/5] bg-white/5 backdrop-blur-md rounded-2xl shadow-xl border border-white/10 flex items-center justify-center p-2" />
+                                            </div>
                                            <div data-dnd-zone={`${el.id}_${idx}`} className="w-full min-h-[80px] border-2 border-dashed border-white/40 rounded-2xl bg-black/20 backdrop-blur-md flex items-center justify-center transition-colors shadow-inner">
                                               {dndAnswers[`${el.id}_${idx}`] ? (
                                                 <div onClick={() => setDndAnswers(prev => { const copy = {...prev}; delete copy[`${el.id}_${idx}`]; return copy; })} className="px-6 py-4 bg-[#fcd34d] text-[#08203e] rounded-xl font-black text-base shadow-xl cursor-pointer w-full text-center hover:scale-105 active:scale-95 transition-transform truncate">
@@ -3242,7 +3239,7 @@ const FinancesPage = () => {
                             if (el.type === 'nav_button') return (
                                <div key={el.id} className="relative group">
                                  {!isPreviewMode && (
-                                   <div className="absolute -top-4 -right-4 z-50 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                   <div className={`absolute -top-4 -right-4 z-50 flex gap-2 transition-opacity ${isMobile ? 'opacity-100 scale-90' : 'opacity-0 group-hover:opacity-100'}`}>
                                      <button onClick={() => { setEditingElementId(el.id); setActiveModal(el.type); }} className="w-8 h-8 bg-blue-500 text-white rounded-full text-xs shadow-lg hover:scale-110 transition-transform flex items-center justify-center" title="Edit Element">✏️</button>
                                      <button onClick={() => handleDuplicateElement(el.id)} className="w-8 h-8 bg-emerald-500 text-white rounded-full text-xs shadow-lg hover:scale-110 transition-transform flex items-center justify-center" title="Duplicate Element">📋</button>
                                      <button onClick={() => handleDeleteElement(el.id)} className="w-8 h-8 bg-red-500 text-white rounded-full text-xs shadow-lg hover:scale-110 transition-transform flex items-center justify-center" title="Delete Element">✕</button>
@@ -3263,7 +3260,7 @@ const FinancesPage = () => {
                 })}
                 
                 {!isPreviewMode && (
-                  <div className="w-full flex flex-col items-center py-20 z-20 mt-10">
+                  <div className={`w-full flex flex-col items-center py-20 z-20 mt-10 ${isMobile ? 'pb-32' : ''}`}>
                     <button onClick={handleExpandWorkspace} className="w-20 h-20 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white flex items-center justify-center cursor-pointer hover:bg-[#fcd34d] hover:text-[#08203e] hover:border-transparent hover:scale-110 transition-all shadow-2xl animate-bounce hover:animate-none">
                        <svg className="w-10 h-10" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
                     </button>
@@ -3271,10 +3268,54 @@ const FinancesPage = () => {
                   </div>
                 )}
               </div>
+              
+              {/* MOBILE FAB FOR TOOLS */}
+              {isMobile && !isPreviewMode && !['Manuals', 'Cue Cards'].includes(contentType) && (
+                <>
+                  <button 
+                    onClick={() => setIsMobileToolsOpen(true)}
+                    className="fixed bottom-24 right-4 w-14 h-14 bg-[#fcd34d] text-[#08203e] rounded-full flex items-center justify-center shadow-[0_10px_25px_rgba(252,211,77,0.5)] z-[250] hover:scale-105 active:scale-95 transition-transform"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/></svg>
+                  </button>
+                  
+                  {isMobileToolsOpen && (
+                    <div className="fixed inset-0 z-[400] flex items-end justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in" onClick={() => setIsMobileToolsOpen(false)}>
+                      <div className="bg-[#070b19] border border-white/20 rounded-[2rem] w-full p-6 shadow-2xl flex flex-col gap-4 animate-slide-up max-h-[70vh]" onClick={e => e.stopPropagation()}>
+                        <div className="flex justify-between items-center border-b border-white/10 pb-4 mb-2 shrink-0">
+                          <h3 className="text-lg font-black text-[#fcd34d] uppercase tracking-widest">Add Element</h3>
+                          <button onClick={() => setIsMobileToolsOpen(false)} className="w-8 h-8 bg-white/10 text-white rounded-full font-black">✕</button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-3">
+                          {toolOptions.map(tool => (
+                            <button key={tool} onClick={() => { handleToolSelect(tool); setIsMobileToolsOpen(false); }} className="w-full py-4 bg-white/5 border border-white/10 hover:bg-white/10 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-colors shadow-sm">
+                              {tool}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
             </div>
           </div>
         )}
       </div>
+      </div> {/* <-- THIS CLOSES THE MISSING FLEX-1 WRAPPER --> */}
+
+      {/* MOBILE BOTTOM NAVIGATION DOCK */}
+      {isMobile && (
+        <div className="fixed bottom-0 left-0 right-0 h-20 bg-[#070b19]/90 backdrop-blur-3xl border-t border-white/10 flex items-center justify-between px-3 z-[200] shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+          <NavIconBtn iconUrl={navIcons.accounts} active={activeModule === 'ACCOUNTS'} onClick={() => { setActiveModule('ACCOUNTS'); setAccountsView('OVERVIEW'); }} />
+          <NavIconBtn iconUrl={navIcons.calendar} active={activeModule === 'CALENDARS'} onClick={() => setActiveModule('CALENDARS')} />
+          <NavIconBtn iconUrl={navIcons.content} active={activeModule === 'CONTENTS'} onClick={() => setActiveModule('CONTENTS')} />
+          <NavIconBtn iconUrl={navIcons.communications} active={activeModule === 'COMMUNICATIONS'} onClick={() => setActiveModule('COMMUNICATIONS')} hasNotification />
+          <NavIconBtn iconUrl={navIcons.finances} active={activeModule === 'FINANCES'} onClick={() => setActiveModule('FINANCES')} />
+          <NavIconBtn iconUrl={navIcons.settings} active={activeModule === 'SETTINGS'} onClick={() => setActiveModule('SETTINGS')} />
+        </div>
+      )}
 
       {/* ==========================================
           PRESERVED MODALS
