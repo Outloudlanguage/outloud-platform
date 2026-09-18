@@ -15,7 +15,11 @@ import MonthlyActiveUsers from '../statistics_engines/MonthlyActiveUsers';
 import CefrHeadcountDashboard from '../statistics_engines/CefrHeadcountDashboard';
 import CurriculumBottleneckHeatmap from '../statistics_engines/CurriculumBottleneckHeatmap';
 
+// Import the new Traffic Engine
+import TrafficAnalyticsModule from '../statistics_engines/TrafficAnalyticsModule';
+
 const ENGINE_DIRECTORY = [
+  { id: 'e0', name: 'Engine 0: Traffic & Conversions', component: TrafficAnalyticsModule, allowedScopes: ['global'] },
   { id: 'e1', name: 'Engine 1: Teacher Radar', component: TeacherPerformanceRadar, allowedScopes: ['teacher'] },
   { id: 'e2', name: 'Engine 2: Accelerated Outliers', component: PacingScatterPlotModule, allowedScopes: ['global', 'student'] },
   { id: 'e3', name: 'Engine 3: Performance Risk', component: RiskChart, allowedScopes: ['global', 'student'] },

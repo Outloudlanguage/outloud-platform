@@ -133,7 +133,7 @@ const ShortAnswerModal = ({ isOpen, initialData = {}, onSave, onCancel }) => {
 
         <div className="p-5 bg-black/40 border-t border-white/10 flex justify-end gap-4 shrink-0 rounded-b-[30px]">
           <button type="button" onClick={onCancel} className="px-6 py-3 rounded-full font-bold text-xs uppercase tracking-widest text-white/80 bg-white/5 border border-white/20 hover:bg-white/10 hover:text-white transition-all">CANCEL</button>
-          <button type="button" onClick={handleSave} className="px-8 py-3 rounded-full font-black text-xs uppercase tracking-widest text-[#08203e] bg-[#fcd34d] hover:scale-105 active:scale-95 transition-all shadow-[0_0_15px_rgba(252,211,77,0.4)]">SAVE</button>
+          <button type="button" onClick={handleSave} className="px-8 py-3 rounded-full font-black text-xs uppercase tracking-widest text-[#ffffff] bg-[#fcd34d] hover:scale-105 active:scale-95 transition-all shadow-[0_0_15px_rgba(252,211,77,0.4)]">SAVE</button>
         </div>
       </div>
     </div>

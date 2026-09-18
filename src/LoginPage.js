@@ -348,6 +348,59 @@ const DesktopLogin = ({ onLogin, onInfoClick, onPlacementClick }) => {
   );
 };
 
+// =========================================
+// 3. FLOATING TRAFFIC WIDGET
+// =========================================
+const FloatingTrafficWidget = () => {
+  const [visitCount, setVisitCount] = useState(0);
+
+  useEffect(() => {
+    const trackVisit = async () => {
+      const lastVisit = localStorage.getItem('ola_last_visit');
+      const now = new Date().getTime();
+      
+      // If no previous visit, or the last visit was more than 24 hours ago
+      if (!lastVisit || now - parseInt(lastVisit) > 24 * 60 * 60 * 1000) {
+        await supabase.from('site_analytics').insert({ event_type: 'site_visit' });
+        localStorage.setItem('ola_last_visit', now.toString());
+      }
+    };
+
+    const fetchTotal = async () => {
+      const { count } = await supabase
+        .from('site_analytics')
+        .select('id', { count: 'exact', head: true })
+        .eq('event_type', 'site_visit');
+      if (count !== null) setVisitCount(count);
+    };
+
+    trackVisit();
+    fetchTotal();
+
+    const channel = supabase.channel('public_traffic')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'site_analytics', filter: "event_type=eq.site_visit" }, () => {
+        setVisitCount(prev => prev + 1);
+      }).subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
+  if (visitCount === 0) return null; // Hide until loaded to prevent flashing '0'
+
+  return (
+    <div className="fixed bottom-6 right-6 z-[9999] bg-[#070b19]/80 backdrop-blur-md border border-white/10 rounded-full px-4 py-2 flex items-center gap-3 shadow-2xl animate-fade-in group hover:bg-[#070b19] transition-colors cursor-default">
+      <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_8px_#34d399]"></div>
+      <span className="text-[10px] font-black text-white/50 uppercase tracking-widest group-hover:text-white transition-colors flex items-center">
+        Total Visits: <span className="text-[#fcd34d] text-xs ml-2">{visitCount.toLocaleString()}</span>
+      </span>
+    </div>
+  );
+};
+
+
+// =========================================
+// 4. MAIN PAGE WRAPPER
+// =========================================
 const LoginPage = (props) => {
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
@@ -366,7 +419,11 @@ const LoginPage = (props) => {
         }
         .animate-hard-blink { animation: hardBlink 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
       `}</style>
+      
       {isMobile ? <MobileLogin {...props} /> : <DesktopLogin {...props} />}
+      
+      {/* Floating Traffic Counter Injected Globally */}
+      <FloatingTrafficWidget />
     </>
   );
 };

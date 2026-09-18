@@ -1,28 +1,60 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 const MultipleSelectionModal = ({ isOpen, initialData = {}, onSave, onCancel }) => {
-  const [promptType, setPromptType] = useState(initialData.promptType || 'text');
-  const [promptUrl, setPromptUrl] = useState(initialData.promptUrl || '');
-  const [promptHtml, setPromptHtml] = useState(initialData.promptHtml || '<span style="font-family: Montserrat; font-size: 18px; font-weight: bold; color: #ffffff;">Type your prompt here...</span>');
-  const [options, setOptions] = useState(initialData.options || [
-    { id: 1, html: '<span style="color: #ffffff;">Option A</span>', isCorrect: false },
-    { id: 2, html: '<span style="color: #ffffff;">Option B</span>', isCorrect: false },
-    { id: 3, html: '<span style="color: #ffffff;">Option C</span>', isCorrect: true },
-    { id: 4, html: '<span style="color: #ffffff;">Option D</span>', isCorrect: false }
-  ]);
-  const [optBoxColor, setOptBoxColor] = useState(initialData.optBoxColor || 'rgba(255,255,255,0.1)');
-  const [optLineColor, setOptLineColor] = useState(initialData.optLineColor || 'rgba(255,255,255,0.2)');
-  const [optBorderRadius, setOptBorderRadius] = useState(initialData.optBorderRadius || '16');
+  const [promptType, setPromptType] = useState('text');
+  const [promptUrl, setPromptUrl] = useState('');
+  const [promptHtml, setPromptHtml] = useState('');
+  const [options, setOptions] = useState([]);
+  const [optBoxColor, setOptBoxColor] = useState('rgba(255,255,255,0.1)');
+  const [optLineColor, setOptLineColor] = useState('rgba(255,255,255,0.2)');
+  const [optBorderRadius, setOptBorderRadius] = useState('16');
   const [textDropdown, setTextDropdown] = useState(null);
+  
   const promptRef = useRef(null);
   const optionsRefs = useRef({});
 
+  // 1. Bulletproof Initialization: Resets memory every single time the modal opens
   useEffect(() => {
     if (isOpen) {
-      if (promptType === 'text' && promptRef.current) promptRef.current.innerHTML = promptHtml;
-      options.forEach(opt => { if (optionsRefs.current[opt.id]) optionsRefs.current[opt.id].innerHTML = opt.html; });
+      const loadPromptType = initialData.promptType || 'text';
+      const loadPromptUrl = initialData.promptUrl || '';
+      const loadPromptHtml = initialData.promptHtml || '<span style="font-family: Montserrat; font-size: 18px; font-weight: bold; color: #ffffff;">Type your prompt here...</span>';
+      
+      const loadOptions = (initialData.options && initialData.options.length > 0) ? initialData.options : [
+        { id: 1, html: '<span style="color: #ffffff;">Option A</span>', isCorrect: false },
+        { id: 2, html: '<span style="color: #ffffff;">Option B</span>', isCorrect: false },
+        { id: 3, html: '<span style="color: #ffffff;">Option C</span>', isCorrect: true },
+        { id: 4, html: '<span style="color: #ffffff;">Option D</span>', isCorrect: false }
+      ];
+
+      setPromptType(loadPromptType);
+      setPromptUrl(loadPromptUrl);
+      setPromptHtml(loadPromptHtml);
+      setOptions(loadOptions);
+      setOptBoxColor(initialData.optBoxColor || 'rgba(255,255,255,0.1)');
+      setOptLineColor(initialData.optLineColor || 'rgba(255,255,255,0.2)');
+      setOptBorderRadius(initialData.optBorderRadius || '16');
+
+      // 2. Sync DOM after React renders to prevent wiped contentEditable boxes
+      setTimeout(() => {
+        if (loadPromptType === 'text' && promptRef.current) {
+          promptRef.current.innerHTML = loadPromptHtml;
+        }
+        loadOptions.forEach(opt => {
+          if (optionsRefs.current[opt.id]) {
+            optionsRefs.current[opt.id].innerHTML = opt.html;
+          }
+        });
+      }, 50);
     }
-  }, [isOpen, promptType, options.length]); 
+  }, [isOpen, initialData]);
+
+  // Syncs the prompt ref specifically if the user toggles back from 'image' to 'text'
+  useEffect(() => {
+    if (isOpen && promptType === 'text' && promptRef.current) {
+      if (!promptRef.current.innerHTML) promptRef.current.innerHTML = promptHtml;
+    }
+  }, [promptType, isOpen, promptHtml]);
 
   const handleFormat = (command, value = null) => {
     if (command === 'fontSizePx') {
@@ -34,7 +66,17 @@ const MultipleSelectionModal = ({ isOpen, initialData = {}, onSave, onCancel }) 
     }
   };
 
-  const addOption = () => { if (options.length < 6) setOptions([...options, { id: Date.now(), html: `<span style="color: #ffffff;">Option ${options.length + 1}</span>`, isCorrect: false }]); };
+  const addOption = () => { 
+    if (options.length < 6) {
+      const newId = Date.now();
+      setOptions([...options, { id: newId, html: `<span style="color: #ffffff;">Option ${options.length + 1}</span>`, isCorrect: false }]); 
+      // Ensure the new ref populates correctly
+      setTimeout(() => {
+        if (optionsRefs.current[newId]) optionsRefs.current[newId].innerHTML = `<span style="color: #ffffff;">Option ${options.length}</span>`;
+      }, 50);
+    }
+  };
+  
   const removeOption = (id) => { if (options.length > 2) { setOptions(options.filter(o => o.id !== id)); delete optionsRefs.current[id]; } };
   const toggleCorrect = (id) => { setOptions(options.map(o => o.id === id ? { ...o, isCorrect: !o.isCorrect } : o)); };
 

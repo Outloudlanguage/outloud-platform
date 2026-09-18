@@ -750,6 +750,99 @@ const TeacherRosterModal = ({ isOpen, onClose, teacherId }) => {
 };
 
 // ==========================================
+// 5.8 TEACHER PDF VIEWER (Glass Shielded)
+// ==========================================
+const TeacherPdfViewerModal = ({ isOpen, type, onClose, defaultUnit }) => {
+  const [selectedLevel, setSelectedLevel] = useState('A1');
+  const [selectedUnit, setSelectedUnit] = useState(defaultUnit || 1);
+  const [pdfUrl, setPdfUrl] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const fetchPdf = async () => {
+      setLoading(true);
+      const { data } = await supabase
+        .from('content_blueprints')
+        .select('blueprint_data')
+        .ilike('level', `${selectedLevel}%`)
+        .ilike('unit', `Unit ${selectedUnit}`)
+        .eq('content_type', type)
+        .maybeSingle();
+      
+      setPdfUrl(data?.blueprint_data?.pdfUrl || '');
+      setLoading(false);
+    };
+    fetchPdf();
+  }, [isOpen, selectedLevel, selectedUnit, type]);
+
+  if (!isOpen) return null;
+
+  const levels = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+  const getUnitMax = (lvl) => {
+    const bounds = { 'A1': 12, 'A2': 24, 'B1': 36, 'B2': 48, 'C1': 70, 'C2': 92 }[lvl] || 12;
+    const start = { 'A1': 1, 'A2': 13, 'B1': 25, 'B2': 37, 'C1': 49, 'C2': 71 }[lvl] || 1;
+    return Array.from({length: bounds - start + 1}, (_, i) => start + i);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-fade-in font-montserrat" onContextMenu={e => e.preventDefault()} style={{ WebkitTouchCallout: 'none' }}>
+      <div className="relative w-full max-w-5xl bg-[#070b19] border border-white/20 rounded-[2rem] shadow-[0_25px_50px_rgba(0,0,0,0.5)] flex flex-col h-[90vh] overflow-hidden">
+        
+        <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/5 shrink-0">
+          <div className="flex items-center gap-6">
+            <div>
+              <h2 className="text-xl font-black text-[#fcd34d] uppercase tracking-widest drop-shadow-md">{type}</h2>
+              <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest mt-1">Proprietary Outloud Materials</p>
+            </div>
+            <div className="h-10 w-px bg-white/20 hidden md:block"></div>
+            <div className="hidden md:flex items-center gap-3">
+              <select value={selectedLevel} onChange={e => { setSelectedLevel(e.target.value); setSelectedUnit(getUnitMax(e.target.value)[0]); }} className="bg-black/40 text-white text-xs font-bold uppercase rounded-lg px-3 py-2 outline-none border border-white/20 cursor-pointer">
+                {levels.map(l => <option key={l} value={l} className="bg-[#0f172a] text-white">Level {l}</option>)}
+              </select>
+              <select value={selectedUnit} onChange={e => setSelectedUnit(e.target.value)} className="bg-black/40 text-white text-xs font-bold uppercase rounded-lg px-3 py-2 outline-none border border-white/20 cursor-pointer">
+                {getUnitMax(selectedLevel).map(u => <option key={u} value={u} className="bg-[#0f172a] text-white">Unit {u}</option>)}
+              </select>
+            </div>
+          </div>
+          <button onClick={onClose} className="w-10 h-10 bg-white/10 hover:bg-red-500 text-white rounded-full flex items-center justify-center transition-colors shadow-md font-black">✕</button>
+        </div>
+
+        {/* Mobile Dropdowns (Only visible on small screens) */}
+        <div className="md:hidden flex gap-3 p-4 bg-white/5 border-b border-white/10 shrink-0">
+          <select value={selectedLevel} onChange={e => { setSelectedLevel(e.target.value); setSelectedUnit(getUnitMax(e.target.value)[0]); }} className="flex-1 bg-black/40 text-white text-xs font-bold uppercase rounded-lg px-3 py-2 outline-none border border-white/20 cursor-pointer">
+            {levels.map(l => <option key={l} value={l} className="bg-[#0f172a] text-white">Level {l}</option>)}
+          </select>
+          <select value={selectedUnit} onChange={e => setSelectedUnit(e.target.value)} className="flex-1 bg-black/40 text-white text-xs font-bold uppercase rounded-lg px-3 py-2 outline-none border border-white/20 cursor-pointer">
+            {getUnitMax(selectedLevel).map(u => <option key={u} value={u} className="bg-[#0f172a] text-white">Unit {u}</option>)}
+          </select>
+        </div>
+
+        <div className="flex-1 p-4 md:p-6 flex flex-col items-center justify-center bg-[#070b19] relative">
+          {loading ? (
+            <div className="w-12 h-12 border-4 border-[#fcd34d] border-t-transparent rounded-full animate-spin"></div>
+          ) : pdfUrl ? (
+            <div className="w-full h-full relative rounded-xl overflow-hidden border border-white/20 bg-white">
+              {/* THE GLASS SHIELD: Blocks clicks on the top toolbar where download/print buttons live */}
+              <div className="absolute top-0 left-0 right-0 h-[60px] bg-transparent z-50 cursor-not-allowed" title="Downloading disabled for proprietary materials" />
+              
+              <iframe src={pdfUrl.includes('google.com') ? pdfUrl.replace('/view', '/preview') : `${pdfUrl}#toolbar=0`} className="w-full h-full border-none pointer-events-auto" title="Secure PDF Viewer" />
+            </div>
+          ) : (
+            <div className="text-center text-white/40 flex flex-col items-center">
+              <svg className="w-16 h-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+              <h3 className="font-black uppercase tracking-widest text-sm">No Document Available</h3>
+              <p className="text-[10px] font-medium mt-2">There is no {type} uploaded for {selectedLevel} Unit {selectedUnit} yet.</p>
+            </div>
+          )}
+        </div>
+        
+      </div>
+    </div>
+  );
+};
+
+// ==========================================
 // 6. MAIN ROUTER COMPONENT
 // ==========================================
 const TeacherHub = ({ onReturnHome }) => {
@@ -775,6 +868,21 @@ const TeacherHub = ({ onReturnHome }) => {
   // Community Panel State
   const [showCommunity, setShowCommunity] = useState(false);
   const [communityTab, setCommunityTab] = useState('CHAT');
+  
+  // PDF Viewer State
+  const [pdfViewerConfig, setPdfViewerConfig] = useState({ isOpen: false, type: 'Manuals' });
+
+  // ANTI-PIRACY: Global Right-Click Lock for Teachers
+  useEffect(() => {
+    const handleContextMenu = (e) => {
+      // Allow right click ONLY inside inputs/textareas so teachers can still copy/paste into chat
+      if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+      }
+    };
+    document.addEventListener('contextmenu', handleContextMenu);
+    return () => document.removeEventListener('contextmenu', handleContextMenu);
+  }, []);
 
   useEffect(() => {
     fetchTeacherDashboard();
@@ -886,6 +994,10 @@ const TeacherHub = ({ onReturnHome }) => {
   const [activeJitsiSession, setActiveJitsiSession] = useState(null);
 
   const handleAction = async (actionType) => {
+    // Route to PDF Viewers
+    if (actionType === 'Manual') { setPdfViewerConfig({ isOpen: true, type: 'Manuals' }); return; }
+    if (actionType === 'Tools') { setPdfViewerConfig({ isOpen: true, type: 'Cue Cards' }); return; }
+    
     if (actionType === 'Calendar') {
       setIsRosterOpen(true);
       return;
@@ -963,6 +1075,13 @@ const TeacherHub = ({ onReturnHome }) => {
         isOpen={isRosterOpen} 
         onClose={() => setIsRosterOpen(false)} 
         teacherId={teacherData?.id} 
+      />
+
+      <TeacherPdfViewerModal 
+        isOpen={pdfViewerConfig.isOpen} 
+        type={pdfViewerConfig.type} 
+        onClose={() => setPdfViewerConfig({ ...pdfViewerConfig, isOpen: false })} 
+        defaultUnit={nextClass?.unit || 1} 
       />
 
       <ProfileOverlay 

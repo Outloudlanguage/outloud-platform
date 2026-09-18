@@ -4,7 +4,7 @@ const FillInTheBlankModal = ({ isOpen, initialData = {}, onSave, onCancel }) => 
   const [templateText, setTemplateText] = useState(initialData.templateText || 'I _____ need your help. I ___ do it alone.');
   const [answerText, setAnswerText] = useState(initialData.answerText || '"don\'t", "can"');
   const [editTarget, setEditTarget] = useState('template'); 
-  const [t_textColor, setT_textColor] = useState(initialData.t_textColor || '#08203e');
+  const [t_textColor, setT_textColor] = useState(initialData.t_textColor || '#ffffff');
   const [t_boxColor, setT_boxColor] = useState(initialData.t_boxColor || 'transparent');
   const [t_lineColor, setT_lineColor] = useState(initialData.t_lineColor || 'transparent');
   const [t_fontSize, setT_fontSize] = useState(initialData.t_fontSize || '16');
@@ -13,9 +13,9 @@ const FillInTheBlankModal = ({ isOpen, initialData = {}, onSave, onCancel }) => 
   const [t_isBold, setT_isBold] = useState(initialData.t_isBold || false);
   const [t_isItalic, setT_isItalic] = useState(initialData.t_isItalic || false);
   const [t_isUnderline, setT_isUnderline] = useState(initialData.t_isUnderline || false);
-  const [a_textColor, setA_textColor] = useState(initialData.a_textColor || '#08203e');
+  const [a_textColor, setA_textColor] = useState(initialData.a_textColor || '#ffffff');
   const [a_boxColor, setA_boxColor] = useState(initialData.a_boxColor || 'transparent');
-  const [a_lineColor, setA_lineColor] = useState(initialData.a_lineColor || '#08203e');
+  const [a_lineColor, setA_lineColor] = useState(initialData.a_lineColor || '#ffffff');
   const [a_fontSize, setA_fontSize] = useState(initialData.a_fontSize || '16');
   const [a_fontFamily, setA_fontFamily] = useState(initialData.a_fontFamily || 'Montserrat');
   const [a_borderRadius, setA_borderRadius] = useState(initialData.a_borderRadius || '4');
@@ -27,8 +27,8 @@ const FillInTheBlankModal = ({ isOpen, initialData = {}, onSave, onCancel }) => 
     if (initialData && isOpen) {
       setTemplateText(initialData.templateText || 'I _____ need your help. I ___ do it alone.');
       setAnswerText(initialData.answerText || '"don\'t", "can"');
-      setT_textColor(initialData.t_textColor || '#08203e'); setT_boxColor(initialData.t_boxColor || 'transparent'); setT_lineColor(initialData.t_lineColor || 'transparent'); setT_fontSize(initialData.t_fontSize || '16'); setT_fontFamily(initialData.t_fontFamily || 'Montserrat'); setT_borderRadius(initialData.t_borderRadius || '12'); setT_isBold(initialData.t_isBold || false); setT_isItalic(initialData.t_isItalic || false); setT_isUnderline(initialData.t_isUnderline || false);
-      setA_textColor(initialData.a_textColor || '#08203e'); setA_boxColor(initialData.a_boxColor || 'transparent'); setA_lineColor(initialData.a_lineColor || '#08203e'); setA_fontSize(initialData.a_fontSize || '16'); setA_fontFamily(initialData.a_fontFamily || 'Montserrat'); setA_borderRadius(initialData.a_borderRadius || '4'); setA_isBold(initialData.a_isBold || true); setA_isItalic(initialData.a_isItalic || false); setA_isUnderline(initialData.a_isUnderline || false);
+      setT_textColor(initialData.t_textColor || '#ffffff'); setT_boxColor(initialData.t_boxColor || 'transparent'); setT_lineColor(initialData.t_lineColor || 'transparent'); setT_fontSize(initialData.t_fontSize || '16'); setT_fontFamily(initialData.t_fontFamily || 'Montserrat'); setT_borderRadius(initialData.t_borderRadius || '12'); setT_isBold(initialData.t_isBold || false); setT_isItalic(initialData.t_isItalic || false); setT_isUnderline(initialData.t_isUnderline || false);
+      setA_textColor(initialData.a_textColor || '#ffffff'); setA_boxColor(initialData.a_boxColor || 'transparent'); setA_lineColor(initialData.a_lineColor || '#ffffff'); setA_fontSize(initialData.a_fontSize || '16'); setA_fontFamily(initialData.a_fontFamily || 'Montserrat'); setA_borderRadius(initialData.a_borderRadius || '4'); setA_isBold(initialData.a_isBold || true); setA_isItalic(initialData.a_isItalic || false); setA_isUnderline(initialData.a_isUnderline || false);
       setEditTarget('template');
     }
   }, [initialData, isOpen]);
@@ -106,9 +106,9 @@ const FillInTheBlankModal = ({ isOpen, initialData = {}, onSave, onCancel }) => 
               <div className="flex flex-col space-y-2">
                 <span className="text-[9px] font-bold uppercase text-white/70 tracking-widest text-center">Style</span>
                 <div className="flex border border-white/20 rounded-lg overflow-hidden bg-black/20 h-10">
-                  <button type="button" onClick={() => setActiveIsBold(!activeIsBold)} className={`flex-1 font-bold text-sm transition-colors ${activeIsBold ? 'bg-[#fcd34d] text-[#08203e]' : 'text-white/70 hover:bg-white/10'}`}>B</button>
-                  <button type="button" onClick={() => setActiveIsItalic(!activeIsItalic)} className={`flex-1 italic text-sm border-x border-white/20 transition-colors ${activeIsItalic ? 'bg-[#fcd34d] text-[#08203e]' : 'text-white/70 hover:bg-white/10'}`}>I</button>
-                  <button type="button" onClick={() => setActiveIsUnderline(!activeIsUnderline)} className={`flex-1 underline text-sm transition-colors ${activeIsUnderline ? 'bg-[#fcd34d] text-[#08203e]' : 'text-white/70 hover:bg-white/10'}`}>U</button>
+                  <button type="button" onClick={() => setActiveIsBold(!activeIsBold)} className={`flex-1 font-bold text-sm transition-colors ${activeIsBold ? 'bg-[#fcd34d] text-[#ffffff]' : 'text-white/70 hover:bg-white/10'}`}>B</button>
+                  <button type="button" onClick={() => setActiveIsItalic(!activeIsItalic)} className={`flex-1 italic text-sm border-x border-white/20 transition-colors ${activeIsItalic ? 'bg-[#fcd34d] text-[#ffffff]' : 'text-white/70 hover:bg-white/10'}`}>I</button>
+                  <button type="button" onClick={() => setActiveIsUnderline(!activeIsUnderline)} className={`flex-1 underline text-sm transition-colors ${activeIsUnderline ? 'bg-[#fcd34d] text-[#ffffff]' : 'text-white/70 hover:bg-white/10'}`}>U</button>
                 </div>
               </div>
               <div className="flex flex-col space-y-2">
@@ -135,7 +135,7 @@ const FillInTheBlankModal = ({ isOpen, initialData = {}, onSave, onCancel }) => 
         
         <div className="p-5 bg-black/40 border-t border-white/10 flex justify-end gap-4 shrink-0 rounded-b-[30px]">
           <button type="button" onClick={onCancel} className="px-6 py-3 rounded-full font-bold text-xs uppercase tracking-widest text-white/80 bg-white/5 border border-white/20 hover:bg-white/10 hover:text-white transition-all">CANCEL</button>
-          <button type="button" onClick={() => onSave({ templateText, answerText, t_textColor, t_boxColor, t_lineColor, t_fontSize, t_fontFamily, t_borderRadius, t_isBold, t_isItalic, t_isUnderline, a_textColor, a_boxColor, a_lineColor, a_fontSize, a_fontFamily, a_borderRadius, a_isBold, a_isItalic, a_isUnderline })} className="px-8 py-3 rounded-full font-black text-xs uppercase tracking-widest text-[#08203e] bg-[#fcd34d] hover:scale-105 active:scale-95 transition-all shadow-[0_0_15px_rgba(252,211,77,0.4)]">SAVE</button>
+          <button type="button" onClick={() => onSave({ templateText, answerText, t_textColor, t_boxColor, t_lineColor, t_fontSize, t_fontFamily, t_borderRadius, t_isBold, t_isItalic, t_isUnderline, a_textColor, a_boxColor, a_lineColor, a_fontSize, a_fontFamily, a_borderRadius, a_isBold, a_isItalic, a_isUnderline })} className="px-8 py-3 rounded-full font-black text-xs uppercase tracking-widest text-[#ffffff] bg-[#fcd34d] hover:scale-105 active:scale-95 transition-all shadow-[0_0_15px_rgba(252,211,77,0.4)]">SAVE</button>
         </div>
       </div>
     </div>

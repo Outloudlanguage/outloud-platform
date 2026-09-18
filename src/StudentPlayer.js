@@ -176,11 +176,19 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
          el.data.placedWords.forEach(pw => {
             possible++; isGraded = true;
             const studentCells = studentAnswers[`${el.id}_cells`] || [];
-            const allSelected = pw.cells.every(c => studentCells.includes(c));
+            // Bridge the gap between the generator's dash format (0-0) and the player's underscore format (0_0)
+            const allSelected = pw.cells.every(c => {
+               const altC = c.replace('-', '_');
+               return studentCells.includes(c) || studentCells.includes(altC);
+            });
             if (allSelected) correct++; else incorrect++;
          });
+         
          const studentCells = studentAnswers[`${el.id}_cells`] || [];
-         const allCorrectCells = el.data.placedWords.flatMap(pw => pw.cells);
+         const allCorrectCells = el.data.placedWords.flatMap(pw => 
+             pw.cells.flatMap(c => [c, c.replace('-', '_')])
+         );
+         // Deduct for randomly checking empty cells
          studentCells.forEach(sc => { if (!allCorrectCells.includes(sc)) incorrect++; });
       }
       if (!isGraded) possible++; // Failsafe to trigger screen validation
@@ -395,6 +403,13 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
   const contentElements = currentElements.filter(el => !['nav_button'].includes(el.type));
   const dockElements = currentElements.filter(el => ['nav_button', 'record_compare'].includes(el.type));
 
+  // Anti-Piracy: Blocks right-clicking anywhere in the app
+  useEffect(() => {
+    const handleContextMenu = (e) => e.preventDefault();
+    document.addEventListener('contextmenu', handleContextMenu);
+    return () => document.removeEventListener('contextmenu', handleContextMenu);
+  }, []);
+
   return (
     <>
       <audio ref={correctSoundRef} src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto" />
@@ -414,7 +429,7 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
           </div>
         </div>
       ) : (
-        <div id="student-player-container" className="fixed inset-0 z-[500] flex flex-col bg-[#070b19] text-white font-montserrat overflow-y-auto custom-scrollbar">
+        <div id="student-player-container" onContextMenu={(e) => e.preventDefault()} style={{ WebkitTouchCallout: 'none' }} className="fixed inset-0 z-[500] flex flex-col bg-[#070b19] text-white font-montserrat overflow-y-auto custom-scrollbar">
           
           <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
             <img src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/267655.jpeg" alt="Background" className="absolute inset-0 w-full h-full object-cover object-left md:object-center opacity-40 mix-blend-lighten" />
@@ -455,10 +470,10 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
                   return (
                     <div key={el.id} className={`w-full ${el.type === 'video' ? 'max-w-5xl' : 'max-w-4xl'} bg-black/40 rounded-[2.5rem] overflow-hidden border border-white/20 shadow-2xl animate-fade-in relative mx-auto`}>
                       {el.type === 'video' && <iframe src={extractVideoUrl(el.url)} className="w-full aspect-video border-none" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;" allowFullScreen />}
-                      {el.type === 'image' && <img src={el.url || el.data?.imageUrl} alt="Content" className="w-full h-auto max-h-[700px] object-contain rounded-[2.5rem]" />}
+                      {el.type === 'image' && <img src={el.url || el.data?.imageUrl} alt="Content" draggable="false" onContextMenu={(e)=>e.preventDefault()} style={{ WebkitUserDrag: 'none' }} className="w-full h-auto max-h-[700px] object-contain rounded-[2.5rem] select-none pointer-events-none" />}
                       {el.type === 'audio' && (
                         <div className="p-10 w-full flex flex-col items-center">
-                          {el.data?.imageUrl && <img src={el.data.imageUrl} alt="Audio Cover" className="w-full max-w-md rounded-3xl shadow-2xl mb-8 border border-white/10" />}
+                          {el.data?.imageUrl && <img src={el.data.imageUrl} alt="Audio Cover" draggable="false" onContextMenu={(e)=>e.preventDefault()} style={{ WebkitUserDrag: 'none' }} className="w-full max-w-md rounded-3xl shadow-2xl mb-8 border border-white/10 select-none pointer-events-none" />}
                           <audio src={el.url || el.data?.audioUrl} controls controlsList="nodownload" className="w-full max-w-2xl" />
                         </div>
                       )}
@@ -478,7 +493,7 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
                     {isCard && (
                       <div className="w-full bg-white/10 backdrop-blur-xl rounded-[2.5rem] border border-white/20 p-8 md:p-12 flex flex-col gap-6 shadow-2xl h-full justify-between animate-slide-up mt-4">
                         
-                        {el.data?.imageUrl && <img src={el.data.imageUrl} alt="Visual Prompt" className="w-full h-80 object-cover rounded-3xl shadow-inner border border-white/10 mb-4" />}
+                        {el.data?.imageUrl && <img src={el.data.imageUrl} alt="Visual Prompt" draggable="false" onContextMenu={(e)=>e.preventDefault()} style={{ WebkitUserDrag: 'none' }} className="w-full h-80 object-cover rounded-3xl shadow-inner border border-white/10 mb-4 select-none pointer-events-none" />}
 
                         {el.type === 'record_compare' && (
                           <div className="w-full flex flex-col items-center justify-center bg-black/30 p-8 rounded-3xl border border-white/10 shadow-inner mt-4">
@@ -630,7 +645,7 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
 
                                 return (
                                   <div key={idx} className="flex flex-col items-center gap-6">
-                                    <img src={item.imageUrl} className="w-full aspect-[4/5] rounded-3xl shadow-xl object-cover border border-white/10" alt="DnD Target" />
+                                    <img src={item.imageUrl} draggable="false" onContextMenu={(e)=>e.preventDefault()} style={{ WebkitUserDrag: 'none' }} className="w-full aspect-[4/5] rounded-3xl shadow-xl object-cover border border-white/10 select-none pointer-events-none" alt="DnD Target" />
                                     <div 
                                       onDragOver={handleDragOver}
                                       onDrop={(e) => handleDrop(e, `${el.id}_${idx}`)}
@@ -701,106 +716,120 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
                         })()}
 
                         {(el.type === 'crossword' || el.type === 'word_search') && el.data && (
-                           <div className="w-full flex flex-col md:flex-row gap-10 mt-6">
-                             <div className="flex-1 flex flex-col gap-8 max-h-[500px] overflow-y-auto custom-scrollbar pr-6">
+                           <div className="w-full flex flex-col lg:flex-row gap-8 mt-8">
+                             
+                             {/* Prompts Section (Stacks on top on mobile, Left on Desktop) */}
+                             <div className="w-full lg:w-1/3 flex flex-col gap-6">
                                {el.type === 'crossword' && (
                                  <>
-                                   <h3 className="font-black text-[#fcd34d] text-xl uppercase tracking-widest border-b border-white/20 pb-4 drop-shadow-md">Prompts</h3>
-                                   <div className="flex gap-10">
-                                     <div className="flex-1 flex flex-col gap-5">
-                                       <h4 className="text-xs font-black text-white/50 uppercase tracking-widest border-b border-white/10 pb-2">Across</h4>
-                                       {el.data.across?.map(a => <div key={`a-${a.num}`} className="text-base text-white flex gap-4"><span className="font-black text-[#fcd34d]">{a.num}.</span><span className="font-medium opacity-90">{a.prompt}</span></div>)}
+                                   <div className="bg-black/30 p-5 rounded-2xl border border-white/10 shadow-inner">
+                                     <h4 className="text-xs font-black text-[#fcd34d] uppercase tracking-widest border-b border-white/10 pb-2 mb-4">Across</h4>
+                                     <div className="flex flex-col gap-3">
+                                       {el.data.across?.map(a => <div key={`a-${a.num}`} className="text-sm text-white flex gap-3"><span className="font-black text-[#fcd34d]">{a.num}.</span><span className="font-medium opacity-90 leading-snug">{a.prompt}</span></div>)}
                                      </div>
-                                     <div className="flex-1 flex flex-col gap-5">
-                                       <h4 className="text-xs font-black text-white/50 uppercase tracking-widest border-b border-white/10 pb-2">Down</h4>
-                                       {el.data.down?.map(d => <div key={`d-${d.num}`} className="text-base text-white flex gap-4"><span className="font-black text-[#fcd34d]">{d.num}.</span><span className="font-medium opacity-90">{d.prompt}</span></div>)}
+                                   </div>
+                                   <div className="bg-black/30 p-5 rounded-2xl border border-white/10 shadow-inner">
+                                     <h4 className="text-xs font-black text-[#fcd34d] uppercase tracking-widest border-b border-white/10 pb-2 mb-4">Down</h4>
+                                     <div className="flex flex-col gap-3">
+                                       {el.data.down?.map(d => <div key={`d-${d.num}`} className="text-sm text-white flex gap-3"><span className="font-black text-[#fcd34d]">{d.num}.</span><span className="font-medium opacity-90 leading-snug">{d.prompt}</span></div>)}
                                      </div>
                                    </div>
                                  </>
                                )}
                                {el.type === 'word_search' && (
-                                 <>
-                                   <div dangerouslySetInnerHTML={{ __html: el.data.promptHtml }} className="w-full whitespace-pre-wrap break-words border-b border-white/20 pb-6 mb-4 drop-shadow-md text-xl" />
-                                   <div className="flex gap-6">
-                                     <ul className="flex-1 flex flex-col gap-4 list-none pl-2">
-                                       {el.data.targetWords?.slice(0, Math.ceil(el.data.targetWords.length / 2)).map((w, i) => <li key={`w1-${i}`} className="text-base font-bold text-white/90 tracking-widest flex items-center gap-4"><span className="w-3 h-3 rounded-full bg-[#fcd34d] shadow-[0_0_10px_#fcd34d]"></span>{w}</li>)}
-                                     </ul>
-                                     <ul className="flex-1 flex flex-col gap-4 list-none pl-2">
-                                       {el.data.targetWords?.slice(Math.ceil(el.data.targetWords.length / 2)).map((w, i) => <li key={`w2-${i}`} className="text-base font-bold text-white/90 tracking-widest flex items-center gap-4"><span className="w-3 h-3 rounded-full bg-[#fcd34d] shadow-[0_0_10px_#fcd34d]"></span>{w}</li>)}
-                                     </ul>
+                                 <div className="bg-black/30 p-6 rounded-2xl border border-white/10 shadow-inner flex flex-col gap-4">
+                                   <div dangerouslySetInnerHTML={{ __html: el.data.promptHtml }} className="w-full whitespace-pre-wrap break-words border-b border-white/20 pb-4 drop-shadow-md text-lg font-medium" />
+                                   <div className="flex flex-wrap gap-3">
+                                      {el.data.targetWords?.map((w, i) => <div key={i} className="bg-white/10 px-3 py-1.5 rounded-lg border border-white/10 text-sm font-bold text-white/90 tracking-widest flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#fcd34d] shadow-[0_0_8px_#fcd34d]"></span>{w}</div>)}
                                    </div>
-                                 </>
+                                 </div>
                                )}
                              </div>
                              
-                             <div className="flex-[2] bg-black/40 rounded-3xl border border-white/10 p-6 zoom-container flex justify-center items-center min-h-[500px] shadow-inner relative w-full overflow-hidden">
-                                {el.type === 'crossword' && (
-                                  <div style={{ display: 'grid', gridTemplateColumns: `repeat(${el.data.grid[0]?.length || 1}, minmax(35px, 1fr))`, gap: '3px', width: 'fit-content', position: 'relative', zIndex: 10 }}>
-                                    {el.data.grid.map((row, rIdx) => 
-                                      row.map((cell, cIdx) => {
-                                        if (!cell) return <div key={`${rIdx}-${cIdx}`} className="relative aspect-square w-10 md:w-12 bg-transparent" />;
-                                        
-                                        const studentLetter = studentAnswers[`${el.id}_${rIdx}_${cIdx}`] || '';
-                                        const targetLetter = cell.char || '';
-                                        const isCellFeedback = showFeedback && studentLetter;
-                                        const isCorrect = studentLetter.toUpperCase() === targetLetter.toUpperCase();
+                             {/* Puzzle Grid Section */}
+                             <div className="w-full lg:w-2/3 bg-black/40 rounded-[2rem] border border-white/10 p-2 md:p-6 flex flex-col items-center shadow-inner relative">
+                                <div className="lg:hidden w-full text-center py-2.5 mb-4 bg-[#fcd34d]/10 border border-[#fcd34d]/30 rounded-xl">
+                                   <span className="text-[10px] font-black text-[#fcd34d] uppercase tracking-widest">🔍 Pinch & Drag to Navigate Board</span>
+                                </div>
+                                
+                                <div className="w-full max-h-[60vh] lg:max-h-none overflow-auto custom-scrollbar touch-pan-x touch-pan-y rounded-2xl flex justify-center items-start" style={{ touchAction: 'pan-x pan-y pinch-zoom' }}>
+                                  <div className="w-fit p-2 min-w-full flex justify-center items-center">
+                                    {el.type === 'crossword' && (
+                                      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${el.data.grid[0]?.length || 1}, minmax(40px, 1fr))`, gap: '3px', width: 'fit-content' }} className="mx-auto">
+                                        {el.data.grid.map((row, rIdx) => 
+                                          row.map((cell, cIdx) => {
+                                            if (!cell) return <div key={`${rIdx}-${cIdx}`} className="relative aspect-square w-10 md:w-12 bg-transparent" />;
+                                            
+                                            const studentLetter = studentAnswers[`${el.id}_${rIdx}_${cIdx}`] || '';
+                                            const targetLetter = cell.char || '';
+                                            const isCellFeedback = showFeedback && studentLetter;
+                                            const isCorrect = studentLetter.toUpperCase() === targetLetter.toUpperCase();
 
-                                        return (
-                                          <div key={`${rIdx}-${cIdx}`} className="relative aspect-square w-10 md:w-12">
-                                            <div className="w-full h-full relative">
-                                              {cell.num && <span className="absolute top-1 left-1.5 text-[9px] font-black text-white/90 z-10 pointer-events-none drop-shadow-md">{cell.num}</span>}
-                                              <input 
-                                                type="text" maxLength={1} 
-                                                disabled={showFeedback}
-                                                value={studentLetter}
-                                                onChange={(e) => setStudentAnswers(prev => ({...prev, [`${el.id}_${rIdx}_${cIdx}`]: e.target.value.toUpperCase().replace(/[^A-Z]/g, '')}))}
-                                                style={{ color: el.data.textColor, fontSize: `${el.data.fontSize}px`, fontFamily: el.data.fontFamily, fontWeight: el.data.isBold ? 'bold' : 'normal' }}
-                                                className={`w-full h-full text-center uppercase focus:outline-none transition shadow-inner rounded-md font-bold
-                                                ${isCellFeedback ? (isCorrect ? 'bg-green-500/20 border-2 border-green-500 text-green-400 animate-pulse' : 'bg-red-500/20 border-2 border-red-500 text-red-400 animate-pulse') : 'bg-white/10 backdrop-blur-md border border-white/20 text-white focus:ring-2 focus:ring-[#fcd34d]'}`}
-                                              />
-                                            </div>
-                                          </div>
-                                        );
-                                      })
+                                            return (
+                                              <div key={`${rIdx}-${cIdx}`} className="relative aspect-square w-10 md:w-12">
+                                                <div className="w-full h-full relative">
+                                                  {cell.num && <span className="absolute top-1 left-1.5 text-[9px] font-black text-white/90 z-10 pointer-events-none drop-shadow-md">{cell.num}</span>}
+                                                  <input 
+                                                    type="text" maxLength={1} 
+                                                    disabled={showFeedback}
+                                                    value={studentLetter}
+                                                    onChange={(e) => setStudentAnswers(prev => ({...prev, [`${el.id}_${rIdx}_${cIdx}`]: e.target.value.toUpperCase().replace(/[^A-Z]/g, '')}))}
+                                                    style={{ color: el.data.textColor, fontSize: `${el.data.fontSize}px`, fontFamily: el.data.fontFamily, fontWeight: el.data.isBold ? 'bold' : 'normal' }}
+                                                    className={`w-full h-full text-center uppercase focus:outline-none transition shadow-inner rounded-lg font-bold
+                                                    ${isCellFeedback ? (isCorrect ? 'bg-green-500/20 border-2 border-green-500 text-green-400 animate-pulse' : 'bg-red-500/20 border-2 border-red-500 text-red-400 animate-pulse') : 'bg-white/10 backdrop-blur-md border border-white/20 text-white focus:ring-2 focus:ring-[#fcd34d]'}`}
+                                                  />
+                                                </div>
+                                              </div>
+                                            );
+                                          })
+                                        )}
+                                      </div>
+                                    )}
+
+                                    {el.type === 'word_search' && (
+                                      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${el.data.size || 10}, 1fr)`, borderWidth: '4px', borderStyle: 'solid', borderColor: el.data.lineColor, backgroundColor: el.data.cellColor }} className="shadow-2xl w-full max-w-[500px] aspect-square rounded-2xl overflow-hidden relative mx-auto">
+                                        {el.data.grid?.map((row, rIdx) => 
+                                          row.map((char, cIdx) => {
+                                            const cellId = `${rIdx}_${cIdx}`;
+                                            const studentCells = studentAnswers[`${el.id}_cells`] || [];
+                                            const isSelected = studentCells.includes(cellId);
+                                            
+                                            let isTargetCell = false;
+                                            if (el.data.placedWords) {
+                                                isTargetCell = el.data.placedWords.some(pw => {
+                                                   return pw.cells.includes(cellId) || pw.cells.includes(`${rIdx}-${cIdx}`);
+                                                });
+                                            }
+                                            
+                                            let cellBg = isSelected ? 'rgba(252, 211, 77, 0.6)' : 'transparent';
+                                            let cellClass = "flex items-center justify-center transition-colors select-none font-bold";
+                                            let textColor = el.data.textColor;
+                                            
+                                            if (showFeedback) {
+                                               if (isSelected && isTargetCell) { cellBg = 'rgba(34, 197, 94, 0.5)'; cellClass += ' animate-pulse'; textColor = '#4ade80'; }
+                                               else if (isSelected && !isTargetCell) { cellBg = 'rgba(239, 68, 68, 0.5)'; cellClass += ' animate-pulse'; textColor = '#f87171'; }
+                                               else if (!isSelected && isTargetCell) { cellBg = 'rgba(34, 197, 94, 0.2)'; textColor = '#4ade80'; }
+                                            }
+
+                                            return (
+                                              <div 
+                                                key={cellId} 
+                                                onClick={() => !showFeedback && setStudentAnswers(prev => {
+                                                   const current = prev[`${el.id}_cells`] || [];
+                                                   return { ...prev, [`${el.id}_cells`]: current.includes(cellId) ? current.filter(c => c !== cellId) : [...current, cellId] };
+                                                })}
+                                                style={{ color: textColor, fontSize: `${el.data.fontSize}px`, fontFamily: el.data.fontFamily, fontWeight: el.data.isBold ? 'bold' : 'normal', borderRight: cIdx < (el.data.size - 1) ? `1px solid ${el.data.lineColor}` : 'none', borderBottom: rIdx < (el.data.size - 1) ? `1px solid ${el.data.lineColor}` : 'none', backgroundColor: cellBg, cursor: showFeedback ? 'default' : 'pointer' }}
+                                                className={cellClass}
+                                              >
+                                                {char}
+                                              </div>
+                                            )
+                                          })
+                                        )}
+                                      </div>
                                     )}
                                   </div>
-                                )}
-
-                                {el.type === 'word_search' && (
-                                  <div style={{ display: 'grid', gridTemplateColumns: `repeat(${el.data.size || 10}, 1fr)`, borderWidth: '4px', borderStyle: 'solid', borderColor: el.data.lineColor, backgroundColor: el.data.cellColor }} className="shadow-2xl max-w-full max-h-full aspect-square w-full rounded-2xl overflow-hidden relative z-10">
-                                    {el.data.grid?.map((row, rIdx) => 
-                                      row.map((char, cIdx) => {
-                                        const cellId = `${el.id}_${rIdx}_${cIdx}`;
-                                        const isSelected = (studentAnswers[`${el.id}_cells`] || []).includes(cellId);
-                                        const isTargetCell = el.data.placedWords?.some(pw => pw.cells.includes(cellId));
-                                        
-                                        let cellBg = isSelected ? 'rgba(252, 211, 77, 0.6)' : 'transparent';
-                                        let cellClass = "flex items-center justify-center transition-colors select-none";
-                                        let textColor = el.data.textColor;
-                                        
-                                        if (showFeedback) {
-                                           if (isSelected && isTargetCell) { cellBg = 'rgba(34, 197, 94, 0.5)'; cellClass += ' animate-pulse'; textColor = '#4ade80'; }
-                                           else if (isSelected && !isTargetCell) { cellBg = 'rgba(239, 68, 68, 0.5)'; cellClass += ' animate-pulse'; textColor = '#f87171'; }
-                                           else if (!isSelected && isTargetCell) { cellBg = 'rgba(34, 197, 94, 0.2)'; textColor = '#4ade80'; }
-                                        }
-
-                                        return (
-                                          <div 
-                                            key={cellId} 
-                                            onClick={() => !showFeedback && setStudentAnswers(prev => {
-                                               const current = prev[`${el.id}_cells`] || [];
-                                               return { ...prev, [`${el.id}_cells`]: current.includes(cellId) ? current.filter(c => c !== cellId) : [...current, cellId] };
-                                            })}
-                                            style={{ color: textColor, fontSize: `${el.data.fontSize}px`, fontFamily: el.data.fontFamily, fontWeight: el.data.isBold ? 'bold' : 'normal', borderRight: cIdx < (el.data.size - 1) ? `1px solid ${el.data.lineColor}` : 'none', borderBottom: rIdx < (el.data.size - 1) ? `1px solid ${el.data.lineColor}` : 'none', backgroundColor: cellBg, cursor: showFeedback ? 'default' : 'pointer' }}
-                                            className={cellClass}
-                                          >
-                                            {char}
-                                          </div>
-                                        )
-                                      })
-                                    )}
-                                  </div>
-                                )}
+                                </div>
                              </div>
                            </div>
                         )}

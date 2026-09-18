@@ -1,9 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from './SupabaseClient'; // Needed for Analytics
 import StudentPlayer from './StudentPlayer';
 
 const FreeLesson = ({ onReturnHome, onReturnToRegister }) => {
   const [isCompleted, setIsCompleted] = useState(false);
   const [finalScore, setFinalScore] = useState(0);
+
+  // LOG FREE LESSON CONVERSION TO ANALYTICS
+  useEffect(() => {
+    const trackFreeLesson = async () => {
+      try {
+        await supabase.from('site_analytics').insert({ event_type: 'free_lesson' });
+      } catch (err) {
+        console.error("Analytics log failed:", err);
+      }
+    };
+    trackFreeLesson();
+  }, []);
 
   const guestStudent = {
     first_name: 'Guest',

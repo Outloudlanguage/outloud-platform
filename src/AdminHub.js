@@ -1375,6 +1375,7 @@ useEffect(() => {
   const [canvasElements, setCanvasElements] = useState([]);
   const [canvasHistory, setCanvasHistory] = useState([]);
   const [activeScreenId, setActiveScreenId] = useState(null);
+  const [pdfUrl, setPdfUrl] = useState(''); // NEW: Dedicated state for PDFs
 
   const saveSnapshot = (elements = canvasElements) => setCanvasHistory(prev => [...prev.slice(-29), JSON.parse(JSON.stringify(elements))]);
 
@@ -1410,12 +1411,17 @@ useEffect(() => {
         if (error) throw error;
 
         if (data) {
-          setCanvasElements(data.blueprint_data?.elements || []);
-          if (contentType === 'Lesson') setLessonScreens(data.screens || [Date.now()]);
-          else setWorkbookScreens(data.screens || [Date.now()]);
+          if (contentType === 'Manuals' || contentType === 'Cue Cards') {
+             setPdfUrl(data.blueprint_data?.pdfUrl || '');
+          } else {
+             setCanvasElements(data.blueprint_data?.elements || []);
+             if (contentType === 'Lesson') setLessonScreens(data.screens || [Date.now()]);
+             else setWorkbookScreens(data.screens || [Date.now()]);
+          }
         } else {
           // Clean slate if nothing is saved yet
           setCanvasElements([]);
+          setPdfUrl('');
           if (contentType === 'Lesson') setLessonScreens([Date.now()]);
           else setWorkbookScreens([Date.now()]);
         }
@@ -1539,6 +1545,43 @@ useEffect(() => {
     setActiveModal(null); setEditingElementId(null);
   };
 
+  const handleDuplicateElement = (idToDuplicate) => {
+    saveSnapshot();
+    const elementToClone = canvasElements.find(el => el.id === idToDuplicate);
+    if (!elementToClone) return;
+
+    // Sync live text from the DOM just in case the user was typing and didn't click away
+    let currentHtmlContent = elementToClone.htmlContent || '';
+    if (elementToClone.type === 'text') {
+      const liveNode = document.getElementById(`element-${elementToClone.id}`);
+      if (liveNode) currentHtmlContent = liveNode.innerHTML;
+    }
+
+    // Deep clone the element to prevent object reference bleeding
+    const clonedElement = {
+      ...elementToClone,
+      id: `${elementToClone.type}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+      data: elementToClone.data ? JSON.parse(JSON.stringify(elementToClone.data)) : {},
+      htmlContent: currentHtmlContent
+    };
+
+    // Insert the cloned element immediately after the original one
+    setCanvasElements(prev => {
+       // Also sync the live text of the original element so nothing is lost!
+       const syncedPrev = prev.map(el => {
+          if (el.id === idToDuplicate && el.type === 'text') {
+             const liveNode = document.getElementById(`element-${el.id}`);
+             if (liveNode) return { ...el, htmlContent: liveNode.innerHTML };
+          }
+          return el;
+       });
+       const index = syncedPrev.findIndex(el => el.id === idToDuplicate);
+       const newElementsArray = [...syncedPrev];
+       newElementsArray.splice(index + 1, 0, clonedElement);
+       return newElementsArray;
+    });
+  };
+
   const handleExpandWorkspace = () => {
     saveSnapshot();
     const newId = Date.now();
@@ -1552,12 +1595,31 @@ useEffect(() => {
     if (contentType === 'Lesson') setLessonScreens([...lessonScreens, newScreenId]);
     else setWorkbookScreens([...workbookScreens, newScreenId]);
 
-    const elementsToClone = canvasElements.filter(el => el.screenId === activeScreenId);
-    const clonedElements = elementsToClone.map(el => ({
-      ...el, id: `${el.type}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`, screenId: newScreenId,
-      data: el.data ? JSON.parse(JSON.stringify(el.data)) : undefined, htmlContent: el.htmlContent || ''
-    }));
-    setCanvasElements(prev => [...prev, ...clonedElements]);
+    setCanvasElements(prev => {
+      // 1. Sync live DOM for text elements on the current screen BEFORE cloning
+      const syncedPrev = prev.map(el => {
+        if (el.screenId === activeScreenId && el.type === 'text') {
+          const liveNode = document.getElementById(`element-${el.id}`);
+          if (liveNode) return { ...el, htmlContent: liveNode.innerHTML };
+        }
+        return el;
+      });
+
+      // 2. Identify elements to clone from the strictly SYNCED array
+      const elementsToClone = syncedPrev.filter(el => el.screenId === activeScreenId);
+      
+      // 3. Perform Deep Clone
+      const clonedElements = elementsToClone.map(el => ({
+        ...el, 
+        id: `${el.type}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`, 
+        screenId: newScreenId,
+        data: el.data ? JSON.parse(JSON.stringify(el.data)) : undefined, 
+        htmlContent: el.htmlContent || ''
+      }));
+
+      // 4. Return combined array so nothing is lost
+      return [...syncedPrev, ...clonedElements];
+    });
   };
 
   const handleUndoWorkspace = () => {
@@ -1573,19 +1635,28 @@ useEffect(() => {
   const handleConfirmSave = async () => {
     if (!selectedLevel || !selectedUnit || !contentType) return;
     setIsSaving(true);
-    const syncedElements = canvasElements.map(el => {
-      if (el.type === 'text') {
-        const liveNode = document.getElementById(`element-${el.id}`);
-        if (liveNode) return { ...el, htmlContent: liveNode.innerHTML };
-      }
-      return el;
-    });
-    setCanvasElements(syncedElements);
-    const payload = { 
+    
+    let payload = { 
       level: selectedLevel, unit: selectedUnit, content_type: contentType, 
-      screens: contentType === 'Lesson' ? lessonScreens : workbookScreens, 
-      blueprint_data: { elements: syncedElements }, updated_at: new Date().toISOString() 
+      updated_at: new Date().toISOString() 
     };
+
+    if (contentType === 'Manuals' || contentType === 'Cue Cards') {
+       payload.blueprint_data = { pdfUrl: pdfUrl };
+       payload.screens = [Date.now()]; // Dummy array to satisfy DB constraints
+    } else {
+       const syncedElements = canvasElements.map(el => {
+         if (el.type === 'text') {
+           const liveNode = document.getElementById(`element-${el.id}`);
+           if (liveNode) return { ...el, htmlContent: liveNode.innerHTML };
+         }
+         return el;
+       });
+       setCanvasElements(syncedElements);
+       payload.screens = contentType === 'Lesson' ? lessonScreens : workbookScreens;
+       payload.blueprint_data = { elements: syncedElements };
+    }
+    
     try {
       await supabase.from('content_blueprints').upsert(payload, { onConflict: 'level,unit,content_type' });
       alert("Changes saved and pushed live successfully!");
@@ -2656,21 +2727,27 @@ const FinancesPage = () => {
                   <span className="text-xl font-light text-white tracking-widest uppercase">CONTENTS</span>
                 </div>
                 
-                {/* TOOL CAROUSEL */}
-                <div className="flex-1 flex overflow-x-auto custom-scrollbar gap-3 items-center px-4 py-2">
-                  <button className="text-white/50 font-black px-2">&lt;</button>
-                  {toolOptions.map(tool => (
-                    <button key={tool} onClick={() => handleToolSelect(tool)} className="px-5 py-2.5 bg-white/10 hover:bg-[#fcd34d] hover:text-[#08203e] rounded-xl font-black text-xs uppercase tracking-widest transition-colors whitespace-nowrap border border-white/20 hover:border-transparent shadow-md">
-                      {tool}
-                    </button>
-                  ))}
-                  <button className="text-white/50 font-black px-2">&gt;</button>
-                </div>
+                {/* TOOL CAROUSEL (Hides when using PDF) */}
+                {!['Manuals', 'Cue Cards'].includes(contentType) && (
+                  <div className="flex-1 flex overflow-x-auto custom-scrollbar gap-3 items-center px-4 py-2">
+                    <button className="text-white/50 font-black px-2">&lt;</button>
+                    {toolOptions.map(tool => (
+                      <button key={tool} onClick={() => handleToolSelect(tool)} className="px-5 py-2.5 bg-white/10 hover:bg-[#fcd34d] hover:text-[#08203e] rounded-xl font-black text-xs uppercase tracking-widest transition-colors whitespace-nowrap border border-white/20 hover:border-transparent shadow-md">
+                        {tool}
+                      </button>
+                    ))}
+                    <button className="text-white/50 font-black px-2">&gt;</button>
+                  </div>
+                )}
 
-                <div className="flex items-center gap-6 shrink-0 border-l border-white/10 pl-6">
+                <div className={`flex items-center gap-6 shrink-0 border-l border-white/10 pl-6 ${['Manuals', 'Cue Cards'].includes(contentType) ? 'ml-auto border-none' : ''}`}>
                   <button onClick={() => setIsSaveModalOpen(true)} className="text-white font-black tracking-widest uppercase hover:text-[#fcd34d] transition-colors text-xs">SAVE</button>
-                  <button onClick={handleUndoWorkspace} className="text-white font-black tracking-widest uppercase hover:text-[#fcd34d] transition-colors text-xs">UNDO</button>
-                  <button onClick={handleDuplicateScreen} className="text-white font-black tracking-widest uppercase hover:text-[#fcd34d] transition-colors text-xs">DUPLICATE</button>
+                  {!['Manuals', 'Cue Cards'].includes(contentType) && (
+                    <>
+                      <button onClick={handleUndoWorkspace} className="text-white font-black tracking-widest uppercase hover:text-[#fcd34d] transition-colors text-xs">UNDO</button>
+                      <button onClick={handleDuplicateScreen} className="text-white font-black tracking-widest uppercase hover:text-[#fcd34d] transition-colors text-xs">DUPLICATE</button>
+                    </>
+                  )}
                   <button onClick={() => setIsPreviewMode(true)} className="text-white font-black tracking-widest uppercase hover:text-[#fcd34d] transition-colors text-xs">PREVIEW</button>
                 </div>
               </div>
@@ -2695,9 +2772,46 @@ const FinancesPage = () => {
                 </div>
               )}
 
-              {/* CANVAS AREA */}
+              {/* CANVAS / PDF AREA */}
               <div className="flex-1 flex flex-col items-center">
-                {activeScreenArray.map((screenId, index) => {
+                {['Manuals', 'Cue Cards'].includes(contentType) ? (
+                   <div className="w-full flex flex-col items-center justify-center p-8 mt-10 animate-fade-in">
+                      <div className="w-full max-w-4xl bg-black/40 backdrop-blur-xl border border-white/20 rounded-[2.5rem] p-10 shadow-2xl flex flex-col items-center relative">
+                        <div className="absolute -top-6 bg-[#fcd34d] text-[#08203e] px-8 py-3 rounded-full font-black tracking-widest uppercase text-sm shadow-xl">
+                          {contentType} PDF Integrator
+                        </div>
+                        <p className="text-white/60 font-medium text-center mb-8 mt-4 leading-relaxed">
+                          Paste the secure URL of your hosted PDF below.<br/> Teachers will view this document in a dedicated fullscreen reader during class.
+                        </p>
+                        
+                        <div className="w-full relative mb-8">
+                           <input 
+                             type="text" 
+                             placeholder="https://.../your-file.pdf" 
+                             value={pdfUrl}
+                             onChange={(e) => setPdfUrl(e.target.value)}
+                             className="w-full bg-white/5 border border-white/20 rounded-2xl pl-6 pr-12 py-5 text-white focus:outline-none focus:border-[#fcd34d] shadow-inner font-medium text-lg placeholder-white/20 transition-all"
+                           />
+                           {pdfUrl && (
+                             <button onClick={() => setPdfUrl('')} className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white rounded-full flex items-center justify-center transition-colors font-bold">✕</button>
+                           )}
+                        </div>
+
+                        {pdfUrl ? (
+                          <div className="w-full aspect-[1/1.4] md:aspect-[16/10] bg-[#070b19] border border-white/10 rounded-2xl overflow-hidden shadow-inner flex items-center justify-center relative group">
+                            {/* Auto-formats Google Drive links to ensure they embed properly */}
+                            <iframe src={pdfUrl.includes('google.com') ? pdfUrl.replace('/view', '/preview') : `${pdfUrl}#toolbar=0`} className="w-full h-full border-none bg-white" title="PDF Preview" />
+                            <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_50px_rgba(0,0,0,0.5)] z-10" />
+                          </div>
+                        ) : (
+                          <div className="w-full aspect-[1/1.4] md:aspect-[16/10] bg-white/5 border-2 border-dashed border-white/20 rounded-2xl flex flex-col items-center justify-center text-white/30 shadow-inner">
+                            <svg className="w-16 h-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                            <span className="font-black uppercase tracking-widest text-sm drop-shadow-md">NO PDF LOADED</span>
+                          </div>
+                        )}
+                      </div>
+                   </div>
+                ) : activeScreenArray.map((screenId, index) => {
                   const screenElements = canvasElements.filter(el => el.screenId === screenId);
                   const contentElements = screenElements.filter(el => !['nav_button'].includes(el.type));
                   const dockElements = screenElements.filter(el => ['nav_button', 'record_compare'].includes(el.type));
@@ -2734,8 +2848,13 @@ const FinancesPage = () => {
                             
                             if (isMedia) {
                               return (
-                                <div key={el.id} className={`w-full ${el.type === 'video' ? 'max-w-5xl' : 'max-w-3xl'} bg-black/40 rounded-[2rem] overflow-hidden border border-white/20 shadow-2xl animate-fade-in relative mx-auto mb-6`}>
-                                  {!isPreviewMode && <button onClick={() => handleDeleteElement(el.id)} className="absolute top-4 right-4 w-10 h-10 bg-red-500 text-white rounded-full flex items-center justify-center font-bold shadow-xl z-50 hover:scale-110 transition-transform">✕</button>}
+                                <div key={el.id} className={`group w-full ${el.type === 'video' ? 'max-w-5xl' : 'max-w-3xl'} bg-black/40 rounded-[2rem] overflow-hidden border border-white/20 shadow-2xl animate-fade-in relative mx-auto mb-6`}>
+                                  {!isPreviewMode && (
+                                     <div className="absolute top-4 right-4 z-50 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                       <button onClick={() => handleDuplicateElement(el.id)} className="w-10 h-10 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-xl hover:scale-110 transition-transform" title="Duplicate Media">📋</button>
+                                       <button onClick={() => handleDeleteElement(el.id)} className="w-10 h-10 bg-red-500 text-white rounded-full flex items-center justify-center shadow-xl hover:scale-110 transition-transform" title="Delete Media">✕</button>
+                                     </div>
+                                  )}
                                   
                                   {el.type === 'video' && <iframe src={extractVideoUrl(el.url)} className="w-full aspect-video border-none" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;" allowFullScreen />}
                                   
@@ -2767,8 +2886,9 @@ const FinancesPage = () => {
                                 {/* Admin Overlay Actions */}
                                 {!isPreviewMode && (
                                    <div className="absolute -top-4 -right-4 z-50 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                     {el.type !== 'text' && <button onClick={() => { setEditingElementId(el.id); setActiveModal(el.type); }} className="w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center shadow-xl hover:scale-110 transition-transform">✏️</button>}
-                                     <button onClick={() => handleDeleteElement(el.id)} className="w-10 h-10 bg-red-500 text-white rounded-full flex items-center justify-center shadow-xl hover:scale-110 transition-transform">✕</button>
+                                     {el.type !== 'text' && <button onClick={() => { setEditingElementId(el.id); setActiveModal(el.type); }} className="w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center shadow-xl hover:scale-110 transition-transform" title="Edit Element">✏️</button>}
+                                     <button onClick={() => handleDuplicateElement(el.id)} className="w-10 h-10 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-xl hover:scale-110 transition-transform" title="Duplicate Element">📋</button>
+                                     <button onClick={() => handleDeleteElement(el.id)} className="w-10 h-10 bg-red-500 text-white rounded-full flex items-center justify-center shadow-xl hover:scale-110 transition-transform" title="Delete Element">✕</button>
                                    </div>
                                 )}
 
@@ -3121,7 +3241,13 @@ const FinancesPage = () => {
                             );
                             if (el.type === 'nav_button') return (
                                <div key={el.id} className="relative group">
-                                 {!isPreviewMode && <button onClick={() => { setEditingElementId(el.id); setActiveModal(el.type); }} className="absolute -top-4 -right-4 w-8 h-8 bg-blue-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity z-50 shadow-lg hover:scale-110">✏️</button>}
+                                 {!isPreviewMode && (
+                                   <div className="absolute -top-4 -right-4 z-50 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                     <button onClick={() => { setEditingElementId(el.id); setActiveModal(el.type); }} className="w-8 h-8 bg-blue-500 text-white rounded-full text-xs shadow-lg hover:scale-110 transition-transform flex items-center justify-center" title="Edit Element">✏️</button>
+                                     <button onClick={() => handleDuplicateElement(el.id)} className="w-8 h-8 bg-emerald-500 text-white rounded-full text-xs shadow-lg hover:scale-110 transition-transform flex items-center justify-center" title="Duplicate Element">📋</button>
+                                     <button onClick={() => handleDeleteElement(el.id)} className="w-8 h-8 bg-red-500 text-white rounded-full text-xs shadow-lg hover:scale-110 transition-transform flex items-center justify-center" title="Delete Element">✕</button>
+                                   </div>
+                                 )}
                                  <button className="bg-[#fcd34d] text-[#08203e] font-black px-12 py-5 rounded-full shadow-[0_0_30px_rgba(252,211,77,0.4)] uppercase tracking-widest hover:scale-105 active:scale-95 transition-transform text-base">
                                     {el.data?.buttonStyle === 'finish_pill' ? 'FINISH' : 'CONTINUE ⬇'}
                                  </button>
