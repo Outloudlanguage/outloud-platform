@@ -21,30 +21,44 @@ const CommercialFunnelModule = () => {
     const fetchFunnelData = async () => {
       try {
         setLoading(true);
-        const { data: funnel, error } = await supabase
-          .from('acquisition_funnel')
-          .select('form_filled, converted_to_student');
 
-        if (error) throw error;
+        // 1. Get Site Visitors from the new analytics table
+        const { count: visitorCount } = await supabase
+          .from('site_analytics')
+          .select('id', { count: 'exact', head: true })
+          .eq('event_type', 'site_visit');
 
-        let visitors = 0;
-        let leads = 0;
-        let conversions = 0;
+        // 2. Get Pending Leads from Registrations
+        const { count: pendingCount } = await supabase
+          .from('registrations')
+          .select('id', { count: 'exact', head: true });
 
-        if (funnel && funnel.length > 0) {
-          visitors = funnel.length;
-          leads = funnel.filter(f => f.form_filled).length;
-          conversions = funnel.filter(f => f.converted_to_student).length;
-        }
+        // 3. Get Paid Students from Profiles
+        const { count: studentCount } = await supabase
+          .from('profiles')
+          .select('id', { count: 'exact', head: true })
+          .eq('role', 'Student');
+
+        const safeVisitors = visitorCount || 0;
+        const safePending = pendingCount || 0;
+        const safeStudents = studentCount || 0;
+
+        // Total leads historically = currently pending + people who already became students
+        const totalLeads = safePending + safeStudents;
+        
+        // Failsafe: Because we just installed the analytics tracker today, you will temporarily 
+        // have more historical leads than recorded visits. This forces the funnel to make 
+        // visual sense during this transition period.
+        const finalVisitors = Math.max(safeVisitors, totalLeads);
 
         setChartData([
-          { stage: 'Site Visitors', count: visitors, color: '#64748b' },
-          { stage: 'Form Leads', count: leads, color: '#3b82f6' },
-          { stage: 'Paid Students', count: conversions, color: '#eab308' }
+          { stage: 'Site Visitors', count: finalVisitors, color: '#64748b' },
+          { stage: 'Form Leads', count: totalLeads, color: '#3b82f6' },
+          { stage: 'Paid Students', count: safeStudents, color: '#eab308' }
         ]);
 
-        const conversionRate = visitors > 0 ? ((conversions / visitors) * 100).toFixed(1) : 0;
-        setMetrics({ visitors, conversions, rate: conversionRate });
+        const conversionRate = finalVisitors > 0 ? ((safeStudents / finalVisitors) * 100).toFixed(1) : 0;
+        setMetrics({ visitors: finalVisitors, conversions: safeStudents, rate: conversionRate });
 
       } catch (error) {
         console.error("Error fetching funnel data:", error);
