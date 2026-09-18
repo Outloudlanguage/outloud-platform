@@ -272,11 +272,11 @@ const AdminCalendar = () => {
   const strokeDashoffset = circleCircumference - (bookedPercentage / 100) * circleCircumference;
 
   return (
-    <div className="w-full h-[calc(100vh-100px)] min-h-[700px] p-2 md:p-6 font-montserrat flex flex-col gap-4 lg:gap-6 animate-fade-in relative z-10 overflow-visible">
+    <div className="w-full flex flex-col xl:h-[calc(100vh-100px)] xl:min-h-[700px] p-2 md:p-6 font-montserrat gap-4 lg:gap-6 animate-fade-in relative z-10">
       <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-[#fcd34d]/5 blur-[120px] rounded-full pointer-events-none z-0"></div>
 
       {/* TOP NAVIGATION ROW */}
-      <div className="absolute -top-12 lg:-top-16 right-2 lg:right-6 z-50 flex justify-end shrink-0">
+      <div className="w-full flex justify-end shrink-0 xl:absolute xl:-top-16 xl:right-6 z-50 mb-2 xl:mb-0">
          {/* Fix applied: Outer Wrapper for the pill */}
          <div className="relative border border-white/10 rounded-full shadow-xl overflow-hidden group">
            {/* Layer 1: Oversized Blur */}
@@ -302,7 +302,7 @@ const AdminCalendar = () => {
       <div className="flex flex-col xl:flex-row gap-6 lg:gap-8 flex-1 min-h-0 relative z-20 mt-4 lg:mt-0">
         
         {/* LEFT COLUMN */}
-        <div className="w-full xl:w-[30%] flex flex-col gap-6 h-full shrink-0">
+        <div className="w-full xl:w-[30%] flex flex-col gap-6 xl:h-full shrink-0">
           
           {/* Ring Chart as a Button - Fix applied */}
           <button 
@@ -331,7 +331,7 @@ const AdminCalendar = () => {
           </button>
 
           {/* Upcoming Sessions Card - Fix applied */}
-          <div className="relative border border-white/10 rounded-[2rem] overflow-hidden shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] flex-1 flex flex-col min-h-0 transform-gpu">
+          <div className="relative border border-white/10 rounded-[2rem] overflow-hidden shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] flex-1 flex flex-col min-h-[350px] xl:min-h-0 transform-gpu">
             
             {/* Layer 1: Oversized Blur */}
             <div className="absolute -inset-4 bg-white/5 backdrop-blur-2xl -z-10" />
@@ -376,7 +376,7 @@ const AdminCalendar = () => {
         </div>
 
         {/* RIGHT COLUMN: Calendar Grid - Fix applied */}
-        <div className="w-full xl:w-[70%] relative border border-white/10 rounded-[2.5rem] overflow-hidden shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] transform-gpu h-full flex flex-col">
+        <div className="w-full xl:w-[70%] relative border border-white/10 rounded-[2.5rem] overflow-hidden shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] transform-gpu min-h-[600px] xl:h-full flex flex-col mt-4 xl:mt-0">
           
           {/* Layer 1: Oversized Blur */}
           <div className="absolute -inset-4 bg-white/5 backdrop-blur-2xl -z-10" />
