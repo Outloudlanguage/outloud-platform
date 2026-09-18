@@ -963,6 +963,35 @@ const AdminHub = () => {
   const [isProvisioningModalOpen, setIsProvisioningModalOpen] = useState(false);
   const [provisioningInitialData, setProvisioningInitialData] = useState(null);
 
+  // --- DIRECTORY SEARCH & FILTER STATES ---
+  const [searchQuery, setSearchQuery] = useState('');
+  const [dirFilters, setDirFilters] = useState({ level: 'ALL', status: 'ALL', cohort: 'ALL', payment: 'ALL' });
+
+  useEffect(() => {
+    setSearchQuery('');
+    setDirFilters({ level: 'ALL', status: 'ALL', cohort: 'ALL', payment: 'ALL' });
+  }, [directoryTab]);
+
+  const getFilteredDirectory = () => {
+    return directoryUsers.filter(user => {
+      const searchStr = searchQuery.toLowerCase();
+      const matchesSearch = !searchQuery || 
+        `${user.first_name || ''} ${user.last_name || ''}`.toLowerCase().includes(searchStr) ||
+        (user.email || '').toLowerCase().includes(searchStr) ||
+        (user.whatsapp || '').includes(searchStr);
+
+      if (directoryTab !== 'students') return matchesSearch;
+
+      const matchesLevel = dirFilters.level === 'ALL' || (user.level && user.level.includes(dirFilters.level));
+      const matchesStatus = dirFilters.status === 'ALL' || user.status === dirFilters.status;
+      const matchesCohort = dirFilters.cohort === 'ALL' || String(user.cohort) === String(dirFilters.cohort);
+      const matchesPayment = dirFilters.payment === 'ALL' || user.payment_status === dirFilters.payment;
+
+      return matchesSearch && matchesLevel && matchesStatus && matchesCohort && matchesPayment;
+    });
+  };
+  const filteredDirectory = getFilteredDirectory();
+
   // --- NEW STATS STATES ---
   const [activeStudentsPct, setActiveStudentsPct] = useState(0);
   const [upcomingActivities, setUpcomingActivities] = useState([]);
@@ -1763,23 +1792,23 @@ const renderAccounts = () => (
       </div>
 
       {/* Middle Column (Quick Actions) */}
-      <div className="lg:col-span-3 grid grid-cols-1 lg:grid-rows-2 gap-6 shrink-0 lg:h-full">
+      <div className="lg:col-span-3 grid grid-cols-2 lg:grid-cols-1 lg:grid-rows-2 gap-4 lg:gap-6 shrink-0 lg:h-full">
         
         {/* CREATE CARD */}
-        <div onClick={() => setIsProvisioningModalOpen(true)} className="relative w-full min-h-[160px] lg:h-full rounded-[2.5rem] border border-white/10 overflow-hidden shadow-2xl cursor-pointer group">
+        <div onClick={() => setIsProvisioningModalOpen(true)} className="relative w-full aspect-square lg:aspect-auto lg:h-full rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl cursor-pointer group">
           <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
-          <div className="relative w-full h-full flex flex-col items-center justify-center p-6">
-             <img src="https://i.postimg.cc/ZKPVccsH/4(8).png" alt="Create" className="w-16 h-16 lg:w-48 lg:h-48 mb-2 lg:mb-4 object-contain group-hover:scale-110 transition-transform duration-300 drop-shadow-md will-change-transform" />
-             <h3 className="text-white font-black text-base lg:text-2xl tracking-widest uppercase text-center">Create</h3>
+          <div className="relative w-full h-full flex flex-col items-center justify-center p-4 lg:p-6">
+             <img src="https://i.postimg.cc/ZKPVccsH/4(8).png" alt="Create" className="w-20 h-20 lg:w-48 lg:h-48 mb-2 lg:mb-4 object-contain group-hover:scale-110 transition-transform duration-300 drop-shadow-md will-change-transform" />
+             <h3 className="text-white font-black text-sm lg:text-xl md:text-2xl tracking-widest uppercase text-center">Create</h3>
           </div>
         </div>
         
         {/* STATISTICS CARD */}
-        <div onClick={() => setAccountsView('STATISTICS')} className="relative w-full min-h-[160px] lg:h-full rounded-[2.5rem] border border-white/10 overflow-hidden shadow-2xl cursor-pointer group">
+        <div onClick={() => setAccountsView('STATISTICS')} className="relative w-full aspect-square lg:aspect-auto lg:h-full rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl cursor-pointer group">
           <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
-          <div className="relative w-full h-full flex flex-col items-center justify-center p-6">
-             <img src="https://i.postimg.cc/sxd4PQpm/2(12).png" alt="Statistics" className="w-16 h-16 lg:w-48 lg:h-48 mb-2 lg:mb-4 object-contain group-hover:scale-110 transition-transform duration-300 drop-shadow-md will-change-transform" />
-             <h3 className="text-white font-black text-base lg:text-2xl tracking-widest uppercase text-center">Statistics</h3>
+          <div className="relative w-full h-full flex flex-col items-center justify-center p-4 lg:p-6">
+             <img src="https://i.postimg.cc/sxd4PQpm/2(12).png" alt="Statistics" className="w-20 h-20 lg:w-48 lg:h-48 mb-2 lg:mb-4 object-contain group-hover:scale-110 transition-transform duration-300 drop-shadow-md will-change-transform" />
+             <h3 className="text-white font-black text-sm lg:text-xl md:text-2xl tracking-widest uppercase text-center">Statistics</h3>
           </div>
         </div>
       </div>
@@ -2397,37 +2426,37 @@ const FinancesPage = () => {
        {/* Left: Circular KPIs */}
         <div className="lg:col-span-3 grid grid-cols-2 lg:flex lg:flex-col gap-4 lg:gap-6 lg:h-full justify-center">
           
-          {/* RENEWALS BUTTON - Clipped Wrapper */}
-          <button onClick={() => setShowRenewalsModal(true)} className="w-full aspect-square lg:aspect-auto lg:flex-1 relative rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl cursor-pointer group hover:bg-white/5 transition-all text-left">
+          {/* RENEWALS BUTTON */}
+          <button onClick={() => setShowRenewalsModal(true)} className="w-full aspect-square lg:aspect-auto lg:h-full lg:flex-1 relative rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl cursor-pointer group hover:bg-white/5 transition-all text-left">
             <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
-            <div className="relative w-full h-full flex flex-col items-center justify-center p-6">
-              <div className="relative w-32 h-32 flex items-center justify-center shrink-0 mb-2">
+            <div className="relative w-full h-full flex flex-col items-center justify-center p-4 lg:p-6">
+              <div className="relative w-24 h-24 lg:w-32 lg:h-32 flex items-center justify-center shrink-0 mb-2">
                 <svg className="w-full h-full transform -rotate-90 drop-shadow-[0_0_15px_rgba(252,211,77,0.8)]" viewBox="0 0 100 100">
                   <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.1)" strokeWidth="10" fill="transparent" />
                   <circle cx="50" cy="50" r="40" stroke="#fcd34d" strokeWidth="10" fill="transparent" strokeDasharray={2 * Math.PI * 40} strokeDashoffset={(2 * Math.PI * 40) - (renewalRate / 100) * (2 * Math.PI * 40)} strokeLinecap="round" className="group-hover:stroke-yellow-300 transition-colors" />
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-3xl font-black text-white drop-shadow-md">{renewalRate}%</span>
+                  <span className="text-xl lg:text-3xl font-black text-white drop-shadow-md">{renewalRate}%</span>
                 </div>
               </div>
-              <h3 className="text-white/90 font-black text-sm tracking-widest uppercase text-center mt-2">Renewals</h3>
+              <h3 className="text-white/90 font-black text-[10px] lg:text-sm tracking-widest uppercase text-center mt-2">Renewals</h3>
             </div>
           </button>
 
-          {/* NET MARGIN CARD - Clipped Wrapper */}
-          <div className="flex-1 relative rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl cursor-pointer group">
+          {/* NET MARGIN CARD */}
+          <div className="w-full aspect-square lg:aspect-auto lg:h-full lg:flex-1 relative rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl cursor-pointer group">
             <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
-            <div className="relative w-full h-full flex flex-col items-center justify-center p-6">
-              <div className="relative w-32 h-32 flex items-center justify-center shrink-0 mb-2">
+            <div className="relative w-full h-full flex flex-col items-center justify-center p-4 lg:p-6">
+              <div className="relative w-24 h-24 lg:w-32 lg:h-32 flex items-center justify-center shrink-0 mb-2">
                 <svg className="w-full h-full transform -rotate-90 drop-shadow-[0_0_15px_rgba(59,130,246,0.8)]" viewBox="0 0 100 100">
                   <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.1)" strokeWidth="10" fill="transparent" />
                   <circle cx="50" cy="50" r="40" stroke="#3b82f6" strokeWidth="10" fill="transparent" strokeDasharray={2 * Math.PI * 40} strokeDashoffset={(2 * Math.PI * 40) - (netMarginPercentage / 100) * (2 * Math.PI * 40)} strokeLinecap="round" className="group-hover:stroke-blue-400 transition-colors" />
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-3xl font-black text-white drop-shadow-md">{netMarginPercentage}%</span>
+                  <span className="text-xl lg:text-3xl font-black text-white drop-shadow-md">{netMarginPercentage}%</span>
                 </div>
               </div>
-              <h3 className="text-white/90 font-black text-sm tracking-widest uppercase text-center mt-2 whitespace-nowrap">Net Margin</h3>
+              <h3 className="text-white/90 font-black text-[10px] lg:text-sm tracking-widest uppercase text-center mt-2 whitespace-nowrap">Net Margin</h3>
             </div>
           </div>
           
@@ -2443,32 +2472,32 @@ const FinancesPage = () => {
           <div className="w-full aspect-square lg:aspect-auto lg:flex-1 relative rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl">
             <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
             <div className="relative w-full h-full flex flex-col items-center justify-center p-4">
-              <h4 className="text-white/70 font-black text-sm tracking-widest uppercase">Gross Revenue</h4>
-              <span className="text-3xl font-black text-[#fcd34d] mt-1">${revenue.toLocaleString()}</span>
+              <h4 className="text-white/70 font-black text-xs lg:text-sm tracking-widest uppercase text-center leading-tight">Gross Revenue</h4>
+              <span className="text-xl lg:text-3xl font-black text-[#fcd34d] mt-1">${revenue.toLocaleString()}</span>
             </div>
           </div>
           
-          <div className="flex-1 relative rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl cursor-pointer group hover:bg-white/5 transition-colors">
+          <div className="w-full aspect-square lg:aspect-auto lg:flex-1 relative rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl cursor-pointer group hover:bg-white/5 transition-colors">
             <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
             <div className="relative w-full h-full flex flex-col items-center justify-center p-4">
-              <h4 className="text-white/70 font-black text-sm tracking-widest uppercase">Payroll Liability</h4>
-              <span className="text-3xl font-black text-red-400 mt-1">-${payroll.toLocaleString()}</span>
+              <h4 className="text-white/70 font-black text-xs lg:text-sm tracking-widest uppercase text-center leading-tight">Payroll Liability</h4>
+              <span className="text-xl lg:text-3xl font-black text-red-400 mt-1">-${payroll.toLocaleString()}</span>
             </div>
           </div>
           
-          <div className="flex-1 relative rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl cursor-pointer group hover:bg-white/5 transition-colors">
+          <div className="w-full aspect-square lg:aspect-auto lg:flex-1 relative rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl cursor-pointer group hover:bg-white/5 transition-colors">
             <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
             <div className="relative w-full h-full flex flex-col items-center justify-center p-4">
-              <h4 className="text-white/70 font-black text-sm tracking-widest uppercase text-center leading-tight">Digital Overhead</h4>
-              <span className="text-3xl font-black text-orange-400 mt-1">-${overhead.toLocaleString()}</span>
+              <h4 className="text-white/70 font-black text-xs lg:text-sm tracking-widest uppercase text-center leading-tight">Digital Overhead</h4>
+              <span className="text-xl lg:text-3xl font-black text-orange-400 mt-1">-${overhead.toLocaleString()}</span>
             </div>
           </div>
           
-          <div className="flex-1 relative rounded-[2rem] border border-[#10b981]/40 overflow-hidden shadow-2xl">
+          <div className="w-full aspect-square lg:aspect-auto lg:flex-1 relative rounded-[2rem] border border-[#10b981]/40 overflow-hidden shadow-2xl">
             <div className="absolute -inset-4 bg-[#10b981]/20 backdrop-blur-xl -z-10" />
             <div className="relative w-full h-full flex flex-col items-center justify-center p-4">
-              <h4 className="text-white font-black text-sm tracking-widest uppercase">Net Profit</h4>
-              <span className="text-4xl font-black text-[#10b981] mt-1 drop-shadow-md">${netProfit.toLocaleString()}</span>
+              <h4 className="text-white font-black text-xs lg:text-sm tracking-widest uppercase text-center leading-tight">Net Profit</h4>
+              <span className="text-2xl lg:text-4xl font-black text-[#10b981] mt-1 drop-shadow-md">${netProfit.toLocaleString()}</span>
             </div>
           </div>
         </div>
@@ -2655,6 +2684,26 @@ const FinancesPage = () => {
       )}
 
       {/* ALL MODALS GO HERE (Profile, Provisioning, Preview, Settings) */}
+      {isProvisioningModalOpen && (
+        <ProvisioningModal 
+          isOpen={isProvisioningModalOpen}
+          onClose={() => setIsProvisioningModalOpen(false)} 
+          supabase={supabase} 
+          onSuccess={() => fetchDirectory(directoryTab)} 
+          initialData={provisioningInitialData}
+        />
+      )}
+
+      {selectedStudent && (
+        <StudentManagerModal 
+            isOpen={!!selectedStudent} 
+            onClose={() => setSelectedStudent(null)} 
+            userData={selectedStudent} 
+            isPending={selectedStudent?.status === 'pending'}
+            supabase={supabase}
+            onSuccess={() => fetchDirectory(directoryTab)}
+        />
+      )}
 
       <div className="flex-1 flex overflow-hidden relative">
         {/* DESKTOP SIDEBAR NAVIGATION */}
@@ -2753,8 +2802,8 @@ const FinancesPage = () => {
               
               {/* MOBILE SETTINGS BOTTOM SHEET */}
               {isMobile && isMobileContentSettingsOpen && !isPreviewMode && (
-                <div className="fixed inset-0 z-[400] flex items-end justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in" onClick={() => setIsMobileContentSettingsOpen(false)}>
-                  <div className="bg-[#070b19] border border-white/20 rounded-[2rem] w-full p-6 shadow-2xl flex flex-col gap-4 animate-slide-up" onClick={e => e.stopPropagation()}>
+                <div className="fixed inset-0 z-[400] flex items-end justify-center bg-black/80 backdrop-blur-sm p-4 pb-24 animate-fade-in" onClick={() => setIsMobileContentSettingsOpen(false)}>
+                  <div className="bg-[#070b19] border border-white/20 rounded-[2rem] w-full p-6 shadow-2xl flex flex-col gap-4 animate-slide-up max-h-[70vh] overflow-y-auto custom-scrollbar" onClick={e => e.stopPropagation()}>
                     <div className="flex justify-between items-center border-b border-white/10 pb-4 mb-2">
                       <h3 className="text-lg font-black text-white uppercase tracking-widest">Composer Settings</h3>
                       <button onClick={() => setIsMobileContentSettingsOpen(false)} className="w-8 h-8 bg-white/10 text-white rounded-full font-black">✕</button>
@@ -3305,8 +3354,8 @@ const FinancesPage = () => {
                   </button>
                   
                   {isMobileToolsOpen && (
-                    <div className="fixed inset-0 z-[400] flex items-end justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in" onClick={() => setIsMobileToolsOpen(false)}>
-                      <div className="bg-[#070b19] border border-white/20 rounded-[2rem] w-full p-6 shadow-2xl flex flex-col gap-4 animate-slide-up max-h-[70vh]" onClick={e => e.stopPropagation()}>
+                    <div className="fixed inset-0 z-[400] flex items-end justify-center bg-black/80 backdrop-blur-sm p-4 pb-24 animate-fade-in" onClick={() => setIsMobileToolsOpen(false)}>
+                      <div className="bg-[#070b19] border border-white/20 rounded-[2rem] w-full p-6 shadow-2xl flex flex-col gap-4 animate-slide-up max-h-[70vh] overflow-y-auto custom-scrollbar" onClick={e => e.stopPropagation()}>
                         <div className="flex justify-between items-center border-b border-white/10 pb-4 mb-2 shrink-0">
                           <h3 className="text-lg font-black text-[#fcd34d] uppercase tracking-widest">Add Element</h3>
                           <button onClick={() => setIsMobileToolsOpen(false)} className="w-8 h-8 bg-white/10 text-white rounded-full font-black">✕</button>
