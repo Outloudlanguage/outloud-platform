@@ -109,6 +109,13 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
     return () => window.removeEventListener('message', handleMessage);
   }, []);
 
+  // Anti-Piracy: Blocks right-clicking anywhere in the app
+  useEffect(() => {
+    const handleContextMenu = (e) => e.preventDefault();
+    document.addEventListener('contextmenu', handleContextMenu);
+    return () => document.removeEventListener('contextmenu', handleContextMenu);
+  }, []);
+
   const evaluateElement = (el) => {
     let possible = 0;
     let correct = 0;
@@ -402,13 +409,6 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
   const currentElements = screensData[currentStep] || [];
   const contentElements = currentElements.filter(el => !['nav_button'].includes(el.type));
   const dockElements = currentElements.filter(el => ['nav_button', 'record_compare'].includes(el.type));
-
-  // Anti-Piracy: Blocks right-clicking anywhere in the app
-  useEffect(() => {
-    const handleContextMenu = (e) => e.preventDefault();
-    document.addEventListener('contextmenu', handleContextMenu);
-    return () => document.removeEventListener('contextmenu', handleContextMenu);
-  }, []);
 
   return (
     <>
