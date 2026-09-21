@@ -1020,6 +1020,7 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
   // Metrics & Practice State
   const [isMetricsModalOpen, setIsMetricsModalOpen] = useState(false);
   const [practiceContext, setPracticeContext] = useState(null);
+  const [completedActivityType, setCompletedActivityType] = useState(null);
 
   const [announcements, setAnnouncements] = useState([]);
   const [activeCategory, setActiveCategory] = useState(null);
@@ -1101,6 +1102,16 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
   const handleStartActivity = async (type) => {
     if (!studentData) return;
     
+    // PREVENT RE-TAKING COMPLETED ACTIVITIES
+    if (type === 'Lesson' && (studentData.lesson_score >= 75)) {
+      setCompletedActivityType('Lesson');
+      return;
+    }
+    if (type === 'Workbook' && (studentData.workbook_score >= 75)) {
+      setCompletedActivityType('Workbook');
+      return;
+    }
+
     // Community Routing
     if (type.startsWith('Community_')) {
       setCommunityTab(type.split('_')[1]);
@@ -1215,6 +1226,29 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
 
   return (
     <>
+      {completedActivityType && (
+        <div className="fixed inset-0 z-[700] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in font-montserrat">
+          <div className="bg-[#070b19] border border-white/20 backdrop-blur-xl rounded-[2.5rem] p-8 md:p-10 max-w-md w-full shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col items-center text-center relative overflow-hidden">
+            <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-[#fcd34d]/10 blur-[80px] rounded-full pointer-events-none"></div>
+            
+            <div className="w-16 h-16 bg-[#fcd34d]/20 text-[#fcd34d] rounded-full flex items-center justify-center mb-6 border border-[#fcd34d]/50 shadow-[0_0_20px_rgba(252,211,77,0.3)] shrink-0 z-10">
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+            </div>
+            
+            <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-widest mb-4 drop-shadow-md z-10">Activity Completed</h2>
+            
+            <p className="text-white/70 font-medium text-sm leading-relaxed mb-8 z-10">
+              You have already successfully completed the <strong className="text-white">{completedActivityType}</strong> for this unit. Please wait for your live class evaluation to unlock the next unit, or visit the <strong className="text-[#fcd34d]">Practice Center</strong> to review previous material without affecting your official grade.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row w-full gap-3 z-10">
+              <button onClick={() => setCompletedActivityType(null)} className="flex-1 py-4 bg-white/5 hover:bg-white/10 text-white font-bold text-xs uppercase tracking-widest rounded-xl transition-colors border border-white/10">Understood</button>
+              <button onClick={() => { setCompletedActivityType(null); setIsMetricsModalOpen(true); }} className="flex-1 py-4 bg-[#fcd34d] text-[#08203e] font-black tracking-widest text-xs uppercase rounded-xl hover:scale-105 transition-transform shadow-[0_0_15px_rgba(252,211,77,0.4)]">Practice Center</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <StudentMetricsModal 
         isOpen={isMetricsModalOpen} 
         onClose={() => setIsMetricsModalOpen(false)} 
