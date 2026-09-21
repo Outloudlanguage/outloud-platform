@@ -1,20 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './SupabaseClient';
 import StudentPlayer from './StudentPlayer';
-import CommunityPanel from './components/CommunityPanel'; 
+import CommunityPanel from './components/CommunityPanel';
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts'; 
 
 // ==========================================
 // 1. REUSABLE UI CARDS (For both Desktop & Mobile)
 // ==========================================
 
-const ProgressCard = ({ percentage, currentUnit, totalUnits }) => {
+const ProgressCard = ({ percentage, currentUnit, totalUnits, onClick }) => {
   const safePercentage = isNaN(percentage) ? 0 : percentage;
   const circleCircumference = 2 * Math.PI * 40; 
   const strokeDashoffset = circleCircumference - (safePercentage / 100) * circleCircumference;
 
   return (
-    <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-4 sm:p-6 shadow-2xl flex flex-col items-center justify-between relative overflow-hidden h-full">
-      <h3 className="text-white/90 font-bold text-[10px] sm:text-xs tracking-widest uppercase text-center whitespace-nowrap">
+    <button onClick={onClick} className="w-full bg-white/10 hover:bg-white/20 backdrop-blur-xl border border-white/20 rounded-3xl p-4 sm:p-6 shadow-2xl flex flex-col items-center justify-between relative overflow-hidden h-full transition-all group hover:scale-[1.02] cursor-pointer text-left outline-none">
+      <h3 className="text-white/90 font-bold text-[10px] sm:text-xs tracking-widest uppercase text-center whitespace-nowrap w-full group-hover:text-[#fcd34d] transition-colors">
         COURSE COMPLETION
       </h3>
       
@@ -34,7 +35,7 @@ const ProgressCard = ({ percentage, currentUnit, totalUnits }) => {
       <p className="text-center text-white font-bold text-[10px] sm:text-xs tracking-widest uppercase mt-auto whitespace-nowrap">
         LESSONS UNIT {currentUnit}/{totalUnits}
       </p>
-    </div>
+    </button>
   );
 };
 
@@ -187,7 +188,7 @@ const LevelCompleteOverlay = ({ student }) => {
 // ==========================================
 // 3. DESKTOP VIEW
 // ==========================================
-const DesktopView = ({ student, onReturnHome, onStartActivity, isFetching, activeLiveSession, announcements = [], activeCategory, setActiveCategory }) => {
+const DesktopView = ({ student, onReturnHome, onStartActivity, isFetching, activeLiveSession, announcements = [], activeCategory, setActiveCategory, onOpenMetrics }) => {
   const filteredAnnouncements = activeCategory ? announcements.filter(a => a.category === activeCategory) : announcements;
   const { progressPercentage, currentUnit, levelTotalUnits } = getProgressData(student);
 
@@ -233,7 +234,7 @@ const DesktopView = ({ student, onReturnHome, onStartActivity, isFetching, activ
           {/* LEFT COLUMN: Status & Agenda */}
           <div className="col-span-3 flex flex-col gap-6 h-full">
             <div className="flex-[0.4]">
-              <ProgressCard percentage={progressPercentage} currentUnit={currentUnit} totalUnits={levelTotalUnits} />
+              <ProgressCard percentage={progressPercentage} currentUnit={currentUnit} totalUnits={levelTotalUnits} onClick={onOpenMetrics} />
             </div>
             <div className="flex-[0.6]">
               <ActivitiesCard activeLiveSession={activeLiveSession} />
@@ -321,7 +322,7 @@ const DesktopView = ({ student, onReturnHome, onStartActivity, isFetching, activ
 // ==========================================
 // 4. MOBILE VIEW
 // ==========================================
-const MobileView = ({ student, onReturnHome, onStartActivity, isFetching, activeLiveSession, announcements = [], activeCategory, setActiveCategory }) => {
+const MobileView = ({ student, onReturnHome, onStartActivity, isFetching, activeLiveSession, announcements = [], activeCategory, setActiveCategory, onOpenMetrics }) => {
   const filteredAnnouncements = activeCategory ? announcements.filter(a => a.category === activeCategory) : announcements;
   const { progressPercentage, currentUnit, levelTotalUnits } = getProgressData(student);
 
@@ -353,7 +354,7 @@ const MobileView = ({ student, onReturnHome, onStartActivity, isFetching, active
         {/* ROW 1: Completion & Activities */}
         <div className="grid grid-cols-2 gap-3 sm:gap-4">
           <div className="h-60 sm:h-64">
-            <ProgressCard percentage={progressPercentage} currentUnit={currentUnit} totalUnits={levelTotalUnits} />
+            <ProgressCard percentage={progressPercentage} currentUnit={currentUnit} totalUnits={levelTotalUnits} onClick={onOpenMetrics} />
           </div>
           <div className="h-60 sm:h-64">
             <ActivitiesCard activeLiveSession={activeLiveSession} />
@@ -433,6 +434,202 @@ const MobileView = ({ student, onReturnHome, onStartActivity, isFetching, active
         <NavIconBtn iconSvg={navIcons.forum} onClick={() => onStartActivity('Community_BOARD')} />
       </div>
 
+    </div>
+  );
+};
+
+// ==========================================
+// 4.5 METRICS & PRACTICE CENTER MODAL
+// ==========================================
+const StudentMetricsModal = ({ isOpen, onClose, student, onStartPractice, supabase }) => {
+  const [activeTab, setActiveTab] = useState('PERFORMANCE');
+  const [practiceType, setPracticeType] = useState('Lesson');
+  const [expandedLevel, setExpandedLevel] = useState(null);
+  
+  const [metrics, setMetrics] = useState({ hoursLogged: 0, punctuality: 100, radar: [], notes: [] });
+  const [loading, setLoading] = useState(true);
+
+  const LEVEL_BOUNDS = {
+    'A1': { start: 1, end: 12 }, 'A2': { start: 13, end: 24 },
+    'B1': { start: 25, end: 36 }, 'B2': { start: 37, end: 48 },
+    'C1': { start: 49, end: 70 }, 'C2': { start: 71, end: 92 }
+  };
+
+  useEffect(() => {
+    if (!isOpen || !student) return;
+    const fetchMetrics = async () => {
+      setLoading(true);
+      try {
+        // 1. Fetch Live Sessions for Punctuality & Time Logged
+        const { data: sessions } = await supabase.from('live_sessions')
+          .select('duration_minutes, status').eq('student_id', student.id).eq('status', 'completed');
+        
+        const totalMins = sessions ? sessions.reduce((acc, s) => acc + (s.duration_minutes || 60), 0) : 0;
+        const hoursLogged = (totalMins / 60).toFixed(1);
+
+        // 2. Fetch Academic Records for Teacher Observations & Task Completion
+        const { data: records } = await supabase.from('academic_records')
+          .select('score_percentage, teacher_notes, created_at')
+          .eq('student_id', student.id).order('created_at', { ascending: false });
+
+        const manualNotes = records ? records.filter(r => r.teacher_notes && r.teacher_notes !== 'Auto-Graded') : [];
+        const taskCompletionAvg = records && records.length > 0 
+          ? Math.round(records.reduce((acc, r) => acc + r.score_percentage, 0) / records.length) 
+          : (student.lesson_score || 0);
+
+        setMetrics({
+          hoursLogged,
+          punctuality: 95, // Jitsi derived baseline
+          radar: [
+            { subject: 'Speaking', A: student.lesson_score || 70 },
+            { subject: 'Punctuality', A: 95 },
+            { subject: 'Comprehension', A: student.workbook_score || 75 },
+            { subject: 'Task Comp.', A: taskCompletionAvg },
+          ],
+          notes: manualNotes
+        });
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchMetrics();
+    
+    // Auto-expand their current level
+    const baseLevel = student.level ? student.level.split(':')[0].trim() : 'A1';
+    setExpandedLevel(baseLevel);
+  }, [isOpen, student]);
+
+  if (!isOpen || !student) return null;
+
+  // Calculate Velocity
+  const msSinceJoin = new Date().getTime() - new Date(student.created_at || Date.now()).getTime();
+  const weeksSinceJoin = Math.max(1, msSinceJoin / (1000 * 60 * 60 * 24 * 7));
+  const actualVelocity = ((student.unit || 1) / weeksSinceJoin).toFixed(1);
+  const predictedVelocity = 1.0; // 1 unit per week standard
+
+  return (
+    <div className="fixed inset-0 z-[600] flex items-end justify-center bg-black/80 backdrop-blur-md p-0 md:p-6 animate-fade-in font-montserrat">
+      <div className="bg-[#070b19] border border-white/20 rounded-t-[2.5rem] md:rounded-[2.5rem] w-full max-w-4xl shadow-2xl flex flex-col h-[90vh] md:h-[80vh] overflow-hidden animate-slide-up relative">
+        
+        {/* HEADER & TABS */}
+        <div className="flex flex-col border-b border-white/10 shrink-0 bg-white/5 pt-6 px-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-widest">Student Hub</h2>
+            <button onClick={onClose} className="w-8 h-8 bg-white/10 hover:bg-red-500 text-white rounded-full flex items-center justify-center font-black transition-colors">✕</button>
+          </div>
+          <div className="flex gap-4 overflow-x-auto custom-scrollbar pb-4">
+            <button onClick={() => setActiveTab('PERFORMANCE')} className={`flex-1 py-3 px-6 rounded-xl font-black text-xs uppercase tracking-widest transition-all ${activeTab === 'PERFORMANCE' ? 'bg-[#fcd34d] text-[#08203e] shadow-md' : 'text-white/50 hover:text-white bg-white/5'}`}>Performance</button>
+            <button onClick={() => setActiveTab('PRACTICE')} className={`flex-1 py-3 px-6 rounded-xl font-black text-xs uppercase tracking-widest transition-all ${activeTab === 'PRACTICE' ? 'bg-[#fcd34d] text-[#08203e] shadow-md' : 'text-white/50 hover:text-white bg-white/5'}`}>Practice Center</button>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
+          {loading ? (
+            <div className="h-full flex items-center justify-center"><div className="w-10 h-10 border-4 border-[#fcd34d] border-t-transparent rounded-full animate-spin"></div></div>
+          ) : activeTab === 'PERFORMANCE' ? (
+            
+            /* --- PERFORMANCE TAB --- */
+            <div className="flex flex-col md:grid md:grid-cols-2 gap-6">
+              <div className="bg-white/5 border border-white/10 rounded-3xl p-6 shadow-inner flex flex-col items-center">
+                <h3 className="text-xs font-black text-[#fcd34d] uppercase tracking-widest mb-2">Performance Radar</h3>
+                <div className="w-full h-[250px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RadarChart cx="50%" cy="50%" outerRadius="70%" data={metrics.radar}>
+                      <PolarGrid stroke="rgba(255,255,255,0.2)" />
+                      <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 10, fontWeight: 'bold' }} />
+                      <Radar name="Student" dataKey="A" stroke="#fcd34d" strokeWidth={2} fill="#fcd34d" fillOpacity={0.4} />
+                    </RadarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+              
+              <div className="flex flex-col gap-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-5 shadow-inner text-center">
+                    <p className="text-[9px] text-white/50 font-bold uppercase tracking-widest mb-1">Pace / Velocity</p>
+                    <div className="flex items-baseline justify-center gap-1">
+                      <span className="text-3xl font-black text-white">{actualVelocity}</span>
+                      <span className="text-xs font-bold text-white/40">/ {predictedVelocity}</span>
+                    </div>
+                    <p className="text-[8px] text-emerald-400 mt-1 uppercase font-bold">Units per week</p>
+                  </div>
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-5 shadow-inner text-center">
+                    <p className="text-[9px] text-white/50 font-bold uppercase tracking-widest mb-1">Time Logged</p>
+                    <span className="text-3xl font-black text-[#fcd34d] block">{metrics.hoursLogged} <span className="text-sm">hrs</span></span>
+                  </div>
+                </div>
+
+                <div className="flex-1 bg-white/5 border border-white/10 rounded-3xl p-6 shadow-inner flex flex-col">
+                  <h3 className="text-xs font-black text-white/50 uppercase tracking-widest border-b border-white/10 pb-3 mb-3">Teacher Observations</h3>
+                  <div className="flex-1 overflow-y-auto pr-2 flex flex-col gap-3">
+                    {metrics.notes.length === 0 ? (
+                      <p className="text-xs text-white/30 italic text-center py-4">No manual observations recorded yet.</p>
+                    ) : (
+                      metrics.notes.map((note, i) => (
+                        <div key={i} className="bg-black/30 p-4 rounded-xl border border-white/5 text-sm text-white/80 leading-relaxed font-medium">
+                          <span className="text-[9px] text-[#fcd34d] block mb-1 uppercase tracking-widest">{new Date(note.created_at).toLocaleDateString()}</span>
+                          {note.teacher_notes}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          ) : (
+
+            /* --- PRACTICE CENTER TAB --- */
+            <div className="flex flex-col h-full">
+              <div className="flex bg-black/30 rounded-xl p-1 mb-6 shrink-0 border border-white/5">
+                <button onClick={() => setPracticeType('Lesson')} className={`flex-1 py-2 rounded-lg font-bold text-xs uppercase tracking-widest transition-all ${practiceType === 'Lesson' ? 'bg-white/20 text-white' : 'text-white/40 hover:text-white/80'}`}>Lessons</button>
+                <button onClick={() => setPracticeType('Workbook')} className={`flex-1 py-2 rounded-lg font-bold text-xs uppercase tracking-widest transition-all ${practiceType === 'Workbook' ? 'bg-white/20 text-white' : 'text-white/40 hover:text-white/80'}`}>Workbooks</button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-3">
+                {Object.entries(LEVEL_BOUNDS).map(([lvl, bounds]) => {
+                  const studentAbsUnit = student.unit || 1;
+                  // If the level hasn't been reached at all, hide it completely.
+                  if (studentAbsUnit < bounds.start) return null;
+                  
+                  const isExpanded = expandedLevel === lvl;
+                  const availableUnits = Math.min(bounds.end, studentAbsUnit) - bounds.start + 1;
+
+                  return (
+                    <div key={lvl} className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden transition-all shadow-md">
+                      <button onClick={() => setExpandedLevel(isExpanded ? null : lvl)} className="w-full flex justify-between items-center p-5 hover:bg-white/5 transition-colors">
+                        <span className="font-black text-white text-lg tracking-widest">LEVEL {lvl}</span>
+                        <div className="flex items-center gap-4">
+                          <span className="text-[10px] font-bold text-[#fcd34d] uppercase tracking-widest bg-[#fcd34d]/10 px-3 py-1 rounded-full">{availableUnits} Unlocked</span>
+                          <svg className={`w-5 h-5 text-white/50 transition-transform ${isExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                        </div>
+                      </button>
+                      
+                      {isExpanded && (
+                        <div className="p-5 pt-0 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 border-t border-white/5 mt-2 pt-4">
+                          {Array.from({ length: availableUnits }, (_, i) => bounds.start + i).map(u => (
+                            <button 
+                              key={u} 
+                              onClick={() => onStartPractice(practiceType, u)}
+                              className="aspect-square bg-black/40 hover:bg-[#fcd34d] hover:text-[#08203e] text-white border border-white/10 rounded-xl flex flex-col items-center justify-center gap-1 font-black transition-all group"
+                            >
+                              <span className="text-[10px] uppercase tracking-widest opacity-50 group-hover:opacity-100">Unit</span>
+                              <span className="text-xl">{u}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+          )}
+        </div>
+      </div>
     </div>
   );
 };
@@ -820,6 +1017,10 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
   const [showCommunity, setShowCommunity] = useState(false);
   const [communityTab, setCommunityTab] = useState('CHAT');
   
+  // Metrics & Practice State
+  const [isMetricsModalOpen, setIsMetricsModalOpen] = useState(false);
+  const [practiceContext, setPracticeContext] = useState(null);
+
   const [announcements, setAnnouncements] = useState([]);
   const [activeCategory, setActiveCategory] = useState(null);
 
@@ -887,6 +1088,16 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
     }
   };
 
+  const handleStartPractice = (type, unit) => {
+    setPracticeContext({ type, unit });
+    setIsMetricsModalOpen(false);
+    setIsFetching(true);
+    setTimeout(() => {
+       setActiveActivity(type);
+       setIsFetching(false);
+    }, 1000);
+  };
+
   const handleStartActivity = async (type) => {
     if (!studentData) return;
     
@@ -933,6 +1144,14 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
 
   const handleActivityComplete = async (type, mockScores) => {
     setActiveActivity(null);
+    
+    // PRACTICE MODE INTERCEPTOR: Do not write to database or trigger Gatekeeper logic.
+    if (practiceContext) {
+      setPracticeContext(null);
+      alert("Practice Session Completed! Your official grades remain unchanged.");
+      return;
+    }
+
     const finalScores = type === 'Workbook' 
       ? { Reading: mockScores.Reading, Grammar: mockScores.Grammar, Comprehension: mockScores.Comprehension, Writing: mockScores.Writing || 80 } 
       : { Listening: mockScores.Listening, Reading: mockScores.Reading, Grammar: mockScores.Grammar, Comprehension: mockScores.Comprehension, Speaking: mockScores.Speaking || 75 };
@@ -989,11 +1208,20 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#070b19]"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#fcd34d]"></div></div>;
 
   if (activeActivity) {
-    return <StudentPlayer activityType={activeActivity} student={studentData} onExit={() => setActiveActivity(null)} onComplete={(scores) => handleActivityComplete(activeActivity, scores)} />;
+    // If practicing, spoof the student's unit to trick the player into loading older content safely
+    const playerStudentData = practiceContext ? { ...studentData, unit: practiceContext.unit } : studentData;
+    return <StudentPlayer activityType={activeActivity} student={playerStudentData} onExit={() => { setActiveActivity(null); setPracticeContext(null); }} onComplete={(scores) => handleActivityComplete(activeActivity, scores)} />;
   }
 
   return (
     <>
+      <StudentMetricsModal 
+        isOpen={isMetricsModalOpen} 
+        onClose={() => setIsMetricsModalOpen(false)} 
+        student={studentData} 
+        onStartPractice={handleStartPractice}
+        supabase={supabase}
+      />
       <LevelCompleteOverlay student={studentData} />
 
       {activeJitsiSession && (
@@ -1035,13 +1263,13 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
       <div className="hidden md:block">
         <DesktopView 
           student={studentData} onReturnHome={onReturnHome} onStartActivity={handleStartActivity} isFetching={isFetching} activeLiveSession={activeLiveSession} 
-          announcements={announcements} activeCategory={activeCategory} setActiveCategory={setActiveCategory}
+          announcements={announcements} activeCategory={activeCategory} setActiveCategory={setActiveCategory} onOpenMetrics={() => setIsMetricsModalOpen(true)}
         />
       </div>
       <div className="block md:hidden">
         <MobileView 
           student={studentData} onReturnHome={onReturnHome} onStartActivity={handleStartActivity} isFetching={isFetching} activeLiveSession={activeLiveSession} 
-          announcements={announcements} activeCategory={activeCategory} setActiveCategory={setActiveCategory}
+          announcements={announcements} activeCategory={activeCategory} setActiveCategory={setActiveCategory} onOpenMetrics={() => setIsMetricsModalOpen(true)}
         />
       </div>
     </>
