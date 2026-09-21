@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './SupabaseClient';
+import StudentHub from './StudentHub';
 import AdminCalendar from './components/AdminHub/Tabs/AdminCalendar';
 import { LEVEL_UNIT_MAP, LEVEL_OPTIONS, LESSON_TOOLS, WORKBOOK_TOOLS } from './constants/adminConfigs';
 import { generateCrosswordLayout } from './utils/crosswordGenerator';
@@ -960,10 +961,15 @@ const [directoryTab, setDirectoryTab] = useState('students');
   const [directoryUsers, setDirectoryUsers] = useState([]);
   const [isLoadingDirectory, setIsLoadingDirectory] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
-  const [isProvisioningModalOpen, setIsProvisioningModalOpen] = useState(false);
-  const [provisioningInitialData, setProvisioningInitialData] = useState(null);
-
-  // --- DIRECTORY SEARCH & FILTER STATES ---
+  // --- IMPERSONATION INTERCEPTOR ---
+  if (impersonatingStudent) {
+    return (
+      <StudentHub 
+        preloadedStudent={impersonatingStudent} 
+        onReturnHome={() => setImpersonatingStudent(null)} 
+      />
+    );
+  }
   const [searchQuery, setSearchQuery] = useState('');
   const [dirFilters, setDirFilters] = useState({ level: 'ALL', status: 'ALL', cohort: 'ALL', payment: 'ALL' });
 
@@ -1887,7 +1893,7 @@ const renderAccounts = () => (
                     {user.status === 'pending' ? (
                       <button onClick={(e) => { e.stopPropagation(); setSelectedStudent(user); }} className="bg-[#fcd34d] text-[#08203e] px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-md hover:scale-105 transition-transform">Pending</button>
                     ) : (
-                      <button onClick={(e) => { e.stopPropagation(); setSelectedStudent(user); }} className="bg-white/10 text-white hover:bg-[#fcd34d] hover:text-[#08203e] px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-md">View as</button>
+                      <button onClick={(e) => { e.stopPropagation(); setImpersonatingStudent(user); }} className="bg-white/10 text-white hover:bg-[#fcd34d] hover:text-[#08203e] px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-md">View as</button>
                     )}
                   </div>
                   
