@@ -881,6 +881,7 @@ const EvaluatorModule = ({ onBack, onOnboard }) => {
 // MAIN ADMIN HUB COMPONENT
 // ==========================================
 const AdminHub = () => {
+  const [impersonatingStudent, setImpersonatingStudent] = useState(null);
   const [activeModule, setActiveModule] = useState('ACCOUNTS');
   
   // Responsive Architecture State
@@ -961,15 +962,6 @@ const [directoryTab, setDirectoryTab] = useState('students');
   const [directoryUsers, setDirectoryUsers] = useState([]);
   const [isLoadingDirectory, setIsLoadingDirectory] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
-  // --- IMPERSONATION INTERCEPTOR ---
-  if (impersonatingStudent) {
-    return (
-      <StudentHub 
-        preloadedStudent={impersonatingStudent} 
-        onReturnHome={() => setImpersonatingStudent(null)} 
-      />
-    );
-  }
   const [searchQuery, setSearchQuery] = useState('');
   const [dirFilters, setDirFilters] = useState({ level: 'ALL', status: 'ALL', cohort: 'ALL', payment: 'ALL' });
 
@@ -2647,6 +2639,16 @@ const FinancesPage = () => {
     </div>
   );
 };
+
+  // --- IMPERSONATION INTERCEPTOR ---
+  if (impersonatingStudent) {
+    return (
+      <StudentHub 
+        preloadedStudent={impersonatingStudent} 
+        onReturnHome={() => setImpersonatingStudent(null)} 
+      />
+    );
+  }
 
   return (
     <div 
