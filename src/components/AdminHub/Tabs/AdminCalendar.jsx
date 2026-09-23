@@ -25,6 +25,11 @@ const AdminCalendar = () => {
   const [selectedClassType, setSelectedClassType] = useState('Unit Class');
   const [selectedUnit, setSelectedUnit] = useState(1);
 
+  // Shift Assignment States
+  const [showShiftModal, setShowShiftModal] = useState(false);
+  const [shiftDate, setShiftDate] = useState('');
+  const [shiftTeacherId, setShiftTeacherId] = useState('');
+
   const dayNames = ['LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB', 'DOM'];
   
   const times = [
@@ -256,6 +261,28 @@ const AdminCalendar = () => {
 
   const closeSlotModal = () => setSelectedSlot(null);
 
+  const handleAssignShift = async (e) => {
+    e.preventDefault();
+    if (!shiftTeacherId || !shiftDate) return alert("Selecciona un profesor y una fecha.");
+    setIsProcessing(true);
+    try {
+      const { error } = await supabase.from('teacher_shifts').insert({
+        teacher_id: shiftTeacherId,
+        shift_date: shiftDate,
+        status: 'scheduled'
+      });
+      if (error) throw error;
+      alert("Shift assigned successfully!");
+      setShowShiftModal(false);
+      setShiftDate('');
+    } catch (err) {
+      console.error(err);
+      alert("Error assigning shift.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const getSlotStyle = (slotData, isHover) => {
     if (!slotData) return isHover ? 'bg-white/10 text-white border-white/20' : 'bg-black/20 backdrop-blur-sm text-white/40 border-white/5';
     if (slotData.status === 'booked' || slotData.status === 'completed') {
@@ -282,7 +309,19 @@ const AdminCalendar = () => {
            {/* Layer 1: Oversized Blur */}
            <div className="absolute -inset-4 bg-white/5 backdrop-blur-2xl -z-10" />
            {/* Layer 2: Content Container */}
-           <div className="relative z-10 flex items-center gap-4 lg:gap-6 p-2 px-6">
+           <div className="relative z-10 flex items-center gap-4 lg:gap-6 p-2 px-4 lg:px-6">
+             
+             <button 
+               onClick={() => {
+                 setShiftTeacherId(teachers.length > 0 ? teachers[0].id : '');
+                 setShowShiftModal(true);
+               }}
+               className="bg-[#fcd34d] hover:bg-white text-[#08203e] font-black text-[9px] lg:text-[10px] uppercase tracking-widest px-4 py-2 rounded-full transition-colors shadow-md hidden sm:block cursor-pointer"
+             >
+               + ASSIGN SHIFT
+             </button>
+             <div className="w-px h-5 bg-white/20 hidden sm:block"></div>
+
              <div className="flex items-center gap-2 lg:gap-3">
                <button onClick={() => handleWeekChange(-1)} className="text-white/40 hover:text-white transition-colors p-2 cursor-pointer relative z-30"><svg className="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg></button>
                <span className="text-[10px] lg:text-xs font-black text-white uppercase tracking-widest min-w-[70px] text-center">SEMANA</span>
@@ -631,6 +670,60 @@ const AdminCalendar = () => {
                 ))
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- STANDBY SHIFT MODAL --- */}
+      {showShiftModal && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-[#070b19]/95 border border-white/20 rounded-[2rem] shadow-2xl w-full max-w-md p-8 relative flex flex-col">
+            <button onClick={() => setShowShiftModal(false)} className="absolute top-6 right-6 text-white/50 hover:text-white cursor-pointer z-10">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+            
+            <div className="w-16 h-16 bg-[#fcd34d]/20 text-[#fcd34d] rounded-full flex items-center justify-center mx-auto mb-4 border border-[#fcd34d]/50 shadow-[0_0_15px_rgba(252,211,77,0.2)]">
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            </div>
+
+            <h3 className="text-xl font-black text-white uppercase tracking-widest mb-1 text-center shrink-0">
+              Assign Standby Shift
+            </h3>
+            <p className="text-[10px] text-white/60 mb-6 text-center font-bold uppercase tracking-widest leading-relaxed">
+              Authorize a teacher for a 12-hour on-duty window (7:30 AM - 7:30 PM). They will earn a $2 bonus if they maintain their connection.
+            </p>
+
+            <form onSubmit={handleAssignShift} className="flex flex-col gap-4">
+              <div>
+                <label className="text-[10px] font-black text-[#fcd34d] uppercase tracking-widest mb-1.5 block">Select Teacher</label>
+                <select 
+                  value={shiftTeacherId} 
+                  onChange={(e) => setShiftTeacherId(e.target.value)}
+                  className="w-full p-3.5 bg-black/40 border border-white/20 rounded-xl text-xs font-bold text-white uppercase tracking-widest focus:outline-none focus:border-[#fcd34d] appearance-none cursor-pointer"
+                  required
+                >
+                  <option value="" disabled className="text-slate-500">Choose a teacher...</option>
+                  {teachers.map(t => (
+                    <option key={t.id} value={t.id} className="text-slate-900">{t.first_name} {t.last_name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black text-[#fcd34d] uppercase tracking-widest mb-1.5 block">Shift Date</label>
+                <input 
+                  type="date" 
+                  value={shiftDate}
+                  onChange={(e) => setShiftDate(e.target.value)}
+                  className="w-full p-3.5 bg-black/40 border border-white/20 rounded-xl text-xs font-bold text-white uppercase tracking-widest focus:outline-none focus:border-[#fcd34d] cursor-pointer"
+                  required
+                />
+              </div>
+
+              <button type="submit" disabled={isProcessing} className="w-full mt-4 py-4 bg-[#fcd34d] hover:bg-white text-[#08203e] font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-[0_0_15px_rgba(252,211,77,0.4)] cursor-pointer disabled:opacity-50">
+                {isProcessing ? 'Processing...' : 'Authorize Shift'}
+              </button>
+            </form>
           </div>
         </div>
       )}

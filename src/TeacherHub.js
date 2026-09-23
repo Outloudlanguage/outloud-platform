@@ -216,10 +216,10 @@ const DesktopView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onR
               <UpcomingCard nextClass={nextClass} pendingCount={pendingEvaluations.length} />
             </div>
             <div className="flex flex-col gap-4 mt-auto">
-              <button onClick={onRequestSub} className="w-full py-4 bg-[#e2e8f0] text-[#0f172a] hover:bg-white font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 transition-transform hover:scale-105 shadow-xl leading-tight text-center">
+              <a href="https://wa.me/584226885683" target="_blank" rel="noreferrer" className="w-full py-4 bg-[#e2e8f0] text-[#0f172a] hover:bg-white font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 transition-transform hover:scale-105 shadow-xl leading-tight text-center cursor-pointer">
                 <img src="https://i.postimg.cc/mrtXmB72/Copia-de-Diseno-sin-titulo-(2).png" alt="Substitute" className="w-8 h-8 object-contain shrink-0" />
                 REQUEST<br/>SUBSTITUTE
-              </button>
+              </a>
               <div className="flex justify-center gap-5 items-center px-2 mt-2">
                 <SocialButton src="https://i.postimg.cc/ry0TD2Hv/11(6).png" url="https://www.facebook.com/share/1KxawRX9vA/" />
                 <SocialButton src="https://i.postimg.cc/MpD2C6cs/10(5).png" url="https://www.instagram.com/outloudlanguage?igsh=MXU5dmRzeTZ3YTk1cg==" />
@@ -433,10 +433,10 @@ const MobileView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onRe
             <SocialButton src="https://i.postimg.cc/pXbwyhzD/9(3).png" url="https://www.tiktok.com/@outloudlanguage" />
             <SocialButton src="https://i.postimg.cc/0y9hdTtf/8(4).png" url="https://discord.gg/847PMD2DbV" />
           </div>
-          <button onClick={onRequestSub} className="w-full py-4 bg-[#e2e8f0] text-[#0f172a] font-black text-sm uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 shadow-xl leading-tight">
+          <a href="https://wa.me/584226885683" target="_blank" rel="noreferrer" className="w-full py-4 bg-[#e2e8f0] text-[#0f172a] font-black text-sm uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 shadow-xl leading-tight cursor-pointer hover:scale-105 transition-transform">
             <img src="https://i.postimg.cc/mrtXmB72/Copia-de-Diseno-sin-titulo-(2).png" alt="Help" className="w-8 h-8 sm:w-10 sm:h-10 object-contain shrink-0" />
             REQUEST SUBSTITUTE
-          </button>
+          </a>
         </div>
 
       </div>
@@ -484,7 +484,8 @@ const JitsiRoom = ({ session, teacher, onLeave }) => {
   const handleEndClass = async () => {
     await supabase.from('live_sessions').update({ 
       status: 'completed', 
-      ended_at: new Date().toISOString() 
+      ended_at: new Date().toISOString(),
+      actual_end_at: new Date().toISOString()
     }).eq('id', session.id);
     onLeave();
   };
@@ -931,7 +932,8 @@ const TeacherHub = ({ onReturnHome }) => {
             student_id: next.student_id,
             student_name: `${next.student?.first_name || 'Estudiante'} ${next.student?.last_name || ''}`.trim(),
             unit: next.unit || 1,
-            date: next.parsedDate.toISOString() 
+            date: next.parsedDate.toISOString(),
+            actual_start_at: next.actual_start_at
           });
         }
       }
@@ -1014,11 +1016,18 @@ const TeacherHub = ({ onReturnHome }) => {
     if (actionType === 'Live' && nextClass) {
       setIsLaunching(true);
       
-      // 1. Force the database to update FIRST (Removed 'started_at' to prevent silent crashes)
-      const { error } = await supabase.from('live_sessions').update({ 
+      const payload = { 
         status: 'in_progress', 
         last_ping_at: new Date().toISOString()
-      }).eq('id', nextClass.id);
+      };
+      
+      // CRITICAL: Only stamp the start time once so refreshing the page doesn't reset their clock
+      if (!nextClass.actual_start_at) {
+        payload.actual_start_at = new Date().toISOString();
+      }
+
+      // 1. Force the database to update FIRST
+      const { error } = await supabase.from('live_sessions').update(payload).eq('id', nextClass.id);
       
       setIsLaunching(false);
 

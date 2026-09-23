@@ -113,8 +113,12 @@ const NavIconBtn = ({ iconSvg, active, onClick, hasNotification, isProfile, avat
   <button onClick={onClick} className={`relative w-14 h-14 md:w-16 md:h-16 flex items-center justify-center rounded-2xl transition-all ${active ? 'bg-white/20 border border-white/40 shadow-inner' : 'hover:bg-white/10 border border-transparent'}`}>
     {hasNotification && <div className="absolute top-3 right-3 w-2.5 h-2.5 bg-red-500 rounded-full border border-[#070b19] z-10 animate-pulse"></div>}
     {isProfile ? (
-      <div className="w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden border-2 border-white/50 bg-gray-300">
-        <img src={avatarUrl || 'https://i.pravatar.cc/150'} alt="Profile" className="w-full h-full object-cover" />
+      <div className="w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden border-2 border-white/50 bg-[#070b19] flex items-center justify-center text-white/40">
+        {avatarUrl ? (
+          <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+        ) : (
+          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+        )}
       </div>
     ) : (
       <div className={`w-8 h-8 md:w-9 md:h-9 ${active ? 'text-white' : 'text-white/70'}`}>
@@ -656,7 +660,11 @@ const JitsiRoom = ({ session, student, onLeave }) => {
 
       if (data) {
         if (data.status !== 'in_progress') {
-           setAlertState('admin_handled');
+           if (data.status === 'completed') {
+             setAlertState('completed');
+           } else {
+             setAlertState('admin_handled');
+           }
            return;
         }
 
@@ -726,6 +734,18 @@ const JitsiRoom = ({ session, student, onLeave }) => {
         </div>
       )}
 
+{alertState === 'completed' && (
+        <div className="bg-emerald-500/10 border border-emerald-500/50 rounded-[2rem] p-10 max-w-md w-full text-center shadow-[0_0_50px_rgba(16,185,129,0.2)] flex flex-col items-center animate-fade-in">
+          <div className="w-8 h-8 bg-emerald-500 rounded-full mb-6 shadow-[0_0_25px_#10b981]"></div>
+          <h2 className="text-2xl font-black text-emerald-400 uppercase tracking-widest mb-2 drop-shadow-md">Clase Finalizada</h2>
+          <p className="text-sm font-medium text-white/90 mb-8 leading-relaxed">
+            Tu profesor ha cerrado la sesión. Por favor, evalúa tu experiencia para ayudarnos a mantener la excelencia.
+          </p>
+          <button onClick={() => onLeave(true)} className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-[#08203e] font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-[0_0_20px_rgba(16,185,129,0.4)] hover:scale-105 cursor-pointer">
+            Evaluar Clase
+          </button>
+        </div>
+      )}
       {alertState === 'admin_handled' && (
         <div className="bg-blue-500/10 border border-blue-500/50 rounded-[2rem] p-10 max-w-md w-full text-center shadow-[0_0_50px_rgba(59,130,246,0.2)] flex flex-col items-center animate-fade-in">
           <div className="w-8 h-8 bg-blue-500 rounded-full mb-6 shadow-[0_0_25px_#3b82f6]"></div>
@@ -808,6 +828,74 @@ const EvaluationCrossroad = ({ data, onProceed, onRetry, onScheduleLive, onSched
   );
 };
 
+// ==========================================
+// 5.5 TEACHER EVALUATION MODAL (Post-Class)
+// ==========================================
+const TeacherEvaluationModal = ({ isOpen, session, onClose, supabase }) => {
+  const [answers, setAnswers] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  if (!isOpen || !session) return null;
+
+  const questions = [
+    { id: 'q_demeanor', text: "¿Mantuvo el profesor una actitud positiva, paciente y motivadora durante la clase?" },
+    { id: 'q_clarity', text: "¿Explicó el profesor los temas de hoy de forma clara y efectiva?" },
+    { id: 'q_facilitation', text: "¿Manejó el profesor activamente la clase y animó a todos a participar?" },
+    { id: 'q_content', text: "¿Presentó el profesor el material de una manera estructurada y fácil de seguir?" },
+    { id: 'q_time', text: "¿Comenzó el profesor exactamente a tiempo y mantuvo un buen ritmo de clase?" }
+  ];
+
+  const isComplete = Object.keys(answers).length === questions.length;
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    try {
+      await supabase.from('class_evaluations').insert({
+        session_id: session.id,
+        teacher_id: session.teacher_id,
+        student_id: session.student_id,
+        q_demeanor: answers.q_demeanor,
+        q_clarity: answers.q_clarity,
+        q_facilitation: answers.q_facilitation,
+        q_content: answers.q_content,
+        q_time: answers.q_time
+      });
+      onClose();
+    } catch (err) {
+      console.error("Error submitting evaluation:", err);
+      onClose(); 
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[800] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in font-montserrat">
+      <div className="bg-[#070b19] border border-white/20 rounded-[2rem] p-6 md:p-10 max-w-lg w-full shadow-2xl flex flex-col relative overflow-hidden">
+        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-emerald-500/10 blur-[80px] rounded-full pointer-events-none"></div>
+
+        <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-2 drop-shadow-md text-center">Califica tu Clase</h2>
+        <p className="text-sm font-medium text-white/70 mb-8 text-center leading-relaxed">
+          Ayúdanos a mantener la excelencia. ¿Cómo fue el desempeño de tu profesor hoy?
+        </p>
+
+        <div className="flex flex-col gap-4 mb-8">
+          {questions.map((q, idx) => (
+            <div key={q.id} className="bg-white/5 border border-white/10 rounded-xl p-4 flex flex-col gap-3 shadow-inner">
+              <span className="text-sm font-bold text-white/90 leading-tight">{idx + 1}. {q.text}</span>
+              <div className="flex gap-3">
+                <button onClick={() => setAnswers(prev => ({...prev, [q.id]: false}))} className={`flex-1 py-2 rounded-lg font-black text-xs uppercase tracking-widest transition-all border cursor-pointer ${answers[q.id] === false ? 'bg-red-500 text-white border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.4)] scale-105' : 'bg-black/40 text-white/50 border-white/10 hover:border-red-500/50'}`}>No</button>
+                <button onClick={() => setAnswers(prev => ({...prev, [q.id]: true}))} className={`flex-1 py-2 rounded-lg font-black text-xs uppercase tracking-widest transition-all border cursor-pointer ${answers[q.id] === true ? 'bg-emerald-500 text-white border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.4)] scale-105' : 'bg-black/40 text-white/50 border-white/10 hover:border-emerald-500/50'}`}>Sí</button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <button disabled={!isComplete || isSubmitting} onClick={handleSubmit} className={`w-full py-4 font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-lg cursor-pointer ${isComplete ? 'bg-[#fcd34d] text-[#08203e] hover:scale-105 shadow-[0_0_20px_rgba(252,211,77,0.4)]' : 'bg-white/10 text-white/30 cursor-not-allowed'}`}>
+          {isSubmitting ? 'Enviando...' : 'Enviar Calificación'}
+        </button>
+      </div>
+    </div>
+  );
+};
 // ==========================================
 // 6. THE LIVE CALENDAR BRIDGE
 // ==========================================
@@ -1006,6 +1094,7 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
   const [isFetching, setIsFetching] = useState(false);
   const [activeLiveSession, setActiveLiveSession] = useState(null);
   const [activeJitsiSession, setActiveJitsiSession] = useState(null);
+  const [evalSessionTarget, setEvalSessionTarget] = useState(null);
   
   const [showGatekeeper, setShowGatekeeper] = useState(false);
   const [gatekeeperData, setGatekeeperData] = useState(null);
@@ -1262,9 +1351,20 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
         <JitsiRoom 
           session={activeJitsiSession} 
           student={studentData} 
-          onLeave={() => setActiveJitsiSession(null)} 
+          onLeave={(needsEval) => { 
+            const sessionData = activeJitsiSession;
+            setActiveJitsiSession(null); 
+            if (needsEval === true) setEvalSessionTarget(sessionData);
+          }} 
         />
       )}
+
+      <TeacherEvaluationModal 
+        isOpen={!!evalSessionTarget}
+        session={evalSessionTarget}
+        onClose={() => setEvalSessionTarget(null)}
+        supabase={supabase}
+      />
 
       <CommunityPanel 
         isOpen={showCommunity} 

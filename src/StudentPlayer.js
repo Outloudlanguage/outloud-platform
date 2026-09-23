@@ -450,7 +450,13 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
                   <span className="text-xs font-bold text-white leading-tight">{student?.first_name} {student?.last_name}</span>
                   <span className="text-[10px] text-[#fcd34d] font-black uppercase tracking-widest">Level {student?.level?.split(':')[0]}</span>
                 </div>
-                <img src={student?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(student?.first_name || 'U')}&background=random&color=fff`} className="w-9 h-9 rounded-full object-cover border border-white/30 shadow-inner" alt="Avatar"/>
+                <div className="w-9 h-9 rounded-full overflow-hidden border border-white/30 shadow-inner bg-[#070b19] flex items-center justify-center text-white/40 shrink-0">
+                  {student?.avatar_url ? (
+                    <img src={student.avatar_url} className="w-full h-full object-cover" alt="Avatar"/>
+                  ) : (
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                  )}
+                </div>
               </div>
 
               <button onClick={onExit} className="text-white/60 hover:text-white transition-all bg-white/5 hover:bg-red-500 hover:border-red-400 p-2 rounded-full border border-white/10 shadow-md">

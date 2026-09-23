@@ -878,6 +878,191 @@ const EvaluatorModule = ({ onBack, onOnboard }) => {
 // MasterCalendarModule removed to restore original AdminCalendar layout.
 
 // ==========================================
+// ADMIN TEACHER METRICS MODAL
+// ==========================================
+const AdminTeacherMetricsModal = ({ isOpen, onClose, teacherId, teacherName, supabase }) => {
+  const [activeTab, setActiveTab] = useState('PAYROLL');
+  const [sessions, setSessions] = useState([]);
+  const [shifts, setShifts] = useState([]);
+  const [evaluations, setEvaluations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [teacherProfile, setTeacherProfile] = useState(null);
+
+  useEffect(() => {
+    if (!isOpen || !teacherId) return;
+    const fetchMetrics = async () => {
+      setLoading(true);
+      const now = new Date();
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+      const { data: profile } = await supabase.from('profiles').select('*').eq('id', teacherId).single();
+      if (profile) setTeacherProfile(profile);
+
+      const { data: sessionData } = await supabase.from('live_sessions').select('*').eq('teacher_id', teacherId).eq('status', 'completed').gte('scheduled_at', firstDayOfMonth).order('scheduled_at', { ascending: false });
+      if (sessionData) setSessions(sessionData);
+
+      const { data: shiftData } = await supabase.from('teacher_shifts').select('*').eq('teacher_id', teacherId).gte('shift_date', firstDayOfMonth).order('shift_date', { ascending: false });
+      if (shiftData) setShifts(shiftData);
+
+      const { data: evalData } = await supabase.from('class_evaluations').select('*').eq('teacher_id', teacherId);
+      if (evalData) setEvaluations(evalData);
+
+      setLoading(false);
+    };
+    fetchMetrics();
+  }, [isOpen, teacherId]);
+
+  if (!isOpen) return null;
+
+  const totalSessionPay = sessions.reduce((sum, s) => sum + (Number(s.final_pay) || 0), 0);
+  const totalShiftBonus = shifts.reduce((sum, s) => sum + (Number(s.bonus_earned) || 0), 0);
+  const totalEarned = (totalSessionPay + totalShiftBonus).toFixed(2);
+
+  const totalEvals = evaluations.length;
+  let radarData = [
+    { subject: 'Actitud', A: 100 }, { subject: 'Claridad', A: 100 }, { subject: 'Participación', A: 100 }, { subject: 'Contenido', A: 100 }, { subject: 'Tiempo', A: 100 }
+  ];
+  let globalRating = 5.0;
+
+  if (totalEvals > 0) {
+    const sum = (key) => evaluations.filter(e => e[key] === true).length;
+    radarData = [
+      { subject: 'Actitud', A: (sum('q_demeanor') / totalEvals) * 100 },
+      { subject: 'Claridad', A: (sum('q_clarity') / totalEvals) * 100 },
+      { subject: 'Participación', A: (sum('q_facilitation') / totalEvals) * 100 },
+      { subject: 'Contenido', A: (sum('q_content') / totalEvals) * 100 },
+      { subject: 'Tiempo', A: (sum('q_time') / totalEvals) * 100 }
+    ];
+    const totalPositives = sum('q_demeanor') + sum('q_clarity') + sum('q_facilitation') + sum('q_content') + sum('q_time');
+    globalRating = ((totalPositives / (totalEvals * 5)) * 5).toFixed(1);
+  } else if (teacherProfile?.total_rating_questions > 0) {
+    globalRating = ((teacherProfile.total_positive_ratings / teacherProfile.total_rating_questions) * 5).toFixed(1);
+  }
+
+  return (
+    <div className="fixed inset-0 z-[700] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in font-montserrat">
+      <div className="relative w-full max-w-4xl bg-[#070b19] border border-emerald-500/30 rounded-[2.5rem] shadow-[0_25px_50px_rgba(0,0,0,0.5)] flex flex-col h-[85vh] overflow-hidden">
+        <div className="flex flex-col border-b border-white/10 shrink-0 bg-white/5 pt-6 px-6 md:px-8">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-widest">{teacherName}</h2>
+              <p className="text-emerald-400 font-bold text-xs uppercase tracking-widest mt-1">Admin Metrics & Payroll View</p>
+            </div>
+            <button onClick={onClose} className="w-8 h-8 bg-white/10 hover:bg-red-500 text-white rounded-full flex items-center justify-center font-black transition-colors">✕</button>
+          </div>
+          <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-4">
+            {['PAYROLL', 'SHIFTS', 'PERFORMANCE'].map(tab => (
+              <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 py-3 px-4 rounded-xl font-black text-[10px] md:text-xs uppercase tracking-widest transition-all ${activeTab === tab ? 'bg-emerald-500 text-white shadow-md' : 'text-white/50 hover:text-white bg-white/5'}`}>{tab}</button>
+            ))}
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-8">
+          {loading ? (
+            <div className="h-full flex items-center justify-center"><div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div></div>
+          ) : activeTab === 'PAYROLL' ? (
+            <div className="flex flex-col gap-6 h-full">
+              <div className="flex flex-col md:flex-row items-center justify-between bg-emerald-500/10 border border-emerald-500/30 rounded-3xl p-6 shadow-inner shrink-0 gap-4">
+                <div>
+                  <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-1">Current Month Payout</p>
+                  <h3 className="text-4xl md:text-5xl font-black text-white">${totalEarned} <span className="text-xl text-white/50">USD</span></h3>
+                </div>
+              </div>
+              <div className="flex-1 bg-white/5 border border-white/10 rounded-2xl overflow-hidden flex flex-col">
+                <div className="grid grid-cols-4 md:grid-cols-6 gap-2 p-4 bg-black/40 border-b border-white/10 text-[9px] font-black text-white/50 uppercase tracking-widest">
+                  <div className="col-span-2">Session Date</div>
+                  <div className="hidden md:block">Base Rate</div>
+                  <div className="text-center text-red-400">Penalty</div>
+                  <div className="text-center text-[#fcd34d]">Bonus</div>
+                  <div className="text-right text-emerald-400">Final Pay</div>
+                </div>
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-2">
+                  {sessions.length === 0 ? (
+                    <div className="text-center py-10 text-white/30 font-bold uppercase tracking-widest text-xs">No classes completed this month.</div>
+                  ) : (
+                    sessions.map(s => (
+                      <div key={s.id} className="grid grid-cols-4 md:grid-cols-6 gap-2 p-3 bg-white/5 rounded-xl text-xs items-center hover:bg-white/10 transition-colors">
+                        <div className="col-span-2 font-bold text-white/90 truncate">{new Date(s.scheduled_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
+                        <div className="hidden md:block text-white/60 font-medium">${s.base_rate_applied || '0.00'}</div>
+                        <div className="text-center font-black text-red-400">${s.minute_penalty || '0.00'}</div>
+                        <div className="text-center font-black text-[#fcd34d]">${s.performance_bonus || '0.00'}</div>
+                        <div className="text-right font-black text-emerald-400">${s.final_pay || '0.00'}</div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : activeTab === 'SHIFTS' ? (
+            <div className="flex flex-col gap-6 h-full">
+              <div className="flex flex-col md:flex-row items-center justify-between bg-[#fcd34d]/10 border border-[#fcd34d]/30 rounded-3xl p-6 shadow-inner shrink-0 gap-4">
+                <div>
+                  <p className="text-[10px] font-bold text-[#fcd34d] uppercase tracking-widest mb-1">Total Shift Bonuses</p>
+                  <h3 className="text-4xl md:text-5xl font-black text-white">${totalShiftBonus.toFixed(2)} <span className="text-xl text-white/50">USD</span></h3>
+                </div>
+              </div>
+              <div className="flex-1 bg-white/5 border border-white/10 rounded-2xl overflow-hidden flex flex-col">
+                <div className="grid grid-cols-3 gap-2 p-4 bg-black/40 border-b border-white/10 text-[9px] font-black text-white/50 uppercase tracking-widest">
+                  <div>Assigned Date</div>
+                  <div className="text-center">Status</div>
+                  <div className="text-right text-[#fcd34d]">Bonus Earned</div>
+                </div>
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-2">
+                  {shifts.length === 0 ? (
+                    <div className="text-center py-10 text-white/30 font-bold uppercase tracking-widest text-xs">No shifts assigned this month.</div>
+                  ) : (
+                    shifts.map(s => (
+                      <div key={s.id} className="grid grid-cols-3 gap-2 p-4 bg-white/5 rounded-xl text-xs items-center hover:bg-white/10 transition-colors">
+                        <div className="font-bold text-white/90">{new Date(s.shift_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</div>
+                        <div className="text-center">
+                          <span className={`px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest ${s.status === 'completed' ? 'bg-emerald-500/20 text-emerald-400' : s.status === 'missed' ? 'bg-red-500/20 text-red-400' : 'bg-white/10 text-white/50'}`}>
+                            {s.status}
+                          </span>
+                        </div>
+                        <div className="text-right font-black text-[#fcd34d]">${s.bonus_earned || '0.00'}</div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col md:grid md:grid-cols-2 gap-6 h-full">
+              <div className="bg-white/5 border border-white/10 rounded-3xl p-6 shadow-inner flex flex-col items-center justify-center">
+                <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest mb-2">Global Star Rating</p>
+                <div className="flex items-baseline gap-2 mb-6">
+                  <span className="text-6xl font-black text-[#fcd34d] drop-shadow-[0_0_15px_rgba(252,211,77,0.5)]">{globalRating}</span>
+                  <span className="text-2xl font-bold text-white/40">/ 5.0</span>
+                </div>
+                <div className="w-full h-[250px] md:h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
+                      <PolarGrid stroke="rgba(255,255,255,0.2)" />
+                      <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 10, fontWeight: 'bold' }} />
+                      <Radar name="Teacher" dataKey="A" stroke="#fcd34d" strokeWidth={2} fill="#fcd34d" fillOpacity={0.4} />
+                    </RadarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+              <div className="flex flex-col gap-6">
+                <div className="bg-white/5 border border-white/10 rounded-3xl p-6 shadow-inner flex flex-col items-center justify-center text-center flex-1">
+                  <div className="w-16 h-16 bg-[#fcd34d]/10 text-[#fcd34d] rounded-full flex items-center justify-center mb-4 border border-[#fcd34d]/30">
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  </div>
+                  <h3 className="text-xl font-black text-white uppercase tracking-widest mb-2">Evaluations Tally</h3>
+                  <p className="text-xs text-white/70 leading-relaxed mb-6">
+                    This radar chart plots the average percentage of 'Yes' answers given by students across the 5 core pedagogical metrics.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ==========================================
 // MAIN ADMIN HUB COMPONENT
 // ==========================================
 const AdminHub = () => {
@@ -962,6 +1147,7 @@ const [directoryTab, setDirectoryTab] = useState('students');
   const [directoryUsers, setDirectoryUsers] = useState([]);
   const [isLoadingDirectory, setIsLoadingDirectory] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
+  const [selectedTeacher, setSelectedTeacher] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [dirFilters, setDirFilters] = useState({ level: 'ALL', status: 'ALL', cohort: 'ALL', payment: 'ALL' });
 
@@ -1009,7 +1195,7 @@ const [directoryTab, setDirectoryTab] = useState('students');
       // Fetch booked and in-progress classes, bringing in the heartbeat and teacher details
       const { data: activities } = await supabase
         .from('live_sessions')
-        .select('id, title, class_type, scheduled_at, status, last_ping_at, teacher_id, teacher:profiles!teacher_id(first_name, last_name)')
+        .select('id, title, class_type, scheduled_at, status, last_ping_at, teacher_id, actual_start_at, teacher:profiles!teacher_id(first_name, last_name)')
         .in('status', ['booked', 'in_progress'])
         .not('teacher_id', 'is', null)
         .order('scheduled_at', { ascending: true })
@@ -1017,21 +1203,42 @@ const [directoryTab, setDirectoryTab] = useState('students');
       
       setUpcomingActivities(activities || []);
 
-      // Trigger the Admin Siren & FORCE UI MODAL for new drops (> 2 mins)
+      // Trigger the Admin Siren & FORCE UI MODAL for drops (> 2 mins) OR late starts (> 2 mins)
       if (activities) {
         const now = new Date().getTime();
         activities.forEach(act => {
+          let triggerAlarm = false;
+          let isCritical = false;
+          let alarmReason = '';
+
+          // CONDITION A: Teacher is in progress but heartbeat dropped for > 2 mins
           if (act.status === 'in_progress' && act.last_ping_at) {
-            // Ensure timezone consistency
             const pingStr = act.last_ping_at.endsWith('Z') ? act.last_ping_at : act.last_ping_at + 'Z';
             const msSincePing = now - new Date(pingStr).getTime();
+            if (msSincePing > 120000) {
+              triggerAlarm = true;
+              isCritical = msSincePing > 600000;
+              alarmReason = 'lost_connection';
+            }
+          }
+          
+          // CONDITION B: Class is booked, calendar time has passed by > 2 mins, and teacher hasn't opened room
+          if (act.status === 'booked' && !act.actual_start_at && act.scheduled_at) {
+            const schedStr = act.scheduled_at.endsWith('Z') ? act.scheduled_at : act.scheduled_at + 'Z';
+            const msSinceStart = now - new Date(schedStr).getTime();
+            if (msSinceStart > 120000) {
+              triggerAlarm = true;
+              isCritical = msSinceStart > 600000;
+              alarmReason = 'late_start';
+            }
+          }
+
+          if (triggerAlarm && !alarmedSessions.current.has(act.id)) {
+            alarmedSessions.current.add(act.id);
             
-            if (msSincePing > 120000 && !alarmedSessions.current.has(act.id)) {
-              alarmedSessions.current.add(act.id);
-              
-              // 1. Force the Substitute Modal to appear on screen instantly
-              setDroppedSessionTarget({...act, isCritical: msSincePing > 600000});
-              setShowSubModal(true);
+            // 1. Force the Substitute Modal to appear on screen instantly
+            setDroppedSessionTarget({...act, isCritical, alarmReason});
+            setShowSubModal(true);
 
               // 2. Browser OS Push Notification (appears over other tabs/apps)
               if (Notification.permission === 'granted') {
@@ -1046,7 +1253,6 @@ const [directoryTab, setDirectoryTab] = useState('students');
               const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3');
               audio.play().catch(e => console.log('Audio blocked by browser.'));
             }
-          }
         });
       }
 
@@ -1164,22 +1370,33 @@ useEffect(() => {
     const now = new Date().getTime();
 
     upcomingActivities.forEach(act => {
+      let triggerAlarm = false;
+      let isCritical = false;
+      let alarmReason = '';
+
       if (act.status === 'in_progress' && act.last_ping_at) {
         const pingStr = act.last_ping_at.endsWith('Z') ? act.last_ping_at : act.last_ping_at + 'Z';
         const msSincePing = now - new Date(pingStr).getTime();
-        
-        // 120,000 = 2 mins. If true, FORCE modal open immediately.
-        if (msSincePing > 120000 && !alarmedSessions.current.has(act.id)) {
-          alarmedSessions.current.add(act.id);
-          
-          setDroppedSessionTarget({...act, isCritical: msSincePing > 600000});
-          setShowSubModal(true); // Pops the modal overlay on screen
-          shouldPlaySiren = true;
+        if (msSincePing > 120000) { triggerAlarm = true; isCritical = msSincePing > 600000; alarmReason = 'lost_connection'; }
+      }
+      
+      if (act.status === 'booked' && !act.actual_start_at && act.scheduled_at) {
+        const schedStr = act.scheduled_at.endsWith('Z') ? act.scheduled_at : act.scheduled_at + 'Z';
+        const msSinceStart = now - new Date(schedStr).getTime();
+        if (msSinceStart > 120000) { triggerAlarm = true; isCritical = msSinceStart > 600000; alarmReason = 'late_start'; }
+      }
 
-          // Force OS Push Notification
-          if (Notification.permission === 'granted') {
-            new Notification("⚠️ ALERTA CRÍTICA", { body: `El Prof. ${act.teacher?.first_name} se ha desconectado de la sala. Asigna un suplente inmediatamente.` });
-          }
+      if (triggerAlarm && !alarmedSessions.current.has(act.id)) {
+        alarmedSessions.current.add(act.id);
+        setDroppedSessionTarget({...act, isCritical, alarmReason});
+        setShowSubModal(true); // Pops the modal overlay on screen
+        shouldPlaySiren = true;
+
+        if (Notification.permission === 'granted') {
+          const msg = alarmReason === 'late_start' 
+            ? `El Prof. ${act.teacher?.first_name} lleva >2 mins de retraso para abrir la sala.` 
+            : `El Prof. ${act.teacher?.first_name} se ha desconectado de la sala.`;
+          new Notification("⚠️ ALERTA CRÍTICA", { body: msg });
         }
       }
     });
@@ -1874,7 +2091,7 @@ const renderAccounts = () => (
             </div>
           ) : (
             filteredDirectory.map((user, i) => (
-              <div key={user.id} className={`border rounded-2xl p-3 lg:p-4 flex items-center justify-between transition-colors cursor-pointer group ${user.status === 'pending' ? 'bg-[#fcd34d] border-[#fcd34d] hover:bg-yellow-300 shadow-[0_0_20px_rgba(252,211,77,0.2)]' : 'bg-black/30 border-white/10 hover:bg-black/40'}`} onClick={() => setSelectedStudent(user)}>
+              <div key={user.id} className={`border rounded-2xl p-3 lg:p-4 flex items-center justify-between transition-colors cursor-pointer group ${user.status === 'pending' ? 'bg-[#fcd34d] border-[#fcd34d] hover:bg-yellow-300 shadow-[0_0_20px_rgba(252,211,77,0.2)]' : 'bg-black/30 border-white/10 hover:bg-black/40'}`} onClick={() => user.role === 'Teacher' ? setSelectedTeacher(user) : setSelectedStudent(user)}>
                 <div className="flex items-center gap-3 w-full min-w-0 pr-2">
                   <img src={user.avatar_url || `https://ui-avatars.com/api/?name=${user.first_name || 'U'}+${user.last_name || ''}&background=random&color=fff`} className={`w-10 h-10 lg:w-12 lg:h-12 rounded-full border-2 ${user.status === 'pending' ? 'border-[#08203e] shadow-sm' : 'border-white/20 group-hover:border-[#fcd34d]'} transition-colors object-cover shadow-md shrink-0`} alt="User" />
                   <h4 className={`font-bold text-sm lg:text-base ${user.status === 'pending' ? 'text-[#08203e]' : 'text-white group-hover:text-[#fcd34d]'} transition-colors truncate`}>{user.first_name || 'Nuevo'} {user.last_name || `Usuario`}</h4>
@@ -2756,6 +2973,16 @@ const FinancesPage = () => {
             isPending={selectedStudent?.status === 'pending'}
             supabase={supabase}
             onSuccess={() => fetchDirectory(directoryTab)}
+        />
+      )}
+
+      {selectedTeacher && (
+        <AdminTeacherMetricsModal
+            isOpen={!!selectedTeacher}
+            onClose={() => setSelectedTeacher(null)}
+            teacherId={selectedTeacher.id}
+            teacherName={`${selectedTeacher.first_name} ${selectedTeacher.last_name}`}
+            supabase={supabase}
         />
       )}
 
