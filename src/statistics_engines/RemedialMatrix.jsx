@@ -130,7 +130,7 @@ const RemedialMatrix = ({ studentId }) => {
     return "Remedial indicators are currently stable and manageable. The volume of students falling below the 75% progression threshold is low, and 'Request Help' triggers remain well within our operational capacity for 1-to-1 remedial tutoring. Overall cohort pacing is healthy.";
   };
 
-  if (loading) return <div className="p-8 text-white/50 text-center font-bold tracking-widest">LOADING MATRIX...</div>;
+  if (loading) return <div className="p-4 md:p-8 text-white/50 text-center font-bold tracking-widest">LOADING MATRIX...</div>;
 
   const dataArray = [
     { ...metrics.needsHelp, color: '#eab308', icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z' },
@@ -141,10 +141,10 @@ const RemedialMatrix = ({ studentId }) => {
 
   return (
     // Glassmorphic container matching the AdminHub UI, with strict print overrides
-    <div className="relative flex flex-col w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 shadow-2xl break-inside-avoid print:bg-white print:border-slate-300 print:shadow-none print:p-4">
+    <div className="relative flex flex-col w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl md:rounded-[2rem] p-4 md:p-8 shadow-2xl break-inside-avoid print:bg-white print:border-slate-300 print:shadow-none print:p-4">
       
       <div className="mb-8">
-        <h3 className="text-2xl font-black tracking-widest uppercase text-white print:text-black">
+        <h3 className="text-xl md:text-2xl font-black tracking-widest uppercase text-white print:text-black">
           {studentId ? "Personal Remedial Profile" : "Remedial Tutoring Matrix"}
         </h3>
         <p className="text-sm font-bold text-yellow-400 print:text-slate-600 uppercase tracking-wide">

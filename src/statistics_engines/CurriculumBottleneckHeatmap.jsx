@@ -84,12 +84,12 @@ const CurriculumBottleneckHeatmap = ({ studentId }) => {
     fetchBottlenecks();
   }, [studentId]); // Re-fire anytime the dual-mode dropdown changes
 
-  if (loading) return <div className="p-8 text-white/50 text-center font-bold tracking-widest">LOADING BOTTLENECKS...</div>;
+  if (loading) return <div className="p-4 md:p-8 text-white/50 text-center font-bold tracking-widest">LOADING BOTTLENECKS...</div>;
 
   return (
-    <div className="bottleneck-heatmap-card relative flex flex-col w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 shadow-2xl break-inside-avoid print:bg-white print:border-slate-300 print:shadow-none print:p-4">
+    <div className="bottleneck-heatmap-card relative flex flex-col w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl md:rounded-[2rem] p-4 md:p-8 shadow-2xl break-inside-avoid print:bg-white print:border-slate-300 print:shadow-none print:p-4">
       <div className="mb-6 border-b border-white/10 print:border-slate-300 pb-4">
-        <h3 className="text-2xl font-black tracking-widest uppercase text-white print:text-black">
+        <h3 className="text-xl md:text-2xl font-black tracking-widest uppercase text-white print:text-black">
           {studentId ? "Personal Sticking Points" : "Curriculum Bottlenecks"}
         </h3>
         <p className="text-sm font-bold text-red-400 print:text-red-600 uppercase tracking-wide">

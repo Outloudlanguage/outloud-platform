@@ -1935,7 +1935,7 @@ const renderAccounts = () => (
       <div className="lg:col-span-3 flex flex-col gap-6 shrink-0 lg:h-full">
         
         {/* ACTIVE STUDENTS RING */}
-        <div className="w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-6 shadow-2xl flex flex-col items-center justify-center relative overflow-hidden shrink-0 lg:h-[40%]">
+        <div className="w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl lg:rounded-[2.5rem] p-3 lg:p-6 shadow-2xl flex flex-col items-center justify-center relative overflow-hidden shrink-0 lg:h-[40%]">
           <div className="relative w-32 h-32 flex items-center justify-center shrink-0 mb-2">
             <svg className="w-full h-full transform -rotate-90 drop-shadow-[0_0_10px_rgba(252,211,77,0.8)]" viewBox="0 0 100 100">
               <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.1)" strokeWidth="8" fill="transparent" />
@@ -1949,7 +1949,7 @@ const renderAccounts = () => (
         </div>
 
         {/* LIVE ACTIVITIES WIDGET */}
-        <div className="w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col flex-1 min-h-[300px] lg:min-h-0">
+        <div className="w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl lg:rounded-[2rem] p-3 lg:p-6 shadow-2xl flex flex-col flex-1 min-h-[300px] lg:min-h-0">
           <h3 className="text-white font-black text-2xl tracking-wide mb-4 drop-shadow-md shrink-0 w-full text-center">Activities</h3>
           <ul className="space-y-3 text-xs font-medium text-white/90 flex-1 overflow-y-auto custom-scrollbar pr-2 mb-4">
             {upcomingActivities.length === 0 ? (
@@ -2026,7 +2026,7 @@ const renderAccounts = () => (
       </div>
 
       {/* Right Column (Directory) */}
-      <div className="lg:col-span-6 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-4 lg:p-8 shadow-2xl flex flex-col flex-1 min-h-[500px] lg:h-full overflow-hidden">
+      <div className="lg:col-span-6 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl lg:rounded-[2.5rem] p-2 lg:p-8 shadow-2xl flex flex-col flex-1 min-h-[500px] lg:h-full overflow-hidden">
         <div className="flex bg-black/20 rounded-2xl p-1.5 lg:p-2 mb-4 shrink-0 shadow-inner overflow-x-auto custom-scrollbar">
           <button onClick={() => setDirectoryTab('students')} className={`flex-1 min-w-[80px] py-2 lg:py-3 rounded-xl font-bold text-xs lg:text-sm shadow-md transition-all ${directoryTab === 'students' ? 'bg-white/20 text-white' : 'text-white/50 hover:text-white'}`}>Students</button>
           <button onClick={() => setDirectoryTab('teachers')} className={`flex-1 min-w-[80px] py-2 lg:py-3 rounded-xl font-bold text-xs lg:text-sm shadow-md transition-all ${directoryTab === 'teachers' ? 'bg-white/20 text-white' : 'text-white/50 hover:text-white'}`}>Teachers</button>
@@ -2572,12 +2572,12 @@ const OverheadExpensesModule = ({ onOverheadUpdate }) => {
     }
   };
 
-  if (loading && expenses.length === 0) return <div className="p-8 text-white/50 text-center font-bold tracking-widest bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem]">LOADING OVERHEAD...</div>;
+  if (loading && expenses.length === 0) return <div className="p-4 lg:p-8 text-white/50 text-center font-bold tracking-widest bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl lg:rounded-[2rem]">LOADING OVERHEAD...</div>;
 
   return (
-    <div className="relative w-full h-full rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl">
+    <div className="relative w-full h-full rounded-2xl lg:rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl">
       <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
-      <div className="relative w-full h-full flex flex-col p-8">
+      <div className="relative w-full h-full flex flex-col p-3 lg:p-8">
         
         <div className="mb-6 flex justify-between items-end border-b border-white/10 pb-4 shrink-0">
           <div>
@@ -3012,7 +3012,7 @@ const FinancesPage = () => {
         )}
 
         {/* MAIN CONTENT AREA */}
-        <div className={`flex-1 flex flex-col overflow-y-auto custom-scrollbar z-10 relative ${isMobile ? 'p-4 pb-28' : 'p-8 lg:p-12'}`}>
+        <div className={`flex-1 flex flex-col overflow-y-auto custom-scrollbar z-10 relative ${isMobile ? 'p-1 pb-28 overflow-x-hidden' : 'p-8 lg:p-12'}`}>
           
           {/* DESKTOP HEADER */}
           {!isMobile && activeModule !== 'CONTENTS' && (

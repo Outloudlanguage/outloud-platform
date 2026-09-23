@@ -127,13 +127,13 @@ const StudentUsageHistogram = ({ studentId }) => {
     fetchUsageData();
   }, [studentId]); // Re-fire anytime the dual-mode dropdown changes
 
-  if (loading) return <div className="p-8 text-white/50 text-center font-bold tracking-widest">LOADING USAGE MATRIX...</div>;
+  if (loading) return <div className="p-4 md:p-8 text-white/50 text-center font-bold tracking-widest">LOADING USAGE MATRIX...</div>;
 
   return (
-    <div className="usage-histogram-card relative flex flex-col w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 shadow-2xl break-inside-avoid print:bg-white print:border-slate-300 print:shadow-none print:p-4">
+    <div className="usage-histogram-card relative flex flex-col w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl md:rounded-[2rem] p-4 md:p-8 shadow-2xl break-inside-avoid print:bg-white print:border-slate-300 print:shadow-none print:p-4">
       
       <div className="mb-6">
-        <h3 className="text-2xl font-black tracking-widest uppercase text-white print:text-black">
+        <h3 className="text-xl md:text-2xl font-black tracking-widest uppercase text-white print:text-black">
           {studentId ? "Personal Platform Usage" : "Weekly Platform Usage"}
         </h3>
         <p className="text-sm font-bold text-yellow-400 print:text-slate-600 uppercase tracking-wide">

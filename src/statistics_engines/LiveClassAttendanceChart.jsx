@@ -119,13 +119,13 @@ const LiveClassAttendanceChart = () => {
     return null;
   };
 
-  if (loading) return <div className="p-8 text-white/50 text-center font-bold tracking-widest">LOADING ATTENDANCE...</div>;
+  if (loading) return <div className="p-4 md:p-8 text-white/50 text-center font-bold tracking-widest">LOADING ATTENDANCE...</div>;
 
   return (
-    <div className="live-attendance-card relative flex flex-col w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 shadow-2xl break-inside-avoid print:bg-white print:border-slate-300 print:shadow-none print:p-4">
+    <div className="live-attendance-card relative flex flex-col w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl md:rounded-[2rem] p-4 md:p-8 shadow-2xl break-inside-avoid print:bg-white print:border-slate-300 print:shadow-none print:p-4">
       
       <div className="mb-6">
-        <h3 className="text-2xl font-black tracking-widest uppercase text-white print:text-black">
+        <h3 className="text-xl md:text-2xl font-black tracking-widest uppercase text-white print:text-black">
           Live Class Attendance
         </h3>
         <p className="text-sm font-bold text-yellow-400 print:text-slate-600 uppercase tracking-wide">
