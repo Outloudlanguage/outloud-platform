@@ -108,43 +108,72 @@ const CefrHeadcountDashboard = () => {
   const currentDate = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
   return (
-    <div id="printable-cefr-report" className="cefr-headcount-card relative flex flex-col w-full bg-transparent md:bg-white/5 md:backdrop-blur-xl border-transparent md:border-white/10 md:rounded-[2rem] p-0 md:p-8 shadow-none md:shadow-2xl print:bg-white print:text-black print:block print:border-none print:shadow-none print:p-0 print:m-0">
+    <div id="printable-cefr-report" className="cefr-headcount-card relative flex flex-col w-full bg-transparent md:bg-white/5 md:backdrop-blur-xl border-transparent md:border-white/10 md:rounded-[2rem] p-0 md:p-8 shadow-none md:shadow-2xl">
       
       <style>{`
         @media print {
-          body * { visibility: hidden; }
-          #printable-cefr-report, #printable-cefr-report * { visibility: visible; }
-          #printable-cefr-report { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 20px; }
-          .recharts-wrapper svg { overflow: visible !important; }
+          /* 1. Force the report to cover the entire page */
+          #printable-cefr-report {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            background-color: white !important;
+            z-index: 2147483647 !important;
+            padding: 40px !important;
+            display: flex !important;
+            flex-direction: column !important;
+            margin: 0 !important;
+            box-sizing: border-box !important;
+          }
+          /* 2. Bruteforce ALL text and borders to be visible on white */
+          #printable-cefr-report * {
+            color: black !important;
+            text-shadow: none !important;
+            border-color: #ccc !important;
+          }
+          /* 3. Recharts specific fixes */
+          .recharts-responsive-container {
+            height: 400px !important;
+            min-height: 400px !important;
+          }
+          .recharts-text { fill: #333 !important; }
+          .recharts-cartesian-grid-line { stroke: #eee !important; }
+          .recharts-tooltip-wrapper { display: none !important; }
+          
+          /* 4. Utilities to bypass Tailwind CDN limits */
+          .print-header { display: block !important; margin-bottom: 20px !important; padding-bottom: 10px !important; border-bottom: 2px solid #000 !important; text-align: right !important; }
+          .hide-on-print { display: none !important; }
         }
       `}</style>
 
       {/* Print-Only Header Date */}
-      <div className="hidden print:block mb-6 text-right border-b border-slate-300 pb-2">
-        <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Reporte Operativo Generado:</p>
-        <p className="text-sm font-black text-black capitalize">{currentDate}</p>
+      <div className="print-header" style={{ display: 'none' }}>
+        <p style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 'bold' }}>Reporte Operativo Generado:</p>
+        <p style={{ fontSize: '16px', fontWeight: '900', textTransform: 'capitalize' }}>{currentDate}</p>
       </div>
 
       {/* Header & Metric Card */}
-      <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-end border-b border-white/10 print:border-none pb-4 gap-4 print:flex-row print:mb-4">
+      <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-end border-b border-white/10 pb-4 gap-4" style={{ borderBottomWidth: '1px' }}>
         <div>
-          <h3 className="text-xl md:text-2xl font-black tracking-widest uppercase text-white print:text-black">
+          <h3 className="text-xl md:text-2xl font-black tracking-widest uppercase text-white">
             CEFR Headcount
           </h3>
-          <p className="text-sm font-bold text-yellow-400 print:text-slate-600 uppercase tracking-wide">
+          <p className="text-sm font-bold text-yellow-400 uppercase tracking-wide">
             Enrollment Distribution by Level
           </p>
         </div>
         <div className="text-right">
-          <p className="text-xs text-slate-400 print:text-slate-500 uppercase font-bold tracking-wider">Total Enrollment</p>
-          <p className="text-4xl font-black text-blue-400 print:text-blue-700">
+          <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">Total Enrollment</p>
+          <p className="text-4xl font-black text-blue-400">
             {metrics.totalEnrollment.toLocaleString()}
           </p>
         </div>
       </div>
 
       {/* Stacked Column Chart */}
-      <div className="w-full h-80 print:h-[400px] mb-6 print:block print:w-full">
+      <div className="w-full h-80 mb-6" style={{ minHeight: '300px' }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={{ top: 15, right: 20, bottom: 5, left: -20 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" vertical={false} className="print:!stroke-slate-300" />
@@ -180,13 +209,13 @@ const CefrHeadcountDashboard = () => {
       </div>
 
       {/* Dynamic Narrative Footer */}
-      <div className="mt-auto pt-6 border-t border-white/10 print:border-slate-300 flex items-start gap-4 print:block print:mt-6 print:pt-6">
-        <div className="bg-black/40 p-3 rounded-xl flex-shrink-0 print:hidden">
-          <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <div className="mt-auto pt-6 border-t border-white/10 flex items-start gap-4" style={{ paddingTop: '24px' }}>
+        <div className="bg-black/40 p-3 rounded-xl flex-shrink-0 hide-on-print">
+          <svg className="w-6 h-6 text-white hide-on-print" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
           </svg>
         </div>
-        <div className="text-sm leading-relaxed text-slate-300 print:text-black font-medium w-full print:text-justify">
+        <div className="text-sm leading-relaxed text-slate-300 font-medium w-full" style={{ textAlign: 'justify' }}>
           {(() => {
             if (metrics.totalEnrollment === 0) return <p>No hay datos suficientes para generar un reporte en este momento. La base de datos no registra estudiantes matriculados.</p>;
             
