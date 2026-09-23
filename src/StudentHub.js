@@ -5,6 +5,112 @@ import CommunityPanel from './components/CommunityPanel';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts'; 
 
 // ==========================================
+// 0.5 AIRTIGHT BILLING LOCKOUT OVERLAY
+// ==========================================
+const PaymentLockoutView = ({ student, supabase, onReload, isDismissible, onClose }) => {
+  const [payMethod, setPayMethod] = useState('Zelle');
+  const [payRef, setPayRef] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const baseLevel = student.level ? student.level.split(':')[0].trim() : 'A1';
+  const amountDue = ['C1', 'C2'].includes(baseLevel) ? 50 : ['B1', 'B2'].includes(baseLevel) ? 30 : 20;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!payRef.trim()) return;
+    setIsSubmitting(true);
+    
+    try {
+      await supabase.from('student_payments').insert({
+        student_id: student.id,
+        payment_type: 'Monthly Renewal',
+        amount: amountDue,
+        reference_number: payRef,
+        status: 'processing'
+      });
+
+      await supabase.from('profiles').update({ payment_status: 'processing' }).eq('id', student.id);
+      onReload();
+    } catch (err) {
+      console.error(err);
+      alert("Hubo un error enviando tu pago.");
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className={`fixed inset-0 z-[9999] min-h-screen flex items-center justify-center p-4 font-montserrat relative overflow-hidden ${isDismissible ? 'bg-black/80 backdrop-blur-md' : 'bg-[#070b19]'}`}>
+      {isDismissible && (
+        <button onClick={onClose} className="absolute top-6 right-6 w-12 h-12 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center font-black transition-colors z-50 shadow-xl">✕</button>
+      )}
+      
+      <div className="absolute inset-0 pointer-events-none z-0">
+        <div className={`absolute top-[-20%] left-[-10%] w-[50%] h-[50%] blur-[120px] rounded-full ${student.payment_status === 'pending_first_month' ? 'bg-[#fcd34d]/10' : 'bg-red-500/10'}`}></div>
+      </div>
+
+      <div className="bg-[#070b19]/90 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] p-8 md:p-12 w-full max-w-md shadow-2xl relative z-10 flex flex-col items-center">
+        {student.payment_status === 'processing' ? (
+          <div className="text-center flex flex-col items-center">
+            <div className="w-20 h-20 bg-blue-500/20 text-blue-400 rounded-full flex items-center justify-center mb-6 border border-blue-500/50 shadow-[0_0_30px_rgba(59,130,246,0.3)]">
+              <svg className="w-10 h-10 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+            </div>
+            <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-2">Pago en Revisión</h2>
+            <p className="text-sm font-medium text-white/70 mb-8 leading-relaxed">
+              Hemos recibido tu número de referencia. Nuestro equipo administrativo está verificando la transacción. Tu acceso será restaurado en breve.
+            </p>
+          </div>
+        ) : (
+          <div className="w-full">
+            {student.payment_status === 'pending_first_month' ? (
+              <div className="w-20 h-20 bg-[#fcd34d]/20 text-[#fcd34d] rounded-full flex items-center justify-center mx-auto mb-6 border border-[#fcd34d]/50 shadow-[0_0_30px_rgba(252,211,77,0.3)]">
+                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+              </div>
+            ) : (
+              <div className="w-20 h-20 bg-red-500/20 text-red-400 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-500/50 shadow-[0_0_30px_rgba(239,68,68,0.3)]">
+                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+              </div>
+            )}
+            
+            <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-2 text-center">
+              {student.payment_status === 'pending_first_month' ? 'Activa tu Cuenta' : 'Acceso Bloqueado'}
+            </h2>
+            <p className="text-sm font-medium text-white/70 mb-6 text-center leading-relaxed">
+              {student.payment_status === 'pending_first_month' 
+                ? '¡Bienvenido a Outloud! Para comenzar a tomar clases y usar las herramientas prácticas, por favor procesa tu primer pago prorrateado.' 
+                : 'Tu ciclo de facturación ha vencido. Por favor procesa tu pago mensual para reactivar tu acceso a la plataforma.'}
+            </p>
+            
+            <div className="bg-black/40 rounded-2xl p-5 mb-6 border border-white/5 text-center">
+              <span className="text-[10px] font-black uppercase tracking-widest text-[#fcd34d]">Monto a Pagar</span>
+              <div className="text-4xl font-black text-white mt-1">${amountDue}.00</div>
+            </div>
+
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full">
+              <select value={payMethod} onChange={e => setPayMethod(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white font-bold uppercase tracking-widest outline-none focus:border-[#fcd34d] appearance-none cursor-pointer">
+                <option value="Zelle" className="bg-[#0f172a]">Zelle</option>
+                <option value="PagoMovil" className="bg-[#0f172a]">Pago Móvil</option>
+                <option value="Cash" className="bg-[#0f172a]">Efectivo</option>
+              </select>
+              
+              <input type="text" value={payRef} onChange={e => setPayRef(e.target.value)} placeholder="Número de Referencia" required className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white outline-none focus:border-[#fcd34d] placeholder-white/30" />
+              
+              <button type="submit" disabled={isSubmitting} className="w-full py-4 mt-2 bg-[#fcd34d] hover:bg-white text-[#08203e] font-black tracking-widest text-xs uppercase rounded-xl transition-all shadow-[0_0_20px_rgba(252,211,77,0.3)] disabled:opacity-50 hover:scale-105">
+                {isSubmitting ? 'ENVIANDO...' : 'REPORTAR PAGO'}
+              </button>
+            </form>
+          </div>
+        )}
+
+        <a href="https://wa.me/584226885683" target="_blank" rel="noreferrer" className="mt-8 flex items-center justify-center gap-2 text-white/50 hover:text-emerald-400 transition-colors text-xs font-bold uppercase tracking-widest w-full">
+          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          Soporte Administrativo
+        </a>
+      </div>
+    </div>
+  );
+};
+
+// ==========================================
 // 1. REUSABLE UI CARDS (For both Desktop & Mobile)
 // ==========================================
 
@@ -1090,6 +1196,7 @@ const StudentCalendar = ({ student, filterType, onConfirm, onCancel }) => {
 const StudentHub = ({ onReturnHome, preloadedStudent }) => {
   const [studentData, setStudentData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [reminderConfig, setReminderConfig] = useState(null);
   const [activeActivity, setActiveActivity] = useState(null);
   const [isFetching, setIsFetching] = useState(false);
   const [activeLiveSession, setActiveLiveSession] = useState(null);
@@ -1101,6 +1208,8 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
   
   const [showCalendar, setShowCalendar] = useState(false);
   const [calendarFilter, setCalendarFilter] = useState('LAB SESSION');
+  
+  const [showActivationModal, setShowActivationModal] = useState(false);
 
   // Community Panel State
   const [showCommunity, setShowCommunity] = useState(false);
@@ -1129,12 +1238,29 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
     }
   };
 
+  const processBillingReminders = (profile) => {
+    if (profile.next_billing_date && profile.payment_status === 'good_standing') {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const billDate = new Date(profile.next_billing_date);
+      billDate.setHours(0, 0, 0, 0);
+      
+      const daysLeft = Math.round((billDate - today) / (1000 * 60 * 60 * 24));
+      const reminderKey = `acknowledged_billing_${profile.next_billing_date}_day_${daysLeft}`;
+      
+      if ((daysLeft === 5 || daysLeft === 1) && !localStorage.getItem(reminderKey)) {
+        setReminderConfig({ days: daysLeft, key: reminderKey });
+      }
+    }
+  };
+
   useEffect(() => {
     if (preloadedStudent) {
       setStudentData(preloadedStudent);
       setLoading(false);
       fetchUpcomingSession(preloadedStudent.id);
       fetchAnnouncements(preloadedStudent.level);
+      processBillingReminders(preloadedStudent);
     } else {
       fetchStudentProfile();
     }
@@ -1148,6 +1274,7 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
       setStudentData(profile);
       fetchUpcomingSession(profile.id);
       fetchAnnouncements(profile.level);
+      processBillingReminders(profile);
     } catch (err) {
       console.error("Error loading student profile:", err);
     } finally {
@@ -1190,6 +1317,12 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
 
   const handleStartActivity = async (type) => {
     if (!studentData) return;
+
+    // PREVIEW INTERCEPTOR
+    if (studentData.payment_status === 'pending_first_month') {
+      setShowActivationModal(true);
+      return;
+    }
     
     // PREVENT RE-TAKING COMPLETED ACTIVITIES
     if (type === 'Lesson' && (studentData.lesson_score >= 75)) {
@@ -1307,6 +1440,18 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#070b19]"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#fcd34d]"></div></div>;
 
+  // --- INSTANTANEOUS BILLING LOCKOUT INTERCEPTOR ---
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const billingDate = studentData?.next_billing_date ? new Date(studentData.next_billing_date) : null;
+  if (billingDate) billingDate.setHours(0, 0, 0, 0);
+
+const isLockedOut = billingDate && today >= billingDate;
+
+  if (isLockedOut || studentData?.payment_status === 'processing') {
+    return <PaymentLockoutView student={studentData} supabase={supabase} onReload={() => window.location.reload()} />;
+  }
+
   if (activeActivity) {
     // If practicing, spoof the student's unit to trick the player into loading older content safely
     const playerStudentData = practiceContext ? { ...studentData, unit: practiceContext.unit } : studentData;
@@ -1315,6 +1460,43 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
 
   return (
     <>
+      {/* BILLING REMINDER MODAL (Strictly Informative) */}
+      {reminderConfig !== null && (
+        <div className="fixed inset-0 z-[8000] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in font-montserrat">
+          <div className="bg-[#070b19] border border-[#fcd34d]/50 rounded-[2rem] w-full max-w-md p-8 shadow-[0_0_50px_rgba(252,211,77,0.15)] flex flex-col items-center text-center relative overflow-hidden">
+            <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-[#fcd34d]/10 blur-[80px] rounded-full pointer-events-none"></div>
+            
+            <div className="w-20 h-20 bg-[#fcd34d]/20 text-[#fcd34d] rounded-full flex items-center justify-center mx-auto mb-6 border border-[#fcd34d]/50 shadow-[0_0_30px_rgba(252,211,77,0.3)] relative z-10">
+              <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+            </div>
+            
+            <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-2 relative z-10">Aviso de Facturación</h2>
+            
+            <div className="bg-white/5 border border-white/10 rounded-xl p-5 mb-6 relative z-10 w-full">
+              <p className="text-sm font-medium text-white/80 leading-relaxed mb-4">
+                Tu próximo corte de facturación es en <strong className="text-[#fcd34d] text-lg">{reminderConfig.days} {reminderConfig.days === 1 ? 'día' : 'días'}</strong>. 
+              </p>
+              <p className="text-[10px] font-black text-red-400 uppercase tracking-widest bg-red-500/10 py-2 px-3 rounded-lg border border-red-500/20 shadow-inner">
+                ⚠️ No aceptamos pagos por adelantado.
+              </p>
+              <p className="text-xs text-white/50 mt-3 font-medium leading-relaxed">
+                Este mensaje es solo un recordatorio para que te organices. Podrás procesar tu pago únicamente a partir de la fecha exacta de tu corte.
+              </p>
+            </div>
+
+            <button 
+              onClick={() => {
+                localStorage.setItem(reminderConfig.key, 'true');
+                setReminderConfig(null);
+              }} 
+              className="w-full py-4 bg-[#fcd34d] hover:bg-white text-[#08203e] font-black tracking-widest text-xs uppercase rounded-xl transition-all shadow-[0_0_20px_rgba(252,211,77,0.3)] hover:scale-105 relative z-10 cursor-pointer"
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+      )}
+
       {completedActivityType && (
         <div className="fixed inset-0 z-[700] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in font-montserrat">
           <div className="bg-[#070b19] border border-white/20 backdrop-blur-xl rounded-[2.5rem] p-8 md:p-10 max-w-md w-full shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col items-center text-center relative overflow-hidden">
@@ -1394,16 +1576,29 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
         />
       )}
       
+      {/* SOFT LOCKOUT (PREVIEW MODE ACTIVATION) */}
+      {showActivationModal && (
+        <PaymentLockoutView 
+          student={studentData} 
+          supabase={supabase} 
+          onReload={() => window.location.reload()} 
+          isDismissible={true}
+          onClose={() => setShowActivationModal(false)}
+        />
+      )}
+
       <div className="hidden md:block">
         <DesktopView 
           student={studentData} onReturnHome={onReturnHome} onStartActivity={handleStartActivity} isFetching={isFetching} activeLiveSession={activeLiveSession} 
-          announcements={announcements} activeCategory={activeCategory} setActiveCategory={setActiveCategory} onOpenMetrics={() => setIsMetricsModalOpen(true)}
+          announcements={announcements} activeCategory={activeCategory} setActiveCategory={setActiveCategory} 
+          onOpenMetrics={() => studentData?.payment_status === 'pending_first_month' ? setShowActivationModal(true) : setIsMetricsModalOpen(true)}
         />
       </div>
       <div className="block md:hidden">
         <MobileView 
           student={studentData} onReturnHome={onReturnHome} onStartActivity={handleStartActivity} isFetching={isFetching} activeLiveSession={activeLiveSession} 
-          announcements={announcements} activeCategory={activeCategory} setActiveCategory={setActiveCategory} onOpenMetrics={() => setIsMetricsModalOpen(true)}
+          announcements={announcements} activeCategory={activeCategory} setActiveCategory={setActiveCategory} 
+          onOpenMetrics={() => studentData?.payment_status === 'pending_first_month' ? setShowActivationModal(true) : setIsMetricsModalOpen(true)}
         />
       </div>
     </>

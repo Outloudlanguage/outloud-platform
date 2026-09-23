@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './SupabaseClient';
 import CommunityPanel from './components/CommunityPanel'; 
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts'; 
 
 // ==========================================
 // 1. REUSABLE UI CARDS (Unified Architecture)
 // ==========================================
 
-const PayrollCard = ({ acquired, goal }) => {
+const PayrollCard = ({ acquired, goal, onClick }) => {
   const safeAcquired = isNaN(acquired) ? 0 : acquired;
   const safeGoal = goal || 80;
   let progressPercentage = Math.round((Math.min(safeAcquired, safeGoal) / safeGoal) * 100);
@@ -16,7 +17,7 @@ const PayrollCard = ({ acquired, goal }) => {
   const strokeDashoffset = circleCircumference - (progressPercentage / 100) * circleCircumference;
 
   return (
-    <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-5 sm:p-6 shadow-2xl flex flex-col items-center justify-between relative overflow-hidden h-full">
+    <button onClick={onClick} className="w-full text-left outline-none bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-5 sm:p-6 shadow-2xl flex flex-col items-center justify-between relative overflow-hidden h-full hover:bg-white/20 hover:scale-[1.02] transition-all cursor-pointer group">
       <h3 className="text-white/90 font-bold text-[10px] sm:text-xs tracking-widest uppercase text-center whitespace-nowrap">
         MONTHLY PAYROLL
       </h3>
@@ -37,7 +38,7 @@ const PayrollCard = ({ acquired, goal }) => {
       <p className="text-center text-white font-bold text-[10px] sm:text-xs tracking-widest uppercase mt-auto whitespace-nowrap">
         TARGET: {safeGoal}h
       </p>
-    </div>
+    </button>
   );
 };
 
@@ -167,7 +168,7 @@ const ProfileOverlay = ({ isOpen, onClose, teacher, pendingCount, onOpenEvaluati
 // ==========================================
 // 3. DESKTOP VIEW
 // ==========================================
-const DesktopView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onReturnHome, onAction, onRequestSub, onOpenProfileMenu, isLaunching, hasNewStaffBoard, announcements = [], activeCategory, setActiveCategory, latestForumPost }) => {
+const DesktopView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onReturnHome, onAction, onRequestSub, onOpenProfileMenu, isLaunching, hasNewStaffBoard, announcements = [], activeCategory, setActiveCategory, latestForumPost, onOpenMetrics }) => {
   const goal = payrollStats?.monthlyGoal || 100;
   const filteredAnnouncements = activeCategory ? announcements.filter(a => a.category === activeCategory) : announcements;
   const acquired = payrollStats?.current || 0;
@@ -558,7 +559,11 @@ const EvaluationModal = ({ isOpen, onClose, pendingClasses, onGradeSubmitted, te
         teacher_notes: notes
       });
 
-      await supabase.from('live_sessions').update({ is_graded: true }).eq('id', currentEvaluation.id);
+      // Stop the payroll clock by logging grading_completed_at
+      await supabase.from('live_sessions').update({ 
+        is_graded: true,
+        grading_completed_at: new Date().toISOString()
+      }).eq('id', currentEvaluation.id);
 
       const { data: studentProfile } = await supabase.from('profiles').select('unit, unit_fail_count').eq('id', currentEvaluation.student_id).single();
       
@@ -844,6 +849,280 @@ const TeacherPdfViewerModal = ({ isOpen, type, onClose, defaultUnit }) => {
 };
 
 // ==========================================
+// 5.9 TEACHER METRICS & PAYROLL MODAL
+// ==========================================
+const TeacherMetricsModal = ({ isOpen, onClose, teacherId, teacherData }) => {
+  const [activeTab, setActiveTab] = useState('PAYROLL');
+  const [infoOverlay, setInfoOverlay] = useState(null); // 'time' | 'shift' | 'report'
+  
+  const [sessions, setSessions] = useState([]);
+  const [shifts, setShifts] = useState([]);
+  const [evaluations, setEvaluations] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!isOpen || !teacherId) return;
+    const fetchMetrics = async () => {
+      setLoading(true);
+      const now = new Date();
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+      // 1. Fetch Payroll Ledger (Sessions)
+      const { data: sessionData } = await supabase
+        .from('live_sessions')
+        .select('*')
+        .eq('teacher_id', teacherId)
+        .eq('status', 'completed')
+        .gte('scheduled_at', firstDayOfMonth)
+        .order('scheduled_at', { ascending: false });
+      if (sessionData) setSessions(sessionData);
+
+      // 2. Fetch Shift Bonuses
+      const { data: shiftData } = await supabase
+        .from('teacher_shifts')
+        .select('*')
+        .eq('teacher_id', teacherId)
+        .gte('shift_date', firstDayOfMonth)
+        .order('shift_date', { ascending: false });
+      if (shiftData) setShifts(shiftData);
+
+      // 3. Fetch Evaluations for Radar Math
+      const { data: evalData } = await supabase
+        .from('class_evaluations')
+        .select('*')
+        .eq('teacher_id', teacherId);
+      if (evalData) setEvaluations(evalData);
+
+      setLoading(false);
+    };
+    fetchMetrics();
+  }, [isOpen, teacherId]);
+
+  if (!isOpen) return null;
+
+  // --- MATH CALCS ---
+  const totalSessionPay = sessions.reduce((sum, s) => sum + (Number(s.final_pay) || 0), 0);
+  const totalShiftBonus = shifts.reduce((sum, s) => sum + (Number(s.bonus_earned) || 0), 0);
+  const totalEarned = (totalSessionPay + totalShiftBonus).toFixed(2);
+
+  // Radar Data Calculation
+  const totalEvals = evaluations.length;
+  let radarData = [
+    { subject: 'Actitud', A: 100 },
+    { subject: 'Claridad', A: 100 },
+    { subject: 'Participación', A: 100 },
+    { subject: 'Contenido', A: 100 },
+    { subject: 'Tiempo', A: 100 }
+  ];
+  let globalRating = 5.0;
+
+  if (totalEvals > 0) {
+    const sum = (key) => evaluations.filter(e => e[key] === true).length;
+    radarData = [
+      { subject: 'Actitud', A: (sum('q_demeanor') / totalEvals) * 100 },
+      { subject: 'Claridad', A: (sum('q_clarity') / totalEvals) * 100 },
+      { subject: 'Participación', A: (sum('q_facilitation') / totalEvals) * 100 },
+      { subject: 'Contenido', A: (sum('q_content') / totalEvals) * 100 },
+      { subject: 'Tiempo', A: (sum('q_time') / totalEvals) * 100 }
+    ];
+    const totalPositives = sum('q_demeanor') + sum('q_clarity') + sum('q_facilitation') + sum('q_content') + sum('q_time');
+    globalRating = ((totalPositives / (totalEvals * 5)) * 5).toFixed(1);
+  } else if (teacherData?.total_rating_questions > 0) {
+    globalRating = ((teacherData.total_positive_ratings / teacherData.total_rating_questions) * 5).toFixed(1);
+  }
+
+  return (
+    <div className="fixed inset-0 z-[700] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in font-montserrat">
+      
+      {/* INFO OVERLAYS */}
+      {infoOverlay && (
+        <div className="absolute inset-0 z-[800] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setInfoOverlay(null)}>
+          <div className="bg-[#070b19] border border-[#fcd34d]/50 rounded-[2rem] p-8 max-w-lg w-full shadow-[0_0_50px_rgba(252,211,77,0.15)] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-start mb-6">
+              <h3 className="text-xl font-black text-[#fcd34d] uppercase tracking-widest leading-tight">
+                {infoOverlay === 'time' ? 'How Your Time is Calculated' : infoOverlay === 'shift' ? 'Standby Shifts' : 'Your Performance Breakdown'}
+              </h3>
+              <button onClick={() => setInfoOverlay(null)} className="text-white/50 hover:text-white">✕</button>
+            </div>
+            <div className="text-sm text-white/80 font-medium leading-relaxed space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar pr-2">
+              {infoOverlay === 'time' && (
+                <>
+                  <p>Your standard billable block is exactly 60 minutes, strictly segmented into three phases to protect student time:</p>
+                  <ul className="list-disc pl-5 space-y-2 text-white">
+                    <li><strong className="text-[#fcd34d]">Prep (10 mins max):</strong> Starts when you open your manual, 10 minutes prior to the live class.</li>
+                    <li><strong className="text-[#fcd34d]">Live Class (45 mins max):</strong> Starts when you enter the Jitsi room. Your class must run for the full 45 minutes. Ending a class early will result in direct minute deductions. Entering the live room late directly penalizes your pay.</li>
+                    <li><strong className="text-[#fcd34d]">Grading (5 mins max):</strong> Stops when you submit the final evaluation.</li>
+                  </ul>
+                  <p className="text-red-400 font-bold italic mt-4">Overtime is strictly not paid and is highly discouraged by the company, as it causes delays and affects student schedules.</p>
+                </>
+              )}
+              {infoOverlay === 'shift' && (
+                <>
+                  <p>A Standby Shift is a 12-hour window (7:30 AM – 7:30 PM) explicitly assigned to you by Administration.</p>
+                  <p>To earn the flat <strong className="text-emerald-400">$2.00 bonus</strong>, you must maintain a stable connection to the Teacher Hub throughout the entire window. If you cover a class during this shift, you will be paid your standard hourly rate for that class in addition to the $2.00 bonus.</p>
+                </>
+              )}
+              {infoOverlay === 'report' && (
+                <>
+                  <p>Your global Star Rating dynamically reflects post-class student evaluations. Each "Sí" vote from a student adds points to the corresponding category. If your overall average is ≥ 90% in a class with 5 or more students, you instantly earn a <strong className="text-emerald-400">$1.00 Excellence Bonus</strong> for that class.</p>
+                  <ul className="space-y-4 mt-4">
+                    <li>⭐ <strong className="text-[#fcd34d]">Actitud (Attitude):</strong> Mide tu capacidad para crear un espacio psicológico seguro. ¿Manejaste la frustración del estudiante con gracia? ¿Mantuviste una postura acogedora sin apresurarlos?</li>
+                    <li>⭐ <strong className="text-[#fcd34d]">Claridad (Clarity):</strong> Mide la adaptabilidad de tu lenguaje. ¿Usaste vocabulario apropiado para su nivel (A1-C2)? ¿Evitaste tangentes confusas y confirmaste su comprensión con ejemplos en lugar de solo preguntar "¿Entendiste?"?</li>
+                    <li>⭐ <strong className="text-[#fcd34d]">Participación (Facilitation):</strong> Mide el equilibrio de conversación. Tu labor es que el estudiante hable más que tú (STT &gt; TTT). ¿Aseguraste que nadie dominara la sesión e invitaste a participar a los más callados sin intimidarlos?</li>
+                    <li>⭐ <strong className="text-[#fcd34d]">Contenido (Content):</strong> Mide tu ejecución de nuestra metodología. ¿Seguiste la estructura de la clase sin perderte y utilizaste los manuales y flashcards de la plataforma fluidamente?</li>
+                    <li>⭐ <strong className="text-[#fcd34d]">Tiempo (Time Management):</strong> Mide la precisión de tu bloque de 45 minutos. ¿Comenzaste exactamente a la hora? ¿Asignaste el tiempo adecuado a cada ejercicio y finalizaste la sesión sin cortes abruptos ni retrasos?</li>
+                  </ul>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="relative w-full max-w-4xl bg-[#070b19] border border-white/20 rounded-[2.5rem] shadow-[0_25px_50px_rgba(0,0,0,0.5)] flex flex-col h-[85vh] overflow-hidden">
+        
+        {/* HEADER & TABS */}
+        <div className="flex flex-col border-b border-white/10 shrink-0 bg-white/5 pt-6 px-6 md:px-8">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-widest">Metrics & Payroll</h2>
+            <button onClick={onClose} className="w-8 h-8 bg-white/10 hover:bg-red-500 text-white rounded-full flex items-center justify-center font-black transition-colors">✕</button>
+          </div>
+          <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-4">
+            {['PAYROLL', 'SHIFTS', 'PERFORMANCE'].map(tab => (
+              <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 py-3 px-4 rounded-xl font-black text-[10px] md:text-xs uppercase tracking-widest transition-all ${activeTab === tab ? 'bg-[#fcd34d] text-[#08203e] shadow-md' : 'text-white/50 hover:text-white bg-white/5'}`}>{tab}</button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-8">
+          {loading ? (
+            <div className="h-full flex items-center justify-center"><div className="w-10 h-10 border-4 border-[#fcd34d] border-t-transparent rounded-full animate-spin"></div></div>
+          ) : activeTab === 'PAYROLL' ? (
+            
+            /* --- PAYROLL LEDGER TAB --- */
+            <div className="flex flex-col gap-6 h-full">
+              <div className="flex flex-col md:flex-row items-center justify-between bg-emerald-500/10 border border-emerald-500/30 rounded-3xl p-6 shadow-inner shrink-0 gap-4">
+                <div>
+                  <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-1">Current Month Payout</p>
+                  <h3 className="text-4xl md:text-5xl font-black text-white">${totalEarned} <span className="text-xl text-white/50">USD</span></h3>
+                </div>
+                <button onClick={() => setInfoOverlay('time')} className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-colors border border-white/10">
+                  <span>How time is calculated</span>
+                  <span className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-xs">?</span>
+                </button>
+              </div>
+
+              <div className="flex-1 bg-white/5 border border-white/10 rounded-2xl overflow-hidden flex flex-col">
+                <div className="grid grid-cols-4 md:grid-cols-6 gap-2 p-4 bg-black/40 border-b border-white/10 text-[9px] font-black text-white/50 uppercase tracking-widest">
+                  <div className="col-span-2">Session Date</div>
+                  <div className="hidden md:block">Base Rate</div>
+                  <div className="text-center text-red-400">Penalty</div>
+                  <div className="text-center text-[#fcd34d]">Bonus</div>
+                  <div className="text-right text-emerald-400">Final Pay</div>
+                </div>
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-2">
+                  {sessions.length === 0 ? (
+                    <div className="text-center py-10 text-white/30 font-bold uppercase tracking-widest text-xs">No classes completed this month.</div>
+                  ) : (
+                    sessions.map(s => (
+                      <div key={s.id} className="grid grid-cols-4 md:grid-cols-6 gap-2 p-3 bg-white/5 rounded-xl text-xs items-center hover:bg-white/10 transition-colors">
+                        <div className="col-span-2 font-bold text-white/90 truncate">{new Date(s.scheduled_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
+                        <div className="hidden md:block text-white/60 font-medium">${s.base_rate_applied || '0.00'}</div>
+                        <div className="text-center font-black text-red-400">${s.minute_penalty || '0.00'}</div>
+                        <div className="text-center font-black text-[#fcd34d]">${s.performance_bonus || '0.00'}</div>
+                        <div className="text-right font-black text-emerald-400">${s.final_pay || '0.00'}</div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+
+          ) : activeTab === 'SHIFTS' ? (
+            
+            /* --- SHIFTS TAB --- */
+            <div className="flex flex-col gap-6 h-full">
+              <div className="flex flex-col md:flex-row items-center justify-between bg-[#fcd34d]/10 border border-[#fcd34d]/30 rounded-3xl p-6 shadow-inner shrink-0 gap-4">
+                <div>
+                  <p className="text-[10px] font-bold text-[#fcd34d] uppercase tracking-widest mb-1">Total Shift Bonuses</p>
+                  <h3 className="text-4xl md:text-5xl font-black text-white">${totalShiftBonus.toFixed(2)} <span className="text-xl text-white/50">USD</span></h3>
+                </div>
+                <button onClick={() => setInfoOverlay('shift')} className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-colors border border-white/10">
+                  <span>What is a shift?</span>
+                  <span className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-xs">?</span>
+                </button>
+              </div>
+
+              <div className="flex-1 bg-white/5 border border-white/10 rounded-2xl overflow-hidden flex flex-col">
+                <div className="grid grid-cols-3 gap-2 p-4 bg-black/40 border-b border-white/10 text-[9px] font-black text-white/50 uppercase tracking-widest">
+                  <div>Assigned Date</div>
+                  <div className="text-center">Status</div>
+                  <div className="text-right text-[#fcd34d]">Bonus Earned</div>
+                </div>
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-2">
+                  {shifts.length === 0 ? (
+                    <div className="text-center py-10 text-white/30 font-bold uppercase tracking-widest text-xs">No shifts assigned this month.</div>
+                  ) : (
+                    shifts.map(s => (
+                      <div key={s.id} className="grid grid-cols-3 gap-2 p-4 bg-white/5 rounded-xl text-xs items-center hover:bg-white/10 transition-colors">
+                        <div className="font-bold text-white/90">{new Date(s.shift_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</div>
+                        <div className="text-center">
+                          <span className={`px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest ${s.status === 'completed' ? 'bg-emerald-500/20 text-emerald-400' : s.status === 'missed' ? 'bg-red-500/20 text-red-400' : 'bg-white/10 text-white/50'}`}>
+                            {s.status}
+                          </span>
+                        </div>
+                        <div className="text-right font-black text-[#fcd34d]">${s.bonus_earned || '0.00'}</div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+
+          ) : (
+
+            /* --- PERFORMANCE RADAR TAB --- */
+            <div className="flex flex-col md:grid md:grid-cols-2 gap-6 h-full">
+              <div className="bg-white/5 border border-white/10 rounded-3xl p-6 shadow-inner flex flex-col items-center justify-center">
+                <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest mb-2">Global Star Rating</p>
+                <div className="flex items-baseline gap-2 mb-6">
+                  <span className="text-6xl font-black text-[#fcd34d] drop-shadow-[0_0_15px_rgba(252,211,77,0.5)]">{globalRating}</span>
+                  <span className="text-2xl font-bold text-white/40">/ 5.0</span>
+                </div>
+                <div className="w-full h-[250px] md:h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
+                      <PolarGrid stroke="rgba(255,255,255,0.2)" />
+                      <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 10, fontWeight: 'bold' }} />
+                      <Radar name="Teacher" dataKey="A" stroke="#fcd34d" strokeWidth={2} fill="#fcd34d" fillOpacity={0.4} />
+                    </RadarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-6">
+                <div className="bg-white/5 border border-white/10 rounded-3xl p-6 shadow-inner flex flex-col items-center justify-center text-center flex-1">
+                  <div className="w-16 h-16 bg-[#fcd34d]/10 text-[#fcd34d] rounded-full flex items-center justify-center mb-4 border border-[#fcd34d]/30">
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  </div>
+                  <h3 className="text-xl font-black text-white uppercase tracking-widest mb-2">Excellence Bonus</h3>
+                  <p className="text-xs text-white/70 leading-relaxed mb-6">
+                    Maintain an average rating of 90% or higher in classes with 5+ students to unlock a flat $1.00 bonus per class.
+                  </p>
+                  <button onClick={() => setInfoOverlay('report')} className="w-full py-4 bg-[#fcd34d] hover:bg-white text-[#08203e] font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-[0_0_15px_rgba(252,211,77,0.4)]">
+                    View Detailed Report
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+// ==========================================
 // 6. MAIN ROUTER COMPONENT
 // ==========================================
 const TeacherHub = ({ onReturnHome }) => {
@@ -854,6 +1133,7 @@ const TeacherHub = ({ onReturnHome }) => {
   const [pendingEvaluations, setPendingEvaluations] = useState([]);
   const [isSubModalOpen, setIsSubModalOpen] = useState(false);
   const [isEvalModalOpen, setIsEvalModalOpen] = useState(false);
+  const [isMetricsOpen, setIsMetricsOpen] = useState(false);
   const [isLaunching, setIsLaunching] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isRosterOpen, setIsRosterOpen] = useState(false); // Controls the Calendar
@@ -933,7 +1213,8 @@ const TeacherHub = ({ onReturnHome }) => {
             student_name: `${next.student?.first_name || 'Estudiante'} ${next.student?.last_name || ''}`.trim(),
             unit: next.unit || 1,
             date: next.parsedDate.toISOString(),
-            actual_start_at: next.actual_start_at
+            actual_start_at: next.actual_start_at,
+            prep_started_at: next.prep_started_at // <-- Now memory persists across refreshes
           });
         }
       }
@@ -996,8 +1277,19 @@ const TeacherHub = ({ onReturnHome }) => {
   const [activeJitsiSession, setActiveJitsiSession] = useState(null);
 
   const handleAction = async (actionType) => {
-    // Route to PDF Viewers
-    if (actionType === 'Manual') { setPdfViewerConfig({ isOpen: true, type: 'Manuals' }); return; }
+    // Route to PDF Viewers & Start Prep Clock
+    if (actionType === 'Manual') { 
+      setPdfViewerConfig({ isOpen: true, type: 'Manuals' }); 
+      
+      // If a class is scheduled, prep hasn't started, AND the video class hasn't started yet
+      if (nextClass && !nextClass.prep_started_at && !nextClass.actual_start_at) {
+        const prepTime = new Date().toISOString();
+        await supabase.from('live_sessions').update({ prep_started_at: prepTime }).eq('id', nextClass.id);
+        setNextClass(prev => ({ ...prev, prep_started_at: prepTime }));
+      }
+      return; 
+    }
+    
     if (actionType === 'Tools') { setPdfViewerConfig({ isOpen: true, type: 'Cue Cards' }); return; }
     
     if (actionType === 'Calendar') {
@@ -1093,6 +1385,13 @@ const TeacherHub = ({ onReturnHome }) => {
         defaultUnit={nextClass?.unit || 1} 
       />
 
+      <TeacherMetricsModal 
+        isOpen={isMetricsOpen} 
+        onClose={() => setIsMetricsOpen(false)} 
+        teacherId={teacherData?.id} 
+        teacherData={teacherData}
+      />
+
       <ProfileOverlay 
         isOpen={isProfileMenuOpen} 
         onClose={() => setIsProfileMenuOpen(false)} 
@@ -1118,6 +1417,7 @@ const TeacherHub = ({ onReturnHome }) => {
               activeCategory={activeCategory}
               setActiveCategory={setActiveCategory}
               latestForumPost={latestForumPost}
+              onOpenMetrics={() => setIsMetricsOpen(true)}
             />
           </div>
           <div className="block md:hidden">
@@ -1136,6 +1436,7 @@ const TeacherHub = ({ onReturnHome }) => {
               activeCategory={activeCategory}
               setActiveCategory={setActiveCategory}
               latestForumPost={latestForumPost}
+              onOpenMetrics={() => setIsMetricsOpen(true)}
             />
           </div>
     </>

@@ -395,13 +395,15 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
       });
       if (ledgerError) throw ledgerError;
 
-      const newCredits = credits + 4;
+      const newCredits = 4; // Credits do not roll over on a new monthly cycle
       const updates = { 
         available_credits: newCredits,
         level_completed: false,
         level: getBaseLevel(nextLevelInfo.level),
         unit: nextLevelInfo.unit,
-        next_billing_date: calculateNextBillingDate()
+        next_billing_date: calculateNextBillingDate(),
+        payment_status: 'good_standing',
+        status: 'active'
       };
 
       const { error: profileError } = await supabase.from('profiles').update(updates).eq('id', userData.id);
@@ -417,6 +419,35 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
     } catch (error) {
       console.error("Renewal Error:", error);
       alert("Hubo un error procesando la renovación en la base de datos.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleVerifyPendingPayment = async (payment) => {
+    setIsProcessing(true);
+    try {
+      await supabase.from('student_payments').update({ status: 'verified' }).eq('id', payment.id);
+      
+      const newCredits = 4; // Monthly renewal grants exactly 4 credits
+      const updates = { 
+        available_credits: newCredits,
+        next_billing_date: calculateNextBillingDate(),
+        payment_status: 'good_standing',
+        status: 'active'
+      };
+      
+      await supabase.from('profiles').update(updates).eq('id', userData.id);
+      
+      setCredits(newCredits);
+      setAccountStatus('active');
+      alert("Pago verificado. Cuenta reactivada y 4 créditos asignados.");
+      
+      fetchPaymentHistory();
+      if (onSuccess) onSuccess();
+    } catch (err) {
+      console.error("Verification error:", err);
+      alert("Error verificando el pago.");
     } finally {
       setIsProcessing(false);
     }
@@ -447,6 +478,8 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
 
       if (payType === 'Mensualidad') {
         updates.next_billing_date = calculateNextBillingDate();
+        updates.payment_status = 'good_standing';
+        updates.status = 'active'; // Unlocks the account
       }
 
       const { error: profileError } = await supabase.from('profiles').update(updates).eq('id', userData.id);
@@ -516,13 +549,14 @@ const handleProvisionAccount = async () => {
           whatsapp: provPhone || null,
           avatar_url: provAvatarUrl.trim() || null,
           assigned_password: provPassword,
-          status: 'active',
+          status: userRole === 'Student' ? 'pending_activation' : 'active',
           role: userData.role || 'Student'
       };
 
       if (userRole === 'Student') {
         updates.cohort = cohort;
         updates.available_credits = 0;
+        updates.payment_status = 'pending_first_month';
         updates.level = getBaseLevel(levelOverride);
         updates.unit = unitOverride;
       }
@@ -534,12 +568,12 @@ const handleProvisionAccount = async () => {
       // 3. Approve Registration (if applicable)
       await supabase.from('registrations').update({ status: 'approved' }).eq('id', userData.id);
 
-      // 4. Log Initial Enrollment Payment
+      // 4. Log Onboarding Fee Payment
       if (userRole === 'Student' && provPayRef) {
         await supabase.from('student_payments').insert({
           student_id: newUserId,
-          payment_type: 'Initial Enrollment',
-          amount: MONTHLY_PRICES[getBaseLevel(levelOverride)] || 20,
+          payment_type: 'Onboarding Fee',
+          amount: 10.00,
           reference_number: provPayRef,
           status: 'verified'
         });
@@ -850,7 +884,7 @@ const handleProvisionAccount = async () => {
                         </select>
                       </div>
                       <div>
-                        <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Ref. Pago de Alta</label>
+                        <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Ref. Pago de Alta ($10)</label>
                         <input type="text" placeholder="Ej: Zelle 1234" value={provPayRef} onChange={(e) => setProvPayRef(e.target.value)} className="w-full bg-black/40 border border-amber-500/30 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-amber-400" />
                       </div>
                     </div>
@@ -1083,7 +1117,13 @@ const handleProvisionAccount = async () => {
                             </div>
                             <div className="text-right">
                               <p className="text-emerald-400 font-black text-lg">${payment.amount}</p>
-                              <p className="text-[9px] text-emerald-400/50 uppercase font-black tracking-widest">{payment.status}</p>
+                              {payment.status === 'processing' ? (
+                                <button onClick={() => handleVerifyPendingPayment(payment)} disabled={isProcessing} className="mt-1 bg-[#fcd34d] hover:bg-white text-[#08203e] px-3 py-1 rounded text-[9px] font-black uppercase tracking-widest hover:scale-105 transition-transform disabled:opacity-50">
+                                  Verificar
+                                </button>
+                              ) : (
+                                <p className="text-[9px] text-emerald-400/50 uppercase font-black tracking-widest">{payment.status}</p>
+                              )}
                             </div>
                           </div>
                         ))}

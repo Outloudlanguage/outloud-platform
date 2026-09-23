@@ -76,17 +76,8 @@ const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess, initialData }
 
   if (!isOpen) return null;
 
-  // Proration Math
-  const getBaseLevel = (lvl) => lvl ? lvl.split(':')[0].trim() : 'A1';
-  const calculateProration = () => {
-    const today = new Date();
-    let nextBilling = new Date(today.getFullYear(), today.getMonth(), provCohort);
-    if (today.getDate() >= provCohort) nextBilling.setMonth(nextBilling.getMonth() + 1);
-    const daysLeft = Math.max(0, Math.ceil((nextBilling - today) / (1000 * 60 * 60 * 24)));
-    const price = MONTHLY_PRICES[getBaseLevel(provLevel)] || 40;
-    return ((price / 30) * daysLeft).toFixed(2);
-  };
-  const proratedDue = calculateProration();
+  // Onboarding Fee is fixed at $10. Monthly subscription starts LATER via the Student Hub.
+  const onboardingFee = 10.00;
 
 const handleProvision = async (e) => {
     e.preventDefault();
@@ -132,7 +123,7 @@ const handleProvision = async (e) => {
         avatar_url: avatarUrl || null,
         role: role,
         assigned_password: password,
-        status: 'active'
+        status: role === 'Student' ? 'pending_activation' : 'active'
       };
 
       if (role === 'Student') {
@@ -140,6 +131,7 @@ const handleProvision = async (e) => {
         profileUpdates.level = provLevel;
         profileUpdates.unit = provUnit;
         profileUpdates.available_credits = 0; 
+        profileUpdates.payment_status = 'pending_first_month';
       }
 
       const { error: profileError } = await supabase.from('profiles').update(profileUpdates).eq('id', newUserId);
@@ -147,12 +139,12 @@ const handleProvision = async (e) => {
       // If your database rejects it, THIS line will tell us exactly which column caused it.
       if (profileError) throw new Error(`Fallo actualizando perfil en BD: ${profileError.message}`);
 
-      // 3. Log the Payment in the Ledger safely
+      // 3. Log the Onboarding Fee in the Ledger safely
       if (role === 'Student' && payRef) {
         const { error: paymentError } = await supabase.from('student_payments').insert({
           student_id: newUserId,
-          payment_type: 'Initial Enrollment (Prorated)',
-          amount: proratedDue,
+          payment_type: 'Onboarding Fee',
+          amount: onboardingFee,
           reference_number: payRef,
           status: 'verified' 
         });
@@ -281,8 +273,8 @@ const handleProvision = async (e) => {
 
                   <div className="bg-white/5 border border-[#fcd34d]/30 rounded-2xl p-5 shadow-inner mt-2">
                     <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-3">
-                      <span className="text-[10px] text-[#fcd34d] font-bold uppercase tracking-widest">Cobro Prorrateado Hoy</span>
-                      <span className="text-xl font-black text-[#fcd34d]">${proratedDue}</span>
+                      <span className="text-[10px] text-[#fcd34d] font-bold uppercase tracking-widest">Onboarding Fee (Setup)</span>
+                      <span className="text-xl font-black text-[#fcd34d]">$10.00</span>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3 mb-3">
