@@ -98,7 +98,7 @@ const TeacherPerformanceRadar = ({ teacherId = 'default-teacher-id' }) => {
   }
 
   return (
-    <div className="flex flex-col bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl md:rounded-[2rem] p-4 md:p-8 shadow-2xl break-inside-avoid print:bg-white print:border-slate-300 print:shadow-none print:p-4 w-full">
+    <div className="flex flex-col bg-transparent md:bg-white/5 md:backdrop-blur-xl border-transparent md:border-white/10 md:rounded-[2rem] p-0 md:p-8 shadow-none md:shadow-2xl break-inside-avoid print:bg-white print:border-slate-300 print:shadow-none print:p-4 w-full">
       
       {/* Header */}
       <div className="mb-6">

@@ -109,7 +109,7 @@ const CefrHeadcountDashboard = () => {
   if (loading) return <div className="p-4 md:p-8 text-white/50 text-center font-bold tracking-widest">LOADING ENROLLMENT DATA...</div>;
 
   return (
-    <div className="cefr-headcount-card relative flex flex-col w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl md:rounded-[2rem] p-4 md:p-8 shadow-2xl break-inside-avoid print:bg-white print:border-slate-300 print:shadow-none print:p-4">
+    <div className="cefr-headcount-card relative flex flex-col w-full bg-transparent md:bg-white/5 md:backdrop-blur-xl border-transparent md:border-white/10 md:rounded-[2rem] p-0 md:p-8 shadow-none md:shadow-2xl break-inside-avoid print:bg-white print:border-slate-300 print:shadow-none print:p-4">
       
       {/* Header & Metric Card */}
       <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-end border-b border-white/10 print:border-slate-300 pb-4 gap-4">

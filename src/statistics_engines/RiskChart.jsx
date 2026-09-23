@@ -97,7 +97,7 @@ const RiskChart = ({ studentId }) => {
   if (error) return <div className="p-8 text-red-400 text-center font-bold tracking-widest">{error}</div>;
 
   return (
-    <div className="relative flex flex-col w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl md:rounded-[2rem] p-4 md:p-8 shadow-2xl break-inside-avoid print:bg-white print:border-slate-300 print:shadow-none print:p-4">
+    <div className="relative flex flex-col w-full bg-transparent md:bg-white/5 md:backdrop-blur-xl border-transparent md:border-white/10 md:rounded-[2rem] p-0 md:p-8 shadow-none md:shadow-2xl break-inside-avoid print:bg-white print:border-slate-300 print:shadow-none print:p-4">
       
       <div className="mb-6">
         <h3 className="text-xl md:text-2xl font-black tracking-widest uppercase text-white print:text-black">
