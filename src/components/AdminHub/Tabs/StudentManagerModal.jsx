@@ -70,6 +70,8 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   const [manualBonus, setManualBonus] = useState('');
   const [manualDeduction, setManualDeduction] = useState('');
   const [evaluations, setEvaluations] = useState([]);
+  const [opMetrics, setOpMetrics] = useState(null);
+  const [opScore, setOpScore] = useState(0);
 
   // DYNAMIC TIERED PRICING MAPPED FROM INSTRUCTIONS
   const MONTHLY_PRICES = { A1: 20, A2: 20, B1: 30, B2: 30, C1: 50, C2: 50 };
@@ -158,11 +160,85 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
         .eq('teacher_id', userData.id)
         .eq('is_paid_out', false);
         
-      // 3. Fetch Evaluations for Radar
+      // 3. Fetch Evaluations for Pedagogical Radar
       const { data: evals } = await supabase.from('class_evaluations')
         .select('*')
         .eq('teacher_id', userData.id);
         
+      // 4. Fetch Operational Radar Metrics
+      let punctualityScore = 100, responsibilityScore = 100, socialScore = 100, teachingScore = 100, passRateScore = 100;
+      const { data: allSessions } = await supabase.from('live_sessions').select('*').eq('teacher_id', userData.id);
+      
+      if (allSessions && allSessions.length > 0) {
+        const standardClasses = allSessions.filter(s => s.status === 'completed' && (!s.class_type || !s.class_type.toLowerCase().includes('social')));
+        if (standardClasses.length > 0) {
+          let totalPunctuality = 0;
+          standardClasses.forEach(c => {
+            const sched = new Date(c.scheduled_at);
+            const prepStart = c.prep_started_at ? new Date(c.prep_started_at) : new Date(sched.getTime() - 10 * 60000);
+            const actualStart = c.actual_start_at ? new Date(c.actual_start_at) : sched;
+            const actualEnd = c.ended_at ? new Date(c.ended_at) : new Date(sched.getTime() + 45 * 60000);
+            const gradedAt = c.graded_at ? new Date(c.graded_at) : new Date(actualEnd.getTime() + 5 * 60000);
+            
+            let classMins = 60;
+            const prepDiff = (sched - prepStart) / 60000;
+            if (prepDiff < 10) classMins -= (10 - Math.max(0, prepDiff));
+            const startDelay = (actualStart - sched) / 60000;
+            if (startDelay > 0) classMins -= startDelay;
+            const endEarly = (new Date(sched.getTime() + 45 * 60000) - actualEnd) / 60000;
+            if (endEarly > 0) classMins -= endEarly;
+            const gradeDelay = (gradedAt - actualEnd) / 60000;
+            if (gradeDelay > 5) classMins -= Math.min(6, gradeDelay - 5);
+            
+            totalPunctuality += Math.max(0, (classMins / 60) * 100);
+          });
+          punctualityScore = Math.round(totalPunctuality / standardClasses.length);
+        }
+        
+        const cancelledCount = allSessions.filter(s => s.status === 'cancelled' && s.cancelled_by === userData.id).length;
+        responsibilityScore -= (cancelledCount * 15);
+        
+        const socialClasses = allSessions.filter(s => s.class_type && s.class_type.toLowerCase().includes('social'));
+        if (socialClasses.length > 0) {
+          const successfulSocials = socialClasses.filter(s => {
+            if (s.status !== 'completed') return false;
+            const start = new Date(s.actual_start_at || s.scheduled_at);
+            const end = new Date(s.ended_at || new Date(start.getTime() + 60 * 60000));
+            return ((end - start) / 60000) >= 55;
+          }).length;
+          socialScore = Math.round((successfulSocials / socialClasses.length) * 100);
+        }
+      }
+      
+      const { data: allShifts } = await supabase.from('teacher_shifts').select('status').eq('teacher_id', userData.id);
+      if (allShifts && allShifts.length > 0) {
+        const missedShifts = allShifts.filter(s => s.status === 'missed').length;
+        responsibilityScore -= (missedShifts * 10);
+      }
+      responsibilityScore = Math.max(0, responsibilityScore);
+      
+      if (userData.total_rating_questions > 0) {
+        teachingScore = Math.round((userData.total_positive_ratings / userData.total_rating_questions) * 100);
+      } else { 
+        teachingScore = 95; 
+      }
+      
+      const { data: supervision } = await supabase.from('engine_teacher_supervision').select('teacher_fail_rate').eq('teacher_id', userData.id).maybeSingle();
+      if (supervision && supervision.teacher_fail_rate !== null) {
+        passRateScore = Math.round(100 - (supervision.teacher_fail_rate * 100));
+      } else { 
+        passRateScore = 92; 
+      }
+
+      setOpMetrics([
+        { subject: 'Puntualidad', score: punctualityScore, fullMark: 100 },
+        { subject: 'Responsabilidad', score: responsibilityScore, fullMark: 100 },
+        { subject: 'Pedagogía', score: teachingScore, fullMark: 100 },
+        { subject: 'Aprobación', score: passRateScore, fullMark: 100 },
+        { subject: 'Eventos Sociales', score: socialScore, fullMark: 100 }
+      ]);
+      setOpScore(Math.round((punctualityScore + responsibilityScore + teachingScore + passRateScore + socialScore) / 5));
+
       setPendingClasses(classes || []);
       setPendingShifts(shifts || []);
       setEvaluations(evals || []);
@@ -1307,11 +1383,13 @@ const handleProvisionAccount = async () => {
           {activeTab === 'TEACHER_STATS' && userRole === 'Teacher' && (
             <div className="animate-fade-in space-y-6">
               <div className="flex justify-between items-end border-b border-white/10 pb-2 mb-4">
-                <h3 className="text-xs font-black text-[#fcd34d] uppercase tracking-widest">Rendimiento Académico</h3>
+                <h3 className="text-xs font-black text-[#fcd34d] uppercase tracking-widest">Rendimiento Integral del Profesor</h3>
               </div>
               <div className="flex flex-col md:grid md:grid-cols-2 gap-6 h-full">
+                
+                {/* Pedagogical Radar (Student Ratings) */}
                 <div className="bg-white/5 border border-white/10 rounded-3xl p-6 shadow-inner flex flex-col items-center justify-center">
-                  <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest mb-2">Calificación Global</p>
+                  <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest mb-2">Calificación Pedagógica</p>
                   <div className="flex items-baseline gap-2 mb-6">
                     <span className="text-6xl font-black text-[#fcd34d] drop-shadow-[0_0_15px_rgba(252,211,77,0.5)]">{globalRating}</span>
                     <span className="text-2xl font-bold text-white/40">/ 5.0</span>
@@ -1321,22 +1399,34 @@ const handleProvisionAccount = async () => {
                       <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
                         <PolarGrid stroke="rgba(255,255,255,0.2)" />
                         <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 10, fontWeight: 'bold' }} />
-                        <Radar name="Teacher" dataKey="A" stroke="#fcd34d" strokeWidth={2} fill="#fcd34d" fillOpacity={0.4} />
+                        <Radar name="Pedagogical" dataKey="A" stroke="#fcd34d" strokeWidth={2} fill="#fcd34d" fillOpacity={0.4} />
                       </RadarChart>
                     </ResponsiveContainer>
                   </div>
                 </div>
-                <div className="flex flex-col gap-6">
-                  <div className="bg-white/5 border border-white/10 rounded-3xl p-6 shadow-inner flex flex-col items-center justify-center text-center flex-1">
-                    <div className="w-16 h-16 bg-[#fcd34d]/10 text-[#fcd34d] rounded-full flex items-center justify-center mb-4 border border-[#fcd34d]/30">
-                      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    </div>
-                    <h3 className="text-xl font-black text-white uppercase tracking-widest mb-2">Evaluaciones Estudiantiles</h3>
-                    <p className="text-xs text-white/70 leading-relaxed mb-6">
-                      Este gráfico mapea el porcentaje promedio de respuestas 'Sí' dadas por los estudiantes a través de las 5 métricas pedagógicas principales después de cada clase.
-                    </p>
+
+                {/* Operational Radar (Database KPI) */}
+                <div className="bg-white/5 border border-white/10 rounded-3xl p-6 shadow-inner flex flex-col items-center justify-center">
+                  <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest mb-2">Cumplimiento Operativo</p>
+                  <div className="flex items-baseline gap-2 mb-6">
+                    <span className="text-6xl font-black text-blue-400 drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]">{opScore || 0}</span>
+                    <span className="text-2xl font-bold text-white/40">/ 100</span>
+                  </div>
+                  <div className="w-full h-[250px] md:h-[300px]">
+                    {opMetrics ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <RadarChart cx="50%" cy="50%" outerRadius="70%" data={opMetrics}>
+                          <PolarGrid stroke="rgba(255,255,255,0.2)" />
+                          <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 10, fontWeight: 'bold' }} />
+                          <Radar name="Operational" dataKey="score" stroke="#3b82f6" strokeWidth={2} fill="#3b82f6" fillOpacity={0.4} />
+                        </RadarChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-white/50 text-xs font-bold tracking-widest uppercase">Cargando...</div>
+                    )}
                   </div>
                 </div>
+
               </div>
             </div>
           )}

@@ -314,7 +314,7 @@ const DesktopView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onR
 // ==========================================
 // 4. MOBILE VIEW
 // ==========================================
-const MobileView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onReturnHome, onAction, onRequestSub, onOpenProfileMenu, isLaunching, hasNewStaffBoard, announcements = [], activeCategory, setActiveCategory, latestForumPost }) => {
+const MobileView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onReturnHome, onAction, onRequestSub, onOpenProfileMenu, isLaunching, hasNewStaffBoard, announcements = [], activeCategory, setActiveCategory, latestForumPost, onOpenMetrics }) => {
   const goal = payrollStats?.monthlyGoal || 100;
   const filteredAnnouncements = activeCategory ? announcements.filter(a => a.category === activeCategory) : announcements;
   const acquired = payrollStats?.current || 0;
@@ -873,6 +873,8 @@ const TeacherMetricsModal = ({ isOpen, onClose, teacherId, teacherData }) => {
   const [shifts, setShifts] = useState([]);
   const [evaluations, setEvaluations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [opMetrics, setOpMetrics] = useState(null);
+  const [opScore, setOpScore] = useState(0);
 
   useEffect(() => {
     if (!isOpen || !teacherId) return;
@@ -900,12 +902,86 @@ const TeacherMetricsModal = ({ isOpen, onClose, teacherId, teacherData }) => {
         .order('shift_date', { ascending: false });
       if (shiftData) setShifts(shiftData);
 
-      // 3. Fetch Evaluations for Radar Math
+      // 3. Fetch Evaluations for Pedagogical Radar
       const { data: evalData } = await supabase
         .from('class_evaluations')
         .select('*')
         .eq('teacher_id', teacherId);
       if (evalData) setEvaluations(evalData);
+
+      // 4. Fetch Operational Radar Metrics
+      let punctualityScore = 100, responsibilityScore = 100, socialScore = 100, teachingScore = 100, passRateScore = 100;
+      const { data: allSessions } = await supabase.from('live_sessions').select('*').eq('teacher_id', teacherId);
+      
+      if (allSessions && allSessions.length > 0) {
+        const standardClasses = allSessions.filter(s => s.status === 'completed' && (!s.class_type || !s.class_type.toLowerCase().includes('social')));
+        if (standardClasses.length > 0) {
+          let totalPunctuality = 0;
+          standardClasses.forEach(c => {
+            const sched = new Date(c.scheduled_at);
+            const prepStart = c.prep_started_at ? new Date(c.prep_started_at) : new Date(sched.getTime() - 10 * 60000);
+            const actualStart = c.actual_start_at ? new Date(c.actual_start_at) : sched;
+            const actualEnd = c.ended_at ? new Date(c.ended_at) : new Date(sched.getTime() + 45 * 60000);
+            const gradedAt = c.graded_at ? new Date(c.graded_at) : new Date(actualEnd.getTime() + 5 * 60000);
+            
+            let classMins = 60;
+            const prepDiff = (sched - prepStart) / 60000;
+            if (prepDiff < 10) classMins -= (10 - Math.max(0, prepDiff));
+            const startDelay = (actualStart - sched) / 60000;
+            if (startDelay > 0) classMins -= startDelay;
+            const endEarly = (new Date(sched.getTime() + 45 * 60000) - actualEnd) / 60000;
+            if (endEarly > 0) classMins -= endEarly;
+            const gradeDelay = (gradedAt - actualEnd) / 60000;
+            if (gradeDelay > 5) classMins -= Math.min(6, gradeDelay - 5);
+            
+            totalPunctuality += Math.max(0, (classMins / 60) * 100);
+          });
+          punctualityScore = Math.round(totalPunctuality / standardClasses.length);
+        }
+        
+        const cancelledCount = allSessions.filter(s => s.status === 'cancelled' && s.cancelled_by === teacherId).length;
+        responsibilityScore -= (cancelledCount * 15);
+        
+        const socialClasses = allSessions.filter(s => s.class_type && s.class_type.toLowerCase().includes('social'));
+        if (socialClasses.length > 0) {
+          const successfulSocials = socialClasses.filter(s => {
+            if (s.status !== 'completed') return false;
+            const start = new Date(s.actual_start_at || s.scheduled_at);
+            const end = new Date(s.ended_at || new Date(start.getTime() + 60 * 60000));
+            return ((end - start) / 60000) >= 55;
+          }).length;
+          socialScore = Math.round((successfulSocials / socialClasses.length) * 100);
+        }
+      }
+      
+      const { data: allShifts } = await supabase.from('teacher_shifts').select('status').eq('teacher_id', teacherId);
+      if (allShifts && allShifts.length > 0) {
+        const missedShifts = allShifts.filter(s => s.status === 'missed').length;
+        responsibilityScore -= (missedShifts * 10);
+      }
+      responsibilityScore = Math.max(0, responsibilityScore);
+      
+      if (teacherData && teacherData.total_rating_questions > 0) {
+        teachingScore = Math.round((teacherData.total_positive_ratings / teacherData.total_rating_questions) * 100);
+      } else { 
+        teachingScore = 95; 
+      }
+      
+      const { data: supervision } = await supabase.from('engine_teacher_supervision').select('teacher_fail_rate').eq('teacher_id', teacherId).maybeSingle();
+      if (supervision && supervision.teacher_fail_rate !== null) {
+        passRateScore = Math.round(100 - (supervision.teacher_fail_rate * 100));
+      } else { 
+        passRateScore = 92; 
+      }
+
+      setOpMetrics([
+        { subject: 'Puntualidad', score: punctualityScore, fullMark: 100 },
+        { subject: 'Responsabilidad', score: responsibilityScore, fullMark: 100 },
+        { subject: 'Pedagogía', score: teachingScore, fullMark: 100 },
+        { subject: 'Aprobación', score: passRateScore, fullMark: 100 },
+        { subject: 'Eventos Sociales', score: socialScore, fullMark: 100 }
+      ]);
+      setOpScore(Math.round((punctualityScore + responsibilityScore + teachingScore + passRateScore + socialScore) / 5));
 
       setLoading(false);
     };
@@ -1097,37 +1173,53 @@ const TeacherMetricsModal = ({ isOpen, onClose, teacherId, teacherData }) => {
 
             /* --- PERFORMANCE RADAR TAB --- */
             <div className="flex flex-col md:grid md:grid-cols-2 gap-6 h-full">
+              
+              {/* Pedagogical Radar */}
               <div className="bg-white/5 border border-white/10 rounded-3xl p-6 shadow-inner flex flex-col items-center justify-center">
-                <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest mb-2">Global Star Rating</p>
-                <div className="flex items-baseline gap-2 mb-6">
+                <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest mb-2">Calificación Pedagógica</p>
+                <div className="flex items-baseline gap-2 mb-4">
                   <span className="text-6xl font-black text-[#fcd34d] drop-shadow-[0_0_15px_rgba(252,211,77,0.5)]">{globalRating}</span>
                   <span className="text-2xl font-bold text-white/40">/ 5.0</span>
                 </div>
-                <div className="w-full h-[250px] md:h-[300px]">
+                <div className="w-full h-[200px] md:h-[250px] mb-4">
                   <ResponsiveContainer width="100%" height="100%">
                     <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
                       <PolarGrid stroke="rgba(255,255,255,0.2)" />
                       <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 10, fontWeight: 'bold' }} />
-                      <Radar name="Teacher" dataKey="A" stroke="#fcd34d" strokeWidth={2} fill="#fcd34d" fillOpacity={0.4} />
+                      <Radar name="Pedagogical" dataKey="A" stroke="#fcd34d" strokeWidth={2} fill="#fcd34d" fillOpacity={0.4} />
                     </RadarChart>
                   </ResponsiveContainer>
                 </div>
+                <button onClick={() => setInfoOverlay('report')} className="w-full py-3 bg-[#fcd34d] hover:bg-white text-[#08203e] font-black text-[10px] uppercase tracking-widest rounded-xl transition-all shadow-[0_0_15px_rgba(252,211,77,0.4)] mt-auto">
+                  Excellence Info
+                </button>
               </div>
 
-              <div className="flex flex-col gap-6">
-                <div className="bg-white/5 border border-white/10 rounded-3xl p-6 shadow-inner flex flex-col items-center justify-center text-center flex-1">
-                  <div className="w-16 h-16 bg-[#fcd34d]/10 text-[#fcd34d] rounded-full flex items-center justify-center mb-4 border border-[#fcd34d]/30">
-                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                  </div>
-                  <h3 className="text-xl font-black text-white uppercase tracking-widest mb-2">Excellence Bonus</h3>
-                  <p className="text-xs text-white/70 leading-relaxed mb-6">
-                    Maintain an average rating of 90% or higher in classes with 5+ students to unlock a flat $1.00 bonus per class.
-                  </p>
-                  <button onClick={() => setInfoOverlay('report')} className="w-full py-4 bg-[#fcd34d] hover:bg-white text-[#08203e] font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-[0_0_15px_rgba(252,211,77,0.4)]">
-                    View Detailed Report
-                  </button>
+              {/* Operational Radar */}
+              <div className="bg-white/5 border border-white/10 rounded-3xl p-6 shadow-inner flex flex-col items-center justify-center">
+                <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest mb-2">Cumplimiento Operativo</p>
+                <div className="flex items-baseline gap-2 mb-4">
+                  <span className="text-6xl font-black text-blue-400 drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]">{opScore || 0}</span>
+                  <span className="text-2xl font-bold text-white/40">/ 100</span>
                 </div>
+                <div className="w-full h-[200px] md:h-[250px] mb-4">
+                  {opMetrics ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RadarChart cx="50%" cy="50%" outerRadius="70%" data={opMetrics}>
+                        <PolarGrid stroke="rgba(255,255,255,0.2)" />
+                        <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 10, fontWeight: 'bold' }} />
+                        <Radar name="Operational" dataKey="score" stroke="#3b82f6" strokeWidth={2} fill="#3b82f6" fillOpacity={0.4} />
+                      </RadarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-white/50 text-xs font-bold tracking-widest uppercase">Cargando...</div>
+                  )}
+                </div>
+                <button onClick={() => setInfoOverlay('time')} className="w-full py-3 bg-blue-500 hover:bg-blue-400 text-white font-black text-[10px] uppercase tracking-widest rounded-xl transition-all shadow-[0_0_15px_rgba(59,130,246,0.4)] mt-auto">
+                  Time Tracking Info
+                </button>
               </div>
+
             </div>
 
           )}

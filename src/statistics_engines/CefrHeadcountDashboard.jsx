@@ -73,27 +73,24 @@ const CefrHeadcountDashboard = () => {
 
         let processedData = Object.values(buckets);
 
-        // Fallback UI mock data if database is empty to guarantee layout stability
-        if (totalValidEnrollments === 0) {
-          processedData = [
-            { level: 'A1', Active: 350, AtRisk: 40, Inactive: 20, total: 410 },
-            { level: 'A2', Active: 280, AtRisk: 30, Inactive: 10, total: 320 },
-            { level: 'B1', Active: 200, AtRisk: 45, Inactive: 15, total: 260 },
-            { level: 'B2', Active: 130, AtRisk: 20, Inactive: 5, total: 155 },
-            { level: 'C1/C2', Active: 50, AtRisk: 3, Inactive: 2, total: 55 }
-          ];
-          totalValidEnrollments = 1200;
+        // Safely calculate the largest segment and the active rate without mock data
+        let largestSegment = { level: 'N/A', total: 0 };
+        let totalActive = 0;
+
+        if (totalValidEnrollments > 0) {
+          largestSegment = processedData.reduce((prev, current) => 
+            (prev.total > current.total) ? prev : current
+          );
+          processedData.forEach(b => { totalActive += b.Active; });
         }
 
-        // Identify the largest level segment for the dynamic insight text
-        const largestSegment = processedData.reduce((prev, current) => 
-          (prev.total > current.total) ? prev : current
-        );
+        const activeRate = totalValidEnrollments > 0 ? ((totalActive / totalValidEnrollments) * 100).toFixed(1) : 0;
 
         setChartData(processedData);
         setMetrics({
           totalEnrollment: totalValidEnrollments,
-          largestLevel: largestSegment.level
+          largestLevel: largestSegment.level,
+          activeRate: activeRate
         });
 
       } catch (error) {
@@ -130,22 +127,22 @@ const CefrHeadcountDashboard = () => {
       </div>
 
       {/* Stacked Column Chart */}
-      <div className="w-full h-80 mb-6">
+      <div className="w-full h-80 print:h-[500px] mb-6 print:block">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={{ top: 15, right: 20, bottom: 5, left: -20 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" vertical={false} className="print:!stroke-slate-200" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" vertical={false} className="print:!stroke-slate-300" />
             
             <XAxis 
               dataKey="level" 
-              tick={{ fill: '#94a3b8', fontSize: 14, fontWeight: 700 }} 
-              axisLine={{ stroke: '#475569' }} 
-              tickLine={{ stroke: '#475569' }} 
+              tick={{ fill: '#64748b', fontSize: 14, fontWeight: 700 }} 
+              axisLine={{ stroke: '#64748b' }} 
+              tickLine={{ stroke: '#64748b' }} 
             />
             
             <YAxis 
-              tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 600 }} 
-              axisLine={{ stroke: '#475569' }} 
-              tickLine={{ stroke: '#475569' }} 
+              tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }} 
+              axisLine={{ stroke: '#64748b' }} 
+              tickLine={{ stroke: '#64748b' }} 
             />
             
             <Tooltip 
@@ -166,16 +163,42 @@ const CefrHeadcountDashboard = () => {
       </div>
 
       {/* Dynamic Narrative Footer */}
-      <div className="mt-auto pt-6 border-t border-white/10 print:border-slate-300 flex items-start gap-4">
-        {/* Custom minimalist thick rounded icon */}
+      <div className="mt-auto pt-6 border-t border-white/10 print:border-slate-400 flex items-start gap-4 print:break-inside-avoid">
         <div className="bg-black/40 print:bg-slate-100 p-3 rounded-xl flex-shrink-0">
           <svg className="w-6 h-6 text-white print:text-slate-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
           </svg>
         </div>
-        <p className="text-sm leading-relaxed text-slate-300 print:text-slate-800 font-medium">
-          Currently, <strong>{metrics.totalEnrollment.toLocaleString()}</strong> students are enrolled in the academy, with the largest portion studying at the <strong>{metrics.largestLevel}</strong> level. The chart above breaks down the cohort by their assigned CEFR segment, highlighting active engagement versus at-risk and inactive statuses.
-        </p>
+        <div className="text-sm leading-relaxed text-slate-300 print:text-slate-800 font-medium w-full">
+          {(() => {
+            if (metrics.totalEnrollment === 0) return <p>No hay datos suficientes para generar un reporte en este momento. La base de datos no registra estudiantes matriculados.</p>;
+            
+            const rate = parseFloat(metrics.activeRate);
+            let estado = "CRÍTICO";
+            let colorClass = "text-red-400 print:text-red-600";
+            let estrategia = "Ejecutar protocolo de retención de emergencia. Contactar telefónicamente a los estudiantes inactivos o en riesgo y ofrecer sesiones de nivelación gratuitas para evitar la deserción masiva.";
+            
+            if (rate >= 80) {
+              estado = "ÓPTIMO";
+              colorClass = "text-emerald-400 print:text-emerald-600";
+              estrategia = "Mantener la metodología actual. Enfocar los esfuerzos operativos y de marketing en escalar la adquisición en los niveles con menor densidad de matrícula.";
+            } else if (rate >= 60) {
+              estado = "INTERMEDIO";
+              colorClass = "text-yellow-400 print:text-yellow-600";
+              estrategia = "Activar protocolos de retención preventivos. Enviar correos de reactivación y programar tutorías de seguimiento para los estudiantes marcados como 'En Riesgo' antes de que pasen a estado inactivo.";
+            }
+
+            return (
+              <p>
+                Actualmente contamos con <strong>{metrics.totalEnrollment.toLocaleString()}</strong> estudiantes matriculados, siendo <strong>{metrics.largestLevel}</strong> el nivel con mayor concentración. 
+                El <strong>{metrics.activeRate}%</strong> de la matrícula global se mantiene activa, lo cual representa un estado operativo <strong className={colorClass}>{estado}</strong>.
+                <br/><br/>
+                <span className="uppercase tracking-widest text-[10px] font-black opacity-70 block mb-1">Estrategia Recomendada:</span>
+                {estrategia}
+              </p>
+            );
+          })()}
+        </div>
       </div>
     </div>
   );
