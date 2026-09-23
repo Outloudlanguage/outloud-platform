@@ -24,13 +24,13 @@ const CefrHeadcountDashboard = () => {
 
         // Fetch users, their status, and their assigned billing level
         const { data: students, error } = await supabase
-          .from('users')
+          .from('profiles')
           .select(`
             id,
             engine_student_status ( activity_status ),
             payments ( level_billed )
           `)
-          .eq('role', 'student');
+          .in('role', ['student', 'Student']); // Catch both casings safely
 
         if (error) throw error;
 
@@ -112,38 +112,40 @@ const CefrHeadcountDashboard = () => {
       
       <style>{`
         @media print {
-          /* 1. Force the report to cover the entire page */
+          @page { size: portrait; margin: 15mm; }
+          
+          /* 1. Nuke the Sidebar & App Layout constraints */
+          .w-28, .w-64, nav, aside { display: none !important; }
+          .flex-1 { padding: 0 !important; margin: 0 !important; width: 100% !important; flex: none !important; display: block !important; }
+          body, html { background: white !important; }
+
+          /* 2. Format our specific container */
           #printable-cefr-report {
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            width: 100vw !important;
-            height: 100vh !important;
             background-color: white !important;
-            z-index: 2147483647 !important;
-            padding: 40px !important;
-            display: flex !important;
-            flex-direction: column !important;
+            width: 100% !important;
             margin: 0 !important;
-            box-sizing: border-box !important;
+            padding: 0 !important;
+            box-shadow: none !important;
+            display: block !important;
           }
-          /* 2. Bruteforce ALL text and borders to be visible on white */
-          #printable-cefr-report * {
+          
+          /* 3. Bruteforce ALL text to be black */
+          #printable-cefr-report, #printable-cefr-report * {
             color: black !important;
             text-shadow: none !important;
             border-color: #ccc !important;
           }
-          /* 3. Recharts specific fixes */
+
+          /* 4. Chart height fix */
           .recharts-responsive-container {
-            height: 400px !important;
-            min-height: 400px !important;
+            height: 350px !important;
+            min-height: 350px !important;
+            margin-bottom: 20px !important;
           }
           .recharts-text { fill: #333 !important; }
-          .recharts-cartesian-grid-line { stroke: #eee !important; }
-          .recharts-tooltip-wrapper { display: none !important; }
           
-          /* 4. Utilities to bypass Tailwind CDN limits */
-          .print-header { display: block !important; margin-bottom: 20px !important; padding-bottom: 10px !important; border-bottom: 2px solid #000 !important; text-align: right !important; }
+          /* 5. Print-specific utility classes */
+          .print-header { display: block !important; margin-bottom: 20px !important; padding-bottom: 10px !important; border-bottom: 2px solid #000 !important; text-align: left !important; }
           .hide-on-print { display: none !important; }
         }
       `}</style>
@@ -215,7 +217,7 @@ const CefrHeadcountDashboard = () => {
             <path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
           </svg>
         </div>
-        <div className="text-sm leading-relaxed text-slate-300 font-medium w-full" style={{ textAlign: 'justify' }}>
+        <div className="text-sm leading-relaxed text-slate-300 font-medium w-full" style={{ textAlign: 'justify', color: 'inherit' }}>
           {(() => {
             if (metrics.totalEnrollment === 0) return <p>No hay datos suficientes para generar un reporte en este momento. La base de datos no registra estudiantes matriculados.</p>;
             
