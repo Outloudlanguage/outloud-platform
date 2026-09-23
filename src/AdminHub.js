@@ -1069,6 +1069,10 @@ const AdminHub = () => {
   const [impersonatingStudent, setImpersonatingStudent] = useState(null);
   const [activeModule, setActiveModule] = useState('ACCOUNTS');
   
+  // Provisioning State
+  const [isProvisioningModalOpen, setIsProvisioningModalOpen] = useState(false);
+  const [provisioningInitialData, setProvisioningInitialData] = useState(null);
+
   // Responsive Architecture State
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
