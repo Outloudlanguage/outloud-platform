@@ -23,6 +23,7 @@ import 'react-phone-number-input/style.css';
 import StatisticsHub from './components/StatisticsHub';
 import CommercialFunnelModule from './statistics_engines/CommercialFunnelModule';
 import ProfitMarginAnalysis from './statistics_engines/ProfitMarginAnalysis';
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts';
 
 // ==========================================
 // Safe URL Extractor for Cloudflare IFrames
@@ -2087,7 +2088,7 @@ const renderAccounts = () => (
             </div>
           ) : (
             filteredDirectory.map((user, i) => (
-              <div key={user.id} className={`border rounded-2xl p-3 lg:p-4 flex items-center justify-between transition-colors cursor-pointer group ${user.status === 'pending' ? 'bg-[#fcd34d] border-[#fcd34d] hover:bg-yellow-300 shadow-[0_0_20px_rgba(252,211,77,0.2)]' : 'bg-black/30 border-white/10 hover:bg-black/40'}`} onClick={() => user.role === 'Teacher' ? setSelectedTeacher(user) : setSelectedStudent(user)}>
+              <div key={user.id} className={`border rounded-2xl p-3 lg:p-4 flex items-center justify-between transition-colors cursor-pointer group ${user.status === 'pending' ? 'bg-[#fcd34d] border-[#fcd34d] hover:bg-yellow-300 shadow-[0_0_20px_rgba(252,211,77,0.2)]' : 'bg-black/30 border-white/10 hover:bg-black/40'}`} onClick={() => setSelectedStudent(user)}>
                 <div className="flex items-center gap-3 w-full min-w-0 pr-2">
                   <img src={user.avatar_url || `https://ui-avatars.com/api/?name=${user.first_name || 'U'}+${user.last_name || ''}&background=random&color=fff`} className={`w-10 h-10 lg:w-12 lg:h-12 rounded-full border-2 ${user.status === 'pending' ? 'border-[#08203e] shadow-sm' : 'border-white/20 group-hover:border-[#fcd34d]'} transition-colors object-cover shadow-md shrink-0`} alt="User" />
                   <h4 className={`font-bold text-sm lg:text-base ${user.status === 'pending' ? 'text-[#08203e]' : 'text-white group-hover:text-[#fcd34d]'} transition-colors truncate`}>{user.first_name || 'Nuevo'} {user.last_name || `Usuario`}</h4>

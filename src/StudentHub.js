@@ -1003,6 +1003,72 @@ const TeacherEvaluationModal = ({ isOpen, session, onClose, supabase }) => {
   );
 };
 // ==========================================
+// 5.1 CAPSTONE MOMENTUM MODAL (Pre-Renewal Teaser)
+// ==========================================
+const CapstoneMomentumModal = ({ isOpen, student, onProceed }) => {
+  if (!isOpen || !student) return null;
+
+  const currentLevel = student.level ? student.level.split(':')[0].trim() : 'A1';
+  const nextLevel = currentLevel === 'A1' ? 'A2' : currentLevel === 'A2' ? 'B1' : currentLevel === 'B1' ? 'B2' : currentLevel === 'B2' ? 'C1' : 'C2';
+  
+  const msSinceJoin = new Date().getTime() - new Date(student.created_at || Date.now()).getTime();
+  const weeks = Math.max(1, Math.floor(msSinceJoin / (1000 * 60 * 60 * 24 * 7)));
+  
+  // Estimate ~3 hours of engagement per unit completed
+  const estimatedHours = (student.unit || 1) * 3;
+
+  return (
+    <div className="fixed inset-0 z-[8500] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-fade-in font-montserrat overflow-y-auto custom-scrollbar">
+      <div className="relative w-full max-w-2xl bg-[#070b19] border border-[#fcd34d]/50 rounded-[3rem] shadow-[0_0_60px_rgba(252,211,77,0.2)] flex flex-col p-8 md:p-12 text-center overflow-hidden">
+        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-[#fcd34d]/10 blur-[80px] rounded-full pointer-events-none"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/10 blur-[80px] rounded-full pointer-events-none"></div>
+        
+        <div className="w-20 h-20 bg-[#fcd34d] text-[#08203e] rounded-full flex items-center justify-center mx-auto mb-6 shadow-[0_0_30px_rgba(252,211,77,0.4)] relative z-10">
+          <svg className="w-10 h-10" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+        </div>
+
+        <h2 className="text-3xl md:text-5xl font-black text-white uppercase tracking-widest mb-4 relative z-10 drop-shadow-md">
+          ¡Hito Alcanzado!
+        </h2>
+        
+        <p className="text-sm md:text-base text-white/80 font-medium leading-relaxed mb-8 relative z-10">
+          Acabas de finalizar el último Workbook de tu nivel. Mira todo lo que has logrado con tu esfuerzo:
+        </p>
+
+        <div className="grid grid-cols-3 gap-4 mb-8 relative z-10">
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 shadow-inner">
+            <div className="text-2xl md:text-4xl font-black text-[#fcd34d]">{student.unit}</div>
+            <div className="text-[9px] md:text-[10px] uppercase font-bold tracking-widest text-white/50 mt-1">Unidades</div>
+          </div>
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 shadow-inner">
+            <div className="text-2xl md:text-4xl font-black text-[#fcd34d]">~{estimatedHours}</div>
+            <div className="text-[9px] md:text-[10px] uppercase font-bold tracking-widest text-white/50 mt-1">Horas Activas</div>
+          </div>
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 shadow-inner">
+            <div className="text-2xl md:text-4xl font-black text-[#fcd34d]">{weeks}</div>
+            <div className="text-[9px] md:text-[10px] uppercase font-bold tracking-widest text-white/50 mt-1">Semanas</div>
+          </div>
+        </div>
+
+        <div className="bg-[#fcd34d]/10 border border-[#fcd34d]/30 rounded-2xl p-6 mb-8 relative z-10 text-left">
+          <h3 className="text-[#fcd34d] font-black uppercase tracking-widest text-sm mb-2">¿Qué sigue ahora?</h3>
+          <p className="text-xs md:text-sm text-white/90 font-medium leading-relaxed mb-4">
+            Te espera tu <strong>Live Lab de cierre</strong>. Será una sesión especial donde evaluarás todo lo aprendido con tu profesor y verás un adelanto del Nivel {nextLevel}.
+          </p>
+          <div className="bg-black/30 p-3 rounded-lg border border-[#fcd34d]/20 text-xs font-bold text-white/80">
+            ⚠️ IMPORTANTE: Al finalizar tu Live Lab, deberás contactar a soporte para procesar la renovación de tu nivel. ¡Avisa a tus padres si eres menor de edad para que no pierdas tu progreso!
+          </div>
+        </div>
+
+        <button onClick={onProceed} className="w-full py-4 md:py-5 bg-[#fcd34d] hover:bg-white text-[#08203e] font-black tracking-widest text-xs md:text-sm uppercase rounded-xl transition-all shadow-[0_0_20px_rgba(252,211,77,0.4)] hover:scale-105 relative z-10 cursor-pointer">
+          Agendar mi Live Lab Final
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ==========================================
 // 6. THE LIVE CALENDAR BRIDGE
 // ==========================================
 const StudentCalendar = ({ student, filterType, onConfirm, onCancel }) => {
@@ -1210,6 +1276,7 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
   const [calendarFilter, setCalendarFilter] = useState('LAB SESSION');
   
   const [showActivationModal, setShowActivationModal] = useState(false);
+  const [showCapstoneMomentum, setShowCapstoneMomentum] = useState(false);
 
   // Community Panel State
   const [showCommunity, setShowCommunity] = useState(false);
@@ -1421,8 +1488,14 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
       setShowGatekeeper(false);
 
       if (!isLesson) {
-        setCalendarFilter('LIVE LAB SESSION');
-        setShowCalendar(true);
+        // Intercept Capstone Workbooks to show the Momentum Modal
+        const CAPSTONE_UNITS = [12, 24, 36, 48, 70, 92];
+        if (CAPSTONE_UNITS.includes(Number(studentData.unit || 1))) {
+          setShowCapstoneMomentum(true);
+        } else {
+          setCalendarFilter('LIVE LAB SESSION');
+          setShowCalendar(true);
+        }
       }
     } catch (err) {
       console.error("Error saving progress:", err);
@@ -1562,6 +1635,18 @@ const isLockedOut = billingDate && today >= billingDate;
           onScheduleLive={() => { setShowGatekeeper(false); setCalendarFilter('LIVE LAB SESSION'); setShowCalendar(true); }}
           onScheduleComplementary={() => { setShowGatekeeper(false); setCalendarFilter('COMPLEMENTARY CLASS'); setShowCalendar(true); }}
           onScheduleTutoring={() => { setShowGatekeeper(false); setCalendarFilter('1-ON-1 TUTORING'); setShowCalendar(true); }}
+        />
+      )}
+
+      {showCapstoneMomentum && (
+        <CapstoneMomentumModal 
+          isOpen={showCapstoneMomentum} 
+          student={studentData} 
+          onProceed={() => {
+            setShowCapstoneMomentum(false);
+            setCalendarFilter('LIVE LAB SESSION');
+            setShowCalendar(true);
+          }}
         />
       )}
 

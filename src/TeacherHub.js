@@ -211,7 +211,7 @@ const DesktopView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onR
           {/* LEFT COLUMN: Status & Agenda */}
           <div className="col-span-3 flex flex-col gap-6 h-full">
             <div className="flex-[0.4]">
-              <PayrollCard acquired={acquired} goal={goal} />
+              <PayrollCard acquired={acquired} goal={goal} onClick={onOpenMetrics} />
             </div>
             <div className="flex-[0.6]">
               <UpcomingCard nextClass={nextClass} pendingCount={pendingEvaluations.length} />
@@ -343,7 +343,7 @@ const MobileView = ({ teacher, nextClass, pendingEvaluations, payrollStats, onRe
         {/* ROW 1: Completion & Activities */}
         <div className="grid grid-cols-2 gap-3 sm:gap-4">
           <div className="h-60 sm:h-64">
-            <PayrollCard acquired={acquired} goal={goal} />
+            <PayrollCard acquired={acquired} goal={goal} onClick={onOpenMetrics} />
           </div>
           <div className="h-60 sm:h-64">
             <UpcomingCard nextClass={nextClass} pendingCount={pendingEvaluations.length} />
@@ -825,6 +825,20 @@ const TeacherPdfViewerModal = ({ isOpen, type, onClose, defaultUnit }) => {
         </div>
 
         <div className="flex-1 p-4 md:p-6 flex flex-col items-center justify-center bg-[#070b19] relative">
+          
+          {[12, 24, 36, 48, 70, 92].includes(Number(selectedUnit)) && (
+            <div className="absolute top-4 left-4 right-4 z-[100] bg-[#fcd34d] text-[#08203e] p-4 rounded-xl shadow-[0_0_30px_rgba(252,211,77,0.5)] border-2 border-white flex flex-col gap-1 animate-slide-down">
+              <h4 className="font-black uppercase tracking-widest text-sm flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                Capstone Unit Protocol
+              </h4>
+              <p className="text-xs font-bold leading-relaxed">
+                This is a transition unit! Focus the class on <strong>praising their progress</strong>, reviewing past concepts, and teasing the next level. 
+                Before ending the call, explicitly remind the student (or their parents) to contact Support to process their Level Renewal so they don't lose their momentum.
+              </p>
+            </div>
+          )}
+
           {loading ? (
             <div className="w-12 h-12 border-4 border-[#fcd34d] border-t-transparent rounded-full animate-spin"></div>
           ) : pdfUrl ? (

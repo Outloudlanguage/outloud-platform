@@ -5,6 +5,7 @@ import 'react-phone-number-input/style.css';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useRef } from 'react';
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts';
 
 const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, onSuccess }) => {
   const reportRef = useRef(null);
@@ -65,6 +66,10 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   const [payrollCadence, setPayrollCadence] = useState('Monthly');
   const [payrollRef, setPayrollRef] = useState('');
   const [isFetchingPayroll, setIsFetchingPayroll] = useState(false);
+  
+  const [manualBonus, setManualBonus] = useState('');
+  const [manualDeduction, setManualDeduction] = useState('');
+  const [evaluations, setEvaluations] = useState([]);
 
   // DYNAMIC TIERED PRICING MAPPED FROM INSTRUCTIONS
   const MONTHLY_PRICES = { A1: 20, A2: 20, B1: 30, B2: 30, C1: 50, C2: 50 };
@@ -153,8 +158,14 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
         .eq('teacher_id', userData.id)
         .eq('is_paid_out', false);
         
+      // 3. Fetch Evaluations for Radar
+      const { data: evals } = await supabase.from('class_evaluations')
+        .select('*')
+        .eq('teacher_id', userData.id);
+        
       setPendingClasses(classes || []);
       setPendingShifts(shifts || []);
+      setEvaluations(evals || []);
       setPayrollCadence(userData.payroll_cadence || 'Monthly');
     } catch (e) {
       console.error("Error fetching payroll:", e);
@@ -197,6 +208,8 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
 
   const shiftCount = pendingShifts.length;
   totalPayroll += (shiftCount * 2);
+  
+  const finalTotalPayroll = Math.max(0, totalPayroll + (Number(manualBonus) || 0) - (Number(manualDeduction) || 0));
 
   const handleMarkAsPaid = async (e) => {
     e.preventDefault();
@@ -217,12 +230,14 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
       await supabase.from('financial_logs').insert({
         student_id: userData.id, 
         type: 'payroll_payout',
-        description: `Teacher Payout - Cadence: ${payrollCadence} | Ref: ${payrollRef}`,
-        amount: totalPayroll
+        description: `Teacher Payout - Cadence: ${payrollCadence} | Ref: ${payrollRef} | Bonus: $${manualBonus || 0} | Deduct: $${manualDeduction || 0}`,
+        amount: finalTotalPayroll
       });
       
       alert("¡Nómina liquidada exitosamente!");
       setPayrollRef('');
+      setManualBonus('');
+      setManualDeduction('');
       fetchTeacherPayroll(); // Refresh to clear UI
     } catch (err) {
       console.error(err);
@@ -231,6 +246,28 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
       setIsProcessing(false);
     }
   };
+
+  // Radar Calculations
+  const totalEvals = evaluations.length;
+  let radarData = [
+    { subject: 'Actitud', A: 100 }, { subject: 'Claridad', A: 100 }, { subject: 'Participación', A: 100 }, { subject: 'Contenido', A: 100 }, { subject: 'Tiempo', A: 100 }
+  ];
+  let globalRating = 5.0;
+
+  if (totalEvals > 0) {
+    const sum = (key) => evaluations.filter(e => e[key] === true).length;
+    radarData = [
+      { subject: 'Actitud', A: (sum('q_demeanor') / totalEvals) * 100 },
+      { subject: 'Claridad', A: (sum('q_clarity') / totalEvals) * 100 },
+      { subject: 'Participación', A: (sum('q_facilitation') / totalEvals) * 100 },
+      { subject: 'Contenido', A: (sum('q_content') / totalEvals) * 100 },
+      { subject: 'Tiempo', A: (sum('q_time') / totalEvals) * 100 }
+    ];
+    const totalPositives = sum('q_demeanor') + sum('q_clarity') + sum('q_facilitation') + sum('q_content') + sum('q_time');
+    globalRating = ((totalPositives / (totalEvals * 5)) * 5).toFixed(1);
+  } else if (userData?.total_rating_questions > 0) {
+    globalRating = ((userData.total_positive_ratings / userData.total_rating_questions) * 5).toFixed(1);
+  }
 
   // ==========================================
   // ACADEMIC LOGIC
@@ -767,9 +804,14 @@ const handleProvisionAccount = async () => {
                 </div>
               )}
               {!isPending && userRole !== 'Student' && (
-                <p className="text-[10px] text-blue-400 font-bold uppercase tracking-widest mt-1">
-                  ROLE: {userRole}
-                </p>
+                <div className="flex gap-4 mt-1">
+                  <p className="text-[10px] text-blue-400 font-bold uppercase tracking-widest">
+                    ROLE: {userRole}
+                  </p>
+                  <p className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest">
+                    JOINED: {new Date(userData.created_at || Date.now()).toLocaleDateString('es-ES')}
+                  </p>
+                </div>
               )}
             </div>
           </div>
@@ -1218,7 +1260,7 @@ const handleProvisionAccount = async () => {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                       <div className="bg-[#08203e] border border-[#fcd34d]/50 rounded-2xl p-6 shadow-[0_0_15px_rgba(252,211,77,0.2)] flex flex-col justify-center items-center text-center">
                         <span className="text-[10px] text-white/50 uppercase font-bold tracking-widest mb-1">Monto a Pagar</span>
-                        <span className="text-4xl font-black text-[#fcd34d]">${totalPayroll.toFixed(2)}</span>
+                        <span className="text-4xl font-black text-[#fcd34d]">${finalTotalPayroll.toFixed(2)}</span>
                         <span className="text-[9px] text-white/40 uppercase mt-2 font-black tracking-widest">Ciclo Pendiente</span>
                       </div>
                       
@@ -1235,10 +1277,16 @@ const handleProvisionAccount = async () => {
                     
                     <div className="bg-black/30 border border-emerald-500/30 rounded-2xl p-6 shadow-inner">
                        <h4 className="text-emerald-400 font-black uppercase tracking-widest mb-2">Liquidar Ciclo</h4>
-                       <p className="text-xs text-white/60 mb-6 font-medium">Ingresa el número de referencia para marcar estas clases y guardias como pagadas, enviando el registro contable a la base de datos.</p>
-                       <form onSubmit={handleMarkAsPaid} className="flex flex-col md:flex-row gap-4">
-                          <input type="text" value={payrollRef} onChange={(e)=>setPayrollRef(e.target.value)} placeholder="N° de Referencia (Ej. Zelle 9823)" className="flex-1 bg-black/40 border border-white/20 rounded-xl px-4 py-4 text-white text-sm font-bold outline-none focus:border-emerald-400 shadow-inner" required />
-                          <button type="submit" disabled={isProcessing || totalPayroll === 0} className="bg-emerald-500 hover:bg-emerald-400 text-[#070b19] font-black text-xs uppercase tracking-widest px-8 py-4 rounded-xl shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all disabled:opacity-50 hover:scale-105 active:scale-95 shrink-0">Marcar como Pagado</button>
+                       <p className="text-xs text-white/60 mb-6 font-medium">Puedes añadir bonos o deducciones manuales. Ingresa la referencia para procesar el pago y asentar en el registro contable.</p>
+                       <form onSubmit={handleMarkAsPaid} className="flex flex-col gap-4">
+                          <div className="flex flex-col md:flex-row gap-4">
+                            <input type="number" value={manualBonus} onChange={(e)=>setManualBonus(e.target.value)} placeholder="Bono Extra ($)" className="w-full md:w-1/3 bg-black/40 border border-white/20 rounded-xl px-4 py-3 text-emerald-400 text-sm font-bold outline-none focus:border-emerald-400 shadow-inner" min="0" step="0.01" />
+                            <input type="number" value={manualDeduction} onChange={(e)=>setManualDeduction(e.target.value)} placeholder="Deducción ($)" className="w-full md:w-1/3 bg-black/40 border border-white/20 rounded-xl px-4 py-3 text-red-400 text-sm font-bold outline-none focus:border-red-400 shadow-inner" min="0" step="0.01" />
+                          </div>
+                          <div className="flex flex-col md:flex-row gap-4">
+                            <input type="text" value={payrollRef} onChange={(e)=>setPayrollRef(e.target.value)} placeholder="N° de Referencia (Ej. Zelle 9823)" className="flex-1 bg-black/40 border border-white/20 rounded-xl px-4 py-4 text-white text-sm font-bold outline-none focus:border-emerald-400 shadow-inner" required />
+                            <button type="submit" disabled={isProcessing || finalTotalPayroll === 0} className="bg-emerald-500 hover:bg-emerald-400 text-[#070b19] font-black text-xs uppercase tracking-widest px-8 py-4 rounded-xl shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all disabled:opacity-50 hover:scale-105 active:scale-95 shrink-0">Marcar como Pagado</button>
+                          </div>
                        </form>
                     </div>
                  </>
@@ -1254,8 +1302,34 @@ const handleProvisionAccount = async () => {
               <div className="flex justify-between items-end border-b border-white/10 pb-2 mb-4">
                 <h3 className="text-xs font-black text-[#fcd34d] uppercase tracking-widest">Rendimiento Académico</h3>
               </div>
-              <div className="py-12 text-center text-xs font-bold text-white/40 uppercase tracking-widest bg-black/20 rounded-2xl border border-white/10 shadow-inner">
-                Las estadísticas históricas de calidad y volumen del profesor estarán disponibles en la próxima actualización del motor analítico.
+              <div className="flex flex-col md:grid md:grid-cols-2 gap-6 h-full">
+                <div className="bg-white/5 border border-white/10 rounded-3xl p-6 shadow-inner flex flex-col items-center justify-center">
+                  <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest mb-2">Calificación Global</p>
+                  <div className="flex items-baseline gap-2 mb-6">
+                    <span className="text-6xl font-black text-[#fcd34d] drop-shadow-[0_0_15px_rgba(252,211,77,0.5)]">{globalRating}</span>
+                    <span className="text-2xl font-bold text-white/40">/ 5.0</span>
+                  </div>
+                  <div className="w-full h-[250px] md:h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
+                        <PolarGrid stroke="rgba(255,255,255,0.2)" />
+                        <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 10, fontWeight: 'bold' }} />
+                        <Radar name="Teacher" dataKey="A" stroke="#fcd34d" strokeWidth={2} fill="#fcd34d" fillOpacity={0.4} />
+                      </RadarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-6">
+                  <div className="bg-white/5 border border-white/10 rounded-3xl p-6 shadow-inner flex flex-col items-center justify-center text-center flex-1">
+                    <div className="w-16 h-16 bg-[#fcd34d]/10 text-[#fcd34d] rounded-full flex items-center justify-center mb-4 border border-[#fcd34d]/30">
+                      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    </div>
+                    <h3 className="text-xl font-black text-white uppercase tracking-widest mb-2">Evaluaciones Estudiantiles</h3>
+                    <p className="text-xs text-white/70 leading-relaxed mb-6">
+                      Este gráfico mapea el porcentaje promedio de respuestas 'Sí' dadas por los estudiantes a través de las 5 métricas pedagógicas principales después de cada clase.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           )}
