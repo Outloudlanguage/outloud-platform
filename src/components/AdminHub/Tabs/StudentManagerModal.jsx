@@ -7,7 +7,7 @@ import html2canvas from 'html2canvas';
 import { useRef } from 'react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts';
 
-const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, onSuccess }) => {
+const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, onSuccess, onImpersonate }) => {
   const reportRef = useRef(null);
   const [activeTab, setActiveTab] = useState('INFO_PERSONAL');
   const userRole = userData?.role || 'Student';
@@ -812,6 +812,13 @@ const handleProvisionAccount = async () => {
                     JOINED: {new Date(userData.created_at || Date.now()).toLocaleDateString('es-ES')}
                   </p>
                 </div>
+              )}
+
+              {!isPending && onImpersonate && (
+                 <button onClick={() => onImpersonate(userData)} className="mt-3 w-fit bg-white/10 text-white hover:bg-[#fcd34d] hover:text-[#08203e] px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-md flex items-center gap-2 cursor-pointer">
+                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                   Ingresar como {userRole === 'Student' ? 'Alumno' : 'Profesor'}
+                 </button>
               )}
             </div>
           </div>
