@@ -105,11 +105,28 @@ const CefrHeadcountDashboard = () => {
 
   if (loading) return <div className="p-4 md:p-8 text-white/50 text-center font-bold tracking-widest">LOADING ENROLLMENT DATA...</div>;
 
+  const currentDate = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
   return (
-    <div className="cefr-headcount-card relative flex flex-col w-full bg-transparent md:bg-white/5 md:backdrop-blur-xl border-transparent md:border-white/10 md:rounded-[2rem] p-0 md:p-8 shadow-none md:shadow-2xl break-inside-avoid print:bg-white print:border-slate-300 print:shadow-none print:p-4">
+    <div id="printable-cefr-report" className="cefr-headcount-card relative flex flex-col w-full bg-transparent md:bg-white/5 md:backdrop-blur-xl border-transparent md:border-white/10 md:rounded-[2rem] p-0 md:p-8 shadow-none md:shadow-2xl print:bg-white print:text-black print:block print:border-none print:shadow-none print:p-0 print:m-0">
       
+      <style>{`
+        @media print {
+          body * { visibility: hidden; }
+          #printable-cefr-report, #printable-cefr-report * { visibility: visible; }
+          #printable-cefr-report { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 20px; }
+          .recharts-wrapper svg { overflow: visible !important; }
+        }
+      `}</style>
+
+      {/* Print-Only Header Date */}
+      <div className="hidden print:block mb-6 text-right border-b border-slate-300 pb-2">
+        <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Reporte Operativo Generado:</p>
+        <p className="text-sm font-black text-black capitalize">{currentDate}</p>
+      </div>
+
       {/* Header & Metric Card */}
-      <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-end border-b border-white/10 print:border-slate-300 pb-4 gap-4">
+      <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-end border-b border-white/10 print:border-none pb-4 gap-4 print:flex-row print:mb-4">
         <div>
           <h3 className="text-xl md:text-2xl font-black tracking-widest uppercase text-white print:text-black">
             CEFR Headcount
@@ -127,7 +144,7 @@ const CefrHeadcountDashboard = () => {
       </div>
 
       {/* Stacked Column Chart */}
-      <div className="w-full h-80 print:h-[500px] mb-6 print:block">
+      <div className="w-full h-80 print:h-[400px] mb-6 print:block print:w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={{ top: 15, right: 20, bottom: 5, left: -20 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" vertical={false} className="print:!stroke-slate-300" />
@@ -163,13 +180,13 @@ const CefrHeadcountDashboard = () => {
       </div>
 
       {/* Dynamic Narrative Footer */}
-      <div className="mt-auto pt-6 border-t border-white/10 print:border-slate-400 flex items-start gap-4 print:break-inside-avoid">
-        <div className="bg-black/40 print:bg-slate-100 p-3 rounded-xl flex-shrink-0">
-          <svg className="w-6 h-6 text-white print:text-slate-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <div className="mt-auto pt-6 border-t border-white/10 print:border-slate-300 flex items-start gap-4 print:block print:mt-6 print:pt-6">
+        <div className="bg-black/40 p-3 rounded-xl flex-shrink-0 print:hidden">
+          <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
           </svg>
         </div>
-        <div className="text-sm leading-relaxed text-slate-300 print:text-slate-800 font-medium w-full">
+        <div className="text-sm leading-relaxed text-slate-300 print:text-black font-medium w-full print:text-justify">
           {(() => {
             if (metrics.totalEnrollment === 0) return <p>No hay datos suficientes para generar un reporte en este momento. La base de datos no registra estudiantes matriculados.</p>;
             
