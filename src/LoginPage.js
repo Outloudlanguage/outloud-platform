@@ -4,7 +4,7 @@ import { supabase } from './SupabaseClient';
 // =========================================
 // 1. MOBILE & TABLET PORTRAIT UI
 // =========================================
-const MobileLogin = ({ onLogin, onInfoClick, onPlacementClick }) => {
+const MobileLogin = ({ onLogin, onInfoClick, onPlacementClick, visitCount }) => {
   const [credentials, setCredentials] = useState({ username: '', password: '' });
   const [authError, setAuthError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -57,7 +57,14 @@ const MobileLogin = ({ onLogin, onInfoClick, onPlacementClick }) => {
         <div className="flex items-center space-x-3 mb-8 mt-4">
           <img src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Header.png" alt="Outloud Logo" className="h-11 object-contain drop-shadow-md opacity-90" />
           <div className="h-8 w-[1px] bg-white/30"></div>
-          <span className="text-sm font-light text-white/80 tracking-wide whitespace-nowrap">Online Platform</span>
+          {visitCount > 0 && (
+            <div className="flex items-center gap-2 bg-[#070b19]/40 backdrop-blur-md border border-white/10 rounded-full px-3 py-1.5 shadow-sm">
+              <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_8px_#34d399]"></div>
+              <span className="text-[9px] font-black text-white/50 uppercase tracking-widest flex items-center">
+                Total Visits: <span className="text-[#fcd34d] text-[10px] ml-1.5">{visitCount.toLocaleString()}</span>
+              </span>
+            </div>
+          )}
         </div>
 
         {/* TRUE DARK GLASSMORPHISM CONTAINER */}
@@ -349,21 +356,39 @@ const DesktopLogin = ({ onLogin, onInfoClick, onPlacementClick }) => {
 };
 
 // =========================================
-// 3. FLOATING TRAFFIC WIDGET
+// 3. FLOATING TRAFFIC WIDGET (Desktop Only)
 // =========================================
-const FloatingTrafficWidget = () => {
+const FloatingTrafficWidget = ({ visitCount }) => {
+  if (visitCount === 0) return null;
+
+  return (
+    <div className="fixed bottom-6 right-6 z-[9999] bg-[#070b19]/80 backdrop-blur-md border border-white/10 rounded-full px-4 py-2 flex items-center gap-3 shadow-2xl animate-fade-in group hover:bg-[#070b19] transition-colors cursor-default">
+      <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_8px_#34d399]"></div>
+      <span className="text-[10px] font-black text-white/50 uppercase tracking-widest group-hover:text-white transition-colors flex items-center">
+        Total Visits: <span className="text-[#fcd34d] text-xs ml-2">{visitCount.toLocaleString()}</span>
+      </span>
+    </div>
+  );
+};
+
+// =========================================
+// 4. MAIN PAGE WRAPPER
+// =========================================
+const LoginPage = (props) => {
+  const [isMobile, setIsMobile] = useState(false);
   const [visitCount, setVisitCount] = useState(0);
 
   useEffect(() => {
+    const handleResize = () => { setIsMobile(window.innerWidth < 768); };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
     const trackVisit = async () => {
-      const lastVisit = localStorage.getItem('ola_last_visit');
-      const now = new Date().getTime();
-      
-      // If no previous visit, or the last visit was more than 24 hours ago
-      if (!lastVisit || now - parseInt(lastVisit) > 24 * 60 * 60 * 1000) {
-        await supabase.from('site_analytics').insert({ event_type: 'site_visit' });
-        localStorage.setItem('ola_last_visit', now.toString());
-      }
+      // Strict Reality: No 24h block. Counts every single page load.
+      await supabase.from('site_analytics').insert({ event_type: 'site_visit' });
     };
 
     const fetchTotal = async () => {
@@ -384,31 +409,6 @@ const FloatingTrafficWidget = () => {
 
     return () => { supabase.removeChannel(channel); };
   }, []);
-
-  if (visitCount === 0) return null; // Hide until loaded to prevent flashing '0'
-
-  return (
-    <div className="fixed bottom-6 right-6 z-[9999] bg-[#070b19]/80 backdrop-blur-md border border-white/10 rounded-full px-4 py-2 flex items-center gap-3 shadow-2xl animate-fade-in group hover:bg-[#070b19] transition-colors cursor-default">
-      <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_8px_#34d399]"></div>
-      <span className="text-[10px] font-black text-white/50 uppercase tracking-widest group-hover:text-white transition-colors flex items-center">
-        Total Visits: <span className="text-[#fcd34d] text-xs ml-2">{visitCount.toLocaleString()}</span>
-      </span>
-    </div>
-  );
-};
-
-
-// =========================================
-// 4. MAIN PAGE WRAPPER
-// =========================================
-const LoginPage = (props) => {
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    const handleResize = () => { setIsMobile(window.innerWidth < 768); };
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
   
   return (
     <>
@@ -420,10 +420,10 @@ const LoginPage = (props) => {
         .animate-hard-blink { animation: hardBlink 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
       `}</style>
       
-      {isMobile ? <MobileLogin {...props} /> : <DesktopLogin {...props} />}
+      {isMobile ? <MobileLogin {...props} visitCount={visitCount} /> : <DesktopLogin {...props} />}
       
-      {/* Floating Traffic Counter Injected Globally */}
-      <FloatingTrafficWidget />
+      {/* Floating widget handles desktop, mobile UI handles its own rendering */}
+      {!isMobile && <FloatingTrafficWidget visitCount={visitCount} />}
     </>
   );
 };
