@@ -109,25 +109,25 @@ const TeacherPerformanceRadar = ({ teacherId = 'default-teacher-id' }) => {
         const calculatedComposite = Math.round((punctualityScore + responsibilityScore + teachingScore + passRateScore + socialScore) / 5);
         
         setMetrics([
-          { subject: 'Punctuality', score: punctualityScore, fullMark: 100 },
-          { subject: 'Responsibility', score: responsibilityScore, fullMark: 100 },
-          { subject: 'Teaching Performance', score: teachingScore, fullMark: 100 },
-          { subject: 'Student Pass Rate', score: passRateScore, fullMark: 100 },
-          { subject: 'Social Activities', score: socialScore, fullMark: 100 }
+          { subject: 'Puntualidad', score: punctualityScore, fullMark: 100 },
+          { subject: 'Responsabilidad', score: responsibilityScore, fullMark: 100 },
+          { subject: 'Pedagogía', score: teachingScore, fullMark: 100 },
+          { subject: 'Aprobación', score: passRateScore, fullMark: 100 },
+          { subject: 'Eventos Sociales', score: socialScore, fullMark: 100 }
         ]);
         setCompositeScore(calculatedComposite);
 
       } catch (error) {
         console.error("Error fetching teacher metrics:", error);
-        // Fallback to placeholders for UI rendering if queries fail
+        // Strict Reality: No mock data padding. Show 0s if failure occurs.
         setMetrics([
-          { subject: 'Punctuality', score: 98, fullMark: 100 },
-          { subject: 'Responsibility', score: 95, fullMark: 100 },
-          { subject: 'Teaching Performance', score: 92, fullMark: 100 },
-          { subject: 'Student Pass Rate', score: 91, fullMark: 100 },
-          { subject: 'Social Activities', score: 100, fullMark: 100 }
+          { subject: 'Puntualidad', score: 0, fullMark: 100 },
+          { subject: 'Responsabilidad', score: 0, fullMark: 100 },
+          { subject: 'Pedagogía', score: 0, fullMark: 100 },
+          { subject: 'Aprobación', score: 0, fullMark: 100 },
+          { subject: 'Eventos Sociales', score: 0, fullMark: 100 }
         ]);
-        setCompositeScore(95);
+        setCompositeScore(0);
       } finally {
         setLoading(false);
       }
@@ -140,40 +140,62 @@ const TeacherPerformanceRadar = ({ teacherId = 'default-teacher-id' }) => {
     return <div className="p-6 text-center text-slate-500 font-bold tracking-widest">LOADING METRICS...</div>;
   }
 
+  const currentDate = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
   return (
-    <div className="flex flex-col bg-transparent md:bg-white/5 md:backdrop-blur-xl border-transparent md:border-white/10 md:rounded-[2rem] p-0 md:p-8 shadow-none md:shadow-2xl break-inside-avoid print:bg-white print:border-slate-300 print:shadow-none print:p-4 w-full">
+    <div id="printable-radar-report" className="flex flex-col bg-transparent md:bg-white/5 md:backdrop-blur-xl border-transparent md:border-white/10 md:rounded-[2rem] p-0 md:p-8 shadow-none md:shadow-2xl w-full">
       
+      <style>{`
+        @media print {
+          @page { size: portrait; margin: 15mm; }
+          .w-28, .w-64, nav, aside { display: none !important; }
+          .flex-1 { padding: 0 !important; margin: 0 !important; width: 100% !important; flex: none !important; display: block !important; }
+          body, html { background: white !important; }
+          #printable-radar-report { background-color: white !important; width: 100% !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; display: block !important; }
+          #printable-radar-report, #printable-radar-report * { color: black !important; text-shadow: none !important; border-color: #ccc !important; }
+          .recharts-responsive-container { height: 350px !important; min-height: 350px !important; margin-bottom: 20px !important; }
+          .recharts-text { fill: #333 !important; font-weight: bold !important; }
+          .print-header { display: block !important; margin-bottom: 20px !important; padding-bottom: 10px !important; border-bottom: 2px solid #000 !important; text-align: left !important; }
+          .hide-on-print { display: none !important; }
+        }
+      `}</style>
+
+      {/* Print-Only Header Date */}
+      <div className="print-header" style={{ display: 'none' }}>
+        <p style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 'bold' }}>Reporte de Rendimiento Docente:</p>
+        <p style={{ fontSize: '16px', fontWeight: '900', textTransform: 'capitalize' }}>{currentDate}</p>
+      </div>
+
       {/* Header */}
-      <div className="mb-6">
-        <h3 className="text-xl md:text-2xl font-black tracking-widest uppercase text-white print:text-black">
-          Performance Radar
+      <div className="mb-6 border-b border-white/10 pb-4" style={{ borderBottomWidth: '1px' }}>
+        <h3 className="text-xl md:text-2xl font-black tracking-widest uppercase text-white">
+          Radar de Desempeño
         </h3>
-        <p className="text-sm font-bold text-yellow-400 print:text-slate-600 uppercase tracking-wide">
-          Composite Score: <span className="text-white print:text-black">{compositeScore}/100</span>
+        <p className="text-sm font-bold text-yellow-400 uppercase tracking-wide">
+          Puntuación Global: <span className="text-white print:text-black">{compositeScore}/100</span>
         </p>
       </div>
 
       {/* Radar Chart */}
-      <div className="w-full aspect-square md:aspect-auto md:min-h-[450px] mb-6 mt-4 flex-1">
+      <div className="w-full aspect-square md:aspect-auto md:min-h-[450px] mb-6 mt-4 flex-1" style={{ minHeight: '350px' }}>
         <ResponsiveContainer width="100%" height="100%">
           <RadarChart cx="50%" cy="50%" outerRadius="70%" data={metrics}>
-            {/* BUG FIX: Print modifiers safely moved to className */}
-            <PolarGrid stroke="#e2e8f0" className="print:!stroke-slate-300" />
+            <PolarGrid stroke="#ffffff20" />
             
             <PolarAngleAxis 
               dataKey="subject" 
-              tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 600 }} 
+              tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }} 
             />
             
             <PolarRadiusAxis 
               angle={30} 
               domain={[0, 100]} 
-              tick={{ fill: '#94a3b8', fontSize: 10 }}
+              tick={{ fill: '#64748b', fontSize: 10 }}
               tickCount={6}
             />
             
             <Radar
-              name="Teacher Score"
+              name="Rendimiento (Score)"
               dataKey="score"
               stroke="#3b82f6"
               fill="#3b82f6"
@@ -181,21 +203,51 @@ const TeacherPerformanceRadar = ({ teacherId = 'default-teacher-id' }) => {
               isAnimationActive={false} 
             />
             
-            <Tooltip wrapperClassName="print:hidden" />
+            <Tooltip wrapperClassName="hide-on-print" contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: '#fff' }} />
           </RadarChart>
         </ResponsiveContainer>
       </div>
 
       {/* Dynamic Narrative Footer */}
-      <div className="mt-auto pt-6 border-t border-white/10 print:border-slate-300 flex items-start gap-4">
-        <div className="bg-black/40 print:bg-slate-100 p-3 rounded-xl flex-shrink-0">
-          <svg className="w-6 h-6 text-white print:text-slate-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <div className="mt-auto pt-6 border-t border-white/10 flex items-start gap-4" style={{ paddingTop: '24px' }}>
+        <div className="bg-black/40 p-3 rounded-xl flex-shrink-0 hide-on-print">
+          <svg className="w-6 h-6 text-white hide-on-print" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </div>
-        <p className="text-sm leading-relaxed text-slate-300 print:text-slate-800 font-medium">
-          This chart evaluates the teacher's holistic operational quality across 5 strict data-driven metrics. <strong>Punctuality</strong> measures the perfect 60-minute cycle (prep, live, grading). <strong>Responsibility</strong> tracks shift attendance and non-cancellations. <strong>Teaching Performance</strong> translates their 5-star student ratings. <strong>Pass Rate</strong> reflects academic success, and <strong>Social Activities</strong> measures their 60-minute community event leadership. This teacher's overall Composite Score is <strong>{compositeScore}/100</strong>.
-        </p>
+        <div className="text-sm leading-relaxed text-slate-300 font-medium w-full" style={{ textAlign: 'justify', color: 'inherit' }}>
+          {(() => {
+            if (metrics.every(m => m.score === 0)) return <p>No hay datos registrados o no se han dictado clases para calcular el rendimiento de este profesor.</p>;
+
+            let estado = "DEFICIENTE";
+            let colorClass = "text-red-400";
+            let estrategia = "Rendimiento inaceptable. Iniciar protocolo de despido o colocar en periodo de prueba estricto por 15 días con micro-supervisión en todas sus clases.";
+            
+            if (compositeScore >= 90) {
+              estado = "EXCELENCIA";
+              colorClass = "text-emerald-400";
+              estrategia = "Desempeño operativo óptimo. El profesor ejecuta la metodología a la perfección, mantiene asistencia intachable y genera retención. Elegible para bonificación salarial o aumento de tarifa base.";
+            } else if (compositeScore >= 80) {
+              estado = "ESTÁNDAR";
+              colorClass = "text-blue-400";
+              estrategia = "Desempeño sólido y confiable. Cumple con los requerimientos operativos básicos de la academia. Identificar el área más baja en el radar y proveer feedback formativo.";
+            } else if (compositeScore >= 60) {
+              estado = "EN RIESGO";
+              colorClass = "text-yellow-400";
+              estrategia = "Rendimiento irregular. Suspender temporalmente la asignación de nuevos estudiantes y agendar reunión disciplinaria para corregir métricas específicas (puntualidad/responsabilidad).";
+            }
+
+            return (
+              <p>
+                Este gráfico evalúa la disciplina operativa y pedagógica del profesor a través de 5 métricas exactas (Puntualidad, Responsabilidad, Pedagogía, Tasa de Aprobación, y Eventos Sociales). 
+                Con una puntuación global de <strong>{compositeScore}/100</strong>, el perfil laboral de este profesor se clasifica en estado de <strong className={colorClass}>{estado}</strong>.
+                <br/><br/>
+                <span className="uppercase tracking-widest text-[10px] font-black opacity-70 block mb-1">Decisión Administrativa Recomendada:</span>
+                {estrategia}
+              </p>
+            );
+          })()}
+        </div>
       </div>
     </div>
   );

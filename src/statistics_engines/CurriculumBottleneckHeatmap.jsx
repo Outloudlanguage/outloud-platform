@@ -47,32 +47,14 @@ const CurriculumBottleneckHeatmap = ({ studentId }) => {
         }
 
         let processedData = Object.values(lessonStats)
-          .map(l => ({ ...l, failRate: ((l.fails / Math.max(l.attempts, 1)) * 100).toFixed(1) }))
+          .map(l => ({ ...l, failRate: parseFloat(((l.fails / Math.max(l.attempts, 1)) * 100).toFixed(1)) }))
           .filter(l => l.failRate > 0) // Only show things they actually failed
           .sort((a, b) => b.failRate - a.failRate)
           .slice(0, 5); // Top 5 bottlenecks
 
-        if (processedData.length === 0) {
-          // Fallback UI data
-          if (studentId) {
-            processedData = [
-              { title: 'B1 Past Perfect', failRate: 66.6 },
-              { title: 'B1 Conditionals', failRate: 50.0 },
-              { title: 'A2 Phrasal Verbs', failRate: 33.3 }
-            ];
-          } else {
-            processedData = [
-              { title: 'B1 Past Perfect', failRate: 28.5 },
-              { title: 'A2 Phrasal Verbs', failRate: 22.0 },
-              { title: 'B2 Conditional Clauses', failRate: 18.2 },
-              { title: 'A1 Irregular Verbs', failRate: 15.4 },
-              { title: 'C1 Idioms & Nuance', failRate: 12.1 }
-            ];
-          }
-        }
-
+        // Strict Reality: No fake math padding.
         setChartData(processedData);
-        setTopBottleneck(processedData[0]?.title || '');
+        setTopBottleneck(processedData[0] || null);
 
       } catch (error) {
         console.error("Error fetching bottlenecks:", error);
@@ -86,41 +68,97 @@ const CurriculumBottleneckHeatmap = ({ studentId }) => {
 
   if (loading) return <div className="p-4 md:p-8 text-white/50 text-center font-bold tracking-widest">LOADING BOTTLENECKS...</div>;
 
+  const currentDate = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
   return (
-    <div className="bottleneck-heatmap-card relative flex flex-col w-full bg-transparent md:bg-white/5 md:backdrop-blur-xl border-transparent md:border-white/10 md:rounded-[2rem] p-0 md:p-8 shadow-none md:shadow-2xl break-inside-avoid print:bg-white print:border-slate-300 print:shadow-none print:p-4">
-      <div className="mb-6 border-b border-white/10 print:border-slate-300 pb-4">
-        <h3 className="text-xl md:text-2xl font-black tracking-widest uppercase text-white print:text-black">
-          {studentId ? "Personal Sticking Points" : "Curriculum Bottlenecks"}
+    <div id="printable-bottleneck-report" className="bottleneck-heatmap-card relative flex flex-col w-full bg-transparent md:bg-white/5 md:backdrop-blur-xl border-transparent md:border-white/10 md:rounded-[2rem] p-0 md:p-8 shadow-none md:shadow-2xl">
+      
+      <style>{`
+        @media print {
+          @page { size: portrait; margin: 15mm; }
+          .w-28, .w-64, nav, aside { display: none !important; }
+          .flex-1 { padding: 0 !important; margin: 0 !important; width: 100% !important; flex: none !important; display: block !important; }
+          body, html { background: white !important; }
+          #printable-bottleneck-report { background-color: white !important; width: 100% !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; display: block !important; }
+          #printable-bottleneck-report, #printable-bottleneck-report * { color: black !important; text-shadow: none !important; border-color: #ccc !important; }
+          .recharts-responsive-container { height: 350px !important; min-height: 350px !important; margin-bottom: 20px !important; }
+          .recharts-text { fill: #333 !important; font-weight: bold !important; }
+          .print-header { display: block !important; margin-bottom: 20px !important; padding-bottom: 10px !important; border-bottom: 2px solid #000 !important; text-align: left !important; }
+          .hide-on-print { display: none !important; }
+        }
+      `}</style>
+
+      {/* Print-Only Header Date */}
+      <div className="print-header" style={{ display: 'none' }}>
+        <p style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 'bold' }}>Reporte Académico Generado:</p>
+        <p style={{ fontSize: '16px', fontWeight: '900', textTransform: 'capitalize' }}>{currentDate}</p>
+      </div>
+
+      <div className="mb-6 border-b border-white/10 pb-4" style={{ borderBottomWidth: '1px' }}>
+        <h3 className="text-xl md:text-2xl font-black tracking-widest uppercase text-white">
+          {studentId ? "Dificultades Personales" : "Cuellos de Botella Académicos"}
         </h3>
-        <p className="text-sm font-bold text-red-400 print:text-red-600 uppercase tracking-wide">
-          {studentId ? "Highest Failure Rates by Module" : "Top 5 Modules by Failure Rate"}
+        <p className="text-sm font-bold text-red-400 uppercase tracking-wide">
+          {studentId ? "Mayor Tasa de Reprobación por Módulo" : "Top 5 Módulos Críticos"}
         </p>
       </div>
 
-      <div className="w-full h-72 mb-6">
+      <div className="w-full h-72 mb-6" style={{ minHeight: '300px' }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: -20 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" vertical={false} className="print:!stroke-slate-200" />
-            <XAxis dataKey="title" tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 600 }} axisLine={{ stroke: '#475569' }} tickLine={{ stroke: '#475569' }} interval={0} angle={-15} textAnchor="end" />
-            <YAxis tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 600 }} axisLine={{ stroke: '#475569' }} tickLine={{ stroke: '#475569' }} />
-            <Tooltip wrapperClassName="print:hidden" contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: '#fff' }} cursor={{ fill: '#ffffff10' }} />
-            <Bar dataKey="failRate" name="Failure Rate (%)" fill="#ef4444" radius={[4, 4, 0, 0]} isAnimationActive={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" vertical={false} />
+            <XAxis dataKey="title" tick={{ fill: '#64748b', fontSize: 10, fontWeight: 600 }} axisLine={{ stroke: '#64748b' }} tickLine={{ stroke: '#64748b' }} interval={0} angle={-15} textAnchor="end" />
+            <YAxis tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }} axisLine={{ stroke: '#64748b' }} tickLine={{ stroke: '#64748b' }} />
+            <Tooltip wrapperClassName="hide-on-print" contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: '#fff' }} cursor={{ fill: '#ffffff10' }} />
+            <Bar dataKey="failRate" name="Tasa de Reprobación (%)" fill="#ef4444" radius={[4, 4, 0, 0]} isAnimationActive={false} />
           </BarChart>
         </ResponsiveContainer>
       </div>
 
-      <div className="mt-auto pt-6 border-t border-white/10 print:border-slate-300 flex items-start gap-4">
-        <div className="bg-black/40 print:bg-slate-100 p-3 rounded-xl flex-shrink-0">
-          <svg className="w-6 h-6 text-white print:text-slate-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <div className="mt-auto pt-6 border-t border-white/10 flex items-start gap-4" style={{ paddingTop: '24px' }}>
+        <div className="bg-black/40 p-3 rounded-xl flex-shrink-0 hide-on-print">
+          <svg className="w-6 h-6 text-white hide-on-print" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
         </div>
-        <p className="text-sm leading-relaxed text-slate-300 print:text-slate-800 font-medium">
-          {studentId 
-            ? `The diagnostic has identified '${topBottleneck}' as the most challenging module for this specific student. High failure rates here indicate a need for targeted review before they can comfortably progress to the next CEFR level.`
-            : `The curriculum diagnostic has identified '${topBottleneck}' as the most challenging module for current students. High failure rates in specific lessons directly correlate with increased demands for 1-to-1 remedial tutoring.`
-          }
-        </p>
+        <div className="text-sm leading-relaxed text-slate-300 font-medium w-full" style={{ textAlign: 'justify', color: 'inherit' }}>
+          {(() => {
+            if (!topBottleneck) {
+              return <p>No se han registrado reprobaciones en el periodo actual. El rendimiento académico general se encuentra en un estado saludable y sin fricciones detectadas.</p>;
+            }
+
+            const failRate = parseFloat(topBottleneck.failRate);
+            let estado = "ÓPTIMO";
+            let colorClass = "text-emerald-400";
+            let estrategia = "La tasa de fallo es baja y se considera un nivel normal de fricción de aprendizaje. No se requiere intervención inmediata en el diseño del currículo.";
+            
+            if (failRate >= 40) {
+              estado = "CRÍTICO";
+              colorClass = "text-red-400";
+              estrategia = studentId 
+                ? `Intervención obligatoria requerida. Asignar de inmediato una sesión de tutoría de recuperación 1-a-1 enfocada en '${topBottleneck.title}' antes de permitir su avance al siguiente módulo.` 
+                : `Revisión curricular de emergencia. El módulo '${topBottleneck.title}' está bloqueando masivamente a los estudiantes. Auditar el material didáctico y proporcionar guías suplementarias a los profesores.`;
+            } else if (failRate >= 20) {
+              estado = "INTERMEDIO";
+              colorClass = "text-yellow-400";
+              estrategia = studentId
+                ? `Asignar material de práctica adicional sobre '${topBottleneck.title}' y notificar a su próximo profesor para que refuerce el tema durante la clase conversacional.`
+                : `Vigilancia requerida. El módulo '${topBottleneck.title}' presenta fricción elevada. Sugerimos agendar talleres grupales enfocados en esta competencia específica para descongestionar.`;
+            }
+
+            return (
+              <p>
+                El diagnóstico académico indica que <strong>'{topBottleneck.title}'</strong> es actualmente el punto de mayor dificultad, con una tasa de reprobación del <strong>{failRate}%</strong>. 
+                Este indicador señala un estado de fluidez académica <strong className={colorClass}>{estado}</strong>.
+                <br/><br/>
+                <span className="uppercase tracking-widest text-[10px] font-black opacity-70 block mb-1">
+                  {studentId ? "Plan de Acción Estudiantil:" : "Directiva Académica Global:"}
+                </span>
+                {estrategia}
+              </p>
+            );
+          })()}
+        </div>
       </div>
     </div>
   );

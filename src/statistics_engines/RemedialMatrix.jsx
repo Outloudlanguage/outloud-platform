@@ -52,27 +52,7 @@ const RemedialMatrix = ({ studentId }) => {
           liveFailCount = liveClasses.filter(c => c.failed).length;
         }
 
-        // Fallback UI mock data if database is empty to guarantee layout stability
-        if (totalAsync === 0 && totalLive === 0) {
-          if (studentId) {
-            // Individual Mock Data
-            totalAsync = 12;
-            needsHelpCount = 2;
-            asyncFailCount = 0;
-            totalLive = 8;
-            liveFailCount = 0;
-            finalHelpCount = 1;
-          } else {
-            // Global Mock Data
-            totalAsync = 800;
-            needsHelpCount = 120;
-            asyncFailCount = 45;
-            totalLive = 600;
-            liveFailCount = 35;
-            finalHelpCount = 28;
-          }
-        }
-
+        // Strict Reality: No fake data padding
         // Prevent division by zero
         const safeTotalAsync = totalAsync || 1;
         const safeTotalLive = totalLive || 1;
@@ -82,24 +62,22 @@ const RemedialMatrix = ({ studentId }) => {
           needsHelp: { 
             value: needsHelpCount, 
             percentage: Math.min(((needsHelpCount / safeTotalAsync) * 100).toFixed(1), 100),
-            label: 'Grades < 75% (Needs Help)'
+            label: 'Calificaciones < 75% (Riesgo)'
           },
           liveFails: { 
             value: liveFailCount, 
             percentage: Math.min(((liveFailCount / safeTotalLive) * 100).toFixed(1), 100),
-            label: 'Live Class Fails'
+            label: 'Clases en Vivo Reprobadas'
           },
           asyncFails: { 
             value: asyncFailCount, 
             percentage: Math.min(((asyncFailCount / safeTotalAsync) * 100).toFixed(1), 100),
-            label: 'Async Lesson Fails'
+            label: 'Asignaciones Reprobadas'
           },
           helpRequests: { 
             rawCount: finalHelpCount,
-            // Normalize help requests to a 0-100 scale based on an operational capacity threshold
-            // Scale drops for individuals so 2 or 3 requests visually fills the bar
             percentage: Math.min(((finalHelpCount / (studentId ? 5 : 50)) * 100).toFixed(1), 100),
-            label: 'Active Help Requests'
+            label: 'Solicitudes de Tutoría'
           }
         });
 
@@ -113,23 +91,6 @@ const RemedialMatrix = ({ studentId }) => {
     fetchMatrixData();
   }, [studentId]); // Re-fire anytime the dual-mode dropdown changes
 
-  // Dynamic Insight Generation
-  const generateInsight = () => {
-    const avgFailRate = (Number(metrics.liveFails.percentage) + Number(metrics.asyncFails.percentage)) / 2;
-    
-    if (studentId) {
-      if (avgFailRate > 15 || metrics.helpRequests.rawCount >= 2) {
-        return "This student is currently displaying elevated risk indicators. High failure rates or repeated help requests suggest they are struggling to maintain the required immersion pace. A 1-to-1 remedial session should be scheduled immediately.";
-      }
-      return "This student's remedial indicators are stable. Progression remains healthy, and their failure rates and help requests are well within acceptable parameters.";
-    }
-
-    if (avgFailRate > 15 || metrics.helpRequests.rawCount > 20) {
-      return "Remedial intervention pipelines are currently experiencing high volume. A significant cluster of students is falling below the 75% progression threshold, correlating directly with an elevated volume of 'Request Help' clicks. Additional 1-to-1 remedial tutoring blocks must be scheduled immediately to stabilize the cohort's pacing.";
-    }
-    return "Remedial indicators are currently stable and manageable. The volume of students falling below the 75% progression threshold is low, and 'Request Help' triggers remain well within our operational capacity for 1-to-1 remedial tutoring. Overall cohort pacing is healthy.";
-  };
-
   if (loading) return <div className="p-4 md:p-8 text-white/50 text-center font-bold tracking-widest">LOADING MATRIX...</div>;
 
   const dataArray = [
@@ -139,16 +100,41 @@ const RemedialMatrix = ({ studentId }) => {
     { ...metrics.helpRequests, color: '#eab308', icon: 'M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0z' }
   ];
 
+  const currentDate = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
   return (
-    // Glassmorphic container matching the AdminHub UI, with strict print overrides
-    <div className="relative flex flex-col w-full bg-transparent md:bg-white/5 md:backdrop-blur-xl border-transparent md:border-white/10 md:rounded-[2rem] p-0 md:p-8 shadow-none md:shadow-2xl break-inside-avoid print:bg-white print:border-slate-300 print:shadow-none print:p-4">
+    <div id="printable-matrix-report" className="relative flex flex-col w-full bg-transparent md:bg-white/5 md:backdrop-blur-xl border-transparent md:border-white/10 md:rounded-[2rem] p-0 md:p-8 shadow-none md:shadow-2xl">
       
-      <div className="mb-8">
-        <h3 className="text-xl md:text-2xl font-black tracking-widest uppercase text-white print:text-black">
-          {studentId ? "Personal Remedial Profile" : "Remedial Tutoring Matrix"}
+      <style>{`
+        @media print {
+          @page { size: portrait; margin: 15mm; }
+          .w-28, .w-64, nav, aside { display: none !important; }
+          .flex-1 { padding: 0 !important; margin: 0 !important; width: 100% !important; flex: none !important; display: block !important; }
+          body, html { background: white !important; }
+          #printable-matrix-report { background-color: white !important; width: 100% !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; display: block !important; }
+          
+          /* Force SVG Text & elements to be black for printing */
+          #printable-matrix-report * { color: black !important; text-shadow: none !important; border-color: #ccc !important; }
+          #printable-matrix-report text { fill: black !important; font-weight: bold !important; }
+          #printable-matrix-report rect.fill-white\\/10 { fill: #f1f5f9 !important; }
+          
+          .print-header { display: block !important; margin-bottom: 20px !important; padding-bottom: 10px !important; border-bottom: 2px solid #000 !important; text-align: left !important; }
+          .hide-on-print { display: none !important; }
+        }
+      `}</style>
+
+      {/* Print-Only Header Date */}
+      <div className="print-header" style={{ display: 'none' }}>
+        <p style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 'bold' }}>Reporte Operativo Generado:</p>
+        <p style={{ fontSize: '16px', fontWeight: '900', textTransform: 'capitalize' }}>{currentDate}</p>
+      </div>
+
+      <div className="mb-8 border-b border-white/10 pb-4" style={{ borderBottomWidth: '1px' }}>
+        <h3 className="text-xl md:text-2xl font-black tracking-widest uppercase text-white">
+          {studentId ? "Perfil de Recuperación Personal" : "Matriz Operativa de Tutorías"}
         </h3>
-        <p className="text-sm font-bold text-yellow-400 print:text-slate-600 uppercase tracking-wide">
-          Intervention Triggers vs. Help Requests
+        <p className="text-sm font-bold text-yellow-400 uppercase tracking-wide">
+          {studentId ? "Indicadores de Riesgo Estudiantil" : "Métricas Globales de Intervención"}
         </p>
       </div>
 
@@ -193,10 +179,63 @@ const RemedialMatrix = ({ studentId }) => {
       </div>
 
       {/* Dynamic Narrative Footer */}
-      <div className="mt-auto pt-6 border-t border-white/10 print:border-slate-300">
-        <p className="text-sm leading-relaxed text-slate-300 print:text-slate-800 font-medium">
-          {generateInsight()}
-        </p>
+      <div className="mt-auto pt-6 border-t border-white/10 flex items-start gap-4" style={{ paddingTop: '24px' }}>
+        <div className="bg-black/40 p-3 rounded-xl flex-shrink-0 hide-on-print">
+          <svg className="w-6 h-6 text-white hide-on-print" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+        <div className="text-sm leading-relaxed text-slate-300 font-medium w-full" style={{ textAlign: 'justify', color: 'inherit' }}>
+          {(() => {
+            const hasData = metrics.needsHelp.value > 0 || metrics.liveFails.value > 0 || metrics.asyncFails.value > 0 || metrics.helpRequests.rawCount > 0;
+            if (!hasData) return <p>No se han registrado fallos, calificaciones de riesgo o solicitudes de tutoría en el periodo actual. El rendimiento es excepcionalmente fluido.</p>;
+
+            const avgFailRate = (Number(metrics.liveFails.percentage) + Number(metrics.asyncFails.percentage)) / 2;
+            const helpCount = metrics.helpRequests.rawCount;
+            
+            if (studentId) {
+              let estado = "ESTABLE";
+              let colorClass = "text-emerald-400";
+              let estrategia = "La progresión de este estudiante es saludable. Sus tasas de reprobación y solicitudes de asistencia se mantienen dentro de los parámetros esperados de autonomía.";
+              
+              if (avgFailRate > 15 || helpCount >= 2) {
+                estado = "EN RIESGO";
+                colorClass = "text-red-400";
+                estrategia = "Intervención prioritaria requerida. Las altas tasas de reprobación combinadas con solicitudes de ayuda directas indican frustración activa. Programar una sesión de tutoría 1-a-1 de recuperación inmediatamente para evitar la deserción (churn).";
+              }
+
+              return (
+                <p>
+                  El sistema detecta una tasa de fallo combinada del <strong>{avgFailRate.toFixed(1)}%</strong> y <strong>{helpCount}</strong> solicitudes formales de ayuda. 
+                  El estado de asimilación de este estudiante se clasifica como <strong className={colorClass}>{estado}</strong>.
+                  <br/><br/>
+                  <span className="uppercase tracking-widest text-[10px] font-black opacity-70 block mb-1">Directiva Académica:</span>
+                  {estrategia}
+                </p>
+              );
+            } else {
+              let estado = "CAPACIDAD ÓPTIMA";
+              let colorClass = "text-emerald-400";
+              let estrategia = "La cohorte avanza fluidamente. El volumen actual de estudiantes en riesgo de rezago es mínimo y las solicitudes de tutoría pueden ser absorbidas sin estrés operativo para el equipo docente.";
+              
+              if (avgFailRate > 15 || helpCount > 20) {
+                estado = "CUELLO DE BOTELLA OPERATIVO";
+                colorClass = "text-red-400";
+                estrategia = "La demanda de intervenciones de recuperación está superando el flujo estándar. Un segmento significativo de la cohorte está reprobando o solicitando asistencia. Abrir nuevos bloques horarios de tutoría 1-a-1 esta semana para descongestionar el sistema.";
+              }
+
+              return (
+                <p>
+                  El ecosistema académico global muestra una tasa promedio de reprobación del <strong>{avgFailRate.toFixed(1)}%</strong> y <strong>{helpCount}</strong> tickets abiertos de asistencia. 
+                  La carga actual del sistema de tutorías remediales se clasifica en <strong className={colorClass}>{estado}</strong>.
+                  <br/><br/>
+                  <span className="uppercase tracking-widest text-[10px] font-black opacity-70 block mb-1">Estrategia Operativa:</span>
+                  {estrategia}
+                </p>
+              );
+            }
+          })()}
+        </div>
       </div>
     </div>
   );

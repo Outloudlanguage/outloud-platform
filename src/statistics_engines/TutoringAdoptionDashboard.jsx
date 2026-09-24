@@ -60,24 +60,8 @@ const TutoringAdoptionDashboard = ({ studentId }) => {
 
           setMetrics({ bookedCount, unbookedCount, totalActive });
           setBookedIds(activeBookedIds);
-        } else {
-          // Fallback UI mock data if database is empty to guarantee layout stability
-          if (studentId) {
-            // Mock an individual who has booked tutoring
-            setMetrics({ bookedCount: 1, unbookedCount: 0, totalActive: 1 });
-            setBookedIds([studentId]);
-          } else {
-            // Mock the global cohort
-            const mockTotal = 120;
-            const mockBooked = 22;
-            const mockIds = Array.from({ length: mockBooked }, (_, i) => 
-              `usr_${Math.random().toString(36).substr(2, 9).toUpperCase()}`
-            );
-            
-            setMetrics({ bookedCount: mockBooked, unbookedCount: mockTotal - mockBooked, totalActive: mockTotal });
-            setBookedIds(mockIds);
-          }
         }
+        // Strict Reality: No mock data padding.
       } catch (error) {
         console.error("Error fetching tutoring adoption data:", error);
       } finally {
@@ -91,8 +75,8 @@ const TutoringAdoptionDashboard = ({ studentId }) => {
   if (loading) return <div className="p-4 md:p-8 text-white/50 text-center font-bold tracking-widest">LOADING ADOPTION DATA...</div>;
 
   const chartData = [
-    { name: 'Booked Support', value: metrics.bookedCount, color: '#eab308' }, // Yellow
-    { name: 'Regular Mastery', value: metrics.unbookedCount, color: '#3b82f6' } // Blue
+    { name: 'Tutorías Asignadas', value: metrics.bookedCount, color: '#eab308' },
+    { name: 'Dominio Regular', value: metrics.unbookedCount, color: '#3b82f6' }
   ];
 
   const bookedPercentage = metrics.totalActive > 0 
@@ -103,16 +87,40 @@ const TutoringAdoptionDashboard = ({ studentId }) => {
     ? ((metrics.unbookedCount / metrics.totalActive) * 100).toFixed(1) 
     : 0;
 
+  const currentDate = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
   return (
-    <div className="tutoring-adoption-card relative flex flex-col w-full bg-transparent md:bg-white/5 md:backdrop-blur-xl border-transparent md:border-white/10 md:rounded-[2rem] p-0 md:p-8 shadow-none md:shadow-2xl break-inside-avoid print:bg-white print:border-slate-300 print:shadow-none print:p-4">
+    <div id="printable-adoption-report" className="tutoring-adoption-card relative flex flex-col w-full bg-transparent md:bg-white/5 md:backdrop-blur-xl border-transparent md:border-white/10 md:rounded-[2rem] p-0 md:p-8 shadow-none md:shadow-2xl">
       
+      <style>{`
+        @media print {
+          @page { size: portrait; margin: 15mm; }
+          .w-28, .w-64, nav, aside { display: none !important; }
+          .flex-1 { padding: 0 !important; margin: 0 !important; width: 100% !important; flex: none !important; display: block !important; }
+          body, html { background: white !important; }
+          #printable-adoption-report { background-color: white !important; width: 100% !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; display: block !important; }
+          #printable-adoption-report, #printable-adoption-report * { color: black !important; text-shadow: none !important; border-color: #ccc !important; }
+          .recharts-responsive-container { height: 350px !important; min-height: 350px !important; margin-bottom: 20px !important; }
+          .recharts-text { fill: #333 !important; font-weight: bold !important; }
+          .print-header { display: block !important; margin-bottom: 20px !important; padding-bottom: 10px !important; border-bottom: 2px solid #000 !important; text-align: left !important; }
+          .hide-on-print { display: none !important; }
+          .custom-scrollbar { overflow: visible !important; height: auto !important; max-height: none !important; }
+        }
+      `}</style>
+
+      {/* Print-Only Header Date */}
+      <div className="print-header" style={{ display: 'none' }}>
+        <p style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 'bold' }}>Reporte Operativo Generado:</p>
+        <p style={{ fontSize: '16px', fontWeight: '900', textTransform: 'capitalize' }}>{currentDate}</p>
+      </div>
+
       {/* Header */}
-      <div className="mb-8 border-b border-white/10 print:border-slate-300 pb-4">
-        <h3 className="text-xl md:text-2xl font-black tracking-widest uppercase text-white print:text-black">
-          {studentId ? "Personal Tutoring Profile" : "Tutoring Adoption"}
+      <div className="mb-8 border-b border-white/10 pb-4" style={{ borderBottomWidth: '1px' }}>
+        <h3 className="text-xl md:text-2xl font-black tracking-widest uppercase text-white">
+          {studentId ? "Perfil Personal de Tutorías" : "Adopción de Tutorías"}
         </h3>
-        <p className="text-sm font-bold text-yellow-400 print:text-slate-600 uppercase tracking-wide">
-          {studentId ? "Individual Remedial Booking Status" : "1-to-1 Remedial Booking Ratios"}
+        <p className="text-sm font-bold text-yellow-400 uppercase tracking-wide">
+          {studentId ? "Estado Individual de Reservas" : "Ratio de Demanda de Recuperación (1-a-1)"}
         </p>
       </div>
 
@@ -139,7 +147,7 @@ const TutoringAdoptionDashboard = ({ studentId }) => {
                 ))}
               </Pie>
               <Tooltip 
-                wrapperClassName="print:hidden"
+                wrapperClassName="hide-on-print"
                 contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '8px', color: '#fff' }}
                 itemStyle={{ fontWeight: 'bold' }}
               />
@@ -149,10 +157,10 @@ const TutoringAdoptionDashboard = ({ studentId }) => {
         </div>
 
         {/* Right Side: Clean Data Table of User IDs */}
-        <div className="flex flex-col bg-black/20 print:bg-slate-50 border border-white/5 print:border-slate-200 rounded-xl overflow-hidden h-64">
-          <div className="bg-black/40 print:bg-slate-200 px-4 py-2 border-b border-white/5 print:border-slate-300">
-            <h4 className="text-xs font-bold text-white print:text-slate-800 tracking-wider uppercase">
-              {studentId ? "Booking Record" : `Booked Student Roster (${metrics.bookedCount})`}
+        <div className="flex flex-col bg-black/20 border border-white/5 rounded-xl overflow-hidden h-64 custom-scrollbar">
+          <div className="bg-black/40 px-4 py-2 border-b border-white/5" style={{ borderBottomWidth: '1px' }}>
+            <h4 className="text-xs font-bold text-white tracking-wider uppercase">
+              {studentId ? "Registro de Reserva" : `Nómina de Tutorías (${metrics.bookedCount})`}
             </h4>
           </div>
           {/* Constrained scroll area to protect dashboard layout; expands gracefully in standard view */}
@@ -160,13 +168,13 @@ const TutoringAdoptionDashboard = ({ studentId }) => {
             <ul className="grid grid-cols-1 gap-2">
               {bookedIds.length > 0 ? (
                 bookedIds.map((id, index) => (
-                  <li key={index} className="text-xs font-mono text-slate-300 print:text-slate-700 bg-white/5 print:bg-white px-3 py-1.5 rounded-md border border-white/5 print:border-slate-200 truncate">
+                  <li key={index} className="text-xs font-mono text-slate-300 bg-white/5 px-3 py-1.5 rounded-md border border-white/5 truncate" style={{ borderWidth: '1px' }}>
                     {id}
                   </li>
                 ))
               ) : (
                 <li className="text-sm font-semibold text-slate-500 italic text-center mt-4">
-                  No bookings found.
+                  No se registraron tutorías.
                 </li>
               )}
             </ul>
@@ -176,22 +184,69 @@ const TutoringAdoptionDashboard = ({ studentId }) => {
       </div>
 
       {/* Dynamic Narrative Footer */}
-      <div className="mt-auto pt-6 border-t border-white/10 print:border-slate-300 flex items-start gap-4">
-        {/* Custom minimalist thick rounded icon */}
-        <div className="bg-black/40 print:bg-slate-100 p-3 rounded-xl flex-shrink-0">
-          <svg className="w-6 h-6 text-white print:text-slate-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <div className="mt-auto pt-6 border-t border-white/10 flex items-start gap-4" style={{ paddingTop: '24px' }}>
+        <div className="bg-black/40 p-3 rounded-xl flex-shrink-0 hide-on-print">
+          <svg className="w-6 h-6 text-white hide-on-print" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 14l9-5-9-5-9 5 9 5z" />
             <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
           </svg>
         </div>
-        <p className="text-sm leading-relaxed text-slate-300 print:text-slate-800 font-medium">
-          {studentId 
-            ? (metrics.bookedCount > 0 
-                ? "This student has actively booked 1-to-1 remedial support outside of their regular mastery pipeline. Their specific profile ID is currently logged in the active tutoring roster."
-                : "This student is successfully maintaining regular mastery without requiring additional 1-to-1 remedial support bookings.")
-            : `Out of ${metrics.totalActive} active students this month, ${bookedPercentage}% of our cohort required extra 1-to-1 remedial support, while ${unbookedPercentage}% successfully mastered the material directly within their regular classes. The table lists the exact User IDs currently occupying the remedial pipeline.`
-          }
-        </p>
+        <div className="text-sm leading-relaxed text-slate-300 font-medium w-full" style={{ textAlign: 'justify', color: 'inherit' }}>
+          {(() => {
+            if (metrics.totalActive === 0) return <p>No existen datos suficientes para generar un reporte de adopción. Actualmente no hay estudiantes activos registrados.</p>;
+
+            let estado = "CRÍTICO";
+            let colorClass = "text-red-400";
+            let estrategia = "";
+
+            if (studentId) {
+              if (metrics.bookedCount > 0) {
+                estado = "EN TUTORÍA";
+                colorClass = "text-yellow-400";
+                estrategia = "El estudiante ha solicitado activamente apoyo remedial 1-a-1 fuera de su flujo regular de dominio. Monitorear su desempeño en la próxima evaluación para verificar la efectividad de la sesión.";
+              } else {
+                estado = "AUTÓNOMO";
+                colorClass = "text-emerald-400";
+                estrategia = "El estudiante está manteniendo un dominio regular y avanzando en el currículo sin requerir la reserva de soporte remedial adicional. Mantener el seguimiento estándar.";
+              }
+
+              return (
+                <p>
+                  El historial operativo indica que la adopción de tutorías de este estudiante se clasifica como <strong className={colorClass}>{estado}</strong>.
+                  <br/><br/>
+                  <span className="uppercase tracking-widest text-[10px] font-black opacity-70 block mb-1">Directiva Académica:</span>
+                  {estrategia}
+                </p>
+              );
+            } else {
+              const bookedRate = parseFloat(bookedPercentage);
+              
+              if (bookedRate >= 30) {
+                estado = "SOBRECARGA OPERATIVA";
+                colorClass = "text-red-400";
+                estrategia = "Alta dependencia del sistema de soporte. Revisar inmediatamente la claridad del material asíncrono y abrir más bloques horarios para profesores de apoyo antes de que se genere un cuello de botella.";
+              } else if (bookedRate >= 15) {
+                estado = "DEMANDA SOSTENIDA";
+                colorClass = "text-yellow-400";
+                estrategia = "Adopción de tutorías dentro de márgenes aceptables pero en zona de precaución. Mantener a los profesores de guardia notificados y vigilar la capacidad de reservas disponibles.";
+              } else {
+                estado = "DOMINIO ÓPTIMO";
+                colorClass = "text-emerald-400";
+                estrategia = "El ecosistema fluye de manera autónoma. La mayoría de los estudiantes está absorbiendo el contenido en sus clases regulares sin saturar el sistema de tutorías 1-a-1.";
+              }
+
+              return (
+                <p>
+                  De los <strong>{metrics.totalActive}</strong> estudiantes activos este mes, el <strong>{bookedPercentage}%</strong> requirió reservar soporte remedial extra (1-a-1), mientras que el <strong>{unbookedPercentage}%</strong> restante logró dominar el material directamente en sus clases regulares.
+                  Esto sitúa nuestra capacidad operativa en estado de <strong className={colorClass}>{estado}</strong>.
+                  <br/><br/>
+                  <span className="uppercase tracking-widest text-[10px] font-black opacity-70 block mb-1">Estrategia Operativa Global:</span>
+                  {estrategia}
+                </p>
+              );
+            }
+          })()}
+        </div>
       </div>
     </div>
   );

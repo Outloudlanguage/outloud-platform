@@ -32,10 +32,10 @@ const RiskChart = ({ studentId }) => {
 
         // Bucket initialization
         const buckets = {
-          atRisk: { id: 'atRisk', label: 'At-Risk', count: 0, color: '#ef4444' },
-          needsAttention: { id: 'needsAttention', label: 'Needs Attention', count: 0, color: '#f59e0b' },
-          onTrack: { id: 'onTrack', label: 'On Track', count: 0, color: '#3b82f6' },
-          highPerforming: { id: 'highPerforming', label: 'High Performing', count: 0, color: '#22c55e' }
+          atRisk: { id: 'atRisk', label: 'En Riesgo', count: 0, color: '#ef4444' },
+          needsAttention: { id: 'needsAttention', label: 'Requiere Atención', count: 0, color: '#f59e0b' },
+          onTrack: { id: 'onTrack', label: 'Buen Ritmo', count: 0, color: '#3b82f6' },
+          highPerforming: { id: 'highPerforming', label: 'Alto Rendimiento', count: 0, color: '#22c55e' }
         };
 
         if (metrics && metrics.length > 0) {
@@ -55,20 +55,8 @@ const RiskChart = ({ studentId }) => {
               buckets.needsAttention.count++;
             }
           });
-        } else {
-          // Fallback UI data
-          if (studentId) {
-            total = 1;
-            buckets.onTrack.count = 1; // Default to On Track for a mock individual
-          } else {
-            // Strict baseline metrics for exactly 1,200 total students
-            total = 1200;
-            buckets.atRisk.count = 168;
-            buckets.needsAttention.count = 312;
-            buckets.onTrack.count = 504;
-            buckets.highPerforming.count = 216;
-          }
         }
+        // Strict Reality: No mock data padding.
 
         processedData = [
           buckets.atRisk,
@@ -96,15 +84,41 @@ const RiskChart = ({ studentId }) => {
   if (loading) return <div className="p-4 md:p-8 text-white/50 text-center font-bold tracking-widest">LOADING RISK MATRIX...</div>;
   if (error) return <div className="p-8 text-red-400 text-center font-bold tracking-widest">{error}</div>;
 
+  const currentDate = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
   return (
-    <div className="relative flex flex-col w-full bg-transparent md:bg-white/5 md:backdrop-blur-xl border-transparent md:border-white/10 md:rounded-[2rem] p-0 md:p-8 shadow-none md:shadow-2xl break-inside-avoid print:bg-white print:border-slate-300 print:shadow-none print:p-4">
+    <div id="printable-risk-report" className="relative flex flex-col w-full bg-transparent md:bg-white/5 md:backdrop-blur-xl border-transparent md:border-white/10 md:rounded-[2rem] p-0 md:p-8 shadow-none md:shadow-2xl">
       
-      <div className="mb-6">
-        <h3 className="text-xl md:text-2xl font-black tracking-widest uppercase text-white print:text-black">
-          {studentId ? "Personal Risk Assessment" : "Student Performance Risk"}
+      <style>{`
+        @media print {
+          @page { size: portrait; margin: 15mm; }
+          .w-28, .w-64, nav, aside { display: none !important; }
+          .flex-1 { padding: 0 !important; margin: 0 !important; width: 100% !important; flex: none !important; display: block !important; }
+          body, html { background: white !important; }
+          #printable-risk-report { background-color: white !important; width: 100% !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; display: block !important; }
+          
+          /* Force SVG Text & elements to be black for printing */
+          #printable-risk-report * { color: black !important; text-shadow: none !important; border-color: #ccc !important; }
+          #printable-risk-report text { fill: black !important; font-weight: bold !important; }
+          #printable-risk-report rect.fill-white\\/10 { fill: #f1f5f9 !important; }
+          
+          .print-header { display: block !important; margin-bottom: 20px !important; padding-bottom: 10px !important; border-bottom: 2px solid #000 !important; text-align: left !important; }
+          .hide-on-print { display: none !important; }
+        }
+      `}</style>
+
+      {/* Print-Only Header Date */}
+      <div className="print-header" style={{ display: 'none' }}>
+        <p style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 'bold' }}>Reporte de Riesgo Generado:</p>
+        <p style={{ fontSize: '16px', fontWeight: '900', textTransform: 'capitalize' }}>{currentDate}</p>
+      </div>
+
+      <div className="mb-6 border-b border-white/10 pb-4" style={{ borderBottomWidth: '1px' }}>
+        <h3 className="text-xl md:text-2xl font-black tracking-widest uppercase text-white">
+          {studentId ? "Evaluación de Riesgo Personal" : "Riesgo de Rendimiento Académico"}
         </h3>
-        <p className="text-sm font-bold text-yellow-400 print:text-slate-600 uppercase tracking-wide">
-          {studentId ? "Individual Metric Evaluation" : `Total Active Cohort: ${totalStudents.toLocaleString()} Students`}
+        <p className="text-sm font-bold text-yellow-400 uppercase tracking-wide">
+          {studentId ? "Evaluación de Métricas Individuales" : `Cohorte Activa Total: ${totalStudents.toLocaleString()} Estudiantes`}
         </p>
       </div>
 
@@ -168,17 +182,71 @@ const RiskChart = ({ studentId }) => {
         </svg>
       </div>
 
-      <div className="mt-auto pt-6 border-t border-white/10 print:border-slate-300 flex items-start gap-4">
-        <div className="bg-black/40 print:bg-slate-100 p-3 rounded-xl flex-shrink-0">
-          <svg className="w-6 h-6 text-white print:text-slate-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <div className="mt-auto pt-6 border-t border-white/10 flex items-start gap-4" style={{ paddingTop: '24px' }}>
+        <div className="bg-black/40 p-3 rounded-xl flex-shrink-0 hide-on-print">
+          <svg className="w-6 h-6 text-white hide-on-print" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
         </div>
-        <div className="text-sm leading-relaxed text-slate-300 print:text-slate-800 font-medium">
-          {studentId 
-            ? <p>This chart visualizes the selected student's current risk assessment based on their grade average and weekly class attendance. Maintaining a consistent pace is paramount. If a student falls into the red "At-Risk" category, mandatory 1-to-1 remedial sessions are triggered to restore their baseline progression.</p>
-            : <p>Outloud Language Academy utilizes a strict methodology: we never translate. Because of this high-immersion approach, maintaining a consistent pace is paramount. Students who fall into the red "At-Risk" category immediately trigger specific operational protocols, specifically mandatory 1-to-1 remedial sessions to restore their baseline progression.</p>
-          }
+        <div className="text-sm leading-relaxed text-slate-300 font-medium w-full" style={{ textAlign: 'justify', color: 'inherit' }}>
+          {(() => {
+            if (totalStudents === 0) return <p>No hay datos suficientes para calcular las métricas de riesgo en este periodo.</p>;
+            
+            if (studentId) {
+              const studentRisk = data.find(d => d.count > 0)?.id;
+              let estado = "ESTABLE";
+              let colorClass = "text-emerald-400";
+              let estrategia = "El estudiante mantiene un ritmo y promedio óptimos. No se requiere intervención inmediata.";
+              
+              if (studentRisk === 'atRisk') {
+                estado = "EN RIESGO CRÍTICO";
+                colorClass = "text-red-400";
+                estrategia = "Intervención inmediata requerida. El estudiante presenta un promedio inferior al 75% y asistencia casi nula. Programar contacto directo (llamada) y agendar sesión de nivelación obligatoria para evitar deserción.";
+              } else if (studentRisk === 'needsAttention') {
+                estado = "REQUIERE ATENCIÓN";
+                colorClass = "text-yellow-400";
+                estrategia = "El estudiante muestra ligeras caídas en su rendimiento o asistencia. Asignar seguimiento preventivo por parte de su profesor actual para evitar que decaiga al estado de riesgo.";
+              } else if (studentRisk === 'highPerforming') {
+                estado = "ALTO RENDIMIENTO";
+                colorClass = "text-emerald-400";
+                estrategia = "Rendimiento sobresaliente. Promedio excelente y asistencia perfecta. Considerar ofrecer oportunidades de avance acelerado o utilizarlo como testimonio de éxito.";
+              }
+
+              return (
+                <p>
+                  Con base en la frecuencia de clases y el promedio de calificaciones, el perfil de este estudiante se clasifica como <strong className={colorClass}>{estado}</strong>.
+                  <br/><br/>
+                  <span className="uppercase tracking-widest text-[10px] font-black opacity-70 block mb-1">Directiva Académica:</span>
+                  {estrategia}
+                </p>
+              );
+            } else {
+              const atRiskPercent = parseFloat(data.find(d => d.id === 'atRisk')?.percentage || 0);
+              let estado = "SALUDABLE";
+              let colorClass = "text-emerald-400";
+              let estrategia = "La distribución de riesgo de la academia es óptima. Mantener las metodologías de inmersión actuales y continuar el seguimiento automatizado.";
+              
+              if (atRiskPercent >= 15) {
+                estado = "CRÍTICO";
+                colorClass = "text-red-400";
+                estrategia = "Alerta de capacidad operativa. Una gran porción de la cohorte está en riesgo inminente de deserción o reprobación. Se exige asistencia obligatoria a sesiones remediales 1-a-1 y auditoría de la claridad del material impartido recientemente.";
+              } else if (atRiskPercent >= 8) {
+                estado = "INTERMEDIO";
+                colorClass = "text-yellow-400";
+                estrategia = "Volumen de riesgo moderado. Aumentar la frecuencia de correos de reactivación y asegurar que los profesores identifiquen tempranamente las dudas durante las clases en vivo.";
+              }
+
+              return (
+                <p>
+                  Nuestra academia utiliza una estricta metodología de inmersión total. Actualmente, el <strong>{atRiskPercent}%</strong> de la cohorte activa se encuentra en la categoría roja de riesgo. 
+                  Esto representa un estado operativo <strong className={colorClass}>{estado}</strong>.
+                  <br/><br/>
+                  <span className="uppercase tracking-widest text-[10px] font-black opacity-70 block mb-1">Estrategia Operativa Global:</span>
+                  {estrategia}
+                </p>
+              );
+            }
+          })()}
         </div>
       </div>
     </div>

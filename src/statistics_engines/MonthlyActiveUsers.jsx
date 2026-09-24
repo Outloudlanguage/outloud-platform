@@ -82,22 +82,10 @@ const MonthlyActiveUsers = () => {
           users: m.activeUsers.size
         }));
 
-        // Fallback Mock Data if DB is empty to maintain layout and test math
-        if (!statusData || statusData.length === 0 || totalStudents === 0) {
-          totalStudents = 1200;
-          currentActive = 920;
-          formattedChartData = [
-            { month: 'Sep', users: 810 }, { month: 'Oct', users: 840 },
-            { month: 'Nov', users: 875 }, { month: 'Dec', users: 850 },
-            { month: 'Jan', users: 900 }, { month: 'Feb', users: 915 },
-            { month: 'Mar', users: 890 }, { month: 'Apr', users: 930 },
-            { month: 'May', users: 945 }, { month: 'Jun', users: 960 },
-            { month: 'Jul', users: 910 }, { month: 'Aug', users: 920 }
-          ];
-        }
-
+        // Strict Reality: No fake math padding.
+        
         const targetBenchmark = Math.round(totalStudents * 0.8);
-        const activeRate = ((currentActive / totalStudents) * 100).toFixed(1);
+        const activeRate = totalStudents > 0 ? ((currentActive / totalStudents) * 100).toFixed(1) : 0;
         const activeVariance = currentActive - targetBenchmark;
 
         setMetrics({
@@ -120,39 +108,52 @@ const MonthlyActiveUsers = () => {
     fetchMAUData();
   }, []);
 
-  // Dynamic Insight Generator
-  const generateInsight = () => {
-    const varianceAbs = Math.abs(metrics.variance);
-    const statusText = metrics.variance >= 0 
-      ? `exceeding our 80% target goal by ${varianceAbs} students`
-      : `which is currently ${varianceAbs} students short of our 80% target goal`;
-
-    return `Currently, ${metrics.active.toLocaleString()} of our ${metrics.total.toLocaleString()} enrolled students are actively learning this month. This translates to a ${metrics.rate}% active rate, ${statusText}.`;
-  };
-
   if (loading) return <div className="p-4 md:p-8 text-white/50 text-center font-bold tracking-widest">LOADING MAU DATA...</div>;
 
+  const currentDate = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
   return (
-    <div className="mau-card relative flex flex-col w-full bg-transparent md:bg-white/5 md:backdrop-blur-xl border-transparent md:border-white/10 md:rounded-[2rem] p-0 md:p-8 shadow-none md:shadow-2xl break-inside-avoid print:bg-white print:border-slate-300 print:shadow-none print:p-4">
+    <div id="printable-mau-report" className="mau-card relative flex flex-col w-full bg-transparent md:bg-white/5 md:backdrop-blur-xl border-transparent md:border-white/10 md:rounded-[2rem] p-0 md:p-8 shadow-none md:shadow-2xl">
       
+      <style>{`
+        @media print {
+          @page { size: portrait; margin: 15mm; }
+          .w-28, .w-64, nav, aside { display: none !important; }
+          .flex-1 { padding: 0 !important; margin: 0 !important; width: 100% !important; flex: none !important; display: block !important; }
+          body, html { background: white !important; }
+          #printable-mau-report { background-color: white !important; width: 100% !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; display: block !important; }
+          #printable-mau-report, #printable-mau-report * { color: black !important; text-shadow: none !important; border-color: #ccc !important; }
+          .recharts-responsive-container { height: 350px !important; min-height: 350px !important; margin-bottom: 20px !important; }
+          .recharts-text { fill: #333 !important; font-weight: bold !important; }
+          .print-header { display: block !important; margin-bottom: 20px !important; padding-bottom: 10px !important; border-bottom: 2px solid #000 !important; text-align: left !important; }
+          .hide-on-print { display: none !important; }
+        }
+      `}</style>
+
+      {/* Print-Only Header Date */}
+      <div className="print-header" style={{ display: 'none' }}>
+        <p style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 'bold' }}>Reporte de Engagement Generado:</p>
+        <p style={{ fontSize: '16px', fontWeight: '900', textTransform: 'capitalize' }}>{currentDate}</p>
+      </div>
+
       {/* Header & KPIs */}
-      <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-end border-b border-white/10 print:border-slate-300 pb-4 gap-4">
+      <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-end border-b border-white/10 pb-4 gap-4" style={{ borderBottomWidth: '1px' }}>
         <div>
-          <h3 className="text-xl md:text-2xl font-black tracking-widest uppercase text-white print:text-black">
-            Monthly Active Users
+          <h3 className="text-xl md:text-2xl font-black tracking-widest uppercase text-white">
+            Usuarios Activos Mensuales
           </h3>
-          <p className="text-sm font-bold text-yellow-400 print:text-slate-600 uppercase tracking-wide">
-            Trailing 12-Month Engagement Trend
+          <p className="text-sm font-bold text-yellow-400 uppercase tracking-wide">
+            Tendencia de Engagement (12 Meses)
           </p>
         </div>
         <div className="flex gap-6 text-right">
           <div>
-            <p className="text-xs text-slate-400 print:text-slate-500 uppercase font-bold tracking-wider">Current MAU</p>
-            <p className="text-2xl font-black text-blue-400 print:text-blue-700">{metrics.active.toLocaleString()}</p>
+            <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">MAU Actual</p>
+            <p className="text-2xl font-black text-blue-400">{metrics.active.toLocaleString()}</p>
           </div>
           <div>
-            <p className="text-xs text-slate-400 print:text-slate-500 uppercase font-bold tracking-wider">Active Rate</p>
-            <p className={`text-2xl font-black ${metrics.variance >= 0 ? 'text-green-400 print:text-green-600' : 'text-yellow-400 print:text-yellow-600'}`}>
+            <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">Tasa Activa</p>
+            <p className={`text-2xl font-black ${metrics.variance >= 0 ? 'text-emerald-400' : 'text-yellow-400'}`}>
               {metrics.rate}%
             </p>
           </div>
@@ -160,27 +161,27 @@ const MonthlyActiveUsers = () => {
       </div>
 
       {/* 12-Month Trend Line Chart */}
-      <div className="w-full h-72 mb-6">
+      <div className="w-full h-72 mb-6" style={{ minHeight: '300px' }}>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: -20 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" vertical={false} className="print:!stroke-slate-200" />
+          <LineChart data={chartData} margin={{ top: 15, right: 20, bottom: 5, left: -20 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" vertical={false} />
             
             <XAxis 
               dataKey="month" 
-              tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 600 }} 
-              axisLine={{ stroke: '#475569' }} 
-              tickLine={{ stroke: '#475569' }} 
+              tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }} 
+              axisLine={{ stroke: '#64748b' }} 
+              tickLine={{ stroke: '#64748b' }} 
             />
             
             <YAxis 
-              tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 600 }} 
-              axisLine={{ stroke: '#475569' }} 
-              tickLine={{ stroke: '#475569' }}
-              domain={[0, 'dataMax + 100']} 
+              tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }} 
+              axisLine={{ stroke: '#64748b' }} 
+              tickLine={{ stroke: '#64748b' }}
+              domain={[0, 'dataMax + 50']} 
             />
             
             <Tooltip 
-              wrapperClassName="print:hidden" 
+              wrapperClassName="hide-on-print" 
               contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: '#fff' }}
               itemStyle={{ fontWeight: 'bold', color: '#3b82f6' }}
             />
@@ -192,7 +193,7 @@ const MonthlyActiveUsers = () => {
               strokeDasharray="4 4" 
               label={{ 
                 position: 'top', 
-                value: `80% Target (${metrics.target})`, 
+                value: `Meta 80% (${metrics.target})`, 
                 fill: '#eab308', 
                 fontSize: 12, 
                 fontWeight: 'bold' 
@@ -202,7 +203,7 @@ const MonthlyActiveUsers = () => {
             <Line 
               type="monotone" 
               dataKey="users" 
-              name="Active Users" 
+              name="Usuarios Activos" 
               stroke="#3b82f6" 
               strokeWidth={3} 
               dot={{ r: 4, strokeWidth: 2, fill: '#0f172a' }} 
@@ -214,16 +215,47 @@ const MonthlyActiveUsers = () => {
       </div>
 
       {/* Dynamic Narrative Footer */}
-      <div className="mt-auto pt-6 border-t border-white/10 print:border-slate-300 flex items-start gap-4">
-        {/* Custom minimalist thick rounded icon */}
-        <div className="bg-black/40 print:bg-slate-100 p-3 rounded-xl flex-shrink-0">
-          <svg className="w-6 h-6 text-white print:text-slate-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <div className="mt-auto pt-6 border-t border-white/10 flex items-start gap-4" style={{ paddingTop: '24px' }}>
+        <div className="bg-black/40 p-3 rounded-xl flex-shrink-0 hide-on-print">
+          <svg className="w-6 h-6 text-white hide-on-print" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
           </svg>
         </div>
-        <p className="text-sm leading-relaxed text-slate-300 print:text-slate-800 font-medium">
-          {generateInsight()}
-        </p>
+        <div className="text-sm leading-relaxed text-slate-300 font-medium w-full" style={{ textAlign: 'justify', color: 'inherit' }}>
+          {(() => {
+            if (metrics.total === 0) return <p>No hay datos suficientes para generar un reporte de retención. Actualmente no hay estudiantes matriculados en la base de datos.</p>;
+            
+            const rate = parseFloat(metrics.rate);
+            const varianceAbs = Math.abs(metrics.variance);
+            let estado = "CRÍTICO";
+            let colorClass = "text-red-400";
+            let estrategia = "Riesgo extremo de deserción ('Churn'). Gran parte de la base de estudiantes está pagando pero no consumiendo sus clases. Ejecutar protocolo de reactivación urgente: Contactar uno a uno y ofrecer sesiones de onboarding de recuperación.";
+            
+            if (rate >= 80) {
+              estado = "ÓPTIMO";
+              colorClass = "text-emerald-400";
+              estrategia = "La retención de la plataforma es excelente, superando el benchmark del 80%. Los estudiantes están comprometidos. Se recomienda mantener la estrategia actual de notificaciones y seguimiento continuo.";
+            } else if (rate >= 60) {
+              estado = "INTERMEDIO";
+              colorClass = "text-yellow-400";
+              estrategia = "Alerta temprana de desvinculación. Un segmento importante no está tomando clases activamente. Activar campaña automatizada de correos de re-engagement ('Te extrañamos') para reincorporarlos antes de su próximo ciclo de cobro.";
+            }
+
+            const statusText = metrics.variance >= 0 
+              ? `superando la meta objetivo del 80% por ${varianceAbs} estudiantes`
+              : `lo cual nos sitúa ${varianceAbs} estudiantes por debajo de la meta objetivo del 80%`;
+
+            return (
+              <p>
+                Actualmente, <strong>{metrics.active.toLocaleString()}</strong> de nuestros <strong>{metrics.total.toLocaleString()}</strong> estudiantes matriculados están tomando clases activamente este mes. 
+                Esto se traduce en una tasa de actividad del <strong>{metrics.rate}%</strong>, {statusText}, marcando un estado de engagement <strong className={colorClass}>{estado}</strong>.
+                <br/><br/>
+                <span className="uppercase tracking-widest text-[10px] font-black opacity-70 block mb-1">Directiva de Retención:</span>
+                {estrategia}
+              </p>
+            );
+          })()}
+        </div>
       </div>
     </div>
   );
