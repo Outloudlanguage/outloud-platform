@@ -27,19 +27,15 @@ const ProtectedRoute = ({ children, allowedRoles, forcedLanguage, isStudentHub =
         return;
       }
 
-      const { data: userData, error } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', session.user.id)
-        .single();
+      // Read role directly from the secure, unforgeable JWT session token
+      const userRole = (session.user.app_metadata?.role || '').toUpperCase();
 
-      if (error || !userData) {
+      if (!userRole) {
         onUnauthorized();
         return;
       }
 
-      // Normalize database role and allowed roles to uppercase for safe comparison
-      const userRole = (userData.role || '').toUpperCase();
+      // Normalize allowed roles to uppercase for safe comparison
       const normalizedAllowed = allowedRoles.map(r => r.toUpperCase());
 
       if (normalizedAllowed.includes(userRole) || userRole === 'GENERAL_MANAGER' || userRole === 'ADMIN') {
@@ -79,9 +75,9 @@ export default function App() {
     return hash || 'login';
   });
 
-  // --- GLOBAL ANTI-TRANSLATION LOCK ---
-  // Runs instantly to strictly forbid Chrome/Safari from translating the app
+  // --- GLOBAL DOM PROTECTION & ANTI-TRANSLATION LOCK ---
   useEffect(() => {
+    // 1. Anti-Translation (Always applies to everyone)
     document.documentElement.lang = "en";
     document.documentElement.classList.add("notranslate");
     document.documentElement.setAttribute("translate", "no");
@@ -93,6 +89,82 @@ export default function App() {
       document.head.appendChild(metaGoogle);
     }
     metaGoogle.content = "notranslate";
+
+    // 2. Dynamic Anti-Theft Handlers
+    const handleContextMenu = (e) => e.preventDefault();
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && ['c', 'v', 'x', 's', 'p'].includes(e.key.toLowerCase())) {
+        e.preventDefault();
+      }
+    };
+    const handleDragStart = (e) => {
+      if (e.target.tagName.toLowerCase() === 'img') e.preventDefault();
+    };
+
+    const applyRestrictions = () => {
+      document.addEventListener('contextmenu', handleContextMenu);
+      document.addEventListener('keydown', handleKeyDown);
+      document.addEventListener('dragstart', handleDragStart);
+      
+      if (!document.getElementById('anti-theft-style')) {
+        const style = document.createElement('style');
+        style.id = 'anti-theft-style';
+        style.innerHTML = `
+          body {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+          }
+          /* Allow selection inside input fields so users can still type/edit */
+          input, textarea {
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+            user-select: text;
+          }
+        `;
+        document.head.appendChild(style);
+      }
+    };
+
+    const removeRestrictions = () => {
+      document.removeEventListener('contextmenu', handleContextMenu);
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('dragstart', handleDragStart);
+      const style = document.getElementById('anti-theft-style');
+      if (style) style.remove();
+    };
+
+    // 3. Determine if user is Admin and dynamically toggle restrictions
+    const enforceSecurityLevel = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const role = session?.user?.app_metadata?.role?.toUpperCase();
+      
+      if (role === 'ADMIN' || role === 'GENERAL_MANAGER') {
+        removeRestrictions(); // Shields down for management
+      } else {
+        applyRestrictions();  // Shields up for public, students, and teachers
+      }
+    };
+
+    // Run on initial load
+    enforceSecurityLevel();
+
+    // Listen for login/logout to instantly switch protection modes
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      const role = session?.user?.app_metadata?.role?.toUpperCase();
+      if (role === 'ADMIN' || role === 'GENERAL_MANAGER') {
+        removeRestrictions();
+      } else {
+        applyRestrictions();
+      }
+    });
+
+    return () => {
+      removeRestrictions();
+      authListener?.subscription.unsubscribe();
+    };
   }, []);
   // ------------------------------------
 
@@ -122,13 +194,8 @@ export default function App() {
       return;
     }
 
-    const { data: userData } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', session.user.id)
-      .single();
-
-    const role = (userData?.role || '').toLowerCase();
+    // Extract role securely from the cryptographically signed JWT
+    const role = (session.user.app_metadata?.role || '').toLowerCase();
 
     // <-- FIX: Specific routing for all 3 roles -->
     if (role === 'student') {

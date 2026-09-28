@@ -26,12 +26,27 @@ const FreeLesson = ({ onReturnHome, onReturnToRegister }) => {
     avatar_url: 'https://ui-avatars.com/api/?name=Free+Trial&background=fcd34d&color=08203e'
   };
 
-  const handleLessonComplete = (scores) => {
-    // Calculates the average of all tracked scores
-    const scoreValues = Object.values(scores);
-    const average = scoreValues.length > 0 ? Math.round(scoreValues.reduce((a, b) => a + b, 0) / scoreValues.length) : 100;
-    setFinalScore(average);
-    setIsCompleted(true);
+  const handleLessonComplete = async (submissionData) => {
+    if (submissionData?.security_flag === 'raw_payload') {
+      try {
+        // Flag this as a guest payload so the server knows NOT to save this to the database
+        submissionData.isGuest = true;
+        
+        const { data: gradedResult, error } = await supabase.functions.invoke('secure-grader', {
+          body: { payload: submissionData }
+        });
+
+        if (error) throw error;
+
+        setFinalScore(gradedResult.average);
+        setIsCompleted(true);
+      } catch (err) {
+        console.error("Error grading free lesson:", err);
+        // Marketing Fail-Safe: If the server request fails for a guest, show 100% so they aren't blocked from registering
+        setFinalScore(100); 
+        setIsCompleted(true);
+      }
+    }
   };
 
   return (

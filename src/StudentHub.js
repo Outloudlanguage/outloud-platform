@@ -1442,7 +1442,7 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
     }, 1000);
   };
 
-  const handleActivityComplete = async (type, mockScores) => {
+  const handleActivityComplete = async (type, submissionData) => {
     setActiveActivity(null);
     
     // PRACTICE MODE INTERCEPTOR: Do not write to database or trigger Gatekeeper logic.
@@ -1452,30 +1452,47 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
       return;
     }
 
-    const finalScores = type === 'Workbook' 
-      ? { Reading: mockScores.Reading, Grammar: mockScores.Grammar, Comprehension: mockScores.Comprehension, Writing: mockScores.Writing || 80 } 
-      : { Listening: mockScores.Listening, Reading: mockScores.Reading, Grammar: mockScores.Grammar, Comprehension: mockScores.Comprehension, Speaking: mockScores.Speaking || 75 };
+    // ANTI-CHEATING LOCKDOWN: Server-Side Grading via Edge Function
+    if (submissionData?.security_flag === 'raw_payload') {
+      
+      // 1. Velocity Check (5-minute hard minimum)
+      if (submissionData.timeSpentSeconds < 300) {
+        alert(`Infracción de Seguridad: Actividad completada en tiempo irreal (${submissionData.timeSpentSeconds} segundos). El tiempo mínimo requerido es de 5 minutos. Calificación anulada.`);
+        return; // Abort completely, do not show gatekeeper, do not write to DB
+      }
 
-    const scoreValues = Object.values(finalScores);
-    const average = scoreValues.length > 0 ? Math.round(scoreValues.reduce((a, b) => a + b, 0) / scoreValues.length) : 0;
-    const passed = average >= 75;
+      setIsFetching(true); // Show loading state while server processes the heavy grading
+      try {
+        // 2. Send raw answers to the secure backend Edge Function
+        const { data: gradedResult, error } = await supabase.functions.invoke('secure-grader', {
+          body: { payload: submissionData }
+        });
 
-    try {
-      await supabase.from('academic_records').insert({
-        student_id: studentData.id,
-        unit: studentData.unit || 1,
-        activity_type: type,
-        score_percentage: average,
-        teacher_notes: 'Auto-Graded'
-      });
-    } catch (e) {
-      console.error("Failed to log academic record", e);
+        if (error) throw error;
+
+        // 3. The Backend returns the verified scores (and has already written them securely to the DB)
+        setGatekeeperData({
+          type, 
+          level: studentData?.level || 'A1', 
+          unit: studentData?.unit || 1, 
+          scores: gradedResult.scores, 
+          average: gradedResult.average, 
+          passed: gradedResult.passed, 
+          fails: studentData?.unit_fail_count || 0
+        });
+        setShowGatekeeper(true);
+        
+      } catch (e) {
+        console.error("Failed to process secure grading:", e);
+        alert("Hubo un error procesando tu calificación de forma segura. Por favor, contacta a soporte administrativo.");
+      } finally {
+        setIsFetching(false);
+      }
+      
+    } else {
+      // Fallback Block: If a tech-savvy student tries to bypass the player and inject the old format
+      alert("Infracción de Seguridad: Formato de envío de calificaciones inválido.");
     }
-
-    setGatekeeperData({
-      type, level: studentData?.level || 'A1', unit: studentData?.unit || 1, scores: finalScores, average, passed, fails: studentData?.unit_fail_count || 0
-    });
-    setShowGatekeeper(true);
   };
 
   const handleGatekeeperProceed = async () => {

@@ -38,6 +38,7 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
   const incorrectSoundRef = useRef(null);
   const [navButtonState, setNavButtonState] = useState('idle'); // 'idle', 'correct', 'incorrect'
   const [sessionStarted, setSessionStarted] = useState(false); // Mobile Audio Gateway State
+  const [sessionStartTime, setSessionStartTime] = useState(null); // Anti-Cheating Velocity Tracker
 
   const safeParse = (data, fallback) => {
     if (!data) return fallback;
@@ -227,49 +228,7 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
     return { possible, correct, incorrect };
   };
 
-  const calculateFinalScores = () => {
-    const metrics = {
-      Listening: { p: 0, c: 0, i: 0 },
-      Speaking: { p: 0, c: 0, i: 0 },
-      Grammar: { p: 0, c: 0, i: 0 },
-      Writing: { p: 0, c: 0, i: 0 },
-      Reading: { p: 0, c: 0, i: 0 },
-      Comprehension: { p: 0, c: 0, i: 0 },
-    };
 
-    const add = (cat, p, c, i) => {
-       metrics[cat].p += p; metrics[cat].c += c; metrics[cat].i += i;
-    };
-
-    allElements.forEach(el => {
-      const { possible, correct, incorrect } = evaluateElement(el);
-      if (possible === 0) return;
-
-      if (el.type === 'record_compare') { add('Listening', possible, correct, incorrect); add('Speaking', possible, correct, incorrect); }
-      else if (el.type === 'fill_in_the_blank') { add('Grammar', possible, correct, incorrect); add('Writing', possible, correct, incorrect); }
-      else if (el.type === 'drag_and_drop') { add('Reading', possible, correct, incorrect); } 
-      else if (el.type === 'short_answer') { add('Writing', possible, correct, incorrect); }
-      else if (el.type === 'multiple_selection') { add('Comprehension', possible, correct, incorrect); add('Reading', possible, correct, incorrect); }
-      else if (el.type === 'slider_bar') { add('Comprehension', possible, correct, incorrect); }
-      else if (el.type === 'word_search' || el.type === 'crossword') { add('Reading', possible, correct, incorrect); } 
-    });
-
-    const finalize = (cat) => {
-       const m = metrics[cat];
-       if (m.p === 0) return 100;
-       const earned = Math.max(0, m.c - (m.i * 0.5)); 
-       return Math.round((earned / m.p) * 100);
-    };
-
-    return {
-      Listening: finalize('Listening'),
-      Reading: finalize('Reading'), 
-      Grammar: finalize('Grammar'),
-      Comprehension: finalize('Comprehension'),
-      Speaking: finalize('Speaking'),
-      Writing: finalize('Writing')
-    };
-  };
 
   const proceedToNext = () => {
     setNavButtonState('idle');
@@ -279,7 +238,22 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
       if (container) container.scrollTo({ top: 0, behavior: 'smooth' });
       else window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-      onComplete(calculateFinalScores());
+      // ANTI-CHEATING LOCKDOWN: The client no longer has authority to grade itself.
+      // We package the raw inputs and strict timestamps for backend validation.
+      const sessionEndTime = Date.now();
+      const timeSpentSeconds = Math.floor((sessionEndTime - sessionStartTime) / 1000);
+      
+      const rawSubmissionPayload = {
+        security_flag: 'raw_payload',
+        studentId: student?.id,
+        level: student?.level,
+        unit: student?.unit,
+        activityType: activityType,
+        timeSpentSeconds: timeSpentSeconds,
+        rawAnswers: { ...studentAnswers, ...dndAnswers }
+      };
+      
+      onComplete(rawSubmissionPayload);
     }
   };
 
@@ -390,6 +364,7 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
          }
      });
      setSessionStarted(true);
+     setSessionStartTime(Date.now()); // Engage strict velocity tracking
   };
 
   if (loading) return <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#070b19]"><div className="w-16 h-16 border-4 border-[#fcd34d] border-t-transparent rounded-full animate-spin"></div></div>;
