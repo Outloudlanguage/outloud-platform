@@ -359,13 +359,12 @@ const DesktopLogin = ({ onLogin, onInfoClick, onPlacementClick }) => {
 // 3. FLOATING TRAFFIC WIDGET (Desktop Only)
 // =========================================
 const FloatingTrafficWidget = ({ visitCount }) => {
-  if (visitCount === 0) return null;
-
+  // Removed the 'return null' blocker so the widget permanently anchors to the UI.
   return (
     <div className="fixed bottom-6 right-6 z-[9999] bg-[#070b19]/80 backdrop-blur-md border border-white/10 rounded-full px-4 py-2 flex items-center gap-3 shadow-2xl animate-fade-in group hover:bg-[#070b19] transition-colors cursor-default">
       <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_8px_#34d399]"></div>
       <span className="text-[10px] font-black text-white/50 uppercase tracking-widest group-hover:text-white transition-colors flex items-center">
-        Total Visits: <span className="text-[#fcd34d] text-xs ml-2">{visitCount.toLocaleString()}</span>
+        Total Visits: <span className="text-[#fcd34d] text-xs ml-2">{visitCount > 0 ? visitCount.toLocaleString() : '...'}</span>
       </span>
     </div>
   );
@@ -386,21 +385,20 @@ const LoginPage = (props) => {
   }, []);
 
   useEffect(() => {
-    const trackVisit = async () => {
-      // Strict Reality: No 24h block. Counts every single page load.
+    const registerAndFetch = async () => {
+      // 1. Force the database to register this specific page load FIRST
       await supabase.from('site_analytics').insert({ event_type: 'site_visit' });
-    };
-
-    const fetchTotal = async () => {
+      
+      // 2. Await the new total ONLY AFTER the insert above finishes
       const { count } = await supabase
         .from('site_analytics')
         .select('id', { count: 'exact', head: true })
         .eq('event_type', 'site_visit');
+        
       if (count !== null) setVisitCount(count);
     };
 
-    trackVisit();
-    fetchTotal();
+    registerAndFetch();
 
     const channel = supabase.channel('public_traffic')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'site_analytics', filter: "event_type=eq.site_visit" }, () => {
