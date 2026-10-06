@@ -38,9 +38,10 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
   useEffect(() => {
     fetchActiveRooms();
 
-    // Realtime Room Channel: Listen for Admin room creation or closure
+    // Realtime Room Channel: Unique channel name prevents collision between side-by-side components
+    const uniqueChannelName = `chat_rooms_lifecycle_${roomScope}_${Math.random().toString(36).substring(2, 9)}`;
     const roomChannel = supabase
-      .channel('chat_rooms_lifecycle')
+      .channel(uniqueChannelName)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_rooms' }, () => {
         fetchActiveRooms();
       })
@@ -49,7 +50,7 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
     return () => {
       supabase.removeChannel(roomChannel);
     };
-  }, []);
+  }, [roomScope]);
 
   // 2. Fetch Active Rooms matching role and level
   const fetchActiveRooms = async () => {
