@@ -249,13 +249,13 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
 
   if (!activeRoom) {
     return (
-      <div className={`${userRole === 'student' ? 'fixed inset-0' : 'absolute inset-0 rounded-[2.5rem]'} z-[700] bg-[#070b19]/50 backdrop-blur-2xl flex flex-col items-center justify-center p-4 md:p-6 font-montserrat text-white animate-fade-in shadow-2xl border border-white/5`}>
+      <div className={`${userRole === 'student' ? 'fixed inset-0' : 'absolute inset-0 rounded-[2.5rem]'} z-[700] bg-[#070b19]/20 backdrop-blur-2xl flex flex-col items-center justify-center p-4 md:p-6 font-montserrat text-white animate-fade-in shadow-2xl border border-white/10`}>
         
         {/* DUAL SCOPE TOGGLE (Empty State) */}
         {roomScope === 'dual' && (
-          <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-black/40 backdrop-blur-md border border-white/10 rounded-full p-1.5 flex gap-1 shadow-2xl z-50">
-            <button onClick={() => { setActiveRoom(null); setInternalScope('students'); }} className={`px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all ${internalScope === 'students' ? 'bg-[#fcd34d] text-[#08203e] shadow-md' : 'text-white/50 hover:text-white'}`}>Student Hub</button>
-            <button onClick={() => { setActiveRoom(null); setInternalScope('staff'); }} className={`px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all ${internalScope === 'staff' ? 'bg-[#fcd34d] text-[#08203e] shadow-md' : 'text-white/50 hover:text-white'}`}>Staff Hub</button>
+          <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-black/40 backdrop-blur-md border border-white/10 rounded-full p-1 flex shadow-2xl z-50">
+            <button onClick={() => { setActiveRoom(null); setInternalScope('students'); }} className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${internalScope === 'students' ? 'bg-[#fcd34d] text-[#08203e] shadow-md' : 'text-white/50 hover:text-white'}`}>Student Hub</button>
+            <button onClick={() => { setActiveRoom(null); setInternalScope('staff'); }} className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${internalScope === 'staff' ? 'bg-[#fcd34d] text-[#08203e] shadow-md' : 'text-white/50 hover:text-white'}`}>Staff Hub</button>
           </div>
         )}
 
@@ -324,7 +324,7 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
   // MAIN LIVE SEMINAR CANVAS (Adaptive Desktop & Mobile)
   // =========================================================================
   return (
-    <div className={`${userRole === 'student' ? 'fixed inset-0' : 'absolute inset-0 rounded-[2.5rem]'} z-[700] bg-[#070b19]/50 backdrop-blur-2xl font-montserrat flex flex-col md:flex-row overflow-hidden text-white select-none shadow-2xl border border-white/5`}>
+    <div className={`${userRole === 'student' ? 'fixed inset-0' : 'absolute inset-0 rounded-[2.5rem]'} z-[700] bg-[#070b19]/20 backdrop-blur-2xl font-montserrat flex flex-col md:flex-row overflow-hidden text-white select-none shadow-2xl border border-white/10`}>
       
       {/* BACKGROUND WATERMARK */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
@@ -386,9 +386,9 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
           
           {/* DUAL SCOPE TOGGLE (Active State) */}
           {roomScope === 'dual' && (
-            <div className="hidden sm:flex absolute left-1/2 -translate-x-1/2 bg-black/40 border border-white/10 rounded-full p-1 gap-1 shadow-inner z-50">
-              <button onClick={() => { setActiveRoom(null); setInternalScope('students'); }} className={`px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${internalScope === 'students' ? 'bg-[#fcd34d] text-[#08203e] shadow-md' : 'text-white/50 hover:text-white'}`}>Student Hub</button>
-              <button onClick={() => { setActiveRoom(null); setInternalScope('staff'); }} className={`px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${internalScope === 'staff' ? 'bg-[#fcd34d] text-[#08203e] shadow-md' : 'text-white/50 hover:text-white'}`}>Staff Hub</button>
+            <div className="hidden sm:flex absolute left-1/2 -translate-x-1/2 bg-black/40 border border-white/10 rounded-full p-1 shadow-inner z-50">
+              <button onClick={() => { setActiveRoom(null); setInternalScope('students'); }} className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${internalScope === 'students' ? 'bg-[#fcd34d] text-[#08203e] shadow-md' : 'text-white/50 hover:text-white'}`}>Student Hub</button>
+              <button onClick={() => { setActiveRoom(null); setInternalScope('staff'); }} className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${internalScope === 'staff' ? 'bg-[#fcd34d] text-[#08203e] shadow-md' : 'text-white/50 hover:text-white'}`}>Staff Hub</button>
             </div>
           )}
 
