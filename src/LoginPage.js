@@ -207,7 +207,6 @@ const DesktopLogin = ({ onLogin, onInfoClick, onPlacementClick }) => {
       }, 3000);
     } else {
       if (onLogin) onLogin();
-      window.location.reload();
     }
   };
 
