@@ -1477,22 +1477,12 @@ const TeacherHub = ({ onReturnHome }) => {
       />
 
       {showSeminarRoom && (
-        <div className="fixed inset-0 z-[650] bg-[#070b19]/95 backdrop-blur-2xl flex flex-col xl:flex-row gap-6 p-6 md:p-10 animate-fade-in font-montserrat overflow-y-auto">
-          <button onClick={() => setShowSeminarRoom(false)} className="absolute top-4 right-6 w-10 h-10 bg-white/10 hover:bg-red-500 rounded-full flex items-center justify-center text-white transition-colors z-[800]">✕</button>
-          
-          <div className="flex-1 relative rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl min-h-[600px] mt-10 xl:mt-0">
+        <div className="fixed inset-0 z-[650] bg-[#070b19]/95 backdrop-blur-2xl flex p-4 md:p-10 animate-fade-in font-montserrat">
+          <div className="flex-1 relative rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl h-full w-full max-w-7xl mx-auto">
             <SeminarRoom 
               currentUser={{ id: teacherData.id, full_name: `${teacherData.first_name} ${teacherData.last_name}`, avatar_url: teacherData.avatar_url, level: 'ALL' }} 
               userRole="teacher" 
-              roomScope="students"
-              onClose={() => setShowSeminarRoom(false)} 
-            />
-          </div>
-          <div className="flex-1 relative rounded-[2.5rem] overflow-hidden border border-[#fcd34d]/30 shadow-2xl min-h-[600px]">
-            <SeminarRoom 
-              currentUser={{ id: teacherData.id, full_name: `${teacherData.first_name} ${teacherData.last_name}`, avatar_url: teacherData.avatar_url, level: 'ALL' }} 
-              userRole="teacher" 
-              roomScope="staff"
+              roomScope="dual"
               onClose={() => setShowSeminarRoom(false)} 
             />
           </div>
