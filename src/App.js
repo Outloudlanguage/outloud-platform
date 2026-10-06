@@ -194,16 +194,26 @@ export default function App() {
       return;
     }
 
-    // Extract role securely from the cryptographically signed JWT
-    const role = (session.user.app_metadata?.role || '').toLowerCase();
+    // Fetch the definitive role directly from the profiles table
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', session.user.id)
+      .single();
 
-    // <-- FIX: Specific routing for all 3 roles -->
+    const role = (profile?.role || session.user.app_metadata?.role || '').toLowerCase();
+
     if (role === 'student') {
       navigate('hub');
     } else if (role === 'teacher') {
       navigate('teacher');
+    } else if (role === 'admin' || role === 'general_manager') {
+      navigate('admin'); 
     } else {
-      navigate('admin'); // General Managers and Admins go here
+      // Failsafe: If no role is found at all, stay on login and alert
+      alert("Error: Your account has not been assigned a role yet. Contact support.");
+      await supabase.auth.signOut();
+      navigate('login');
     }
   };
 

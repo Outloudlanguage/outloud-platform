@@ -30,7 +30,6 @@ const MobileLogin = ({ onLogin, onInfoClick, onPlacementClick, visitCount }) => 
       setLoading(false);
     } else {
       if (onLogin) onLogin();
-      window.location.reload();
     }
   };
 
