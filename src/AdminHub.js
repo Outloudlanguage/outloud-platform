@@ -2168,12 +2168,23 @@ const renderCommunications = () => (
       {/* CHAT MODERATOR VIEW (SEMINAR ROOMS)     */}
       {/* ======================================= */}
       {activeCommsTab === 'Chat' && (
-        <div className="w-full flex-1 relative min-h-[600px] border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl">
-          <SeminarRoom 
-            currentUser={{ id: adminProfile.id, full_name: `${adminProfile.firstName} ${adminProfile.lastName}`, avatar_url: adminProfile.avatarUrl, level: 'ALL' }} 
-            userRole="admin" 
-            onClose={() => setActiveCommsTab('General')} 
-          />
+        <div className="w-full flex-1 flex flex-col xl:flex-row gap-6 min-h-[600px]">
+          <div className="flex-1 relative border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl min-h-[600px]">
+            <SeminarRoom 
+              currentUser={{ id: adminProfile.id, full_name: `${adminProfile.firstName} ${adminProfile.lastName}`, avatar_url: adminProfile.avatarUrl, level: 'ALL' }} 
+              userRole="admin" 
+              roomScope="students"
+              onClose={() => setActiveCommsTab('General')} 
+            />
+          </div>
+          <div className="flex-1 relative border border-[#fcd34d]/30 rounded-[2.5rem] overflow-hidden shadow-2xl min-h-[600px]">
+            <SeminarRoom 
+              currentUser={{ id: adminProfile.id, full_name: `${adminProfile.firstName} ${adminProfile.lastName}`, avatar_url: adminProfile.avatarUrl, level: 'ALL' }} 
+              userRole="admin" 
+              roomScope="staff"
+              onClose={() => setActiveCommsTab('General')} 
+            />
+          </div>
         </div>
       )}
 
