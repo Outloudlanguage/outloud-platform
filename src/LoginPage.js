@@ -21,7 +21,7 @@ const MobileLogin = ({ onLogin, onInfoClick, onPlacementClick, visitCount }) => 
     setAuthError('');
 
     const { data, error } = await supabase.auth.signInWithPassword({
-      email: credentials.username, 
+      email: credentials.username.trim(), 
       password: credentials.password,
     });
 
@@ -30,6 +30,7 @@ const MobileLogin = ({ onLogin, onInfoClick, onPlacementClick, visitCount }) => 
       setLoading(false);
     } else {
       if (onLogin) onLogin();
+      window.location.reload();
     }
   };
 
@@ -193,7 +194,7 @@ const DesktopLogin = ({ onLogin, onInfoClick, onPlacementClick }) => {
     setAuthError('');
 
     const { data, error } = await supabase.auth.signInWithPassword({
-      email: credentials.username, 
+      email: credentials.username.trim(), 
       password: credentials.password,
     });
 
@@ -207,6 +208,7 @@ const DesktopLogin = ({ onLogin, onInfoClick, onPlacementClick }) => {
       }, 3000);
     } else {
       if (onLogin) onLogin();
+      window.location.reload();
     }
   };
 
