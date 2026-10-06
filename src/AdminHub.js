@@ -1525,12 +1525,7 @@ useEffect(() => {
     setAnnouncements(prev => prev.filter(a => a.id !== id));
   };
 
-  const handleToggleChatLock = async (channel) => {
-    const newValue = !chatLocks[channel];
-    setChatLocks(prev => ({ ...prev, [channel]: newValue }));
-    try { await supabase.from('app_settings').update({ [`${channel}_chat_locked`]: newValue }).eq('id', 1); } 
-    catch (error) { console.error(error); }
-  };
+  
 
   const handleSendForumReply = async (e) => {
     e.preventDefault();
@@ -1558,12 +1553,7 @@ useEffect(() => {
     setForumReplies(prev => prev.filter(r => r.id !== id));
   };
 
-  const handleToggleChatLock = async (channel) => {
-    const newValue = !chatLocks[channel];
-    setChatLocks(prev => ({ ...prev, [channel]: newValue }));
-    try { await supabase.from('app_settings').update({ [`${channel}_chat_locked`]: newValue }).eq('id', 1); } 
-    catch (error) { console.error(error); }
-  };
+  
 
   // ----------------------------------------------------
   // PRESERVED CONTENT EDITING STATE & LOGIC
