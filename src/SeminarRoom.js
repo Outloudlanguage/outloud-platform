@@ -27,8 +27,16 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
   const [pinnedMessage, setPinnedMessage] = useState(null);
   const [newRoomTitle, setNewRoomTitle] = useState('');
   const [newRoomLevel, setNewRoomLevel] = useState(roomScope === 'staff' ? 'STAFF' : 'ALL');
+  const [openMenuId, setOpenMenuId] = useState(null);
   
   const messagesEndRef = useRef(null);
+
+  const handleModerateUser = (userId, userName, action) => {
+    if (action === 'kick') alert(`Kicked ${userName} from the room. (Backend integration pending)`);
+    if (action === 'mute') alert(`Muted ${userName}. They can no longer send messages. (Backend integration pending)`);
+    if (action === 'ban') alert(`Banned ${userName} from this session. (Backend integration pending)`);
+    setOpenMenuId(null);
+  };
   const inputRef = useRef(null);
 
   const normalizedLevel = currentUser?.level ? currentUser.level.split(':')[0].trim() : 'ALL';
@@ -193,9 +201,9 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
     }
   };
 
-  // 6. Moderation: Admin Global Room Closure (The Clean Slate)
+  // 6. Moderation: Admin/Teacher Global Room Closure (The Clean Slate)
   const handleCloseRoom = async (roomId) => {
-    if (!isAdmin) return;
+    if (!isModerator) return;
     if (!window.confirm('Close and wipe this live session for all participants?')) return;
 
     try {
@@ -208,10 +216,10 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
     }
   };
 
-  // 7. Admin: Create New Live Room
+  // 7. Admin/Teacher: Create New Live Room
   const handleCreateRoom = async (e) => {
     e.preventDefault();
-    if (!isAdmin || !newRoomTitle.trim()) return;
+    if (!isModerator || !newRoomTitle.trim()) return;
 
     try {
       const { data, error } = await supabase.from('chat_rooms').insert({
@@ -244,18 +252,18 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
   // CONDITIONAL VIEW: NO ACTIVE SEMINAR AVAILABLE
   // =========================================================================
   if (isLoading) {
-    return <div className={`${userRole === 'admin' ? 'absolute inset-0 rounded-[2.5rem]' : 'fixed inset-0'} z-[700] bg-[#070b19]/90 backdrop-blur-2xl flex items-center justify-center`}><div className="w-10 h-10 border-4 border-[#fcd34d] border-t-transparent rounded-full animate-spin"></div></div>;
+    return <div className="absolute inset-0 rounded-[2.5rem] z-[700] bg-[#070b19]/10 backdrop-blur-3xl flex items-center justify-center border border-white/10"><div className="w-10 h-10 border-4 border-[#fcd34d] border-t-transparent rounded-full animate-spin"></div></div>;
   }
 
   if (!activeRoom) {
     return (
-      <div className={`${userRole === 'student' ? 'fixed inset-0' : 'absolute inset-0 rounded-[2.5rem]'} z-[700] bg-[#070b19]/20 backdrop-blur-2xl flex flex-col items-center justify-center p-4 md:p-6 font-montserrat text-white animate-fade-in shadow-2xl border border-white/10`}>
+      <div className="absolute inset-0 rounded-[2.5rem] z-[700] bg-[#070b19]/10 backdrop-blur-3xl flex flex-col items-center justify-center p-4 md:p-6 font-montserrat text-white animate-fade-in shadow-2xl border border-white/10">
         
         {/* DUAL SCOPE TOGGLE (Empty State) */}
         {roomScope === 'dual' && (
-          <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-black/40 backdrop-blur-md border border-white/10 rounded-full p-1 flex shadow-2xl z-50">
-            <button onClick={() => { setActiveRoom(null); setInternalScope('students'); }} className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${internalScope === 'students' ? 'bg-[#fcd34d] text-[#08203e] shadow-md' : 'text-white/50 hover:text-white'}`}>Student Hub</button>
-            <button onClick={() => { setActiveRoom(null); setInternalScope('staff'); }} className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${internalScope === 'staff' ? 'bg-[#fcd34d] text-[#08203e] shadow-md' : 'text-white/50 hover:text-white'}`}>Staff Hub</button>
+          <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-black/20 backdrop-blur-md border border-white/5 rounded-full p-0.5 flex shadow-lg z-50">
+            <button onClick={() => { setActiveRoom(null); setInternalScope('students'); }} className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest transition-all ${internalScope === 'students' ? 'bg-[#fcd34d] text-[#08203e] shadow-md' : 'text-white/50 hover:text-white hover:bg-white/5'}`}>Student Hub</button>
+            <button onClick={() => { setActiveRoom(null); setInternalScope('staff'); }} className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest transition-all ${internalScope === 'staff' ? 'bg-[#fcd34d] text-[#08203e] shadow-md' : 'text-white/50 hover:text-white hover:bg-white/5'}`}>Staff Hub</button>
           </div>
         )}
 
@@ -271,7 +279,7 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
             There is no live activity available here at the moment. Please check back when a teacher or administrator initiates a seminar room.
           </p>
 
-          {isAdmin && (
+          {isModerator && (
             <form onSubmit={handleCreateRoom} className="w-full mb-8 flex flex-col gap-3">
               <input 
                 type="text" 
@@ -304,7 +312,7 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
                 type="submit" 
                 className="w-full py-3.5 bg-[#fcd34d] hover:bg-white text-[#08203e] font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-[0_0_15px_rgba(252,211,77,0.4)]"
               >
-                Launch Room As Admin
+                Launch Room
               </button>
             </form>
           )}
@@ -324,7 +332,7 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
   // MAIN LIVE SEMINAR CANVAS (Adaptive Desktop & Mobile)
   // =========================================================================
   return (
-    <div className={`${userRole === 'student' ? 'fixed inset-0' : 'absolute inset-0 rounded-[2.5rem]'} z-[700] bg-[#070b19]/20 backdrop-blur-2xl font-montserrat flex flex-col md:flex-row overflow-hidden text-white select-none shadow-2xl border border-white/10`}>
+    <div className="absolute inset-0 rounded-[2.5rem] z-[700] bg-[#070b19]/10 backdrop-blur-3xl font-montserrat flex flex-col md:flex-row overflow-hidden text-white select-none shadow-2xl border border-white/10">
       
       {/* BACKGROUND WATERMARK */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
@@ -343,7 +351,7 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
 
         <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-2">
           {activeMembers.map((member, idx) => (
-            <div key={idx} className="flex items-center gap-3 p-2.5 rounded-xl bg-white/5 border border-white/5">
+            <div key={idx} className="flex items-center gap-3 p-2.5 rounded-xl bg-white/5 border border-white/5 group">
               <div className="relative w-9 h-9 rounded-full overflow-hidden bg-[#070b19] border border-white/20 shrink-0">
                 {member.avatar ? (
                   <img src={member.avatar} alt="User" className="w-full h-full object-cover" />
@@ -356,6 +364,21 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
                 <p className="text-xs font-bold text-white truncate">{member.name}</p>
                 <div className="mt-0.5">{getRoleBadge(member.role, member.level)}</div>
               </div>
+              {isModerator && member.id !== currentUser.id && (
+                <div className="relative">
+                  <button onClick={() => setOpenMenuId(openMenuId === member.id ? null : member.id)} className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-white/10 text-white/40 hover:text-white transition-colors">
+                    ⋮
+                  </button>
+                  {openMenuId === member.id && (
+                    <div className="absolute right-0 top-8 w-36 bg-[#0e2a47] border border-white/20 rounded-xl shadow-2xl overflow-hidden z-[100] py-1">
+                      <button onClick={() => handleModerateUser(member.id, member.name, 'mute')} className="w-full text-left px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-white/80 hover:text-white hover:bg-white/10">Mute User</button>
+                      <button onClick={() => handleModerateUser(member.id, member.name, 'kick')} className="w-full text-left px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-white/80 hover:text-white hover:bg-white/10">Kick from Room</button>
+                      <div className="border-t border-white/10 my-1"></div>
+                      <button onClick={() => handleModerateUser(member.id, member.name, 'ban')} className="w-full text-left px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-red-400 hover:text-red-300 hover:bg-red-500/10">Ban User</button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -382,36 +405,35 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
       <div className="flex-1 flex flex-col h-full relative z-10">
 
         {/* TOP NAVBAR */}
-        <div className="h-16 md:h-20 border-b border-white/10 bg-black/30 backdrop-blur-xl px-4 md:px-8 flex items-center justify-between shrink-0 relative">
+        <div className="h-16 md:h-20 border-b border-white/10 bg-black/20 backdrop-blur-xl px-4 md:px-8 flex items-center justify-between shrink-0 relative">
           
-          {/* DUAL SCOPE TOGGLE (Active State) */}
-          {roomScope === 'dual' && (
-            <div className="hidden sm:flex absolute left-1/2 -translate-x-1/2 bg-black/40 border border-white/10 rounded-full p-1 shadow-inner z-50">
-              <button onClick={() => { setActiveRoom(null); setInternalScope('students'); }} className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${internalScope === 'students' ? 'bg-[#fcd34d] text-[#08203e] shadow-md' : 'text-white/50 hover:text-white'}`}>Student Hub</button>
-              <button onClick={() => { setActiveRoom(null); setInternalScope('staff'); }} className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${internalScope === 'staff' ? 'bg-[#fcd34d] text-[#08203e] shadow-md' : 'text-white/50 hover:text-white'}`}>Staff Hub</button>
-            </div>
-          )}
-
-          <div className="flex items-center gap-3 md:gap-4">
+          <div className="flex items-center gap-3 md:gap-4 overflow-hidden">
             <button 
               onClick={onClose} 
-              className="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white transition-colors cursor-pointer"
+              className="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white transition-colors cursor-pointer shrink-0"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
             </button>
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h1 className="text-sm md:text-base font-black uppercase tracking-wider text-white">{activeRoom.room_name}</h1>
-                <span className="text-[10px] font-bold text-[#fcd34d] bg-[#fcd34d]/10 border border-[#fcd34d]/30 px-2 py-0.5 rounded-full">{activeRoom.level_target}</span>
+                <h1 className="text-sm md:text-base font-black uppercase tracking-wider text-white truncate">{activeRoom.room_name}</h1>
+                <span className="text-[9px] font-bold text-[#fcd34d] bg-[#fcd34d]/10 border border-[#fcd34d]/30 px-2 py-0.5 rounded-full shrink-0">{activeRoom.level_target}</span>
               </div>
-              <p className="text-[10px] text-emerald-400 font-bold tracking-widest uppercase flex items-center gap-1.5 mt-0.5">
+              <p className="text-[9px] text-emerald-400 font-bold tracking-widest uppercase flex items-center gap-1.5 mt-0.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Seminar Session Live
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            {isAdmin && (
+          <div className="flex items-center gap-2 md:gap-4 shrink-0">
+            {/* DUAL SCOPE TOGGLE (Active State - INLINE) */}
+            {roomScope === 'dual' && (
+              <div className="hidden lg:flex bg-black/20 border border-white/5 rounded-full p-0.5 gap-0.5 shadow-inner">
+                <button onClick={() => { setActiveRoom(null); setInternalScope('students'); }} className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest transition-all ${internalScope === 'students' ? 'bg-[#fcd34d] text-[#08203e] shadow-md' : 'text-white/50 hover:text-white hover:bg-white/5'}`}>Student Hub</button>
+                <button onClick={() => { setActiveRoom(null); setInternalScope('staff'); }} className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest transition-all ${internalScope === 'staff' ? 'bg-[#fcd34d] text-[#08203e] shadow-md' : 'text-white/50 hover:text-white hover:bg-white/5'}`}>Staff Hub</button>
+              </div>
+            )}
+            {isModerator && (
               <button 
                 onClick={() => handleCloseRoom(activeRoom.id)} 
                 className="px-3.5 py-2 bg-red-500/20 hover:bg-red-500 text-red-200 hover:text-white border border-red-500/40 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer"
