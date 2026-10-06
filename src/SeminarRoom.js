@@ -237,7 +237,11 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
   // =========================================================================
   // CONDITIONAL VIEW: NO ACTIVE SEMINAR AVAILABLE
   // =========================================================================
-  if (!isLoading && !activeRoom) {
+  if (isLoading) {
+    return <div className="fixed inset-0 z-[700] bg-[#070b19] flex items-center justify-center"><div className="w-10 h-10 border-4 border-[#fcd34d] border-t-transparent rounded-full animate-spin"></div></div>;
+  }
+
+  if (!activeRoom) {
     return (
       <div className="fixed inset-0 z-[700] bg-[#070b19]/95 backdrop-blur-2xl flex items-center justify-center p-4 font-montserrat text-white animate-fade-in">
         <div className="bg-white/10 border border-white/20 rounded-[2.5rem] p-8 md:p-12 max-w-md w-full shadow-2xl flex flex-col items-center text-center relative overflow-hidden">
