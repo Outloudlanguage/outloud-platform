@@ -27,15 +27,22 @@ const ProtectedRoute = ({ children, allowedRoles, forcedLanguage, isStudentHub =
         return;
       }
 
-      // Read role directly from the secure, unforgeable JWT session token
-      const userRole = (session.user.app_metadata?.role || '').toUpperCase();
+      // Consultar el rol en profiles con fallback a metadata
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', session.user.id)
+        .single();
+
+      const rawRole = profile?.role || session.user.app_metadata?.role || '';
+      const userRole = rawRole.trim().toUpperCase();
 
       if (!userRole) {
         onUnauthorized();
         return;
       }
 
-      // Normalize allowed roles to uppercase for safe comparison
+      // Normalizar roles permitidos a mayúsculas
       const normalizedAllowed = allowedRoles.map(r => r.toUpperCase());
 
       if (normalizedAllowed.includes(userRole) || userRole === 'GENERAL_MANAGER' || userRole === 'ADMIN') {
