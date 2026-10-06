@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './SupabaseClient';
 import StudentHub from './StudentHub';
+import SeminarRoom from './SeminarRoom';
 import AdminCalendar from './components/AdminHub/Tabs/AdminCalendar';
 import { LEVEL_UNIT_MAP, LEVEL_OPTIONS, LESSON_TOOLS, WORKBOOK_TOOLS } from './constants/adminConfigs';
 import { generateCrosswordLayout } from './utils/crosswordGenerator';
@@ -1416,13 +1417,7 @@ useEffect(() => {
   const [isPublishing, setIsPublishing] = useState(false);
 
   // Chat States
-  const [mobileChatView, setMobileChatView] = useState('students');
-  const [chatMessages, setChatMessages] = useState({ student: [], staff: [] });
-  const [chatFilters, setChatFilters] = useState({ student: 'ALL', staff: 'ALL' });
-  const [chatLocks, setChatLocks] = useState({ student: false, staff: false });
-  const [chatInputs, setChatInputs] = useState({ student: '', staff: '', forum: '' });
-  const chatEndRefStudent = useRef(null);
-  const chatEndRefStaff = useRef(null);
+  const [chatInputs, setChatInputs] = useState({ forum: '' });
 
  // Forum States
   const [forumLevelFilter, setForumLevelFilter] = useState('A1');
@@ -1472,44 +1467,7 @@ useEffect(() => {
     fetchCommsData();
   }, [activeModule, activeCommsTab, forumLevelFilter]);
 
-  // 2. Real-time Chat Monitor
-  useEffect(() => {
-    if (activeModule !== 'COMMUNICATIONS' || activeCommsTab !== 'Chat') return;
-
-    const fetchChats = async () => {
-      const { data } = await supabase.from('messages')
-        .select('*').order('created_at', { ascending: true }).limit(150);
-      if (data) {
-        setChatMessages({
-          student: data.filter(m => m.channel !== 'STAFF'),
-          staff: data.filter(m => m.channel === 'STAFF')
-        });
-        setTimeout(() => chatEndRefStudent.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-        setTimeout(() => chatEndRefStaff.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-      }
-    };
-    fetchChats();
-
-    const chatChannel = supabase.channel('admin_chat_monitor')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
-        const newMsg = payload.new;
-        if (newMsg.channel !== 'STAFF') {
-          setChatMessages(p => ({ ...p, student: [...p.student, newMsg] }));
-          setTimeout(() => chatEndRefStudent.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-        } else if (newMsg.channel === 'STAFF') {
-          setChatMessages(p => ({ ...p, staff: [...p.staff, newMsg] }));
-          setTimeout(() => chatEndRefStaff.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-        }
-      })
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'messages' }, payload => {
-        setChatMessages(p => ({
-          student: p.student.filter(m => m.id !== payload.old.id),
-          staff: p.staff.filter(m => m.id !== payload.old.id)
-        }));
-      }).subscribe();
-
-    return () => { supabase.removeChannel(chatChannel); };
-  }, [activeModule, activeCommsTab]);
+  // 2. Real-time Chat Monitor (Handled by SeminarRoom)
 
   // ==========================================
   // COMMUNICATION MUTATIONS (CRUD)
@@ -1567,19 +1525,11 @@ useEffect(() => {
     setAnnouncements(prev => prev.filter(a => a.id !== id));
   };
 
-  const handleAdminChatSend = async (e, channelType) => {
-    e.preventDefault();
-    const content = chatInputs[channelType];
-    if (!content.trim()) return;
-    try {
-      await supabase.from('messages').insert({ sender_name: 'Outloud Admin', sender_role: 'Admin', content: content.trim(), channel: channelType.toUpperCase() });
-      setChatInputs(p => ({ ...p, [channelType]: '' }));
-    } catch (error) { console.error(error); alert("Error enviando mensaje"); }
-  };
-
-  const handleDeleteChatMessage = async (id) => {
-    if (!window.confirm("¿Eliminar mensaje de la base de datos?")) return;
-    await supabase.from('messages').delete().eq('id', id);
+  const handleToggleChatLock = async (channel) => {
+    const newValue = !chatLocks[channel];
+    setChatLocks(prev => ({ ...prev, [channel]: newValue }));
+    try { await supabase.from('app_settings').update({ [`${channel}_chat_locked`]: newValue }).eq('id', 1); } 
+    catch (error) { console.error(error); }
   };
 
   const handleSendForumReply = async (e) => {
@@ -2225,121 +2175,15 @@ const renderCommunications = () => (
       )}
 
       {/* ======================================= */}
-      {/* CHAT MODERATOR VIEW                     */}
+      {/* CHAT MODERATOR VIEW (SEMINAR ROOMS)     */}
       {/* ======================================= */}
       {activeCommsTab === 'Chat' && (
-        <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 lg:gap-8 flex-1 lg:min-h-[600px]">
-          
-          {/* Mobile Tab Toggle for Chat */}
-          {isMobile && (
-            <div className="flex bg-black/20 rounded-2xl p-1 shrink-0 shadow-inner w-full mb-2">
-              <button onClick={() => setMobileChatView('students')} className={`flex-1 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all ${mobileChatView === 'students' ? 'bg-[#fcd34d] text-[#08203e] shadow-md' : 'text-white/50 hover:text-white'}`}>Students Chat</button>
-              <button onClick={() => setMobileChatView('staff')} className={`flex-1 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all ${mobileChatView === 'staff' ? 'bg-[#fcd34d] text-[#08203e] shadow-md' : 'text-white/50 hover:text-white'}`}>Staff Chat</button>
-            </div>
-          )}
-
-          {/* Students Panel */}
-          <div className={`${isMobile && mobileChatView !== 'students' ? 'hidden' : 'flex'} relative border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl flex-col min-h-[60vh] lg:h-full group`}>
-            <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
-            
-            <div className="flex justify-between items-center p-4 lg:p-6 border-b border-white/10 z-10 shrink-0">
-              <h3 className="font-black text-white text-base lg:text-lg tracking-widest uppercase drop-shadow-md">Students Chat</h3>
-              <div className="flex items-center gap-3 lg:gap-4">
-                <select value={chatFilters.student} onChange={e => setChatFilters(p => ({...p, student: e.target.value}))} className="bg-white/10 text-white text-[10px] font-black uppercase rounded-lg pl-2 lg:pl-3 pr-6 lg:pr-8 py-2 outline-none border border-white/20 cursor-pointer appearance-none max-w-[100px] lg:max-w-none">
-                  <option className="bg-[#0f172a] text-white" value="ALL">All Levels</option>
-                  <option className="bg-[#0f172a] text-white" value="A1">A1 Only</option>
-                  <option className="bg-[#0f172a] text-white" value="A2">A2 Only</option>
-                  <option className="bg-[#0f172a] text-white" value="B1">B1 Only</option>
-                  <option className="bg-[#0f172a] text-white" value="B2">B2 Only</option>
-                  <option className="bg-[#0f172a] text-white" value="C1">C1 Only</option>
-                  <option className="bg-[#0f172a] text-white" value="C2">C2 Only</option>
-                </select>
-                <button onClick={() => handleToggleChatLock('student')} className={`w-10 lg:w-12 h-5 lg:h-6 rounded-full relative transition-colors border border-white/20 shadow-inner cursor-pointer shrink-0 ${chatLocks.student ? 'bg-red-500/80' : 'bg-emerald-500/80'}`}>
-                  <div className={`w-3.5 lg:w-4 h-3.5 lg:h-4 bg-white rounded-full absolute top-[3px] lg:top-0.5 transition-all ${chatLocks.student ? 'left-6 lg:left-7' : 'left-1'}`}></div>
-                </button>
-              </div>
-            </div>
-
-            <div className="flex-1 p-4 lg:p-6 overflow-y-auto custom-scrollbar flex flex-col gap-4 lg:gap-6 z-10">
-              {chatMessages.student.filter(m => chatFilters.student === 'ALL' || m.channel === chatFilters.student || m.channel === 'GLOBAL').length === 0 ? (
-                <div className="h-full flex items-center justify-center"><span className="text-white/40 font-bold uppercase tracking-widest text-xs text-center">Waiting for live messages...</span></div>
-              ) : (
-                chatMessages.student.filter(m => chatFilters.student === 'ALL' || m.channel === chatFilters.student || m.channel === 'GLOBAL').map(msg => {
-                  const isAdmin = msg.sender_role?.includes('Admin');
-                  const isTeacher = msg.sender_role === 'Teacher';
-                  return (
-                    <div key={msg.id} className={`group bg-[#4b6bfb]/20 backdrop-blur-md rounded-3xl p-4 lg:p-5 border w-[90%] lg:w-[85%] relative mt-2 ${isAdmin ? 'border-[#fcd34d] bg-[#fcd34d]/10 ml-auto' : isTeacher ? 'border-emerald-400/50 bg-emerald-500/10' : 'border-blue-400/30 ml-4 lg:ml-4'}`}>
-                      <button onClick={() => handleDeleteChatMessage(msg.id)} className="absolute -top-2 lg:-top-3 -right-2 lg:-right-3 w-6 h-6 lg:w-8 lg:h-8 bg-red-500 text-white rounded-full text-[10px] lg:text-xs font-black lg:opacity-0 group-hover:opacity-100 transition-opacity z-20 shadow-xl cursor-pointer hover:scale-110 flex justify-center items-center">✕</button>
-                      <img src={msg.avatar_url || `https://ui-avatars.com/api/?name=${msg.sender_name}&background=random`} className={`absolute -left-4 lg:-left-6 top-1/2 -translate-y-1/2 w-8 h-8 lg:w-12 lg:h-12 rounded-full border-2 object-cover shadow-lg ${isAdmin ? 'border-[#fcd34d]' : 'border-white'}`} alt="User" />
-                      <div className="pl-4 lg:pl-6">
-                        <div className="flex flex-wrap items-center gap-1.5 lg:gap-2 mb-1">
-                          <span className={`font-black text-[9px] lg:text-[11px] uppercase tracking-widest ${isAdmin ? 'text-[#fcd34d]' : 'text-white'}`}>{msg.sender_name}</span>
-                          <span className={`text-[7px] lg:text-[8px] font-black px-1.5 lg:px-2 py-0.5 rounded uppercase ${isAdmin ? 'bg-red-500 text-white' : isTeacher ? 'bg-emerald-500 text-white' : 'bg-[#fcd34d] text-[#08203e]'}`}>{msg.sender_role}</span>
-                          <span className="text-white/40 text-[7px] lg:text-[8px] font-bold ml-1 lg:ml-2">[{msg.channel}]</span>
-                        </div>
-                        <p className={`text-xs lg:text-sm font-medium leading-relaxed ${msg.is_reported ? 'text-red-400 italic' : 'text-white/90'}`}>{msg.is_reported ? '⚠️ Mensaje Reportado: ' + msg.content : msg.content}</p>
-                      </div>
-                    </div>
-                  )
-                })
-              )}
-              <div ref={chatEndRefStudent} />
-            </div>
-
-            <form onSubmit={(e) => handleAdminChatSend(e, 'student')} className="p-4 lg:p-6 border-t border-white/10 z-10 relative shrink-0">
-              <input type="text" placeholder="Admin Override Message..." value={chatInputs.student} onChange={(e) => setChatInputs(p => ({...p, student: e.target.value}))} className="w-full bg-black/40 border border-white/20 rounded-full pl-4 lg:pl-6 pr-10 lg:pr-12 py-3 lg:py-4 text-xs lg:text-sm text-white focus:outline-none focus:border-[#fcd34d] shadow-inner" />
-              <button type="submit" disabled={!chatInputs.student.trim()} className="absolute right-6 lg:right-10 top-1/2 -translate-y-1/2 text-white/50 hover:text-[#fcd34d] hover:scale-110 transition-transform cursor-pointer disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center">
-                <svg className="w-4 h-4 lg:w-5 lg:h-5 transform rotate-45" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
-              </button>
-            </form>
-          </div>
-
-          {/* Staff Panel */}
-          <div className={`${isMobile && mobileChatView !== 'staff' ? 'hidden' : 'flex'} relative border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl flex-col min-h-[60vh] lg:h-full group`}>
-            <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10" />
-            
-            <div className="flex justify-between items-center p-4 lg:p-6 border-b border-white/10 z-10 shrink-0">
-              <h3 className="font-black text-[#fcd34d] text-base lg:text-lg tracking-widest uppercase drop-shadow-md">Staff Chat</h3>
-              <div className="flex items-center gap-3 lg:gap-4">
-                <select value={chatFilters.staff} onChange={e => setChatFilters(p => ({...p, staff: e.target.value}))} className="bg-white/10 text-white text-[10px] font-black uppercase rounded-lg pl-2 lg:pl-3 pr-6 lg:pr-8 py-2 outline-none border border-white/20 cursor-pointer appearance-none max-w-[100px] lg:max-w-none">
-                  <option className="bg-[#0f172a] text-white" value="ALL">All Staff</option>
-                  <option className="bg-[#0f172a] text-white" value="T1">Teachers</option>
-                  <option className="bg-[#0f172a] text-white" value="A1">Admins</option>
-                </select>
-                <button onClick={() => handleToggleChatLock('staff')} className={`w-10 lg:w-12 h-5 lg:h-6 rounded-full relative transition-colors border border-white/20 shadow-inner cursor-pointer shrink-0 ${chatLocks.staff ? 'bg-red-500/80' : 'bg-emerald-500/80'}`}>
-                  <div className={`w-3.5 lg:w-4 h-3.5 lg:h-4 bg-white rounded-full absolute top-[3px] lg:top-0.5 transition-all ${chatLocks.staff ? 'left-6 lg:left-7' : 'left-1'}`}></div>
-                </button>
-              </div>
-            </div>
-
-            <div className="flex-1 p-4 lg:p-6 overflow-y-auto custom-scrollbar flex flex-col gap-4 lg:gap-6 z-10">
-              {chatMessages.staff.length === 0 ? (
-                <div className="h-full flex items-center justify-center"><span className="text-white/40 font-bold uppercase tracking-widest text-xs text-center">Waiting for live messages...</span></div>
-              ) : (
-                chatMessages.staff.map(msg => (
-                  <div key={msg.id} className={`group bg-[#1e293b]/60 backdrop-blur-md rounded-3xl p-4 lg:p-5 border w-[90%] lg:w-[85%] relative mt-2 ${msg.sender_role?.includes('Admin') ? 'border-[#fcd34d] ml-auto' : 'border-white/10 ml-4 lg:ml-4'}`}>
-                    <button onClick={() => handleDeleteChatMessage(msg.id)} className="absolute -top-2 lg:-top-3 -right-2 lg:-right-3 w-6 h-6 lg:w-8 lg:h-8 bg-red-500 text-white rounded-full text-[10px] lg:text-xs font-black lg:opacity-0 group-hover:opacity-100 transition-opacity z-20 shadow-xl cursor-pointer hover:scale-110 flex items-center justify-center">✕</button>
-                    <img src={msg.avatar_url || `https://ui-avatars.com/api/?name=${msg.sender_name}&background=random`} className={`absolute -left-4 lg:-left-6 top-1/2 -translate-y-1/2 w-8 h-8 lg:w-12 lg:h-12 rounded-full border-2 object-cover shadow-lg ${msg.sender_role?.includes('Admin') ? 'border-[#fcd34d]' : 'border-emerald-400'}`} alt="User" />
-                    <div className="pl-4 lg:pl-6">
-                      <div className="flex flex-wrap items-center gap-1.5 lg:gap-2 mb-1">
-                        <span className="font-black text-white text-[9px] lg:text-[11px] uppercase tracking-widest">{msg.sender_name}</span>
-                        <span className={`text-[7px] lg:text-[8px] font-black px-1.5 lg:px-2 py-0.5 rounded uppercase tracking-widest border ${msg.sender_role?.includes('Admin') ? 'bg-red-500 text-white border-red-400' : 'bg-emerald-500 text-white border-emerald-400'}`}>{msg.sender_role}</span>
-                      </div>
-                      <p className="text-white/80 text-xs lg:text-sm font-medium leading-relaxed">{msg.content}</p>
-                    </div>
-                  </div>
-                ))
-              )}
-              <div ref={chatEndRefStaff} />
-            </div>
-
-            <form onSubmit={(e) => handleAdminChatSend(e, 'staff')} className="p-4 lg:p-6 border-t border-white/10 z-10 relative shrink-0">
-              <input type="text" placeholder="Internal Staff Message..." value={chatInputs.staff} onChange={(e) => setChatInputs(p => ({...p, staff: e.target.value}))} className="w-full bg-black/40 border border-white/20 rounded-full pl-4 lg:pl-6 pr-10 lg:pr-12 py-3 lg:py-4 text-xs lg:text-sm text-white focus:outline-none focus:border-[#fcd34d] shadow-inner" />
-              <button type="submit" disabled={!chatInputs.staff.trim()} className="absolute right-6 lg:right-10 top-1/2 -translate-y-1/2 text-white/50 hover:text-[#fcd34d] hover:scale-110 transition-transform cursor-pointer disabled:opacity-50 disabled:hover:scale-100 flex justify-center items-center">
-                <svg className="w-4 h-4 lg:w-5 lg:h-5 transform rotate-45 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
-              </button>
-            </form>
-          </div>
+        <div className="w-full flex-1 relative min-h-[600px] border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl">
+          <SeminarRoom 
+            currentUser={{ id: adminProfile.id, full_name: `${adminProfile.firstName} ${adminProfile.lastName}`, avatar_url: adminProfile.avatarUrl, level: 'ALL' }} 
+            userRole="admin" 
+            onClose={() => setActiveCommsTab('General')} 
+          />
         </div>
       )}
 

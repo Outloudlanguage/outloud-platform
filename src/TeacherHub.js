@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './SupabaseClient';
-import CommunityPanel from './components/CommunityPanel'; 
+import CommunityPanel from './components/CommunityPanel';
+import SeminarRoom from './SeminarRoom';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts'; 
 
 // ==========================================
@@ -1252,9 +1253,10 @@ const TeacherHub = ({ onReturnHome }) => {
   const [activeCategory, setActiveCategory] = useState(null);
   const [latestForumPost, setLatestForumPost] = useState(null);
 
-  // Community Panel State
+  // Community Panel & Chat States
   const [showCommunity, setShowCommunity] = useState(false);
-  const [communityTab, setCommunityTab] = useState('CHAT');
+  const [communityTab, setCommunityTab] = useState('BOARD');
+  const [showSeminarRoom, setShowSeminarRoom] = useState(false);
   
   // PDF Viewer State
   const [pdfViewerConfig, setPdfViewerConfig] = useState({ isOpen: false, type: 'Manuals' });
@@ -1404,10 +1406,14 @@ const TeacherHub = ({ onReturnHome }) => {
     }
 
     // Community Routing
-    if (actionType.startsWith('Community_')) {
-      setCommunityTab(actionType.split('_')[1]);
+    if (actionType === 'Community_CHAT') {
+      setShowSeminarRoom(true);
+      return;
+    }
+    if (actionType === 'Community_BOARD') {
+      setCommunityTab('BOARD');
       setShowCommunity(true);
-      if (actionType === 'Community_BOARD') setHasNewStaffBoard(false);
+      setHasNewStaffBoard(false);
       return;
     }
 
@@ -1469,6 +1475,14 @@ const TeacherHub = ({ onReturnHome }) => {
         userProfile={teacherData}
         supabase={supabase}
       />
+
+      {showSeminarRoom && (
+        <SeminarRoom 
+          currentUser={{ id: teacherData.id, full_name: `${teacherData.first_name} ${teacherData.last_name}`, avatar_url: teacherData.avatar_url, level: 'ALL' }} 
+          userRole="teacher" 
+          onClose={() => setShowSeminarRoom(false)} 
+        />
+      )}
 
       <EvaluationModal 
         isOpen={isEvalModalOpen} 

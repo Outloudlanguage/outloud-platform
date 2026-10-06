@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './SupabaseClient';
 import StudentPlayer from './StudentPlayer';
 import CommunityPanel from './components/CommunityPanel';
+import SeminarRoom from './SeminarRoom';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts'; 
 
 // ==========================================
@@ -298,7 +299,7 @@ const LevelCompleteOverlay = ({ student }) => {
 // ==========================================
 // 3. DESKTOP VIEW
 // ==========================================
-const DesktopView = ({ student, onReturnHome, onStartActivity, isFetching, activeLiveSession, announcements = [], activeCategory, setActiveCategory, onOpenMetrics }) => {
+const DesktopView = ({ student, classCredits, onReturnHome, onStartActivity, isFetching, activeLiveSession, announcements = [], activeCategory, setActiveCategory, onOpenMetrics }) => {
   const filteredAnnouncements = activeCategory ? announcements.filter(a => a.category === activeCategory) : announcements;
   const { progressPercentage, currentUnit, levelTotalUnits } = getProgressData(student);
 
@@ -335,7 +336,17 @@ const DesktopView = ({ student, onReturnHome, onStartActivity, isFetching, activ
         <div className="flex items-center gap-4 mb-10 pl-2">
           <img src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Header.png" alt="Outloud Logo" className="h-12 lg:h-14 object-contain opacity-100" />
           <div className="h-10 w-[2px] bg-white/40"></div>
-          <span className="text-2xl lg:text-3xl font-light text-white tracking-wide">Online Platform</span>
+          <div className="flex flex-col justify-center shrink-0">
+            <span className="text-[10px] lg:text-xs font-black text-white/50 uppercase tracking-widest leading-none mb-1">
+              Live Classes
+            </span>
+            <div className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${classCredits > 0 ? 'bg-emerald-400 shadow-[0_0_8px_#34d399]' : 'bg-red-500 shadow-[0_0_8px_#ef4444] animate-pulse'}`}></div>
+              <span className="text-xl lg:text-2xl font-black text-white leading-none">
+                {classCredits} <span className="text-white/60 font-medium text-lg lg:text-xl">Credits</span>
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* 3-COLUMN GRID */}
@@ -1261,6 +1272,7 @@ const StudentCalendar = ({ student, filterType, onConfirm, onCancel }) => {
 // ==========================================
 const StudentHub = ({ onReturnHome, preloadedStudent }) => {
   const [studentData, setStudentData] = useState(null);
+  const [classCredits, setClassCredits] = useState(0);
   const [loading, setLoading] = useState(true);
   const [reminderConfig, setReminderConfig] = useState(null);
   const [activeActivity, setActiveActivity] = useState(null);
@@ -1278,9 +1290,10 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
   const [showActivationModal, setShowActivationModal] = useState(false);
   const [showCapstoneMomentum, setShowCapstoneMomentum] = useState(false);
 
-  // Community Panel State
+  // Community Panel & Chat States
   const [showCommunity, setShowCommunity] = useState(false);
-  const [communityTab, setCommunityTab] = useState('CHAT');
+  const [communityTab, setCommunityTab] = useState('BOARD');
+  const [showSeminarRoom, setShowSeminarRoom] = useState(false);
   
   // Metrics & Practice State
   const [isMetricsModalOpen, setIsMetricsModalOpen] = useState(false);
@@ -1339,6 +1352,7 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
       if (!session) return;
       const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
       setStudentData(profile);
+      setClassCredits(profile.available_credits || 0);
       fetchUpcomingSession(profile.id);
       fetchAnnouncements(profile.level);
       processBillingReminders(profile);
@@ -1402,8 +1416,12 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
     }
 
     // Community Routing
-    if (type.startsWith('Community_')) {
-      setCommunityTab(type.split('_')[1]);
+    if (type === 'Community_CHAT') {
+      setShowSeminarRoom(true);
+      return;
+    }
+    if (type === 'Community_BOARD') {
+      setCommunityTab('BOARD');
       setShowCommunity(true);
       return;
     }
@@ -1646,6 +1664,14 @@ const isLockedOut = billingDate && today >= billingDate;
         supabase={supabase}
       />
 
+      {showSeminarRoom && (
+        <SeminarRoom 
+          currentUser={{ id: studentData.id, full_name: `${studentData.first_name} ${studentData.last_name}`, avatar_url: studentData.avatar_url, level: studentData.level }} 
+          userRole="student" 
+          onClose={() => setShowSeminarRoom(false)} 
+        />
+      )}
+
       {showGatekeeper && (
         <EvaluationCrossroad 
           data={gatekeeperData} onProceed={handleGatekeeperProceed} onRetry={handleRetry}
@@ -1691,14 +1717,14 @@ const isLockedOut = billingDate && today >= billingDate;
 
       <div className="hidden md:block">
         <DesktopView 
-          student={studentData} onReturnHome={onReturnHome} onStartActivity={handleStartActivity} isFetching={isFetching} activeLiveSession={activeLiveSession} 
+          student={studentData} classCredits={classCredits} onReturnHome={onReturnHome} onStartActivity={handleStartActivity} isFetching={isFetching} activeLiveSession={activeLiveSession} 
           announcements={announcements} activeCategory={activeCategory} setActiveCategory={setActiveCategory} 
           onOpenMetrics={() => studentData?.payment_status === 'pending_first_month' ? setShowActivationModal(true) : setIsMetricsModalOpen(true)}
         />
       </div>
       <div className="block md:hidden">
         <MobileView 
-          student={studentData} onReturnHome={onReturnHome} onStartActivity={handleStartActivity} isFetching={isFetching} activeLiveSession={activeLiveSession} 
+          student={studentData} classCredits={classCredits} onReturnHome={onReturnHome} onStartActivity={handleStartActivity} isFetching={isFetching} activeLiveSession={activeLiveSession} 
           announcements={announcements} activeCategory={activeCategory} setActiveCategory={setActiveCategory} 
           onOpenMetrics={() => studentData?.payment_status === 'pending_first_month' ? setShowActivationModal(true) : setIsMetricsModalOpen(true)}
         />
