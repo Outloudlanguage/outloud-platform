@@ -436,16 +436,20 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
             {isModerator && (
               <button 
                 onClick={() => handleCloseRoom(activeRoom.id)} 
-                className="px-3.5 py-2 bg-red-500/20 hover:bg-red-500 text-red-200 hover:text-white border border-red-500/40 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer"
+                title="Close & Wipe Room"
+                className="w-10 h-10 md:w-auto md:h-auto p-0 md:px-3.5 md:py-2 flex items-center justify-center bg-red-500/20 hover:bg-red-500 text-red-200 hover:text-white border border-red-500/40 rounded-xl transition-all cursor-pointer"
               >
-                Close & Wipe Room
+                <svg className="w-5 h-5 md:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                <span className="hidden md:inline text-[10px] font-black uppercase tracking-widest">Close & Wipe Room</span>
               </button>
             )}
             <button 
               onClick={onClose} 
-              className="px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-xs font-bold text-white transition-colors cursor-pointer"
+              title="Exit"
+              className="w-10 h-10 md:w-auto md:h-auto p-0 md:px-4 md:py-2 flex items-center justify-center bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-white transition-colors cursor-pointer"
             >
-              Exit
+              <svg className="w-5 h-5 md:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+              <span className="hidden md:inline text-xs font-bold">Exit</span>
             </button>
           </div>
         </div>
