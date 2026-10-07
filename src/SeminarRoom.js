@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './SupabaseClient';
+import { validateContent } from './utils/ContentFilter';
 
 // =========================================================================
 // BUILT-IN VISUAL DICTIONARY (Zero-dependency emoji palette for language immersion)
@@ -28,6 +29,7 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
   const [newRoomTitle, setNewRoomTitle] = useState('');
   const [newRoomLevel, setNewRoomLevel] = useState(roomScope === 'staff' ? 'STAFF' : 'ALL');
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [chatError, setChatError] = useState('');
   
   const messagesEndRef = useRef(null);
 
@@ -163,10 +165,19 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
   // 4. Send Message Handler
   const handleSendMessage = async (e) => {
     e?.preventDefault();
+    setChatError('');
     if (!inputText.trim() || !activeRoom || isSending) return;
 
-    setIsSending(true);
     const content = inputText.trim();
+    
+    // Run through the automated bouncer (passing false so it doesn't enforce English-only here)
+    const { isValid, error: validationError } = validateContent(content, false);
+    if (!isValid) {
+      setChatError(validationError);
+      return;
+    }
+
+    setIsSending(true);
     setInputText('');
     setShowEmojiPicker(false);
 
@@ -580,7 +591,12 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
         )}
 
         {/* --- BOTTOM INPUT BAR --- */}
-        <div className="p-3 md:p-5 border-t border-white/10 bg-black/40 backdrop-blur-2xl shrink-0">
+        <div className="p-3 md:p-5 border-t border-white/10 bg-black/40 backdrop-blur-2xl shrink-0 relative">
+          {chatError && (
+            <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-red-500/95 text-white text-[10px] md:text-xs font-bold px-6 py-2 rounded-full shadow-[0_0_20px_rgba(239,68,68,0.5)] flex items-center gap-2 animate-slide-up z-50 whitespace-nowrap border border-white/20">
+              ⚠️ {chatError}
+            </div>
+          )}
           <form onSubmit={handleSendMessage} className="flex items-center gap-2 md:gap-3 max-w-4xl mx-auto">
             
             {/* Visual Dictionary / Emoji Trigger */}
@@ -598,7 +614,7 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
               ref={inputRef}
               type="text" 
               value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
+              onChange={(e) => { setInputText(e.target.value); if (chatError) setChatError(''); }}
               placeholder="Type your message in English..." 
               className="flex-1 h-11 md:h-12 bg-white/5 border border-white/15 focus:border-[#fcd34d] rounded-2xl px-4 text-sm text-white placeholder-white/30 outline-none transition-all shadow-inner"
               disabled={isSending}
