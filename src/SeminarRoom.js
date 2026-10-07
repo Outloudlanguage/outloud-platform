@@ -332,13 +332,8 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
   // MAIN LIVE SEMINAR CANVAS (Adaptive Desktop & Mobile)
   // =========================================================================
   return (
-    <div className="absolute inset-0 rounded-[2.5rem] z-[700] bg-[#070b19]/10 backdrop-blur-3xl font-montserrat flex flex-col md:flex-row overflow-hidden text-white select-none shadow-2xl border border-white/10">
+    <div className="absolute inset-0 rounded-[2.5rem] z-[700] bg-[#070b19]/30 backdrop-blur-md font-montserrat flex flex-col md:flex-row overflow-hidden text-white select-none shadow-2xl border border-white/10">
       
-      {/* BACKGROUND WATERMARK */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-        <img src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Monogram.png" alt="Watermark" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] md:w-[700px] object-contain opacity-[0.04] invert brightness-0" />
-      </div>
-
       {/* --- DESKTOP ROSTER PANE (Hidden on Mobile) --- */}
       <div className="hidden md:flex flex-col w-72 lg:w-80 border-r border-white/10 bg-black/20 backdrop-blur-2xl z-10 shrink-0">
         <div className="p-6 border-b border-white/10 flex items-center justify-between">
@@ -402,7 +397,12 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
       </div>
 
       {/* --- MAIN CHAT CONTAINER --- */}
-      <div className="flex-1 flex flex-col h-full relative z-10">
+      <div className="flex-1 flex flex-col h-full relative z-10 overflow-hidden">
+
+        {/* BACKGROUND WATERMARK (Centered strictly to the chat canvas) */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+          <img src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Monogram.png" alt="Watermark" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] md:w-[700px] object-contain opacity-[0.04] invert brightness-0" />
+        </div>
 
         {/* TOP NAVBAR */}
         <div className="h-16 md:h-20 border-b border-white/10 bg-black/20 backdrop-blur-xl px-4 md:px-8 flex items-center justify-between shrink-0 relative">
@@ -464,7 +464,7 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
         )}
 
         {/* MESSAGE STREAM (WhatsApp-Inspired Bubbles) */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 space-y-4">
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 space-y-4 relative z-10">
           {messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center p-6 text-white/30">
               <span className="text-3xl mb-2">💬</span>
