@@ -3,6 +3,7 @@ import { supabase } from './SupabaseClient';
 import StudentPlayer from './StudentPlayer';
 import ForumBoard from './ForumBoard';
 import SeminarRoom from './SeminarRoom';
+import TrophyRoom from './components/TrophyRoom';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts'; 
 
 // ==========================================
@@ -247,7 +248,8 @@ const navIcons = {
   monitor: <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /><circle cx="9" cy="8" r="1.5" fill="currentColor"/><circle cx="15" cy="8" r="1.5" fill="currentColor"/><path strokeLinecap="round" d="M7 11h4M13 11h4" /></svg>,
   bell: <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" /></svg>,
   chat: <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>,
-  forum: <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" /></svg>
+  forum: <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" /></svg>,
+  trophy: <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 007.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M7.73 9.728a6.726 6.726 0 002.748 1.35m8.272-6.842V4.5c0 2.108-.966 3.99-2.48 5.228m2.48-5.492a46.32 46.32 0 012.916.52 6.003 6.003 0 01-5.395 4.972m0 0a6.726 6.726 0 01-2.749 1.35m0 0a6.772 6.772 0 01-3.044 0" /></svg>
 };
 
 // ==========================================
@@ -327,6 +329,7 @@ const DesktopView = ({ student, classCredits, onReturnHome, onStartActivity, isF
         <NavIconBtn iconSvg={navIcons.bell} hasNotification />
         <NavIconBtn iconSvg={navIcons.chat} onClick={() => onStartActivity('Community_CHAT')} />
         <NavIconBtn iconSvg={navIcons.forum} onClick={() => onStartActivity('Community_BOARD')} />
+        <NavIconBtn iconSvg={navIcons.trophy} onClick={() => onStartActivity('Trophies')} />
       </div>
 
       {/* MAIN CONTENT */}
@@ -553,6 +556,7 @@ const MobileView = ({ student, onReturnHome, onStartActivity, isFetching, active
         <NavIconBtn iconSvg={navIcons.bell} hasNotification />
         <NavIconBtn iconSvg={navIcons.chat} onClick={() => onStartActivity('Community_CHAT')} />
         <NavIconBtn iconSvg={navIcons.forum} onClick={() => onStartActivity('Community_BOARD')} />
+        <NavIconBtn iconSvg={navIcons.trophy} onClick={() => onStartActivity('Trophies')} />
       </div>
 
     </div>
@@ -1294,6 +1298,7 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
   const [showCommunity, setShowCommunity] = useState(false);
   const [communityTab, setCommunityTab] = useState('BOARD');
   const [showSeminarRoom, setShowSeminarRoom] = useState(false);
+  const [showTrophyRoom, setShowTrophyRoom] = useState(false);
   
   // Metrics & Practice State
   const [isMetricsModalOpen, setIsMetricsModalOpen] = useState(false);
@@ -1423,6 +1428,11 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
     if (type === 'Community_BOARD') {
       setCommunityTab('BOARD');
       setShowCommunity(true);
+      return;
+    }
+
+    if (type === 'Trophies') {
+      setShowTrophyRoom(true);
       return;
     }
 
@@ -1679,6 +1689,14 @@ const isLockedOut = billingDate && today >= billingDate;
           currentUser={{ id: studentData.id, full_name: `${studentData.first_name} ${studentData.last_name}`, avatar_url: studentData.avatar_url, level: studentData.level }} 
           userRole="student" 
           onClose={() => setShowSeminarRoom(false)} 
+        />
+      )}
+
+      {showTrophyRoom && (
+        <TrophyRoom 
+          targetUser={studentData} 
+          currentUserRole="student" 
+          onClose={() => setShowTrophyRoom(false)} 
         />
       )}
 

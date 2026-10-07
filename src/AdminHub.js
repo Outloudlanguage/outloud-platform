@@ -2169,32 +2169,36 @@ const renderCommunications = () => (
       {/* CHAT MODERATOR VIEW (SEMINAR ROOMS)     */}
       {/* ======================================= */}
       {activeCommsTab === 'Chat' && (
-        <div className="w-full flex-1 relative min-h-[600px] border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl">
-          <SeminarRoom 
-            currentUser={{ id: adminProfile.id, full_name: `${adminProfile.firstName} ${adminProfile.lastName}`, avatar_url: adminProfile.avatarUrl, level: 'ALL' }} 
-            userRole="admin" 
-            roomScope="dual"
-            onClose={() => setActiveCommsTab('General')} 
-          />
+        <div className="fixed inset-0 z-[650] bg-black/30 backdrop-blur-md flex items-center justify-center p-2 sm:p-6 md:p-10 animate-fade-in font-montserrat">
+          <div className="w-full h-full max-w-7xl relative shadow-[0_0_50px_rgba(0,0,0,0.5)] rounded-[2.5rem]">
+            <SeminarRoom 
+              currentUser={{ id: adminProfile.id, full_name: `${adminProfile.firstName} ${adminProfile.lastName}`, avatar_url: adminProfile.avatarUrl, level: 'ALL' }} 
+              userRole="admin" 
+              roomScope="dual"
+              onClose={() => setActiveCommsTab('General')} 
+            />
+          </div>
         </div>
       )}
 
-{/* ======================================= */}
+      {/* ======================================= */}
       {/* FORUM MODERATOR VIEW                    */}
       {/* ======================================= */}
       {activeCommsTab === 'Forum' && (
-        <div className="w-full flex-1 relative min-h-[600px] border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl">
-          <ForumBoard 
-            currentUser={{ 
-              id: adminProfile.id, 
-              role: 'admin', 
-              level: 'ALL', 
-              first_name: adminProfile.firstName,
-              last_name: adminProfile.lastName,
-              avatar_url: adminProfile.avatarUrl
-            }} 
-            onClose={() => setActiveCommsTab('General')} 
-          />
+        <div className="fixed inset-0 z-[650] bg-black/30 backdrop-blur-md flex items-center justify-center p-2 sm:p-6 md:p-10 animate-fade-in font-montserrat">
+          <div className="w-full h-full max-w-7xl relative shadow-[0_0_50px_rgba(0,0,0,0.5)] rounded-[2.5rem]">
+            <ForumBoard 
+              currentUser={{ 
+                id: adminProfile.id, 
+                role: 'admin', 
+                level: 'ALL', 
+                first_name: adminProfile.firstName,
+                last_name: adminProfile.lastName,
+                avatar_url: adminProfile.avatarUrl
+              }} 
+              onClose={() => setActiveCommsTab('General')} 
+            />
+          </div>
         </div>
       )}
     </div>

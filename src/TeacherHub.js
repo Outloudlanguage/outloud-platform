@@ -1410,7 +1410,6 @@ const TeacherHub = ({ onReturnHome }) => {
       return;
     }
     if (actionType === 'Community_BOARD') {
-      setCommunityTab('BOARD');
       setShowCommunity(true);
       setHasNewStaffBoard(false);
       return;
@@ -1468,8 +1467,8 @@ const TeacherHub = ({ onReturnHome }) => {
       )}
 
       {showCommunity && (
-        <div className="fixed inset-0 z-[650] bg-black/60 backdrop-blur-2xl flex items-center justify-center p-2 sm:p-6 md:p-10 animate-fade-in font-montserrat">
-          <div className="w-full h-full max-w-7xl relative">
+        <div className="fixed inset-0 z-[650] bg-black/30 backdrop-blur-md flex items-center justify-center p-2 sm:p-6 md:p-10 animate-fade-in font-montserrat">
+          <div className="w-full h-full max-w-7xl relative shadow-[0_0_50px_rgba(0,0,0,0.5)] rounded-[2.5rem]">
             <ForumBoard 
               currentUser={{ 
                 id: teacherData.id, 
@@ -1486,8 +1485,8 @@ const TeacherHub = ({ onReturnHome }) => {
       )}
 
       {showSeminarRoom && (
-        <div className="fixed inset-0 z-[650] bg-black/60 backdrop-blur-2xl flex items-center justify-center p-2 sm:p-6 md:p-10 animate-fade-in font-montserrat">
-          <div className="w-full h-full max-w-7xl relative">
+        <div className="fixed inset-0 z-[650] bg-black/30 backdrop-blur-md flex items-center justify-center p-2 sm:p-6 md:p-10 animate-fade-in font-montserrat">
+          <div className="w-full h-full max-w-7xl relative shadow-[0_0_50px_rgba(0,0,0,0.5)] rounded-[2.5rem]">
             <SeminarRoom 
               currentUser={{ id: teacherData.id, full_name: `${teacherData.first_name} ${teacherData.last_name}`, avatar_url: teacherData.avatar_url, level: 'ALL' }} 
               userRole="teacher" 

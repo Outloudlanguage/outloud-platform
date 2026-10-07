@@ -296,27 +296,30 @@ export default function ForumBoard({ currentUser, onClose }) {
   // =========================================================================
   // RENDER HELPERS
   // =========================================================================
-  const renderAuthorBlock = (author, dateStr) => (
-    <div className="flex items-center gap-3 mb-3">
-      <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-[#070b19] border-2 border-white/20 overflow-hidden shrink-0 shadow-md">
-        {author?.avatar_url ? (
-          <img src={author.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-[10px] md:text-xs font-black text-white/50">{author?.first_name?.[0] || 'U'}</div>
-        )}
-      </div>
-      <div className="flex flex-col">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-xs font-black text-white/90">{author?.first_name} {author?.last_name}</span>
-          <div className="flex gap-1.5">
-            {getRoleBadge(author?.role, author?.level)}
-            {getReputationBadge(author?.forum_reputation || 0)}
-          </div>
+  const renderAuthorBlock = (author, dateStr) => {
+    const isStaff = author?.role?.toLowerCase() === 'admin' || author?.role?.toLowerCase() === 'teacher';
+    return (
+      <div className="flex items-center gap-3 mb-3">
+        <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-[#070b19] border-2 border-white/20 overflow-hidden shrink-0 shadow-md">
+          {author?.avatar_url ? (
+            <img src={author.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-[10px] md:text-xs font-black text-white/50">{author?.first_name?.[0] || 'U'}</div>
+          )}
         </div>
-        <span className="text-[8px] font-bold text-white/40 uppercase tracking-widest">{new Date(dateStr).toLocaleString()}</span>
+        <div className="flex flex-col">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-xs font-black text-white/90">{author?.first_name} {author?.last_name}</span>
+            <div className="flex gap-1.5 items-center">
+              {getRoleBadge(author?.role, author?.level)}
+              {!isStaff && getReputationBadge(author?.forum_reputation || 0)}
+            </div>
+          </div>
+          <span className="text-[8px] font-bold text-white/40 uppercase tracking-widest">{new Date(dateStr).toLocaleString()}</span>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // =========================================================================
   // MAIN COMPONENT RENDER
@@ -326,12 +329,18 @@ export default function ForumBoard({ currentUser, onClose }) {
   }
 
   return (
-    <div className="absolute inset-0 rounded-[2.5rem] z-[700] bg-[#070b19]/10 backdrop-blur-3xl font-montserrat flex flex-col md:flex-row overflow-hidden text-white select-none shadow-2xl border border-white/10 animate-fade-in">
+    <div className="absolute inset-0 rounded-[2.5rem] z-[700] bg-[#070b19]/40 backdrop-blur-xl font-montserrat flex flex-col md:flex-row overflow-hidden text-white select-none shadow-2xl border border-white/20 animate-fade-in">
       
+      {/* VIBRANT BACKGROUND IMAGE PARA EL FORO */}
+      <div className="absolute inset-0 pointer-events-none z-0">
+        <img src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/267655.jpeg" alt="Forum Background" className="w-full h-full object-cover opacity-20" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#070b19]/70 to-[#0e2a47]/50"></div>
+      </div>
+
       {/* ----------------------------------------------------------------- */}
       {/* LEFT PANE: CHANNEL DIRECTORY */}
       {/* ----------------------------------------------------------------- */}
-      <div className={`${activePost ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-64 lg:w-72 border-r border-white/10 bg-black/20 shrink-0 h-full relative z-10`}>
+      <div className={`${activePost ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-64 lg:w-72 border-r border-white/10 bg-black/10 backdrop-blur-lg shrink-0 h-full relative z-10`}>
         <div className="h-16 md:h-20 border-b border-white/10 flex items-center justify-between px-6 shrink-0 bg-white/5">
           <h2 className="text-sm font-black uppercase tracking-widest text-[#fcd34d]">Discussion Boards</h2>
           {/* Mobile exit button when seeing channels */}
@@ -550,7 +559,7 @@ export default function ForumBoard({ currentUser, onClose }) {
             <div className="p-4 md:p-8 max-w-4xl mx-auto w-full flex flex-col gap-6">
               
               {/* ORIGINAL POST (Big Card) */}
-              <div className="bg-black/60 border border-white/20 rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden">
+              <div className="bg-black/30 backdrop-blur-md border border-white/20 rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-1 h-full bg-[#fcd34d]"></div>
                 {renderAuthorBlock(activePost.author, activePost.created_at)}
                 <h2 className="text-xl md:text-2xl font-black text-white mt-4 mb-4 leading-tight">{activePost.title}</h2>
@@ -571,9 +580,9 @@ export default function ForumBoard({ currentUser, onClose }) {
                     
                     {/* Golden Apple Badge */}
                     {reply.is_teacher_approved && (
-                      <div className="absolute -top-3 -right-2 md:-top-4 md:-right-3 z-10 animate-fade-in" title="Teacher Approved">
-                        <svg className="w-8 h-8 md:w-10 md:h-10 text-[#fcd34d] drop-shadow-[0_0_15px_rgba(252,211,77,1)]" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M15.2,5.1c0.6-0.8,1.1-1.9,0.9-2.9c-0.9,0-2,0.4-2.7,1.1c-0.6,0.7-1.1,1.8-1,2.8C13.4,6.2,14.5,5.8,15.2,5.1z M16.7,6.8c-1.4-0.1-2.6,0.8-3.4,1.4c-0.6-0.5-1.7-1.4-3.2-1.4c-2.1,0-4.1,1.7-4.1,4.3c0,3,2.1,6.5,4.6,9.8c1.2,1.5,2.1,2.9,3.2,2.9c1,0,1.6-0.7,3.1-0.7c1.4,0,2,0.7,3.2,0.7c1.1,0,2.2-1.5,3.3-2.9c1.1-1.5,2.1-3.6,2.1-3.6s-1.8-0.7-1.8-2.8c0-1.8,1.4-2.7,1.4-2.7C20.1,8.3,18.5,6.9,16.7,6.8z"/>
+                      <div className="absolute -top-3 -right-2 md:-top-4 md:-right-3 z-10 animate-fade-in shrink-0" title="Teacher Approved">
+                        <svg className="w-8 h-8 md:w-10 md:h-10 text-[#fcd34d] drop-shadow-[0_0_15px_rgba(252,211,77,1)]" viewBox="0 0 384 512" fill="currentColor">
+                          <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/>
                         </svg>
                       </div>
                     )}
