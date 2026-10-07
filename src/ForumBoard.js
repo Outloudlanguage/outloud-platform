@@ -13,6 +13,7 @@ const EMOJI_CATEGORIES = {
 };
 
 export default function ForumBoard({ currentUser, onClose }) {
+  const [myReputation, setMyReputation] = useState(0);
   const [channels, setChannels] = useState([]);
   const [activeChannel, setActiveChannel] = useState(null);
   const [posts, setPosts] = useState([]);
@@ -50,7 +51,13 @@ export default function ForumBoard({ currentUser, onClose }) {
   // =========================================================================
   useEffect(() => {
     fetchChannels();
+    fetchMyReputation();
   }, []);
+
+  const fetchMyReputation = async () => {
+    const { data } = await supabase.from('profiles').select('forum_reputation').eq('id', currentUser.id).single();
+    if (data) setMyReputation(data.forum_reputation || 0);
+  };
 
   const fetchChannels = async () => {
     setIsLoading(true);
@@ -283,7 +290,8 @@ export default function ForumBoard({ currentUser, onClose }) {
     );
   };
 
-  const canPostHere = isModerator || activeChannel?.channel_type === 'qa';
+  const isContributor = myReputation >= 50;
+  const canPostHere = isModerator || activeChannel?.channel_type === 'qa' || (activeChannel?.channel_type === 'debate' && isContributor);
 
   // =========================================================================
   // RENDER HELPERS
@@ -486,10 +494,15 @@ export default function ForumBoard({ currentUser, onClose }) {
                   </form>
                 </div>
               ) : (
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-5 text-center shadow-inner">
-                  <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
-                    This is a Teacher-led Debate channel. Students can reply to existing topics, but cannot start new ones.
-                  </p>
+                <div className="bg-[#070b19]/60 border border-white/10 rounded-3xl p-6 text-center shadow-inner flex flex-col items-center justify-center gap-3 relative overflow-hidden">
+                  <svg className="w-8 h-8 text-amber-500/50" fill="currentColor" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  <div>
+                    <h4 className="text-xs font-black uppercase tracking-widest text-white/80 mb-1">Contributor Rank Required</h4>
+                    <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest leading-relaxed">
+                      Earn 50 Reputation Points by helping others in Q&A to unlock Debate creation.<br/>
+                      <span className="text-[#fcd34d]">Your Current Reputation: {myReputation} / 50</span>
+                    </p>
+                  </div>
                 </div>
               )}
 
