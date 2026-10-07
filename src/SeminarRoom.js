@@ -425,33 +425,22 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
             </div>
           </div>
 
-          <div className="flex items-center gap-2 md:gap-4 shrink-0">
-            {/* DUAL SCOPE TOGGLE (Active State - INLINE) */}
-            {roomScope === 'dual' && (
-              <div className="hidden lg:flex bg-black/20 border border-white/5 rounded-full p-0.5 gap-0.5 shadow-inner">
-                <button onClick={() => { setActiveRoom(null); setInternalScope('students'); }} className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest transition-all ${internalScope === 'students' ? 'bg-[#fcd34d] text-[#08203e] shadow-md' : 'text-white/50 hover:text-white hover:bg-white/5'}`}>Student Hub</button>
-                <button onClick={() => { setActiveRoom(null); setInternalScope('staff'); }} className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest transition-all ${internalScope === 'staff' ? 'bg-[#fcd34d] text-[#08203e] shadow-md' : 'text-white/50 hover:text-white hover:bg-white/5'}`}>Staff Hub</button>
-              </div>
-            )}
-            {isModerator && (
+          {isModerator && (
               <button 
                 onClick={() => handleCloseRoom(activeRoom.id)} 
                 title="Close & Wipe Room"
-                className="w-10 h-10 md:w-auto md:h-auto p-0 md:px-3.5 md:py-2 flex items-center justify-center bg-red-500/20 hover:bg-red-500 text-red-200 hover:text-white border border-red-500/40 rounded-xl transition-all cursor-pointer"
+                className="w-10 h-10 flex items-center justify-center bg-red-500/20 hover:bg-red-500 text-red-200 hover:text-white border border-red-500/40 rounded-xl transition-all cursor-pointer shrink-0"
               >
-                <svg className="w-5 h-5 md:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                <span className="hidden md:inline text-[10px] font-black uppercase tracking-widest">Close & Wipe Room</span>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
               </button>
             )}
             <button 
               onClick={onClose} 
               title="Exit"
-              className="w-10 h-10 md:w-auto md:h-auto p-0 md:px-4 md:py-2 flex items-center justify-center bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-white transition-colors cursor-pointer"
+              className="w-10 h-10 flex items-center justify-center bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-white transition-colors cursor-pointer shrink-0"
             >
-              <svg className="w-5 h-5 md:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-              <span className="hidden md:inline text-xs font-bold">Exit</span>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
             </button>
-          </div>
         </div>
 
         {/* PINNED ANNOUNCEMENT STRIP (If enabled by teacher/admin) */}
