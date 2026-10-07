@@ -2,6 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './SupabaseClient';
 import { validateContent } from './utils/ContentFilter';
 
+const EMOJI_CATEGORIES = {
+  Expressions: ['😀','😃','😄','😁','😆','😅','😂','🤣','☺️','😊','😇','🙂','🙃','😉','😌','😍','🥰','😘','😗','😙','😚','😋','😛','😝','😜','🤪','🤨','🧐','🤓','😎','🤩','🥳','😏','😒','😞','😔','😟','😕','🙁','☹️','😣','😖','😫','😩','🥺','😢','😭','😤','😠','😡','🤬','🤯','😳','😱','😨','😰','😥','😓','🤗','🤔','🤭','🤫','🤥','😶','😐','😑','😬','🙄','😯','😦','😧','😮','😲','🥱','😴','🤤','😪','😵','🤐','🤢','🤮','🤧','😷','🤒','🤕','🤑','🤠','😈','👿','👹','👺','🤡','💩','👻','💀','☠️','👽','👾','🤖','🎃','😺','😸','😹','😻','😼','😽','🙀','😿','😾'],
+  People: ['👋','🤚','🖐','✋','🖖','👌','✌️','🤞','🤟','🤘','🤙','👈','👉','👆','🖕','👇','☝️','👍','👎','✊','👊','🤛','🤜','👏','🙌','👐','🤲','🤝','🙏','✍️','💅','🤳','💪','🦵','🦶','👂','👃','🧠','👀','👁','👅','👄','👶','🧒','👦','👧','🧑','👱','👨','🧔','👩','🧓','👴','👵','🙍','🙎','🙅','🙆','💁','🙋','🙇','🤦','🤷','👮','🕵','💂','👷','🤴','👸','👳','👲','🧕','🤵','👰','🤰','🤱','👼','🎅','🤶','🦸','🦹','🧙','🧚','🧛','🧜','🧝','🧞','🧟','💆','💇','🚶','🏃','💃','🕺','👯','🧖','🧗','🤺','🏇','⛷','🏂','🏌','🏄','🚣','🏊','⛹','🏋','🚴','🚵','🤸','🤼','🤽','🤾','🤹','🧘'],
+  Symbols: ['❤️','🧡','💛','💚','💙','💜','🖤','💔','❣️','💕','💞','💓','💗','💖','💘','💝','💟','☮️','✝️','☪️','🕉','☸','✡️','🔯','🕎','☯️','☦️','🛐','⛎','♈️','♉️','♊️','♋️','♌','♍️','♎️','♏️','♐️','♑️','♒️','♓️','💯','💢','♨️','❗️','❕','❓','❔','‼️','⁉️','✅','✔️','☑️']
+};
+
 export default function ForumBoard({ currentUser, onClose }) {
   const [channels, setChannels] = useState([]);
   const [activeChannel, setActiveChannel] = useState(null);
@@ -17,6 +23,9 @@ export default function ForumBoard({ currentUser, onClose }) {
   const [newPostTitle, setNewPostTitle] = useState('');
   const [newPostContent, setNewPostContent] = useState('');
   const [newReplyContent, setNewReplyContent] = useState('');
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [selectedEmojiCategory, setSelectedEmojiCategory] = useState('Expressions');
+  const replyInputRef = useRef(null);
   
   // Admin Forms
   const [showChannelForm, setShowChannelForm] = useState(false);
@@ -184,20 +193,23 @@ export default function ForumBoard({ currentUser, onClose }) {
   // 3. MICRO-INTERACTIONS & MODERATION
   // =========================================================================
   const handleUpvote = async (itemId, type) => {
-    // 1. Try to insert unique vote record
+    // Optimistic UI Update (Instant visual feedback before the DB confirms)
+    if (type === 'post') setPosts(prev => prev.map(p => p.id === itemId ? { ...p, upvote_count: p.upvote_count + 1 } : p));
+    if (type === 'reply') setReplies(prev => prev.map(r => r.id === itemId ? { ...r, upvote_count: r.upvote_count + 1 } : r));
+
     const { error } = await supabase.from('forum_upvotes').insert({ 
       user_id: currentUser.id, 
       [type === 'post' ? 'post_id' : 'reply_id']: itemId 
     });
     
-    // 2. If no error (not a duplicate vote), increment the counter visually & in DB
     if (!error) {
       const table = type === 'post' ? 'forum_posts' : 'forum_replies';
       const targetArray = type === 'post' ? posts : replies;
       const item = targetArray.find(i => i.id === itemId);
       
       await supabase.from(table).update({ upvote_count: item.upvote_count + 1 }).eq('id', itemId);
-      
+    } else {
+      // Revert optimistic update if they already voted (DB blocks duplicates)
       if (type === 'post') fetchPosts(activeChannel.id);
       if (type === 'reply') fetchReplies(activePost.id);
     }
@@ -222,9 +234,10 @@ export default function ForumBoard({ currentUser, onClose }) {
   };
 
   const getRoleBadge = (role, level) => {
-    if (role === 'admin') return <span className="text-[9px] font-black uppercase tracking-wider bg-red-500/20 text-red-300 border border-red-500/40 px-1.5 py-0.5 rounded">MOD</span>;
-    if (role === 'teacher') return <span className="text-[9px] font-black uppercase tracking-wider bg-[#fcd34d]/20 text-[#fcd34d] border border-[#fcd34d]/40 px-1.5 py-0.5 rounded">TEACHER</span>;
-    return <span className="text-[9px] font-black uppercase tracking-wider bg-blue-500/20 text-blue-300 border border-blue-500/40 px-1.5 py-0.5 rounded">{level || 'A1'}</span>;
+    const safeRole = String(role).toLowerCase();
+    if (safeRole === 'admin') return <span className="text-[9px] font-black uppercase tracking-wider bg-red-500/20 text-red-300 border border-red-500/40 px-2 py-0.5 rounded shadow-sm">ADMIN</span>;
+    if (safeRole === 'teacher') return <span className="text-[9px] font-black uppercase tracking-wider bg-[#fcd34d]/20 text-[#fcd34d] border border-[#fcd34d]/40 px-2 py-0.5 rounded shadow-sm">TEACHER</span>;
+    return <span className="text-[9px] font-black uppercase tracking-wider bg-blue-500/20 text-blue-300 border border-blue-500/40 px-2 py-0.5 rounded shadow-sm">{level || 'A1'}</span>;
   };
 
   const canPostHere = isModerator || activeChannel?.channel_type === 'qa';
@@ -259,7 +272,11 @@ export default function ForumBoard({ currentUser, onClose }) {
   }
 
   return (
-    <div className="absolute inset-0 rounded-[2.5rem] z-[700] bg-[#070b19]/30 backdrop-blur-2xl font-montserrat flex flex-col md:flex-row overflow-hidden text-white select-none shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-white/10 animate-fade-in">
+    <div className="absolute inset-0 rounded-[2.5rem] z-[700] bg-gradient-to-br from-[#070b19]/70 to-[#0e2a47]/60 backdrop-blur-3xl font-montserrat flex flex-col md:flex-row overflow-hidden text-white select-none shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-white/20 animate-fade-in">
+      
+      {/* Vibrant Aesthetic Orbs */}
+      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-[#fcd34d]/10 blur-[100px] rounded-full pointer-events-none z-0"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/15 blur-[100px] rounded-full pointer-events-none z-0"></div>
       
       {/* ----------------------------------------------------------------- */}
       {/* LEFT PANE: CHANNEL DIRECTORY */}
@@ -511,16 +528,28 @@ export default function ForumBoard({ currentUser, onClose }) {
 
                       <div className="flex-1 min-w-0">
                         {renderAuthorBlock(reply.author, reply.created_at)}
-                        <p className="text-xs md:text-sm text-white/90 leading-relaxed whitespace-pre-wrap mt-2">{reply.content}</p>
+                        <div className="text-xs md:text-sm text-white/90 leading-relaxed whitespace-pre-wrap mt-2">
+                          {reply.content.split('\n').map((line, i) => line.startsWith('> ') ? <span key={i} className="block text-[#fcd34d] font-bold text-[10px] bg-black/20 p-2 rounded mb-2 border-l-2 border-[#fcd34d] shadow-inner">{line.replace('> ', '')}</span> : <span key={i}>{line}<br/></span>)}
+                        </div>
                         
                         <div className="flex items-center gap-4 mt-4 pt-3 border-t border-white/5">
+                          <button onClick={() => {
+                            setNewReplyContent(prev => `> Replying to @${author.first_name}:\n\n` + prev);
+                            replyInputRef.current?.focus();
+                          }} className="text-[10px] font-black uppercase tracking-widest text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
+                            Reply
+                          </button>
+                          
                           {isModerator && (
-                            <button onClick={() => handleGoldenApple(reply.id, reply.is_teacher_approved)} className={`text-[9px] font-black uppercase tracking-widest transition-colors flex items-center gap-1 ${reply.is_teacher_approved ? 'text-[#fcd34d]/70 hover:text-[#fcd34d]' : 'text-emerald-400/50 hover:text-emerald-400'}`}>
-                              {reply.is_teacher_approved ? 'Revoke Apple' : 'Grant Golden Apple'}
+                            <button onClick={() => handleGoldenApple(reply.id, reply.is_teacher_approved)} className={`text-[10px] font-black uppercase tracking-widest transition-colors flex items-center gap-1 ${reply.is_teacher_approved ? 'text-white/40 hover:text-white' : 'text-white/40 hover:text-[#fcd34d]'}`}>
+                              <span className={`text-base ${reply.is_teacher_approved ? 'opacity-50 grayscale' : 'drop-shadow-[0_0_10px_rgba(252,211,77,1)]'}`}>🏆</span>
+                              {reply.is_teacher_approved ? 'Revoke' : 'Award'}
                             </button>
                           )}
+                          
                           {(reply.author_id === currentUser.id || isModerator) && (
-                            <button onClick={() => handleDelete(reply.id, 'reply')} className="text-[9px] font-black text-red-400/50 hover:text-red-400 uppercase tracking-widest transition-colors">Delete</button>
+                            <button onClick={() => handleDelete(reply.id, 'reply')} className="text-[10px] font-black text-red-400/50 hover:text-red-400 uppercase tracking-widest transition-colors ml-auto">Delete</button>
                           )}
                         </div>
                       </div>
@@ -530,12 +559,36 @@ export default function ForumBoard({ currentUser, onClose }) {
                 <div ref={messagesEndRef} className="h-4"></div>
               </div>
 
+              {/* EMOJI DRAWER */}
+              {showEmojiPicker && (
+                <div className="absolute bottom-24 left-4 right-4 bg-[#070b19]/95 backdrop-blur-2xl p-4 rounded-3xl border border-white/20 shadow-[0_0_40px_rgba(0,0,0,0.5)] z-50 animate-slide-up">
+                  <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-3 mb-2 border-b border-white/10">
+                    {Object.keys(EMOJI_CATEGORIES).map(cat => (
+                      <button key={cat} onClick={() => setSelectedEmojiCategory(cat)} className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors shrink-0 ${selectedEmojiCategory === cat ? 'bg-[#fcd34d] text-[#08203e]' : 'bg-white/5 text-white/60 hover:text-white'}`}>
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-8 sm:grid-cols-12 md:grid-cols-16 gap-2 max-h-36 overflow-y-auto custom-scrollbar p-1">
+                    {EMOJI_CATEGORIES[selectedEmojiCategory].map((emoji, idx) => (
+                      <button key={idx} onClick={() => { setNewReplyContent(prev => prev + emoji); replyInputRef.current?.focus(); }} className="text-2xl hover:scale-125 transition-transform p-1 rounded hover:bg-white/5">
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* REPLY INPUT BAR */}
-              <div className="sticky bottom-4 md:bottom-8 bg-[#0e2a47] border border-[#fcd34d]/30 rounded-3xl p-2 shadow-[0_10px_40px_rgba(0,0,0,0.6)] flex items-end gap-2 mt-auto">
+              <div className="sticky bottom-4 md:bottom-8 bg-[#0e2a47] border border-[#fcd34d]/30 rounded-3xl p-2 shadow-[0_10px_40px_rgba(0,0,0,0.6)] flex items-end gap-2 mt-auto relative z-[60]">
+                <button onClick={() => setShowEmojiPicker(!showEmojiPicker)} className={`w-10 h-10 shrink-0 rounded-2xl flex items-center justify-center transition-all m-1 ${showEmojiPicker ? 'bg-[#fcd34d] text-[#08203e]' : 'bg-white/10 text-white/70 hover:bg-white/20'}`}>
+                  <span className="text-lg">😊</span>
+                </button>
                 <textarea 
+                  ref={replyInputRef}
                   value={newReplyContent} onChange={e => setNewReplyContent(e.target.value)}
                   placeholder={activeChannel?.channel_type === 'debate' ? "Add to the debate (English only)..." : "Write a helpful reply..."}
-                  className="flex-1 bg-transparent text-xs font-medium text-white px-4 py-3 outline-none resize-none max-h-32 custom-scrollbar placeholder-white/40"
+                  className="flex-1 bg-transparent text-xs font-medium text-white px-2 py-3 outline-none resize-none max-h-32 custom-scrollbar placeholder-white/40"
                   rows="1"
                   onInput={(e) => {
                     e.target.style.height = 'auto';
