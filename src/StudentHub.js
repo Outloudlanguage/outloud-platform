@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './SupabaseClient';
 import StudentPlayer from './StudentPlayer';
-import CommunityPanel from './components/CommunityPanel';
+import ForumBoard from './ForumBoard';
 import SeminarRoom from './SeminarRoom';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts'; 
 
@@ -1656,13 +1656,23 @@ const isLockedOut = billingDate && today >= billingDate;
         supabase={supabase}
       />
 
-      <CommunityPanel 
-        isOpen={showCommunity} 
-        onClose={() => setShowCommunity(false)} 
-        initialTab={communityTab}
-        userProfile={studentData}
-        supabase={supabase}
-      />
+      {showCommunity && (
+        <div className="fixed inset-0 z-[650] bg-black/60 backdrop-blur-2xl flex items-center justify-center p-2 sm:p-6 md:p-10 animate-fade-in font-montserrat">
+          <div className="w-full h-full max-w-7xl relative">
+            <ForumBoard 
+              currentUser={{ 
+                id: studentData.id, 
+                role: 'student', 
+                level: studentData.level || 'A1', 
+                first_name: studentData.first_name,
+                last_name: studentData.last_name,
+                avatar_url: studentData.avatar_url
+              }} 
+              onClose={() => setShowCommunity(false)} 
+            />
+          </div>
+        </div>
+      )}
 
       {showSeminarRoom && (
         <SeminarRoom 

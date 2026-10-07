@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './SupabaseClient';
 import StudentHub from './StudentHub';
 import SeminarRoom from './SeminarRoom';
+import ForumBoard from './ForumBoard';
 import AdminCalendar from './components/AdminHub/Tabs/AdminCalendar';
 import { LEVEL_UNIT_MAP, LEVEL_OPTIONS, LESSON_TOOLS, WORKBOOK_TOOLS } from './constants/adminConfigs';
 import { generateCrosswordLayout } from './utils/crosswordGenerator';
@@ -2182,157 +2183,18 @@ const renderCommunications = () => (
       {/* FORUM MODERATOR VIEW                    */}
       {/* ======================================= */}
       {activeCommsTab === 'Forum' && (
-        <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6 lg:gap-8 flex-1 min-h-0 relative">
-          
-          {/* Active Post OR Composer (Left Panel) */}
-          <div className={`${isMobile && (!isMobileCommsComposerOpen && !forumPost) ? 'hidden' : 'flex'} ${isMobile && isMobileCommsComposerOpen && !forumPost ? 'fixed inset-0 z-[300] bg-[#070b19]/95 backdrop-blur-3xl p-6 overflow-y-auto flex-col' : 'lg:col-span-8 relative border border-white/10 rounded-[2.5rem] shadow-2xl flex-col lg:h-full group shrink-0'}`}>
-            {!isMobile && <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10 rounded-[3rem]" />}
-            {isMobile && forumPost && <div className="absolute -inset-4 bg-white/5 backdrop-blur-xl -z-10 rounded-[3rem]" />}
-            
-            <div className={`flex flex-col h-full z-10 w-full ${isMobile && !forumPost ? 'max-w-md mx-auto mt-10' : 'p-6 lg:p-8'}`}>
-              <div className={`flex justify-between items-center shrink-0 ${isMobile && !forumPost ? 'mb-6 border-b border-white/10 pb-4' : 'mb-6'}`}>
-                {forumPost ? (
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full border-2 border-[#fcd34d] bg-white/10 flex items-center justify-center font-black text-[#fcd34d] shadow-md uppercase">
-                       {forumPost.author_name?.charAt(0) || 'O'}
-                    </div>
-                    <div>
-                      <h4 className="font-black text-white text-[10px] lg:text-xs uppercase tracking-widest">{forumPost.author_name || 'Admin'}</h4>
-                      <span className="bg-[#fcd34d] text-[#08203e] text-[8px] font-black px-2 py-0.5 rounded uppercase">Staff</span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-4">
-                     <h3 className="font-black text-[#fcd34d] text-base lg:text-lg tracking-widest uppercase drop-shadow-md">Create Topic</h3>
-                  </div>
-                )}
-                
-                <div className="flex gap-2 items-center">
-                  <select value={forumLevelFilter} onChange={(e) => setForumLevelFilter(e.target.value)} className="bg-white/10 text-white text-[10px] lg:text-xs font-black uppercase rounded-lg pl-3 pr-8 py-2 outline-none border border-white/20 cursor-pointer appearance-none max-w-[100px] lg:max-w-none">
-                    <option className="bg-[#0f172a] text-white" value="A1">Level A1</option>
-                    <option className="bg-[#0f172a] text-white" value="A2">Level A2</option>
-                    <option className="bg-[#0f172a] text-white" value="B1">Level B1</option>
-                    <option className="bg-[#0f172a] text-white" value="B2">Level B2</option>
-                    <option className="bg-[#0f172a] text-white" value="C1">Level C1</option>
-                    <option className="bg-[#0f172a] text-white" value="C2">Level C2</option>
-                  </select>
-                  {isMobile && !forumPost && (
-                    <button onClick={() => setIsMobileCommsComposerOpen(false)} className="w-8 h-8 bg-white/10 hover:bg-red-500 text-white rounded-full flex items-center justify-center font-black transition-colors shrink-0">✕</button>
-                  )}
-                </div>
-              </div>
-
-              {forumPost ? (
-                <>
-                  <button onClick={handleDeleteForumPost} className="absolute top-6 right-6 lg:top-8 lg:right-[120px] w-8 h-8 lg:w-10 lg:h-10 bg-red-500/20 rounded-full flex items-center justify-center text-red-400 lg:opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500 hover:text-white cursor-pointer z-20 shadow-xl" title="Delete Topic">✕</button>
-                  <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 mb-4">
-                    <h2 className="text-xl lg:text-2xl font-black text-white uppercase tracking-widest mb-4">
-                      {forumPost.title}
-                    </h2>
-                    {forumPost.image_url && (
-                      <div className="w-full h-40 lg:h-48 bg-black/40 rounded-2xl border border-white/10 mb-4 overflow-hidden shadow-inner shrink-0">
-                        <img src={forumPost.image_url} className="w-full h-full object-cover opacity-80" alt="Post" />
-                      </div>
-                    )}
-                    <p className="text-xs lg:text-sm text-white/80 font-medium leading-relaxed">
-                      {forumPost.content}
-                    </p>
-                  </div>
-
-                  <form onSubmit={handleSendForumReply} className="relative mt-auto shrink-0 border-t border-white/10 pt-4 lg:pt-0 lg:border-none">
-                    <input type="text" placeholder="Post an admin reply..." value={chatInputs.forum} onChange={(e) => setChatInputs(p => ({...p, forum: e.target.value}))} className="w-full bg-black/40 border border-white/20 rounded-full pl-4 lg:pl-6 pr-10 lg:pr-12 py-3 lg:py-4 text-xs lg:text-sm text-white focus:outline-none focus:border-[#fcd34d] shadow-inner disabled:opacity-50" />
-                    <button type="submit" className="absolute right-4 lg:right-6 top-1/2 -translate-y-1/2 lg:top-1/2 text-white/50 hover:text-[#fcd34d] transition-colors cursor-pointer disabled:opacity-50 mt-2 lg:mt-0" disabled={!chatInputs.forum.trim()}>
-                      <svg className="w-4 h-4 lg:w-5 lg:h-5 transform rotate-45 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
-                    </button>
-                  </form>
-                </>
-              ) : (
-                <div className="flex flex-col flex-1 min-h-0">
-                  <input 
-                    type="text" 
-                    placeholder="TOPIC TITLE..." 
-                    value={forumTitleInput} 
-                    onChange={(e) => setForumTitleInput(e.target.value)} 
-                    className="w-full bg-white/5 border border-white/20 rounded-2xl p-4 text-white focus:outline-none focus:border-[#fcd34d] placeholder-white/30 shadow-inner font-black uppercase tracking-widest mb-4 shrink-0 text-sm"
-                  />
-                  <div className={`flex flex-col gap-4 flex-1 min-h-0 mb-6 ${isMobile ? 'overflow-y-auto custom-scrollbar' : ''}`}>
-                    {!showForumImageInput ? (
-                      <button onClick={() => setShowForumImageInput(true)} className={`${isMobile ? 'w-full h-24' : 'w-64 h-32'} bg-white/10 border-2 border-dashed border-white/30 rounded-2xl flex flex-col items-center justify-center text-white hover:bg-white/20 transition-colors shrink-0 cursor-pointer`}>
-                        <span className={`${isMobile ? 'text-3xl' : 'text-5xl'} font-light leading-none mb-1`}>+</span>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-center leading-tight">UPLOAD IMAGE</span>
-                      </button>
-                    ) : (
-                      <div className={`${isMobile ? 'w-full h-24' : 'w-64 h-32'} bg-black/40 border border-white/20 rounded-2xl flex flex-col items-center justify-center text-white p-4 shrink-0 relative`}>
-                        <button onClick={() => { setShowForumImageInput(false); setForumImageUrlInput(''); }} className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full text-[10px] font-bold cursor-pointer hover:scale-110">✕</button>
-                        <span className="text-[9px] font-black uppercase tracking-widest text-[#fcd34d] mb-1">Image URL</span>
-                        <input type="text" value={forumImageUrlInput} onChange={(e) => setForumImageUrlInput(e.target.value)} placeholder="https://..." className="w-full bg-white/10 rounded p-2 text-xs outline-none focus:border-[#fcd34d] border border-transparent" />
-                      </div>
-                    )}
-                    
-                    <textarea 
-                      value={forumContentInput}
-                      onChange={(e) => setForumContentInput(e.target.value)}
-                      placeholder="Escribe el contenido del foro aquí..." 
-                      className={`w-full flex-1 bg-white/5 border border-white/20 rounded-2xl p-4 text-white resize-none focus:outline-none focus:border-[#fcd34d] placeholder-white/30 shadow-inner ${isMobile ? 'min-h-[150px]' : 'min-h-[300px]'}`}
-                    />
-                  </div>
-                  <button onClick={() => { handlePublishForumPost(); setIsMobileCommsComposerOpen(false); }} disabled={isPublishingForum} className={`w-full mt-auto bg-[#fcd34d] hover:bg-white text-[#08203e] font-black rounded-xl py-4 uppercase tracking-widest transition-colors shadow-lg disabled:opacity-50 cursor-pointer shrink-0`}>
-                    {isPublishingForum ? '...' : 'PUBLISH TOPIC'}
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Replies Feed (Right Panel) */}
-          <div className={`${isMobile && (!forumPost || isMobileCommsComposerOpen) ? 'hidden' : 'flex'} lg:col-span-4 flex-col gap-4 overflow-y-auto custom-scrollbar h-[50vh] lg:h-full lg:pl-2 relative`}>
-            {isMobile && forumPost && (
-               <div className="flex justify-between items-center sticky top-0 bg-[#070b19]/90 backdrop-blur-md p-2 z-10 rounded-xl border border-white/10 mb-2">
-                 <button onClick={() => setForumPost(null)} className="text-[#fcd34d] font-black text-xs uppercase tracking-widest">← Back</button>
-                 <span className="text-white font-black text-[10px] uppercase">{forumLevelFilter} Replies</span>
-               </div>
-            )}
-            
-            {!forumPost && !isMobile ? (
-              <div className="flex flex-col items-center justify-center h-full text-white/40">
-                <span className="font-bold uppercase tracking-widest text-sm text-center px-8">No topic active for {forumLevelFilter}.<br/>Create one to allow replies.</span>
-              </div>
-            ) : forumReplies.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-white/40 min-h-[150px]">
-                <span className="font-bold uppercase tracking-widest text-sm">No replies yet.</span>
-              </div>
-            ) : (
-              forumReplies.map(reply => {
-                const author = reply.author || {};
-                const isA1 = author.level?.includes('A1');
-                return (
-                  <div key={reply.id} className="relative border border-white/10 bg-white/5 backdrop-blur-xl rounded-2xl lg:rounded-3xl p-4 lg:p-6 shadow-xl w-full lg:w-[90%] mb-2 flex items-start gap-3 lg:gap-4 hover:bg-white/10 transition-colors group shrink-0">
-                    <button onClick={() => handleDeleteForumReply(reply.id)} className="absolute top-2 right-2 lg:top-4 lg:right-4 w-6 h-6 lg:w-8 lg:h-8 bg-red-500/20 text-red-400 lg:opacity-0 group-hover:opacity-100 hover:bg-red-500 hover:text-white transition-all font-black rounded-full cursor-pointer flex items-center justify-center text-[10px] lg:text-sm">✕</button>
-                    <img src={author.avatar_url || `https://ui-avatars.com/api/?name=${author.first_name || 'User'}&background=random`} className="w-10 h-10 lg:w-12 lg:h-12 rounded-full border-2 border-white object-cover shrink-0" alt="User" />
-                    <div className="flex-1 min-w-0 pr-6">
-                      <div className="flex flex-wrap items-center gap-1.5 lg:gap-2 mb-1.5 lg:mb-2">
-                        <span className="font-black text-white text-[9px] lg:text-[11px] uppercase tracking-widest truncate max-w-full">{author.first_name} {author.last_name}</span>
-                        <span className={`text-white text-[7px] lg:text-[9px] font-black px-1.5 lg:px-2 py-0.5 rounded border ${isA1 ? 'bg-blue-500 border-blue-400' : 'bg-emerald-500 border-emerald-400'}`}>{author.level ? author.level.split(':')[0] : 'User'}</span>
-                      </div>
-                      <p className={`text-xs lg:text-sm font-medium leading-relaxed break-words ${reply.is_flagged ? 'text-red-400 italic' : 'text-white/90'}`}>
-                        {reply.is_flagged ? '⚠️ Mensaje Marcado: ' + reply.content : reply.content}
-                      </p>
-                    </div>
-                  </div>
-                )
-              })
-            )}
-          </div>
-          
-          {/* Mobile Floating Action Button (FAB) for Forum */}
-          {isMobile && !forumPost && (
-            <button 
-              onClick={() => setIsMobileCommsComposerOpen(true)}
-              className="absolute bottom-6 right-6 w-14 h-14 bg-[#fcd34d] text-[#08203e] rounded-full flex items-center justify-center shadow-[0_10px_25px_rgba(252,211,77,0.5)] z-50 hover:scale-105 active:scale-95 transition-transform"
-            >
-              <span className="text-3xl font-light leading-none mb-1">+</span>
-            </button>
-          )}
+        <div className="w-full flex-1 relative min-h-[600px] border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl">
+          <ForumBoard 
+            currentUser={{ 
+              id: adminProfile.id, 
+              role: 'admin', 
+              level: 'ALL', 
+              first_name: adminProfile.firstName,
+              last_name: adminProfile.lastName,
+              avatar_url: adminProfile.avatarUrl
+            }} 
+            onClose={() => setActiveCommsTab('General')} 
+          />
         </div>
       )}
     </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './SupabaseClient';
-import CommunityPanel from './components/CommunityPanel';
+import ForumBoard from './ForumBoard';
 import SeminarRoom from './SeminarRoom';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts'; 
 
@@ -1468,13 +1468,23 @@ const TeacherHub = ({ onReturnHome }) => {
         />
       )}
 
-      <CommunityPanel 
-        isOpen={showCommunity} 
-        onClose={() => setShowCommunity(false)} 
-        initialTab={communityTab}
-        userProfile={teacherData}
-        supabase={supabase}
-      />
+      {showCommunity && (
+        <div className="fixed inset-0 z-[650] bg-black/60 backdrop-blur-2xl flex items-center justify-center p-2 sm:p-6 md:p-10 animate-fade-in font-montserrat">
+          <div className="w-full h-full max-w-7xl relative">
+            <ForumBoard 
+              currentUser={{ 
+                id: teacherData.id, 
+                role: 'teacher', 
+                level: 'ALL', 
+                first_name: teacherData.first_name,
+                last_name: teacherData.last_name,
+                avatar_url: teacherData.avatar_url
+              }} 
+              onClose={() => setShowCommunity(false)} 
+            />
+          </div>
+        </div>
+      )}
 
       {showSeminarRoom && (
         <div className="fixed inset-0 z-[650] bg-black/60 backdrop-blur-2xl flex items-center justify-center p-2 sm:p-6 md:p-10 animate-fade-in font-montserrat">
