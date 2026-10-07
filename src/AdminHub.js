@@ -1058,6 +1058,181 @@ const AdminTeacherMetricsModal = ({ isOpen, onClose, teacherId, teacherName, sup
 };
 
 // ==========================================
+// ACHIEVEMENTS MANAGER MODULE (Admin)
+// ==========================================
+const AchievementsModule = ({ onBack }) => {
+  const [achievements, setAchievements] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    id: null, title: '', description: '', category: 'Milestone', 
+    tier: 'Bronze', target_value: 1, asset_url: '', is_secret: false, sort_order: 0
+  });
+
+  const fetchAchievements = async () => {
+    setLoading(true);
+    const { data } = await supabase.from('achievements').select('*').order('sort_order', { ascending: true });
+    if (data) setAchievements(data);
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchAchievements(); }, []);
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    const payload = { ...formData };
+    if (!payload.id) delete payload.id; // Let DB generate ID for new ones
+    
+    const { error } = await supabase.from('achievements').upsert(payload);
+    if (error) {
+      alert("Error saving achievement: " + error.message);
+    } else {
+      alert("Achievement saved successfully!");
+      setIsEditing(false);
+      setFormData({ id: null, title: '', description: '', category: 'Milestone', tier: 'Bronze', target_value: 1, asset_url: '', is_secret: false, sort_order: 0 });
+      fetchAchievements();
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this achievement? This will remove it from all users who earned it.")) return;
+    await supabase.from('achievements').delete().eq('id', id);
+    fetchAchievements();
+  };
+
+  const openEditor = (ach = null) => {
+    if (ach) setFormData(ach);
+    else setFormData({ id: null, title: '', description: '', category: 'Milestone', tier: 'Bronze', target_value: 1, asset_url: '', is_secret: false, sort_order: 0 });
+    setIsEditing(true);
+  };
+
+  return (
+    <div className="flex flex-col w-full h-[calc(100vh-160px)] animate-fade-in relative z-10">
+      <div className="flex items-center gap-4 mb-8 shrink-0">
+        <button onClick={onBack} className="w-10 h-10 bg-white/10 hover:bg-[#fcd34d] text-white hover:text-[#08203e] rounded-full flex items-center justify-center font-black transition-all">←</button>
+        <div>
+          <h2 className="text-2xl font-black uppercase tracking-widest text-white drop-shadow-md">Trophy Catalog</h2>
+          <p className="text-xs font-bold text-[#fcd34d] uppercase tracking-widest mt-1">Manage Platform Gamification</p>
+        </div>
+      </div>
+
+      <div className="flex-1 flex flex-col lg:flex-row gap-8 min-h-0">
+        {/* LEFT PANE: CATALOG LIST */}
+        <div className="flex-1 relative rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl flex flex-col bg-black/20">
+          <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/5 shrink-0">
+            <h3 className="font-black text-white uppercase tracking-widest">Active Achievements</h3>
+            <button onClick={() => openEditor()} className="bg-[#fcd34d] text-[#08203e] px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-transform shadow-md">
+              + New Trophy
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto custom-scrollbar p-6 flex flex-col gap-3">
+            {loading ? (
+              <div className="text-center text-white/50 text-xs font-bold py-10 uppercase tracking-widest">Loading Catalog...</div>
+            ) : achievements.length === 0 ? (
+              <div className="text-center text-white/50 text-xs font-bold py-10 uppercase tracking-widest">Catalog is empty. Add your first trophy.</div>
+            ) : (
+              achievements.map(ach => (
+                <div key={ach.id} className="bg-white/5 border border-white/10 p-4 rounded-xl flex items-center justify-between hover:bg-white/10 transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className={`w-12 h-12 rounded-lg flex items-center justify-center border-2 border-white/20 shrink-0 ${ach.asset_url ? 'bg-black/40' : 'bg-white/5'}`}>
+                      {ach.asset_url ? <img src={ach.asset_url} alt="icon" className="w-8 h-8 object-contain" /> : <span className="text-xs">🏆</span>}
+                    </div>
+                    <div>
+                      <h4 className="font-black text-white text-sm uppercase tracking-wider">{ach.title}</h4>
+                      <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest">{ach.tier} • {ach.category}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => openEditor(ach)} className="w-8 h-8 bg-blue-500 text-white rounded-lg flex items-center justify-center shadow-md hover:scale-110 transition-transform">✏️</button>
+                    <button onClick={() => handleDelete(ach.id)} className="w-8 h-8 bg-red-500 text-white rounded-lg flex items-center justify-center shadow-md hover:scale-110 transition-transform">✕</button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* RIGHT PANE: EDITOR */}
+        {isEditing && (
+          <div className="flex-[0.8] relative rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl flex flex-col bg-black/40 backdrop-blur-xl animate-fade-in">
+            <div className="p-6 border-b border-white/10 bg-white/5 shrink-0">
+              <h3 className="font-black text-[#fcd34d] uppercase tracking-widest">{formData.id ? 'Edit Achievement' : 'Create New Trophy'}</h3>
+            </div>
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
+              <form onSubmit={handleSave} className="flex flex-col gap-5">
+                
+                <div>
+                  <label className="block text-[10px] text-white/50 font-bold uppercase tracking-widest mb-1">Trophy Title</label>
+                  <input type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#fcd34d]" required />
+                </div>
+                
+                <div>
+                  <label className="block text-[10px] text-white/50 font-bold uppercase tracking-widest mb-1">Lore / Description</label>
+                  <textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#fcd34d] resize-none h-24" required />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] text-white/50 font-bold uppercase tracking-widest mb-1">Category</label>
+                    <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#fcd34d] appearance-none">
+                      <option className="bg-[#0f172a]">Milestone</option>
+                      <option className="bg-[#0f172a]">Consistency</option>
+                      <option className="bg-[#0f172a]">Excellence</option>
+                      <option className="bg-[#0f172a]">Community</option>
+                      <option className="bg-[#0f172a]">Operations</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-white/50 font-bold uppercase tracking-widest mb-1">Tier</label>
+                    <select value={formData.tier} onChange={e => setFormData({...formData, tier: e.target.value})} className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#fcd34d] appearance-none">
+                      <option className="bg-[#0f172a]">Bronze</option>
+                      <option className="bg-[#0f172a]">Silver</option>
+                      <option className="bg-[#0f172a]">Gold</option>
+                      <option className="bg-[#0f172a]">Diamond</option>
+                      <option className="bg-[#0f172a]">Emerald</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] text-white/50 font-bold uppercase tracking-widest mb-1">Target Value to Unlock</label>
+                    <input type="number" min="1" value={formData.target_value} onChange={e => setFormData({...formData, target_value: parseInt(e.target.value) || 1})} className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#fcd34d]" required />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-white/50 font-bold uppercase tracking-widest mb-1">Sort Order</label>
+                    <input type="number" value={formData.sort_order} onChange={e => setFormData({...formData, sort_order: parseInt(e.target.value) || 0})} className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#fcd34d]" required />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] text-[#fcd34d] font-bold uppercase tracking-widest mb-1">Cloudflare Asset URL (PNG/WebP)</label>
+                  <input type="text" placeholder="https://..." value={formData.asset_url} onChange={e => setFormData({...formData, asset_url: e.target.value})} className="w-full bg-white/5 border border-[#fcd34d]/50 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#fcd34d]" />
+                </div>
+
+                <label className="flex items-center gap-3 cursor-pointer group bg-white/5 p-4 rounded-xl border border-white/10 hover:border-white/30 transition-colors">
+                  <input type="checkbox" checked={formData.is_secret} onChange={e => setFormData({...formData, is_secret: e.target.value === 'on'})} className="w-5 h-5 rounded border-white/20 bg-black/40 text-[#fcd34d] focus:ring-[#fcd34d]" />
+                  <div className="flex flex-col">
+                    <span className="text-xs font-black text-white uppercase tracking-widest">Secret Achievement</span>
+                    <span className="text-[10px] font-medium text-white/50 leading-tight">Will not display as a locked silhouette to students until they earn it.</span>
+                  </div>
+                </label>
+
+                <div className="flex gap-3 pt-4 border-t border-white/10 mt-auto">
+                  <button type="button" onClick={() => setIsEditing(false)} className="flex-1 py-4 bg-white/5 hover:bg-white/10 text-white font-bold text-xs uppercase tracking-widest rounded-xl transition-colors border border-white/10">Cancel</button>
+                  <button type="submit" className="flex-[2] py-4 bg-[#fcd34d] text-[#08203e] hover:bg-white font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-[0_0_20px_rgba(252,211,77,0.3)] hover:scale-105">Save Trophy</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+};
+
+// ==========================================
 // MAIN ADMIN HUB COMPONENT
 // ==========================================
 const AdminHub = () => {
@@ -2530,30 +2705,37 @@ const FinancesPage = () => {
       />;
     }
 
+    if (settingsView === 'ACHIEVEMENTS') {
+      return <AchievementsModule onBack={() => setSettingsView('MENU')} />;
+    }
+
     return (
       <div className="flex flex-col items-center w-full animate-fade-in relative z-10 pb-24 lg:pb-0 lg:h-[calc(100vh-160px)] overflow-y-auto custom-scrollbar">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-8 max-w-[1200px] w-full mt-4 lg:mt-0">
-          {['Tenants', 'Public logs', 'Shifts', 'Evaluator', 'Reports', 'B2B Clients', 'Resumes', 'Language'].map((setting, i) => (
+          {['Tenants', 'Public logs', 'Shifts', 'Evaluator', 'Reports', 'B2B Clients', 'Resumes', 'Language', 'Achievements'].map((setting, i) => (
             <button 
               key={setting} 
-              onClick={() => setting === 'Evaluator' ? setSettingsView('EVALUATOR') : null} 
+              onClick={() => setting === 'Evaluator' ? setSettingsView('EVALUATOR') : setting === 'Achievements' ? setSettingsView('ACHIEVEMENTS') : null} 
               className="aspect-square bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl lg:rounded-[3rem] p-4 lg:p-6 shadow-2xl flex flex-col items-center justify-center gap-3 lg:gap-6 hover:bg-white/10 hover:scale-105 transition-all group cursor-pointer"
             >
-            {i===0 && <svg className="w-16 h-16 lg:w-32 lg:h-32 text-white group-hover:text-[#fcd34d] transition-colors drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" /></svg>}
-            {i===1 && <svg className="w-16 h-16 lg:w-32 lg:h-32 text-white group-hover:text-[#fcd34d] transition-colors drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" /></svg>}
-            {i===2 && <svg className="w-16 h-16 lg:w-32 lg:h-32 text-white group-hover:text-[#fcd34d] transition-colors drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
-            {i===3 && <svg className="w-16 h-16 lg:w-32 lg:h-32 text-white group-hover:text-[#fcd34d] transition-colors drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" /></svg>}
-            {i===4 && <svg className="w-16 h-16 lg:w-32 lg:h-32 text-white group-hover:text-[#fcd34d] transition-colors drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>}
-            {i===5 && <svg className="w-16 h-16 lg:w-32 lg:h-32 text-white group-hover:text-[#fcd34d] transition-colors drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M20.25 14.15v4.25c0 1.094-.787 2.036-1.872 2.18-2.087.277-4.216.42-6.378.42s-4.291-.143-6.378-.42c-1.085-.144-1.872-1.086-1.872-2.18v-4.25m16.5 0a2.18 2.18 0 00.75-1.661V8.706c0-1.081-.768-2.015-1.837-2.175a48.114 48.114 0 00-3.413-.387m4.5 8.006c-.194.165-.42.295-.673.38A23.978 23.978 0 0112 15.75c-2.648 0-5.195-.429-7.577-1.22a2.016 2.016 0 01-.673-.38m0 0A2.18 2.18 0 013 12.489V8.706c0-1.081.768-2.015 1.837-2.175a48.111 48.111 0 013.413-.387m7.5 0V5.25A2.25 2.25 0 0013.5 3h-3a2.25 2.25 0 00-2.25 2.25v.894m7.5 0a48.667 48.667 0 00-7.5 0M12 12.75h.008v.008H12v-.008z" /></svg>}
-            {i===6 && <svg className="w-16 h-16 lg:w-32 lg:h-32 text-white group-hover:text-[#fcd34d] transition-colors drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" /></svg>}
-            {i===7 && <svg className="w-16 h-16 lg:w-32 lg:h-32 text-white group-hover:text-[#fcd34d] transition-colors drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 21l5.25-11.25L21 21m-9-3h7.5M3 5.621a48.474 48.474 0 016-.371m0 0c1.12 0 2.233.038 3.334.114M9 5.25V3m3.334 2.364C11.176 10.658 7.69 15.08 3 17.502m9.334-12.138c.896.061 1.785.147 2.666.257m-4.589 8.495a18.023 18.023 0 01-3.827-5.802" /></svg>}
-            <h3 className="text-white font-black text-sm lg:text-2xl uppercase tracking-widest text-center">{setting}</h3>
-          </button>
-        ))}
+              {i===0 && <svg className="w-16 h-16 lg:w-32 lg:h-32 text-white group-hover:text-[#fcd34d] transition-colors drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" /></svg>}
+              {i===1 && <svg className="w-16 h-16 lg:w-32 lg:h-32 text-white group-hover:text-[#fcd34d] transition-colors drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" /></svg>}
+              {i===2 && <svg className="w-16 h-16 lg:w-32 lg:h-32 text-white group-hover:text-[#fcd34d] transition-colors drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+              {i===3 && <svg className="w-16 h-16 lg:w-32 lg:h-32 text-white group-hover:text-[#fcd34d] transition-colors drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" /></svg>}
+              {i===4 && <svg className="w-16 h-16 lg:w-32 lg:h-32 text-white group-hover:text-[#fcd34d] transition-colors drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>}
+              {i===5 && <svg className="w-16 h-16 lg:w-32 lg:h-32 text-white group-hover:text-[#fcd34d] transition-colors drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M20.25 14.15v4.25c0 1.094-.787 2.036-1.872 2.18-2.087.277-4.216.42-6.378.42s-4.291-.143-6.378-.42c-1.085-.144-1.872-1.086-1.872-2.18v-4.25m16.5 0a2.18 2.18 0 00.75-1.661V8.706c0-1.081-.768-2.015-1.837-2.175a48.114 48.114 0 00-3.413-.387m4.5 8.006c-.194.165-.42.295-.673.38A23.978 23.978 0 0112 15.75c-2.648 0-5.195-.429-7.577-1.22a2.016 2.016 0 01-.673-.38m0 0A2.18 2.18 0 013 12.489V8.706c0-1.081.768-2.015 1.837-2.175a48.111 48.111 0 013.413-.387m7.5 0V5.25A2.25 2.25 0 0013.5 3h-3a2.25 2.25 0 00-2.25 2.25v.894m7.5 0a48.667 48.667 0 00-7.5 0M12 12.75h.008v.008H12v-.008z" /></svg>}
+              {i===6 && <svg className="w-16 h-16 lg:w-32 lg:h-32 text-white group-hover:text-[#fcd34d] transition-colors drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" /></svg>}
+              {i===7 && <svg className="w-16 h-16 lg:w-32 lg:h-32 text-white group-hover:text-[#fcd34d] transition-colors drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 21l5.25-11.25L21 21m-9-3h7.5M3 5.621a48.474 48.474 0 016-.371m0 0c1.12 0 2.233.038 3.334.114M9 5.25V3m3.334 2.364C11.176 10.658 7.69 15.08 3 17.502m9.334-12.138c.896.061 1.785.147 2.666.257m-4.589 8.495a18.023 18.023 0 01-3.827-5.802" /></svg>}
+              {i===8 && <svg className="w-16 h-16 lg:w-32 lg:h-32 text-white group-hover:text-[#fcd34d] transition-colors drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 007.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M7.73 9.728a6.726 6.726 0 002.748 1.35m8.272-6.842V4.5c0 2.108-.966 3.99-2.48 5.228m2.48-5.492a46.32 46.32 0 012.916.52 6.003 6.003 0 01-5.395 4.972m0 0a6.726 6.726 0 01-2.749 1.35m0 0a6.772 6.772 0 01-3.044 0" /></svg>}
+              <h3 className="text-white font-black text-sm lg:text-2xl uppercase tracking-widest text-center">{setting}</h3>
+            </button>
+          ))}
+        </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
+
+  // --- IMPERSONATION INTERCEPTOR ---
 
   // --- IMPERSONATION INTERCEPTOR ---
   if (impersonatingStudent) {
