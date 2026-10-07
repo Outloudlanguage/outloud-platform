@@ -5,7 +5,11 @@ import { validateContent } from './utils/ContentFilter';
 const EMOJI_CATEGORIES = {
   Expressions: ['😀','😃','😄','😁','😆','😅','😂','🤣','☺️','😊','😇','🙂','🙃','😉','😌','😍','🥰','😘','😗','😙','😚','😋','😛','😝','😜','🤪','🤨','🧐','🤓','😎','🤩','🥳','😏','😒','😞','😔','😟','😕','🙁','☹️','😣','😖','😫','😩','🥺','😢','😭','😤','😠','😡','🤬','🤯','😳','😱','😨','😰','😥','😓','🤗','🤔','🤭','🤫','🤥','😶','😐','😑','😬','🙄','😯','😦','😧','😮','😲','🥱','😴','🤤','😪','😵','🤐','🤢','🤮','🤧','😷','🤒','🤕','🤑','🤠','😈','👿','👹','👺','🤡','💩','👻','💀','☠️','👽','👾','🤖','🎃','😺','😸','😹','😻','😼','😽','🙀','😿','😾'],
   People: ['👋','🤚','🖐','✋','🖖','👌','✌️','🤞','🤟','🤘','🤙','👈','👉','👆','🖕','👇','☝️','👍','👎','✊','👊','🤛','🤜','👏','🙌','👐','🤲','🤝','🙏','✍️','💅','🤳','💪','🦵','🦶','👂','👃','🧠','👀','👁','👅','👄','👶','🧒','👦','👧','🧑','👱','👨','🧔','👩','🧓','👴','👵','🙍','🙎','🙅','🙆','💁','🙋','🙇','🤦','🤷','👮','🕵','💂','👷','🤴','👸','👳','👲','🧕','🤵','👰','🤰','🤱','👼','🎅','🤶','🦸','🦹','🧙','🧚','🧛','🧜','🧝','🧞','🧟','💆','💇','🚶','🏃','💃','🕺','👯','🧖','🧗','🤺','🏇','⛷','🏂','🏌','🏄','🚣','🏊','⛹','🏋','🚴','🚵','🤸','🤼','🤽','🤾','🤹','🧘'],
-  Symbols: ['❤️','🧡','💛','💚','💙','💜','🖤','💔','❣️','💕','💞','💓','💗','💖','💘','💝','💟','☮️','✝️','☪️','🕉','☸','✡️','🔯','🕎','☯️','☦️','🛐','⛎','♈️','♉️','♊️','♋️','♌','♍️','♎️','♏️','♐️','♑️','♒️','♓️','💯','💢','♨️','❗️','❕','❓','❔','‼️','⁉️','✅','✔️','☑️']
+  Animals: ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐽','🐸','🐵','🙈','🙉','🙊','🐒','🐔','🐧','🐦','🐤','🐣','🐥','🦆','🦅','🦉','🦇','🐺','🐗','🐴','🦄','🐝','🐛','🦋','🐌','🐞','🐜','蚊','🦗','🕸','🦂','🐢','🐍','🦎','🦖','🦕','🐙','🦑','🦐','🦞','🦀','🐡','🐠','🐟','🐬','🐳','🐋','🦈','鳄','🐅','豹','🦓','🦍','🐘','犀','🐫','🐪','🦒','🐃','🐂','🐄','🐎','🐖','🐏','🐑','山羊','鹿','狗','贵宾','猫','公鸡','火鸡','孔雀','天鹅','鸽','兔','浣熊','臭鼬','獾','鼠','老鼠','松鼠','刺猬','🐾','龙','🐲','🌵','🎄','🌲','🌳','🌴','🌱','🌿','☘️','🍀','🎍','🎋','🍃','🍂','🍁','🍄','🐚','🌾','💐','🌷','🌹','🥀','🌺','🌸','🌼','🌻','🌞','🌝','🌛','🌜','🌚','🌕','🌖','🌗','🌘','🌑','🌒','🌓','🌔','🌙','🌎','🌍','🌏','🪐','💫','⭐️','🌟','✨','⚡️','☄️','💥','🔥','🌪','🌈','☀️','🌤','⛅️','🌥','☁️','🌦','🌧','⛈','🌩','🌨','❄️','☃️','⛄️','🌬','💨','💧','💦','☔️','☂️','🌊','🌫'],
+  Food: ['🍏','🍎','🍐','🍊','🍋','🍌','🍉','🍇','🍓','🍈','🍒','🍑','🍍','🥥','🥝','🍅','🍆','🥑','🥦','🥒','🌶','🌽','🥕','🥔','🍠','🥐','🍞','🥖','🥨','🧀','🥚','🍳','🥞','🥓','🥩','🍗','🍖','🌭','🍔','🍟','🍕','🥪','🥙','🌮','🌯','🥗','🥘','🥫','🍝','🍜','🍲','🍛','🍣','🍱','🥟','🍤','🍙','🍚','🍘','🍥','🥠','🍢','🍡','🍧','🍨','🍦','🥧','🍰','🎂','🍮','🍭','🍬','🍫','🍿','🍩','🍪','🌰','🥜','🍯','🥛','🍼','☕️','🍵','🥤','🍶','🍺','🍻','🥂','🍷','🥃','🍸','🍹','🍾','🥄','🍴','🍽','🥣','🥡','🥢','🧂'],
+  Places: ['🚗','🚕','🚙','🚌','🚎','🏎','🚓','🚑','🚒','🚐','🚚','🚛','🚜','🛴','🚲','🛵','🏍','🚨','🚔','🚍','🚘','🚖','🚡','🚠','🚟','🚃','🚋','🚞','🚝','🚄','🚅','🚈','🚂','🚆','🚇','🚊','🚉','✈️','🛫','🛬','🛩','💺','🛰','🚀','🛸','🚁','🛶','⛵️','🛥','🛳','⛴','🚢','⚓️','⛽️','🚧','🚦','🚥','🚏','🗺','🗿','🗽','🗼','城堡','🏯','🏟','🎡','🎢','🎠','⛲️','⛱','🏖','🏝','🏜','🌋','⛰','🏔','🗻','🏕','⛺️','🏠','🏡','🏘','🏚','🏗','🏭','🏢','🏬','🏣','🏤','🏥','🏦','🏨','🏪','🏫','🏩','💒','🏛','⛪️','🕌','🕍','🕋'],
+  Objects: ['⌚️','📱','📲','💻','⌨️','🖥','🖨','🖱','🖲','🕹','💽','💾','💿','📀','📼','📷','📸','📹','🎥','📽','🎞','📞','☎️','📟','📠','📺','📻','🎙','🎚','🎛','🧭','⏱','⏲','⏰','🕰','⌛️','⏳','📡','🔌','💡','🔦','🕯','💸','💵','💴','💶','💷','💰','💳','💎','⚖️','🔧','🔨','⚒','🛠','⛏','🔩','⚙️','砖块','链条','磁铁','🔫','💣','🧨','🔪','🗡','⚔️','盾牌','🚬','⚰️','⚱️','🔮','📿','💈','⚗️','望远镜','显微镜','🕳','💊','💉','🧬','🦠','🧫','🧪','🌡','扫帚','厕纸','🚽','🚰','🚿','🛁','🛀','皂','海绵','门','钥匙','床','🧸','画框','镜子','窗户','🛍','🛒','🎁','🎈','🎏','🎀','🎊','🎉','🎎','🏮','🎐','🧧','✉️','📩','📨','📧','💌','📥','📤','📦','🏷','📪','📫','📬','📭','📮','📯','📜','📃','📄','📑','🧾','📊','📈','📉','🗒','🗓','📆','📅','🗑','📇','🗃','🗳','🗄','📋','📁','📂','🗂','🗞','📰','📓','📔','📒','📕','📗','📘','📙','📚','📖','🔖','🔗','📎','🖇','📐','📏','🧮','📌','📍','✂️','🖊','🖋','✒️','🖌','🖍','📝','✏️','🔍','🔎','🔏','🔐','🔒','🔓'],
+  Symbols: ['❤️','🧡','💛','💚','💙','💜','🖤','💔','❣️','💕','💞','💓','💗','💖','💘','💝','💟','☮️','✝️','☪️','🕉','☸','✡️','🔯','🕎','☯️','☦️','🛐','⛎','♈️','♉️','♊️','♋️','♌','♍️','♎️','♏️','♐️','♑️','♒️','♓️','🆔','⚛️','🉑','☢️','☣️','📴','📳','🈶','🈚️','🈸','🈺','🈷️','✴️','🆚','💮','🉐','㊙️','㊗️','🈴','🈵','🈹','🈲','🅰️','🅱️','🆎','🆑','🅾️','🆘','❌','⭕️','🛑','⛔️','📛','🚫','💯','💢','♨️','🚷','🚯','🚳','🚱','🔞','📵','🚭','❗️','❕','❓','❔','‼️','⁉️','🔅','🔆','〽️','⚠️','🚸','🔱','⚜️','🔰','♻️','✅','🈯️','💹','❇','✳️','❎','🌐','💠','Ⓜ️','🌀','💤','🏧','🚾','♿️','🅿️','🈳','🈂️','🛂','🛃','🛄','🛅','🚹','🚺','🚼','⚧','🚻','🚮','🎦','📶','🈁','🔣','ℹ️','🔤','🔡','🔠','🆖','🆗','🆙','🆒','🆕','🆓','0️⃣','1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟','🔢','#️⃣','*️⃣','⏏️','▶️','⏸','⏯','⏹','⏺','⏭','⏮','⏩','⏪','⏫','⏬','◀️','🔼','🔽','➡️','⬅️','⬆️','⬇️','↗️','↘️','↙️','↖️','↕️','↔️','↪️','↩️','⤴️','⤵️','🔀','🔁','🔂','🔄','🔃','🎵','🎶','➕','➖','➗','✖️','💲','💱','™️','©️','®️','〰️','➰','➿','🔚','🔙','🔛','🔝','🔜','✔️','☑️','🔘','🔴','🟠','🟡','🟢','🔵','🟣','⚫️','⚪️','🔺','🔻','🔸','🔹','🔶','🔷','🔳','🔲','▪️','▫️','◾️','◽️','◼','◻️','⬛️','⬜️','🔈','🔇','🔉','🔊','🔔','🔕','📣','📢','👁‍🗨','💬','💭','🗯','♠','♣️','♥️','♦️','🃏','🎴','🀄️']
 };
 
 export default function ForumBoard({ currentUser, onClose }) {
@@ -77,7 +81,7 @@ export default function ForumBoard({ currentUser, onClose }) {
   const fetchPosts = async (channelId) => {
     const { data } = await supabase
       .from('forum_posts')
-      .select('*, author:profiles!author_id(first_name, last_name, role, level, avatar_url)')
+      .select('*, author:profiles!author_id(first_name, last_name, role, level, avatar_url, forum_reputation)')
       .eq('channel_id', channelId)
       .order('is_pinned', { ascending: false })
       .order('created_at', { ascending: false });
@@ -94,7 +98,7 @@ export default function ForumBoard({ currentUser, onClose }) {
   const fetchReplies = async (postId) => {
     const { data } = await supabase
       .from('forum_replies')
-      .select('*, author:profiles!author_id(first_name, last_name, role, level, avatar_url)')
+      .select('*, author:profiles!author_id(first_name, last_name, role, level, avatar_url, forum_reputation)')
       .eq('post_id', postId)
       .order('is_teacher_approved', { ascending: false }) // Golden apples float to top
       .order('created_at', { ascending: true });
@@ -194,7 +198,10 @@ export default function ForumBoard({ currentUser, onClose }) {
   // =========================================================================
   const handleUpvote = async (itemId, type) => {
     // Optimistic UI Update (Instant visual feedback before the DB confirms)
-    if (type === 'post') setPosts(prev => prev.map(p => p.id === itemId ? { ...p, upvote_count: p.upvote_count + 1 } : p));
+    if (type === 'post') {
+      setPosts(prev => prev.map(p => p.id === itemId ? { ...p, upvote_count: p.upvote_count + 1 } : p));
+      if (activePost && activePost.id === itemId) setActivePost(prev => ({ ...prev, upvote_count: prev.upvote_count + 1 }));
+    }
     if (type === 'reply') setReplies(prev => prev.map(r => r.id === itemId ? { ...r, upvote_count: r.upvote_count + 1 } : r));
 
     const { error } = await supabase.from('forum_upvotes').insert({ 
@@ -210,7 +217,10 @@ export default function ForumBoard({ currentUser, onClose }) {
       await supabase.from(table).update({ upvote_count: item.upvote_count + 1 }).eq('id', itemId);
     } else {
       // Revert optimistic update if they already voted (DB blocks duplicates)
-      if (type === 'post') fetchPosts(activeChannel.id);
+      if (type === 'post') {
+        fetchPosts(activeChannel.id);
+        if (activePost && activePost.id === itemId) setActivePost(prev => ({ ...prev, upvote_count: Math.max(0, prev.upvote_count - 1) }));
+      }
       if (type === 'reply') fetchReplies(activePost.id);
     }
   };
@@ -240,24 +250,60 @@ export default function ForumBoard({ currentUser, onClose }) {
     return <span className="text-[9px] font-black uppercase tracking-wider bg-blue-500/20 text-blue-300 border border-blue-500/40 px-2 py-0.5 rounded shadow-sm">{level || 'A1'}</span>;
   };
 
+  const getReputationBadge = (reputation = 0) => {
+    if (reputation >= 500) {
+      return (
+        <div className="flex items-center gap-1 bg-gradient-to-r from-yellow-500/20 to-yellow-600/20 border border-yellow-500/40 px-1.5 py-0.5 rounded shadow-[0_0_10px_rgba(234,179,8,0.2)]" title="Scholar (500+ Rep)">
+          <svg className="w-3 h-3 text-yellow-400 drop-shadow-md" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 12l10 10 10-10L12 2z"/></svg>
+          <span className="text-[8px] font-black uppercase tracking-wider text-yellow-400">Scholar</span>
+        </div>
+      );
+    }
+    if (reputation >= 150) {
+      return (
+        <div className="flex items-center gap-1 bg-gradient-to-r from-slate-300/20 to-slate-400/20 border border-slate-300/40 px-1.5 py-0.5 rounded shadow-[0_0_10px_rgba(203,213,225,0.2)]" title="Debater (150+ Rep)">
+          <svg className="w-3 h-3 text-slate-300 drop-shadow-md" fill="currentColor" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+          <span className="text-[8px] font-black uppercase tracking-wider text-slate-300">Debater</span>
+        </div>
+      );
+    }
+    if (reputation >= 50) {
+      return (
+        <div className="flex items-center gap-1 bg-gradient-to-r from-amber-600/20 to-amber-700/20 border border-amber-600/40 px-1.5 py-0.5 rounded shadow-[0_0_10px_rgba(217,119,6,0.2)]" title="Contributor (50+ Rep)">
+          <svg className="w-3 h-3 text-amber-500 drop-shadow-md" fill="currentColor" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span className="text-[8px] font-black uppercase tracking-wider text-amber-500">Contributor</span>
+        </div>
+      );
+    }
+    return (
+      <div className="flex items-center gap-1 bg-white/5 border border-white/10 px-1.5 py-0.5 rounded" title="Novice (0+ Rep)">
+        <svg className="w-3 h-3 text-white/40" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L3 7v10l9 5 9-5V7l-9-5z"/></svg>
+        <span className="text-[8px] font-black uppercase tracking-wider text-white/40">Novice</span>
+      </div>
+    );
+  };
+
   const canPostHere = isModerator || activeChannel?.channel_type === 'qa';
 
   // =========================================================================
   // RENDER HELPERS
   // =========================================================================
   const renderAuthorBlock = (author, dateStr) => (
-    <div className="flex items-center gap-2 mb-2">
-      <div className="w-6 h-6 rounded-full bg-[#070b19] border border-white/20 overflow-hidden shrink-0">
+    <div className="flex items-center gap-3 mb-3">
+      <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-[#070b19] border-2 border-white/20 overflow-hidden shrink-0 shadow-md">
         {author?.avatar_url ? (
           <img src={author.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-[10px] font-black text-white/50">{author?.first_name?.[0] || 'U'}</div>
+          <div className="w-full h-full flex items-center justify-center text-[10px] md:text-xs font-black text-white/50">{author?.first_name?.[0] || 'U'}</div>
         )}
       </div>
       <div className="flex flex-col">
-        <div className="flex items-center gap-1.5">
-          <span className="text-[10px] font-bold text-white/90">{author?.first_name} {author?.last_name}</span>
-          {getRoleBadge(author?.role, author?.level)}
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-xs font-black text-white/90">{author?.first_name} {author?.last_name}</span>
+          <div className="flex gap-1.5">
+            {getRoleBadge(author?.role, author?.level)}
+            {getReputationBadge(author?.forum_reputation || 0)}
+          </div>
         </div>
         <span className="text-[8px] font-bold text-white/40 uppercase tracking-widest">{new Date(dateStr).toLocaleString()}</span>
       </div>
@@ -272,16 +318,12 @@ export default function ForumBoard({ currentUser, onClose }) {
   }
 
   return (
-    <div className="absolute inset-0 rounded-[2.5rem] z-[700] bg-gradient-to-br from-[#070b19]/70 to-[#0e2a47]/60 backdrop-blur-3xl font-montserrat flex flex-col md:flex-row overflow-hidden text-white select-none shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-white/20 animate-fade-in">
-      
-      {/* Vibrant Aesthetic Orbs */}
-      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-[#fcd34d]/10 blur-[100px] rounded-full pointer-events-none z-0"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/15 blur-[100px] rounded-full pointer-events-none z-0"></div>
+    <div className="absolute inset-0 rounded-[2.5rem] z-[700] bg-[#070b19]/10 backdrop-blur-3xl font-montserrat flex flex-col md:flex-row overflow-hidden text-white select-none shadow-2xl border border-white/10 animate-fade-in">
       
       {/* ----------------------------------------------------------------- */}
       {/* LEFT PANE: CHANNEL DIRECTORY */}
       {/* ----------------------------------------------------------------- */}
-      <div className={`${activePost ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-64 lg:w-72 border-r border-white/10 bg-black/20 shrink-0 h-full`}>
+      <div className={`${activePost ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-64 lg:w-72 border-r border-white/10 bg-black/20 shrink-0 h-full relative z-10`}>
         <div className="h-16 md:h-20 border-b border-white/10 flex items-center justify-between px-6 shrink-0 bg-white/5">
           <h2 className="text-sm font-black uppercase tracking-widest text-[#fcd34d]">Discussion Boards</h2>
           {/* Mobile exit button when seeing channels */}
@@ -375,8 +417,13 @@ export default function ForumBoard({ currentUser, onClose }) {
       {/* ----------------------------------------------------------------- */}
       {/* RIGHT PANE: FEED / THREAD */}
       {/* ----------------------------------------------------------------- */}
-      <div className={`flex-1 flex flex-col h-full relative z-10 ${!activePost ? 'hidden md:flex' : 'flex'}`}>
+      <div className={`flex-1 flex flex-col h-full relative z-10 overflow-hidden ${!activePost ? 'hidden md:flex' : 'flex'}`}>
         
+        {/* BACKGROUND WATERMARK (Centered strictly to the feed canvas) */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+          <img src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Monogram.png" alt="Watermark" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] md:w-[700px] object-contain opacity-[0.04] invert brightness-0" />
+        </div>
+
         {/* Top Navbar */}
         <div className="h-16 md:h-20 border-b border-white/10 bg-black/20 backdrop-blur-xl px-4 md:px-8 flex items-center justify-between shrink-0 relative z-20">
           <div className="flex items-center gap-3">
@@ -511,9 +558,10 @@ export default function ForumBoard({ currentUser, onClose }) {
                     
                     {/* Golden Apple Badge */}
                     {reply.is_teacher_approved && (
-                      <div className="absolute -top-3 -right-3 md:top-4 md:right-4 bg-[#fcd34d] text-[#08203e] text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 z-10 border-2 border-[#070b19]">
-                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                        Teacher Approved
+                      <div className="absolute -top-3 -right-2 md:-top-4 md:-right-3 z-10 animate-fade-in" title="Teacher Approved">
+                        <svg className="w-8 h-8 md:w-10 md:h-10 text-[#fcd34d] drop-shadow-[0_0_15px_rgba(252,211,77,1)]" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M15.2,5.1c0.6-0.8,1.1-1.9,0.9-2.9c-0.9,0-2,0.4-2.7,1.1c-0.6,0.7-1.1,1.8-1,2.8C13.4,6.2,14.5,5.8,15.2,5.1z M16.7,6.8c-1.4-0.1-2.6,0.8-3.4,1.4c-0.6-0.5-1.7-1.4-3.2-1.4c-2.1,0-4.1,1.7-4.1,4.3c0,3,2.1,6.5,4.6,9.8c1.2,1.5,2.1,2.9,3.2,2.9c1,0,1.6-0.7,3.1-0.7c1.4,0,2,0.7,3.2,0.7c1.1,0,2.2-1.5,3.3-2.9c1.1-1.5,2.1-3.6,2.1-3.6s-1.8-0.7-1.8-2.8c0-1.8,1.4-2.7,1.4-2.7C20.1,8.3,18.5,6.9,16.7,6.8z"/>
+                        </svg>
                       </div>
                     )}
 
@@ -542,9 +590,9 @@ export default function ForumBoard({ currentUser, onClose }) {
                           </button>
                           
                           {isModerator && (
-                            <button onClick={() => handleGoldenApple(reply.id, reply.is_teacher_approved)} className={`text-[10px] font-black uppercase tracking-widest transition-colors flex items-center gap-1 ${reply.is_teacher_approved ? 'text-white/40 hover:text-white' : 'text-white/40 hover:text-[#fcd34d]'}`}>
-                              <span className={`text-base ${reply.is_teacher_approved ? 'opacity-50 grayscale' : 'drop-shadow-[0_0_10px_rgba(252,211,77,1)]'}`}>🏆</span>
-                              {reply.is_teacher_approved ? 'Revoke' : 'Award'}
+                            <button onClick={() => handleGoldenApple(reply.id, reply.is_teacher_approved)} className={`text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border shadow-sm ${reply.is_teacher_approved ? 'bg-white/5 border-white/10 text-white/50 hover:text-white hover:bg-white/10' : 'bg-[#fcd34d]/10 border-[#fcd34d]/30 text-[#fcd34d] hover:bg-[#fcd34d]/20 hover:border-[#fcd34d]/50 shadow-[0_0_15px_rgba(252,211,77,0.15)]'}`}>
+                              <svg className={`w-3.5 h-3.5 transition-all ${reply.is_teacher_approved ? 'text-white/40' : 'text-[#fcd34d] drop-shadow-[0_0_8px_rgba(252,211,77,0.8)]'}`} fill="currentColor" viewBox="0 0 24 24"><path d="M15.2,5.1c0.6-0.8,1.1-1.9,0.9-2.9c-0.9,0-2,0.4-2.7,1.1c-0.6,0.7-1.1,1.8-1,2.8C13.4,6.2,14.5,5.8,15.2,5.1z M16.7,6.8c-1.4-0.1-2.6,0.8-3.4,1.4c-0.6-0.5-1.7-1.4-3.2-1.4c-2.1,0-4.1,1.7-4.1,4.3c0,3,2.1,6.5,4.6,9.8c1.2,1.5,2.1,2.9,3.2,2.9c1,0,1.6-0.7,3.1-0.7c1.4,0,2,0.7,3.2,0.7c1.1,0,2.2-1.5,3.3-2.9c1.1-1.5,2.1-3.6,2.1-3.6s-1.8-0.7-1.8-2.8c0-1.8,1.4-2.7,1.4-2.7C20.1,8.3,18.5,6.9,16.7,6.8z"/></svg>
+                              {reply.is_teacher_approved ? 'Revoke Apple' : 'Award Apple'}
                             </button>
                           )}
                           
@@ -558,54 +606,63 @@ export default function ForumBoard({ currentUser, onClose }) {
                 ))}
                 <div ref={messagesEndRef} className="h-4"></div>
               </div>
-
-              {/* EMOJI DRAWER */}
-              {showEmojiPicker && (
-                <div className="absolute bottom-24 left-4 right-4 bg-[#070b19]/95 backdrop-blur-2xl p-4 rounded-3xl border border-white/20 shadow-[0_0_40px_rgba(0,0,0,0.5)] z-50 animate-slide-up">
-                  <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-3 mb-2 border-b border-white/10">
-                    {Object.keys(EMOJI_CATEGORIES).map(cat => (
-                      <button key={cat} onClick={() => setSelectedEmojiCategory(cat)} className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors shrink-0 ${selectedEmojiCategory === cat ? 'bg-[#fcd34d] text-[#08203e]' : 'bg-white/5 text-white/60 hover:text-white'}`}>
-                        {cat}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="grid grid-cols-8 sm:grid-cols-12 md:grid-cols-16 gap-2 max-h-36 overflow-y-auto custom-scrollbar p-1">
-                    {EMOJI_CATEGORIES[selectedEmojiCategory].map((emoji, idx) => (
-                      <button key={idx} onClick={() => { setNewReplyContent(prev => prev + emoji); replyInputRef.current?.focus(); }} className="text-2xl hover:scale-125 transition-transform p-1 rounded hover:bg-white/5">
-                        {emoji}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* REPLY INPUT BAR */}
-              <div className="sticky bottom-4 md:bottom-8 bg-[#0e2a47] border border-[#fcd34d]/30 rounded-3xl p-2 shadow-[0_10px_40px_rgba(0,0,0,0.6)] flex items-end gap-2 mt-auto relative z-[60]">
-                <button onClick={() => setShowEmojiPicker(!showEmojiPicker)} className={`w-10 h-10 shrink-0 rounded-2xl flex items-center justify-center transition-all m-1 ${showEmojiPicker ? 'bg-[#fcd34d] text-[#08203e]' : 'bg-white/10 text-white/70 hover:bg-white/20'}`}>
-                  <span className="text-lg">😊</span>
-                </button>
-                <textarea 
-                  ref={replyInputRef}
-                  value={newReplyContent} onChange={e => setNewReplyContent(e.target.value)}
-                  placeholder={activeChannel?.channel_type === 'debate' ? "Add to the debate (English only)..." : "Write a helpful reply..."}
-                  className="flex-1 bg-transparent text-xs font-medium text-white px-2 py-3 outline-none resize-none max-h-32 custom-scrollbar placeholder-white/40"
-                  rows="1"
-                  onInput={(e) => {
-                    e.target.style.height = 'auto';
-                    e.target.style.height = (e.target.scrollHeight) + 'px';
-                  }}
-                />
-                <button 
-                  onClick={handleCreateReply} disabled={isSubmitting || !newReplyContent.trim()}
-                  className="w-10 h-10 shrink-0 bg-[#fcd34d] text-[#08203e] hover:bg-white rounded-2xl flex items-center justify-center transition-all disabled:opacity-40 active:scale-95 m-1"
-                >
-                  <svg className="w-4 h-4 translate-x-0.5" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
-                </button>
-              </div>
-
             </div>
           )}
         </div>
+
+        {/* EMOJI DRAWER */}
+        {activePost && showEmojiPicker && (
+          <div className="border-t border-white/10 bg-[#070b19]/95 backdrop-blur-2xl p-4 shrink-0 shadow-2xl animate-slide-up relative z-50">
+            <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-3 mb-2 border-b border-white/10">
+              {Object.keys(EMOJI_CATEGORIES).map(cat => (
+                <button key={cat} onClick={() => setSelectedEmojiCategory(cat)} className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors shrink-0 ${selectedEmojiCategory === cat ? 'bg-[#fcd34d] text-[#08203e]' : 'bg-white/5 text-white/60 hover:text-white'}`}>
+                  {cat}
+                </button>
+              ))}
+            </div>
+            <div className="grid grid-cols-8 sm:grid-cols-12 md:grid-cols-16 gap-2 max-h-36 overflow-y-auto custom-scrollbar p-1">
+              {EMOJI_CATEGORIES[selectedEmojiCategory].map((emoji, idx) => (
+                <button key={idx} onClick={() => { setNewReplyContent(prev => prev + emoji); replyInputRef.current?.focus(); }} className="text-2xl hover:scale-125 transition-transform p-1 rounded hover:bg-white/5">
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* REPLY INPUT BAR */}
+        {activePost && (
+          <div className="p-3 md:p-5 border-t border-white/10 bg-black/40 backdrop-blur-2xl shrink-0 relative z-[60]">
+            <form onSubmit={handleCreateReply} className="flex items-center gap-2 md:gap-3 max-w-4xl mx-auto">
+              <button type="button" onClick={() => setShowEmojiPicker(!showEmojiPicker)} className={`w-11 h-11 shrink-0 rounded-2xl flex items-center justify-center transition-all border ${showEmojiPicker ? 'bg-[#fcd34d] border-[#fcd34d] text-[#08203e]' : 'bg-white/5 border-white/10 text-white/70 hover:bg-white/10'}`}>
+                <span className="text-xl">😊</span>
+              </button>
+              <textarea 
+                ref={replyInputRef}
+                value={newReplyContent} onChange={e => setNewReplyContent(e.target.value)}
+                placeholder={activeChannel?.channel_type === 'debate' ? "Add to the debate (English only)..." : "Write a helpful reply..."}
+                className="flex-1 bg-white/5 border border-white/15 focus:border-[#fcd34d] rounded-2xl px-4 py-3.5 text-sm font-medium text-white outline-none resize-none max-h-32 custom-scrollbar placeholder-white/30 shadow-inner"
+                rows="1"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleCreateReply(e);
+                  }
+                }}
+                onInput={(e) => {
+                  e.target.style.height = 'auto';
+                  e.target.style.height = (e.target.scrollHeight) + 'px';
+                }}
+              />
+              <button 
+                type="submit" disabled={isSubmitting || !newReplyContent.trim()}
+                className="w-11 h-11 md:w-12 md:h-12 shrink-0 bg-[#fcd34d] text-[#08203e] hover:bg-white rounded-2xl flex items-center justify-center transition-all disabled:opacity-40 active:scale-95 shadow-[0_0_15px_rgba(252,211,77,0.4)]"
+              >
+                <svg className="w-5 h-5 translate-x-0.5" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
+              </button>
+            </form>
+          </div>
+        )}
       </div>
     </div>
   );
