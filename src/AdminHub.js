@@ -1093,6 +1093,34 @@ const AdminHub = () => {
     avatarUrl: ''
   });
 
+  // --- ANTI-COPY OVERRIDE FOR ADMINS ---
+  // Forcefully bypasses global site restrictions so you can copy/paste/right-click in the Admin Hub
+  useEffect(() => {
+    document.oncontextmenu = null;
+    document.onselectstart = null;
+    document.oncopy = null;
+    document.onpaste = null;
+
+    const allowCopyPaste = (e) => e.stopPropagation();
+    const adminRoot = document.getElementById('admin-hub-root');
+    
+    if (adminRoot) {
+      adminRoot.addEventListener('contextmenu', allowCopyPaste, true);
+      adminRoot.addEventListener('copy', allowCopyPaste, true);
+      adminRoot.addEventListener('paste', allowCopyPaste, true);
+      adminRoot.addEventListener('selectstart', allowCopyPaste, true);
+    }
+    
+    return () => {
+      if (adminRoot) {
+        adminRoot.removeEventListener('contextmenu', allowCopyPaste, true);
+        adminRoot.removeEventListener('copy', allowCopyPaste, true);
+        adminRoot.removeEventListener('paste', allowCopyPaste, true);
+        adminRoot.removeEventListener('selectstart', allowCopyPaste, true);
+      }
+    };
+  }, []);
+
   // Fetch true admin data on load
   useEffect(() => {
     const loadMyProfile = async () => {
@@ -2584,6 +2612,7 @@ const FinancesPage = () => {
 
   return (
     <div 
+      id="admin-hub-root"
       className="relative min-h-screen w-full font-montserrat text-white overflow-hidden flex flex-col bg-[#070b19]"
       style={{ 
         backgroundImage: `linear-gradient(to bottom right, rgba(7,11,25,0.9), rgba(7,11,25,0.65)), url("https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/267655.jpeg")`, 
@@ -2593,6 +2622,15 @@ const FinancesPage = () => {
       }}
     >
       <style>{`
+        /* ==========================================
+           ADMIN OVERRIDE: FORCE ENABLE COPY/PASTE 
+           ========================================== */
+        input, textarea, [contenteditable="true"] {
+          -webkit-user-select: text !important;
+          user-select: text !important;
+          cursor: text !important;
+        }
+
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; } 
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; } 
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; } 
