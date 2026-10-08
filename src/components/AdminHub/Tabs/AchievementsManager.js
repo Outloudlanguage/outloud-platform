@@ -48,53 +48,57 @@ const METRICS_DICTIONARY = [
 ];
 
 // ==========================================
-// STUDENT VIEW PREVIEW RENDERERS
+// PRE-COMPILED RENDERING ENGINES
 // ==========================================
 const getTierColor = (tier) => {
   const colors = { 'Bronze': '#d97706', 'Silver': '#cbd5e1', 'Gold': '#fcd34d', 'Diamond': '#38bdf8', 'Emerald': '#10b981' };
   return colors[tier] || '#ffffff';
 };
 
-const renderFallbackSVG = (tier, color) => {
-  return (
-    <svg className="w-full h-full drop-shadow-2xl" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id={`grad-${tier}`} x1="20" y1="10" x2="80" y2="90" gradientUnits="userSpaceOnUse">
-          <stop stopColor={color} stopOpacity="0.8" />
-          <stop offset="0.5" stopColor={color} stopOpacity="0.2" />
-          <stop offset="1" stopColor={color} stopOpacity="0.6" />
-        </linearGradient>
-        <filter id={`glow-${tier}`} x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur stdDeviation="8" result="blur" />
-          <feComposite in="SourceGraphic" in2="blur" operator="over" />
-        </filter>
-      </defs>
-      <path d="M50 5 L85 30 L85 70 L50 95 L15 70 L15 30 Z" fill={`url(#grad-${tier})`} stroke={color} strokeWidth="1.5" strokeOpacity="0.8"/>
-      <path d="M50 5 L50 50 L85 30" fill="white" fillOpacity="0.1" stroke={color} strokeWidth="0.5" strokeOpacity="0.5"/>
-      <path d="M50 5 L50 50 L15 30" fill="black" fillOpacity="0.2" stroke={color} strokeWidth="0.5" strokeOpacity="0.5"/>
-      <path d="M15 30 L50 50 L15 70" fill="white" fillOpacity="0.05" stroke={color} strokeWidth="0.5" strokeOpacity="0.5"/>
-      <path d="M85 30 L50 50 L85 70" fill="black" fillOpacity="0.3" stroke={color} strokeWidth="0.5" strokeOpacity="0.5"/>
-      <path d="M15 70 L50 50 L50 95" fill="white" fillOpacity="0.15" stroke={color} strokeWidth="0.5" strokeOpacity="0.5"/>
-      <path d="M85 70 L50 50 L50 95" fill="black" fillOpacity="0.4" stroke={color} strokeWidth="0.5" strokeOpacity="0.5"/>
-      <circle cx="50" cy="50" r="10" fill={color} filter={`url(#glow-${tier})`} opacity="0.8"/>
-      <circle cx="50" cy="50" r="4" fill="#ffffff" opacity="0.9"/>
-    </svg>
-  );
-};
+const renderFallbackSVG = (tier, color) => (
+  <svg className="absolute inset-0 w-full h-full drop-shadow-2xl z-20 scale-50" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id={`grad-${tier}`} x1="20" y1="10" x2="80" y2="90" gradientUnits="userSpaceOnUse">
+        <stop stopColor={color} stopOpacity="0.8" />
+        <stop offset="0.5" stopColor={color} stopOpacity="0.2" />
+        <stop offset="1" stopColor={color} stopOpacity="0.6" />
+      </linearGradient>
+      <filter id={`glow-${tier}`} x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur stdDeviation="8" result="blur" />
+        <feComposite in="SourceGraphic" in2="blur" operator="over" />
+      </filter>
+    </defs>
+    <path d="M50 5 L85 30 L85 70 L50 95 L15 70 L15 30 Z" fill={`url(#grad-${tier})`} stroke={color} strokeWidth="1.5" strokeOpacity="0.8"/>
+    <path d="M50 5 L50 50 L85 30" fill="white" fillOpacity="0.1" stroke={color} strokeWidth="0.5" strokeOpacity="0.5"/>
+    <path d="M50 5 L50 50 L15 30" fill="black" fillOpacity="0.2" stroke={color} strokeWidth="0.5" strokeOpacity="0.5"/>
+    <circle cx="50" cy="50" r="10" fill={color} filter={`url(#glow-${tier})`} opacity="0.8"/>
+    <circle cx="50" cy="50" r="4" fill="#ffffff" opacity="0.9"/>
+  </svg>
+);
 
-const TrophyPlayer = ({ assetUrl, videoUrl, tier, color, isModal = false }) => {
-  const [showSpawn, setShowSpawn] = useState(isModal && !!videoUrl);
+const TrophyPlayer = ({ assetUrl, videoUrl, tier, color, isModal = false, isUnlocked = false }) => {
+  const [showSpawn, setShowSpawn] = useState(isModal && isUnlocked && !!videoUrl);
+  const [fading, setFading] = useState(false);
 
   useEffect(() => {
-    if (isModal && videoUrl) {
+    // If opened in modal, play spawn animation, then smoothly crossfade to idle loop
+    if (isModal && isUnlocked && videoUrl) {
       setShowSpawn(true);
-      // Spawn animation lasts ~4 seconds before seamlessly swapping to the idle loop
-      const timer = setTimeout(() => setShowSpawn(false), 4000); 
-      return () => clearTimeout(timer);
+      setFading(false);
+      const fadeOutTimer = setTimeout(() => setFading(true), 3500); 
+      const swapTimer = setTimeout(() => {
+        setShowSpawn(false);
+        setFading(false);
+      }, 4000); 
+      return () => { clearTimeout(fadeOutTimer); clearTimeout(swapTimer); };
+    } else {
+      setShowSpawn(false);
+      setFading(false);
     }
-  }, [isModal, videoUrl, assetUrl]);
+  }, [isModal, isUnlocked, videoUrl, assetUrl]);
 
   const activeUrl = showSpawn ? videoUrl : assetUrl;
+  const isLooping = !showSpawn;
 
   if (!activeUrl) return renderFallbackSVG(tier, color);
 
@@ -103,23 +107,27 @@ const TrophyPlayer = ({ assetUrl, videoUrl, tier, color, isModal = false }) => {
     let src = match ? match[1] : '';
     if (!src) return renderFallbackSVG(tier, color);
 
-    // Forcefully strip old params and inject the required Cloudflare auto-play parameters
-    src = src.replace(/&?(autoplay|muted|controls|loop)=[^&]*/g, '');
-    src += (src.includes('?') ? '&' : '?') + `autoplay=true&muted=true&controls=false${showSpawn ? '' : '&loop=true'}`;
+    // CRITICAL: Strip any existing controls/background parameters and force Autoplay & Mute
+    src = src.replace(/\?.*/, ''); 
+    src += `?autoplay=true&muted=true&controls=false&background=true${isLooping ? '&loop=true' : ''}`;
 
     return (
-      <iframe
-        src={src}
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%] mix-blend-screen pointer-events-none"
-        style={{ border: 'none', maxWidth: 'none' }}
-        allow="autoplay; encrypted-media; picture-in-picture;"
-      />
+      <div className={`absolute inset-0 flex items-center justify-center pointer-events-none mix-blend-screen transition-opacity duration-500 z-20 ${fading ? 'opacity-0' : 'opacity-100'}`}>
+        {/* The 150% scaling forces 9:16 vertical videos to cover the bounding box without letterboxing */}
+        <div className="w-[150%] h-[150%] min-w-[300px] min-h-[400px] flex items-center justify-center">
+          <iframe
+            src={src}
+            className="w-full h-full border-none mix-blend-screen"
+            allow="autoplay; encrypted-media; picture-in-picture;"
+            title="Trophy Animation"
+          />
+        </div>
+      </div>
     );
   }
 
-  return <img src={activeUrl} alt="Trophy" className="w-full h-full object-contain mix-blend-screen drop-shadow-2xl" style={{ filter: 'contrast(1.2) brightness(1.1)' }} />;
+  return <img src={activeUrl} alt="Trophy" className="absolute inset-0 w-full h-full object-contain mix-blend-screen drop-shadow-2xl z-20 p-8" style={{ filter: 'contrast(1.2) brightness(1.1)' }} />;
 };
-
 
 export default function AchievementsManager({ onBack }) {
   const [achievements, setAchievements] = useState([]);
@@ -460,34 +468,47 @@ export default function AchievementsManager({ onBack }) {
                   <h4 className="text-[10px] font-black text-[#fcd34d] uppercase tracking-widest mb-2">Live Student Render</h4>
                   <p className="text-[9px] text-white/50 mb-6 text-center max-w-xs leading-relaxed">This is exactly how the trophy will loop in the Student's glass cabinet. Click the card to test the explosive unlock animation.</p>
                   
+                  {/* The Tall 3D Glass Case (Forces isUnlocked=true for preview) */}
                   <div 
                     onClick={() => setShowPreviewModal(true)}
-                    className="relative aspect-[4/5] w-56 md:w-64 rounded-[2rem] border flex flex-col items-center justify-between p-6 text-center transition-all duration-500 cursor-pointer group overflow-hidden bg-gradient-to-b from-white/10 to-black/60 border-white/20 shadow-[0_15px_35px_rgba(0,0,0,0.4)] hover:-translate-y-2 hover:shadow-[0_25px_60px_rgba(0,0,0,0.6)]"
+                    className="relative w-full max-w-[280px] h-[22rem] md:h-[26rem] rounded-t-[2.5rem] rounded-b-2xl border border-white/20 flex flex-col justify-end text-center transition-all duration-500 cursor-pointer group overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.8)] hover:-translate-y-2 hover:shadow-[0_30px_60px_rgba(0,0,0,0.9)]"
                   >
-                    {/* Dynamic Pedestal & Glow (Unlocked State) */}
-                    <div className="absolute inset-0 opacity-20 blur-[50px] transition-opacity duration-700 group-hover:opacity-50 rounded-[2rem] pointer-events-none" style={{ backgroundColor: hexColorPreview }} />
-                    <div className="absolute bottom-0 w-3/4 h-8 blur-[20px] rounded-[100%]" style={{ backgroundColor: hexColorPreview, opacity: 0.4 }} />
-                    <div className="absolute bottom-4 w-1/2 h-1 bg-white/40 blur-[2px] rounded-full" />
+                    {/* Deep Glass Background */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-[#0a1229]/60 to-[#070b19]/90 backdrop-blur-xl z-0"></div>
+                    
+                    {/* Dynamic Ambient Back-Glow */}
+                    <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-40 h-48 blur-[60px] opacity-40 group-hover:opacity-70 transition-opacity duration-700 pointer-events-none z-0" style={{ backgroundColor: hexColorPreview }}></div>
 
-                    {/* 3D Asset or Fallback */}
-                    <div className="relative w-32 h-32 md:w-40 md:h-40 mt-4 transition-all duration-700 pointer-events-none flex items-center justify-center overflow-hidden scale-100 opacity-100 group-hover:scale-110" style={{ transformStyle: 'preserve-3d', perspective: '1000px' }}>
+                    {/* The Physical 3D Pedestal Base */}
+                    <div className="absolute bottom-[4.5rem] left-1/2 -translate-x-1/2 w-3/4 h-12 perspective-[500px] z-10 pointer-events-none">
+                      <div className="w-full h-full border-t-2 border-l border-white/30 bg-gradient-to-b from-white/20 to-black/90 rounded-[100%]" style={{ transform: 'rotateX(75deg)', boxShadow: `inset 0 0 30px ${hexColorPreview}50` }}></div>
+                      {/* Condensed inner glow hitting the pedestal floor */}
+                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 blur-[20px] rounded-full" style={{ backgroundColor: hexColorPreview, opacity: 0.8 }}></div>
+                    </div>
+
+                    {/* The Video Engine Layer */}
+                    <div className="absolute inset-0 flex items-center justify-center transition-all duration-700 pointer-events-none overflow-hidden scale-100 opacity-100 group-hover:scale-110" style={{ transformStyle: 'preserve-3d', perspective: '1000px' }}>
                       <div style={{ color: hexColorPreview, filter: `drop-shadow(0 20px 30px ${hexColorPreview}80)` }} className="w-full h-full flex items-center justify-center transform transition-transform duration-700 group-hover:rotate-y-12 group-hover:-rotate-x-12 relative">
-                        <TrophyPlayer assetUrl={formData.asset_url} tier={formData.tier} color={hexColorPreview} isModal={false} />
+                        <TrophyPlayer assetUrl={formData.asset_url} videoUrl={formData.video_url} tier={formData.tier} color={hexColorPreview} isModal={false} isUnlocked={true} />
                       </div>
                     </div>
 
-                    <div className="w-full z-10 flex flex-col items-center mt-auto">
+                    {/* Foreground Glass Glare Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-30 z-30 pointer-events-none rounded-t-[2.5rem]"></div>
+
+                    {/* The Engraved Plaque */}
+                    <div className="relative z-40 w-full p-5 text-center bg-black/80 border-t border-white/10 backdrop-blur-2xl mt-auto shadow-inner flex flex-col items-center">
                       <h3 className="text-xs md:text-sm font-black uppercase tracking-widest mb-1.5 transition-colors line-clamp-2 px-2 text-white drop-shadow-md">
                         {formData.title || 'Trophy Title'}
                       </h3>
-                      <div className="px-3 py-1 rounded-full border border-transparent text-[8px] font-black tracking-widest uppercase shadow-sm bg-black/40" style={{ color: hexColorPreview }}>
+                      <div className="px-4 py-1.5 rounded-full border border-white/10 text-[8px] font-black tracking-widest uppercase shadow-md bg-black inline-block" style={{ color: hexColorPreview }}>
                         {formData.tier}
                       </div>
                     </div>
 
-                    {/* Instruction Overlay */}
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-50 backdrop-blur-sm rounded-[2rem]">
-                        <span className="text-white font-black text-xs uppercase tracking-widest border border-white/20 px-4 py-2 rounded-full bg-white/10 shadow-lg">TEST SPAWN</span>
+                    {/* Interaction Overlay */}
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-50 backdrop-blur-sm">
+                        <span className="text-white font-black text-xs uppercase tracking-widest border border-white/20 px-6 py-3 rounded-full bg-white/10 shadow-lg hover:scale-105 transition-transform">TEST SPAWN</span>
                     </div>
                   </div>
                 </div>
@@ -527,40 +548,42 @@ export default function AchievementsManager({ onBack }) {
       {/* STUDENT SPAWN PREVIEW MODAL                */}
       {/* ========================================== */}
       {showPreviewModal && (
-        <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-2xl flex items-center justify-center p-4 animate-fade-in select-none" onClick={() => setShowPreviewModal(false)}>
-          <div className="bg-[#0a0e1a] border border-white/10 rounded-[3rem] p-6 md:p-10 max-w-lg w-full shadow-[0_30px_100px_rgba(0,0,0,1)] relative flex flex-col items-center text-center animate-slide-up max-h-[90vh] overflow-y-auto custom-scrollbar" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-2xl flex items-center justify-center p-4 animate-fade-in select-none overflow-y-auto custom-scrollbar" onClick={() => setShowPreviewModal(false)}>
+          
+          <div className="bg-[#0a0e1a] border border-white/10 rounded-[3rem] p-6 md:p-10 max-w-2xl w-full shadow-[0_30px_100px_rgba(0,0,0,1)] relative flex flex-col items-center text-center animate-slide-up my-auto" onClick={e => e.stopPropagation()}>
             
-            {/* Dynamic Modal Background Glow */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1/2 blur-[100px] rounded-full pointer-events-none opacity-20" style={{ backgroundColor: hexColorPreview }} />
+            {/* Massive Environmental Glow */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-3/4 blur-[120px] rounded-full pointer-events-none opacity-30" style={{ backgroundColor: hexColorPreview }} />
             
-            <button onClick={() => setShowPreviewModal(false)} className="absolute top-6 right-6 w-10 h-10 bg-white/5 border border-white/10 hover:bg-white/20 text-white rounded-full font-black transition-colors flex items-center justify-center z-50 shadow-md">✕</button>
+            <button onClick={() => setShowPreviewModal(false)} className="absolute top-6 right-6 w-12 h-12 bg-white/5 border border-white/10 hover:bg-white/20 text-white rounded-full font-black transition-colors flex items-center justify-center z-50 shadow-md">✕</button>
             
-            <div className="w-48 md:w-56 aspect-[3/4] mb-6 transition-all duration-700 relative z-10 flex items-center justify-center overflow-hidden opacity-100 scale-100">
+            {/* The Fullscreen Cinematic Player Container */}
+            <div className="w-full max-w-sm aspect-[3/4] mb-8 relative z-10 flex items-center justify-center overflow-hidden rounded-[2.5rem] shadow-[0_20px_60px_rgba(0,0,0,0.8)] border border-white/10 bg-black/40 backdrop-blur-xl">
               <div style={{ color: hexColorPreview, filter: `drop-shadow(0 20px 40px ${hexColorPreview})` }} className="absolute inset-0 flex items-center justify-center w-full h-full">
-                <TrophyPlayer assetUrl={formData.asset_url} videoUrl={formData.video_url} tier={formData.tier} color={hexColorPreview} isModal={true} />
+                <TrophyPlayer assetUrl={formData.asset_url} videoUrl={formData.video_url} tier={formData.tier} color={hexColorPreview} isModal={true} isUnlocked={true} />
               </div>
             </div>
 
-            <h2 className="text-3xl md:text-4xl font-black text-white uppercase tracking-widest mb-3 relative z-10 drop-shadow-md">{formData.title || 'Trophy Title'}</h2>
+            <h2 className="text-3xl md:text-5xl font-black text-white uppercase tracking-widest mb-4 relative z-10 drop-shadow-lg">{formData.title || 'Trophy Title'}</h2>
             
             <div className="flex items-center gap-3 mb-8 relative z-10">
-              <span className="px-4 py-1.5 rounded-full border bg-black/40 text-[10px] font-black tracking-widest uppercase shadow-inner" style={{ color: hexColorPreview, borderColor: `${hexColorPreview}40` }}>
+              <span className="px-5 py-2 rounded-full border bg-black/60 text-[10px] font-black tracking-widest uppercase shadow-inner" style={{ color: hexColorPreview, borderColor: `${hexColorPreview}50` }}>
                 {formData.tier} Tier
               </span>
-              <span className="px-4 py-1.5 rounded-full border border-white/10 bg-white/5 text-white/60 text-[10px] font-black tracking-widest uppercase">
+              <span className="px-5 py-2 rounded-full border border-white/10 bg-white/5 text-white/70 text-[10px] font-black tracking-widest uppercase">
                 {formData.category}
               </span>
             </div>
             
             <div className="w-full bg-white/5 border border-white/10 rounded-2xl p-6 mb-8 relative z-10 shadow-inner">
-              <h4 className="text-[10px] font-black text-[#fcd34d] uppercase tracking-widest mb-2">Objective</h4>
+              <h4 className="text-[10px] font-black text-[#fcd34d] uppercase tracking-widest mb-2">Objective Completed</h4>
               <p className="text-sm md:text-base text-white/90 font-medium leading-relaxed">
                 {formData.description || 'Description will appear here...'}
               </p>
             </div>
 
-            <div className="w-full py-5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-2xl font-black text-sm uppercase tracking-widest shadow-inner flex items-center justify-center gap-3 mb-8 relative z-10">
-              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/></svg>
+            <div className="w-full py-6 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-2xl font-black text-sm uppercase tracking-widest shadow-inner flex items-center justify-center gap-3 relative z-10">
+              <svg className="w-6 h-6 animate-pulse" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/></svg>
               Achievement Unlocked
             </div>
           </div>
