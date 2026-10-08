@@ -575,6 +575,7 @@ export default function AchievementsManager({ onBack }) {
               </span>
             </div>
             
+            
             <div className="w-full bg-white/5 border border-white/10 rounded-2xl p-6 mb-8 relative z-10 shadow-inner">
               <h4 className="text-[10px] font-black text-[#fcd34d] uppercase tracking-widest mb-2">Objective Completed</h4>
               <p className="text-sm md:text-base text-white/90 font-medium leading-relaxed">
