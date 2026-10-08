@@ -54,64 +54,71 @@ export default function TrophyRoom({ targetUser, currentUserRole, onClose, isAdm
     return colors[tier] || '#ffffff';
   };
 
-  // Upgraded Premium Geometric Fallbacks
-  const renderFallbackSVG = (tier, color) => {
+  // ==========================================
+// PRE-COMPILED RENDERING ENGINES
+// ==========================================
+const renderFallbackSVG = (tier, color) => (
+  <svg className="w-full h-full drop-shadow-2xl" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id={`grad-${tier}`} x1="20" y1="10" x2="80" y2="90" gradientUnits="userSpaceOnUse">
+        <stop stopColor={color} stopOpacity="0.8" />
+        <stop offset="0.5" stopColor={color} stopOpacity="0.2" />
+        <stop offset="1" stopColor={color} stopOpacity="0.6" />
+      </linearGradient>
+      <filter id={`glow-${tier}`} x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur stdDeviation="8" result="blur" />
+        <feComposite in="SourceGraphic" in2="blur" operator="over" />
+      </filter>
+    </defs>
+    <path d="M50 5 L85 30 L85 70 L50 95 L15 70 L15 30 Z" fill={`url(#grad-${tier})`} stroke={color} strokeWidth="1.5" strokeOpacity="0.8"/>
+    <path d="M50 5 L50 50 L85 30" fill="white" fillOpacity="0.1" stroke={color} strokeWidth="0.5" strokeOpacity="0.5"/>
+    <path d="M50 5 L50 50 L15 30" fill="black" fillOpacity="0.2" stroke={color} strokeWidth="0.5" strokeOpacity="0.5"/>
+    <path d="M15 30 L50 50 L15 70" fill="white" fillOpacity="0.05" stroke={color} strokeWidth="0.5" strokeOpacity="0.5"/>
+    <path d="M85 30 L50 50 L85 70" fill="black" fillOpacity="0.3" stroke={color} strokeWidth="0.5" strokeOpacity="0.5"/>
+    <path d="M15 70 L50 50 L50 95" fill="white" fillOpacity="0.15" stroke={color} strokeWidth="0.5" strokeOpacity="0.5"/>
+    <path d="M85 70 L50 50 L50 95" fill="black" fillOpacity="0.4" stroke={color} strokeWidth="0.5" strokeOpacity="0.5"/>
+    <circle cx="50" cy="50" r="10" fill={color} filter={`url(#glow-${tier})`} opacity="0.8"/>
+    <circle cx="50" cy="50" r="4" fill="#ffffff" opacity="0.9"/>
+  </svg>
+);
+
+const TrophyPlayer = ({ assetUrl, videoUrl, tier, color, isModal = false, isUnlocked = false }) => {
+  const [showSpawn, setShowSpawn] = useState(isModal && isUnlocked && !!videoUrl);
+
+  useEffect(() => {
+    if (isModal && isUnlocked && videoUrl) {
+      setShowSpawn(true);
+      const timer = setTimeout(() => setShowSpawn(false), 4000); 
+      return () => clearTimeout(timer);
+    }
+  }, [isModal, isUnlocked, videoUrl, assetUrl]);
+
+  const activeUrl = showSpawn ? videoUrl : assetUrl;
+
+  if (!activeUrl) return renderFallbackSVG(tier, color);
+
+  if (activeUrl.includes('<iframe')) {
+    const match = activeUrl.match(/src=["'](.*?)["']/);
+    let src = match ? match[1] : '';
+    if (!src) return renderFallbackSVG(tier, color);
+
+    // Forcefully strip old params and inject the required Cloudflare auto-play parameters
+    src = src.replace(/&?(autoplay|muted|controls|loop)=[^&]*/g, '');
+    src += (src.includes('?') ? '&' : '?') + `autoplay=true&muted=true&controls=false${showSpawn ? '' : '&loop=true'}`;
+
     return (
-      <svg className="w-full h-full drop-shadow-2xl" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id={`grad-${tier}`} x1="20" y1="10" x2="80" y2="90" gradientUnits="userSpaceOnUse">
-            <stop stopColor={color} stopOpacity="0.8" />
-            <stop offset="0.5" stopColor={color} stopOpacity="0.2" />
-            <stop offset="1" stopColor={color} stopOpacity="0.6" />
-          </linearGradient>
-          <filter id={`glow-${tier}`} x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="8" result="blur" />
-            <feComposite in="SourceGraphic" in2="blur" operator="over" />
-          </filter>
-        </defs>
-        
-        {/* Core Crystal Shape */}
-        <path d="M50 5 L85 30 L85 70 L50 95 L15 70 L15 30 Z" fill={`url(#grad-${tier})`} stroke={color} strokeWidth="1.5" strokeOpacity="0.8"/>
-        
-        {/* Inner Facets for 3D illusion */}
-        <path d="M50 5 L50 50 L85 30" fill="white" fillOpacity="0.1" stroke={color} strokeWidth="0.5" strokeOpacity="0.5"/>
-        <path d="M50 5 L50 50 L15 30" fill="black" fillOpacity="0.2" stroke={color} strokeWidth="0.5" strokeOpacity="0.5"/>
-        <path d="M15 30 L50 50 L15 70" fill="white" fillOpacity="0.05" stroke={color} strokeWidth="0.5" strokeOpacity="0.5"/>
-        <path d="M85 30 L50 50 L85 70" fill="black" fillOpacity="0.3" stroke={color} strokeWidth="0.5" strokeOpacity="0.5"/>
-        <path d="M15 70 L50 50 L50 95" fill="white" fillOpacity="0.15" stroke={color} strokeWidth="0.5" strokeOpacity="0.5"/>
-        <path d="M85 70 L50 50 L50 95" fill="black" fillOpacity="0.4" stroke={color} strokeWidth="0.5" strokeOpacity="0.5"/>
-        
-        {/* Core Energy Sphere */}
-        <circle cx="50" cy="50" r="10" fill={color} filter={`url(#glow-${tier})`} opacity="0.8"/>
-        <circle cx="50" cy="50" r="4" fill="#ffffff" opacity="0.9"/>
-      </svg>
+      <iframe
+        src={src}
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%] mix-blend-screen pointer-events-none"
+        style={{ border: 'none', maxWidth: 'none' }}
+        allow="autoplay; encrypted-media; picture-in-picture;"
+        title="Trophy Animation"
+      />
     );
-  };
+  }
 
-  // Helper function to render the Cloudflare Iframe seamlessly
-  const renderCloudflareIframe = (iframeHtml) => {
-    if (!iframeHtml || !iframeHtml.includes('<iframe')) return null;
-    
-    // Extract just the src URL from the iframe string to keep our React structure clean
-    const match = iframeHtml.match(/src=["'](.*?)["']/);
-    const src = match ? match[1] : '';
-
-    if (!src) return null;
-
-    return (
-      <div className="w-full h-full relative" style={{ paddingTop: '177.77777777777777%' }}>
-        <iframe
-          src={src}
-          loading="lazy"
-          style={{ border: 'none', position: 'absolute', top: 0, left: 0, height: '100%', width: '100%' }}
-          allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
-          allowFullScreen={true}
-          title="Trophy Animation"
-          className="mix-blend-screen pointer-events-none" // This is the magic that removes the black background
-        />
-      </div>
-    );
-  };
+  return <img src={activeUrl} alt="Trophy" className="w-full h-full object-contain mix-blend-screen drop-shadow-2xl" style={{ filter: 'contrast(1.2) brightness(1.1)' }} />;
+};
 
   if (loading) {
     return (
@@ -194,16 +201,12 @@ export default function TrophyRoom({ targetUser, currentUserRole, onClose, isAdm
                   )}
 
                   {/* 3D Asset, Video Iframe, or Fallback */}
-                  <div className={`relative w-28 h-28 md:w-36 md:h-36 mt-4 transition-all duration-700 pointer-events-none flex items-center justify-center overflow-visible ${
+                  <div className={`relative w-28 h-28 md:w-36 md:h-36 mt-4 transition-all duration-700 pointer-events-none flex items-center justify-center overflow-hidden ${
                     isUnlocked ? 'scale-100 opacity-100 group-hover:scale-110' : 'scale-90 opacity-20 grayscale blur-[2px]'
                   }`} style={{ transformStyle: 'preserve-3d', perspective: '1000px' }}>
                     
-                    <div style={{ color: hexColor, filter: isUnlocked ? `drop-shadow(0 20px 30px ${hexColor}80)` : 'none' }} className="w-full h-full flex items-center justify-center transform transition-transform duration-700 group-hover:rotate-y-12 group-hover:-rotate-x-12">
-                      {trophy.asset_url ? (
-                        trophy.asset_url.includes('<iframe') 
-                          ? renderCloudflareIframe(trophy.asset_url)
-                          : <img src={trophy.asset_url} alt={trophy.title} className="w-full h-full object-contain drop-shadow-2xl mix-blend-screen" />
-                      ) : renderFallbackSVG(trophy.tier, hexColor)}
+                    <div style={{ color: hexColor, filter: isUnlocked ? `drop-shadow(0 20px 30px ${hexColor}80)` : 'none' }} className="w-full h-full flex items-center justify-center transform transition-transform duration-700 group-hover:rotate-y-12 group-hover:-rotate-x-12 relative">
+                      <TrophyPlayer assetUrl={trophy.asset_url} videoUrl={trophy.video_url} tier={trophy.tier} color={hexColor} isModal={false} isUnlocked={isUnlocked} />
                     </div>
                     
                     {/* The Padlock Seal */}
@@ -246,23 +249,17 @@ export default function TrophyRoom({ targetUser, currentUserRole, onClose, isAdm
 
       {/* INSPECTION MODAL */}
       {selectedTrophy && (
-        <div className="fixed inset-0 z-[800] bg-black/80 backdrop-blur-2xl flex items-center justify-center p-4 animate-fade-in" onClick={() => setSelectedTrophy(null)}>
-          <div className="bg-[#0a0e1a] border border-white/10 rounded-[3rem] p-8 md:p-12 max-w-xl w-full shadow-[0_30px_100px_rgba(0,0,0,1)] relative flex flex-col items-center text-center animate-slide-up" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[800] bg-black/80 backdrop-blur-2xl flex items-center justify-center p-4 animate-fade-in select-none" onClick={() => setSelectedTrophy(null)}>
+          <div className="bg-[#0a0e1a] border border-white/10 rounded-[3rem] p-6 md:p-10 max-w-lg w-full shadow-[0_30px_100px_rgba(0,0,0,1)] relative flex flex-col items-center text-center animate-slide-up max-h-[90vh] overflow-y-auto custom-scrollbar" onClick={e => e.stopPropagation()}>
             
             {/* Dynamic Modal Background Glow */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1/2 blur-[100px] rounded-full pointer-events-none opacity-20" style={{ backgroundColor: getTierColor(selectedTrophy.tier) }} />
             
-            <button onClick={() => setSelectedTrophy(null)} className="absolute top-6 right-6 w-12 h-12 bg-white/5 border border-white/10 hover:bg-white/20 text-white rounded-full font-black transition-colors flex items-center justify-center z-50 shadow-md">✕</button>
+            <button onClick={() => setSelectedTrophy(null)} className="absolute top-6 right-6 w-10 h-10 bg-white/5 border border-white/10 hover:bg-white/20 text-white rounded-full font-black transition-colors flex items-center justify-center z-50 shadow-md">✕</button>
             
-            <div className={`w-48 h-48 md:w-64 md:h-64 mb-10 transition-all duration-700 relative z-10 flex items-center justify-center overflow-visible ${selectedTrophy.isUnlocked ? 'opacity-100 scale-100' : 'opacity-30 grayscale blur-[2px] scale-90'}`}>
-              <div style={{ color: getTierColor(selectedTrophy.tier), filter: selectedTrophy.isUnlocked ? `drop-shadow(0 20px 40px ${getTierColor(selectedTrophy.tier)})` : 'none' }} className="w-full h-full flex items-center justify-center">
-                {selectedTrophy.video_url && selectedTrophy.isUnlocked ? (
-                  renderCloudflareIframe(selectedTrophy.video_url)
-                ) : selectedTrophy.asset_url ? (
-                  selectedTrophy.asset_url.includes('<iframe') 
-                    ? renderCloudflareIframe(selectedTrophy.asset_url)
-                    : <img src={selectedTrophy.asset_url} alt="Trophy" className="w-full h-full object-contain mix-blend-screen drop-shadow-2xl" />
-                ) : renderFallbackSVG(selectedTrophy.tier, getTierColor(selectedTrophy.tier))}
+            <div className={`w-48 md:w-56 aspect-[3/4] mb-6 transition-all duration-700 relative z-10 flex items-center justify-center overflow-hidden ${selectedTrophy.isUnlocked ? 'opacity-100 scale-100' : 'opacity-30 grayscale blur-[2px] scale-90'}`}>
+              <div style={{ color: getTierColor(selectedTrophy.tier), filter: selectedTrophy.isUnlocked ? `drop-shadow(0 20px 40px ${getTierColor(selectedTrophy.tier)})` : 'none' }} className="absolute inset-0 flex items-center justify-center w-full h-full">
+                <TrophyPlayer assetUrl={selectedTrophy.asset_url} videoUrl={selectedTrophy.video_url} tier={selectedTrophy.tier} color={getTierColor(selectedTrophy.tier)} isModal={true} isUnlocked={selectedTrophy.isUnlocked} />
               </div>
               
               {!selectedTrophy.isUnlocked && (

@@ -82,24 +82,42 @@ const renderFallbackSVG = (tier, color) => {
   );
 };
 
-const renderCloudflareIframe = (iframeHtml) => {
-  if (!iframeHtml || !iframeHtml.includes('<iframe')) return null;
-  const match = iframeHtml.match(/src=["'](.*?)["']/);
-  const src = match ? match[1] : '';
-  if (!src) return null;
-  return (
-    <div className="w-full h-full relative" style={{ paddingTop: '177.77777777777777%' }}>
+const TrophyPlayer = ({ assetUrl, videoUrl, tier, color, isModal = false }) => {
+  const [showSpawn, setShowSpawn] = useState(isModal && !!videoUrl);
+
+  useEffect(() => {
+    if (isModal && videoUrl) {
+      setShowSpawn(true);
+      // Spawn animation lasts ~4 seconds before seamlessly swapping to the idle loop
+      const timer = setTimeout(() => setShowSpawn(false), 4000); 
+      return () => clearTimeout(timer);
+    }
+  }, [isModal, videoUrl, assetUrl]);
+
+  const activeUrl = showSpawn ? videoUrl : assetUrl;
+
+  if (!activeUrl) return renderFallbackSVG(tier, color);
+
+  if (activeUrl.includes('<iframe')) {
+    const match = activeUrl.match(/src=["'](.*?)["']/);
+    let src = match ? match[1] : '';
+    if (!src) return renderFallbackSVG(tier, color);
+
+    // Forcefully strip old params and inject the required Cloudflare auto-play parameters
+    src = src.replace(/&?(autoplay|muted|controls|loop)=[^&]*/g, '');
+    src += (src.includes('?') ? '&' : '?') + `autoplay=true&muted=true&controls=false${showSpawn ? '' : '&loop=true'}`;
+
+    return (
       <iframe
         src={src}
-        loading="lazy"
-        style={{ border: 'none', position: 'absolute', top: 0, left: 0, height: '100%', width: '100%' }}
-        allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
-        allowFullScreen={true}
-        title="Trophy Animation"
-        className="mix-blend-screen pointer-events-none"
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%] mix-blend-screen pointer-events-none"
+        style={{ border: 'none', maxWidth: 'none' }}
+        allow="autoplay; encrypted-media; picture-in-picture;"
       />
-    </div>
-  );
+    );
+  }
+
+  return <img src={activeUrl} alt="Trophy" className="w-full h-full object-contain mix-blend-screen drop-shadow-2xl" style={{ filter: 'contrast(1.2) brightness(1.1)' }} />;
 };
 
 
@@ -452,13 +470,9 @@ export default function AchievementsManager({ onBack }) {
                     <div className="absolute bottom-4 w-1/2 h-1 bg-white/40 blur-[2px] rounded-full" />
 
                     {/* 3D Asset or Fallback */}
-                    <div className="relative w-32 h-32 md:w-40 md:h-40 mt-4 transition-all duration-700 pointer-events-none flex items-center justify-center overflow-visible scale-100 opacity-100 group-hover:scale-110" style={{ transformStyle: 'preserve-3d', perspective: '1000px' }}>
-                      <div style={{ color: hexColorPreview, filter: `drop-shadow(0 20px 30px ${hexColorPreview}80)` }} className="w-full h-full flex items-center justify-center transform transition-transform duration-700 group-hover:rotate-y-12 group-hover:-rotate-x-12">
-                        {formData.asset_url ? (
-                          formData.asset_url.includes('<iframe') 
-                            ? renderCloudflareIframe(formData.asset_url)
-                            : <img src={formData.asset_url} alt={formData.title} className="w-full h-full object-contain drop-shadow-2xl mix-blend-screen" style={{ filter: 'contrast(1.2) brightness(1.1)' }} />
-                        ) : renderFallbackSVG(formData.tier, hexColorPreview)}
+                    <div className="relative w-32 h-32 md:w-40 md:h-40 mt-4 transition-all duration-700 pointer-events-none flex items-center justify-center overflow-hidden scale-100 opacity-100 group-hover:scale-110" style={{ transformStyle: 'preserve-3d', perspective: '1000px' }}>
+                      <div style={{ color: hexColorPreview, filter: `drop-shadow(0 20px 30px ${hexColorPreview}80)` }} className="w-full h-full flex items-center justify-center transform transition-transform duration-700 group-hover:rotate-y-12 group-hover:-rotate-x-12 relative">
+                        <TrophyPlayer assetUrl={formData.asset_url} tier={formData.tier} color={hexColorPreview} isModal={false} />
                       </div>
                     </div>
 
@@ -514,22 +528,16 @@ export default function AchievementsManager({ onBack }) {
       {/* ========================================== */}
       {showPreviewModal && (
         <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-2xl flex items-center justify-center p-4 animate-fade-in select-none" onClick={() => setShowPreviewModal(false)}>
-          <div className="bg-[#0a0e1a] border border-white/10 rounded-[3rem] p-8 md:p-12 max-w-xl w-full shadow-[0_30px_100px_rgba(0,0,0,1)] relative flex flex-col items-center text-center animate-slide-up" onClick={e => e.stopPropagation()}>
+          <div className="bg-[#0a0e1a] border border-white/10 rounded-[3rem] p-6 md:p-10 max-w-lg w-full shadow-[0_30px_100px_rgba(0,0,0,1)] relative flex flex-col items-center text-center animate-slide-up max-h-[90vh] overflow-y-auto custom-scrollbar" onClick={e => e.stopPropagation()}>
             
             {/* Dynamic Modal Background Glow */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1/2 blur-[100px] rounded-full pointer-events-none opacity-20" style={{ backgroundColor: hexColorPreview }} />
             
-            <button onClick={() => setShowPreviewModal(false)} className="absolute top-6 right-6 w-12 h-12 bg-white/5 border border-white/10 hover:bg-white/20 text-white rounded-full font-black transition-colors flex items-center justify-center z-50 shadow-md">✕</button>
+            <button onClick={() => setShowPreviewModal(false)} className="absolute top-6 right-6 w-10 h-10 bg-white/5 border border-white/10 hover:bg-white/20 text-white rounded-full font-black transition-colors flex items-center justify-center z-50 shadow-md">✕</button>
             
-            <div className="w-48 h-48 md:w-64 md:h-64 mb-10 transition-all duration-700 relative z-10 flex items-center justify-center overflow-visible opacity-100 scale-100">
-              <div style={{ color: hexColorPreview, filter: `drop-shadow(0 20px 40px ${hexColorPreview})` }} className="w-full h-full flex items-center justify-center">
-                {formData.video_url ? (
-                  renderCloudflareIframe(formData.video_url)
-                ) : formData.asset_url ? (
-                  formData.asset_url.includes('<iframe') 
-                    ? renderCloudflareIframe(formData.asset_url)
-                    : <img src={formData.asset_url} alt="Trophy" className="w-full h-full object-contain mix-blend-screen drop-shadow-2xl" style={{ filter: 'contrast(1.2) brightness(1.1)' }} />
-                ) : renderFallbackSVG(formData.tier, hexColorPreview)}
+            <div className="w-48 md:w-56 aspect-[3/4] mb-6 transition-all duration-700 relative z-10 flex items-center justify-center overflow-hidden opacity-100 scale-100">
+              <div style={{ color: hexColorPreview, filter: `drop-shadow(0 20px 40px ${hexColorPreview})` }} className="absolute inset-0 flex items-center justify-center w-full h-full">
+                <TrophyPlayer assetUrl={formData.asset_url} videoUrl={formData.video_url} tier={formData.tier} color={hexColorPreview} isModal={true} />
               </div>
             </div>
 
