@@ -88,6 +88,31 @@ export default function TrophyRoom({ targetUser, currentUserRole, onClose, isAdm
     );
   };
 
+  // Helper function to render the Cloudflare Iframe seamlessly
+  const renderCloudflareIframe = (iframeHtml) => {
+    if (!iframeHtml || !iframeHtml.includes('<iframe')) return null;
+    
+    // Extract just the src URL from the iframe string to keep our React structure clean
+    const match = iframeHtml.match(/src=["'](.*?)["']/);
+    const src = match ? match[1] : '';
+
+    if (!src) return null;
+
+    return (
+      <div className="w-full h-full relative" style={{ paddingTop: '177.77777777777777%' }}>
+        <iframe
+          src={src}
+          loading="lazy"
+          style={{ border: 'none', position: 'absolute', top: 0, left: 0, height: '100%', width: '100%' }}
+          allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+          allowFullScreen={true}
+          title="Trophy Animation"
+          className="mix-blend-screen pointer-events-none" // This is the magic that removes the black background
+        />
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="fixed inset-0 z-[700] bg-black/80 backdrop-blur-2xl flex items-center justify-center p-4 animate-fade-in font-montserrat">
@@ -168,13 +193,17 @@ export default function TrophyRoom({ targetUser, currentUserRole, onClose, isAdm
                     </>
                   )}
 
-                  {/* 3D Asset or Fallback */}
-                  <div className={`relative w-28 h-28 md:w-36 md:h-36 mt-4 transition-all duration-700 pointer-events-none ${
+                  {/* 3D Asset, Video Iframe, or Fallback */}
+                  <div className={`relative w-28 h-28 md:w-36 md:h-36 mt-4 transition-all duration-700 pointer-events-none flex items-center justify-center overflow-visible ${
                     isUnlocked ? 'scale-100 opacity-100 group-hover:scale-110' : 'scale-90 opacity-20 grayscale blur-[2px]'
                   }`} style={{ transformStyle: 'preserve-3d', perspective: '1000px' }}>
                     
                     <div style={{ color: hexColor, filter: isUnlocked ? `drop-shadow(0 20px 30px ${hexColor}80)` : 'none' }} className="w-full h-full flex items-center justify-center transform transition-transform duration-700 group-hover:rotate-y-12 group-hover:-rotate-x-12">
-                      {trophy.asset_url ? <img src={trophy.asset_url} alt={trophy.title} className="w-full h-full object-contain drop-shadow-2xl" /> : renderFallbackSVG(trophy.tier, hexColor)}
+                      {trophy.asset_url ? (
+                        trophy.asset_url.includes('<iframe') 
+                          ? renderCloudflareIframe(trophy.asset_url)
+                          : <img src={trophy.asset_url} alt={trophy.title} className="w-full h-full object-contain drop-shadow-2xl mix-blend-screen" />
+                      ) : renderFallbackSVG(trophy.tier, hexColor)}
                     </div>
                     
                     {/* The Padlock Seal */}
@@ -198,7 +227,7 @@ export default function TrophyRoom({ targetUser, currentUserRole, onClose, isAdm
                       {trophy.tier}
                     </div>
 
-                    {/* Progress Bar (Always visible if locked and progress > 0, otherwise appears on hover) */}
+                    {/* Progress Bar */}
                     {!isUnlocked && trophy.target_value > 1 && (
                       <div className="w-full mt-4 px-2 opacity-60 group-hover:opacity-100 transition-opacity">
                         <div className="w-full h-1.5 bg-black/80 rounded-full overflow-hidden shadow-inner border border-white/5">
@@ -225,10 +254,17 @@ export default function TrophyRoom({ targetUser, currentUserRole, onClose, isAdm
             
             <button onClick={() => setSelectedTrophy(null)} className="absolute top-6 right-6 w-12 h-12 bg-white/5 border border-white/10 hover:bg-white/20 text-white rounded-full font-black transition-colors flex items-center justify-center z-50 shadow-md">✕</button>
             
-            <div className={`w-48 h-48 md:w-64 md:h-64 mb-10 transition-all duration-700 relative z-10 ${selectedTrophy.isUnlocked ? 'opacity-100 scale-100' : 'opacity-30 grayscale blur-[2px] scale-90'}`}>
+            <div className={`w-48 h-48 md:w-64 md:h-64 mb-10 transition-all duration-700 relative z-10 flex items-center justify-center overflow-visible ${selectedTrophy.isUnlocked ? 'opacity-100 scale-100' : 'opacity-30 grayscale blur-[2px] scale-90'}`}>
               <div style={{ color: getTierColor(selectedTrophy.tier), filter: selectedTrophy.isUnlocked ? `drop-shadow(0 20px 40px ${getTierColor(selectedTrophy.tier)})` : 'none' }} className="w-full h-full flex items-center justify-center">
-                {selectedTrophy.asset_url ? <img src={selectedTrophy.asset_url} alt="Trophy" className="w-full h-full object-contain drop-shadow-2xl" /> : renderFallbackSVG(selectedTrophy.tier, getTierColor(selectedTrophy.tier))}
+                {selectedTrophy.video_url && selectedTrophy.isUnlocked ? (
+                  renderCloudflareIframe(selectedTrophy.video_url)
+                ) : selectedTrophy.asset_url ? (
+                  selectedTrophy.asset_url.includes('<iframe') 
+                    ? renderCloudflareIframe(selectedTrophy.asset_url)
+                    : <img src={selectedTrophy.asset_url} alt="Trophy" className="w-full h-full object-contain mix-blend-screen drop-shadow-2xl" />
+                ) : renderFallbackSVG(selectedTrophy.tier, getTierColor(selectedTrophy.tier))}
               </div>
+              
               {!selectedTrophy.isUnlocked && (
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="bg-black/80 backdrop-blur-xl p-6 rounded-full border border-white/10 shadow-2xl">

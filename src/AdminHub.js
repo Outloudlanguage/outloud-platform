@@ -23,6 +23,7 @@ import StudentManagerModal from './components/AdminHub/Tabs/StudentManagerModal'
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import StatisticsHub from './components/StatisticsHub';
+import AchievementsManager from './components/AdminHub/Tabs/AchievementsManager';
 import CommercialFunnelModule from './statistics_engines/CommercialFunnelModule';
 import ProfitMarginAnalysis from './statistics_engines/ProfitMarginAnalysis';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts';
@@ -1052,181 +1053,6 @@ const AdminTeacherMetricsModal = ({ isOpen, onClose, teacherId, teacherName, sup
             </div>
           )}
         </div>
-      </div>
-    </div>
-  );
-};
-
-// ==========================================
-// ACHIEVEMENTS MANAGER MODULE (Admin)
-// ==========================================
-const AchievementsModule = ({ onBack }) => {
-  const [achievements, setAchievements] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({
-    id: null, title: '', description: '', category: 'Milestone', 
-    tier: 'Bronze', target_value: 1, asset_url: '', is_secret: false, sort_order: 0
-  });
-
-  const fetchAchievements = async () => {
-    setLoading(true);
-    const { data } = await supabase.from('achievements').select('*').order('sort_order', { ascending: true });
-    if (data) setAchievements(data);
-    setLoading(false);
-  };
-
-  useEffect(() => { fetchAchievements(); }, []);
-
-  const handleSave = async (e) => {
-    e.preventDefault();
-    const payload = { ...formData };
-    if (!payload.id) delete payload.id; // Let DB generate ID for new ones
-    
-    const { error } = await supabase.from('achievements').upsert(payload);
-    if (error) {
-      alert("Error saving achievement: " + error.message);
-    } else {
-      alert("Achievement saved successfully!");
-      setIsEditing(false);
-      setFormData({ id: null, title: '', description: '', category: 'Milestone', tier: 'Bronze', target_value: 1, asset_url: '', is_secret: false, sort_order: 0 });
-      fetchAchievements();
-    }
-  };
-
-  const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this achievement? This will remove it from all users who earned it.")) return;
-    await supabase.from('achievements').delete().eq('id', id);
-    fetchAchievements();
-  };
-
-  const openEditor = (ach = null) => {
-    if (ach) setFormData(ach);
-    else setFormData({ id: null, title: '', description: '', category: 'Milestone', tier: 'Bronze', target_value: 1, asset_url: '', is_secret: false, sort_order: 0 });
-    setIsEditing(true);
-  };
-
-  return (
-    <div className="flex flex-col w-full h-[calc(100vh-160px)] animate-fade-in relative z-10">
-      <div className="flex items-center gap-4 mb-8 shrink-0">
-        <button onClick={onBack} className="w-10 h-10 bg-white/10 hover:bg-[#fcd34d] text-white hover:text-[#08203e] rounded-full flex items-center justify-center font-black transition-all">←</button>
-        <div>
-          <h2 className="text-2xl font-black uppercase tracking-widest text-white drop-shadow-md">Trophy Catalog</h2>
-          <p className="text-xs font-bold text-[#fcd34d] uppercase tracking-widest mt-1">Manage Platform Gamification</p>
-        </div>
-      </div>
-
-      <div className="flex-1 flex flex-col lg:flex-row gap-8 min-h-0">
-        {/* LEFT PANE: CATALOG LIST */}
-        <div className="flex-1 relative rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl flex flex-col bg-black/20">
-          <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/5 shrink-0">
-            <h3 className="font-black text-white uppercase tracking-widest">Active Achievements</h3>
-            <button onClick={() => openEditor()} className="bg-[#fcd34d] text-[#08203e] px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-transform shadow-md">
-              + New Trophy
-            </button>
-          </div>
-          <div className="flex-1 overflow-y-auto custom-scrollbar p-6 flex flex-col gap-3">
-            {loading ? (
-              <div className="text-center text-white/50 text-xs font-bold py-10 uppercase tracking-widest">Loading Catalog...</div>
-            ) : achievements.length === 0 ? (
-              <div className="text-center text-white/50 text-xs font-bold py-10 uppercase tracking-widest">Catalog is empty. Add your first trophy.</div>
-            ) : (
-              achievements.map(ach => (
-                <div key={ach.id} className="bg-white/5 border border-white/10 p-4 rounded-xl flex items-center justify-between hover:bg-white/10 transition-colors">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-lg flex items-center justify-center border-2 border-white/20 shrink-0 ${ach.asset_url ? 'bg-black/40' : 'bg-white/5'}`}>
-                      {ach.asset_url ? <img src={ach.asset_url} alt="icon" className="w-8 h-8 object-contain" /> : <span className="text-xs">🏆</span>}
-                    </div>
-                    <div>
-                      <h4 className="font-black text-white text-sm uppercase tracking-wider">{ach.title}</h4>
-                      <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest">{ach.tier} • {ach.category}</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => openEditor(ach)} className="w-8 h-8 bg-blue-500 text-white rounded-lg flex items-center justify-center shadow-md hover:scale-110 transition-transform">✏️</button>
-                    <button onClick={() => handleDelete(ach.id)} className="w-8 h-8 bg-red-500 text-white rounded-lg flex items-center justify-center shadow-md hover:scale-110 transition-transform">✕</button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* RIGHT PANE: EDITOR */}
-        {isEditing && (
-          <div className="flex-[0.8] relative rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl flex flex-col bg-black/40 backdrop-blur-xl animate-fade-in">
-            <div className="p-6 border-b border-white/10 bg-white/5 shrink-0">
-              <h3 className="font-black text-[#fcd34d] uppercase tracking-widest">{formData.id ? 'Edit Achievement' : 'Create New Trophy'}</h3>
-            </div>
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
-              <form onSubmit={handleSave} className="flex flex-col gap-5">
-                
-                <div>
-                  <label className="block text-[10px] text-white/50 font-bold uppercase tracking-widest mb-1">Trophy Title</label>
-                  <input type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#fcd34d]" required />
-                </div>
-                
-                <div>
-                  <label className="block text-[10px] text-white/50 font-bold uppercase tracking-widest mb-1">Lore / Description</label>
-                  <textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#fcd34d] resize-none h-24" required />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[10px] text-white/50 font-bold uppercase tracking-widest mb-1">Category</label>
-                    <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#fcd34d] appearance-none">
-                      <option className="bg-[#0f172a]">Milestone</option>
-                      <option className="bg-[#0f172a]">Consistency</option>
-                      <option className="bg-[#0f172a]">Excellence</option>
-                      <option className="bg-[#0f172a]">Community</option>
-                      <option className="bg-[#0f172a]">Operations</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] text-white/50 font-bold uppercase tracking-widest mb-1">Tier</label>
-                    <select value={formData.tier} onChange={e => setFormData({...formData, tier: e.target.value})} className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#fcd34d] appearance-none">
-                      <option className="bg-[#0f172a]">Bronze</option>
-                      <option className="bg-[#0f172a]">Silver</option>
-                      <option className="bg-[#0f172a]">Gold</option>
-                      <option className="bg-[#0f172a]">Diamond</option>
-                      <option className="bg-[#0f172a]">Emerald</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[10px] text-white/50 font-bold uppercase tracking-widest mb-1">Target Value to Unlock</label>
-                    <input type="number" min="1" value={formData.target_value} onChange={e => setFormData({...formData, target_value: parseInt(e.target.value) || 1})} className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#fcd34d]" required />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] text-white/50 font-bold uppercase tracking-widest mb-1">Sort Order</label>
-                    <input type="number" value={formData.sort_order} onChange={e => setFormData({...formData, sort_order: parseInt(e.target.value) || 0})} className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#fcd34d]" required />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[10px] text-[#fcd34d] font-bold uppercase tracking-widest mb-1">Cloudflare Asset URL (PNG/WebP)</label>
-                  <input type="text" placeholder="https://..." value={formData.asset_url} onChange={e => setFormData({...formData, asset_url: e.target.value})} className="w-full bg-white/5 border border-[#fcd34d]/50 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#fcd34d]" />
-                </div>
-
-                <label className="flex items-center gap-3 cursor-pointer group bg-white/5 p-4 rounded-xl border border-white/10 hover:border-white/30 transition-colors">
-                  <input type="checkbox" checked={formData.is_secret} onChange={e => setFormData({...formData, is_secret: e.target.value === 'on'})} className="w-5 h-5 rounded border-white/20 bg-black/40 text-[#fcd34d] focus:ring-[#fcd34d]" />
-                  <div className="flex flex-col">
-                    <span className="text-xs font-black text-white uppercase tracking-widest">Secret Achievement</span>
-                    <span className="text-[10px] font-medium text-white/50 leading-tight">Will not display as a locked silhouette to students until they earn it.</span>
-                  </div>
-                </label>
-
-                <div className="flex gap-3 pt-4 border-t border-white/10 mt-auto">
-                  <button type="button" onClick={() => setIsEditing(false)} className="flex-1 py-4 bg-white/5 hover:bg-white/10 text-white font-bold text-xs uppercase tracking-widest rounded-xl transition-colors border border-white/10">Cancel</button>
-                  <button type="submit" className="flex-[2] py-4 bg-[#fcd34d] text-[#08203e] hover:bg-white font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-[0_0_20px_rgba(252,211,77,0.3)] hover:scale-105">Save Trophy</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
       </div>
     </div>
   );
@@ -2706,7 +2532,7 @@ const FinancesPage = () => {
     }
 
     if (settingsView === 'ACHIEVEMENTS') {
-      return <AchievementsModule onBack={() => setSettingsView('MENU')} />;
+      return <AchievementsManager onBack={() => setSettingsView('MENU')} />;
     }
 
     return (
