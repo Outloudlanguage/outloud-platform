@@ -140,7 +140,7 @@ export default function CataLanding() {
 
   const paquetesData = [
     { 
-      title: "Corporativos", desc: "Coffee break premium, almuerzo de negocios y logística audiovisual para juntas de alto nivel.", price: "450", img: "https://images.unsplash.com/photo-1515169067868-5387ec356754?auto=format&fit=crop&q=80&w=800",
+      title: "Corporativos", desc: "Coffee break premium, almuerzo de negocios y logística audiovisual para juntas de alto nivel.", price: "450", img: "https://images.unsplash.com/photo-1528605105345-5344ea20e269?auto=format&fit=crop&q=80&w=800",
       distribution: [ { label: "Platos Fuertes", val: 40, color: "#4A90E2" }, { label: "Bebidas", val: 30, color: "#F3A712" }, { label: "Servicios", val: 20, color: "#FFFFFF" }, { label: "Postres", val: 10, color: "#A855F7" } ]
     },
     { 
@@ -160,7 +160,7 @@ export default function CataLanding() {
       distribution: [ { label: "Postres Finos", val: 80, color: "#A855F7" }, { label: "Bebidas", val: 10, color: "#F3A712" }, { label: "Decoración", val: 10, color: "#EC4899" } ]
     },
     { 
-      title: "Temporada", desc: "Menús temáticos festivos con ingredientes estacionales y ambientación exclusiva.", price: "500", img: "https://images.unsplash.com/photo-1543599538-a6c4f6ccb1f2?auto=format&fit=crop&q=80&w=800",
+      title: "Temporada", desc: "Hallacas, pan de jamón, y menú navideño tradicional con ambientación festiva exclusiva.", price: "500", img: "https://images.unsplash.com/photo-1607335614551-3062bf90f30e?auto=format&fit=crop&q=80&w=800",
       distribution: [ { label: "Platos Fuertes", val: 40, color: "#4A90E2" }, { label: "Bebidas", val: 30, color: "#F3A712" }, { label: "P. Salados", val: 15, color: "#E11D48" }, { label: "Postres", val: 15, color: "#A855F7" } ]
     }
   ];
@@ -168,7 +168,7 @@ export default function CataLanding() {
   // Doughnut Math Calculations
   const radius = 42;
   const circum = 2 * Math.PI * radius; 
-  const gap = 2; // Espacio visual entre segmentos
+  const gap = 2;
 
   const getDoughnutSegments = () => {
     let currentOffset = 0;
@@ -176,7 +176,7 @@ export default function CataLanding() {
       const segmentValue = item.val / 100;
       const segmentDash = segmentValue * circum;
       const offsetToApply = currentOffset;
-      currentOffset -= segmentDash; // Restamos porque el SVG dibuja en sentido inverso
+      currentOffset -= segmentDash;
 
       return {
         ...item,
@@ -282,7 +282,7 @@ export default function CataLanding() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 md:gap-6 items-center">
             
-            {/* Lado Izquierdo: 3D Coverflow Slider */}
+            {/* Lado Izquierdo: 3D Coverflow Slider con Hover-Scroll */}
             <div className="relative w-full h-[450px] md:h-[500px] flex items-center justify-center perspective-[1200px] overflow-hidden md:overflow-visible">
               {paquetesData.map((paquete, index) => {
                 const offset = index - activePaquete;
@@ -290,16 +290,18 @@ export default function CataLanding() {
                 const isActive = offset === 0;
                 
                 // Coverflow math parameters
-                const translateX = offset * 45; // % distance
+                const translateX = offset * 45; 
                 const scale = isActive ? 1 : Math.max(0.6, 1 - absOffset * 0.15);
                 const rotateY = offset === 0 ? 0 : offset > 0 ? -35 : 35;
                 const zIndex = 20 - absOffset;
-                const opacity = isActive ? 1 : Math.max(0, 0.5 - absOffset * 0.2);
+                // Incremental opacity to make back cards clearly visible
+                const opacity = isActive ? 1 : Math.max(0.4, 0.8 - absOffset * 0.15);
 
                 return (
                   <div 
                     key={index}
                     onClick={() => setActivePaquete(index)}
+                    onMouseEnter={() => setActivePaquete(index)} // <-- Activa el auto-scroll al pasar el ratón
                     className="absolute w-[80%] max-w-[320px] h-[400px] md:h-[450px] rounded-[24px] overflow-hidden cursor-pointer shadow-2xl border border-white/20 transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] flex flex-col justify-end p-6"
                     style={{
                       transform: `translateX(${translateX}%) translateZ(${isActive ? 50 : -absOffset * 100}px) rotateY(${rotateY}deg) scale(${scale})`,
@@ -312,7 +314,8 @@ export default function CataLanding() {
                       pointerEvents: opacity === 0 ? 'none' : 'auto'
                     }}
                   >
-                    <div className={`absolute inset-0 bg-black transition-opacity duration-700 ${isActive ? 'opacity-50' : 'opacity-80'}`}></div>
+                    {/* Filtro oscurecedor más sutil para permitir legibilidad visual del fondo */}
+                    <div className={`absolute inset-0 bg-black transition-opacity duration-700 ${isActive ? 'opacity-30' : 'opacity-60'}`}></div>
                     
                     {/* Tarjeta de Contenido Activo */}
                     <div className={`relative z-10 bg-black/60 backdrop-blur-md p-5 md:p-6 rounded-[20px] border border-white/10 transition-all duration-500 transform ${isActive ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
@@ -367,7 +370,7 @@ export default function CataLanding() {
                     const isAnyHovered = hoveredRing !== null;
                     return (
                       <circle
-                        key={`${activePaquete}-${segment.index}`} // Fuerza re-render para animación inicial al cambiar paquete
+                        key={`${activePaquete}-${segment.index}`} 
                         cx="50" cy="50" r={radius}
                         fill="transparent"
                         stroke={segment.color}
