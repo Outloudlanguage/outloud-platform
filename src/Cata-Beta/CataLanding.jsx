@@ -33,19 +33,32 @@ const AnimatedButton = ({ text, fullWidth = false, onClick }) => {
   );
 };
 
-const ServiceCard = ({ title, subtitle, description, abbreviation }) => (
-  <div className="group/card relative w-full h-[200px] md:h-[400px] rounded-[16px] md:rounded-[30px] overflow-hidden bg-white/80 backdrop-blur-xl border border-white/50 transition-all duration-500 hover:bg-[#1a1a1a] hover:border-[#444444] shadow-lg cursor-default flex flex-col p-4 md:p-8">
-    <div className="absolute inset-0 p-4 md:p-8 transition-opacity duration-500 group-hover/card:opacity-0 flex flex-col">
-      <h3 className="text-sm md:text-2xl font-extrabold text-gray-900 tracking-tight leading-none">{title}</h3>
-      <p className="text-[8px] md:text-xs font-semibold text-gray-500 tracking-widest uppercase mt-1 md:mt-3">{subtitle}</p>
-      <div className="absolute bottom-2 md:bottom-4 left-4 md:left-6 text-gray-200 text-[60px] md:text-[140px] font-black leading-none tracking-tighter select-none">
+const ServiceCard = ({ title, subtitle, description, abbreviation, bgImage }) => (
+  <div className="group/card relative w-full h-[200px] md:h-[400px] rounded-[16px] md:rounded-[30px] overflow-hidden shadow-lg cursor-default flex flex-col border border-white/50 transition-all duration-500 hover:border-white/80">
+    
+    {/* Background Image Layer */}
+    <div className="absolute inset-0 w-full h-full bg-cover bg-center transition-transform duration-1000 group-hover/card:scale-110" style={{ backgroundImage: `url('${bgImage}')` }}></div>
+    
+    {/* Light Glass Overlay for Idle State */}
+    <div className="absolute inset-0 bg-white/75 backdrop-blur-md transition-opacity duration-500 group-hover/card:opacity-0"></div>
+    
+    {/* Dark Glass Overlay for Hover State */}
+    <div className="absolute inset-0 bg-black/80 backdrop-blur-md opacity-0 transition-opacity duration-500 group-hover/card:opacity-100"></div>
+
+    {/* Default State Content (Dark Text) */}
+    <div className="absolute inset-0 p-4 md:p-8 transition-opacity duration-500 group-hover/card:opacity-0 flex flex-col z-10">
+      <h3 className="text-sm md:text-2xl font-extrabold text-gray-900 tracking-tight leading-none drop-shadow-sm">{title}</h3>
+      <p className="text-[8px] md:text-xs font-bold text-gray-700 tracking-widest uppercase mt-1 md:mt-3">{subtitle}</p>
+      <div className="absolute bottom-2 md:bottom-4 left-4 md:left-6 text-black/10 text-[60px] md:text-[140px] font-black leading-none tracking-tighter select-none">
         {abbreviation}
       </div>
     </div>
-    <div className="absolute inset-0 p-4 md:p-8 flex flex-col justify-between opacity-0 translate-y-4 md:translate-y-8 transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] group-hover/card:opacity-100 group-hover/card:translate-y-0 text-white z-10">
+
+    {/* Hover State Content (White Text) */}
+    <div className="absolute inset-0 p-4 md:p-8 flex flex-col justify-between opacity-0 translate-y-4 md:translate-y-8 transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] group-hover/card:opacity-100 group-hover/card:translate-y-0 text-white z-20">
       <div>
         <h3 className="text-sm md:text-2xl font-extrabold tracking-tight leading-none">{title}</h3>
-        <p className="text-[8px] md:text-xs font-semibold text-gray-400 tracking-widest uppercase mt-1 md:mt-3 hidden md:block">{subtitle}</p>
+        <p className="text-[8px] md:text-xs font-bold text-gray-300 tracking-widest uppercase mt-1 md:mt-3 hidden md:block">{subtitle}</p>
       </div>
       <p className="text-[10px] md:text-lg font-medium leading-tight md:leading-snug mb-2 md:mb-6 drop-shadow-md line-clamp-3 md:line-clamp-none">
         {description}
@@ -84,11 +97,9 @@ export default function CataLanding() {
   const costoBasicos = invitados * basicos * 8.00;
   const costoPremium = invitados * premium * 12.00;
   const costoBebidas = invitados * bebidas * 4.00;
-  const costoExtras = isDelivery ? 50.00 : 15.00; // $50 Delivery, $15 Pick Up Packaging
+  const costoExtras = isDelivery ? 50.00 : 15.00;
 
   const costoTotal = costoSalados + costoDulces + costoBasicos + costoPremium + costoBebidas + costoExtras;
-
-  // For the Bar Chart Scale
   const maxChartValue = Math.max(costoSalados, costoDulces, costoBasicos, costoPremium, costoBebidas, costoExtras, 1);
 
   // Dropdown Configuration Map
@@ -110,10 +121,10 @@ export default function CataLanding() {
   const cloudflareVideo = "https://customer-b0aw0ze4tgacea6a.cloudflarestream.com/0a048c047845136e3bccd777d507dfde/iframe?autoplay=true&loop=true&muted=true&controls=false&poster=https%3A%2F%2Fcustomer-b0aw0ze4tgacea6a.cloudflarestream.com%2F0a048c047845136e3bccd777d507dfde%2Fthumbnails%2Fthumbnail.jpg%3Ftime%3D%26height%3D600";
 
   const mockServices = [
-    { title: "Menú Ejecutivo", subtitle: "Almuerzos Corporativos", description: "Opciones de almuerzo de alto nivel diseñadas para juntas directivas.", abbreviation: "Ej" },
-    { title: "Coffee Break", subtitle: "Pausas Activas", description: "Café de especialidad y bollería artesanal para conferencias.", abbreviation: "Cb" },
-    { title: "Estaciones Vivas", subtitle: "Cocina Interactiva", description: "Barras preparadas al momento por nuestros chefs.", abbreviation: "Ev" },
-    { title: "Bodas y Galas", subtitle: "Banquetes a 3 Tiempos", description: "Alta cocina con emplatado de precisión milimétrica.", abbreviation: "Bg" }
+    { title: "Menú Ejecutivo", subtitle: "Almuerzos Corporativos", description: "Opciones de almuerzo de alto nivel diseñadas para juntas directivas.", abbreviation: "Ej", bgImage: "https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&q=80&w=800" },
+    { title: "Coffee Break", subtitle: "Pausas Activas", description: "Café de especialidad y bollería artesanal para conferencias.", abbreviation: "Cb", bgImage: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&q=80&w=800" },
+    { title: "Estaciones Vivas", subtitle: "Cocina Interactiva", description: "Barras preparadas al momento por nuestros chefs.", abbreviation: "Ev", bgImage: "https://images.unsplash.com/photo-1574966739987-65e386c121ee?auto=format&fit=crop&q=80&w=800" },
+    { title: "Bodas y Galas", subtitle: "Banquetes a 3 Tiempos", description: "Alta cocina con emplatado de precisión milimétrica.", abbreviation: "Bg", bgImage: "https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&q=80&w=800" }
   ];
 
   useGSAP(() => {
@@ -198,8 +209,8 @@ export default function CataLanding() {
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#4A90E2]/20 rounded-full blur-[120px] -z-10 pointer-events-none"></div>
           
           <div className="mb-10 text-center md:text-left">
-            <h2 className="text-3xl md:text-5xl font-black tracking-tighter mb-2">PROYECTA TU EVENTO</h2>
-            <p className="text-sm md:text-base text-gray-300 font-medium">Configura las variables y obtén un estimado al instante.</p>
+            <h2 className="text-3xl md:text-5xl font-black tracking-tighter mb-2 text-white">PROYECTA TU EVENTO</h2>
+            <p className="text-sm md:text-base text-white/90 font-medium">Configura las variables y obtén un estimado al instante.</p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 md:gap-16">
@@ -209,11 +220,11 @@ export default function CataLanding() {
               
               {/* Dropdown Selector */}
               <div>
-                <label className="text-xs font-semibold text-gray-400 tracking-widest uppercase mb-2 block">Variable a ajustar</label>
+                <label className="text-xs font-bold text-white tracking-widest uppercase mb-2 block">Variable a ajustar</label>
                 <select 
                   value={activeCategory} 
                   onChange={(e) => setActiveCategory(e.target.value)}
-                  className="w-full bg-black/40 text-white text-base md:text-lg p-4 rounded-2xl border border-white/20 appearance-none outline-none focus:border-[#4A90E2] transition-colors cursor-pointer"
+                  className="w-full bg-black/40 text-white text-base md:text-lg p-4 rounded-2xl border border-white/20 appearance-none outline-none focus:border-[#4A90E2] transition-colors cursor-pointer font-semibold"
                 >
                   {Object.entries(categoryConfig).map(([key, config]) => (
                     <option key={key} value={key} className="bg-gray-900 text-white">{config.label}</option>
@@ -224,7 +235,6 @@ export default function CataLanding() {
               {/* Master Slider */}
               <div className="bg-black/20 p-6 rounded-3xl border border-white/10">
                 <div className="flex flex-col items-center justify-center mb-6">
-                  {/* PURE WHITE, HUGE FONT FOR READABILITY */}
                   <span className="text-6xl font-black text-white drop-shadow-lg mb-1">{activeConfig.val}</span>
                   <span className="text-sm font-bold text-white uppercase tracking-widest">{activeConfig.unit}</span>
                 </div>
@@ -240,10 +250,10 @@ export default function CataLanding() {
 
               {/* Logistics Toggle */}
               <div className="flex items-center justify-between p-4 bg-black/40 rounded-2xl border border-white/10">
-                <span className="text-sm font-semibold text-gray-200 tracking-wide">Modalidad</span>
+                <span className="text-sm font-bold text-white tracking-wide">Modalidad</span>
                 <div className="flex space-x-2 bg-black/60 rounded-full p-1">
-                  <button onClick={() => setIsDelivery(false)} className={`px-5 py-2 rounded-full text-xs font-bold transition-all ${!isDelivery ? 'bg-[#4A90E2] text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}>Pick Up</button>
-                  <button onClick={() => setIsDelivery(true)} className={`px-5 py-2 rounded-full text-xs font-bold transition-all ${isDelivery ? 'bg-[#4A90E2] text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}>Delivery</button>
+                  <button onClick={() => setIsDelivery(false)} className={`px-5 py-2 rounded-full text-xs font-bold transition-all ${!isDelivery ? 'bg-[#4A90E2] text-white shadow-lg' : 'text-white/60 hover:text-white'}`}>Pick Up</button>
+                  <button onClick={() => setIsDelivery(true)} className={`px-5 py-2 rounded-full text-xs font-bold transition-all ${isDelivery ? 'bg-[#4A90E2] text-white shadow-lg' : 'text-white/60 hover:text-white'}`}>Delivery</button>
                 </div>
               </div>
 
@@ -253,62 +263,64 @@ export default function CataLanding() {
             <div className="lg:col-span-7 bg-black/40 rounded-[30px] border border-white/10 p-6 md:p-8 flex flex-col justify-between">
               
               {/* Chart Area */}
-              <div className="w-full h-[250px] md:h-[300px] border-b border-white/20 flex items-end justify-between gap-2 md:gap-4 pb-2 relative">
+              <div className="w-full h-[220px] md:h-[280px] flex items-end justify-between gap-2 md:gap-4 mb-10 md:mb-12 relative">
+                
+                {/* Horizontal Baseline */}
+                <div className="absolute bottom-0 left-0 w-full h-px bg-white/40"></div>
                 
                 {/* Salados Bar */}
-                <div className="w-full flex flex-col items-center justify-end h-full group relative">
+                <div className="w-full flex flex-col items-center justify-end h-full group relative pb-[1px]">
                   <span className="opacity-0 group-hover:opacity-100 absolute -top-8 text-xs font-bold bg-white text-black px-2 py-1 rounded transition-opacity">${costoSalados.toFixed(0)}</span>
-                  <div style={{ height: `${(costoSalados / maxChartValue) * 100}%` }} className="w-full bg-[#4A90E2] rounded-t-lg transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] hover:brightness-125 min-h-[4px]"></div>
-                  <span className="text-[10px] md:text-xs text-gray-400 font-bold mt-2 rotate-[-45deg] md:rotate-0 origin-top-left">Salados</span>
+                  <div style={{ height: `${(costoSalados / maxChartValue) * 100}%` }} className="w-full bg-[#4A90E2] rounded-t-sm md:rounded-t-lg transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] hover:brightness-125 min-h-[4px]"></div>
+                  <span className="absolute top-full mt-2 text-[9px] md:text-xs text-white font-bold text-center w-full truncate">Salados</span>
                 </div>
 
                 {/* Dulces Bar */}
-                <div className="w-full flex flex-col items-center justify-end h-full group relative">
+                <div className="w-full flex flex-col items-center justify-end h-full group relative pb-[1px]">
                   <span className="opacity-0 group-hover:opacity-100 absolute -top-8 text-xs font-bold bg-white text-black px-2 py-1 rounded transition-opacity">${costoDulces.toFixed(0)}</span>
-                  <div style={{ height: `${(costoDulces / maxChartValue) * 100}%` }} className="w-full bg-[#4A90E2]/80 rounded-t-lg transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] hover:brightness-125 min-h-[4px]"></div>
-                  <span className="text-[10px] md:text-xs text-gray-400 font-bold mt-2 rotate-[-45deg] md:rotate-0 origin-top-left">Dulces</span>
+                  <div style={{ height: `${(costoDulces / maxChartValue) * 100}%` }} className="w-full bg-[#4A90E2]/80 rounded-t-sm md:rounded-t-lg transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] hover:brightness-125 min-h-[4px]"></div>
+                  <span className="absolute top-full mt-2 text-[9px] md:text-xs text-white font-bold text-center w-full truncate">Dulces</span>
                 </div>
 
                 {/* Básicos Bar */}
-                <div className="w-full flex flex-col items-center justify-end h-full group relative">
+                <div className="w-full flex flex-col items-center justify-end h-full group relative pb-[1px]">
                   <span className="opacity-0 group-hover:opacity-100 absolute -top-8 text-xs font-bold bg-white text-black px-2 py-1 rounded transition-opacity">${costoBasicos.toFixed(0)}</span>
-                  <div style={{ height: `${(costoBasicos / maxChartValue) * 100}%` }} className="w-full bg-white/80 rounded-t-lg transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] hover:bg-white min-h-[4px]"></div>
-                  <span className="text-[10px] md:text-xs text-gray-400 font-bold mt-2 rotate-[-45deg] md:rotate-0 origin-top-left">Básicos</span>
+                  <div style={{ height: `${(costoBasicos / maxChartValue) * 100}%` }} className="w-full bg-white/80 rounded-t-sm md:rounded-t-lg transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] hover:bg-white min-h-[4px]"></div>
+                  <span className="absolute top-full mt-2 text-[9px] md:text-xs text-white font-bold text-center w-full truncate">Básicos</span>
                 </div>
 
                 {/* Premium Bar */}
-                <div className="w-full flex flex-col items-center justify-end h-full group relative">
+                <div className="w-full flex flex-col items-center justify-end h-full group relative pb-[1px]">
                   <span className="opacity-0 group-hover:opacity-100 absolute -top-8 text-xs font-bold bg-white text-black px-2 py-1 rounded transition-opacity">${costoPremium.toFixed(0)}</span>
-                  <div style={{ height: `${(costoPremium / maxChartValue) * 100}%` }} className="w-full bg-white/60 rounded-t-lg transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] hover:bg-white min-h-[4px]"></div>
-                  <span className="text-[10px] md:text-xs text-gray-400 font-bold mt-2 rotate-[-45deg] md:rotate-0 origin-top-left">Premium</span>
+                  <div style={{ height: `${(costoPremium / maxChartValue) * 100}%` }} className="w-full bg-white/60 rounded-t-sm md:rounded-t-lg transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] hover:bg-white min-h-[4px]"></div>
+                  <span className="absolute top-full mt-2 text-[9px] md:text-xs text-white font-bold text-center w-full truncate">Premium</span>
                 </div>
 
                 {/* Bebidas Bar */}
-                <div className="w-full flex flex-col items-center justify-end h-full group relative">
+                <div className="w-full flex flex-col items-center justify-end h-full group relative pb-[1px]">
                   <span className="opacity-0 group-hover:opacity-100 absolute -top-8 text-xs font-bold bg-white text-black px-2 py-1 rounded transition-opacity">${costoBebidas.toFixed(0)}</span>
-                  <div style={{ height: `${(costoBebidas / maxChartValue) * 100}%` }} className="w-full bg-[#E2A74A] rounded-t-lg transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] hover:brightness-125 min-h-[4px]"></div>
-                  <span className="text-[10px] md:text-xs text-gray-400 font-bold mt-2 rotate-[-45deg] md:rotate-0 origin-top-left">Bebidas</span>
+                  <div style={{ height: `${(costoBebidas / maxChartValue) * 100}%` }} className="w-full bg-[#E2A74A] rounded-t-sm md:rounded-t-lg transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] hover:brightness-125 min-h-[4px]"></div>
+                  <span className="absolute top-full mt-2 text-[9px] md:text-xs text-white font-bold text-center w-full truncate">Bebidas</span>
                 </div>
 
                 {/* Logística Bar */}
-                <div className="w-full flex flex-col items-center justify-end h-full group relative">
+                <div className="w-full flex flex-col items-center justify-end h-full group relative pb-[1px]">
                   <span className="opacity-0 group-hover:opacity-100 absolute -top-8 text-xs font-bold bg-white text-black px-2 py-1 rounded transition-opacity">${costoExtras.toFixed(0)}</span>
-                  <div style={{ height: `${(costoExtras / maxChartValue) * 100}%` }} className="w-full bg-purple-400/80 rounded-t-lg transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] hover:brightness-125 min-h-[4px]"></div>
-                  <span className="text-[10px] md:text-xs text-purple-300 font-bold mt-2 rotate-[-45deg] md:rotate-0 origin-top-left">Extras</span>
+                  <div style={{ height: `${(costoExtras / maxChartValue) * 100}%` }} className="w-full bg-purple-400/80 rounded-t-sm md:rounded-t-lg transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] hover:brightness-125 min-h-[4px]"></div>
+                  <span className="absolute top-full mt-2 text-[9px] md:text-xs text-purple-300 font-bold text-center w-full truncate">Extras</span>
                 </div>
               </div>
 
               {/* Total & Action */}
-              <div className="mt-10">
+              <div className="mt-4">
                 <div className="flex justify-between items-end mb-2">
-                  <span className="text-lg md:text-xl font-bold">Total Aproximado</span>
+                  <span className="text-lg md:text-xl font-bold text-white">Total Aproximado</span>
                   <span className="text-4xl md:text-5xl font-black text-[#4A90E2] tracking-tighter transition-all duration-500">
                     ${costoTotal.toFixed(2)}
                   </span>
                 </div>
                 
-                {/* Dynamic Note Based on Delivery/Pick Up */}
-                <div className="text-[10px] md:text-xs text-gray-400 leading-tight mb-6 space-y-1">
+                <div className="text-[10px] md:text-xs text-white/80 leading-tight mb-6 space-y-1">
                   <p>* Los precios al mayor ($0.65/und) se aplican automáticamente en salados/dulces al superar 100 unidades.</p>
                   {!isDelivery ? (
                     <p className="text-purple-300">* Se ha aplicado un cargo fijo de <strong>$15.00</strong> por concepto de empaque especial para Pick Up.</p>
@@ -344,7 +356,7 @@ export default function CataLanding() {
               <button onClick={() => setIsModalOpen(false)} className="w-full py-4 rounded-full bg-[#4A90E2] hover:bg-[#357ABD] text-white font-bold tracking-widest text-sm transition-all shadow-[0_0_20px_rgba(74,144,226,0.3)]">
                 ENTENDIDO, CONTINUAR
               </button>
-              <button onClick={() => setIsModalOpen(false)} className="w-full py-3 rounded-full bg-transparent hover:bg-white/10 text-gray-400 hover:text-white font-semibold tracking-widest text-xs transition-all">
+              <button onClick={() => setIsModalOpen(false)} className="w-full py-3 rounded-full bg-transparent hover:bg-white/10 text-white/80 hover:text-white font-semibold tracking-widest text-xs transition-all">
                 VOLVER AL GRÁFICO
               </button>
             </div>
