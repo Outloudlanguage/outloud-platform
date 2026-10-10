@@ -4,14 +4,13 @@ import { useGSAP } from '@gsap/react';
 
 gsap.registerPlugin(useGSAP);
 
-// 1. Reusable Animated Button Component (Responsive padding/text)
+// 1. Reusable Animated Button Component (Adjusted for tighter mobile spaces)
 const AnimatedButton = ({ text, fullWidth = false }) => {
   const chars = text.split('');
   
   return (
-    <button className={`group/btn relative px-5 py-2.5 md:px-8 md:py-3 rounded-full bg-white/10 backdrop-blur-lg border border-white/40 text-white font-bold tracking-widest text-[10px] md:text-base transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] hover:bg-white/30 hover:scale-105 hover:-translate-y-1 hover:border-white hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] active:scale-95 ${fullWidth ? 'w-full' : ''}`}>
+    <button className={`group/btn relative px-4 py-2 md:px-8 md:py-3 rounded-full bg-white/10 backdrop-blur-lg border border-white/40 text-white font-bold tracking-widest text-[9px] md:text-base transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] hover:bg-white/30 hover:scale-105 hover:-translate-y-1 hover:border-white hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] active:scale-95 ${fullWidth ? 'w-full' : ''}`}>
       <div className="relative overflow-hidden flex items-center justify-center">
-        
         <div className="flex">
           {chars.map((char, i) => (
             <span
@@ -23,7 +22,6 @@ const AnimatedButton = ({ text, fullWidth = false }) => {
             </span>
           ))}
         </div>
-        
         <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
           <div className="flex">
             {chars.map((char, i) => (
@@ -37,34 +35,33 @@ const AnimatedButton = ({ text, fullWidth = false }) => {
             ))}
           </div>
         </div>
-        
       </div>
     </button>
   );
 };
 
-// 2. Interactive Service Card Component (Horizontal rectangle on mobile)
+// 2. Interactive Service Card Component (Compact 2-col mobile layout)
 const ServiceCard = ({ title, subtitle, description, abbreviation }) => (
-  <div className="group/card relative w-full h-[220px] md:h-[400px] rounded-[20px] md:rounded-[30px] overflow-hidden bg-white/80 backdrop-blur-xl border border-white/50 transition-all duration-500 hover:bg-[#111111] hover:border-[#333333] shadow-lg cursor-default flex flex-col p-5 md:p-8">
+  <div className="group/card relative w-full h-[200px] md:h-[400px] rounded-[16px] md:rounded-[30px] overflow-hidden bg-white/80 backdrop-blur-xl border border-white/50 transition-all duration-500 hover:bg-[#111111] hover:border-[#333333] shadow-lg cursor-default flex flex-col p-4 md:p-8">
     
     {/* Default State (Light) */}
-    <div className="absolute inset-0 p-5 md:p-8 transition-opacity duration-500 group-hover/card:opacity-0 flex flex-col">
-      <h3 className="text-xl md:text-2xl font-extrabold text-gray-900 tracking-tight leading-none">{title}</h3>
-      <p className="text-[10px] md:text-xs font-semibold text-gray-500 tracking-widest uppercase mt-2 md:mt-3">{subtitle}</p>
+    <div className="absolute inset-0 p-4 md:p-8 transition-opacity duration-500 group-hover/card:opacity-0 flex flex-col">
+      <h3 className="text-sm md:text-2xl font-extrabold text-gray-900 tracking-tight leading-none">{title}</h3>
+      <p className="text-[8px] md:text-xs font-semibold text-gray-500 tracking-widest uppercase mt-1 md:mt-3">{subtitle}</p>
       
-      <div className="absolute bottom-2 md:bottom-4 left-4 md:left-6 text-gray-200 text-[80px] md:text-[140px] font-black leading-none tracking-tighter select-none">
+      <div className="absolute bottom-2 md:bottom-4 left-4 md:left-6 text-gray-200 text-[60px] md:text-[140px] font-black leading-none tracking-tighter select-none">
         {abbreviation}
       </div>
     </div>
 
-    {/* Hover State (Dark, reveals description and button) */}
-    <div className="absolute inset-0 p-5 md:p-8 flex flex-col justify-between opacity-0 translate-y-4 md:translate-y-8 transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] group-hover/card:opacity-100 group-hover/card:translate-y-0 text-white z-10">
+    {/* Hover State (Dark) */}
+    <div className="absolute inset-0 p-4 md:p-8 flex flex-col justify-between opacity-0 translate-y-4 md:translate-y-8 transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] group-hover/card:opacity-100 group-hover/card:translate-y-0 text-white z-10">
       <div>
-        <h3 className="text-xl md:text-2xl font-extrabold tracking-tight leading-none">{title}</h3>
-        <p className="text-[10px] md:text-xs font-semibold text-gray-400 tracking-widest uppercase mt-1 md:mt-3 hidden md:block">{subtitle}</p>
+        <h3 className="text-sm md:text-2xl font-extrabold tracking-tight leading-none">{title}</h3>
+        <p className="text-[8px] md:text-xs font-semibold text-gray-400 tracking-widest uppercase mt-1 md:mt-3 hidden md:block">{subtitle}</p>
       </div>
       
-      <p className="text-sm md:text-lg font-medium leading-snug mb-3 md:mb-6 drop-shadow-md line-clamp-3 md:line-clamp-none">
+      <p className="text-[10px] md:text-lg font-medium leading-tight md:leading-snug mb-2 md:mb-6 drop-shadow-md line-clamp-3 md:line-clamp-none">
         {description}
       </p>
       
@@ -88,37 +85,15 @@ export default function CataLanding() {
 
   const navItems = ['SERVICIOS', 'GALERÍA', 'PRESUPUESTOS', 'CONTACTO', 'EMPLEOS'];
 
-  // Mock Data
   const mockServices = [
-    {
-      title: "Menú Ejecutivo",
-      subtitle: "Almuerzos Corporativos",
-      description: "Opciones de almuerzo de alto nivel diseñadas para juntas directivas.",
-      abbreviation: "Ej"
-    },
-    {
-      title: "Coffee Break",
-      subtitle: "Pausas Activas",
-      description: "Café de especialidad y bollería artesanal para conferencias.",
-      abbreviation: "Cb"
-    },
-    {
-      title: "Estaciones Vivas",
-      subtitle: "Cocina Interactiva",
-      description: "Barras preparadas al momento por nuestros chefs frente a los invitados.",
-      abbreviation: "Ev"
-    },
-    {
-      title: "Bodas y Galas",
-      subtitle: "Banquetes a 3 Tiempos",
-      description: "Alta cocina con emplatado de precisión milimétrica para grandes eventos.",
-      abbreviation: "Bg"
-    }
+    { title: "Menú Ejecutivo", subtitle: "Almuerzos Corporativos", description: "Opciones de almuerzo de alto nivel diseñadas para juntas directivas.", abbreviation: "Ej" },
+    { title: "Coffee Break", subtitle: "Pausas Activas", description: "Café de especialidad y bollería artesanal para conferencias.", abbreviation: "Cb" },
+    { title: "Estaciones Vivas", subtitle: "Cocina Interactiva", description: "Barras preparadas al momento por nuestros chefs.", abbreviation: "Ev" },
+    { title: "Bodas y Galas", subtitle: "Banquetes a 3 Tiempos", description: "Alta cocina con emplatado de precisión milimétrica.", abbreviation: "Bg" }
   ];
 
   useGSAP(() => {
     const tl = gsap.timeline();
-    
     tl.to('#solid-logo', { duration: 0.8 })
       .to('#solid-logo', { scale: 150, opacity: 0, duration: 1.2, ease: "expo.inOut" })
       .to('#loading-screen', {
@@ -167,40 +142,40 @@ export default function CataLanding() {
       </nav>
 
       {/* Main Content Sections */}
-      <main className="relative z-10 px-4 md:px-6 pt-[90px] md:pt-[120px] pb-20 max-w-[1800px] mx-auto flex flex-col gap-6 md:gap-10">
+      <main className="relative z-10 px-4 md:px-6 pt-[90px] md:pt-[120px] pb-20 max-w-[1800px] mx-auto flex flex-col gap-4 md:gap-10">
         
-        {/* HUGE BLOCK 1: CATERING (Squarish on mobile, immersive on desktop) */}
-        <section className="relative w-full h-[400px] md:h-[70vh] rounded-[24px] md:rounded-[40px] overflow-hidden shadow-2xl group border border-white/20">
+        {/* HUGE BLOCK 1: CATERING (Shortened for Mobile: h-[250px]) */}
+        <section className="relative w-full h-[250px] md:h-[70vh] rounded-[24px] md:rounded-[40px] overflow-hidden shadow-2xl group border border-white/20">
           <div className="absolute inset-0 w-full h-full bg-cover bg-center transition-transform duration-1000 group-hover:scale-105" style={{ backgroundImage: `url('${cateringImg}')` }}></div>
           <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px] group-hover:bg-black/10 transition-colors duration-500"></div>
           <div className="absolute inset-0 flex flex-col items-center justify-center z-10 p-4">
             <h1 className="text-[15vw] md:text-[12vw] font-black tracking-tighter leading-none mb-2 md:mb-4 text-white drop-shadow-2xl transition-all duration-500 ease-out cursor-default hover:scale-110 hover:-translate-y-2 hover:text-[#4A90E2] hover:tracking-wide hover:drop-shadow-[0_10px_30px_rgba(74,144,226,0.6)]">
               CATERING
             </h1>
-            <div className="flex space-x-3 md:space-x-6 mt-4 md:mt-8">
+            <div className="flex space-x-3 md:space-x-6 mt-2 md:mt-8">
               <AnimatedButton text="PRECIOS" />
               <AnimatedButton text="CATÁLOGO" />
             </div>
           </div>
         </section>
 
-        {/* HUGE BLOCK 2: PASAPALOS */}
-        <section className="relative w-full h-[400px] md:h-[70vh] rounded-[24px] md:rounded-[40px] overflow-hidden shadow-2xl group border border-white/20">
+        {/* HUGE BLOCK 2: PASAPALOS (Shortened for Mobile: h-[250px]) */}
+        <section className="relative w-full h-[250px] md:h-[70vh] rounded-[24px] md:rounded-[40px] overflow-hidden shadow-2xl group border border-white/20">
           <div className="absolute inset-0 w-full h-full bg-cover bg-center transition-transform duration-1000 group-hover:scale-105" style={{ backgroundImage: `url('${pasapalosImg}')` }}></div>
           <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px] group-hover:bg-black/10 transition-colors duration-500"></div>
           <div className="absolute inset-0 flex flex-col items-center justify-center z-10 p-4">
             <h1 className="text-[15vw] md:text-[12vw] font-black tracking-tighter leading-none mb-2 md:mb-4 text-white drop-shadow-2xl transition-all duration-500 ease-out cursor-default hover:scale-110 hover:-translate-y-2 hover:text-[#4A90E2] hover:tracking-wide hover:drop-shadow-[0_10px_30px_rgba(74,144,226,0.6)]">
               PASAPALOS
             </h1>
-            <div className="flex space-x-3 md:space-x-6 mt-4 md:mt-8">
+            <div className="flex space-x-3 md:space-x-6 mt-2 md:mt-8">
               <AnimatedButton text="PRECIOS" />
               <AnimatedButton text="CATÁLOGO" />
             </div>
           </div>
         </section>
 
-        {/* PROGRESSION GRID: SMALLER OPTIONS */}
-        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mt-2 md:mt-6">
+        {/* PROGRESSION GRID: 2 Columns on Mobile (grid-cols-2) */}
+        <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mt-2 md:mt-6">
           {mockServices.map((service, index) => (
             <ServiceCard 
               key={index}
