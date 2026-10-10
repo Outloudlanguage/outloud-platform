@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 
@@ -6,127 +6,130 @@ gsap.registerPlugin(useGSAP);
 
 export default function CataLanding() {
   const containerRef = useRef();
-  const logoUrl = "https://i.postimg.cc/4dgfQW7T/Logo-Cata-Azul.png";
+  const [activeTab, setActiveTab] = useState('SERVICIOS');
+
+  // Assets
+  const loadingLogoUrl = "https://i.postimg.cc/4dgfQW7T/Logo-Cata-Azul.png";
+  const headerLogoUrl = "https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Cata%20horizontal%20logo%20(1).png";
+  const cateringImg = "https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/photo-1512061942530-e6a4e9a5cf27%20(1).avif";
+  const pasapalosImg = "https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/photo-1518619745898-93e765966dcd%20(1).avif";
+  const cloudflareVideo = "https://customer-b0aw0ze4tgacea6a.cloudflarestream.com/0a048c047845136e3bccd777d507dfde/iframe?autoplay=true&loop=true&muted=true&controls=false&poster=https%3A%2F%2Fcustomer-b0aw0ze4tgacea6a.cloudflarestream.com%2F0a048c047845136e3bccd777d507dfde%2Fthumbnails%2Fthumbnail.jpg%3Ftime%3D%26height%3D600";
+
+  const navItems = ['SERVICIOS', 'GALERÍA', 'PRESUPUESTOS', 'CONTACTO', 'EMPLEOS'];
 
   useGSAP(() => {
     const tl = gsap.timeline();
-
-    // 1. The Suspense Beat: Hold for 0.8 seconds on the solid blue logo
+    
+    // 1. Hold on the solid blue lobster
     tl.to('#solid-logo', { duration: 0.8 })
       
-      // 2. The Inversion: Crossfade solid logo with the masked iframe layer
-      .to('#solid-logo', { opacity: 0, duration: 0.1 }, "swap")
-      .to('#masked-video-layer', { opacity: 1, duration: 0.1 }, "swap")
-      
-      // 3. The Rush: Aggressive exponential scale up of the mask size
-      .to('#masked-video-layer', {
-        webkitMaskSize: "20000px",
-        maskSize: "20000px",
-        duration: 1.2,
-        ease: "expo.in"
+      // 2. Rush the camera: Massive scale up while fading out
+      .to('#solid-logo', { 
+        scale: 150, 
+        opacity: 0, 
+        duration: 1.2, 
+        ease: "expo.inOut" 
       })
       
-      // 4. The Drop: Fade out the white loading overlay to reveal the live site
+      // 3. Fade out the white loading screen to reveal the live site
       .to('#loading-screen', {
         opacity: 0,
-        duration: 0.4,
+        duration: 0.6,
         ease: "power2.out",
         onComplete: () => {
           document.getElementById('loading-screen').style.display = 'none';
         }
-      }, "-=0.3");
+      }, "-=0.8");
   }, { scope: containerRef });
 
   return (
-    <div ref={containerRef} className="relative min-h-screen bg-[#f4f4f4] overflow-x-hidden font-sans">
+    <div ref={containerRef} className="relative min-h-screen text-white font-sans overflow-x-hidden">
       
       {/* ==========================================
           BUFFER ZONE / LOADING SCREEN
       ========================================== */}
-      <div id="loading-screen" className="fixed inset-0 z-50 flex items-center justify-center bg-white overflow-hidden pointer-events-none">
-        
-        {/* Layer A: Solid Blue Logo */}
+      <div id="loading-screen" className="fixed inset-0 z-[100] flex items-center justify-center bg-white overflow-hidden pointer-events-none">
         <img
           id="solid-logo"
-          src={logoUrl}
-          alt="CATA Logo Loading"
+          src={loadingLogoUrl}
+          alt="Loading..."
           className="absolute w-[180px] z-20"
         />
+      </div>
 
-        {/* Layer B: Masked Cloudflare Iframe */}
-        <div
-          id="masked-video-layer"
-          className="absolute inset-0 z-10 opacity-0"
-          style={{
-            WebkitMaskImage: `url(${logoUrl})`,
-            WebkitMaskPosition: 'center',
-            WebkitMaskRepeat: 'no-repeat',
-            WebkitMaskSize: '180px',
-            maskImage: `url(${logoUrl})`,
-            maskPosition: 'center',
-            maskRepeat: 'no-repeat',
-            maskSize: '180px',
-          }}
-        >
-          {/* We scale the iframe slightly (110%) to hide the borders during the mask expansion */}
+      {/* ==========================================
+          FIXED SEAMLESS VIDEO BACKGROUND
+      ========================================== */}
+      <div className="fixed inset-0 z-0 overflow-hidden bg-black pointer-events-none">
+        {/* CSS trick to ensure the iframe perfectly covers the viewport without black bars */}
+        <div className="absolute top-1/2 left-1/2 w-[100vw] h-[56.25vw] min-h-[100vh] min-w-[177.77vh] -translate-x-1/2 -translate-y-1/2 opacity-60">
           <iframe
-            src="https://customer-b0aw0ze4tgacea6a.cloudflarestream.com/0a048c047845136e3bccd777d507dfde/iframe?autoplay=true&loop=true&muted=true&controls=false&poster=https%3A%2F%2Fcustomer-b0aw0ze4tgacea6a.cloudflarestream.com%2F0a048c047845136e3bccd777d507dfde%2Fthumbnails%2Fthumbnail.jpg%3Ftime%3D%26height%3D600"
+            src={cloudflareVideo}
             loading="lazy"
-            className="w-full h-full scale-110 pointer-events-none"
+            className="w-full h-full scale-105 pointer-events-none"
             style={{ border: 'none' }}
             allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
             allowFullScreen
           ></iframe>
         </div>
+        {/* Subtle glass overlay on the entire background to improve readability */}
+        <div className="absolute inset-0 bg-black/20 backdrop-blur-sm"></div>
       </div>
 
       {/* ==========================================
-          LIVE SITE FRONT END (NEO-BRUTALIST MOCKUP)
+          LIVE FRONT END (UI / UX)
       ========================================== */}
       
-      {/* Navigation Header */}
-      <nav className="flex items-center justify-between px-8 py-6 max-w-[1800px] mx-auto relative z-10">
-        <div className="flex items-center space-x-3 text-[#333333]">
-          <img src={logoUrl} alt="CATA Logo" className="w-[50px] object-contain" />
-          <div>
-            <h2 className="text-xl font-bold tracking-widest leading-none">CATA</h2>
-            <p className="text-[10px] tracking-[0.2em] font-medium mt-1">SERVICIOS GASTRONÓMICOS</p>
+      {/* Glassmorphic Navigation Header */}
+      <nav className="fixed top-0 left-0 right-0 z-50 px-8 py-4 bg-white/10 backdrop-blur-lg border-b border-white/20 shadow-lg">
+        <div className="max-w-[1800px] mx-auto flex items-center justify-between">
+          
+          <img src={headerLogoUrl} alt="CATA" className="h-[45px] object-contain drop-shadow-md" />
+          
+          <div className="hidden md:flex items-center space-x-2 text-sm font-semibold tracking-wider">
+            {navItems.map(item => (
+              <button
+                key={item}
+                onClick={() => setActiveTab(item)}
+                className={`px-5 py-2.5 rounded-xl transition-all duration-300 border ${
+                  activeTab === item
+                    ? 'bg-white/30 backdrop-blur-md border-white/50 text-white shadow-[0_0_15px_rgba(255,255,255,0.2)]'
+                    : 'border-transparent text-gray-200 hover:bg-white/20 hover:backdrop-blur-md hover:border-white/40 hover:text-white hover:-translate-y-0.5'
+                }`}
+              >
+                {item}
+              </button>
+            ))}
+            <button className="ml-4 p-2 text-2xl hover:text-blue-300 transition-colors">≡</button>
           </div>
-        </div>
-        
-        <div className="hidden md:flex items-center space-x-8 text-sm font-semibold tracking-wider text-gray-700">
-          <button className="hover:text-black transition-colors">SERVICIOS</button>
-          <button className="hover:text-black transition-colors">GALERÍA</button>
-          <button className="hover:text-black transition-colors">PRESUPUESTOS</button>
-          <button className="hover:text-black transition-colors">CONTACTO</button>
-          <button className="hover:text-black transition-colors">EMPLEOS</button>
-          <button className="ml-4 p-2 text-xl hover:text-black">≡</button>
         </div>
       </nav>
 
-      {/* Main Content Sections (Scrollable Grid) */}
-      <main className="px-6 pb-20 max-w-[1800px] mx-auto flex flex-col gap-12 relative z-10">
+      {/* Main Content Grids */}
+      <main className="relative z-10 px-6 pt-[120px] pb-20 max-w-[1800px] mx-auto flex flex-col gap-16">
         
         {/* BLOCK 1: CATERING */}
-        <section className="relative w-full h-[80vh] rounded-[40px] overflow-hidden bg-black shadow-2xl">
+        <section className="relative w-full h-[80vh] rounded-[40px] overflow-hidden shadow-2xl group border border-white/20">
           <div 
-            className="absolute inset-0 w-full h-full bg-cover bg-center opacity-70"
-            style={{ backgroundImage: "url('https://source.unsplash.com/OB7ol699Iww/1600x900')" }}
+            className="absolute inset-0 w-full h-full bg-cover bg-center transition-transform duration-1000 group-hover:scale-105"
+            style={{ backgroundImage: `url('${cateringImg}')` }}
           ></div>
           
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-white z-10">
-            <h1 className="text-[12vw] font-black tracking-tighter leading-none mb-2 drop-shadow-lg">
+          {/* Glassmorphic overlay for the block */}
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px] group-hover:bg-black/10 transition-colors duration-500"></div>
+          
+          <div className="absolute inset-0 flex flex-col items-center justify-center z-10 p-4">
+            {/* Interactive Typography */}
+            <h1 className="text-[12vw] font-black tracking-tighter leading-none mb-4 text-white drop-shadow-2xl transition-all duration-500 ease-out cursor-default hover:scale-110 hover:-translate-y-2 hover:text-[#4A90E2] hover:tracking-wide hover:drop-shadow-[0_10px_30px_rgba(74,144,226,0.6)]">
               CATERING
             </h1>
-            <p className="text-xl md:text-2xl font-medium tracking-wide mb-10 drop-shadow-md text-center px-4">
-              ALMUERZOS Y MENÚS PARA EVENTOS Y COMPAÑÍAS
-            </p>
             
-            <div className="flex space-x-4">
-              <button className="px-10 py-3 rounded-full border border-white bg-white/10 hover:bg-white hover:text-black transition-all backdrop-blur-md font-semibold tracking-wider">
+            {/* Glassmorphic Button Container */}
+            <div className="flex space-x-6 mt-8">
+              <button className="px-10 py-3 rounded-full bg-white/10 backdrop-blur-lg border border-white/40 text-white font-bold tracking-widest transition-all duration-300 ease-out hover:bg-white/30 hover:scale-110 hover:-translate-y-1 hover:border-white hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] active:scale-95">
                 PRECIOS
               </button>
-              <button className="px-10 py-3 rounded-full border border-white bg-transparent hover:bg-white hover:text-black transition-all backdrop-blur-md font-semibold tracking-wider">
+              <button className="px-10 py-3 rounded-full bg-black/20 backdrop-blur-lg border border-white/40 text-white font-bold tracking-widest transition-all duration-300 ease-out hover:bg-white/30 hover:scale-110 hover:-translate-y-1 hover:border-white hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] active:scale-95">
                 CATÁLOGO
               </button>
             </div>
@@ -134,25 +137,27 @@ export default function CataLanding() {
         </section>
 
         {/* BLOCK 2: PASAPALOS */}
-        <section className="relative w-full h-[80vh] rounded-[40px] overflow-hidden bg-black shadow-2xl">
+        <section className="relative w-full h-[80vh] rounded-[40px] overflow-hidden shadow-2xl group border border-white/20">
           <div 
-            className="absolute inset-0 w-full h-full bg-cover bg-center opacity-70"
-            style={{ backgroundImage: "url('https://source.unsplash.com/V98W_4pCrVA/1600x900')" }}
+            className="absolute inset-0 w-full h-full bg-cover bg-center transition-transform duration-1000 group-hover:scale-105"
+            style={{ backgroundImage: `url('${pasapalosImg}')` }}
           ></div>
           
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-white z-10">
-            <h1 className="text-[12vw] font-black tracking-tighter leading-none mb-2 drop-shadow-lg">
+          {/* Glassmorphic overlay for the block */}
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px] group-hover:bg-black/10 transition-colors duration-500"></div>
+          
+          <div className="absolute inset-0 flex flex-col items-center justify-center z-10 p-4">
+            {/* Interactive Typography */}
+            <h1 className="text-[12vw] font-black tracking-tighter leading-none mb-4 text-white drop-shadow-2xl transition-all duration-500 ease-out cursor-default hover:scale-110 hover:-translate-y-2 hover:text-[#4A90E2] hover:tracking-wide hover:drop-shadow-[0_10px_30px_rgba(74,144,226,0.6)]">
               PASAPALOS
             </h1>
-            <p className="text-xl md:text-2xl font-medium tracking-wide mb-10 drop-shadow-md text-center px-4">
-              OPCIONES PARA RECEPCIONES
-            </p>
             
-            <div className="flex space-x-4">
-              <button className="px-10 py-3 rounded-full border border-white bg-white/10 hover:bg-white hover:text-black transition-all backdrop-blur-md font-semibold tracking-wider">
+            {/* Glassmorphic Button Container */}
+            <div className="flex space-x-6 mt-8">
+              <button className="px-10 py-3 rounded-full bg-white/10 backdrop-blur-lg border border-white/40 text-white font-bold tracking-widest transition-all duration-300 ease-out hover:bg-white/30 hover:scale-110 hover:-translate-y-1 hover:border-white hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] active:scale-95">
                 PRECIOS
               </button>
-              <button className="px-10 py-3 rounded-full border border-white bg-transparent hover:bg-white hover:text-black transition-all backdrop-blur-md font-semibold tracking-wider">
+              <button className="px-10 py-3 rounded-full bg-black/20 backdrop-blur-lg border border-white/40 text-white font-bold tracking-widest transition-all duration-300 ease-out hover:bg-white/30 hover:scale-110 hover:-translate-y-1 hover:border-white hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] active:scale-95">
                 CATÁLOGO
               </button>
             </div>
