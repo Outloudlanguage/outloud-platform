@@ -4,7 +4,7 @@ import { useGSAP } from '@gsap/react';
 
 gsap.registerPlugin(useGSAP);
 
-// 1. Reusable Animated Button Component (Adjusted for tighter mobile spaces)
+// 1. Reusable Animated Button Component
 const AnimatedButton = ({ text, fullWidth = false }) => {
   const chars = text.split('');
   
@@ -40,9 +40,9 @@ const AnimatedButton = ({ text, fullWidth = false }) => {
   );
 };
 
-// 2. Interactive Service Card Component (Compact 2-col mobile layout)
+// 2. Interactive Service Card Component
 const ServiceCard = ({ title, subtitle, description, abbreviation }) => (
-  <div className="group/card relative w-full h-[200px] md:h-[400px] rounded-[16px] md:rounded-[30px] overflow-hidden bg-white/80 backdrop-blur-xl border border-white/50 transition-all duration-500 hover:bg-[#111111] hover:border-[#333333] shadow-lg cursor-default flex flex-col p-4 md:p-8">
+  <div className="group/card relative w-full h-[200px] md:h-[400px] rounded-[16px] md:rounded-[30px] overflow-hidden bg-white/80 backdrop-blur-xl border border-white/50 transition-all duration-500 hover:bg-[#1a1a1a] hover:border-[#444444] shadow-lg cursor-default flex flex-col p-4 md:p-8">
     
     {/* Default State (Light) */}
     <div className="absolute inset-0 p-4 md:p-8 transition-opacity duration-500 group-hover/card:opacity-0 flex flex-col">
@@ -110,46 +110,50 @@ export default function CataLanding() {
         <img id="solid-logo" src={loadingLogoUrl} alt="Loading..." className="absolute w-[120px] md:w-[180px] z-20" />
       </div>
 
-      {/* Seamless Video Background */}
+      {/* Seamless Video Background - Lightened overlay */}
       <div className="fixed inset-0 z-0 overflow-hidden bg-black pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 w-[100vw] h-[56.25vw] min-h-[100vh] min-w-[177.77vh] -translate-x-1/2 -translate-y-1/2 opacity-60">
+        <div className="absolute top-1/2 left-1/2 w-[100vw] h-[56.25vw] min-h-[100vh] min-w-[177.77vh] -translate-x-1/2 -translate-y-1/2 opacity-80">
           <iframe src={cloudflareVideo} loading="lazy" className="w-full h-full scale-105 pointer-events-none" style={{ border: 'none' }} allow="autoplay; encrypted-media;" allowFullScreen></iframe>
         </div>
-        <div className="absolute inset-0 bg-black/20 backdrop-blur-[4px]"></div>
+        <div className="absolute inset-0 bg-black/5 backdrop-blur-[3px]"></div>
       </div>
 
       {/* Glassmorphic Navigation Header */}
       <nav className="fixed top-0 left-0 right-0 z-50 px-4 md:px-8 py-3 md:py-4 bg-white/10 backdrop-blur-lg border-b border-white/20 shadow-lg">
         <div className="max-w-[1800px] mx-auto flex items-center justify-between">
-          <img src={headerLogoUrl} alt="CATA" className="h-[35px] md:h-[45px] object-contain drop-shadow-md" />
-          <div className="hidden md:flex items-center space-x-2 text-sm font-semibold tracking-wider">
-            {navItems.map(item => (
-              <button
-                key={item}
-                onClick={() => setActiveTab(item)}
-                className={`px-5 py-2.5 rounded-xl transition-all duration-300 border ${
-                  activeTab === item
-                    ? 'bg-white/30 backdrop-blur-md border-white/50 text-white shadow-[0_0_15px_rgba(255,255,255,0.2)]'
-                    : 'border-transparent text-gray-200 hover:bg-white/20 hover:backdrop-blur-md hover:border-white/40 hover:text-white hover:-translate-y-0.5'
-                }`}
-              >
-                {item}
-              </button>
-            ))}
+          <img src={headerLogoUrl} alt="CATA" className="ml-3 md:ml-5 h-[35px] md:h-[45px] object-contain drop-shadow-md" />
+          
+          <div className="flex items-center">
+            <div className="hidden md:flex items-center space-x-2 text-sm font-semibold tracking-wider">
+              {navItems.map(item => (
+                <button
+                  key={item}
+                  onClick={() => setActiveTab(item)}
+                  className={`px-5 py-2.5 rounded-xl transition-all duration-300 border ${
+                    activeTab === item
+                      ? 'bg-white/30 backdrop-blur-md border-white/50 text-white shadow-[0_0_15px_rgba(255,255,255,0.2)]'
+                      : 'border-transparent text-gray-200 hover:bg-white/20 hover:backdrop-blur-md hover:border-white/40 hover:text-white hover:-translate-y-0.5'
+                  }`}
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+            {/* Hamburger menu restored on desktop */}
+            <button className="ml-4 md:ml-8 p-2 text-2xl text-white hover:text-blue-300 transition-colors">≡</button>
           </div>
-          <button className="md:hidden p-2 text-2xl text-white hover:text-blue-300 transition-colors">≡</button>
         </div>
       </nav>
 
       {/* Main Content Sections */}
       <main className="relative z-10 px-4 md:px-6 pt-[90px] md:pt-[120px] pb-20 max-w-[1800px] mx-auto flex flex-col gap-4 md:gap-10">
         
-        {/* HUGE BLOCK 1: CATERING (Shortened for Mobile: h-[250px]) */}
+        {/* HUGE BLOCK 1: CATERING - Lightened overlay */}
         <section className="relative w-full h-[250px] md:h-[70vh] rounded-[24px] md:rounded-[40px] overflow-hidden shadow-2xl group border border-white/20">
           <div className="absolute inset-0 w-full h-full bg-cover bg-center transition-transform duration-1000 group-hover:scale-105" style={{ backgroundImage: `url('${cateringImg}')` }}></div>
-          <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px] group-hover:bg-black/10 transition-colors duration-500"></div>
+          <div className="absolute inset-0 bg-black/10 backdrop-blur-[2px] group-hover:bg-black/0 transition-colors duration-500"></div>
           <div className="absolute inset-0 flex flex-col items-center justify-center z-10 p-4">
-            <h1 className="text-[15vw] md:text-[12vw] font-black tracking-tighter leading-none mb-2 md:mb-4 text-white drop-shadow-2xl transition-all duration-500 ease-out cursor-default hover:scale-110 hover:-translate-y-2 hover:text-[#4A90E2] hover:tracking-wide hover:drop-shadow-[0_10px_30px_rgba(74,144,226,0.6)]">
+            <h1 className="text-[15vw] md:text-[12vw] font-black tracking-tighter leading-none mb-2 md:mb-4 text-white drop-shadow-[0_15px_15px_rgba(0,0,0,0.5)] transition-all duration-500 ease-out cursor-default hover:scale-110 hover:-translate-y-2 hover:text-[#4A90E2] hover:tracking-wide hover:drop-shadow-[0_10px_30px_rgba(74,144,226,0.6)]">
               CATERING
             </h1>
             <div className="flex space-x-3 md:space-x-6 mt-2 md:mt-8">
@@ -159,12 +163,12 @@ export default function CataLanding() {
           </div>
         </section>
 
-        {/* HUGE BLOCK 2: PASAPALOS (Shortened for Mobile: h-[250px]) */}
+        {/* HUGE BLOCK 2: PASAPALOS - Lightened overlay */}
         <section className="relative w-full h-[250px] md:h-[70vh] rounded-[24px] md:rounded-[40px] overflow-hidden shadow-2xl group border border-white/20">
           <div className="absolute inset-0 w-full h-full bg-cover bg-center transition-transform duration-1000 group-hover:scale-105" style={{ backgroundImage: `url('${pasapalosImg}')` }}></div>
-          <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px] group-hover:bg-black/10 transition-colors duration-500"></div>
+          <div className="absolute inset-0 bg-black/10 backdrop-blur-[2px] group-hover:bg-black/0 transition-colors duration-500"></div>
           <div className="absolute inset-0 flex flex-col items-center justify-center z-10 p-4">
-            <h1 className="text-[15vw] md:text-[12vw] font-black tracking-tighter leading-none mb-2 md:mb-4 text-white drop-shadow-2xl transition-all duration-500 ease-out cursor-default hover:scale-110 hover:-translate-y-2 hover:text-[#4A90E2] hover:tracking-wide hover:drop-shadow-[0_10px_30px_rgba(74,144,226,0.6)]">
+            <h1 className="text-[15vw] md:text-[12vw] font-black tracking-tighter leading-none mb-2 md:mb-4 text-white drop-shadow-[0_15px_15px_rgba(0,0,0,0.5)] transition-all duration-500 ease-out cursor-default hover:scale-110 hover:-translate-y-2 hover:text-[#4A90E2] hover:tracking-wide hover:drop-shadow-[0_10px_30px_rgba(74,144,226,0.6)]">
               PASAPALOS
             </h1>
             <div className="flex space-x-3 md:space-x-6 mt-2 md:mt-8">
@@ -174,7 +178,7 @@ export default function CataLanding() {
           </div>
         </section>
 
-        {/* PROGRESSION GRID: 2 Columns on Mobile (grid-cols-2) */}
+        {/* PROGRESSION GRID */}
         <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mt-2 md:mt-6">
           {mockServices.map((service, index) => (
             <ServiceCard 
