@@ -77,7 +77,7 @@ export default function CataLanding() {
   const [activeTab, setActiveTab] = useState('SERVICIOS');
 
   // Assets
-  const loadingLogoUrl = "https://i.postimg.cc/4dgfQW7T/Logo-Cata-Azul.png";
+  const loadingLogoUrl = "https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Logo%20Cata%20Azul.png";
   const headerLogoUrl = "https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Cata%20horizontal%20logo%20(1).png";
   const cateringImg = "https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/photo-1512061942530-e6a4e9a5cf27%20(1).avif";
   const pasapalosImg = "https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/photo-1518619745898-93e765966dcd%20(1).avif";
