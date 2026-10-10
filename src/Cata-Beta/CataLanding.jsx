@@ -4,37 +4,64 @@ import { useGSAP } from '@gsap/react';
 
 gsap.registerPlugin(useGSAP);
 
-// 1. Reusable Animated Button Component
-const AnimatedButton = ({ text, fullWidth = false }) => (
-  <button className={`group relative px-8 py-3 rounded-full bg-white/10 backdrop-blur-lg border border-white/40 text-white font-bold tracking-widest transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] hover:bg-white/30 hover:scale-105 hover:-translate-y-1 hover:border-white hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] active:scale-95 ${fullWidth ? 'w-full' : ''}`}>
-    <div className="relative overflow-hidden h-[1.3em] flex items-center justify-center">
-      <span className="block transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] group-hover:-translate-y-[150%]">
-        {text}
-      </span>
-      <span className="absolute top-0 left-0 w-full h-full flex items-center justify-center transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] translate-y-[150%] group-hover:translate-y-0">
-        {text}
-      </span>
-    </div>
-  </button>
-);
+// 1. Reusable Animated Button Component (Updated with Staggered Wave Mechanics)
+const AnimatedButton = ({ text, fullWidth = false }) => {
+  const chars = text.split('');
+  
+  return (
+    <button className={`group/btn relative px-8 py-3 rounded-full bg-white/10 backdrop-blur-lg border border-white/40 text-white font-bold tracking-widest transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] hover:bg-white/30 hover:scale-105 hover:-translate-y-1 hover:border-white hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] active:scale-95 ${fullWidth ? 'w-full' : ''}`}>
+      <div className="relative overflow-hidden flex items-center justify-center">
+        
+        {/* Primary text layer (Moves up and tilts slightly) */}
+        <div className="flex">
+          {chars.map((char, i) => (
+            <span
+              key={i}
+              className="block transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] group-hover/btn:-translate-y-[150%] group-hover/btn:rotate-[-8deg]"
+              style={{ transitionDelay: `${i * 0.02}s` }}
+            >
+              {char === ' ' ? '\u00A0' : char}
+            </span>
+          ))}
+        </div>
+        
+        {/* Secondary Clone text layer (Starts below, moves up to center) */}
+        <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
+          <div className="flex">
+            {chars.map((char, i) => (
+              <span
+                key={i}
+                className="block transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] translate-y-[150%] rotate-[8deg] group-hover/btn:translate-y-0 group-hover/btn:rotate-0"
+                style={{ transitionDelay: `${i * 0.02}s` }}
+              >
+                {char === ' ' ? '\u00A0' : char}
+              </span>
+            ))}
+          </div>
+        </div>
+        
+      </div>
+    </button>
+  );
+};
 
-// 2. Interactive Service Card Component (Pangram Style)
+// 2. Interactive Service Card Component
 const ServiceCard = ({ title, subtitle, description, abbreviation }) => (
-  <div className="group relative w-full h-[400px] rounded-[30px] overflow-hidden bg-white/80 backdrop-blur-xl border border-white/50 transition-all duration-500 hover:bg-[#111111] hover:border-[#333333] shadow-lg cursor-default flex flex-col p-8">
+  <div className="group/card relative w-full h-[400px] rounded-[30px] overflow-hidden bg-white/80 backdrop-blur-xl border border-white/50 transition-all duration-500 hover:bg-[#111111] hover:border-[#333333] shadow-lg cursor-default flex flex-col p-8">
     
     {/* Default State (Light) */}
-    <div className="absolute inset-0 p-8 transition-opacity duration-500 group-hover:opacity-0 flex flex-col">
+    <div className="absolute inset-0 p-8 transition-opacity duration-500 group-hover/card:opacity-0 flex flex-col">
       <h3 className="text-2xl font-extrabold text-gray-900 tracking-tight leading-none">{title}</h3>
       <p className="text-xs font-semibold text-gray-500 tracking-widest uppercase mt-3">{subtitle}</p>
       
-      {/* Abstract Background Graphic (Similar to the 'Aa' font preview) */}
+      {/* Abstract Background Graphic */}
       <div className="absolute bottom-4 left-6 text-gray-200 text-[140px] font-black leading-none tracking-tighter select-none">
         {abbreviation}
       </div>
     </div>
 
     {/* Hover State (Dark, reveals description and button) */}
-    <div className="absolute inset-0 p-8 flex flex-col justify-between opacity-0 translate-y-8 transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] group-hover:opacity-100 group-hover:translate-y-0 text-white z-10">
+    <div className="absolute inset-0 p-8 flex flex-col justify-between opacity-0 translate-y-8 transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] group-hover/card:opacity-100 group-hover/card:translate-y-0 text-white z-10">
       <div>
         <h3 className="text-2xl font-extrabold tracking-tight leading-none">{title}</h3>
         <p className="text-xs font-semibold text-gray-400 tracking-widest uppercase mt-3">{subtitle}</p>
