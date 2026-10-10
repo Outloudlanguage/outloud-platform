@@ -137,6 +137,7 @@ export default function CataLanding() {
   // ==========================================
   const [activePaquete, setActivePaquete] = useState(0);
   const [hoveredRing, setHoveredRing] = useState(null);
+  const scrollIntervalRef = useRef(null); // Ref para controlar el auto-scroll
 
   const paquetesData = [
     { 
@@ -164,6 +165,27 @@ export default function CataLanding() {
       distribution: [ { label: "Platos Fuertes", val: 40, color: "#4A90E2" }, { label: "Bebidas", val: 30, color: "#F3A712" }, { label: "P. Salados", val: 15, color: "#E11D48" }, { label: "Postres", val: 15, color: "#A855F7" } ]
     }
   ];
+
+  // Controladores de Auto-Scroll Laterales
+  const triggerNext = () => setActivePaquete(prev => (prev < paquetesData.length - 1 ? prev + 1 : prev));
+  const triggerPrev = () => setActivePaquete(prev => (prev > 0 ? prev - 1 : prev));
+
+  const startHoverScroll = (dir) => {
+    if (scrollIntervalRef.current) clearInterval(scrollIntervalRef.current);
+    if (dir === 'next') triggerNext(); else triggerPrev(); // Avanza 1 de inmediato
+    
+    scrollIntervalRef.current = setInterval(() => {
+      if (dir === 'next') triggerNext(); else triggerPrev();
+    }, 1000); // 1 segundo da tiempo perfecto para que termine la transición de 700ms
+  };
+
+  const stopHoverScroll = () => {
+    if (scrollIntervalRef.current) clearInterval(scrollIntervalRef.current);
+  };
+
+  useEffect(() => {
+    return () => stopHoverScroll(); // Limpia el intervalo si el usuario sale de la página
+  }, []);
 
   // Doughnut Math Calculations
   const radius = 42;
@@ -282,8 +304,33 @@ export default function CataLanding() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 md:gap-6 items-center">
             
-            {/* Lado Izquierdo: 3D Coverflow Slider con Hover-Scroll */}
+            {/* Lado Izquierdo: 3D Coverflow Slider con Hitboxes de Auto-Scroll */}
             <div className="relative w-full h-[450px] md:h-[500px] flex items-center justify-center perspective-[1200px] overflow-hidden md:overflow-visible">
+              
+              {/* ZONA DE HOVER/CLICK IZQUIERDA (Para retroceder) */}
+              <div 
+                className="absolute left-0 top-0 w-[20%] h-full z-50 flex items-center justify-start opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
+                onMouseEnter={() => startHoverScroll('prev')}
+                onMouseLeave={stopHoverScroll}
+                onClick={(e) => { e.preventDefault(); stopHoverScroll(); triggerPrev(); }}
+              >
+                <div className="w-full h-full bg-gradient-to-r from-black/60 to-transparent flex items-center pl-2 md:pl-6">
+                  <span className="text-white text-4xl md:text-5xl drop-shadow-lg">‹</span>
+                </div>
+              </div>
+
+              {/* ZONA DE HOVER/CLICK DERECHA (Para avanzar) */}
+              <div 
+                className="absolute right-0 top-0 w-[20%] h-full z-50 flex items-center justify-end opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
+                onMouseEnter={() => startHoverScroll('next')}
+                onMouseLeave={stopHoverScroll}
+                onClick={(e) => { e.preventDefault(); stopHoverScroll(); triggerNext(); }}
+              >
+                <div className="w-full h-full bg-gradient-to-l from-black/60 to-transparent flex items-center justify-end pr-2 md:pr-6">
+                  <span className="text-white text-4xl md:text-5xl drop-shadow-lg">›</span>
+                </div>
+              </div>
+
               {paquetesData.map((paquete, index) => {
                 const offset = index - activePaquete;
                 const absOffset = Math.abs(offset);
@@ -294,15 +341,12 @@ export default function CataLanding() {
                 const scale = isActive ? 1 : Math.max(0.6, 1 - absOffset * 0.15);
                 const rotateY = offset === 0 ? 0 : offset > 0 ? -35 : 35;
                 const zIndex = 20 - absOffset;
-                // Incremental opacity to make back cards clearly visible
                 const opacity = isActive ? 1 : Math.max(0.4, 0.8 - absOffset * 0.15);
 
                 return (
                   <div 
                     key={index}
-                    onClick={() => setActivePaquete(index)}
-                    onMouseEnter={() => setActivePaquete(index)} // <-- Activa el auto-scroll al pasar el ratón
-                    className="absolute w-[80%] max-w-[320px] h-[400px] md:h-[450px] rounded-[24px] overflow-hidden cursor-pointer shadow-2xl border border-white/20 transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] flex flex-col justify-end p-6"
+                    className="absolute w-[80%] max-w-[320px] h-[400px] md:h-[450px] rounded-[24px] overflow-hidden shadow-2xl border border-white/20 transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] flex flex-col justify-end p-6"
                     style={{
                       transform: `translateX(${translateX}%) translateZ(${isActive ? 50 : -absOffset * 100}px) rotateY(${rotateY}deg) scale(${scale})`,
                       zIndex: zIndex,
@@ -311,14 +355,12 @@ export default function CataLanding() {
                       backgroundImage: `url('${paquete.img}')`,
                       backgroundSize: 'cover',
                       backgroundPosition: 'center',
-                      pointerEvents: opacity === 0 ? 'none' : 'auto'
                     }}
                   >
-                    {/* Filtro oscurecedor más sutil para permitir legibilidad visual del fondo */}
                     <div className={`absolute inset-0 bg-black transition-opacity duration-700 ${isActive ? 'opacity-30' : 'opacity-60'}`}></div>
                     
                     {/* Tarjeta de Contenido Activo */}
-                    <div className={`relative z-10 bg-black/60 backdrop-blur-md p-5 md:p-6 rounded-[20px] border border-white/10 transition-all duration-500 transform ${isActive ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
+                    <div className={`relative z-10 bg-black/60 backdrop-blur-md p-5 md:p-6 rounded-[20px] border border-white/10 transition-all duration-500 transform ${isActive ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-10 opacity-0 pointer-events-none'}`}>
                       <h3 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tight mb-1 leading-none">{paquete.title}</h3>
                       <p className="text-[#F3A712] font-bold text-lg md:text-xl mb-3">Desde ${paquete.price}</p>
                       <p className="text-[10px] md:text-xs text-gray-200 leading-snug mb-5 hidden md:block">{paquete.desc}</p>
