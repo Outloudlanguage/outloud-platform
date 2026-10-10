@@ -138,34 +138,54 @@ export default function CataLanding() {
   const [activePaquete, setActivePaquete] = useState(0);
   const [hoveredRing, setHoveredRing] = useState(null);
   const scrollIntervalRef = useRef(null); 
-  const touchStartX = useRef(0); // Para detectar swipes en móviles
+  const touchStartX = useRef(0);
 
+  // DATA: Paquetes con su configuración base para la importación hacia la calculadora
   const paquetesData = [
     { 
       title: "Corporativos", desc: "Coffee break premium, almuerzo de negocios y logística audiovisual para juntas de alto nivel.", price: "450", img: "https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Corporativo.avif",
-      distribution: [ { label: "Platos Fuertes", val: 40, color: "#4A90E2" }, { label: "Bebidas", val: 30, color: "#F3A712" }, { label: "Servicios", val: 20, color: "#FFFFFF" }, { label: "Postres", val: 10, color: "#A855F7" } ]
+      distribution: [ { label: "Platos Fuertes", val: 40, color: "#4A90E2" }, { label: "Bebidas", val: 30, color: "#F3A712" }, { label: "Servicios", val: 20, color: "#FFFFFF" }, { label: "Postres", val: 10, color: "#A855F7" } ],
+      baseConfig: { invitados: 20, salados: 4, dulces: 2, basicos: 1, premium: 0, bebidas: 3 }
     },
     { 
       title: "Fiestas", desc: "Selección de pasapalos, coctelería de autor y montaje lounge para celebraciones vibrantes.", price: "350", img: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&q=80&w=800",
-      distribution: [ { label: "Bebidas/Barra", val: 40, color: "#F3A712" }, { label: "P. Salados", val: 30, color: "#E11D48" }, { label: "Entretenimiento", val: 20, color: "#10B981" }, { label: "P. Dulces", val: 10, color: "#A855F7" } ]
+      distribution: [ { label: "Bebidas/Barra", val: 40, color: "#F3A712" }, { label: "P. Salados", val: 30, color: "#E11D48" }, { label: "Entretenimiento", val: 20, color: "#10B981" }, { label: "P. Dulces", val: 10, color: "#A855F7" } ],
+      baseConfig: { invitados: 20, salados: 12, dulces: 4, basicos: 0, premium: 0, bebidas: 6 }
     },
     { 
       title: "Bodas", desc: "Banquete a 3 tiempos, decoración floral inmersiva y barra libre premium para tu gran día.", price: "850", img: "https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&q=80&w=800",
-      distribution: [ { label: "Platos Fuertes", val: 45, color: "#4A90E2" }, { label: "Bebidas", val: 25, color: "#F3A712" }, { label: "Decoración", val: 20, color: "#EC4899" }, { label: "Postres", val: 10, color: "#A855F7" } ]
+      distribution: [ { label: "Platos Fuertes", val: 45, color: "#4A90E2" }, { label: "Bebidas", val: 25, color: "#F3A712" }, { label: "Decoración", val: 20, color: "#EC4899" }, { label: "Postres", val: 10, color: "#A855F7" } ],
+      baseConfig: { invitados: 20, salados: 6, dulces: 4, basicos: 0, premium: 2, bebidas: 8 }
     },
     { 
       title: "Fijos", desc: "Servicio de comedor ejecutivo con menús rotativos diarios. Contratación mensual.", price: "1200", img: "https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&q=80&w=800",
-      distribution: [ { label: "Platos Fuertes", val: 75, color: "#4A90E2" }, { label: "Bebidas", val: 15, color: "#F3A712" }, { label: "Postres", val: 10, color: "#A855F7" } ]
+      distribution: [ { label: "Platos Fuertes", val: 75, color: "#4A90E2" }, { label: "Bebidas", val: 15, color: "#F3A712" }, { label: "Postres", val: 10, color: "#A855F7" } ],
+      baseConfig: { invitados: 20, salados: 0, dulces: 1, basicos: 2, premium: 0, bebidas: 2 }
     },
     { 
       title: "Postres", desc: "Boutique dulce con mesa de tartas, macarons, bombones artesanales y pastelería fina.", price: "200", img: "https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&q=80&w=800",
-      distribution: [ { label: "Postres Finos", val: 80, color: "#A855F7" }, { label: "Bebidas", val: 10, color: "#F3A712" }, { label: "Decoración", val: 10, color: "#EC4899" } ]
+      distribution: [ { label: "Postres Finos", val: 80, color: "#A855F7" }, { label: "Bebidas", val: 10, color: "#F3A712" }, { label: "Decoración", val: 10, color: "#EC4899" } ],
+      baseConfig: { invitados: 20, salados: 0, dulces: 10, basicos: 0, premium: 0, bebidas: 1 }
     },
     { 
       title: "Temporada", desc: "Hallacas, pan de jamón, y menú navideño tradicional con ambientación festiva exclusiva.", price: "500", img: "https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/hallacas-730x524.jpg",
-      distribution: [ { label: "Platos Fuertes", val: 40, color: "#4A90E2" }, { label: "Bebidas", val: 30, color: "#F3A712" }, { label: "P. Salados", val: 15, color: "#E11D48" }, { label: "Postres", val: 15, color: "#A855F7" } ]
+      distribution: [ { label: "Platos Fuertes", val: 40, color: "#4A90E2" }, { label: "Bebidas", val: 30, color: "#F3A712" }, { label: "P. Salados", val: 15, color: "#E11D48" }, { label: "Postres", val: 15, color: "#A855F7" } ],
+      baseConfig: { invitados: 20, salados: 3, dulces: 2, basicos: 1, premium: 1, bebidas: 4 }
     }
   ];
+
+  const handlePersonalizePackage = (e, config) => {
+    e.stopPropagation();
+    // 1. Importar los datos del paquete a la calculadora
+    setInvitados(config.invitados);
+    setSalados(config.salados);
+    setDulces(config.dulces);
+    setBasicos(config.basicos);
+    setPremium(config.premium);
+    setBebidas(config.bebidas);
+    // 2. Hacer scroll suave hacia la sección
+    document.getElementById('calculadora-section')?.scrollIntoView({behavior: 'smooth'});
+  };
 
   // Controladores de Navegación del Carrusel
   const triggerNext = () => setActivePaquete(prev => (prev < paquetesData.length - 1 ? prev + 1 : prev));
@@ -184,15 +204,14 @@ export default function CataLanding() {
     if (scrollIntervalRef.current) clearInterval(scrollIntervalRef.current);
   };
 
-  // Manejadores de Swipe para Móviles
   const handleTouchStart = (e) => {
     touchStartX.current = e.touches[0].clientX;
   };
   const handleTouchEnd = (e) => {
     const touchEndX = e.changedTouches[0].clientX;
     const diff = touchStartX.current - touchEndX;
-    if (diff > 50) triggerNext(); // Swipe a la izquierda
-    else if (diff < -50) triggerPrev(); // Swipe a la derecha
+    if (diff > 50) triggerNext(); 
+    else if (diff < -50) triggerPrev(); 
   };
 
   useEffect(() => {
@@ -316,7 +335,7 @@ export default function CataLanding() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 md:gap-6 items-center">
             
-            {/* Lado Izquierdo: 3D Coverflow Slider con Máscara de Difuminado */}
+            {/* Lado Izquierdo: 3D Coverflow Slider */}
             <div 
               className="relative w-full h-[450px] md:h-[500px] flex items-center justify-center perspective-[1200px] overflow-hidden"
               style={{ WebkitMaskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)' }}
@@ -324,7 +343,6 @@ export default function CataLanding() {
               onTouchEnd={handleTouchEnd}
             >
               
-              {/* ZONA DE HOVER/CLICK IZQUIERDA (Para retroceder) */}
               <div 
                 className="absolute left-0 top-0 w-[20%] h-full z-50 flex items-center justify-start opacity-0 hover:opacity-100 transition-opacity cursor-pointer hidden md:flex"
                 onMouseEnter={() => startHoverScroll('prev')}
@@ -336,7 +354,6 @@ export default function CataLanding() {
                 </div>
               </div>
 
-              {/* ZONA DE HOVER/CLICK DERECHA (Para avanzar) */}
               <div 
                 className="absolute right-0 top-0 w-[20%] h-full z-50 flex items-center justify-end opacity-0 hover:opacity-100 transition-opacity cursor-pointer hidden md:flex"
                 onMouseEnter={() => startHoverScroll('next')}
@@ -382,7 +399,10 @@ export default function CataLanding() {
                       <p className="text-[10px] md:text-xs text-gray-200 leading-snug mb-5 hidden md:block">{paquete.desc}</p>
                       <div className="flex flex-col gap-2">
                         <AnimatedButton text="CONTRATAR" fullWidth={true} />
-                        <button onClick={(e) => { e.stopPropagation(); document.getElementById('calculadora-section')?.scrollIntoView({behavior: 'smooth'}); }} className="px-4 py-2 rounded-full border border-white/40 text-white font-bold tracking-widest text-[10px] md:text-xs hover:bg-white hover:text-black transition-colors w-full text-center">
+                        <button 
+                          onClick={(e) => handlePersonalizePackage(e, paquete.baseConfig)} 
+                          className="px-4 py-2 rounded-full border border-white/40 text-white font-bold tracking-widest text-[10px] md:text-xs hover:bg-white hover:text-black transition-colors w-full text-center"
+                        >
                           PERSONALIZAR
                         </button>
                       </div>
@@ -398,7 +418,6 @@ export default function CataLanding() {
               
               <div className="relative w-[240px] h-[240px] md:w-[320px] md:h-[320px] mt-4">
                 
-                {/* Centro Dinámico (Valor Numérico y Etiqueta) */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none">
                    {hoveredRing !== null ? (
                       <>
@@ -421,9 +440,7 @@ export default function CataLanding() {
                    )}
                 </div>
 
-                {/* Anillo SVG Dinámico con Cajas de Impacto Invisibles */}
                 <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90 drop-shadow-2xl overflow-visible">
-                  {/* Anillos Visibles */}
                   {segments.map((segment) => {
                     const isHovered = hoveredRing === segment.index;
                     const isAnyHovered = hoveredRing !== null;
@@ -446,14 +463,13 @@ export default function CataLanding() {
                     );
                   })}
                   
-                  {/* Hitboxes Invisibles Masivos para Fácil Interactividad */}
                   {segments.map((segment) => (
                     <circle
                       key={`hitbox-${activePaquete}-${segment.index}`} 
                       cx="50" cy="50" r={radius}
                       fill="transparent"
                       stroke="transparent"
-                      strokeWidth="30" /* Grosor masivo para capturar el cursor fácilmente */
+                      strokeWidth="30"
                       strokeDasharray={segment.dashArray}
                       strokeDashoffset={segment.dashOffset}
                       className="cursor-pointer origin-center"
@@ -464,7 +480,6 @@ export default function CataLanding() {
                 </svg>
               </div>
 
-              {/* Leyenda Horizontal Inferior */}
               <div className="flex flex-wrap justify-center gap-3 md:gap-4 mt-6 md:mt-10 z-20">
                 {segments.map((seg) => (
                   <div key={seg.index} className="flex items-center gap-2" onMouseEnter={() => setHoveredRing(seg.index)} onMouseLeave={() => setHoveredRing(null)}>
@@ -478,7 +493,7 @@ export default function CataLanding() {
           </div>
           
           <p className="text-[9px] md:text-[11px] text-gray-500 mt-8 text-center border-t border-white/10 pt-4">
-            * Todos los paquetes mostrados toman como base referencial un aforo de 20 personas. Si se selecciona la opción de personalizar para un evento de mayor capacidad, la cotización se ajustará proporcionalmente mediante el cotizador.
+            * Todos los paquetes mostrados toman como base referencial un aforo de 20 personas. Si se selecciona la opción de personalizar para un evento de mayor capacidad, la cotización se ajustará automáticamente.
           </p>
         </section>
 
