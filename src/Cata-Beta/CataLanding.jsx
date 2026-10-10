@@ -137,11 +137,12 @@ export default function CataLanding() {
   // ==========================================
   const [activePaquete, setActivePaquete] = useState(0);
   const [hoveredRing, setHoveredRing] = useState(null);
-  const scrollIntervalRef = useRef(null); // Ref para controlar el auto-scroll
+  const scrollIntervalRef = useRef(null); 
+  const touchStartX = useRef(0); // Para detectar swipes en móviles
 
   const paquetesData = [
     { 
-      title: "Corporativos", desc: "Coffee break premium, almuerzo de negocios y logística audiovisual para juntas de alto nivel.", price: "450", img: "https://images.unsplash.com/photo-1528605105345-5344ea20e269?auto=format&fit=crop&q=80&w=800",
+      title: "Corporativos", desc: "Coffee break premium, almuerzo de negocios y logística audiovisual para juntas de alto nivel.", price: "450", img: "https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Corporativo.avif",
       distribution: [ { label: "Platos Fuertes", val: 40, color: "#4A90E2" }, { label: "Bebidas", val: 30, color: "#F3A712" }, { label: "Servicios", val: 20, color: "#FFFFFF" }, { label: "Postres", val: 10, color: "#A855F7" } ]
     },
     { 
@@ -161,30 +162,41 @@ export default function CataLanding() {
       distribution: [ { label: "Postres Finos", val: 80, color: "#A855F7" }, { label: "Bebidas", val: 10, color: "#F3A712" }, { label: "Decoración", val: 10, color: "#EC4899" } ]
     },
     { 
-      title: "Temporada", desc: "Hallacas, pan de jamón, y menú navideño tradicional con ambientación festiva exclusiva.", price: "500", img: "https://images.unsplash.com/photo-1607335614551-3062bf90f30e?auto=format&fit=crop&q=80&w=800",
+      title: "Temporada", desc: "Hallacas, pan de jamón, y menú navideño tradicional con ambientación festiva exclusiva.", price: "500", img: "https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/hallacas-730x524.jpg",
       distribution: [ { label: "Platos Fuertes", val: 40, color: "#4A90E2" }, { label: "Bebidas", val: 30, color: "#F3A712" }, { label: "P. Salados", val: 15, color: "#E11D48" }, { label: "Postres", val: 15, color: "#A855F7" } ]
     }
   ];
 
-  // Controladores de Auto-Scroll Laterales
+  // Controladores de Navegación del Carrusel
   const triggerNext = () => setActivePaquete(prev => (prev < paquetesData.length - 1 ? prev + 1 : prev));
   const triggerPrev = () => setActivePaquete(prev => (prev > 0 ? prev - 1 : prev));
 
   const startHoverScroll = (dir) => {
     if (scrollIntervalRef.current) clearInterval(scrollIntervalRef.current);
-    if (dir === 'next') triggerNext(); else triggerPrev(); // Avanza 1 de inmediato
+    if (dir === 'next') triggerNext(); else triggerPrev(); 
     
     scrollIntervalRef.current = setInterval(() => {
       if (dir === 'next') triggerNext(); else triggerPrev();
-    }, 1000); // 1 segundo da tiempo perfecto para que termine la transición de 700ms
+    }, 1000); 
   };
 
   const stopHoverScroll = () => {
     if (scrollIntervalRef.current) clearInterval(scrollIntervalRef.current);
   };
 
+  // Manejadores de Swipe para Móviles
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+  const handleTouchEnd = (e) => {
+    const touchEndX = e.changedTouches[0].clientX;
+    const diff = touchStartX.current - touchEndX;
+    if (diff > 50) triggerNext(); // Swipe a la izquierda
+    else if (diff < -50) triggerPrev(); // Swipe a la derecha
+  };
+
   useEffect(() => {
-    return () => stopHoverScroll(); // Limpia el intervalo si el usuario sale de la página
+    return () => stopHoverScroll();
   }, []);
 
   // Doughnut Math Calculations
@@ -304,12 +316,17 @@ export default function CataLanding() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 md:gap-6 items-center">
             
-            {/* Lado Izquierdo: 3D Coverflow Slider con Hitboxes de Auto-Scroll */}
-            <div className="relative w-full h-[450px] md:h-[500px] flex items-center justify-center perspective-[1200px] overflow-hidden md:overflow-visible">
+            {/* Lado Izquierdo: 3D Coverflow Slider con Máscara de Difuminado */}
+            <div 
+              className="relative w-full h-[450px] md:h-[500px] flex items-center justify-center perspective-[1200px] overflow-hidden"
+              style={{ WebkitMaskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)' }}
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+            >
               
               {/* ZONA DE HOVER/CLICK IZQUIERDA (Para retroceder) */}
               <div 
-                className="absolute left-0 top-0 w-[20%] h-full z-50 flex items-center justify-start opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
+                className="absolute left-0 top-0 w-[20%] h-full z-50 flex items-center justify-start opacity-0 hover:opacity-100 transition-opacity cursor-pointer hidden md:flex"
                 onMouseEnter={() => startHoverScroll('prev')}
                 onMouseLeave={stopHoverScroll}
                 onClick={(e) => { e.preventDefault(); stopHoverScroll(); triggerPrev(); }}
@@ -321,7 +338,7 @@ export default function CataLanding() {
 
               {/* ZONA DE HOVER/CLICK DERECHA (Para avanzar) */}
               <div 
-                className="absolute right-0 top-0 w-[20%] h-full z-50 flex items-center justify-end opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
+                className="absolute right-0 top-0 w-[20%] h-full z-50 flex items-center justify-end opacity-0 hover:opacity-100 transition-opacity cursor-pointer hidden md:flex"
                 onMouseEnter={() => startHoverScroll('next')}
                 onMouseLeave={stopHoverScroll}
                 onClick={(e) => { e.preventDefault(); stopHoverScroll(); triggerNext(); }}
@@ -336,7 +353,6 @@ export default function CataLanding() {
                 const absOffset = Math.abs(offset);
                 const isActive = offset === 0;
                 
-                // Coverflow math parameters
                 const translateX = offset * 45; 
                 const scale = isActive ? 1 : Math.max(0.6, 1 - absOffset * 0.15);
                 const rotateY = offset === 0 ? 0 : offset > 0 ? -35 : 35;
@@ -405,36 +421,51 @@ export default function CataLanding() {
                    )}
                 </div>
 
-                {/* Anillo SVG Dinámico */}
+                {/* Anillo SVG Dinámico con Cajas de Impacto Invisibles */}
                 <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90 drop-shadow-2xl overflow-visible">
+                  {/* Anillos Visibles */}
                   {segments.map((segment) => {
                     const isHovered = hoveredRing === segment.index;
                     const isAnyHovered = hoveredRing !== null;
                     return (
                       <circle
-                        key={`${activePaquete}-${segment.index}`} 
+                        key={`visible-${activePaquete}-${segment.index}`} 
                         cx="50" cy="50" r={radius}
                         fill="transparent"
                         stroke={segment.color}
-                        strokeWidth={isHovered ? "14" : "10"}
+                        strokeWidth={isHovered ? "12" : "8"}
                         strokeDasharray={segment.dashArray}
                         strokeDashoffset={segment.dashOffset}
                         strokeLinecap="round"
-                        className="transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] cursor-pointer origin-center animate-[drawRing_1s_ease-out_forwards]"
+                        className="transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] origin-center animate-[drawRing_1s_ease-out_forwards] pointer-events-none"
                         style={{ 
                           opacity: !isAnyHovered || isHovered ? 1 : 0.3, 
                           transform: isHovered ? 'scale(1.05)' : 'scale(1)',
                         }}
-                        onMouseEnter={() => setHoveredRing(segment.index)}
-                        onMouseLeave={() => setHoveredRing(null)}
                       />
                     );
                   })}
+                  
+                  {/* Hitboxes Invisibles Masivos para Fácil Interactividad */}
+                  {segments.map((segment) => (
+                    <circle
+                      key={`hitbox-${activePaquete}-${segment.index}`} 
+                      cx="50" cy="50" r={radius}
+                      fill="transparent"
+                      stroke="transparent"
+                      strokeWidth="30" /* Grosor masivo para capturar el cursor fácilmente */
+                      strokeDasharray={segment.dashArray}
+                      strokeDashoffset={segment.dashOffset}
+                      className="cursor-pointer origin-center"
+                      onMouseEnter={() => setHoveredRing(segment.index)}
+                      onMouseLeave={() => setHoveredRing(null)}
+                    />
+                  ))}
                 </svg>
               </div>
 
               {/* Leyenda Horizontal Inferior */}
-              <div className="flex flex-wrap justify-center gap-3 md:gap-4 mt-6 md:mt-10">
+              <div className="flex flex-wrap justify-center gap-3 md:gap-4 mt-6 md:mt-10 z-20">
                 {segments.map((seg) => (
                   <div key={seg.index} className="flex items-center gap-2" onMouseEnter={() => setHoveredRing(seg.index)} onMouseLeave={() => setHoveredRing(null)}>
                     <div className="w-2 h-2 md:w-3 md:h-3 rounded-full" style={{ backgroundColor: seg.color }}></div>
