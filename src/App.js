@@ -10,6 +10,7 @@ import AdminHub from './AdminHub';
 import StudentHub from './StudentHub';
 import TeacherHub from './TeacherHub'; // <-- NEW: Imported the Teacher Hub
 import PlacementTest from './components/PlacementTest'; // <-- NEW: Placement Test
+import CataLanding from './Cata-Beta/CataLanding'; // <-- NEW: CATA Beta
 
 // ==========================================
 // RBAC & LOCALIZATION WRAPPER COMPONENT
@@ -277,6 +278,11 @@ export default function App() {
       {/* NEW: Placement Test Route (Public) */}
       {currentPage === 'placement-test' && (
         <PlacementTest />
+      )}
+
+      {/* NEW: CATA Beta Route (Isolated) */}
+      {currentPage === 'cata-beta' && (
+        <CataLanding />
       )}
 
       {/* PROTECTED ROUTES */}
