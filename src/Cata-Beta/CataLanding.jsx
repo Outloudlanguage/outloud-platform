@@ -57,23 +57,6 @@ const ServiceCard = ({ title, subtitle, description, abbreviation }) => (
   </div>
 );
 
-const RangeSlider = ({ label, value, min, max, onChange, unit = "", highlight = false }) => (
-  <div className="mb-5 group">
-    <div className="flex justify-between items-end mb-2">
-      <label className="text-xs md:text-sm font-semibold text-gray-300 tracking-wide">{label}</label>
-      <span className={`text-lg md:text-xl font-black transition-colors ${highlight ? 'text-[#4A90E2]' : 'text-white'}`}>
-        {value} <span className="text-xs font-medium text-gray-400">{unit}</span>
-      </span>
-    </div>
-    <input 
-      type="range" 
-      min={min} max={max} 
-      value={value} 
-      onChange={(e) => onChange(Number(e.target.value))}
-      className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#4A90E2] group-hover:bg-white/20 transition-colors"
-    />
-  </div>
-);
 
 // ==========================================
 // 2. MAIN APP COMPONENT
@@ -82,7 +65,8 @@ export default function CataLanding() {
   const containerRef = useRef();
   const [activeTab, setActiveTab] = useState('SERVICIOS');
   
-  // Calculator State
+  // Dynamic Calculator State
+  const [activeCategory, setActiveCategory] = useState('invitados');
   const [invitados, setInvitados] = useState(50);
   const [salados, setSalados] = useState(6);
   const [dulces, setDulces] = useState(3);
@@ -95,19 +79,28 @@ export default function CataLanding() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Derived Math Logic
-  const totalSalados = invitados * salados;
-  const precioSalados = totalSalados >= 100 ? 0.65 : 0.80;
-  const costoSalados = totalSalados * precioSalados;
-
-  const totalDulces = invitados * dulces;
-  const precioDulces = totalDulces >= 100 ? 0.65 : 0.80;
-  const costoDulces = totalDulces * precioDulces;
-
+  const costoSalados = (invitados * salados) * ((invitados * salados) >= 100 ? 0.65 : 0.80);
+  const costoDulces = (invitados * dulces) * ((invitados * dulces) >= 100 ? 0.65 : 0.80);
   const costoBasicos = invitados * basicos * 8.00;
   const costoPremium = invitados * premium * 12.00;
   const costoBebidas = invitados * bebidas * 4.00;
+  const costoExtras = isDelivery ? 50.00 : 15.00; // $50 Delivery, $15 Pick Up Packaging
 
-  const costoTotal = costoSalados + costoDulces + costoBasicos + costoPremium + costoBebidas;
+  const costoTotal = costoSalados + costoDulces + costoBasicos + costoPremium + costoBebidas + costoExtras;
+
+  // For the Bar Chart Scale
+  const maxChartValue = Math.max(costoSalados, costoDulces, costoBasicos, costoPremium, costoBebidas, costoExtras, 1);
+
+  // Dropdown Configuration Map
+  const categoryConfig = {
+    invitados: { label: 'Cantidad de Invitados', min: 10, max: 500, step: 5, unit: 'personas', val: invitados, set: setInvitados },
+    salados: { label: 'Pasapalos Salados', min: 0, max: 25, step: 1, unit: 'unidades por persona', val: salados, set: setSalados },
+    dulces: { label: 'Pasapalos Dulces', min: 0, max: 25, step: 1, unit: 'unidades por persona', val: dulces, set: setDulces },
+    basicos: { label: 'Platos Principales (Básicos)', min: 0, max: 3, step: 1, unit: 'por persona', val: basicos, set: setBasicos },
+    premium: { label: 'Platos Principales (Premium)', min: 0, max: 3, step: 1, unit: 'por persona', val: premium, set: setPremium },
+    bebidas: { label: 'Bebidas Variadas', min: 0, max: 10, step: 1, unit: 'por persona', val: bebidas, set: setBebidas }
+  };
+  const activeConfig = categoryConfig[activeCategory];
 
   // Assets
   const loadingLogoUrl = "https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Logo%20Cata%20Azul.png";
@@ -116,7 +109,6 @@ export default function CataLanding() {
   const pasapalosImg = "https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/photo-1518619745898-93e765966dcd%20(1).avif";
   const cloudflareVideo = "https://customer-b0aw0ze4tgacea6a.cloudflarestream.com/0a048c047845136e3bccd777d507dfde/iframe?autoplay=true&loop=true&muted=true&controls=false&poster=https%3A%2F%2Fcustomer-b0aw0ze4tgacea6a.cloudflarestream.com%2F0a048c047845136e3bccd777d507dfde%2Fthumbnails%2Fthumbnail.jpg%3Ftime%3D%26height%3D600";
 
-  const navItems = ['SERVICIOS', 'GALERÍA', 'PRESUPUESTOS', 'CONTACTO', 'EMPLEOS'];
   const mockServices = [
     { title: "Menú Ejecutivo", subtitle: "Almuerzos Corporativos", description: "Opciones de almuerzo de alto nivel diseñadas para juntas directivas.", abbreviation: "Ej" },
     { title: "Coffee Break", subtitle: "Pausas Activas", description: "Café de especialidad y bollería artesanal para conferencias.", abbreviation: "Cb" },
@@ -128,19 +120,11 @@ export default function CataLanding() {
     const tl = gsap.timeline();
     tl.to('#solid-logo', { duration: 0.8 })
       .to('#solid-logo', { scale: 150, opacity: 0, duration: 1.2, ease: "expo.inOut" })
-      .to('#loading-screen', {
-        opacity: 0, duration: 0.6, ease: "power2.out",
-        onComplete: () => { document.getElementById('loading-screen').style.display = 'none'; }
-      }, "-=0.8");
+      .to('#loading-screen', { opacity: 0, duration: 0.6, ease: "power2.out", onComplete: () => { document.getElementById('loading-screen').style.display = 'none'; } }, "-=0.8");
   }, { scope: containerRef });
 
-  // Prevent background scrolling when modal is open
   useEffect(() => {
-    if (isModalOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
+    document.body.style.overflow = isModalOpen ? 'hidden' : 'unset';
   }, [isModalOpen]);
 
   return (
@@ -151,7 +135,7 @@ export default function CataLanding() {
         <img id="solid-logo" src={loadingLogoUrl} alt="Loading..." className="absolute w-[120px] md:w-[180px] z-20" />
       </div>
 
-      {/* Seamless Video Background */}
+      {/* Background Video */}
       <div className="fixed inset-0 z-0 overflow-hidden bg-black pointer-events-none">
         <div className="absolute top-1/2 left-1/2 w-[100vw] h-[56.25vw] min-h-[100vh] min-w-[177.77vh] -translate-x-1/2 -translate-y-1/2 opacity-80">
           <iframe src={cloudflareVideo} loading="lazy" className="w-full h-full scale-105 pointer-events-none" style={{ border: 'none' }} allow="autoplay; encrypted-media;" allowFullScreen></iframe>
@@ -159,13 +143,13 @@ export default function CataLanding() {
         <div className="absolute inset-0 bg-black/5 backdrop-blur-[3px]"></div>
       </div>
 
-      {/* Header */}
+      {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 px-4 md:px-8 py-3 md:py-4 bg-white/10 backdrop-blur-lg border-b border-white/20 shadow-lg">
         <div className="max-w-[1800px] mx-auto flex items-center justify-between">
           <img src={headerLogoUrl} alt="CATA" className="ml-3 md:ml-5 h-[35px] md:h-[45px] object-contain drop-shadow-md" />
           <div className="flex items-center">
             <div className="hidden md:flex items-center space-x-2 text-sm font-semibold tracking-wider">
-              {navItems.map(item => (
+              {['SERVICIOS', 'GALERÍA', 'PRESUPUESTOS', 'CONTACTO', 'EMPLEOS'].map(item => (
                 <button key={item} onClick={() => setActiveTab(item)} className={`px-5 py-2.5 rounded-xl transition-all duration-300 border ${activeTab === item ? 'bg-white/30 backdrop-blur-md border-white/50 text-white shadow-[0_0_15px_rgba(255,255,255,0.2)]' : 'border-transparent text-gray-200 hover:bg-white/20 hover:backdrop-blur-md hover:border-white/40 hover:text-white hover:-translate-y-0.5'}`}>
                   {item}
                 </button>
@@ -203,92 +187,136 @@ export default function CataLanding() {
           </div>
         </section>
 
-        {/* PROGRESSION GRID */}
         <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mt-2 md:mt-6">
-          {mockServices.map((service, index) => (
-            <ServiceCard key={index} {...service} />
-          ))}
+          {mockServices.map((service, index) => <ServiceCard key={index} {...service} />)}
         </section>
 
         {/* ==========================================
-            DYNAMIC CALCULATOR SECTION
+            DYNAMIC CALCULATOR SECTION (GRAPH & DROPDOWN)
         ========================================== */}
         <section className="w-full mt-10 rounded-[24px] md:rounded-[40px] bg-white/10 backdrop-blur-2xl border border-white/20 p-6 md:p-12 shadow-2xl overflow-hidden relative">
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#4A90E2]/20 rounded-full blur-[120px] -z-10 pointer-events-none"></div>
           
           <div className="mb-10 text-center md:text-left">
             <h2 className="text-3xl md:text-5xl font-black tracking-tighter mb-2">PROYECTA TU EVENTO</h2>
-            <p className="text-sm md:text-base text-gray-300 font-medium">Configura las variables y calcula un estimado al instante.</p>
+            <p className="text-sm md:text-base text-gray-300 font-medium">Configura las variables y obtén un estimado al instante.</p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 md:gap-16">
             
-            {/* Sliders Area (Left) */}
-            <div className="lg:col-span-7 flex flex-col gap-2">
-              <RangeSlider label="Cantidad de Invitados" value={invitados} min={10} max={500} onChange={setInvitados} unit="personas" highlight={true} />
-              <div className="w-full h-[1px] bg-white/10 my-2"></div>
-              <RangeSlider label="Pasapalos Salados" value={salados} min={0} max={25} onChange={setSalados} unit="por persona" />
-              <RangeSlider label="Pasapalos Dulces" value={dulces} min={0} max={25} onChange={setDulces} unit="por persona" />
-              <RangeSlider label="Platos Principales (Básicos)" value={basicos} min={0} max={3} onChange={setBasicos} unit="por persona" />
-              <RangeSlider label="Platos Principales (Premium)" value={premium} min={0} max={3} onChange={setPremium} unit="por persona" />
-              <RangeSlider label="Bebidas Variadas" value={bebidas} min={0} max={10} onChange={setBebidas} unit="por persona" />
+            {/* Left Column: Dropdown & Master Slider */}
+            <div className="lg:col-span-5 flex flex-col gap-6">
+              
+              {/* Dropdown Selector */}
+              <div>
+                <label className="text-xs font-semibold text-gray-400 tracking-widest uppercase mb-2 block">Variable a ajustar</label>
+                <select 
+                  value={activeCategory} 
+                  onChange={(e) => setActiveCategory(e.target.value)}
+                  className="w-full bg-black/40 text-white text-base md:text-lg p-4 rounded-2xl border border-white/20 appearance-none outline-none focus:border-[#4A90E2] transition-colors cursor-pointer"
+                >
+                  {Object.entries(categoryConfig).map(([key, config]) => (
+                    <option key={key} value={key} className="bg-gray-900 text-white">{config.label}</option>
+                  ))}
+                </select>
+              </div>
 
-              {/* Delivery Toggle */}
-              <div className="flex items-center justify-between p-4 bg-black/20 rounded-2xl border border-white/10 mt-4">
-                <span className="text-sm font-semibold text-gray-300 tracking-wide">Modalidad de Entrega</span>
-                <div className="flex space-x-2 bg-black/40 rounded-full p-1">
-                  <button onClick={() => setIsDelivery(false)} className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${!isDelivery ? 'bg-[#4A90E2] text-white' : 'text-gray-400 hover:text-white'}`}>Pick Up</button>
-                  <button onClick={() => setIsDelivery(true)} className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${isDelivery ? 'bg-[#4A90E2] text-white' : 'text-gray-400 hover:text-white'}`}>Delivery</button>
+              {/* Master Slider */}
+              <div className="bg-black/20 p-6 rounded-3xl border border-white/10">
+                <div className="flex flex-col items-center justify-center mb-6">
+                  {/* PURE WHITE, HUGE FONT FOR READABILITY */}
+                  <span className="text-6xl font-black text-white drop-shadow-lg mb-1">{activeConfig.val}</span>
+                  <span className="text-sm font-bold text-white uppercase tracking-widest">{activeConfig.unit}</span>
+                </div>
+                
+                <input 
+                  type="range" 
+                  min={activeConfig.min} max={activeConfig.max} step={activeConfig.step}
+                  value={activeConfig.val} 
+                  onChange={(e) => activeConfig.set(Number(e.target.value))}
+                  className="w-full h-3 bg-white/20 rounded-lg appearance-none cursor-pointer accent-[#4A90E2] transition-all"
+                />
+              </div>
+
+              {/* Logistics Toggle */}
+              <div className="flex items-center justify-between p-4 bg-black/40 rounded-2xl border border-white/10">
+                <span className="text-sm font-semibold text-gray-200 tracking-wide">Modalidad</span>
+                <div className="flex space-x-2 bg-black/60 rounded-full p-1">
+                  <button onClick={() => setIsDelivery(false)} className={`px-5 py-2 rounded-full text-xs font-bold transition-all ${!isDelivery ? 'bg-[#4A90E2] text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}>Pick Up</button>
+                  <button onClick={() => setIsDelivery(true)} className={`px-5 py-2 rounded-full text-xs font-bold transition-all ${isDelivery ? 'bg-[#4A90E2] text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}>Delivery</button>
                 </div>
               </div>
+
             </div>
 
-            {/* Live Receipt Area (Right) */}
-            <div className="lg:col-span-5 bg-black/40 rounded-[30px] border border-white/10 p-6 md:p-8 flex flex-col justify-between">
-              <div>
-                <h3 className="text-sm font-bold text-gray-400 tracking-widest uppercase mb-6">Desglose Aproximado</h3>
+            {/* Right Column: Live Interactive Bar Graph */}
+            <div className="lg:col-span-7 bg-black/40 rounded-[30px] border border-white/10 p-6 md:p-8 flex flex-col justify-between">
+              
+              {/* Chart Area */}
+              <div className="w-full h-[250px] md:h-[300px] border-b border-white/20 flex items-end justify-between gap-2 md:gap-4 pb-2 relative">
                 
-                <ul className="space-y-4 text-sm md:text-base font-medium">
-                  <li className="flex justify-between">
-                    <span className="text-gray-300">Salados ({totalSalados} unds)</span>
-                    <span>${costoSalados.toFixed(2)}</span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span className="text-gray-300">Dulces ({totalDulces} unds)</span>
-                    <span>${costoDulces.toFixed(2)}</span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span className="text-gray-300">Básicos ({invitados * basicos} unds)</span>
-                    <span>${costoBasicos.toFixed(2)}</span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span className="text-gray-300">Premium ({invitados * premium} unds)</span>
-                    <span>${costoPremium.toFixed(2)}</span>
-                  </li>
-                  <li className="flex justify-between border-b border-white/10 pb-4">
-                    <span className="text-gray-300">Bebidas ({invitados * bebidas} unds)</span>
-                    <span>${costoBebidas.toFixed(2)}</span>
-                  </li>
-                  
-                  {isDelivery && (
-                    <li className="flex justify-between text-[#4A90E2]">
-                      <span>Logística Delivery</span>
-                      <span className="text-xs self-center">Por cotizar</span>
-                    </li>
-                  )}
-                </ul>
+                {/* Salados Bar */}
+                <div className="w-full flex flex-col items-center justify-end h-full group relative">
+                  <span className="opacity-0 group-hover:opacity-100 absolute -top-8 text-xs font-bold bg-white text-black px-2 py-1 rounded transition-opacity">${costoSalados.toFixed(0)}</span>
+                  <div style={{ height: `${(costoSalados / maxChartValue) * 100}%` }} className="w-full bg-[#4A90E2] rounded-t-lg transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] hover:brightness-125 min-h-[4px]"></div>
+                  <span className="text-[10px] md:text-xs text-gray-400 font-bold mt-2 rotate-[-45deg] md:rotate-0 origin-top-left">Salados</span>
+                </div>
+
+                {/* Dulces Bar */}
+                <div className="w-full flex flex-col items-center justify-end h-full group relative">
+                  <span className="opacity-0 group-hover:opacity-100 absolute -top-8 text-xs font-bold bg-white text-black px-2 py-1 rounded transition-opacity">${costoDulces.toFixed(0)}</span>
+                  <div style={{ height: `${(costoDulces / maxChartValue) * 100}%` }} className="w-full bg-[#4A90E2]/80 rounded-t-lg transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] hover:brightness-125 min-h-[4px]"></div>
+                  <span className="text-[10px] md:text-xs text-gray-400 font-bold mt-2 rotate-[-45deg] md:rotate-0 origin-top-left">Dulces</span>
+                </div>
+
+                {/* Básicos Bar */}
+                <div className="w-full flex flex-col items-center justify-end h-full group relative">
+                  <span className="opacity-0 group-hover:opacity-100 absolute -top-8 text-xs font-bold bg-white text-black px-2 py-1 rounded transition-opacity">${costoBasicos.toFixed(0)}</span>
+                  <div style={{ height: `${(costoBasicos / maxChartValue) * 100}%` }} className="w-full bg-white/80 rounded-t-lg transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] hover:bg-white min-h-[4px]"></div>
+                  <span className="text-[10px] md:text-xs text-gray-400 font-bold mt-2 rotate-[-45deg] md:rotate-0 origin-top-left">Básicos</span>
+                </div>
+
+                {/* Premium Bar */}
+                <div className="w-full flex flex-col items-center justify-end h-full group relative">
+                  <span className="opacity-0 group-hover:opacity-100 absolute -top-8 text-xs font-bold bg-white text-black px-2 py-1 rounded transition-opacity">${costoPremium.toFixed(0)}</span>
+                  <div style={{ height: `${(costoPremium / maxChartValue) * 100}%` }} className="w-full bg-white/60 rounded-t-lg transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] hover:bg-white min-h-[4px]"></div>
+                  <span className="text-[10px] md:text-xs text-gray-400 font-bold mt-2 rotate-[-45deg] md:rotate-0 origin-top-left">Premium</span>
+                </div>
+
+                {/* Bebidas Bar */}
+                <div className="w-full flex flex-col items-center justify-end h-full group relative">
+                  <span className="opacity-0 group-hover:opacity-100 absolute -top-8 text-xs font-bold bg-white text-black px-2 py-1 rounded transition-opacity">${costoBebidas.toFixed(0)}</span>
+                  <div style={{ height: `${(costoBebidas / maxChartValue) * 100}%` }} className="w-full bg-[#E2A74A] rounded-t-lg transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] hover:brightness-125 min-h-[4px]"></div>
+                  <span className="text-[10px] md:text-xs text-gray-400 font-bold mt-2 rotate-[-45deg] md:rotate-0 origin-top-left">Bebidas</span>
+                </div>
+
+                {/* Logística Bar */}
+                <div className="w-full flex flex-col items-center justify-end h-full group relative">
+                  <span className="opacity-0 group-hover:opacity-100 absolute -top-8 text-xs font-bold bg-white text-black px-2 py-1 rounded transition-opacity">${costoExtras.toFixed(0)}</span>
+                  <div style={{ height: `${(costoExtras / maxChartValue) * 100}%` }} className="w-full bg-purple-400/80 rounded-t-lg transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] hover:brightness-125 min-h-[4px]"></div>
+                  <span className="text-[10px] md:text-xs text-purple-300 font-bold mt-2 rotate-[-45deg] md:rotate-0 origin-top-left">Extras</span>
+                </div>
               </div>
 
-              <div className="mt-8">
+              {/* Total & Action */}
+              <div className="mt-10">
                 <div className="flex justify-between items-end mb-2">
-                  <span className="text-lg font-bold">Total Estimado</span>
-                  <span className="text-4xl md:text-5xl font-black text-[#4A90E2] tracking-tighter">
+                  <span className="text-lg md:text-xl font-bold">Total Aproximado</span>
+                  <span className="text-4xl md:text-5xl font-black text-[#4A90E2] tracking-tighter transition-all duration-500">
                     ${costoTotal.toFixed(2)}
                   </span>
                 </div>
-                <p className="text-[10px] md:text-xs text-gray-400 leading-tight mb-6">
-                  *Los precios al mayor ($0.65/und) se aplican automáticamente al superar las 100 unidades por categoría. Este valor es un estimado inicial.
-                </p>
+                
+                {/* Dynamic Note Based on Delivery/Pick Up */}
+                <div className="text-[10px] md:text-xs text-gray-400 leading-tight mb-6 space-y-1">
+                  <p>* Los precios al mayor ($0.65/und) se aplican automáticamente en salados/dulces al superar 100 unidades.</p>
+                  {!isDelivery ? (
+                    <p className="text-purple-300">* Se ha aplicado un cargo fijo de <strong>$15.00</strong> por concepto de empaque especial para Pick Up.</p>
+                  ) : (
+                    <p className="text-purple-300">* Se ha aplicado una tarifa base de <strong>$50.00</strong> por Delivery. Este monto puede variar si la distancia supera los 10 kilómetros.</p>
+                  )}
+                </div>
+
                 <AnimatedButton text="SOLICITAR PRESUPUESTO" fullWidth={true} onClick={() => setIsModalOpen(true)} />
               </div>
             </div>
@@ -303,35 +331,21 @@ export default function CataLanding() {
       ========================================== */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-          {/* Backdrop */}
           <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setIsModalOpen(false)}></div>
-          
-          {/* Modal Container */}
           <div className="relative w-full max-w-lg bg-[#111] border border-white/20 rounded-[30px] p-8 md:p-10 shadow-2xl transform transition-all">
             <div className="flex justify-center mb-6">
-              <div className="w-16 h-16 rounded-full bg-[#4A90E2]/20 flex items-center justify-center">
-                <span className="text-3xl">📄</span>
-              </div>
+              <div className="w-16 h-16 rounded-full bg-[#4A90E2]/20 flex items-center justify-center text-3xl">📄</div>
             </div>
-            
             <h3 className="text-2xl font-black tracking-tight text-center mb-4">Aviso Importante</h3>
-            
             <p className="text-gray-300 text-sm leading-relaxed text-center mb-8">
-              Este cálculo es una <strong>estimación referencial</strong> basada en los datos proporcionados y no constituye una cotización formal ni un contrato vinculante. Los precios definitivos pueden variar ligeramente dependiendo de factores logísticos, temporada de ingredientes, tipo de evento y la modalidad de entrega seleccionada.
+              Este cálculo es una <strong>estimación referencial</strong> basada en los datos proporcionados y no constituye un contrato vinculante. Los precios definitivos pueden variar ligeramente dependiendo de factores logísticos, temporada de ingredientes y {isDelivery ? 'la distancia final del delivery' : 'el volumen total de empaques requeridos'}.
             </p>
-            
             <div className="flex flex-col space-y-3">
-              <button 
-                onClick={() => setIsModalOpen(false)}
-                className="w-full py-4 rounded-full bg-[#4A90E2] hover:bg-[#357ABD] text-white font-bold tracking-widest text-sm transition-all shadow-[0_0_20px_rgba(74,144,226,0.3)] hover:shadow-[0_0_30px_rgba(74,144,226,0.5)]"
-              >
+              <button onClick={() => setIsModalOpen(false)} className="w-full py-4 rounded-full bg-[#4A90E2] hover:bg-[#357ABD] text-white font-bold tracking-widest text-sm transition-all shadow-[0_0_20px_rgba(74,144,226,0.3)]">
                 ENTENDIDO, CONTINUAR
               </button>
-              <button 
-                onClick={() => setIsModalOpen(false)}
-                className="w-full py-3 rounded-full bg-transparent hover:bg-white/10 text-gray-400 hover:text-white font-semibold tracking-widest text-xs transition-all"
-              >
-                VOLVER AL CALCULADOR
+              <button onClick={() => setIsModalOpen(false)} className="w-full py-3 rounded-full bg-transparent hover:bg-white/10 text-gray-400 hover:text-white font-semibold tracking-widest text-xs transition-all">
+                VOLVER AL GRÁFICO
               </button>
             </div>
           </div>
