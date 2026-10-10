@@ -34,22 +34,22 @@ const AnimatedButton = ({ text, fullWidth = false, onClick }) => {
 };
 
 const ServiceCard = ({ title, subtitle, description, abbreviation, bgImage }) => (
-  <div className="group/card relative w-full h-[200px] md:h-[400px] rounded-[16px] md:rounded-[30px] overflow-hidden shadow-lg cursor-default flex flex-col border border-white/50 transition-all duration-500 hover:border-white/80">
+  <div className="group/card relative w-full h-[200px] md:h-[400px] rounded-[16px] md:rounded-[30px] overflow-hidden shadow-lg cursor-default flex flex-col border border-white/30 transition-all duration-500 hover:border-white/80">
     
     {/* Background Image Layer */}
     <div className="absolute inset-0 w-full h-full bg-cover bg-center transition-transform duration-1000 group-hover/card:scale-110" style={{ backgroundImage: `url('${bgImage}')` }}></div>
     
-    {/* Light Glass Overlay for Idle State */}
-    <div className="absolute inset-0 bg-white/75 backdrop-blur-md transition-opacity duration-500 group-hover/card:opacity-0"></div>
+    {/* Dark Glass Overlay for Idle State (Allows image to be visible) */}
+    <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px] transition-opacity duration-500 group-hover/card:opacity-0"></div>
     
-    {/* Dark Glass Overlay for Hover State */}
+    {/* Darker Glass Overlay for Hover State (Prioritizes text readability) */}
     <div className="absolute inset-0 bg-black/80 backdrop-blur-md opacity-0 transition-opacity duration-500 group-hover/card:opacity-100"></div>
 
-    {/* Default State Content (Dark Text) */}
+    {/* Default State Content (White Text) */}
     <div className="absolute inset-0 p-4 md:p-8 transition-opacity duration-500 group-hover/card:opacity-0 flex flex-col z-10">
-      <h3 className="text-sm md:text-2xl font-extrabold text-gray-900 tracking-tight leading-none drop-shadow-sm">{title}</h3>
-      <p className="text-[8px] md:text-xs font-bold text-gray-700 tracking-widest uppercase mt-1 md:mt-3">{subtitle}</p>
-      <div className="absolute bottom-2 md:bottom-4 left-4 md:left-6 text-black/10 text-[60px] md:text-[140px] font-black leading-none tracking-tighter select-none">
+      <h3 className="text-sm md:text-2xl font-extrabold text-white tracking-tight leading-none drop-shadow-md">{title}</h3>
+      <p className="text-[8px] md:text-xs font-bold text-white/90 tracking-widest uppercase mt-1 md:mt-3 drop-shadow-md">{subtitle}</p>
+      <div className="absolute bottom-2 md:bottom-4 left-4 md:left-6 text-white/30 text-[60px] md:text-[140px] font-black leading-none tracking-tighter select-none drop-shadow-lg">
         {abbreviation}
       </div>
     </div>
@@ -58,7 +58,7 @@ const ServiceCard = ({ title, subtitle, description, abbreviation, bgImage }) =>
     <div className="absolute inset-0 p-4 md:p-8 flex flex-col justify-between opacity-0 translate-y-4 md:translate-y-8 transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] group-hover/card:opacity-100 group-hover/card:translate-y-0 text-white z-20">
       <div>
         <h3 className="text-sm md:text-2xl font-extrabold tracking-tight leading-none">{title}</h3>
-        <p className="text-[8px] md:text-xs font-bold text-gray-300 tracking-widest uppercase mt-1 md:mt-3 hidden md:block">{subtitle}</p>
+        <p className="text-[8px] md:text-xs font-bold text-gray-400 tracking-widest uppercase mt-1 md:mt-3 hidden md:block">{subtitle}</p>
       </div>
       <p className="text-[10px] md:text-lg font-medium leading-tight md:leading-snug mb-2 md:mb-6 drop-shadow-md line-clamp-3 md:line-clamp-none">
         {description}
@@ -265,49 +265,48 @@ export default function CataLanding() {
               {/* Chart Area */}
               <div className="w-full h-[220px] md:h-[280px] flex items-end justify-between gap-2 md:gap-4 mb-10 md:mb-12 relative">
                 
-                {/* Horizontal Baseline */}
                 <div className="absolute bottom-0 left-0 w-full h-px bg-white/40"></div>
                 
                 {/* Salados Bar */}
                 <div className="w-full flex flex-col items-center justify-end h-full group relative pb-[1px]">
-                  <span className="opacity-0 group-hover:opacity-100 absolute -top-8 text-xs font-bold bg-white text-black px-2 py-1 rounded transition-opacity">${costoSalados.toFixed(0)}</span>
+                  <span className="opacity-0 group-hover:opacity-100 absolute -top-8 text-xs font-bold bg-white text-black px-2 py-1 rounded transition-opacity z-10">${costoSalados.toFixed(0)}</span>
                   <div style={{ height: `${(costoSalados / maxChartValue) * 100}%` }} className="w-full bg-[#4A90E2] rounded-t-sm md:rounded-t-lg transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] hover:brightness-125 min-h-[4px]"></div>
-                  <span className="absolute top-full mt-2 text-[9px] md:text-xs text-white font-bold text-center w-full truncate">Salados</span>
+                  <span className="absolute top-full mt-2 text-[8px] md:text-[11px] text-white font-bold text-center w-[150%] left-1/2 -translate-x-1/2 tracking-tighter md:tracking-normal">Salados</span>
                 </div>
 
                 {/* Dulces Bar */}
                 <div className="w-full flex flex-col items-center justify-end h-full group relative pb-[1px]">
-                  <span className="opacity-0 group-hover:opacity-100 absolute -top-8 text-xs font-bold bg-white text-black px-2 py-1 rounded transition-opacity">${costoDulces.toFixed(0)}</span>
+                  <span className="opacity-0 group-hover:opacity-100 absolute -top-8 text-xs font-bold bg-white text-black px-2 py-1 rounded transition-opacity z-10">${costoDulces.toFixed(0)}</span>
                   <div style={{ height: `${(costoDulces / maxChartValue) * 100}%` }} className="w-full bg-[#4A90E2]/80 rounded-t-sm md:rounded-t-lg transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] hover:brightness-125 min-h-[4px]"></div>
-                  <span className="absolute top-full mt-2 text-[9px] md:text-xs text-white font-bold text-center w-full truncate">Dulces</span>
+                  <span className="absolute top-full mt-2 text-[8px] md:text-[11px] text-white font-bold text-center w-[150%] left-1/2 -translate-x-1/2 tracking-tighter md:tracking-normal">Dulces</span>
                 </div>
 
                 {/* Básicos Bar */}
                 <div className="w-full flex flex-col items-center justify-end h-full group relative pb-[1px]">
-                  <span className="opacity-0 group-hover:opacity-100 absolute -top-8 text-xs font-bold bg-white text-black px-2 py-1 rounded transition-opacity">${costoBasicos.toFixed(0)}</span>
+                  <span className="opacity-0 group-hover:opacity-100 absolute -top-8 text-xs font-bold bg-white text-black px-2 py-1 rounded transition-opacity z-10">${costoBasicos.toFixed(0)}</span>
                   <div style={{ height: `${(costoBasicos / maxChartValue) * 100}%` }} className="w-full bg-white/80 rounded-t-sm md:rounded-t-lg transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] hover:bg-white min-h-[4px]"></div>
-                  <span className="absolute top-full mt-2 text-[9px] md:text-xs text-white font-bold text-center w-full truncate">Básicos</span>
+                  <span className="absolute top-full mt-2 text-[8px] md:text-[11px] text-white font-bold text-center w-[150%] left-1/2 -translate-x-1/2 tracking-tighter md:tracking-normal">Básicos</span>
                 </div>
 
                 {/* Premium Bar */}
                 <div className="w-full flex flex-col items-center justify-end h-full group relative pb-[1px]">
-                  <span className="opacity-0 group-hover:opacity-100 absolute -top-8 text-xs font-bold bg-white text-black px-2 py-1 rounded transition-opacity">${costoPremium.toFixed(0)}</span>
+                  <span className="opacity-0 group-hover:opacity-100 absolute -top-8 text-xs font-bold bg-white text-black px-2 py-1 rounded transition-opacity z-10">${costoPremium.toFixed(0)}</span>
                   <div style={{ height: `${(costoPremium / maxChartValue) * 100}%` }} className="w-full bg-white/60 rounded-t-sm md:rounded-t-lg transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] hover:bg-white min-h-[4px]"></div>
-                  <span className="absolute top-full mt-2 text-[9px] md:text-xs text-white font-bold text-center w-full truncate">Premium</span>
+                  <span className="absolute top-full mt-2 text-[8px] md:text-[11px] text-white font-bold text-center w-[150%] left-1/2 -translate-x-1/2 tracking-tighter md:tracking-normal">Premium</span>
                 </div>
 
                 {/* Bebidas Bar */}
                 <div className="w-full flex flex-col items-center justify-end h-full group relative pb-[1px]">
-                  <span className="opacity-0 group-hover:opacity-100 absolute -top-8 text-xs font-bold bg-white text-black px-2 py-1 rounded transition-opacity">${costoBebidas.toFixed(0)}</span>
+                  <span className="opacity-0 group-hover:opacity-100 absolute -top-8 text-xs font-bold bg-white text-black px-2 py-1 rounded transition-opacity z-10">${costoBebidas.toFixed(0)}</span>
                   <div style={{ height: `${(costoBebidas / maxChartValue) * 100}%` }} className="w-full bg-[#E2A74A] rounded-t-sm md:rounded-t-lg transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] hover:brightness-125 min-h-[4px]"></div>
-                  <span className="absolute top-full mt-2 text-[9px] md:text-xs text-white font-bold text-center w-full truncate">Bebidas</span>
+                  <span className="absolute top-full mt-2 text-[8px] md:text-[11px] text-white font-bold text-center w-[150%] left-1/2 -translate-x-1/2 tracking-tighter md:tracking-normal">Bebidas</span>
                 </div>
 
                 {/* Logística Bar */}
                 <div className="w-full flex flex-col items-center justify-end h-full group relative pb-[1px]">
-                  <span className="opacity-0 group-hover:opacity-100 absolute -top-8 text-xs font-bold bg-white text-black px-2 py-1 rounded transition-opacity">${costoExtras.toFixed(0)}</span>
+                  <span className="opacity-0 group-hover:opacity-100 absolute -top-8 text-xs font-bold bg-white text-black px-2 py-1 rounded transition-opacity z-10">${costoExtras.toFixed(0)}</span>
                   <div style={{ height: `${(costoExtras / maxChartValue) * 100}%` }} className="w-full bg-purple-400/80 rounded-t-sm md:rounded-t-lg transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] hover:brightness-125 min-h-[4px]"></div>
-                  <span className="absolute top-full mt-2 text-[9px] md:text-xs text-purple-300 font-bold text-center w-full truncate">Extras</span>
+                  <span className="absolute top-full mt-2 text-[8px] md:text-[11px] text-purple-300 font-bold text-center w-[150%] left-1/2 -translate-x-1/2 tracking-tighter md:tracking-normal">Extras</span>
                 </div>
               </div>
 
@@ -321,7 +320,7 @@ export default function CataLanding() {
                 </div>
                 
                 <div className="text-[10px] md:text-xs text-white/80 leading-tight mb-6 space-y-1">
-                  <p>* Los precios al mayor ($0.65/und) se aplican automáticamente en salados/dulces al superar 100 unidades.</p>
+                  <p>* Los precios al mayor ($0.65/und) se aplican automáticamente en pasapalos salados y dulces al superar 100 unidades.</p>
                   {!isDelivery ? (
                     <p className="text-purple-300">* Se ha aplicado un cargo fijo de <strong>$15.00</strong> por concepto de empaque especial para Pick Up.</p>
                   ) : (
