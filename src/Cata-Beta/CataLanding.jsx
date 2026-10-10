@@ -133,33 +133,61 @@ export default function CataLanding() {
   const activeConfig = categoryConfig[activeCategory];
 
   // ==========================================
-  // STATE: PAQUETES & STATS DOUGHNUT
+  // STATE: COVERFLOW & DISTRIBUTION DOUGHNUT
   // ==========================================
   const [activePaquete, setActivePaquete] = useState(0);
-  const [activeStat, setActiveStat] = useState(0);
+  const [hoveredRing, setHoveredRing] = useState(null);
 
   const paquetesData = [
-    { title: "Corporativos", desc: "Coffee break premium, almuerzo de negocios y logística audiovisual para juntas de alto nivel.", price: "450", img: "https://images.unsplash.com/photo-1515169067868-5387ec356754?auto=format&fit=crop&q=80&w=800" },
-    { title: "Fiestas", desc: "Selección de pasapalos, coctelería de autor y montaje lounge para celebraciones vibrantes.", price: "350", img: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&q=80&w=800" },
-    { title: "Bodas", desc: "Banquete a 3 tiempos, decoración floral inmersiva y barra libre premium para tu gran día.", price: "850", img: "https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&q=80&w=800" },
-    { title: "Fijos", desc: "Servicio de comedor ejecutivo con menús rotativos diarios. Contratación mensual.", price: "1200", img: "https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&q=80&w=800" },
-    { title: "Postres", desc: "Boutique dulce con mesa de tartas, macarons, bombones artesanales y pastelería fina.", price: "200", img: "https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&q=80&w=800" },
-    { title: "Temporada", desc: "Menús temáticos festivos con ingredientes estacionales y ambientación exclusiva.", price: "500", img: "https://images.unsplash.com/photo-1543599538-a6c4f6ccb1f2?auto=format&fit=crop&q=80&w=800" }
+    { 
+      title: "Corporativos", desc: "Coffee break premium, almuerzo de negocios y logística audiovisual para juntas de alto nivel.", price: "450", img: "https://images.unsplash.com/photo-1515169067868-5387ec356754?auto=format&fit=crop&q=80&w=800",
+      distribution: [ { label: "Platos Fuertes", val: 40, color: "#4A90E2" }, { label: "Bebidas", val: 30, color: "#F3A712" }, { label: "Servicios", val: 20, color: "#FFFFFF" }, { label: "Postres", val: 10, color: "#A855F7" } ]
+    },
+    { 
+      title: "Fiestas", desc: "Selección de pasapalos, coctelería de autor y montaje lounge para celebraciones vibrantes.", price: "350", img: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&q=80&w=800",
+      distribution: [ { label: "Bebidas/Barra", val: 40, color: "#F3A712" }, { label: "P. Salados", val: 30, color: "#E11D48" }, { label: "Entretenimiento", val: 20, color: "#10B981" }, { label: "P. Dulces", val: 10, color: "#A855F7" } ]
+    },
+    { 
+      title: "Bodas", desc: "Banquete a 3 tiempos, decoración floral inmersiva y barra libre premium para tu gran día.", price: "850", img: "https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&q=80&w=800",
+      distribution: [ { label: "Platos Fuertes", val: 45, color: "#4A90E2" }, { label: "Bebidas", val: 25, color: "#F3A712" }, { label: "Decoración", val: 20, color: "#EC4899" }, { label: "Postres", val: 10, color: "#A855F7" } ]
+    },
+    { 
+      title: "Fijos", desc: "Servicio de comedor ejecutivo con menús rotativos diarios. Contratación mensual.", price: "1200", img: "https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&q=80&w=800",
+      distribution: [ { label: "Platos Fuertes", val: 75, color: "#4A90E2" }, { label: "Bebidas", val: 15, color: "#F3A712" }, { label: "Postres", val: 10, color: "#A855F7" } ]
+    },
+    { 
+      title: "Postres", desc: "Boutique dulce con mesa de tartas, macarons, bombones artesanales y pastelería fina.", price: "200", img: "https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&q=80&w=800",
+      distribution: [ { label: "Postres Finos", val: 80, color: "#A855F7" }, { label: "Bebidas", val: 10, color: "#F3A712" }, { label: "Decoración", val: 10, color: "#EC4899" } ]
+    },
+    { 
+      title: "Temporada", desc: "Menús temáticos festivos con ingredientes estacionales y ambientación exclusiva.", price: "500", img: "https://images.unsplash.com/photo-1543599538-a6c4f6ccb1f2?auto=format&fit=crop&q=80&w=800",
+      distribution: [ { label: "Platos Fuertes", val: 40, color: "#4A90E2" }, { label: "Bebidas", val: 30, color: "#F3A712" }, { label: "P. Salados", val: 15, color: "#E11D48" }, { label: "Postres", val: 15, color: "#A855F7" } ]
+    }
   ];
 
-  const statsData = [
-    { label: "Pasapalos Servidos", value: "50,000+", color: "#4A90E2", img: "https://images.unsplash.com/photo-1518619745898-93e765966dcd?auto=format&fit=crop&q=80&w=800" },
-    { label: "Bodas Realizadas", value: "120+", color: "#F3A712", img: "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&q=80&w=800" },
-    { label: "Horas de Mixología", value: "5,000+", color: "#FFFFFF", img: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&q=80&w=800" },
-    { label: "Empresas Satisfechas", value: "85+", color: "#A855F7", img: "https://images.unsplash.com/photo-1556761175-5973dc0f32b7?auto=format&fit=crop&q=80&w=800" }
-  ];
-
-  // Doughnut Math calculations
+  // Doughnut Math Calculations
   const radius = 42;
   const circum = 2 * Math.PI * radius; 
-  const segmentLength = circum / statsData.length;
-  const gap = 3; 
-  const dash = segmentLength - gap;
+  const gap = 2; // Espacio visual entre segmentos
+
+  const getDoughnutSegments = () => {
+    let currentOffset = 0;
+    return paquetesData[activePaquete].distribution.map((item, index) => {
+      const segmentValue = item.val / 100;
+      const segmentDash = segmentValue * circum;
+      const offsetToApply = currentOffset;
+      currentOffset -= segmentDash; // Restamos porque el SVG dibuja en sentido inverso
+
+      return {
+        ...item,
+        dashArray: `${segmentDash - gap} ${circum}`,
+        dashOffset: offsetToApply,
+        index
+      };
+    });
+  };
+
+  const segments = getDoughnutSegments();
 
   // Assets
   const loadingLogoUrl = "https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Logo%20Cata%20Azul.png";
@@ -242,7 +270,7 @@ export default function CataLanding() {
         </section>
 
         {/* ==========================================
-            NUEVA SECCIÓN: PAQUETES & STATS DOUGHNUT
+            COVERFLOW PAQUETES & RESOURCE DOUGHNUT
         ========================================== */}
         <section className="w-full mt-10 md:mt-16 rounded-[24px] md:rounded-[40px] bg-[#111]/80 backdrop-blur-3xl border border-white/10 p-4 md:p-10 shadow-2xl overflow-hidden relative">
           <div className="absolute top-0 left-0 w-[400px] h-[400px] bg-[#F3A712]/10 rounded-full blur-[120px] -z-10 pointer-events-none"></div>
@@ -252,100 +280,130 @@ export default function CataLanding() {
             <p className="text-sm md:text-base text-gray-400 font-medium">Experiencias pre-diseñadas con la firma de nuestros expertos.</p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 md:gap-12">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 md:gap-6 items-center">
             
-            {/* Lado Izquierdo: Acordeón de Paquetes tipo Spotify */}
-            <div className="flex flex-col h-[600px] md:h-[500px]">
-              <div className="flex flex-col md:flex-row h-full gap-2 w-full">
-                {paquetesData.map((paquete, index) => {
-                  const isActive = activePaquete === index;
-                  return (
-                    <div 
-                      key={index} 
-                      onClick={() => setActivePaquete(index)}
-                      className={`relative rounded-[20px] overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] cursor-pointer group border border-white/10 ${isActive ? 'flex-[6] md:flex-[5] shadow-2xl' : 'flex-[1] md:flex-[1] hover:flex-[1.2] opacity-60 hover:opacity-100'}`}
-                    >
-                      <div className="absolute inset-0 w-full h-full bg-cover bg-center transition-transform duration-1000 group-hover:scale-110" style={{ backgroundImage: `url('${paquete.img}')` }}></div>
-                      <div className={`absolute inset-0 transition-colors duration-500 ${isActive ? 'bg-black/60' : 'bg-black/80'}`}></div>
-                      
-                      {/* Contenido Inactivo (Texto vertical o contraído) */}
-                      {!isActive && (
-                        <div className="absolute inset-0 flex items-center justify-center p-2">
-                          <span className="text-white font-bold tracking-widest text-xs md:text-sm uppercase md:-rotate-90 whitespace-nowrap opacity-70 group-hover:opacity-100 transition-opacity drop-shadow-md">
-                            {paquete.title}
-                          </span>
-                        </div>
-                      )}
+            {/* Lado Izquierdo: 3D Coverflow Slider */}
+            <div className="relative w-full h-[450px] md:h-[500px] flex items-center justify-center perspective-[1200px] overflow-hidden md:overflow-visible">
+              {paquetesData.map((paquete, index) => {
+                const offset = index - activePaquete;
+                const absOffset = Math.abs(offset);
+                const isActive = offset === 0;
+                
+                // Coverflow math parameters
+                const translateX = offset * 45; // % distance
+                const scale = isActive ? 1 : Math.max(0.6, 1 - absOffset * 0.15);
+                const rotateY = offset === 0 ? 0 : offset > 0 ? -35 : 35;
+                const zIndex = 20 - absOffset;
+                const opacity = isActive ? 1 : Math.max(0, 0.5 - absOffset * 0.2);
 
-                      {/* Contenido Activo (Desplegado) */}
-                      {isActive && (
-                        <div className="absolute inset-0 p-6 md:p-8 flex flex-col justify-end opacity-0 animate-[fadeIn_0.5s_ease_0.3s_forwards]">
-                          <div className="bg-black/40 backdrop-blur-md p-5 rounded-[20px] border border-white/20">
-                            <h3 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tight mb-1">{paquete.title}</h3>
-                            <p className="text-[#F3A712] font-bold text-lg md:text-xl mb-3">Desde ${paquete.price}</p>
-                            <p className="text-xs md:text-sm text-gray-200 leading-snug mb-5">{paquete.desc}</p>
-                            <div className="flex flex-col sm:flex-row gap-2 md:gap-3">
-                              <AnimatedButton text="CONTRATAR" fullWidth={true} />
-                              <button onClick={(e) => { e.stopPropagation(); document.getElementById('calculadora-section')?.scrollIntoView({behavior: 'smooth'}); }} className="px-4 py-2 rounded-full border border-white/40 text-white font-bold tracking-widest text-[10px] md:text-xs hover:bg-white hover:text-black transition-colors w-full text-center">
-                                PERSONALIZAR
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      )}
+                return (
+                  <div 
+                    key={index}
+                    onClick={() => setActivePaquete(index)}
+                    className="absolute w-[80%] max-w-[320px] h-[400px] md:h-[450px] rounded-[24px] overflow-hidden cursor-pointer shadow-2xl border border-white/20 transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] flex flex-col justify-end p-6"
+                    style={{
+                      transform: `translateX(${translateX}%) translateZ(${isActive ? 50 : -absOffset * 100}px) rotateY(${rotateY}deg) scale(${scale})`,
+                      zIndex: zIndex,
+                      opacity: opacity,
+                      transformStyle: 'preserve-3d',
+                      backgroundImage: `url('${paquete.img}')`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      pointerEvents: opacity === 0 ? 'none' : 'auto'
+                    }}
+                  >
+                    <div className={`absolute inset-0 bg-black transition-opacity duration-700 ${isActive ? 'opacity-50' : 'opacity-80'}`}></div>
+                    
+                    {/* Tarjeta de Contenido Activo */}
+                    <div className={`relative z-10 bg-black/60 backdrop-blur-md p-5 md:p-6 rounded-[20px] border border-white/10 transition-all duration-500 transform ${isActive ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
+                      <h3 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tight mb-1 leading-none">{paquete.title}</h3>
+                      <p className="text-[#F3A712] font-bold text-lg md:text-xl mb-3">Desde ${paquete.price}</p>
+                      <p className="text-[10px] md:text-xs text-gray-200 leading-snug mb-5 hidden md:block">{paquete.desc}</p>
+                      <div className="flex flex-col gap-2">
+                        <AnimatedButton text="CONTRATAR" fullWidth={true} />
+                        <button onClick={(e) => { e.stopPropagation(); document.getElementById('calculadora-section')?.scrollIntoView({behavior: 'smooth'}); }} className="px-4 py-2 rounded-full border border-white/40 text-white font-bold tracking-widest text-[10px] md:text-xs hover:bg-white hover:text-black transition-colors w-full text-center">
+                          PERSONALIZAR
+                        </button>
+                      </div>
                     </div>
-                  );
-                })}
-              </div>
-              <p className="text-[10px] md:text-xs text-gray-500 mt-4 text-center md:text-left px-2">
-                * Base referencial de 20 personas. Si se personaliza para un aforo mayor, la cotización aumentará proporcionalmente.
-              </p>
+                  </div>
+                );
+              })}
             </div>
 
-            {/* Lado Derecho: Doughnut Chart Interactivo (Factor WOW) */}
-            <div className="flex flex-col items-center justify-center relative h-[400px] md:h-[500px] bg-black/20 rounded-[30px] border border-white/5">
-              <h3 className="absolute top-6 left-8 text-sm font-bold text-gray-400 tracking-widest uppercase">El Impacto Cata</h3>
+            {/* Lado Derecho: Resource Distribution Doughnut Chart */}
+            <div className="flex flex-col items-center justify-center relative h-[350px] md:h-[500px] bg-black/20 rounded-[30px] border border-white/5 p-4 md:p-8">
+              <h3 className="absolute top-6 left-8 text-[10px] md:text-xs font-bold text-gray-400 tracking-widest uppercase">Distribución de Recursos</h3>
               
-              <div className="relative w-[300px] h-[300px] md:w-[380px] md:h-[380px]">
-                {/* Centro Dinámico (Imagen y Texto) */}
-                <div className="absolute inset-0 m-auto w-[65%] h-[65%] rounded-full overflow-hidden border-4 border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.8)] z-10">
-                   {statsData.map((stat, i) => (
-                     <div key={i} className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${activeStat === i ? 'opacity-100' : 'opacity-0'}`}>
-                        <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url('${stat.img}')` }}></div>
-                        <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center p-4 text-center">
-                          <span className="text-3xl md:text-4xl font-black text-white drop-shadow-lg mb-1" style={{ color: stat.color }}>{stat.value}</span>
-                          <span className="text-[10px] md:text-xs font-bold text-white uppercase tracking-widest leading-tight">{stat.label}</span>
-                        </div>
-                     </div>
-                   ))}
+              <div className="relative w-[240px] h-[240px] md:w-[320px] md:h-[320px] mt-4">
+                
+                {/* Centro Dinámico (Valor Numérico y Etiqueta) */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none">
+                   {hoveredRing !== null ? (
+                      <>
+                        <span className="text-5xl md:text-6xl font-black text-white drop-shadow-lg" style={{ color: segments[hoveredRing].color }}>
+                          {segments[hoveredRing].val}%
+                        </span>
+                        <span className="text-[10px] md:text-xs font-bold text-white uppercase tracking-widest mt-1 text-center max-w-[120px]">
+                          {segments[hoveredRing].label}
+                        </span>
+                      </>
+                   ) : (
+                      <>
+                        <span className="text-xl md:text-2xl font-black text-white/50 tracking-tighter uppercase text-center leading-none">
+                          {paquetesData[activePaquete].title}
+                        </span>
+                        <span className="text-[9px] md:text-[10px] font-bold text-white/30 uppercase tracking-widest mt-2">
+                          Distribución
+                        </span>
+                      </>
+                   )}
                 </div>
 
                 {/* Anillo SVG Dinámico */}
-                <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90 drop-shadow-2xl">
-                  {statsData.map((stat, i) => {
-                    const offset = -(segmentLength * i);
-                    const isActive = activeStat === i;
+                <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90 drop-shadow-2xl overflow-visible">
+                  {segments.map((segment) => {
+                    const isHovered = hoveredRing === segment.index;
+                    const isAnyHovered = hoveredRing !== null;
                     return (
                       <circle
-                        key={i}
+                        key={`${activePaquete}-${segment.index}`} // Fuerza re-render para animación inicial al cambiar paquete
                         cx="50" cy="50" r={radius}
                         fill="transparent"
-                        stroke={stat.color}
-                        strokeWidth={isActive ? "12" : "8"}
-                        strokeDasharray={`${dash} ${circum}`}
-                        strokeDashoffset={offset}
+                        stroke={segment.color}
+                        strokeWidth={isHovered ? "14" : "10"}
+                        strokeDasharray={segment.dashArray}
+                        strokeDashoffset={segment.dashOffset}
                         strokeLinecap="round"
-                        className="transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] cursor-pointer origin-center"
-                        style={{ opacity: isActive ? 1 : 0.4, transform: isActive ? 'scale(1.02)' : 'scale(1)' }}
-                        onMouseEnter={() => setActiveStat(i)}
+                        className="transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] cursor-pointer origin-center animate-[drawRing_1s_ease-out_forwards]"
+                        style={{ 
+                          opacity: !isAnyHovered || isHovered ? 1 : 0.3, 
+                          transform: isHovered ? 'scale(1.05)' : 'scale(1)',
+                        }}
+                        onMouseEnter={() => setHoveredRing(segment.index)}
+                        onMouseLeave={() => setHoveredRing(null)}
                       />
                     );
                   })}
                 </svg>
               </div>
+
+              {/* Leyenda Horizontal Inferior */}
+              <div className="flex flex-wrap justify-center gap-3 md:gap-4 mt-6 md:mt-10">
+                {segments.map((seg) => (
+                  <div key={seg.index} className="flex items-center gap-2" onMouseEnter={() => setHoveredRing(seg.index)} onMouseLeave={() => setHoveredRing(null)}>
+                    <div className="w-2 h-2 md:w-3 md:h-3 rounded-full" style={{ backgroundColor: seg.color }}></div>
+                    <span className="text-[9px] md:text-[10px] text-gray-300 font-bold uppercase tracking-wider cursor-pointer hover:text-white transition-colors">{seg.label}</span>
+                  </div>
+                ))}
+              </div>
             </div>
 
           </div>
+          
+          <p className="text-[9px] md:text-[11px] text-gray-500 mt-8 text-center border-t border-white/10 pt-4">
+            * Todos los paquetes mostrados toman como base referencial un aforo de 20 personas. Si se selecciona la opción de personalizar para un evento de mayor capacidad, la cotización se ajustará proporcionalmente mediante el cotizador.
+          </p>
         </section>
 
         {/* ==========================================
@@ -507,8 +565,11 @@ export default function CataLanding() {
         </div>
       )}
       
-      {/* Animación del texto para las cartas desplegables */}
-      <style>{`@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+      {/* Animaciones Base */}
+      <style>{`
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes drawRing { from { stroke-dashoffset: 264; } }
+      `}</style>
     </div>
   );
 }
