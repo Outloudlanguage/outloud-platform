@@ -34,14 +34,13 @@ const AnimatedButton = ({ text, fullWidth = false, onClick }) => {
 };
 
 const LargeHeroCard = ({ title, imgUrl, textSize = "text-[12vw] md:text-[9vw]" }) => {
-  // Solución de kerning (espaciado manual) para las colisiones de letras específicas
   const renderTitle = () => {
     if (typeof title === 'string') {
       if (title.toUpperCase() === 'CATERING') {
         return <>C<span className="inline-block mr-[0.05em] md:mr-[0.08em]"></span>ATERING</>;
       }
       if (title.toUpperCase() === 'MENÚ EJECUTIVO') {
-        return <>MENÚ E<span className="inline-block mr-[0.03em] md:mr-[0.05em]"></span>JECUTIVO</>;
+        return <>MENÚ <span className="whitespace-nowrap"><span className="inline-block mr-[0.03em] md:mr-[0.05em]">E</span>JECUTIVO</span></>;
       }
     }
     return title;
@@ -149,7 +148,7 @@ export default function CataLanding() {
 
   // Event Org Data
   const orgServices = [
-    { title: "Mobiliario", subtitle: "Alquiler de Espacios", description: "Sillas, mesas y lounges de diseño para estructurar y acomodar cómodamente tu evento.", abbreviation: "Mb", bgImage: "https://images.unsplash.com/photo-1505362892972-005fa9ecafdd?auto=format&fit=crop&q=80&w=800" },
+    { title: "Mobiliario", subtitle: "Alquiler de Espacios", description: "Sillas, mesas y lounges de diseño para estructurar y acomodar cómodamente tu evento.", abbreviation: "Mb", bgImage: "https://images.unsplash.com/photo-1600224503431-2b507981ad32?q=80&w=876&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D" },
     { title: "Decoraciones", subtitle: "Ambientación Temática", description: "Transformamos los espacios con conceptos visuales que reflejan fielmente tu visión.", abbreviation: "Dc", bgImage: "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?auto=format&fit=crop&q=80&w=800" },
     { title: "Arreglos Florales", subtitle: "Diseño Botánico", description: "Centros de mesa y composiciones florales frescas para aportar vida y elegancia.", abbreviation: "Af", bgImage: "https://images.unsplash.com/photo-1563241527-3004b7be0ffd?auto=format&fit=crop&q=80&w=800" },
     { title: "Servicios Limpieza", subtitle: "Mantenimiento Integral", description: "Personal discreto y dedicado a mantener la impecabilidad del lugar en todo momento.", abbreviation: "Lm", bgImage: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&q=80&w=800" }
@@ -219,7 +218,7 @@ export default function CataLanding() {
         />
         <LargeHeroCard 
           title="BUFFETS" 
-          imgUrl="https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&q=80&w=1200" 
+          imgUrl="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Gemini_Generated_Image_kegi84kegi84kegi.jfif" 
         />
 
         {/* ==========================================
@@ -337,7 +336,7 @@ export default function CataLanding() {
         />
         <LargeHeroCard 
           title="MÚSICA" 
-          imgUrl="https://images.unsplash.com/photo-1510506450014-a957262f022d?auto=format&fit=crop&q=80&w=1200" 
+          imgUrl="https://images.unsplash.com/photo-1769230364868-a3c7588ed628?q=80&w=869&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D" 
         />
         <LargeHeroCard 
           title="FOTOGRAFÍA" 
