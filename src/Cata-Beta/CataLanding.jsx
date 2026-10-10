@@ -123,7 +123,7 @@ export default function CataLanding() {
   const mockServices = [
     { title: "Menú Ejecutivo", subtitle: "Almuerzos Corporativos", description: "Opciones de almuerzo de alto nivel diseñadas para juntas directivas.", abbreviation: "Ej", bgImage: "https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&q=80&w=800" },
     { title: "Coffee Break", subtitle: "Pausas Activas", description: "Café de especialidad y bollería artesanal para conferencias.", abbreviation: "Cb", bgImage: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&q=80&w=800" },
-    { title: "Estaciones Vivas", subtitle: "Cocina Interactiva", description: "Barras preparadas al momento por nuestros chefs.", abbreviation: "Ev", bgImage: "https://images.unsplash.com/photo-1574966739987-65e386c121ee?auto=format&fit=crop&q=80&w=800" },
+    { title: "Estaciones Vivas", subtitle: "Cocina Interactiva", description: "Barras preparadas al momento por nuestros chefs.", abbreviation: "Ev", bgImage: "https://images.unsplash.com/photo-1577219491135-ce391730fb2c?auto=format&fit=crop&q=80&w=800" },
     { title: "Bodas y Galas", subtitle: "Banquetes a 3 Tiempos", description: "Alta cocina con emplatado de precisión milimétrica.", abbreviation: "Bg", bgImage: "https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&q=80&w=800" }
   ];
 
