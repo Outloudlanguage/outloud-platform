@@ -7,10 +7,10 @@ gsap.registerPlugin(useGSAP);
 // ==========================================
 // 1. REUSABLE UI COMPONENTS
 // ==========================================
-const AnimatedButton = ({ text, fullWidth = false, onClick }) => {
+const AnimatedButton = ({ text, fullWidth = false, onClick, secondary = false }) => {
   const chars = text.split('');
   return (
-    <button onClick={onClick} className={`group/btn relative px-4 py-2 md:px-8 md:py-3 rounded-full bg-white/10 backdrop-blur-lg border border-white/40 text-white font-bold tracking-widest text-[9px] md:text-base transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] hover:bg-white/30 hover:scale-105 hover:-translate-y-1 hover:border-white hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] active:scale-95 ${fullWidth ? 'w-full' : ''}`}>
+    <button onClick={onClick} className={`group/btn relative px-4 py-2 md:px-8 md:py-3 rounded-full backdrop-blur-lg border font-bold tracking-widest text-[9px] md:text-base transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] hover:scale-105 hover:-translate-y-1 active:scale-95 ${fullWidth ? 'w-full' : ''} ${secondary ? 'bg-transparent border-white/40 text-white hover:bg-white/10 hover:border-white' : 'bg-white/10 border-[#4A90E2]/50 text-white hover:bg-[#4A90E2]/20 hover:border-[#4A90E2] hover:shadow-[0_0_20px_rgba(74,144,226,0.4)]'}`}>
       <div className="relative overflow-hidden flex items-center justify-center">
         <div className="flex">
           {chars.map((char, i) => (
@@ -55,7 +55,7 @@ const LargeHeroCard = ({ title, imgUrl, textSize = "text-[12vw] md:text-[9vw]" }
           {renderTitle()}
         </h1>
         <div className="flex space-x-3 md:space-x-6 mt-2 md:mt-8">
-          <AnimatedButton text="PRECIOS" />
+          <AnimatedButton text="PRECIOS" secondary={true} />
           <AnimatedButton text="CATÁLOGO" />
         </div>
       </div>
@@ -100,7 +100,9 @@ export default function CataLanding() {
   const containerRef = useRef();
   const [activeTab, setActiveTab] = useState('SERVICIOS');
   
-  // Dynamic Calculator State
+  // ==========================================
+  // STATE: CALCULATOR
+  // ==========================================
   const [activeCategory, setActiveCategory] = useState('invitados');
   const [invitados, setInvitados] = useState(50);
   const [salados, setSalados] = useState(6);
@@ -111,18 +113,15 @@ export default function CataLanding() {
   const [isDelivery, setIsDelivery] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Derived Math Logic
   const costoSalados = (invitados * salados) * ((invitados * salados) >= 100 ? 0.65 : 0.80);
   const costoDulces = (invitados * dulces) * ((invitados * dulces) >= 100 ? 0.65 : 0.80);
   const costoBasicos = invitados * basicos * 8.00;
   const costoPremium = invitados * premium * 12.00;
   const costoBebidas = invitados * bebidas * 4.00;
   const costoExtras = isDelivery ? 50.00 : 15.00;
-
   const costoTotal = costoSalados + costoDulces + costoBasicos + costoPremium + costoBebidas + costoExtras;
   const maxChartValue = Math.max(costoSalados, costoDulces, costoBasicos, costoPremium, costoBebidas, costoExtras, 1);
 
-  // Dropdown Configuration Map
   const categoryConfig = {
     invitados: { label: 'Cantidad de Invitados', min: 10, max: 500, step: 5, unit: 'personas', val: invitados, set: setInvitados },
     salados: { label: 'Pasapalos Salados', min: 0, max: 25, step: 1, unit: 'unidades por persona', val: salados, set: setSalados },
@@ -133,12 +132,40 @@ export default function CataLanding() {
   };
   const activeConfig = categoryConfig[activeCategory];
 
+  // ==========================================
+  // STATE: PAQUETES & STATS DOUGHNUT
+  // ==========================================
+  const [activePaquete, setActivePaquete] = useState(0);
+  const [activeStat, setActiveStat] = useState(0);
+
+  const paquetesData = [
+    { title: "Corporativos", desc: "Coffee break premium, almuerzo de negocios y logística audiovisual para juntas de alto nivel.", price: "450", img: "https://images.unsplash.com/photo-1515169067868-5387ec356754?auto=format&fit=crop&q=80&w=800" },
+    { title: "Fiestas", desc: "Selección de pasapalos, coctelería de autor y montaje lounge para celebraciones vibrantes.", price: "350", img: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&q=80&w=800" },
+    { title: "Bodas", desc: "Banquete a 3 tiempos, decoración floral inmersiva y barra libre premium para tu gran día.", price: "850", img: "https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&q=80&w=800" },
+    { title: "Fijos", desc: "Servicio de comedor ejecutivo con menús rotativos diarios. Contratación mensual.", price: "1200", img: "https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&q=80&w=800" },
+    { title: "Postres", desc: "Boutique dulce con mesa de tartas, macarons, bombones artesanales y pastelería fina.", price: "200", img: "https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&q=80&w=800" },
+    { title: "Temporada", desc: "Menús temáticos festivos con ingredientes estacionales y ambientación exclusiva.", price: "500", img: "https://images.unsplash.com/photo-1543599538-a6c4f6ccb1f2?auto=format&fit=crop&q=80&w=800" }
+  ];
+
+  const statsData = [
+    { label: "Pasapalos Servidos", value: "50,000+", color: "#4A90E2", img: "https://images.unsplash.com/photo-1518619745898-93e765966dcd?auto=format&fit=crop&q=80&w=800" },
+    { label: "Bodas Realizadas", value: "120+", color: "#F3A712", img: "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&q=80&w=800" },
+    { label: "Horas de Mixología", value: "5,000+", color: "#FFFFFF", img: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&q=80&w=800" },
+    { label: "Empresas Satisfechas", value: "85+", color: "#A855F7", img: "https://images.unsplash.com/photo-1556761175-5973dc0f32b7?auto=format&fit=crop&q=80&w=800" }
+  ];
+
+  // Doughnut Math calculations
+  const radius = 42;
+  const circum = 2 * Math.PI * radius; 
+  const segmentLength = circum / statsData.length;
+  const gap = 3; 
+  const dash = segmentLength - gap;
+
   // Assets
   const loadingLogoUrl = "https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Logo%20Cata%20Azul.png";
   const headerLogoUrl = "https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Cata%20horizontal%20logo%20(1).png";
   const cloudflareVideo = "https://customer-b0aw0ze4tgacea6a.cloudflarestream.com/0a048c047845136e3bccd777d507dfde/iframe?autoplay=true&loop=true&muted=true&controls=false&poster=https%3A%2F%2Fcustomer-b0aw0ze4tgacea6a.cloudflarestream.com%2F0a048c047845136e3bccd777d507dfde%2Fthumbnails%2Fthumbnail.jpg%3Ftime%3D%26height%3D600";
 
-  // Gastro Services Data
   const gastroServices = [
     { title: "Eventos Corporativos", subtitle: "Reuniones de Negocios", description: "Soluciones gastronómicas integrales para potenciar la imagen de su empresa en cada evento corporativo.", abbreviation: "Ec", bgImage: "https://images.unsplash.com/photo-1515169067868-5387ec356754?auto=format&fit=crop&q=80&w=800" },
     { title: "Coffee Break", subtitle: "Pausas Activas", description: "Café de especialidad y bollería artesanal para conferencias.", abbreviation: "Cb", bgImage: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&q=80&w=800" },
@@ -146,7 +173,6 @@ export default function CataLanding() {
     { title: "Bodas y Galas", subtitle: "Banquetes a 3 Tiempos", description: "Alta cocina con emplatado de precisión milimétrica.", abbreviation: "Bg", bgImage: "https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&q=80&w=800" }
   ];
 
-  // Event Org Data
   const orgServices = [
     { title: "Mobiliario", subtitle: "Alquiler de Espacios", description: "Sillas, mesas y lounges de diseño para estructurar y acomodar cómodamente tu evento.", abbreviation: "Mb", bgImage: "https://images.unsplash.com/photo-1600224503431-2b507981ad32?q=80&w=876&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D" },
     { title: "Decoraciones", subtitle: "Ambientación Temática", description: "Transformamos los espacios con conceptos visuales que reflejan fielmente tu visión.", abbreviation: "Dc", bgImage: "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?auto=format&fit=crop&q=80&w=800" },
@@ -203,23 +229,10 @@ export default function CataLanding() {
         {/* ==========================================
             GASTRONOMY SECTION (HERO CARDS)
         ========================================== */}
-        <LargeHeroCard 
-          title="CATERING" 
-          imgUrl="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/photo-1512061942530-e6a4e9a5cf27%20(1).avif" 
-        />
-        <LargeHeroCard 
-          title="MENÚ EJECUTIVO" 
-          textSize="text-[10vw] md:text-[8vw]"
-          imgUrl="https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&q=80&w=1200" 
-        />
-        <LargeHeroCard 
-          title="PASAPALOS" 
-          imgUrl="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/photo-1518619745898-93e765966dcd%20(1).avif" 
-        />
-        <LargeHeroCard 
-          title="BUFFETS" 
-          imgUrl="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Gemini_Generated_Image_kegi84kegi84kegi.jfif" 
-        />
+        <LargeHeroCard title="CATERING" imgUrl="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/photo-1512061942530-e6a4e9a5cf27%20(1).avif" />
+        <LargeHeroCard title="MENÚ EJECUTIVO" textSize="text-[10vw] md:text-[8vw]" imgUrl="https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&q=80&w=1200" />
+        <LargeHeroCard title="PASAPALOS" imgUrl="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/photo-1518619745898-93e765966dcd%20(1).avif" />
+        <LargeHeroCard title="BUFFETS" imgUrl="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Gemini_Generated_Image_kegi84kegi84kegi.jfif" />
 
         {/* ==========================================
             GASTRONOMY SECTION (SMALL GRID)
@@ -229,9 +242,116 @@ export default function CataLanding() {
         </section>
 
         {/* ==========================================
+            NUEVA SECCIÓN: PAQUETES & STATS DOUGHNUT
+        ========================================== */}
+        <section className="w-full mt-10 md:mt-16 rounded-[24px] md:rounded-[40px] bg-[#111]/80 backdrop-blur-3xl border border-white/10 p-4 md:p-10 shadow-2xl overflow-hidden relative">
+          <div className="absolute top-0 left-0 w-[400px] h-[400px] bg-[#F3A712]/10 rounded-full blur-[120px] -z-10 pointer-events-none"></div>
+          
+          <div className="mb-8 md:mb-10 text-center md:text-left pl-2">
+            <h2 className="text-3xl md:text-5xl font-black tracking-tighter mb-2 text-white">COLECCIONES CATA</h2>
+            <p className="text-sm md:text-base text-gray-400 font-medium">Experiencias pre-diseñadas con la firma de nuestros expertos.</p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 md:gap-12">
+            
+            {/* Lado Izquierdo: Acordeón de Paquetes tipo Spotify */}
+            <div className="flex flex-col h-[600px] md:h-[500px]">
+              <div className="flex flex-col md:flex-row h-full gap-2 w-full">
+                {paquetesData.map((paquete, index) => {
+                  const isActive = activePaquete === index;
+                  return (
+                    <div 
+                      key={index} 
+                      onClick={() => setActivePaquete(index)}
+                      className={`relative rounded-[20px] overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] cursor-pointer group border border-white/10 ${isActive ? 'flex-[6] md:flex-[5] shadow-2xl' : 'flex-[1] md:flex-[1] hover:flex-[1.2] opacity-60 hover:opacity-100'}`}
+                    >
+                      <div className="absolute inset-0 w-full h-full bg-cover bg-center transition-transform duration-1000 group-hover:scale-110" style={{ backgroundImage: `url('${paquete.img}')` }}></div>
+                      <div className={`absolute inset-0 transition-colors duration-500 ${isActive ? 'bg-black/60' : 'bg-black/80'}`}></div>
+                      
+                      {/* Contenido Inactivo (Texto vertical o contraído) */}
+                      {!isActive && (
+                        <div className="absolute inset-0 flex items-center justify-center p-2">
+                          <span className="text-white font-bold tracking-widest text-xs md:text-sm uppercase md:-rotate-90 whitespace-nowrap opacity-70 group-hover:opacity-100 transition-opacity drop-shadow-md">
+                            {paquete.title}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Contenido Activo (Desplegado) */}
+                      {isActive && (
+                        <div className="absolute inset-0 p-6 md:p-8 flex flex-col justify-end opacity-0 animate-[fadeIn_0.5s_ease_0.3s_forwards]">
+                          <div className="bg-black/40 backdrop-blur-md p-5 rounded-[20px] border border-white/20">
+                            <h3 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tight mb-1">{paquete.title}</h3>
+                            <p className="text-[#F3A712] font-bold text-lg md:text-xl mb-3">Desde ${paquete.price}</p>
+                            <p className="text-xs md:text-sm text-gray-200 leading-snug mb-5">{paquete.desc}</p>
+                            <div className="flex flex-col sm:flex-row gap-2 md:gap-3">
+                              <AnimatedButton text="CONTRATAR" fullWidth={true} />
+                              <button onClick={(e) => { e.stopPropagation(); document.getElementById('calculadora-section')?.scrollIntoView({behavior: 'smooth'}); }} className="px-4 py-2 rounded-full border border-white/40 text-white font-bold tracking-widest text-[10px] md:text-xs hover:bg-white hover:text-black transition-colors w-full text-center">
+                                PERSONALIZAR
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-[10px] md:text-xs text-gray-500 mt-4 text-center md:text-left px-2">
+                * Base referencial de 20 personas. Si se personaliza para un aforo mayor, la cotización aumentará proporcionalmente.
+              </p>
+            </div>
+
+            {/* Lado Derecho: Doughnut Chart Interactivo (Factor WOW) */}
+            <div className="flex flex-col items-center justify-center relative h-[400px] md:h-[500px] bg-black/20 rounded-[30px] border border-white/5">
+              <h3 className="absolute top-6 left-8 text-sm font-bold text-gray-400 tracking-widest uppercase">El Impacto Cata</h3>
+              
+              <div className="relative w-[300px] h-[300px] md:w-[380px] md:h-[380px]">
+                {/* Centro Dinámico (Imagen y Texto) */}
+                <div className="absolute inset-0 m-auto w-[65%] h-[65%] rounded-full overflow-hidden border-4 border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.8)] z-10">
+                   {statsData.map((stat, i) => (
+                     <div key={i} className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${activeStat === i ? 'opacity-100' : 'opacity-0'}`}>
+                        <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url('${stat.img}')` }}></div>
+                        <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center p-4 text-center">
+                          <span className="text-3xl md:text-4xl font-black text-white drop-shadow-lg mb-1" style={{ color: stat.color }}>{stat.value}</span>
+                          <span className="text-[10px] md:text-xs font-bold text-white uppercase tracking-widest leading-tight">{stat.label}</span>
+                        </div>
+                     </div>
+                   ))}
+                </div>
+
+                {/* Anillo SVG Dinámico */}
+                <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90 drop-shadow-2xl">
+                  {statsData.map((stat, i) => {
+                    const offset = -(segmentLength * i);
+                    const isActive = activeStat === i;
+                    return (
+                      <circle
+                        key={i}
+                        cx="50" cy="50" r={radius}
+                        fill="transparent"
+                        stroke={stat.color}
+                        strokeWidth={isActive ? "12" : "8"}
+                        strokeDasharray={`${dash} ${circum}`}
+                        strokeDashoffset={offset}
+                        strokeLinecap="round"
+                        className="transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] cursor-pointer origin-center"
+                        style={{ opacity: isActive ? 1 : 0.4, transform: isActive ? 'scale(1.02)' : 'scale(1)' }}
+                        onMouseEnter={() => setActiveStat(i)}
+                      />
+                    );
+                  })}
+                </svg>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        {/* ==========================================
             DYNAMIC CALCULATOR SECTION 
         ========================================== */}
-        <section className="w-full mt-10 rounded-[24px] md:rounded-[40px] bg-white/10 backdrop-blur-2xl border border-white/20 p-6 md:p-12 shadow-2xl overflow-hidden relative">
+        <section id="calculadora-section" className="w-full mt-10 md:mt-16 rounded-[24px] md:rounded-[40px] bg-white/10 backdrop-blur-2xl border border-white/20 p-6 md:p-12 shadow-2xl overflow-hidden relative">
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#4A90E2]/20 rounded-full blur-[120px] -z-10 pointer-events-none"></div>
           
           <div className="mb-10 text-center md:text-left">
@@ -281,7 +401,6 @@ export default function CataLanding() {
               <div className="w-full h-[220px] md:h-[280px] flex items-end justify-between gap-2 md:gap-4 mb-10 md:mb-12 relative">
                 <div className="absolute bottom-0 left-0 w-full h-px bg-white/40"></div>
                 
-                {/* Barras del gráfico */}
                 {[
                   { label: "Salados", val: costoSalados, color: "bg-[#4A90E2]" },
                   { label: "Dulces", val: costoDulces, color: "bg-[#4A90E2]/80" },
@@ -329,20 +448,9 @@ export default function CataLanding() {
           <div className="w-24 h-1 bg-[#4A90E2] mx-auto mt-4 rounded-full"></div>
         </div>
 
-        <LargeHeroCard 
-          title="BARRAS DE BEBIDAS" 
-          textSize="text-[9vw] md:text-[7vw]"
-          imgUrl="https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&q=80&w=1200" 
-        />
-        <LargeHeroCard 
-          title="MÚSICA" 
-          imgUrl="https://images.unsplash.com/photo-1769230364868-a3c7588ed628?q=80&w=869&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D" 
-        />
-        <LargeHeroCard 
-          title="FOTOGRAFÍA" 
-          textSize="text-[11vw] md:text-[8vw]"
-          imgUrl="https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&q=80&w=1200" 
-        />
+        <LargeHeroCard title="BARRAS DE BEBIDAS" textSize="text-[9vw] md:text-[7vw]" imgUrl="https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&q=80&w=1200" />
+        <LargeHeroCard title="MÚSICA" imgUrl="https://images.unsplash.com/photo-1769230364868-a3c7588ed628?q=80&w=869&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D" />
+        <LargeHeroCard title="FOTOGRAFÍA" textSize="text-[11vw] md:text-[8vw]" imgUrl="https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&q=80&w=1200" />
 
         <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mt-2 md:mt-6">
           {orgServices.map((service, index) => <ServiceCard key={index} {...service} />)}
@@ -355,43 +463,27 @@ export default function CataLanding() {
       ========================================== */}
       <footer className="relative z-10 bg-black/40 backdrop-blur-xl border-t border-white/10 mt-10 p-10 md:p-16">
         <div className="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-10">
-          
-          {/* Brand & Redes */}
           <div className="flex flex-col items-center md:items-start space-y-6">
             <img src={headerLogoUrl} alt="CATA" className="h-[40px] md:h-[50px] object-contain drop-shadow-md opacity-80" />
             <p className="text-sm text-gray-400 text-center md:text-left max-w-xs">
               Elevando el estándar de la gastronomía y la producción de eventos para celebraciones inolvidables.
             </p>
-            
             <div className="flex space-x-4 mt-4">
-              <a href="#" className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center border border-white/20 hover:bg-[#4A90E2] transition-colors">
-                <span className="text-lg">📷</span> {/* Mockup Icon Instagram */}
-              </a>
-              <a href="#" className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center border border-white/20 hover:bg-[#4A90E2] transition-colors">
-                <span className="text-lg">📘</span> {/* Mockup Icon Facebook */}
-              </a>
-              <a href="#" className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center border border-white/20 hover:bg-[#4A90E2] transition-colors">
-                <span className="text-lg">🎵</span> {/* Mockup Icon TikTok */}
-              </a>
+              <a href="#" className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center border border-white/20 hover:bg-[#4A90E2] transition-colors"><span className="text-lg">📷</span></a>
+              <a href="#" className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center border border-white/20 hover:bg-[#4A90E2] transition-colors"><span className="text-lg">📘</span></a>
+              <a href="#" className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center border border-white/20 hover:bg-[#4A90E2] transition-colors"><span className="text-lg">🎵</span></a>
             </div>
           </div>
-
-          {/* Contacto Directo */}
           <div className="flex flex-col items-center md:items-end justify-center space-y-4 text-center md:text-right">
             <div>
               <p className="text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-1">Escríbenos</p>
-              <a href="mailto:contacto@cataservicios.com" className="text-lg font-medium text-white hover:text-[#4A90E2] transition-colors">
-                contacto@cataservicios.com
-              </a>
+              <a href="mailto:contacto@cataservicios.com" className="text-lg font-medium text-white hover:text-[#4A90E2] transition-colors">contacto@cataservicios.com</a>
             </div>
             <div>
               <p className="text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-1">Llámanos</p>
-              <a href="tel:+584121234567" className="text-xl font-black text-white hover:text-[#4A90E2] tracking-wider transition-colors">
-                +58 412 123 4567
-              </a>
+              <a href="tel:+584121234567" className="text-xl font-black text-white hover:text-[#4A90E2] tracking-wider transition-colors">+58 412 123 4567</a>
             </div>
           </div>
-          
         </div>
       </footer>
 
@@ -402,25 +494,21 @@ export default function CataLanding() {
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setIsModalOpen(false)}></div>
           <div className="relative w-full max-w-lg bg-[#111] border border-white/20 rounded-[30px] p-8 md:p-10 shadow-2xl transform transition-all">
-            <div className="flex justify-center mb-6">
-              <div className="w-16 h-16 rounded-full bg-[#4A90E2]/20 flex items-center justify-center text-3xl">📄</div>
-            </div>
+            <div className="flex justify-center mb-6"><div className="w-16 h-16 rounded-full bg-[#4A90E2]/20 flex items-center justify-center text-3xl">📄</div></div>
             <h3 className="text-2xl font-black tracking-tight text-center mb-4">Aviso Importante</h3>
             <p className="text-gray-300 text-sm leading-relaxed text-center mb-8">
-              Este cálculo es una <strong>estimación referencial</strong> basada en los datos proporcionados y no constituye un contrato vinculante. Los precios definitivos pueden variar ligeramente dependiendo de factores logísticos, temporada de ingredientes y {isDelivery ? 'la distancia final del delivery' : 'el volumen total de empaques requeridos'}.
+              Este cálculo es una <strong>estimación referencial</strong> basada en los datos proporcionados y no constituye un contrato vinculante.
             </p>
             <div className="flex flex-col space-y-3">
-              <button onClick={() => setIsModalOpen(false)} className="w-full py-4 rounded-full bg-[#4A90E2] hover:bg-[#357ABD] text-white font-bold tracking-widest text-sm transition-all shadow-[0_0_20px_rgba(74,144,226,0.3)]">
-                ENTENDIDO, CONTINUAR
-              </button>
-              <button onClick={() => setIsModalOpen(false)} className="w-full py-3 rounded-full bg-transparent hover:bg-white/10 text-white/80 hover:text-white font-semibold tracking-widest text-xs transition-all">
-                VOLVER AL GRÁFICO
-              </button>
+              <button onClick={() => setIsModalOpen(false)} className="w-full py-4 rounded-full bg-[#4A90E2] hover:bg-[#357ABD] text-white font-bold tracking-widest text-sm transition-all shadow-[0_0_20px_rgba(74,144,226,0.3)]">ENTENDIDO</button>
+              <button onClick={() => setIsModalOpen(false)} className="w-full py-3 rounded-full bg-transparent hover:bg-white/10 text-white/80 hover:text-white font-semibold tracking-widest text-xs transition-all">VOLVER</button>
             </div>
           </div>
         </div>
       )}
-
+      
+      {/* Animación del texto para las cartas desplegables */}
+      <style>{`@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }`}</style>
     </div>
   );
 }
