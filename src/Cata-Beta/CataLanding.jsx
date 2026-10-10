@@ -113,14 +113,20 @@ export default function CataLanding() {
   const [isDelivery, setIsDelivery] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const costoSalados = (invitados * salados) * ((invitados * salados) >= 100 ? 0.65 : 0.80);
-  const costoDulces = (invitados * dulces) * ((invitados * dulces) >= 100 ? 0.65 : 0.80);
-  const costoBasicos = invitados * basicos * 8.00;
-  const costoPremium = invitados * premium * 12.00;
-  const costoBebidas = invitados * bebidas * 4.00;
-  const costoExtras = isDelivery ? 50.00 : 15.00;
-  const costoTotal = costoSalados + costoDulces + costoBasicos + costoPremium + costoBebidas + costoExtras;
-  const maxChartValue = Math.max(costoSalados, costoDulces, costoBasicos, costoPremium, costoBebidas, costoExtras, 1);
+  // Función matemática central compartida (asegura que los precios siempre coincidan)
+  const calculateCosts = (inv, sal, dul, bas, prem, beb, delivery) => {
+    const cSalados = (inv * sal) * ((inv * sal) >= 100 ? 0.65 : 0.80);
+    const cDulces = (inv * dul) * ((inv * dul) >= 100 ? 0.65 : 0.80);
+    const cBasicos = inv * bas * 8.00;
+    const cPremium = inv * prem * 12.00;
+    const cBebidas = inv * beb * 4.00;
+    const cExtras = delivery ? 50.00 : 15.00;
+    const total = cSalados + cDulces + cBasicos + cPremium + cBebidas + cExtras;
+    return { cSalados, cDulces, cBasicos, cPremium, cBebidas, cExtras, total };
+  };
+
+  const currentCosts = calculateCosts(invitados, salados, dulces, basicos, premium, bebidas, isDelivery);
+  const maxChartValue = Math.max(currentCosts.cSalados, currentCosts.cDulces, currentCosts.cBasicos, currentCosts.cPremium, currentCosts.cBebidas, currentCosts.cExtras, 1);
 
   const categoryConfig = {
     invitados: { label: 'Cantidad de Invitados', min: 10, max: 500, step: 5, unit: 'personas', val: invitados, set: setInvitados },
@@ -140,50 +146,58 @@ export default function CataLanding() {
   const scrollIntervalRef = useRef(null); 
   const touchStartX = useRef(0);
 
-  // DATA: Paquetes con su configuración base para la importación hacia la calculadora
+  // DATA: Paquetes con su configuración base (Ordenados por Precio Ascendente)
   const paquetesData = [
     { 
-      title: "Corporativos", desc: "Coffee break premium, almuerzo de negocios y logística audiovisual para juntas de alto nivel.", price: "450", img: "https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Corporativo.avif",
-      distribution: [ { label: "Platos Fuertes", val: 40, color: "#4A90E2" }, { label: "Bebidas", val: 30, color: "#F3A712" }, { label: "Servicios", val: 20, color: "#FFFFFF" }, { label: "Postres", val: 10, color: "#A855F7" } ],
-      baseConfig: { invitados: 20, salados: 4, dulces: 2, basicos: 1, premium: 0, bebidas: 3 }
+      title: "Postres", desc: "Boutique dulce con tartas, bombones artesanales y pastelería fina. (2 piezas p/p).", img: "https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&q=80&w=800",
+      distribution: [ { label: "Postres Finos", val: 100, color: "#A855F7" } ],
+      baseConfig: { invitados: 20, salados: 0, dulces: 2, basicos: 0, premium: 0, bebidas: 0 } // Precio Resultante: $47
     },
     { 
-      title: "Fiestas", desc: "Selección de pasapalos, coctelería de autor y montaje lounge para celebraciones vibrantes.", price: "350", img: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&q=80&w=800",
-      distribution: [ { label: "Bebidas/Barra", val: 40, color: "#F3A712" }, { label: "P. Salados", val: 30, color: "#E11D48" }, { label: "Entretenimiento", val: 20, color: "#10B981" }, { label: "P. Dulces", val: 10, color: "#A855F7" } ],
-      baseConfig: { invitados: 20, salados: 12, dulces: 4, basicos: 0, premium: 0, bebidas: 6 }
+      title: "Pasapalos", desc: "Variedad de bocados (3 tipos salados y 3 tipos dulces, a razón de 3 uds de cada tipo p/p).", img: "https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/photo-1518619745898-93e765966dcd%20(1).avif",
+      distribution: [ { label: "P. Salados", val: 50, color: "#E11D48" }, { label: "P. Dulces", val: 50, color: "#A855F7" } ],
+      baseConfig: { invitados: 20, salados: 9, dulces: 9, basicos: 0, premium: 0, bebidas: 0 } // Precio Resultante: $249
     },
     { 
-      title: "Bodas", desc: "Banquete a 3 tiempos, decoración floral inmersiva y barra libre premium para tu gran día.", price: "850", img: "https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&q=80&w=800",
-      distribution: [ { label: "Platos Fuertes", val: 45, color: "#4A90E2" }, { label: "Bebidas", val: 25, color: "#F3A712" }, { label: "Decoración", val: 20, color: "#EC4899" }, { label: "Postres", val: 10, color: "#A855F7" } ],
-      baseConfig: { invitados: 20, salados: 6, dulces: 4, basicos: 0, premium: 2, bebidas: 8 }
+      title: "Bebidas", desc: "Barra de mixología y refrescos. (Incluye selección de 3 opciones de bebidas p/p).", img: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&q=80&w=800",
+      distribution: [ { label: "Bebidas", val: 100, color: "#F3A712" } ],
+      baseConfig: { invitados: 20, salados: 0, dulces: 0, basicos: 0, premium: 0, bebidas: 3 } // Precio Resultante: $255
     },
     { 
-      title: "Fijos", desc: "Servicio de comedor ejecutivo con menús rotativos diarios. Contratación mensual.", price: "1200", img: "https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&q=80&w=800",
-      distribution: [ { label: "Platos Fuertes", val: 75, color: "#4A90E2" }, { label: "Bebidas", val: 15, color: "#F3A712" }, { label: "Postres", val: 10, color: "#A855F7" } ],
-      baseConfig: { invitados: 20, salados: 0, dulces: 1, basicos: 2, premium: 0, bebidas: 2 }
+      title: "Corporativos", desc: "Coffee break premium, almuerzo ejecutivo y logística para juntas de alto nivel.", img: "https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Corporativo.avif",
+      distribution: [ { label: "Bebidas", val: 48, color: "#F3A712" }, { label: "Platos Básicos", val: 32, color: "#4A90E2" }, { label: "P. Salados", val: 13, color: "#E11D48" }, { label: "Postres", val: 7, color: "#A855F7" } ],
+      baseConfig: { invitados: 20, salados: 4, dulces: 2, basicos: 1, premium: 0, bebidas: 3 } // Precio Resultante: $511
     },
     { 
-      title: "Postres", desc: "Boutique dulce con mesa de tartas, macarons, bombones artesanales y pastelería fina.", price: "200", img: "https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&q=80&w=800",
-      distribution: [ { label: "Postres Finos", val: 80, color: "#A855F7" }, { label: "Bebidas", val: 10, color: "#F3A712" }, { label: "Decoración", val: 10, color: "#EC4899" } ],
-      baseConfig: { invitados: 20, salados: 0, dulces: 10, basicos: 0, premium: 0, bebidas: 1 }
+      title: "Fijos", desc: "Servicio de comedor para empresas con menús completos. Modalidad de contrato.", img: "https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&q=80&w=800",
+      distribution: [ { label: "Platos Básicos", val: 73, color: "#4A90E2" }, { label: "Bebidas", val: 24, color: "#F3A712" }, { label: "Postres", val: 3, color: "#A855F7" } ],
+      baseConfig: { invitados: 20, salados: 0, dulces: 1, basicos: 3, premium: 0, bebidas: 2 } // Precio Resultante: $671
     },
     { 
-      title: "Temporada", desc: "Hallacas, pan de jamón, y menú navideño tradicional con ambientación festiva exclusiva.", price: "500", img: "https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/hallacas-730x524.jpg",
-      distribution: [ { label: "Platos Fuertes", val: 40, color: "#4A90E2" }, { label: "Bebidas", val: 30, color: "#F3A712" }, { label: "P. Salados", val: 15, color: "#E11D48" }, { label: "Postres", val: 15, color: "#A855F7" } ],
-      baseConfig: { invitados: 20, salados: 3, dulces: 2, basicos: 1, premium: 1, bebidas: 4 }
+      title: "Fiestas", desc: "Abundante selección de pasapalos y coctelería vibrante para celebraciones largas.", img: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&q=80&w=800",
+      distribution: [ { label: "Bebidas", val: 71, color: "#F3A712" }, { label: "P. Salados", val: 19, color: "#E11D48" }, { label: "P. Dulces", val: 10, color: "#A855F7" } ],
+      baseConfig: { invitados: 20, salados: 10, dulces: 4, basicos: 0, premium: 0, bebidas: 6 } // Precio Resultante: $689
+    },
+    { 
+      title: "Temporada", desc: "Hallacas, pan de jamón, y menú navideño tradicional con ambientación festiva.", img: "https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/hallacas-730x524.jpg",
+      distribution: [ { label: "Platos Fuertes", val: 50, color: "#4A90E2" }, { label: "Bebidas", val: 40, color: "#F3A712" }, { label: "P. Salados", val: 6, color: "#E11D48" }, { label: "Postres", val: 4, color: "#A855F7" } ],
+      baseConfig: { invitados: 20, salados: 3, dulces: 2, basicos: 1, premium: 1, bebidas: 4 } // Precio Resultante: $815
+    },
+    { 
+      title: "Bodas", desc: "Banquete a 3 tiempos, decoración floral inmersiva y barra libre premium continua.", img: "https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&q=80&w=800",
+      distribution: [ { label: "Bebidas", val: 51, color: "#F3A712" }, { label: "Platos Premium", val: 38, color: "#4A90E2" }, { label: "P. Salados", val: 6, color: "#E11D48" }, { label: "Postres", val: 5, color: "#A855F7" } ],
+      baseConfig: { invitados: 20, salados: 6, dulces: 4, basicos: 0, premium: 2, bebidas: 8 } // Precio Resultante: $1277
     }
   ];
 
   const handlePersonalizePackage = (e, config) => {
     e.stopPropagation();
-    // 1. Importar los datos del paquete a la calculadora
     setInvitados(config.invitados);
     setSalados(config.salados);
     setDulces(config.dulces);
     setBasicos(config.basicos);
     setPremium(config.premium);
     setBebidas(config.bebidas);
-    // 2. Hacer scroll suave hacia la sección
     document.getElementById('calculadora-section')?.scrollIntoView({behavior: 'smooth'});
   };
 
@@ -194,7 +208,6 @@ export default function CataLanding() {
   const startHoverScroll = (dir) => {
     if (scrollIntervalRef.current) clearInterval(scrollIntervalRef.current);
     if (dir === 'next') triggerNext(); else triggerPrev(); 
-    
     scrollIntervalRef.current = setInterval(() => {
       if (dir === 'next') triggerNext(); else triggerPrev();
     }, 1000); 
@@ -335,7 +348,7 @@ export default function CataLanding() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 md:gap-6 items-center">
             
-            {/* Lado Izquierdo: 3D Coverflow Slider */}
+            {/* Lado Izquierdo: 3D Coverflow Slider con Máscara de Difuminado */}
             <div 
               className="relative w-full h-[450px] md:h-[500px] flex items-center justify-center perspective-[1200px] overflow-hidden"
               style={{ WebkitMaskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)' }}
@@ -376,6 +389,10 @@ export default function CataLanding() {
                 const zIndex = 20 - absOffset;
                 const opacity = isActive ? 1 : Math.max(0.4, 0.8 - absOffset * 0.15);
 
+                // Cálculo Dinámico del Precio Base del Paquete para asegurar sincronía perfecta
+                const config = paquete.baseConfig;
+                const precioCalculado = calculateCosts(config.invitados, config.salados, config.dulces, config.basicos, config.premium, config.bebidas, false).total;
+
                 return (
                   <div 
                     key={index}
@@ -395,7 +412,7 @@ export default function CataLanding() {
                     {/* Tarjeta de Contenido Activo */}
                     <div className={`relative z-10 bg-black/60 backdrop-blur-md p-5 md:p-6 rounded-[20px] border border-white/10 transition-all duration-500 transform ${isActive ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-10 opacity-0 pointer-events-none'}`}>
                       <h3 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tight mb-1 leading-none">{paquete.title}</h3>
-                      <p className="text-[#F3A712] font-bold text-lg md:text-xl mb-3">Desde ${paquete.price}</p>
+                      <p className="text-[#F3A712] font-bold text-lg md:text-xl mb-3">Desde ${precioCalculado.toLocaleString('en-US')}</p>
                       <p className="text-[10px] md:text-xs text-gray-200 leading-snug mb-5 hidden md:block">{paquete.desc}</p>
                       <div className="flex flex-col gap-2">
                         <AnimatedButton text="CONTRATAR" fullWidth={true} />
@@ -551,12 +568,12 @@ export default function CataLanding() {
                 <div className="absolute bottom-0 left-0 w-full h-px bg-white/40"></div>
                 
                 {[
-                  { label: "Salados", val: costoSalados, color: "bg-[#4A90E2]" },
-                  { label: "Dulces", val: costoDulces, color: "bg-[#4A90E2]/80" },
-                  { label: "Básicos", val: costoBasicos, color: "bg-white/80" },
-                  { label: "Premium", val: costoPremium, color: "bg-white/60" },
-                  { label: "Bebidas", val: costoBebidas, color: "bg-[#E2A74A]" },
-                  { label: "Extras", val: costoExtras, color: "bg-purple-400/80", textCol: "text-purple-300" }
+                  { label: "Salados", val: currentCosts.cSalados, color: "bg-[#4A90E2]" },
+                  { label: "Dulces", val: currentCosts.cDulces, color: "bg-[#4A90E2]/80" },
+                  { label: "Básicos", val: currentCosts.cBasicos, color: "bg-white/80" },
+                  { label: "Premium", val: currentCosts.cPremium, color: "bg-white/60" },
+                  { label: "Bebidas", val: currentCosts.cBebidas, color: "bg-[#E2A74A]" },
+                  { label: "Extras", val: currentCosts.cExtras, color: "bg-purple-400/80", textCol: "text-purple-300" }
                 ].map((bar, i) => (
                   <div key={i} className="w-full flex flex-col items-center justify-end h-full group relative pb-[1px]">
                     <span className="opacity-0 group-hover:opacity-100 absolute -top-8 text-xs font-bold bg-white text-black px-2 py-1 rounded transition-opacity z-10">${bar.val.toFixed(0)}</span>
@@ -570,7 +587,7 @@ export default function CataLanding() {
                 <div className="flex justify-between items-end mb-2">
                   <span className="text-lg md:text-xl font-bold text-white">Total Aproximado</span>
                   <span className="text-4xl md:text-5xl font-black text-[#4A90E2] tracking-tighter transition-all duration-500">
-                    ${costoTotal.toFixed(2)}
+                    ${currentCosts.total.toFixed(2)}
                   </span>
                 </div>
                 
