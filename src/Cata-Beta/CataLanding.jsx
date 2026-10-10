@@ -33,19 +33,36 @@ const AnimatedButton = ({ text, fullWidth = false, onClick }) => {
   );
 };
 
-const LargeHeroCard = ({ title, imgUrl, textSize = "text-[12vw] md:text-[9vw]" }) => (
-  <section className="relative w-full h-[250px] md:h-[70vh] rounded-[24px] md:rounded-[40px] overflow-hidden shadow-2xl group border border-white/20">
-    <div className="absolute inset-0 w-full h-full bg-cover bg-center transition-transform duration-1000 group-hover:scale-105" style={{ backgroundImage: `url('${imgUrl}')` }}></div>
-    <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px] group-hover:bg-black/10 transition-colors duration-500"></div>
-    <div className="absolute inset-0 flex flex-col items-center justify-center z-10 p-4 text-center">
-      <h1 className={`${textSize} font-black tracking-tighter leading-none mb-2 md:mb-4 text-white drop-shadow-[0_15px_15px_rgba(0,0,0,0.6)] transition-all duration-500 ease-out cursor-default hover:scale-110 hover:-translate-y-2 hover:text-[#4A90E2] hover:tracking-wide hover:drop-shadow-[0_10px_30px_rgba(74,144,226,0.6)] uppercase`}>{title}</h1>
-      <div className="flex space-x-3 md:space-x-6 mt-2 md:mt-8">
-        <AnimatedButton text="PRECIOS" />
-        <AnimatedButton text="CATÁLOGO" />
+const LargeHeroCard = ({ title, imgUrl, textSize = "text-[12vw] md:text-[9vw]" }) => {
+  // Solución de kerning (espaciado manual) para las colisiones de letras específicas
+  const renderTitle = () => {
+    if (typeof title === 'string') {
+      if (title.toUpperCase() === 'CATERING') {
+        return <>C<span className="inline-block mr-[0.05em] md:mr-[0.08em]"></span>ATERING</>;
+      }
+      if (title.toUpperCase() === 'MENÚ EJECUTIVO') {
+        return <>MENÚ E<span className="inline-block mr-[0.03em] md:mr-[0.05em]"></span>JECUTIVO</>;
+      }
+    }
+    return title;
+  };
+
+  return (
+    <section className="relative w-full h-[250px] md:h-[70vh] rounded-[24px] md:rounded-[40px] overflow-hidden shadow-2xl group border border-white/20">
+      <div className="absolute inset-0 w-full h-full bg-cover bg-center transition-transform duration-1000 group-hover:scale-105" style={{ backgroundImage: `url('${imgUrl}')` }}></div>
+      <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px] group-hover:bg-black/10 transition-colors duration-500"></div>
+      <div className="absolute inset-0 flex flex-col items-center justify-center z-10 p-4 text-center">
+        <h1 className={`${textSize} font-black tracking-tight leading-none mb-2 md:mb-4 text-white drop-shadow-[0_15px_15px_rgba(0,0,0,0.6)] transition-all duration-500 ease-out cursor-default hover:scale-105 hover:-translate-y-2 hover:text-[#F3A712] hover:tracking-wide hover:drop-shadow-[0_10px_30px_rgba(243,167,18,0.85)] uppercase`}>
+          {renderTitle()}
+        </h1>
+        <div className="flex space-x-3 md:space-x-6 mt-2 md:mt-8">
+          <AnimatedButton text="PRECIOS" />
+          <AnimatedButton text="CATÁLOGO" />
+        </div>
       </div>
-    </div>
-  </section>
-);
+    </section>
+  );
+};
 
 const ServiceCard = ({ title, subtitle, description, abbreviation, bgImage }) => (
   <div className="group/card relative w-full h-[200px] md:h-[400px] rounded-[16px] md:rounded-[30px] overflow-hidden shadow-lg cursor-default flex flex-col border border-white/30 transition-all duration-500 hover:border-white/80">
@@ -132,7 +149,7 @@ export default function CataLanding() {
 
   // Event Org Data
   const orgServices = [
-    { title: "Mobiliario", subtitle: "Alquiler de Espacios", description: "Sillas, mesas y lounges de diseño para estructurar y acomodar cómodamente tu evento.", abbreviation: "Mb", bgImage: "https://images.unsplash.com/photo-1532323544230-7191fd51bc1b?auto=format&fit=crop&q=80&w=800" },
+    { title: "Mobiliario", subtitle: "Alquiler de Espacios", description: "Sillas, mesas y lounges de diseño para estructurar y acomodar cómodamente tu evento.", abbreviation: "Mb", bgImage: "https://images.unsplash.com/photo-1505362892972-005fa9ecafdd?auto=format&fit=crop&q=80&w=800" },
     { title: "Decoraciones", subtitle: "Ambientación Temática", description: "Transformamos los espacios con conceptos visuales que reflejan fielmente tu visión.", abbreviation: "Dc", bgImage: "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?auto=format&fit=crop&q=80&w=800" },
     { title: "Arreglos Florales", subtitle: "Diseño Botánico", description: "Centros de mesa y composiciones florales frescas para aportar vida y elegancia.", abbreviation: "Af", bgImage: "https://images.unsplash.com/photo-1563241527-3004b7be0ffd?auto=format&fit=crop&q=80&w=800" },
     { title: "Servicios Limpieza", subtitle: "Mantenimiento Integral", description: "Personal discreto y dedicado a mantener la impecabilidad del lugar en todo momento.", abbreviation: "Lm", bgImage: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&q=80&w=800" }
@@ -202,7 +219,7 @@ export default function CataLanding() {
         />
         <LargeHeroCard 
           title="BUFFETS" 
-          imgUrl="https://images.unsplash.com/photo-1555243896-c709bfa0b564?auto=format&fit=crop&q=80&w=1200" 
+          imgUrl="https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&q=80&w=1200" 
         />
 
         {/* ==========================================
@@ -320,7 +337,7 @@ export default function CataLanding() {
         />
         <LargeHeroCard 
           title="MÚSICA" 
-          imgUrl="https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&q=80&w=1200" 
+          imgUrl="https://images.unsplash.com/photo-1510506450014-a957262f022d?auto=format&fit=crop&q=80&w=1200" 
         />
         <LargeHeroCard 
           title="FOTOGRAFÍA" 
