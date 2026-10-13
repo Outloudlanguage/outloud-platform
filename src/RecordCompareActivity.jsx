@@ -2,17 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './SupabaseClient';
 import { PitchDetector } from 'pitchy';
 
-/**
- * RecordCompareActivity
- * 
- * Props:
- * - targetText: string (The subtitle / sentence to repeat)
- * - audioUrl: string (Teacher reference audio URL)
- * - lessonId: string / uuid
- * - nodeId: string
- * - cefrLevel: string ('A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2')
- * - onComplete: function({ overallScore, pointsAwarded, passed })
- */
 export default function RecordCompareActivity({
   targetText = "The quick brown fox jumps over the lazy dog",
   audioUrl = "",
@@ -21,27 +10,29 @@ export default function RecordCompareActivity({
   cefrLevel = "A1",
   onComplete = () => {}
 }) {
-  // State Machine
   const [phase, setPhase] = useState('idle');
   const [attempt, setAttempt] = useState(1);
   const [canContinue, setCanContinue] = useState(false);
   const [pointsAwarded, setPointsAwarded] = useState(0);
 
-  // Evaluation & Word Tracking
   const [wordResults, setWordResults] = useState([]);
   const [failedIndices, setFailedIndices] = useState(new Set());
   const [overallScore, setOverallScore] = useState(null);
 
-  // Audio References
   const sampleAudioRef = useRef(null);
   const studentAudioRef = useRef(null);
   const [studentAudioUrl, setStudentAudioUrl] = useState(null);
 
-  // Hardware & Web API References
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const recognitionRef = useRef(null);
+  
+  // Persistent Memory Accumulators
   const speechTranscriptRef = useRef('');
+  const globalTranscriptRef = useRef('');
+  const sessionTranscriptRef = useRef('');
+  const lastSpeechErrorRef = useRef('');
+
   const audioCtxRef = useRef(null);
   const analyserRef = useRef(null);
   const pitchValuesRef = useRef([]);
@@ -50,10 +41,8 @@ export default function RecordCompareActivity({
   
   const isRecordingRef = useRef(false);
 
-  // Clean split of target words for rendering
   const wordsList = targetText.trim().split(/\s+/);
 
-  // Initialize Speech Recognition once
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
@@ -63,21 +52,36 @@ export default function RecordCompareActivity({
       recognition.lang = 'en-US';
 
       recognition.onresult = (event) => {
-        let fullTranscript = '';
+        let interim = '';
+        let final = '';
         for (let i = 0; i < event.results.length; ++i) {
-          fullTranscript += event.results[i][0].transcript + ' ';
+          if (event.results[i].isFinal) final += event.results[i][0].transcript + ' ';
+          else interim += event.results[i][0].transcript + ' ';
         }
-        speechTranscriptRef.current = fullTranscript.trim();
+        
+        // Save the current fragment safely
+        sessionTranscriptRef.current = final + interim;
+        
+        // Stitch it together with any previous fragments rescued by the Auto-Reviver
+        speechTranscriptRef.current = (globalTranscriptRef.current + ' ' + sessionTranscriptRef.current).trim();
       };
 
       recognition.onerror = (event) => {
-        console.warn("Browser Speech Event:", event.error);
+        lastSpeechErrorRef.current = event.error;
+        console.warn("Browser Speech Event Error:", event.error);
       };
 
-      // AUTO-REVIVER: If mobile hardware tries to sleep the engine, instantly wake it up
+      // THE AUTO-REVIVER
       recognition.onend = () => {
+        // Lock the rescued text into the global vault before restarting
+        if (sessionTranscriptRef.current) {
+          globalTranscriptRef.current = (globalTranscriptRef.current + ' ' + sessionTranscriptRef.current).trim();
+          sessionTranscriptRef.current = '';
+        }
         if (isRecordingRef.current) {
-          try { recognition.start(); } catch (e) {}
+          setTimeout(() => {
+            try { recognition.start(); } catch (e) {}
+          }, 100);
         }
       };
 
@@ -93,26 +97,30 @@ export default function RecordCompareActivity({
     };
   }, []);
 
-  // 1. Pitch Tracking Loop (AnalyserNode + Pitchy)
+  // CPU-Optimized Pitch Tracking Loop
   const trackPitch = () => {
     if (!analyserRef.current || !audioCtxRef.current) return;
     const analyser = analyserRef.current;
     const detector = PitchDetector.forFloat32Array(analyser.fftSize);
     const inputBuffer = new Float32Array(detector.inputLength);
 
-    const update = () => {
-      analyser.getFloatTimeDomainData(inputBuffer);
-      const [pitch, clarity] = detector.findPitch(inputBuffer, audioCtxRef.current.sampleRate);
-      if (clarity > 0.8 && pitch > 50 && pitch < 500) {
-        pitchValuesRef.current.push(pitch);
+    let lastTime = 0;
+    const update = (time) => {
+      // PITCH THROTTLER: Only calculate pitch 10 times per second instead of 60 to free up Mobile CPU
+      if (time - lastTime > 100) { 
+        analyser.getFloatTimeDomainData(inputBuffer);
+        const [pitch, clarity] = detector.findPitch(inputBuffer, audioCtxRef.current.sampleRate);
+        if (clarity > 0.8 && pitch > 50 && pitch < 500) {
+          pitchValuesRef.current.push(pitch);
+        }
+        lastTime = time;
       }
       animationFrameRef.current = requestAnimationFrame(update);
     };
 
-    update();
+    animationFrameRef.current = requestAnimationFrame(update);
   };
 
-  // 2. Play Sample Audio
   const playSample = () => {
     if (!audioUrl) return;
     setPhase('playing_sample');
@@ -123,34 +131,30 @@ export default function RecordCompareActivity({
     };
   };
 
-  // 3. Start Recording Phase
   const startRecording = async () => {
     try {
       audioChunksRef.current = [];
       pitchValuesRef.current = [];
+      
+      // Reset memory vaults
+      globalTranscriptRef.current = '';
+      sessionTranscriptRef.current = '';
       speechTranscriptRef.current = '';
+      lastSpeechErrorRef.current = '';
       isRecordingRef.current = true; 
 
-      // CRITICAL FIX 1: Hardware Serialization
-      // Start the native speech engine FIRST to secure the microphone channel lock
-      if (recognitionRef.current) {
-        try {
-          recognitionRef.current.start();
-        } catch {
-          // Fallback if recognition is already running
-        }
-      }
-
-      // Give the hardware 100ms to open the channel before making the second request
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      // Second request: Full uncompromised MediaStream safely piggybacks on the channel
+      // 1. Fully-constrained Microphone Request (Echo Cancellation Active)
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
       });
 
-      // CRITICAL FIX 2: AudioContext Exhaustion Prevention
-      // Re-use the existing memory context so Android doesn't crash the pitch detector
+      // 2. THE AUDIO SINK HACK: Bind to a hidden HTML audio element to stabilize Android's lock
+      const dummyAudio = new Audio();
+      dummyAudio.muted = true;
+      dummyAudio.srcObject = stream;
+      dummyAudio.play().catch(()=>{});
+
+      // 3. AudioContext Re-use (Prevents Memory Exhaustion on Mobile)
       if (!audioCtxRef.current || audioCtxRef.current.state === 'closed') {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
         audioCtxRef.current = new AudioCtx();
@@ -166,6 +170,7 @@ export default function RecordCompareActivity({
 
       trackPitch();
 
+      // 4. Start the Raw Media Recorder
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorder.ondataavailable = (e) => {
         if (e.data.size > 0) audioChunksRef.current.push(e.data);
@@ -186,15 +191,22 @@ export default function RecordCompareActivity({
       mediaRecorderRef.current = mediaRecorder;
       mediaRecorder.start();
       recordingStartTimeRef.current = Date.now();
-
       setPhase('recording');
+
+      // 5. MILLI-SEQUENCING: Wait exactly 300ms before booting the STT Engine 
+      // so it safely piggybacks onto the existing hardware lock
+      setTimeout(() => {
+        if (recognitionRef.current && isRecordingRef.current) {
+          try { recognitionRef.current.start(); } catch (e) {}
+        }
+      }, 300);
+
     } catch (err) {
       console.error("Microphone access denied or audio initialization failed", err);
       setPhase('idle');
     }
   };
 
-  // 4. Stop Recording
   const stopRecording = () => {
     isRecordingRef.current = false; 
     
@@ -202,23 +214,16 @@ export default function RecordCompareActivity({
       mediaRecorderRef.current.stop();
     }
     
-    // CRITICAL FIX 3: Trailing Text Delay
-    // Gives the engine 500ms to finalize the last word before the mic fully dies
+    // Give the speech engine 500ms to process the final word before turning it off
     setTimeout(() => {
       if (recognitionRef.current) {
-        try {
-          recognitionRef.current.stop();
-        } catch {
-          // Recognition already stopped
-        }
+        try { recognitionRef.current.stop(); } catch (e) {}
       }
     }, 500);
   };
 
-  // 5. Automated Comparative Playback Loop (Sample -> Student)
   const runPlaybackReview = (studentBlobUrl) => {
     setPhase('playing_review');
-
     executeGrading();
 
     if (audioUrl) {
@@ -240,9 +245,8 @@ export default function RecordCompareActivity({
     }
   };
 
-  // 6. Server-Side Grading Handshake
   const executeGrading = async () => {
-    let retries = 30; // Up to 3 seconds wait time for mobile networks
+    let retries = 30; // Gives mobile networks 3 seconds to catch up
     while (!speechTranscriptRef.current && retries > 0) {
       await new Promise(resolve => setTimeout(resolve, 100));
       retries--;
@@ -260,8 +264,9 @@ export default function RecordCompareActivity({
 
     const isGhost = !speechTranscriptRef.current.trim() || durationSec < 0.5;
 
+    // Enhanced Error Alert: Will output exactly *why* Android blocked it if it fails again
     if (!speechTranscriptRef.current.trim()) {
-      alert("DEBUG CHECK: The browser's speech engine did not capture any text. It sent a blank string to the server.");
+      alert(`DEBUG CHECK: Speech engine captured no text. Mobile Error Code: [${lastSpeechErrorRef.current || 'None'}]. Try speaking clearly after pressing record.`);
     }
 
     try {
@@ -313,7 +318,6 @@ export default function RecordCompareActivity({
     }
   };
 
-  // 7. Retrying Attempts
   const handleTryAgain = () => {
     setAttempt((prev) => prev + 1);
     setOverallScore(null);
@@ -321,7 +325,6 @@ export default function RecordCompareActivity({
     setPhase('idle');
   };
 
-  // 8. Progress to next node
   const handleContinue = () => {
     onComplete({
       overallScore: overallScore || 0,
@@ -332,102 +335,54 @@ export default function RecordCompareActivity({
 
   return (
     <div className="flex flex-col items-center justify-center p-6 bg-slate-900/90 border border-slate-800 rounded-2xl max-w-2xl mx-auto shadow-2xl backdrop-blur-md">
-      {/* Top Meta Indicator */}
       <div className="flex items-center justify-between w-full mb-6 px-2 text-xs font-semibold tracking-wider uppercase text-slate-400">
         <span>Attempt {attempt} / 3</span>
         <span>Target: {cefrLevel}</span>
       </div>
 
-      {/* Dynamic Subtitle / Heatmap Display */}
       <div className="text-xl md:text-2xl text-center leading-relaxed mb-8 select-none min-h-[4rem] flex flex-wrap items-center justify-center gap-2">
         {wordsList.map((word, idx) => {
-          // Completed Phase: Render Granular Scorecard
           if (phase === 'completed' && wordResults[idx]) {
             const res = wordResults[idx];
             if (res.error_type === 'Omission') {
-              return (
-                <span key={idx} className="text-slate-500 line-through opacity-40">
-                  {word}
-                </span>
-              );
+              return <span key={idx} className="text-slate-500 line-through opacity-40">{word}</span>;
             }
             if (res.score >= 80) {
-              return (
-                <span key={idx} className="text-emerald-400 font-bold">
-                  {word}
-                </span>
-              );
+              return <span key={idx} className="text-emerald-400 font-bold">{word}</span>;
             }
             if (res.score >= 60) {
-              return (
-                <span key={idx} className="text-[#fcd34d] font-bold">
-                  {word}
-                </span>
-              );
+              return <span key={idx} className="text-[#fcd34d] font-bold">{word}</span>;
             }
-            return (
-              <span key={idx} className="text-red-500 font-bold">
-                {word}
-              </span>
-            );
+            return <span key={idx} className="text-red-500 font-bold">{word}</span>;
           }
 
-          // Pre-Recording / Recording Phase: Target Lock Escalation
           const isTargeted = failedIndices.has(idx);
 
           if (attempt === 2 && isTargeted) {
-            return (
-              <span key={idx} className="font-black underline text-white">
-                {word}
-              </span>
-            );
+            return <span key={idx} className="font-black underline text-white">{word}</span>;
           }
 
           if (attempt === 3 && isTargeted) {
-            return (
-              <span
-                key={idx}
-                className="font-black underline text-[#fcd34d] drop-shadow-[0_0_10px_rgba(252,211,77,0.8)] animate-pulse"
-              >
-                {word}
-              </span>
-            );
+            return <span key={idx} className="font-black underline text-[#fcd34d] drop-shadow-[0_0_10px_rgba(252,211,77,0.8)] animate-pulse">{word}</span>;
           }
 
-          // Default styling for non-targeted words on retry
           if (attempt > 1 && !isTargeted) {
-            return (
-              <span key={idx} className="text-white/60 font-normal">
-                {word}
-              </span>
-            );
+            return <span key={idx} className="text-white/60 font-normal">{word}</span>;
           }
 
-          // Neutral baseline (Attempt 1)
-          return (
-            <span key={idx} className="text-white font-medium">
-              {word}
-            </span>
-          );
+          return <span key={idx} className="text-white font-medium">{word}</span>;
         })}
       </div>
 
-      {/* Control Interface */}
       <div className="flex flex-col items-center gap-4 w-full">
         {phase === 'idle' && (
           <div className="flex items-center gap-4">
             {audioUrl && (
-              <button
-                onClick={playSample}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold rounded-lg transition"
-              >
+              <button onClick={playSample} className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold rounded-lg transition">
                 Hear Sample
               </button>
             )}
-            <button
-              onClick={startRecording}
-              className="flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl shadow-lg transition transform active:scale-95"
-            >
+            <button onClick={startRecording} className="flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl shadow-lg transition transform active:scale-95">
               <span className="w-3 h-3 bg-white rounded-full animate-ping" />
               Record
             </button>
@@ -441,10 +396,7 @@ export default function RecordCompareActivity({
         )}
 
         {phase === 'recording' && (
-          <button
-            onClick={stopRecording}
-            className="flex items-center gap-2 px-8 py-3 bg-slate-800 border border-red-500 text-red-400 font-bold rounded-xl shadow-lg transition transform active:scale-95 animate-pulse"
-          >
+          <button onClick={stopRecording} className="flex items-center gap-2 px-8 py-3 bg-slate-800 border border-red-500 text-red-400 font-bold rounded-xl shadow-lg transition transform active:scale-95 animate-pulse">
             <span className="w-3 h-3 bg-red-500 rounded-sm" />
             Stop Recording
           </button>
@@ -469,19 +421,13 @@ export default function RecordCompareActivity({
 
             <div className="flex items-center gap-3">
               {!canContinue && attempt < 3 && (
-                <button
-                  onClick={handleTryAgain}
-                  className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-sm font-semibold rounded-xl transition"
-                >
+                <button onClick={handleTryAgain} className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-sm font-semibold rounded-xl transition">
                   Try Again ({3 - attempt} left)
                 </button>
               )}
 
               {canContinue && (
-                <button
-                  onClick={handleContinue}
-                  className="px-8 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl shadow-lg transition transform active:scale-95"
-                >
+                <button onClick={handleContinue} className="px-8 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl shadow-lg transition transform active:scale-95">
                   Continue
                 </button>
               )}
