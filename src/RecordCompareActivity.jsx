@@ -86,7 +86,6 @@ export default function RecordCompareActivity({
 
     let lastTime = 0;
     const update = (time) => {
-      // CPU THROTTLER: Checks pitch 10 times per second to save mobile battery
       if (time - lastTime > 100) { 
         analyser.getFloatTimeDomainData(inputBuffer);
         const [pitch, clarity] = detector.findPitch(inputBuffer, audioCtxRef.current.sampleRate);
@@ -119,24 +118,26 @@ export default function RecordCompareActivity({
       lastSpeechErrorRef.current = '';
       isRecordingRef.current = true; 
 
-      // Start STT immediately so it locks in its permissions
-      if (recognitionRef.current) {
-        try { recognitionRef.current.start(); } catch (e) {}
-      }
-
-      // CRITICAL FIX: channelCount: 1 forces Mono routing, preventing Android hardware conflicts
+      // CRITICAL FIX: Force all streams to 16kHz Mono to match Web Speech API and prevent hardware lockouts
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { 
           echoCancellation: true, 
           noiseSuppression: true, 
           autoGainControl: true,
-          channelCount: 1 
+          channelCount: 1,
+          sampleRate: 16000 
         }
       });
 
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      
+      // CRITICAL FIX: Initialize AudioContext at 16kHz to share the hardware buffer
       if (!audioCtxRef.current || audioCtxRef.current.state === 'closed') {
-        const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        audioCtxRef.current = new AudioCtx();
+        try {
+          audioCtxRef.current = new AudioCtx({ sampleRate: 16000 });
+        } catch (e) {
+          audioCtxRef.current = new AudioCtx(); // Fallback for older Safari devices
+        }
       } else if (audioCtxRef.current.state === 'suspended') {
         await audioCtxRef.current.resume();
       }
@@ -171,6 +172,13 @@ export default function RecordCompareActivity({
       recordingStartTimeRef.current = Date.now();
       setPhase('recording');
 
+      // Boot STT engine 200ms after the mic stabilizes at 16kHz
+      setTimeout(() => {
+        if (recognitionRef.current && isRecordingRef.current) {
+          try { recognitionRef.current.start(); } catch (e) {}
+        }
+      }, 200);
+
     } catch (err) {
       console.error("Microphone access denied or audio initialization failed", err);
       setPhase('idle');
@@ -184,8 +192,6 @@ export default function RecordCompareActivity({
       mediaRecorderRef.current.stop();
     }
     
-    // CRITICAL FIX: The Network Buffer Delay.
-    // Do NOT stop STT instantly. Allow 1.5 seconds for mobile networks to send the final text.
     setTimeout(() => {
       if (recognitionRef.current) {
         try { recognitionRef.current.stop(); } catch (e) {}
@@ -217,7 +223,6 @@ export default function RecordCompareActivity({
   };
 
   const executeGrading = async () => {
-    // Check for text for up to 3.5 seconds to accommodate the trailing network buffer
     let retries = 35; 
     while (!speechTranscriptRef.current && retries > 0) {
       await new Promise(resolve => setTimeout(resolve, 100));
