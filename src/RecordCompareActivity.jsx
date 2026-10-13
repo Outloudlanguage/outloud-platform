@@ -48,6 +48,9 @@ export default function RecordCompareActivity({
   const pitchValuesRef = useRef([]);
   const animationFrameRef = useRef(null);
   const recordingStartTimeRef = useRef(0);
+  
+  // MOBILE FIX: Tracking ref to ensure the microphone stays awake on iOS/Android
+  const isRecordingRef = useRef(false);
 
   // Clean split of target words for rendering
   const wordsList = targetText.trim().split(/\s+/);
@@ -58,7 +61,9 @@ export default function RecordCompareActivity({
     if (SpeechRecognition) {
       const recognition = new SpeechRecognition();
       recognition.continuous = true; // UPGRADED: Keep listening even if the student pauses
-      recognition.interimResults = false;
+      
+      // MOBILE FIX: Turn on interim results to harvest text live while speaking
+      recognition.interimResults = true; 
       recognition.lang = 'en-US';
 
       recognition.onresult = (event) => {
@@ -71,6 +76,13 @@ export default function RecordCompareActivity({
 
       recognition.onerror = (event) => {
         console.warn("Browser Speech Event:", event.error);
+      };
+
+      // MOBILE FIX: Auto-Reviver. If a mobile browser tries to kill the engine during a pause, force it back on
+      recognition.onend = () => {
+        if (isRecordingRef.current) {
+          try { recognition.start(); } catch (e) {}
+        }
       };
 
       recognitionRef.current = recognition;
@@ -126,6 +138,9 @@ export default function RecordCompareActivity({
       audioChunksRef.current = [];
       pitchValuesRef.current = [];
       speechTranscriptRef.current = '';
+      
+      // MOBILE FIX: Mark as actively recording for the auto-reviver
+      isRecordingRef.current = true; 
 
       // Initialize Web Audio Context for Pitch Tracking
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -180,6 +195,9 @@ export default function RecordCompareActivity({
 
   // 4. Stop Recording
   const stopRecording = () => {
+    // MOBILE FIX: Disables the auto-reviver before stopping
+    isRecordingRef.current = false; 
+    
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
       mediaRecorderRef.current.stop();
     }
