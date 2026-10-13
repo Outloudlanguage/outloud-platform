@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './SupabaseClient';
+import RecordCompareActivity from './RecordCompareActivity';
 
 const extractVideoUrl = (rawInput) => {
   if (!rawInput) return '';
@@ -383,7 +384,7 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
   const showFeedback = navButtonState !== 'idle';
   const currentElements = screensData[currentStep] || [];
   const contentElements = currentElements.filter(el => !['nav_button'].includes(el.type));
-  const dockElements = currentElements.filter(el => ['nav_button', 'record_compare'].includes(el.type));
+  const dockElements = currentElements.filter(el => ['nav_button'].includes(el.type));
 
   return (
     <>
@@ -477,21 +478,22 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
                         {el.data?.imageUrl && <img src={el.data.imageUrl} alt="Visual Prompt" draggable="false" onContextMenu={(e)=>e.preventDefault()} style={{ WebkitUserDrag: 'none' }} className="w-full h-80 object-cover rounded-3xl shadow-inner border border-white/10 mb-4 select-none pointer-events-none" />}
 
                         {el.type === 'record_compare' && (
-                          <div className="w-full flex flex-col items-center justify-center bg-black/30 p-8 rounded-3xl border border-white/10 shadow-inner mt-4">
-                            {el.data?.transcriptText && (
-                              <div className="w-full text-center mb-6 border-b border-white/10 pb-6">
-                                <p className="text-white font-medium text-2xl lg:text-3xl leading-relaxed drop-shadow-md">
-                                  "{el.data.transcriptText}"
-                                </p>
-                              </div>
-                            )}
-                            {el.data?.audioUrl && (
-                              <div className="w-full flex flex-col items-center">
-                                <span className="text-white/60 font-black uppercase tracking-widest text-xs mb-4">Original Audio</span>
-                                <audio src={el.data.audioUrl} controls controlsList="nodownload" className="w-full max-w-md" />
-                              </div>
-                            )}
-                          </div>
+                          <RecordCompareActivity
+                            targetText={el.data?.transcriptText || el.data?.text || ""}
+                            audioUrl={el.data?.audioUrl || el.data?.audio || ""}
+                            lessonId={student?.lessonId || "standalone-lesson"}
+                            nodeId={el.id}
+                            cefrLevel={student?.level ? student.level.split(':')[0] : 'A1'}
+                            onComplete={({ overallScore, pointsAwarded, passed }) => {
+                              setStudentAnswers(prev => ({
+                                ...prev,
+                                [`${el.id}_recorded`]: passed,
+                                [`${el.id}_score`]: overallScore,
+                                [`${el.id}_points`]: pointsAwarded
+                              }));
+                              proceedToNext();
+                            }}
+                          />
                         )}
 
                         {el.type === 'fill_in_the_blank' && el.data && (() => {
@@ -825,23 +827,6 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
             {/* BOTTOM ACTION DOCK WITH ANTI-OVERFLOW WRAPPER */}
             <div className="w-full mt-auto pt-20 flex flex-col sm:flex-row justify-center items-center gap-4 px-4 relative z-50">
               {dockElements.map(el => {
-                if (el.type === 'record_compare') {
-                  const btnConfig = {
-                    idle: { text: "RECORD AUDIO", class: "bg-white/10 hover:bg-white/20 text-white shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-white/20", icon: <div className="w-4 h-4 rounded-full bg-red-500 animate-pulse shadow-[0_0_15px_#ef4444]"></div> },
-                    recording: { text: "RECORDING...", class: "bg-red-500 text-white shadow-[0_0_30px_rgba(239,68,68,0.5)] border-red-400 animate-pulse", icon: null },
-                    recorded: { text: "COMPARE", class: "bg-[#5b9bd5] text-white shadow-[0_0_30px_rgba(91,155,213,0.5)] border-blue-400", icon: null },
-                    comparing: { text: "COMPARING...", class: "bg-[#5b9bd5] text-white shadow-[0_0_30px_rgba(91,155,213,0.5)] border-blue-400 animate-pulse", icon: null },
-                    retry: { text: "RETRY", class: "bg-white/10 hover:bg-white/20 text-white shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-white/20", icon: <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 3.16L3 8" /><path d="M3 3v5h5" /></svg> }
-                  };
-                  const config = btnConfig[recordState];
-                  
-                  return (
-                    <button key={el.id} disabled={showFeedback} onClick={() => handleRecordAction(el.data?.audioUrl, el.id)} className={`w-full sm:w-auto backdrop-blur-xl border font-black px-8 py-4 md:px-12 md:py-6 rounded-full flex justify-center items-center gap-4 cursor-pointer transition-all uppercase tracking-widest text-sm md:text-lg ${showFeedback ? 'opacity-50' : 'hover:scale-105 active:scale-95'} ${config.class}`}>
-                      {config.icon}
-                      {config.text}
-                    </button>
-                  );
-                }
                 if (el.type === 'nav_button') {
                   let btnClass = "bg-[#fcd34d] text-[#08203e] shadow-[0_0_40px_rgba(252,211,77,0.4)] hover:shadow-[0_0_50px_rgba(252,211,77,0.6)]";
                   let btnText = "CONFIRM";
