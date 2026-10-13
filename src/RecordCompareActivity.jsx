@@ -57,19 +57,19 @@ export default function RecordCompareActivity({
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
       const recognition = new SpeechRecognition();
-      recognition.continuous = false;
+      recognition.continuous = true; // UPGRADED: Keep listening even if the student pauses
       recognition.interimResults = false;
       recognition.lang = 'en-US';
 
       recognition.onresult = (event) => {
-        if (event.results && event.results.length > 0) {
-          speechTranscriptRef.current = event.results[0][0].transcript;
+        let fullTranscript = '';
+        for (let i = 0; i < event.results.length; ++i) {
+          fullTranscript += event.results[i][0].transcript + ' ';
         }
+        speechTranscriptRef.current = fullTranscript.trim();
       };
 
       recognition.onerror = (event) => {
-        // Do NOT wipe the transcript. 
-        // Manually clicking "Stop Recording" naturally triggers an 'aborted' flag here.
         console.warn("Browser Speech Event:", event.error);
       };
 
@@ -241,6 +241,11 @@ export default function RecordCompareActivity({
 
     const isGhost = !speechTranscriptRef.current.trim() || durationSec < 0.5;
 
+    // TRIPWIRE 1: Did the microphone capture anything?
+    if (!speechTranscriptRef.current.trim()) {
+      alert("DEBUG CHECK: The browser's speech engine did not capture any text. It sent a blank string to the server.");
+    }
+
     try {
       const { data, error } = await supabase.functions.invoke('evaluate-pronunciation', {
         body: {
@@ -289,8 +294,9 @@ export default function RecordCompareActivity({
         }
       }
     } catch (err) {
+      // TRIPWIRE 2: Did the server crash or reject the data?
+      alert("SERVER ERROR: " + err.message);
       console.error("Grading invocation failed:", err);
-      // Failsafe for client network errors on attempt 3
       if (attempt >= 3) setCanContinue(true);
     }
   };
