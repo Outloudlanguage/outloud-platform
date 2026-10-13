@@ -62,11 +62,15 @@ export default function RecordCompareActivity({
       recognition.lang = 'en-US';
 
       recognition.onresult = (event) => {
-        speechTranscriptRef.current = event.results[0][0].transcript;
+        if (event.results && event.results.length > 0) {
+          speechTranscriptRef.current = event.results[0][0].transcript;
+        }
       };
 
-      recognition.onerror = () => {
-        speechTranscriptRef.current = '';
+      recognition.onerror = (event) => {
+        // Do NOT wipe the transcript. 
+        // Manually clicking "Stop Recording" naturally triggers an 'aborted' flag here.
+        console.warn("Browser Speech Event:", event.error);
       };
 
       recognitionRef.current = recognition;
