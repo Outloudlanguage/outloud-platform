@@ -54,21 +54,38 @@ serve(async (req) => {
       overall_score = 0;
     } else {
       const rawTargetWords = target_text.trim().split(/\s+/);
+      const cleanRawTargets = rawTargetWords.map((w: string) => w.toLowerCase().replace(/[^\w\s]/gi, ''));
       
-      // --- THE STT PRE-PROCESSOR ---
+      // --- THE PRE-PROCESSOR STREAM NORMALIZER ---
       let normSpoken = transcript.toLowerCase();
 
-      // Fix "w" spelled out by STT
-      normSpoken = normSpoken.replace(/\bdouble you\b/g, 'w').replace(/\bdouble u\b/g, 'w');
-
-      // NLP parse all number words ("fifteen" -> "15")
+      // Step A: NLP parse all number words ("fifty two" -> "52")
       const parsedNumbers = wordsToNumbers(normSpoken);
       if (parsedNumbers !== null && parsedNumbers !== undefined) {
         normSpoken = parsedNumbers.toString();
       }
 
-      // Explode all clustered digits ("752" -> "7 5 2")
+      // Step B: Explode all clustered digits ("752" -> "7 5 2")
       normSpoken = normSpoken.replace(/(\d)/g, ' $1 ');
+
+      // Step C: Spelled Word STT Exploder
+      // If target expects isolated letters (E R N E S T O), find STT grouped words ("ernesto") and explode them.
+      let currentSequence: string[] = [];
+      const spelledWordsToExpand: string[] = [];
+      for (let w of cleanRawTargets) {
+        if (w.length === 1 && /[a-z]/.test(w)) {
+          currentSequence.push(w);
+        } else {
+          if (currentSequence.length >= 2) spelledWordsToExpand.push(currentSequence.join(''));
+          currentSequence = [];
+        }
+      }
+      if (currentSequence.length >= 2) spelledWordsToExpand.push(currentSequence.join(''));
+
+      spelledWordsToExpand.forEach(sw => {
+        const regex = new RegExp(`\\b${sw}\\b`, 'g');
+        normSpoken = normSpoken.replace(regex, sw.split('').join(' '));
+      });
 
       const spokenWords = normSpoken.replace(/[^\w\s]/gi, '').split(/\s+/).filter(Boolean);
 
@@ -95,16 +112,16 @@ serve(async (req) => {
       };
 
       const strictnessRules: any = {
-        'A1': { maxShort: 2, maxLong: 3, penalty: 15, wAcc: 0.50, wComp: 0.40, wPros: 0.10 },
-        'A2': { maxShort: 2, maxLong: 3, penalty: 15, wAcc: 0.50, wComp: 0.40, wPros: 0.10 },
-        'B1': { maxShort: 1, maxLong: 2, penalty: 20, wAcc: 0.55, wComp: 0.35, wPros: 0.10 },
-        'B2': { maxShort: 1, maxLong: 2, penalty: 20, wAcc: 0.55, wComp: 0.35, wPros: 0.10 },
-        'C1': { maxShort: 1, maxLong: 2, penalty: 30, wAcc: 0.65, wComp: 0.20, wPros: 0.15 },
-        'C2': { maxShort: 0, maxLong: 1, penalty: 40, wAcc: 0.70, wComp: 0.10, wPros: 0.20 }
+        'A1': { maxShort: 2, maxLong: 3, penalty: 10, wAcc: 0.50, wComp: 0.40, wPros: 0.10 },
+        'A2': { maxShort: 2, maxLong: 3, penalty: 10, wAcc: 0.50, wComp: 0.40, wPros: 0.10 },
+        'B1': { maxShort: 1, maxLong: 2, penalty: 15, wAcc: 0.55, wComp: 0.35, wPros: 0.10 },
+        'B2': { maxShort: 1, maxLong: 2, penalty: 15, wAcc: 0.55, wComp: 0.35, wPros: 0.10 },
+        'C1': { maxShort: 1, maxLong: 2, penalty: 20, wAcc: 0.65, wComp: 0.20, wPros: 0.15 },
+        'C2': { maxShort: 1, maxLong: 1, penalty: 25, wAcc: 0.70, wComp: 0.10, wPros: 0.20 }
       };
       const rules = strictnessRules[cefr_level] || strictnessRules['A1'];
 
-      // 3. ANCHOR-BASED ALIGNMENT ENGINE
+      // 4. LINEAR STREAM ALIGNMENT ENGINE
       rawTargetWords.forEach((rawTWord: string) => {
         const tWord = rawTWord.toLowerCase().replace(/[^\w\s]/gi, '');
         
@@ -116,70 +133,71 @@ serve(async (req) => {
         validTargetCount++;
         let bestMatchIdx = -1;
         let bestDistance = 999;
-        let isPerfect = false;
         
         let numericTWord = tWord;
         const parsedT = wordsToNumbers(tWord);
         if (parsedT !== null && parsedT !== undefined) numericTWord = parsedT.toString();
 
-        // Scan ahead up to 4 words to naturally recover skipped words
-        const maxLookahead = 4; 
-        const maxFragments = 15; 
+        // Scan ahead up to 5 words for natural recovery (ignores skips, locks onto next valid word)
+        const searchLimit = Math.min(spokenWords.length - 1, sIdx + 5);
+        
+        for (let searchIdx = sIdx; searchIdx <= searchLimit; searchIdx++) {
+          const sWord = spokenWords[searchIdx];
+          let isPerfect = false;
+          let rawDist = levenshtein.get(tWord, sWord);
 
-        for (let lookahead = 0; lookahead <= maxLookahead; lookahead++) {
-            const searchIdx = sIdx + lookahead;
-            if (searchIdx >= spokenWords.length) break;
+          // 4A: Exact matches
+          if (tWord === sWord || numericTWord === sWord) isPerfect = true;
+          
+          // 4B: Spelled Letter Maps
+          if (tWord.length === 1 && /[a-z]/.test(tWord)) {
+             if (tWord === (letterMap[sWord] || sWord)) isPerfect = true;
+          }
 
-            const sWord = spokenWords[searchIdx];
-            
-            // 4A: Exact matches
-            if (tWord === sWord || numericTWord === sWord) {
-                bestMatchIdx = searchIdx; bestDistance = 0; isPerfect = true; break;
-            }
-            
-            // 4B: Fragment Combiner (Handles Spelling "E-R-N-E-S-T-O" & Numbers)
-            let combinedStr = "";
-            let combinedSpelled = "";
-            const fragmentsToCombine = Math.min(maxFragments, spokenWords.length - searchIdx);
+          // 4C: Fragment Combiner (Catches Acronyms like "USA" or clustered spelling "u s a")
+          let combinedStr = "";
+          let combinedSpelled = "";
+          for (let k = 0; k < 5 && (searchIdx + k) < spokenWords.length; k++) {
+              const frag = spokenWords[searchIdx + k];
+              combinedStr += frag;
+              combinedSpelled += (letterMap[frag] || frag);
+              
+              if (tWord === combinedStr || numericTWord === combinedStr || 
+                  tWord === combinedSpelled || numericTWord === combinedSpelled) {
+                  bestMatchIdx = searchIdx + k; // Advance pointer past the fragment block
+                  bestDistance = 0;
+                  isPerfect = true;
+                  break;
+              }
+          }
+          if (isPerfect) {
+             if (bestMatchIdx === -1) bestMatchIdx = searchIdx;
+             bestDistance = 0;
+             break;
+          }
 
-            for (let k = 1; k <= fragmentsToCombine; k++) {
-                const frag = spokenWords[searchIdx + k - 1];
-                combinedStr += frag;
-                combinedSpelled += (letterMap[frag] || frag);
+          // 4D: Phonetic Hashing (Double Metaphone)
+          const tHashes = doubleMetaphone(tWord);
+          const sHashes = doubleMetaphone(sWord);
+          if ((tHashes[0] && sHashes[0] && tHashes[0] === sHashes[0]) || 
+              (tHashes[1] && sHashes[0] && tHashes[1] === sHashes[0]) || 
+              (tHashes[0] && sHashes[1] && tHashes[0] === sHashes[1])) {
+              bestMatchIdx = searchIdx; bestDistance = 0; break;
+          }
 
-                if (tWord === combinedStr || numericTWord === combinedStr ||
-                    tWord === combinedSpelled || numericTWord === combinedSpelled) {
-                    bestMatchIdx = searchIdx + k - 1; // Advance past the combined block
-                    bestDistance = 0;
-                    isPerfect = true;
-                    break;
-                }
-            }
-            if (isPerfect) break;
-
-            // 4C: Phonetic Hash Match (Double Metaphone)
-            const tHashes = doubleMetaphone(tWord);
-            const sHashes = doubleMetaphone(sWord);
-            if ((tHashes[0] && sHashes[0] && tHashes[0] === sHashes[0]) || 
-                (tHashes[1] && sHashes[0] && tHashes[1] === sHashes[0]) || 
-                (tHashes[0] && sHashes[1] && tHashes[0] === sHashes[1])) {
-                bestMatchIdx = searchIdx; bestDistance = 0; isPerfect = true; break;
-            }
-
-            // 4D: CEFR Typo Leniency (Only if it's NOT a conversational filler)
-            if (!scriptFillers.includes(tWord)) {
-                const rawDist = levenshtein.get(tWord, sWord);
-                let allowedTypo = 0;
-                if (tWord.length > 4) allowedTypo = rules.maxLong;
-                else if (tWord.length > 1) allowedTypo = rules.maxShort;
-                
-                if (rawDist <= allowedTypo) {
-                    if (bestMatchIdx === -1 || rawDist < bestDistance) {
-                        bestMatchIdx = searchIdx;
-                        bestDistance = rawDist;
-                    }
-                }
-            }
+          // 4E: CEFR Typo Leniency (BANNED for Fillers to prevent greediness)
+          if (!scriptFillers.includes(tWord)) {
+              let allowedTypo = 0;
+              if (tWord.length > 4) allowedTypo = rules.maxLong;
+              else if (tWord.length > 1) allowedTypo = rules.maxShort;
+              
+              if (rawDist <= allowedTypo) {
+                  if (bestMatchIdx === -1 || rawDist < bestDistance) {
+                      bestMatchIdx = searchIdx;
+                      bestDistance = rawDist;
+                  }
+              }
+          }
         }
 
         // 5. WORD RESOLUTION
@@ -193,17 +211,17 @@ serve(async (req) => {
           }
           if (wordScore >= 60) matchedWords++;
           
-          sIdx = bestMatchIdx + 1; // Snaps pointer perfectly to the matched word
+          sIdx = bestMatchIdx + 1; // Advance pointer successfully
         } else {
           if (scriptFillers.includes(tWord)) {
              wordScore = 100; // Forgiven filler
              errorType = "None";
              matchedWords++;
-             // DO NOT advance pointer: simply ignore the filler and move on
+             // DO NOT ADVANCE POINTER. We simply ignore it and move on.
           } else {
              wordScore = 0;
              errorType = "Omission";
-             // DO NOT advance pointer: keeps alignment locked for the next valid word
+             // DO NOT ADVANCE POINTER. Ensures alignment stays locked for the next word.
           }
         }
 

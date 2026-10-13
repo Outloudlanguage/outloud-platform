@@ -22,7 +22,6 @@ export default function RecordCompareActivity({
   onComplete = () => {}
 }) {
   // State Machine
-  // 'idle' | 'playing_sample' | 'recording' | 'playing_review' | 'evaluating' | 'completed'
   const [phase, setPhase] = useState('idle');
   const [attempt, setAttempt] = useState(1);
   const [canContinue, setCanContinue] = useState(false);
@@ -49,7 +48,6 @@ export default function RecordCompareActivity({
   const animationFrameRef = useRef(null);
   const recordingStartTimeRef = useRef(0);
   
-  // MOBILE FIX: Tracking ref to ensure the microphone stays awake on iOS/Android
   const isRecordingRef = useRef(false);
 
   // Clean split of target words for rendering
@@ -60,9 +58,7 @@ export default function RecordCompareActivity({
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
       const recognition = new SpeechRecognition();
-      recognition.continuous = true; // UPGRADED: Keep listening even if the student pauses
-      
-      // MOBILE FIX: Turn on interim results to harvest text live while speaking
+      recognition.continuous = true; 
       recognition.interimResults = true; 
       recognition.lang = 'en-US';
 
@@ -78,7 +74,7 @@ export default function RecordCompareActivity({
         console.warn("Browser Speech Event:", event.error);
       };
 
-      // MOBILE FIX: Auto-Reviver. If a mobile browser tries to kill the engine during a pause, force it back on
+      // AUTO-REVIVER: If mobile hardware tries to sleep the engine, instantly wake it up
       recognition.onend = () => {
         if (isRecordingRef.current) {
           try { recognition.start(); } catch (e) {}
@@ -130,21 +126,38 @@ export default function RecordCompareActivity({
   // 3. Start Recording Phase
   const startRecording = async () => {
     try {
+      audioChunksRef.current = [];
+      pitchValuesRef.current = [];
+      speechTranscriptRef.current = '';
+      isRecordingRef.current = true; 
+
+      // CRITICAL FIX 1: Hardware Serialization
+      // Start the native speech engine FIRST to secure the microphone channel lock
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.start();
+        } catch {
+          // Fallback if recognition is already running
+        }
+      }
+
+      // Give the hardware 100ms to open the channel before making the second request
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Second request: Full uncompromised MediaStream safely piggybacks on the channel
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
       });
 
-      // Clear previous buffers
-      audioChunksRef.current = [];
-      pitchValuesRef.current = [];
-      speechTranscriptRef.current = '';
-      
-      // MOBILE FIX: Mark as actively recording for the auto-reviver
-      isRecordingRef.current = true; 
+      // CRITICAL FIX 2: AudioContext Exhaustion Prevention
+      // Re-use the existing memory context so Android doesn't crash the pitch detector
+      if (!audioCtxRef.current || audioCtxRef.current.state === 'closed') {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        audioCtxRef.current = new AudioCtx();
+      } else if (audioCtxRef.current.state === 'suspended') {
+        await audioCtxRef.current.resume();
+      }
 
-      // Initialize Web Audio Context for Pitch Tracking
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      audioCtxRef.current = new AudioCtx();
       const source = audioCtxRef.current.createMediaStreamSource(stream);
       const analyser = audioCtxRef.current.createAnalyser();
       analyser.fftSize = 2048;
@@ -153,7 +166,6 @@ export default function RecordCompareActivity({
 
       trackPitch();
 
-      // Setup MediaRecorder for local playback comparison
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorder.ondataavailable = (e) => {
         if (e.data.size > 0) audioChunksRef.current.push(e.data);
@@ -165,26 +177,15 @@ export default function RecordCompareActivity({
         const url = URL.createObjectURL(audioBlob);
         setStudentAudioUrl(url);
 
-        // Turn off microphone tracks
         stream.getTracks().forEach((track) => track.stop());
         cancelAnimationFrame(animationFrameRef.current);
 
-        // Transition straight into the comparative playback review
         runPlaybackReview(url);
       };
 
       mediaRecorderRef.current = mediaRecorder;
       mediaRecorder.start();
       recordingStartTimeRef.current = Date.now();
-
-      // Trigger Web Speech API recognition
-      if (recognitionRef.current) {
-        try {
-          recognitionRef.current.start();
-        } catch {
-          // Fallback if recognition is already running
-        }
-      }
 
       setPhase('recording');
     } catch (err) {
@@ -195,26 +196,29 @@ export default function RecordCompareActivity({
 
   // 4. Stop Recording
   const stopRecording = () => {
-    // MOBILE FIX: Disables the auto-reviver before stopping
     isRecordingRef.current = false; 
     
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
       mediaRecorderRef.current.stop();
     }
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.stop();
-      } catch {
-        // Recognition already stopped
+    
+    // CRITICAL FIX 3: Trailing Text Delay
+    // Gives the engine 500ms to finalize the last word before the mic fully dies
+    setTimeout(() => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {
+          // Recognition already stopped
+        }
       }
-    }
+    }, 500);
   };
 
   // 5. Automated Comparative Playback Loop (Sample -> Student)
   const runPlaybackReview = (studentBlobUrl) => {
     setPhase('playing_review');
 
-    // Run grading call in background while playback occurs
     executeGrading();
 
     if (audioUrl) {
@@ -228,7 +232,6 @@ export default function RecordCompareActivity({
         };
       };
     } else {
-      // If no sample URL exists, just play the student attempt
       const studentAudio = new Audio(studentBlobUrl);
       studentAudio.play();
       studentAudio.onended = () => {
@@ -239,8 +242,7 @@ export default function RecordCompareActivity({
 
   // 6. Server-Side Grading Handshake
   const executeGrading = async () => {
-    // NEW: Wait up to 2 seconds for the browser STT to finish its asynchronous transcription
-    let retries = 20;
+    let retries = 30; // Up to 3 seconds wait time for mobile networks
     while (!speechTranscriptRef.current && retries > 0) {
       await new Promise(resolve => setTimeout(resolve, 100));
       retries--;
@@ -248,7 +250,6 @@ export default function RecordCompareActivity({
 
     const durationSec = Math.max(0.1, (Date.now() - recordingStartTimeRef.current) / 1000);
 
-    // Calculate Pitch Standard Deviation
     const pitches = pitchValuesRef.current;
     let pitchVariance = 0;
     if (pitches.length > 1) {
@@ -259,7 +260,6 @@ export default function RecordCompareActivity({
 
     const isGhost = !speechTranscriptRef.current.trim() || durationSec < 0.5;
 
-    // TRIPWIRE 1: Did the microphone capture anything?
     if (!speechTranscriptRef.current.trim()) {
       alert("DEBUG CHECK: The browser's speech engine did not capture any text. It sent a blank string to the server.");
     }
@@ -285,7 +285,6 @@ export default function RecordCompareActivity({
       setOverallScore(score);
       setWordResults(data.word_level_data || []);
 
-      // Calculate failed indices for subsequent attempt highlight
       const newFailed = new Set();
       (data.word_level_data || []).forEach((w, idx) => {
         if (w.score < 80 || w.error_type === 'Omission') {
@@ -294,16 +293,12 @@ export default function RecordCompareActivity({
       });
       setFailedIndices(newFailed);
 
-      // Scoring & Failsafe Resolution
       if (score >= 60) {
-        // Successful pass
         const yieldPercent = attempt === 1 ? 100 : attempt === 2 ? 85 : 70;
         setPointsAwarded(yieldPercent);
         setCanContinue(true);
       } else {
-        // Failed attempt
         if (attempt >= 3) {
-          // 3-strike failsafe unlocked
           const finalYield = isGhost ? 0 : 50;
           setPointsAwarded(finalYield);
           setCanContinue(true);
@@ -312,7 +307,6 @@ export default function RecordCompareActivity({
         }
       }
     } catch (err) {
-      // TRIPWIRE 2: Did the server crash or reject the data?
       alert("SERVER ERROR: " + err.message);
       console.error("Grading invocation failed:", err);
       if (attempt >= 3) setCanContinue(true);
