@@ -26,11 +26,7 @@ export default function RecordCompareActivity({
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const recognitionRef = useRef(null);
-  
-  // Persistent Memory Accumulators
   const speechTranscriptRef = useRef('');
-  const globalTranscriptRef = useRef('');
-  const sessionTranscriptRef = useRef('');
   const lastSpeechErrorRef = useRef('');
 
   const audioCtxRef = useRef(null);
@@ -52,36 +48,21 @@ export default function RecordCompareActivity({
       recognition.lang = 'en-US';
 
       recognition.onresult = (event) => {
-        let interim = '';
-        let final = '';
+        let fullTranscript = '';
         for (let i = 0; i < event.results.length; ++i) {
-          if (event.results[i].isFinal) final += event.results[i][0].transcript + ' ';
-          else interim += event.results[i][0].transcript + ' ';
+          fullTranscript += event.results[i][0].transcript + ' ';
         }
-        
-        // Save the current fragment safely
-        sessionTranscriptRef.current = final + interim;
-        
-        // Stitch it together with any previous fragments rescued by the Auto-Reviver
-        speechTranscriptRef.current = (globalTranscriptRef.current + ' ' + sessionTranscriptRef.current).trim();
+        speechTranscriptRef.current = fullTranscript.trim();
       };
 
       recognition.onerror = (event) => {
         lastSpeechErrorRef.current = event.error;
-        console.warn("Browser Speech Event Error:", event.error);
+        console.warn("Browser Speech Event:", event.error);
       };
 
-      // THE AUTO-REVIVER
       recognition.onend = () => {
-        // Lock the rescued text into the global vault before restarting
-        if (sessionTranscriptRef.current) {
-          globalTranscriptRef.current = (globalTranscriptRef.current + ' ' + sessionTranscriptRef.current).trim();
-          sessionTranscriptRef.current = '';
-        }
         if (isRecordingRef.current) {
-          setTimeout(() => {
-            try { recognition.start(); } catch (e) {}
-          }, 100);
+          try { recognition.start(); } catch (e) {}
         }
       };
 
@@ -97,7 +78,6 @@ export default function RecordCompareActivity({
     };
   }, []);
 
-  // CPU-Optimized Pitch Tracking Loop
   const trackPitch = () => {
     if (!analyserRef.current || !audioCtxRef.current) return;
     const analyser = analyserRef.current;
@@ -106,7 +86,7 @@ export default function RecordCompareActivity({
 
     let lastTime = 0;
     const update = (time) => {
-      // PITCH THROTTLER: Only calculate pitch 10 times per second instead of 60 to free up Mobile CPU
+      // CPU THROTTLER: Checks pitch 10 times per second to save mobile battery
       if (time - lastTime > 100) { 
         analyser.getFloatTimeDomainData(inputBuffer);
         const [pitch, clarity] = detector.findPitch(inputBuffer, audioCtxRef.current.sampleRate);
@@ -135,26 +115,25 @@ export default function RecordCompareActivity({
     try {
       audioChunksRef.current = [];
       pitchValuesRef.current = [];
-      
-      // Reset memory vaults
-      globalTranscriptRef.current = '';
-      sessionTranscriptRef.current = '';
       speechTranscriptRef.current = '';
       lastSpeechErrorRef.current = '';
       isRecordingRef.current = true; 
 
-      // 1. Fully-constrained Microphone Request (Echo Cancellation Active)
+      // Start STT immediately so it locks in its permissions
+      if (recognitionRef.current) {
+        try { recognitionRef.current.start(); } catch (e) {}
+      }
+
+      // CRITICAL FIX: channelCount: 1 forces Mono routing, preventing Android hardware conflicts
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+        audio: { 
+          echoCancellation: true, 
+          noiseSuppression: true, 
+          autoGainControl: true,
+          channelCount: 1 
+        }
       });
 
-      // 2. THE AUDIO SINK HACK: Bind to a hidden HTML audio element to stabilize Android's lock
-      const dummyAudio = new Audio();
-      dummyAudio.muted = true;
-      dummyAudio.srcObject = stream;
-      dummyAudio.play().catch(()=>{});
-
-      // 3. AudioContext Re-use (Prevents Memory Exhaustion on Mobile)
       if (!audioCtxRef.current || audioCtxRef.current.state === 'closed') {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
         audioCtxRef.current = new AudioCtx();
@@ -170,7 +149,6 @@ export default function RecordCompareActivity({
 
       trackPitch();
 
-      // 4. Start the Raw Media Recorder
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorder.ondataavailable = (e) => {
         if (e.data.size > 0) audioChunksRef.current.push(e.data);
@@ -193,14 +171,6 @@ export default function RecordCompareActivity({
       recordingStartTimeRef.current = Date.now();
       setPhase('recording');
 
-      // 5. MILLI-SEQUENCING: Wait exactly 300ms before booting the STT Engine 
-      // so it safely piggybacks onto the existing hardware lock
-      setTimeout(() => {
-        if (recognitionRef.current && isRecordingRef.current) {
-          try { recognitionRef.current.start(); } catch (e) {}
-        }
-      }, 300);
-
     } catch (err) {
       console.error("Microphone access denied or audio initialization failed", err);
       setPhase('idle');
@@ -214,12 +184,13 @@ export default function RecordCompareActivity({
       mediaRecorderRef.current.stop();
     }
     
-    // Give the speech engine 500ms to process the final word before turning it off
+    // CRITICAL FIX: The Network Buffer Delay.
+    // Do NOT stop STT instantly. Allow 1.5 seconds for mobile networks to send the final text.
     setTimeout(() => {
       if (recognitionRef.current) {
         try { recognitionRef.current.stop(); } catch (e) {}
       }
-    }, 500);
+    }, 1500);
   };
 
   const runPlaybackReview = (studentBlobUrl) => {
@@ -246,7 +217,8 @@ export default function RecordCompareActivity({
   };
 
   const executeGrading = async () => {
-    let retries = 30; // Gives mobile networks 3 seconds to catch up
+    // Check for text for up to 3.5 seconds to accommodate the trailing network buffer
+    let retries = 35; 
     while (!speechTranscriptRef.current && retries > 0) {
       await new Promise(resolve => setTimeout(resolve, 100));
       retries--;
@@ -264,7 +236,6 @@ export default function RecordCompareActivity({
 
     const isGhost = !speechTranscriptRef.current.trim() || durationSec < 0.5;
 
-    // Enhanced Error Alert: Will output exactly *why* Android blocked it if it fails again
     if (!speechTranscriptRef.current.trim()) {
       alert(`DEBUG CHECK: Speech engine captured no text. Mobile Error Code: [${lastSpeechErrorRef.current || 'None'}]. Try speaking clearly after pressing record.`);
     }
