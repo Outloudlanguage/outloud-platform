@@ -217,6 +217,13 @@ export default function RecordCompareActivity({
 
   // 6. Server-Side Grading Handshake
   const executeGrading = async () => {
+    // NEW: Wait up to 2 seconds for the browser STT to finish its asynchronous transcription
+    let retries = 20;
+    while (!speechTranscriptRef.current && retries > 0) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      retries--;
+    }
+
     const durationSec = Math.max(0.1, (Date.now() - recordingStartTimeRef.current) / 1000);
 
     // Calculate Pitch Standard Deviation
