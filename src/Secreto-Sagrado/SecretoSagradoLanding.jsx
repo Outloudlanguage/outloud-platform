@@ -13,6 +13,272 @@ import {
 const URL_FONDO_MONTANA = 'https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/1791990986647.jpg';
 const URL_MUSICA_MENU = 'https://pub-f968bc599b9e4b30965522b355899a7e.r2.dev/crown_of_the_morning_mist.mp3';
 const URL_LOGO_OFICIAL = 'https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/S%20ECRETO%20SAGRADO.png';
+const DEFAULT_GEMINI_API_KEY = 'AQ.Ab8RN6LiD0PYs8Jdu9p7VrlSRG8Ut4FuYs8c8ykWZTJRyhmXkQ';
+
+/* ==========================================================================
+   SISTEMA DE ICONOGRAFÍA VECTORIAL SVG DE LUJO (CERO EMOJIS)
+   ========================================================================== */
+function IconoSagradoSVG({ tipo, className = 'w-6 h-6' }) {
+  const renderTrazado = () => {
+    switch (tipo) {
+      case 'pastor':
+        return (
+          <>
+            <path d="M12 22c4.97 0 9-4.03 9-9-4.97 0-9 4.03-9 9z" />
+            <path d="M12 22c-4.97 0-9-4.03-9-9 4.97 0 9 4.03 9 9z" />
+            <path d="M12 2v20" />
+            <path d="M12 13c3.5-3.5 6-8 0-11-6 3-3.5 7.5 0 11z" />
+          </>
+        );
+      case 'historiador':
+      case 'escriba':
+        return (
+          <>
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+            <path d="M8 7h8M8 11h8M8 15h5" />
+          </>
+        );
+      case 'profeta':
+        return (
+          <>
+            <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
+            <circle cx="12" cy="12" r="3.5" />
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41" />
+          </>
+        );
+      case 'rey':
+      case 'noble':
+        return (
+          <>
+            <path d="M3 18h18v2H3z" />
+            <path d="M4 15l-1-9 5.5 4L12 4l3.5 6L21 6l-1 9H4z" />
+            <circle cx="12" cy="2" r="1" />
+          </>
+        );
+      case 'angel':
+      case 'estrella':
+        return (
+          <>
+            <polygon points="12 2 14.8 8.5 22 9.3 16.5 14 18.2 21 12 17.3 5.8 21 7.5 14 2 9.3 9.2 8.5 12 2" />
+            <circle cx="12" cy="12" r="2" />
+          </>
+        );
+      case 'guerrero':
+        return (
+          <>
+            <path d="M14.5 17.5L3 6V3h3l11.5 11.5" />
+            <path d="M13 19l6-6" />
+            <path d="M16 16l4 4" />
+            <path d="M19 21l2-2" />
+          </>
+        );
+      case 'sacerdote':
+        return (
+          <>
+            <path d="M3 21h18" />
+            <path d="M4 10h16" />
+            <path d="M6 10v11M10 10v11M14 10v11M18 10v11" />
+            <polygon points="12 3 21 10 3 10 12 3" />
+          </>
+        );
+      case 'mayordomo':
+        return (
+          <>
+            <rect x="3" y="7" width="18" height="13" rx="2" />
+            <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            <path d="M3 12h18" />
+            <circle cx="12" cy="12" r="1.5" />
+          </>
+        );
+      case 'juez':
+        return (
+          <>
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            <path d="M12 8v8M8 12h8" />
+          </>
+        );
+      case 'proselito':
+        return (
+          <>
+            <path d="M12 3c-4.5 5-7 8-7 11.5a7 7 0 0 0 14 0C19 11 16.5 8 12 3z" />
+            <path d="M12 18a3.5 3.5 0 0 1-3.5-3.5" />
+          </>
+        );
+      case 'patriarca':
+        return (
+          <>
+            <circle cx="12" cy="5" r="2.5" />
+            <circle cx="6" cy="18" r="2.5" />
+            <circle cx="18" cy="18" r="2.5" />
+            <path d="M12 7.5v4.5M12 12L6 15.5M12 12l6 3.5" />
+          </>
+        );
+      case 'express':
+        return <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />;
+      case 'estandar':
+        return (
+          <>
+            <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
+            <line x1="8" y1="2" x2="8" y2="18" />
+            <line x1="16" y1="6" x2="16" y2="22" />
+          </>
+        );
+      case 'pulgar':
+        return (
+          <>
+            <path d="M12 10v4" />
+            <path d="M8 8.5a4 4 0 0 1 8 0v7a4 4 0 0 1-8 0v-7z" />
+            <path d="M5 12a7 7 0 0 0 14 0" />
+            <circle cx="12" cy="12" r="10" strokeDasharray="3 3" />
+          </>
+        );
+      case 'hp':
+        return (
+          <>
+            <polygon points="12 2 20 8.5 16.5 21 7.5 21 4 8.5 12 2" />
+            <polyline points="4 8.5 12 13 20 8.5" />
+            <line x1="12" y1="2" x2="12" y2="21" />
+          </>
+        );
+      case 'oracion':
+        return (
+          <>
+            <path d="M12 2v4M4.93 4.93l2.83 2.83M19.07 4.93l-2.83 2.83" />
+            <path d="M9 21l3-9 3 9" />
+            <path d="M7 14c2.5-2 7.5-2 10 0" />
+          </>
+        );
+      case 'guardar':
+        return (
+          <>
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+            <polyline points="17 21 17 13 7 13 7 21" />
+            <polyline points="7 3 7 8 15 8" />
+          </>
+        );
+      case 'cerrar':
+        return (
+          <>
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </>
+        );
+      case 'fullscreen':
+        return (
+          <>
+            <polyline points="15 3 21 3 21 9" />
+            <polyline points="9 21 3 21 3 15" />
+            <line x1="21" y1="3" x2="14" y2="10" />
+            <line x1="3" y1="21" x2="10" y2="14" />
+          </>
+        );
+      case 'mic':
+        return (
+          <>
+            <rect x="9" y="2" width="6" height="11" rx="3" />
+            <path d="M19 10v1a7 7 0 0 1-14 0v-1" />
+            <line x1="12" y1="18" x2="12" y2="22" />
+            <line x1="8" y1="22" x2="16" y2="22" />
+          </>
+        );
+      case 'camara':
+        return (
+          <>
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+            <circle cx="12" cy="13" r="4" />
+          </>
+        );
+      case 'pasos':
+        return (
+          <>
+            <circle cx="12" cy="12" r="9" />
+            <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
+          </>
+        );
+      case 'biblia':
+        return (
+          <>
+            <path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2z" />
+            <path d="M22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z" />
+          </>
+        );
+      case 'audio':
+        return (
+          <>
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+          </>
+        );
+      case 'opcion':
+      default:
+        return (
+          <>
+            <polygon points="12 2 22 12 12 22 2 12 12 2" />
+            <circle cx="12" cy="12" r="3" />
+          </>
+        );
+    }
+  };
+
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.65"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      {renderTrazado()}
+    </svg>
+  );
+}
+
+/* ==========================================================================
+   NORMALIZADOR DE CITAS BÍBLICAS PARA VOZ NATURAL (EVITA LEER "3:15" COMO HORA)
+   ========================================================================== */
+function formatearCitasParaLocucion(textoOriginal) {
+  if (!textoOriginal) return '';
+  let t = textoOriginal;
+
+  // Expandir abreviaturas bíblicas comunes
+  t = t.replace(/\ba\.\s*E\.\s*C\./gi, 'antes de nuestra era');
+  t = t.replace(/\bE\.\s*C\./gi, 'de nuestra era');
+  t = t.replace(/\bGén\./gi, 'Génesis');
+  t = t.replace(/\bÉx\./gi, 'Éxodo');
+  t = t.replace(/\bLev\./gi, 'Levítico');
+  t = t.replace(/\bNúm\./gi, 'Números');
+  t = t.replace(/\bDeut\./gi, 'Deuteronomio');
+  t = t.replace(/\b2\s*Sam\./gi, 'Segundo de Samuel');
+  t = t.replace(/\b1\s*Sam\./gi, 'Primero de Samuel');
+  t = t.replace(/\b2\s*Crón\./gi, 'Segundo de Crónicas');
+  t = t.replace(/\b1\s*Crón\./gi, 'Primero de Crónicas');
+  t = t.replace(/\bMiq\./gi, 'Miqueas');
+  t = t.replace(/\bDan\./gi, 'Daniel');
+  t = t.replace(/\bIsa\./gi, 'Isaías');
+  t = t.replace(/\bMat\./gi, 'Mateo');
+  t = t.replace(/\bGál\./gi, 'Gálatas');
+  t = t.replace(/\bApoc\./gi, 'Apocalipsis');
+  t = t.replace(/\bRev\./gi, 'Revelación');
+
+  // Reemplazar "Capítulo:Versículo-Versículo" tras punto y coma: ej. "; 49:8-10" -> ", y capítulo 49, versículos 8 al 10"
+  t = t.replace(/;\s*(\d+):(\d+)-(\d+)/g, ', y capítulo $1, versículos $2 al $3');
+  // Reemplazar "; 4:4" -> ", y capítulo 4, versículo 4"
+  t = t.replace(/;\s*(\d+):(\d+)/g, ', y capítulo $1, versículo $2');
+  // Reemplazar "22:20, 28-30" -> "capítulo 22, versículo 20, y 28 al 30"
+  t = t.replace(/(\d+):(\d+),\s*(\d+)-(\d+)/g, 'capítulo $1, versículo $2, y versículos $3 al $4');
+  // Reemplazar "3:15, 16" -> "capítulo 3, versículos 15 y 16"
+  t = t.replace(/(\d+):(\d+),\s*(\d+)/g, 'capítulo $1, versículos $2 y $3');
+  // Reemplazar "22:16-18" -> "capítulo 22, versículos 16 al 18"
+  t = t.replace(/(\d+):(\d+)-(\d+)/g, 'capítulo $1, versículos $2 al $3');
+  // Reemplazar "3:15" -> "capítulo 3, versículo 15"
+  t = t.replace(/(\d+):(\d+)/g, 'capítulo $1, versículo $2');
+
+  return t;
+}
 
 /* ==========================================================================
    CATÁLOGO DE LOS 6 ARQUETIPOS DEL SYSTEM DM Y LOS 8 ROLES DE JUGADOR
@@ -22,79 +288,85 @@ const CATALOGO_DMS = [
     id: 'pastor',
     nombre: 'El Pastor Amoroso',
     subtitulo: 'Cálido, paciente y consolador',
-    icono: '🌿',
+    iconoTipo: 'pastor',
     colorHex: '#10b981',
     colorSecundario: '#34d399',
-    pitchVoz: 0.96,
-    rateVoz: 0.95,
-    introHistoria: 'Bienvenidos, queridos amigos. Soy su compañero de estudio en este viaje a través de las ocho eras bíblicas. Juntos veremos cómo Jehová fue revelando paso a paso el Secreto Sagrado desde Edén hasta el Reino Mesiánico. En cada turno les indicaré qué pasaje abrir en su Biblia física y qué acción realizar en la Tablet. ¿Me dan su permiso para comenzar?'
+    pitchVoz: 1.0,
+    rateVoz: 0.96,
+    introHistoria:
+      'Bienvenidos, queridos amigos. Soy su compañero de estudio en este viaje a través de las ocho eras bíblicas. Juntos veremos cómo Jehová fue revelando paso a paso el Secreto Sagrado desde Edén hasta el Reino Mesiánico. En cada turno les indicaré qué pasaje abrir en su Biblia física y qué acción realizar en la Tablet. ¿Me dan su permiso para comenzar?'
   },
   {
     id: 'historiador',
     nombre: 'El Historiador Dedicado',
     subtitulo: 'Cronología exacta, mapas y linajes',
-    icono: '📜',
+    iconoTipo: 'historiador',
     colorHex: '#38bdf8',
     colorSecundario: '#60a5fa',
     pitchVoz: 1.0,
     rateVoz: 1.0,
-    introHistoria: 'Saludos, investigadores de las Escrituras. Como su cronista y compañero de estudio, los guiaré por las ocho eras históricas desde el año 4026 antes de nuestra era hasta el cumplimiento final en Revelación. En cada desafío verificaremos citas, fechas y pruebas en su Biblia impresa. ¿Me conceden su permiso para iniciar la travesía?'
+    introHistoria:
+      'Saludos, investigadores de las Escrituras. Como su cronista y compañero de estudio, los guiaré por las ocho eras históricas desde el año 4026 antes de nuestra era hasta el cumplimiento final en Revelación. En cada desafío verificaremos citas, fechas y pruebas en su Biblia impresa. ¿Me conceden su permiso para iniciar la travesía?'
   },
   {
     id: 'profeta',
     nombre: 'El Profeta Exhortador',
     subtitulo: 'Sombras sagradas y visiones proféticas',
-    icono: '🔥',
+    iconoTipo: 'profeta',
     colorHex: '#a855f7',
     colorSecundario: '#f59e0b',
-    pitchVoz: 0.92,
+    pitchVoz: 0.96,
     rateVoz: 0.98,
-    introHistoria: '¡Presten atención a la palabra profética! Como coesclavo de ustedes, hoy contemplaremos cómo cada sacrificio, pacto y profecía apuntaba con precisión infalible hacia el Mesías. Tengan lista su Biblia física y su discernimiento. ¿Me dan su permiso para abrir el primer sello?'
+    introHistoria:
+      '¡Presten atención a la palabra profética! Como coesclavo de ustedes, hoy contemplaremos cómo cada sacrificio, pacto y profecía apuntaba con precisión infalible hacia el Mesías. Tengan lista su Biblia física y su discernimiento. ¿Me dan su permiso para abrir el primer sello?'
   },
   {
     id: 'rey',
     nombre: 'El Rey Valiente',
     subtitulo: 'Pactos reales y defensa de la Soberanía',
-    icono: '👑',
+    iconoTipo: 'rey',
     colorHex: '#f59e0b',
     colorSecundario: '#fbbf24',
-    pitchVoz: 0.9,
-    rateVoz: 0.96,
-    introHistoria: '¡Bienvenidos a la sala del pacto! A lo largo de ocho eras veremos cómo Jehová defendió Su legítima Soberanía y protegió el derecho legal al trono de Su Rey Ungido. Yo dirigiré el orden de los turnos y les indicaré cómo superar cada prueba. ¿Me dan su permiso para comenzar?'
+    pitchVoz: 0.95,
+    rateVoz: 0.97,
+    introHistoria:
+      '¡Bienvenidos a la sala del pacto! A lo largo de ocho eras veremos cómo Jehová defendió Su legítima Soberanía y protegió el derecho legal al trono de Su Rey Ungido. Yo dirigiré el orden de los turnos y les indicaré cómo superar cada prueba. ¿Me dan su permiso para comenzar?'
   },
   {
     id: 'angel',
     nombre: 'El Ángel Mensajero',
     subtitulo: 'Siervo revelador (Apocalipsis 19:10)',
-    icono: '✨',
+    iconoTipo: 'angel',
     colorHex: '#22d3ee',
     colorSecundario: '#818cf8',
-    pitchVoz: 1.08,
-    rateVoz: 0.98,
-    introHistoria: '¡Adoren a Dios! Todo lo que soy es un coesclavo de ustedes y de sus hermanos. Hoy recorreremos las cosas en las que los mismos ángeles deseaban mirar con atención a medida que se desvelaba el Secreto Sagrado. Abran sus Biblias y preparen su corazón. ¿Me dan su permiso para comenzar?'
+    pitchVoz: 1.04,
+    rateVoz: 0.99,
+    introHistoria:
+      '¡Adoren a Dios! Todo lo que soy es un coesclavo de ustedes y de sus hermanos. Hoy recorreremos las cosas en las que los mismos ángeles deseaban mirar con atención a medida que se desvelaba el Secreto Sagrado. Abran sus Biblias y preparen su corazón. ¿Me dan su permiso para comenzar?'
   },
   {
     id: 'guerrero',
     nombre: 'El Poderoso Guerrero',
     subtitulo: 'Combate espiritual y firmeza bajo prueba',
-    icono: '⚔️',
+    iconoTipo: 'guerrero',
     colorHex: '#f97316',
     colorSecundario: '#ef4444',
-    pitchVoz: 0.88,
-    rateVoz: 1.02,
-    introHistoria: '¡Empuñen la Espada del Espíritu, que es la Palabra de Dios! La Serpiente original intentó quebrar la fe de los siervos leales y cortar el linaje mesiánico en cada época, pero jamás pudo vencer el propósito de Jehová. ¿Están listos y me dan su permiso para entrar en acción?'
+    pitchVoz: 0.94,
+    rateVoz: 1.01,
+    introHistoria:
+      '¡Empuñen la Espada del Espíritu, que es la Palabra de Dios! La Serpiente original intentó quebrar la fe de los siervos leales y cortar el linaje mesiánico en cada época, pero jamás pudo vencer el propósito de Jehová. ¿Están listos y me dan su permiso para entrar en acción?'
   }
 ];
 
 const CLASES_ROLES = [
-  { id: 'escriba', nombre: 'El Escriba', icono: '📜', color: '#38bdf8', ventaja: 'Ilumina pistas conectadas directamente con la cita bíblica' },
-  { id: 'sacerdote', nombre: 'El Sacerdote', icono: '🏛️', color: '#facc15', ventaja: 'Escudo de Expiación: evita perder Convicción ante un error' },
-  { id: 'profeta', nombre: 'El Profeta', icono: '👁️', color: '#c084fc', ventaja: 'Luz Profética: descarta 2 opciones falsas en pantalla' },
-  { id: 'noble', nombre: 'El Noble', icono: '👑', color: '#fb7185', ventaja: 'Decreto Real: puede participar sin entrar en enfriamiento' },
-  { id: 'mayordomo', nombre: 'El Mayordomo', icono: '💼', color: '#34d399', ventaja: 'Archivo Real: muestra contexto histórico y arqueológico' },
-  { id: 'juez', nombre: 'El Juez', icono: '🛡️', color: '#fb923c', ventaja: 'Llamado de Valor: otorga +1 Convicción extra al acertar' },
-  { id: 'proselito', nombre: 'El Prosélito', icono: '🕊️', color: '#22d3ee', ventaja: 'Hambre de Verdad: restaura +1 Convicción al explicar la verdad' },
-  { id: 'patriarca', nombre: 'El Patriarca', icono: '🌾', color: '#818cf8', ventaja: 'Bendición Ancestral: reactiva a un compañero en enfriamiento' }
+  { id: 'escriba', nombre: 'El Escriba', iconoTipo: 'escriba', color: '#38bdf8', ventaja: 'Ilumina pistas conectadas directamente con la cita bíblica' },
+  { id: 'sacerdote', nombre: 'El Sacerdote', iconoTipo: 'sacerdote', color: '#facc15', ventaja: 'Escudo de Expiación: evita perder Convicción ante un error' },
+  { id: 'profeta', nombre: 'El Profeta', iconoTipo: 'profeta', color: '#c084fc', ventaja: 'Luz Profética: descarta 2 opciones falsas en pantalla' },
+  { id: 'noble', nombre: 'El Noble', iconoTipo: 'noble', color: '#fb7185', ventaja: 'Decreto Real: otorga +1 de Convicción extra al equipo al acertar' },
+  { id: 'mayordomo', nombre: 'El Mayordomo', iconoTipo: 'mayordomo', color: '#34d399', ventaja: 'Archivo Real: muestra contexto histórico y arqueológico' },
+  { id: 'juez', nombre: 'El Juez', iconoTipo: 'juez', color: '#fb923c', ventaja: 'Llamado de Valor: otorga +1 Convicción extra al acertar' },
+  { id: 'proselito', nombre: 'El Prosélito', iconoTipo: 'proselito', color: '#22d3ee', ventaja: 'Hambre de Verdad: restaura +1 Convicción al explicar la verdad' },
+  { id: 'patriarca', nombre: 'El Patriarca', iconoTipo: 'patriarca', color: '#818cf8', ventaja: 'Bendición Ancestral: puede usar su poder para reactivar a un aliado' }
 ];
 
 const TITULOS_OCHO_ERAS = [
@@ -118,7 +390,7 @@ function OrbeLiquidoReactivo({
   tamano = 220,
   etiquetaSuperior = '',
   nombreCentral = '',
-  iconoCentral = '',
+  iconoTipo = 'estrella',
   enEsquina = false,
   onClick = null
 }) {
@@ -142,7 +414,6 @@ function OrbeLiquidoReactivo({
       const cy = tamano / 2;
       const radioBase = tamano * 0.36;
 
-      // Velocidad y expansión moduladas por la voz en tiempo real
       const energia = Math.min(1.2, amplitudVoz * 1.6);
       faseRef.current += 0.032 + energia * 0.095;
       const f = faseRef.current;
@@ -150,7 +421,6 @@ function OrbeLiquidoReactivo({
       ctx.save();
       ctx.globalCompositeOperation = 'screen';
 
-      // 3 Capas de fluido orgánico (Metaballs / Ondas armónicas)
       const capas = [
         { color: colorPrimario, velocidad: 1.0, desfase: 0, escala: 1.0 + energia * 0.22 },
         { color: colorSecundario, velocidad: -1.3, desfase: 2.1, escala: 0.92 + energia * 0.28 },
@@ -202,25 +472,25 @@ function OrbeLiquidoReactivo({
         onClick ? 'cursor-pointer hover:scale-105' : ''
       }`}
     >
-      {/* Fluido Interno Reactivo */}
       <canvas
         ref={canvasOrbRef}
         style={{ width: tamano, height: tamano }}
         className="absolute inset-0 pointer-events-none"
       />
 
-      {/* Reflejo Especular Superior de Cristal */}
       <div className="absolute top-2 left-1/4 right-1/4 h-1/4 rounded-full bg-gradient-to-b from-white/50 to-transparent pointer-events-none blur-[1px]" />
 
-      {/* Etiqueta y Nombre en el Núcleo del Orbe */}
       <div className="relative z-10 flex flex-col items-center justify-center text-center px-4 pointer-events-none">
-        {iconoCentral && (
-          <span className={`${enEsquina ? 'text-xl' : 'text-3xl'} drop-shadow-[0_2px_10px_rgba(0,0,0,0.6)]`}>
-            {iconoCentral}
-          </span>
+        {iconoTipo && (
+          <div className="text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.85)]">
+            <IconoSagradoSVG
+              tipo={iconoTipo}
+              className={enEsquina ? 'w-5 h-5' : 'w-8 h-8 md:w-9 md:h-9'}
+            />
+          </div>
         )}
         {etiquetaSuperior && !enEsquina && (
-          <span className="text-[10px] font-black tracking-[0.22em] uppercase text-white/90 drop-shadow mt-1">
+          <span className="text-[10px] font-black tracking-[0.22em] uppercase text-white/90 drop-shadow mt-1.5">
             {etiquetaSuperior}
           </span>
         )}
@@ -247,7 +517,7 @@ export default function SecretoSagradoLanding() {
      ------------------------------------------------------------------------ */
   // Pantallas: BOOT_LOGO | MENU_PRINCIPAL | SETUP_NARRADOR | SETUP_PARTIDA | SETUP_ESTILO | CONFIGURACION | RITUAL_PULGARES | JUEGO
   const [pantalla, setPantalla] = useState('BOOT_LOGO');
-  const [faseBoot, setFaseBoot] = useState(0); // 0: Entrada Logo, 1: Brillo máximo, 2: Transición a Menú
+  const [faseBoot, setFaseBoot] = useState(0);
 
   // Configuración del Juego
   const [dmId, setDmId] = useState('historiador');
@@ -260,18 +530,24 @@ export default function SecretoSagradoLanding() {
   const [nuevoNombreInput, setNuevoNombreInput] = useState('');
   const [nuevoRolIdxInput, setNuevoRolIdxInput] = useState(1);
 
-  // Ajustes en "Configuración"
+  // Ajustes en "Configuración" (Con tu API Key ya inyectada por defecto)
   const [geminiApiKey, setGeminiApiKey] = useState(() => {
     try {
-      return localStorage.getItem('ss_gemini_api_key') || process.env.REACT_APP_GEMINI_API_KEY || '';
+      return (
+        localStorage.getItem('ss_gemini_api_key') ||
+        process.env.REACT_APP_GEMINI_API_KEY ||
+        DEFAULT_GEMINI_API_KEY
+      );
     } catch (e) {
-      return '';
+      return DEFAULT_GEMINI_API_KEY;
     }
   });
-  const [volumenMusica, setVolumenMusica] = useState(0.55);
+  const [volumenMusica, setVolumenMusica] = useState(0.65);
   const [vozSinteticaActiva, setVozSinteticaActiva] = useState(true);
   const [vibracionActiva, setVibracionActiva] = useState(true);
   const [sensoresMovimientoActivos, setSensoresMovimientoActivos] = useState(true);
+  const [vocesDisponibles, setVocesDisponibles] = useState([]);
+  const [vozSeleccionadaURI, setVozSeleccionadaURI] = useState('');
 
   /* ------------------------------------------------------------------------
      2. ESTADOS DEL RITUAL DE PULGARES (3 SEGUNDOS) PARA TRANSICIONES DE CONTROL
@@ -284,14 +560,12 @@ export default function SecretoSagradoLanding() {
   });
   const [pulgarIzqActivo, setPulgarIzqActivo] = useState(false);
   const [pulgarDerActivo, setPulgarDerActivo] = useState(false);
-  const [progresoPulgares, setProgresoPulgares] = useState(0); // 0 a 100
+  const [progresoPulgares, setProgresoPulgares] = useState(0);
   const [explosionLuzCompleta, setExplosionLuzCompleta] = useState(false);
 
   /* ------------------------------------------------------------------------
      3. ESTADOS DEL JUEGO EN VIVO Y COREOGRAFÍA DEL ORBE
      ------------------------------------------------------------------------ */
-  // Sub-fases dentro de JUEGO:
-  // INTRO_HISTORIA -> ELEGIR_JUGADOR -> ANIMACION_DESVANECER_OTROS -> DM_PREGUNTA -> JUGADOR_ACTIVO -> REVELACION_HILO -> FIN_PARTIDA
   const [subFaseJuego, setSubFaseJuego] = useState('INTRO_HISTORIA');
   const [eraActualNum, setEraActualNum] = useState(1);
   const [indiceRetoEnEra, setIndiceRetoEnEra] = useState(0);
@@ -330,34 +604,66 @@ export default function SecretoSagradoLanding() {
   const retosMetaPorEra = modoEstilo === 'EXPRESS' ? 1 : 2;
 
   /* ==========================================================================
-     EFECTO 1: ANIMACIÓN DE ARRANQUE (BOOT CON EL LOGO OFICIAL)
+     FUNCIÓN PARA ACTIVAR PANTALLA COMPLETA (OCULTAR BARRAS DEL NAVEGADOR)
      ========================================================================== */
-  useEffect(() => {
-    const t1 = setTimeout(() => setFaseBoot(1), 400);
-    const t2 = setTimeout(() => setFaseBoot(2), 2600);
-    const t3 = setTimeout(() => setPantalla('MENU_PRINCIPAL'), 3500);
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
-    };
+  const activarPantallaCompleta = useCallback(() => {
+    try {
+      const elem = document.documentElement;
+      if (!document.fullscreenElement) {
+        if (elem.requestFullscreen) {
+          elem.requestFullscreen().catch(() => {});
+        } else if (elem.webkitRequestFullscreen) {
+          elem.webkitRequestFullscreen();
+        }
+      }
+    } catch (e) {}
   }, []);
 
+  const alternarPantallaCompleta = useCallback(() => {
+    try {
+      if (!document.fullscreenElement) {
+        activarPantallaCompleta();
+      } else if (document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+    } catch (e) {}
+  }, [activarPantallaCompleta]);
+
   /* ==========================================================================
-     EFECTO 2: MÚSICA DEL MENÚ Y SETUP (SE DETIENE AL INICIAR EL JUEGO REAL)
+     EFECTO 1: ANIMACIÓN DE ARRANQUE Y PRECARGA INMEDIATA DEL AUDIO
      ========================================================================== */
   useEffect(() => {
-    if (!audioMenuRef.current) {
-      const audio = new Audio(URL_MUSICA_MENU);
-      audio.loop = true;
-      audio.volume = volumenMusica;
-      audioMenuRef.current = audio;
-    } else {
+    // Precargar la música desde el segundo 0
+    const audio = new Audio(URL_MUSICA_MENU);
+    audio.preload = 'auto';
+    audio.loop = true;
+    audio.volume = volumenMusica;
+    audioMenuRef.current = audio;
+    audio.load();
+
+    const t1 = setTimeout(() => setFaseBoot(1), 250);
+    return () => clearTimeout(t1);
+  }, []);
+
+  const entrarDesdeBoot = () => {
+    activarPantallaCompleta();
+    if (audioMenuRef.current) {
       audioMenuRef.current.volume = volumenMusica;
+      audioMenuRef.current.currentTime = 0;
+      audioMenuRef.current.play().catch(() => {});
     }
+    setFaseBoot(2);
+    setTimeout(() => setPantalla('MENU_PRINCIPAL'), 550);
+  };
+
+  /* ==========================================================================
+     EFECTO 2: GESTIÓN DE MÚSICA DEL MENÚ (SE DETIENE AL INICIAR EL JUEGO REAL)
+     ========================================================================== */
+  useEffect(() => {
+    if (!audioMenuRef.current) return;
+    audioMenuRef.current.volume = volumenMusica;
 
     const enMenuOSetup = [
-      'BOOT_LOGO',
       'MENU_PRINCIPAL',
       'SETUP_NARRADOR',
       'SETUP_PARTIDA',
@@ -366,11 +672,10 @@ export default function SecretoSagradoLanding() {
     ].includes(pantalla);
 
     if (enMenuOSetup) {
-      audioMenuRef.current.play().catch(() => {
-        // Se desbloquea automáticamente al primer toque del usuario en la pantalla
-      });
+      if (audioMenuRef.current.paused) {
+        audioMenuRef.current.play().catch(() => {});
+      }
     } else if (pantalla === 'JUEGO') {
-      // Fade out suave y parada total cuando comienza el juego real
       const audio = audioMenuRef.current;
       let vol = audio.volume;
       const fadeInterval = setInterval(() => {
@@ -382,7 +687,7 @@ export default function SecretoSagradoLanding() {
           audio.currentTime = 0;
           clearInterval(fadeInterval);
         }
-      }, 80);
+      }, 75);
       return () => clearInterval(fadeInterval);
     }
   }, [pantalla, volumenMusica]);
@@ -391,7 +696,8 @@ export default function SecretoSagradoLanding() {
     if (
       audioMenuRef.current &&
       audioMenuRef.current.paused &&
-      pantalla !== 'JUEGO'
+      pantalla !== 'JUEGO' &&
+      pantalla !== 'RITUAL_PULGARES'
     ) {
       audioMenuRef.current.volume = volumenMusica;
       audioMenuRef.current.play().catch(() => {});
@@ -399,12 +705,45 @@ export default function SecretoSagradoLanding() {
   };
 
   /* ==========================================================================
-     EFECTO 3: SÍNTESIS DE VOZ DEL SYSTEM DM + PULSO LÍQUIDO DEL ORBE
+     EFECTO 3: CARGA DE VOCES NEURONALES NATURALES + LECTURA DE CITAS BÍBLICAS
      ========================================================================== */
+  useEffect(() => {
+    if (typeof window.speechSynthesis === 'undefined') return;
+
+    const cargarVoces = () => {
+      const todas = window.speechSynthesis.getVoices() || [];
+      const espanol = todas.filter((v) => v.lang && v.lang.toLowerCase().startsWith('es'));
+
+      // Ordenar priorizando voces "Natural", "Online", "Neural", "Google", "Premium"
+      espanol.sort((a, b) => {
+        const puntA =
+          (a.name.includes('Natural') ? 10 : 0) +
+          (a.name.includes('Online') ? 8 : 0) +
+          (a.name.includes('Google') ? 6 : 0) +
+          (!a.localService ? 4 : 0);
+        const puntB =
+          (b.name.includes('Natural') ? 10 : 0) +
+          (b.name.includes('Online') ? 8 : 0) +
+          (b.name.includes('Google') ? 6 : 0) +
+          (!b.localService ? 4 : 0);
+        return puntB - puntA;
+      });
+
+      setVocesDisponibles(espanol);
+      if (espanol.length > 0 && !vozSeleccionadaURI) {
+        setVozSeleccionadaURI(espanol[0].voiceURI);
+      }
+    };
+
+    cargarVoces();
+    window.speechSynthesis.onvoiceschanged = cargarVoces;
+  }, [vozSeleccionadaURI]);
+
   const hablarConVozDM = useCallback(
-    (texto, alTerminarCallback = null) => {
+    (textoCrudo, alTerminarCallback = null) => {
+      const textoLimpio = formatearCitasParaLocucion(textoCrudo);
+
       if (!vozSinteticaActiva || typeof window.speechSynthesis === 'undefined') {
-        // Simulación de pulso del orbe durante 3.2 segundos si la voz está desactivada
         let ticks = 0;
         const sim = setInterval(() => {
           ticks++;
@@ -419,20 +758,37 @@ export default function SecretoSagradoLanding() {
       }
 
       window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(texto);
-      utterance.lang = 'es-ES';
+      const utterance = new SpeechSynthesisUtterance(textoLimpio);
+
+      const voces = window.speechSynthesis.getVoices() || [];
+      const vozElegida =
+        voces.find((v) => v.voiceURI === vozSeleccionadaURI) ||
+        voces.find(
+          (v) =>
+            v.lang?.toLowerCase().startsWith('es') &&
+            (v.name.includes('Natural') || v.name.includes('Online') || v.name.includes('Google'))
+        ) ||
+        voces.find((v) => v.lang?.toLowerCase().startsWith('es'));
+
+      if (vozElegida) {
+        utterance.voice = vozElegida;
+        utterance.lang = vozElegida.lang;
+      } else {
+        utterance.lang = 'es-ES';
+      }
+
       utterance.pitch = dmPerfil.pitchVoz || 1.0;
       utterance.rate = dmPerfil.rateVoz || 1.0;
 
       let animInterval = null;
       utterance.onstart = () => {
         animInterval = setInterval(() => {
-          setAmplitudVozDM(0.25 + Math.random() * 0.7);
-        }, 90);
+          setAmplitudVozDM(0.28 + Math.random() * 0.68);
+        }, 85);
       };
 
       utterance.onboundary = () => {
-        setAmplitudVozDM(0.5 + Math.random() * 0.5);
+        setAmplitudVozDM(0.55 + Math.random() * 0.45);
       };
 
       const finalizar = () => {
@@ -445,11 +801,11 @@ export default function SecretoSagradoLanding() {
       utterance.onerror = finalizar;
       window.speechSynthesis.speak(utterance);
     },
-    [vozSinteticaActiva, dmPerfil]
+    [vozSinteticaActiva, dmPerfil, vozSeleccionadaURI]
   );
 
   /* ==========================================================================
-     EFECTO 4: CAPA DE FONDO EN CANVAS (NIEBLA EN MONTAÑA, BANDADA DE AVES Y BRILLO)
+     EFECTO 4: CAPA ATMOSFÉRICA VISIBLE (NIEBLA EN MOVIMIENTO, AVES Y BRILLO EN LA CUMBRE)
      ========================================================================== */
   useEffect(() => {
     const canvas = canvasAtmosferaRef.current;
@@ -464,93 +820,142 @@ export default function SecretoSagradoLanding() {
     ajustar();
     window.addEventListener('resize', ajustar);
 
-    // 1. Bancos de niebla suave deslizándose sobre la montaña
-    const bancosNiebla = Array.from({ length: 7 }, (_, i) => ({
-      x: Math.random() * window.innerWidth,
-      y: window.innerHeight * (0.32 + (i % 4) * 0.14),
-      radioX: window.innerWidth * (0.28 + Math.random() * 0.22),
-      radioY: window.innerHeight * (0.09 + Math.random() * 0.06),
-      velocidad: (i % 2 === 0 ? 1 : -1) * (0.18 + Math.random() * 0.25),
-      opacidad: 0.12 + Math.random() * 0.14
+    // 1. Bancos densos y visibles de niebla cruzando la montaña y el valle
+    const bancosNiebla = Array.from({ length: 10 }, (_, i) => ({
+      x: (i / 10) * window.innerWidth * 1.4 - window.innerWidth * 0.2,
+      y: window.innerHeight * (0.28 + (i % 5) * 0.13),
+      radioX: window.innerWidth * (0.26 + (i % 3) * 0.12),
+      radioY: window.innerHeight * (0.08 + (i % 3) * 0.045),
+      velocidad: (i % 2 === 0 ? 1 : -1) * (0.45 + (i % 4) * 0.22),
+      opacidad: 0.26 + (i % 3) * 0.08
     }));
 
-    // 2. Bandada de aves volando en la distancia
-    const bandadaAves = Array.from({ length: 14 }, (_, i) => ({
-      x: -120 - i * 28 + Math.random() * 40,
-      y: window.innerHeight * 0.22 + (i % 5) * 14 + Math.random() * 12,
-      escala: 0.55 + Math.random() * 0.45,
-      velX: 0.65 + Math.random() * 0.25,
-      velY: -0.06 + Math.random() * 0.12,
-      faseAla: Math.random() * Math.PI * 2
+    // 2. Bandada de aves volando en la distancia a través del cielo
+    const bandadaAves = Array.from({ length: 16 }, (_, i) => ({
+      x: window.innerWidth * 0.15 + i * 32 + (i % 3) * 14,
+      y: window.innerHeight * 0.16 + Math.abs(i - 8) * 9,
+      escala: 0.7 + (i % 4) * 0.18,
+      velX: 0.85 + (i % 3) * 0.18,
+      velY: -0.05 + (i % 2) * 0.1,
+      faseAla: i * 0.55
     }));
 
-    // 3. Partículas de brillo solar flotante (Animated Shine)
-    const destellosSol = Array.from({ length: 38 }, () => ({
+    // 3. Partículas luminosas ascendentes
+    const destellosSol = Array.from({ length: 45 }, () => ({
       x: Math.random() * window.innerWidth,
       y: Math.random() * window.innerHeight,
-      r: Math.random() * 2.4 + 0.8,
-      vx: (Math.random() - 0.3) * 0.35,
-      vy: -Math.random() * 0.3 - 0.08,
+      r: Math.random() * 2.8 + 1.0,
+      vx: (Math.random() - 0.3) * 0.45,
+      vy: -Math.random() * 0.4 - 0.12,
       faseBrillo: Math.random() * Math.PI * 2
     }));
 
     let tiempo = 0;
 
     const animarPaisaje = () => {
-      tiempo += 0.018;
+      tiempo += 0.022;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // A. Resplandor Solar Animado Superior (Animated Shine)
-      const pulsoSol = 0.22 + Math.sin(tiempo * 0.8) * 0.08;
-      const gradSol = ctx.createRadialGradient(
-        canvas.width * 0.5,
-        canvas.height * 0.12,
-        10,
-        canvas.width * 0.5,
-        canvas.height * 0.18,
-        canvas.width * 0.65
-      );
-      gradSol.addColorStop(0, `rgba(255, 251, 235, ${pulsoSol + 0.15})`);
-      gradSol.addColorStop(0.45, `rgba(253, 230, 138, ${pulsoSol * 0.55})`);
-      gradSol.addColorStop(1, 'transparent');
-      ctx.fillStyle = gradSol;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      // A. BRILLO ANIMADO EN LA CUMBRE DE LA MONTAÑA Y EL EMBLEMA (DERECHA)
+      const cumbreX = canvas.width * 0.84;
+      const cumbreY = canvas.height * 0.15;
+      const emblemaX = canvas.width * 0.84;
+      const emblemaY = canvas.height * 0.43;
 
-      // B. Bandada de Aves Lejanas con Aleteo Orgánico
       ctx.save();
-      ctx.strokeStyle = 'rgba(30, 41, 59, 0.58)';
+      ctx.globalCompositeOperation = 'screen';
+
+      // Resplandor pulsante sobre la cumbre nevada
+      const pulsoCumbre = 0.38 + Math.sin(tiempo * 1.4) * 0.16;
+      const gradCumbre = ctx.createRadialGradient(
+        cumbreX,
+        cumbreY,
+        8,
+        cumbreX,
+        cumbreY,
+        canvas.width * 0.32
+      );
+      gradCumbre.addColorStop(0, `rgba(255, 255, 255, ${pulsoCumbre + 0.25})`);
+      gradCumbre.addColorStop(0.3, `rgba(254, 240, 138, ${pulsoCumbre})`);
+      gradCumbre.addColorStop(0.65, `rgba(56, 189, 248, ${pulsoCumbre * 0.4})`);
+      gradCumbre.addColorStop(1, 'transparent');
+      ctx.fillStyle = gradCumbre;
+      ctx.beginPath();
+      ctx.arc(cumbreX, cumbreY, canvas.width * 0.32, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Rayos solares rotatorios que emanan de la cumbre de la montaña
+      ctx.save();
+      ctx.translate(cumbreX, cumbreY);
+      ctx.rotate(tiempo * 0.08);
+      for (let r = 0; r < 8; r++) {
+        ctx.rotate(Math.PI / 4);
+        const gradRayo = ctx.createLinearGradient(0, 0, canvas.width * 0.28, 0);
+        gradRayo.addColorStop(0, `rgba(254, 249, 195, ${pulsoCumbre * 0.55})`);
+        gradRayo.addColorStop(1, 'transparent');
+        ctx.fillStyle = gradRayo;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(canvas.width * 0.28, -22);
+        ctx.lineTo(canvas.width * 0.28, 22);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
+
+      // Destello vivo sobre el emblema incrustado en la montaña
+      const pulsoEmblema = 0.42 + Math.cos(tiempo * 2.1) * 0.22;
+      const gradEmblema = ctx.createRadialGradient(
+        emblemaX,
+        emblemaY,
+        4,
+        emblemaX,
+        emblemaY,
+        canvas.width * 0.14
+      );
+      gradEmblema.addColorStop(0, `rgba(255, 255, 255, ${pulsoEmblema + 0.3})`);
+      gradEmblema.addColorStop(0.4, `rgba(253, 224, 71, ${pulsoEmblema})`);
+      gradEmblema.addColorStop(1, 'transparent');
+      ctx.fillStyle = gradEmblema;
+      ctx.beginPath();
+      ctx.arc(emblemaX, emblemaY, canvas.width * 0.14, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // B. BANDADA DE AVES VOLANDO EN LA DISTANCIA
+      ctx.save();
+      ctx.strokeStyle = 'rgba(15, 23, 42, 0.72)';
       ctx.lineCap = 'round';
       bandadaAves.forEach((ave) => {
         ave.x += ave.velX;
-        ave.y += ave.velY + Math.sin(tiempo * 1.5 + ave.faseAla) * 0.15;
-        ave.faseAla += 0.14;
+        ave.y += ave.velY + Math.sin(tiempo * 1.6 + ave.faseAla) * 0.18;
+        ave.faseAla += 0.15;
 
-        if (ave.x > canvas.width + 140) {
-          ave.x = -120;
-          ave.y = canvas.innerHeight * (0.16 + Math.random() * 0.18);
+        // Corrección del bug anterior: usar canvas.height en lugar de canvas.innerHeight
+        if (ave.x > canvas.width + 120) {
+          ave.x = -100;
+          ave.y = canvas.height * (0.12 + Math.random() * 0.22);
         }
 
-        const aleteoY = Math.sin(ave.faseAla) * 5.5 * ave.escala;
-        const anchoAla = 9.5 * ave.escala;
+        const aleteoY = Math.sin(ave.faseAla) * 6.5 * ave.escala;
+        const anchoAla = 11 * ave.escala;
 
-        ctx.lineWidth = 1.6 * ave.escala;
+        ctx.lineWidth = 1.9 * ave.escala;
         ctx.beginPath();
-        // Ala izquierda
         ctx.moveTo(ave.x - anchoAla, ave.y - aleteoY);
-        ctx.quadraticCurveTo(ave.x - anchoAla * 0.4, ave.y - aleteoY * 0.4, ave.x, ave.y);
-        // Ala derecha
-        ctx.quadraticCurveTo(ave.x + anchoAla * 0.4, ave.y - aleteoY * 0.4, ave.x + anchoAla, ave.y - aleteoY);
+        ctx.quadraticCurveTo(ave.x - anchoAla * 0.4, ave.y - aleteoY * 0.35, ave.x, ave.y);
+        ctx.quadraticCurveTo(ave.x + anchoAla * 0.4, ave.y - aleteoY * 0.35, ave.x + anchoAla, ave.y - aleteoY);
         ctx.stroke();
       });
       ctx.restore();
 
-      // C. Bancos de Niebla Montañosa (Misty Clouds)
+      // C. NUBES Y NIEBLA MÍSTICA EN MOVIMIENTO CONTINUO
       bancosNiebla.forEach((nube) => {
         nube.x += nube.velocidad;
-        if (nube.velocidad > 0 && nube.x - nube.radioX > canvas.width) {
-          nube.x = -nube.radioX;
-        } else if (nube.velocidad < 0 && nube.x + nube.radioX < 0) {
-          nube.x = canvas.width + nube.radioX;
+        if (nube.velocidad > 0 && nube.x - nube.radioX > canvas.width + 100) {
+          nube.x = -nube.radioX - 80;
+        } else if (nube.velocidad < 0 && nube.x + nube.radioX < -100) {
+          nube.x = canvas.width + nube.radioX + 80;
         }
 
         ctx.save();
@@ -558,7 +963,7 @@ export default function SecretoSagradoLanding() {
         ctx.scale(1, nube.radioY / nube.radioX);
         const gradNiebla = ctx.createRadialGradient(0, 0, 10, 0, 0, nube.radioX);
         gradNiebla.addColorStop(0, `rgba(255, 255, 255, ${nube.opacidad})`);
-        gradNiebla.addColorStop(0.55, `rgba(241, 245, 249, ${nube.opacidad * 0.55})`);
+        gradNiebla.addColorStop(0.5, `rgba(241, 245, 249, ${nube.opacidad * 0.65})`);
         gradNiebla.addColorStop(1, 'transparent');
         ctx.fillStyle = gradNiebla;
         ctx.beginPath();
@@ -567,22 +972,22 @@ export default function SecretoSagradoLanding() {
         ctx.restore();
       });
 
-      // D. Motas de Brillo Flotantes
+      // D. MOTAS DE LUZ FLOTANTES
       destellosSol.forEach((d) => {
         d.x += d.vx;
         d.y += d.vy;
-        d.faseBrillo += 0.04;
+        d.faseBrillo += 0.05;
         if (d.y < -10) d.y = canvas.height + 10;
         if (d.x < -10) d.x = canvas.width + 10;
         if (d.x > canvas.width + 10) d.x = -10;
 
-        const alfa = 0.25 + Math.abs(Math.sin(d.faseBrillo)) * 0.65;
+        const alfa = 0.3 + Math.abs(Math.sin(d.faseBrillo)) * 0.7;
         ctx.save();
         ctx.beginPath();
         ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
         ctx.fillStyle = '#fffbeb';
         ctx.globalAlpha = alfa;
-        ctx.shadowBlur = 12;
+        ctx.shadowBlur = 14;
         ctx.shadowColor = '#fde047';
         ctx.fill();
         ctx.restore();
@@ -645,18 +1050,15 @@ export default function SecretoSagradoLanding() {
       return;
     }
 
-    // Incremento durante 3.0 segundos (30 intervalos de 100ms)
     const timer = setInterval(() => {
       setProgresoPulgares((prev) => {
         const nuevo = Math.min(100, prev + 3.4);
 
-        // Vibración progresiva más y más intensa en la Tablet
         if (vibracionActiva && navigator.vibrate) {
           const intensidadMs = Math.floor(25 + (nuevo / 100) * 95);
           navigator.vibrate(intensidadMs);
         }
 
-        // Sonido ascendente de energía
         if (Math.floor(nuevo) % 12 === 0) {
           sonarAcordeSintetico([260 + nuevo * 4.8, 390 + nuevo * 5.2], 0.18);
         }
@@ -715,7 +1117,6 @@ export default function SecretoSagradoLanding() {
         leerVolumen();
       })
       .catch(() => {
-        // Pulso orgánico suave si no se concedió micrófono ambiental
         let t = 0;
         const loopSuave = () => {
           t += 0.05;
@@ -767,6 +1168,7 @@ export default function SecretoSagradoLanding() {
      FLUJO DEL JUEGO EN VIVO: INICIO, SELECCIÓN DE JUGADOR Y PREGUNTA DEL DM
      ========================================================================== */
   const iniciarJuegoTrasConfiguracion = () => {
+    activarPantallaCompleta();
     lanzarRitualPulgares({
       titulo: 'Ritual de Apertura del Secreto Sagrado',
       subtitulo: 'Sostén la Tablet horizontalmente y mantén ambos pulgares en los círculos durante 3 segundos',
@@ -791,7 +1193,6 @@ export default function SecretoSagradoLanding() {
     setPasosCaminados(0);
     setTranscripcionVoz('');
 
-    // Cargar el reto (desde Gemini si hay API Key, o desde la matriz multimodal de la Era)
     const listaEra = NODOS_MULTIMODALES_POR_ERA[eraNum] || NODOS_MULTIMODALES_POR_ERA[1];
     const retoFallback = listaEra[idxReto % listaEra.length];
     setRetoActual(retoFallback);
@@ -827,11 +1228,9 @@ export default function SecretoSagradoLanding() {
     setJugadorActivoId(jugador.id);
     sonarAcordeSintetico([523.25, 659.25, 783.99], 0.5);
 
-    // 1. Todos los demás jugadores desaparecen con una animación energética
     setSubFaseJuego('ANIMACION_DESVANECER_OTROS');
 
     setTimeout(() => {
-      // 2. Acción de Transición Poderosa cuando el jugador toma el control de la Tablet
       lanzarRitualPulgares({
         titulo: `${jugador.nombre} (${clase.nombre}) Toma el Control`,
         subtitulo: `${jugador.nombre}, coloca ambos pulgares durante 3 segundos para recibir el desafío`,
@@ -842,8 +1241,6 @@ export default function SecretoSagradoLanding() {
 
           const locucionCompleta = `${retoActual.narrativaDM} Busquen en su Biblia física ${retoActual.citaBiblia}. ${retoActual.pregunta} ${retoActual.instruccionInput}`;
           hablarConVozDM(locucionCompleta, () => {
-            // 3. Al terminar la pregunta, el círculo del DM se encoge hacia la esquina superior izquierda
-            // y el círculo del jugador ocupa el centro junto con la pregunta al 70% arriba
             setSubFaseJuego('JUGADOR_ACTIVO');
           });
         }
@@ -852,20 +1249,22 @@ export default function SecretoSagradoLanding() {
   };
 
   /* ==========================================================================
-     RESOLUCIÓN DE DESAFÍOS Y DEVOLUCIÓN DE CONTROL AL SYSTEM DM
+     RESOLUCIÓN DE DESAFÍOS Y ENFRIAMIENTO ESTRICTO POR VUELTAS (TODOS SE APAGAN)
      ========================================================================== */
   const completarTurnoYDevolverControlAlDM = (fueCorrecto, comentarioExtraDM = '') => {
     if (!jugadorActivo) return;
     const clase = CLASES_ROLES[jugadorActivo.rolIdx];
 
-    // Poner al jugador en enfriamiento (gris) hasta que todos los demás jueguen
+    // CORRECCIÓN VIDEO 4: TODOS los jugadores (incluido David / El Noble) entran en enfriamiento
+    // tras su turno hasta que todos los demás hayan jugado en la vuelta actual.
     let nuevaLista = jugadores.map((j) => {
-      if (j.id === jugadorActivo.id && clase.id !== 'noble') {
+      if (j.id === jugadorActivo.id) {
         return { ...j, disponible: false };
       }
       return j;
     });
 
+    // Solo cuando todos los jugadores ya jugaron en esta vuelta se reactivan para la siguiente
     if (!nuevaLista.some((j) => j.disponible)) {
       nuevaLista = nuevaLista.map((j) => ({ ...j, disponible: true }));
       setVueltaNumero((v) => v + 1);
@@ -873,14 +1272,13 @@ export default function SecretoSagradoLanding() {
     setJugadores(nuevaLista);
 
     if (fueCorrecto) {
-      if (clase.id === 'juez' || clase.id === 'proselito') {
+      if (clase.id === 'juez' || clase.id === 'proselito' || clase.id === 'noble') {
         setConviccionHP((hp) => Math.min(10, hp + 1));
       }
     } else if (clase.id !== 'sacerdote') {
       setConviccionHP((hp) => Math.max(1, hp - 1));
     }
 
-    // Acción de transición cuando el jugador devuelve el control al System DM
     lanzarRitualPulgares({
       titulo: `${jugadorActivo.nombre} Devuelve el Control al Guía`,
       subtitulo: 'Mantén ambos pulgares durante 3 segundos para sellar la respuesta y escuchar la revelación',
@@ -1051,6 +1449,7 @@ export default function SecretoSagradoLanding() {
 
   const cargarPartidaGuardada = () => {
     try {
+      activarPantallaCompleta();
       const raw = localStorage.getItem('ss_partida_guardada_v4');
       if (!raw) return;
       const d = JSON.parse(raw);
@@ -1072,26 +1471,32 @@ export default function SecretoSagradoLanding() {
       onClick={desbloquearAudioAlTocar}
       className="relative w-screen h-screen overflow-hidden select-none font-sans text-white bg-slate-950"
     >
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        .font-cinzel { font-family: 'Cinzel', serif; }
+      `}</style>
+
       {/* 1. IMAGEN DE FONDO PERSONALIZADA DE MONTAÑA */}
       <div
-        className="fixed inset-0 z-0 bg-cover bg-center transition-transform duration-[15000ms] ease-out scale-105"
+        className="fixed inset-0 z-0 bg-cover bg-center transition-transform duration-[18000ms] ease-out scale-105"
         style={{ backgroundImage: `url('${URL_FONDO_MONTANA}')` }}
       />
 
-      {/* Sutil velo atmosférico para garantizar contraste con el cristal */}
-      <div className="fixed inset-0 z-0 bg-gradient-to-b from-slate-950/20 via-transparent to-slate-950/45 pointer-events-none" />
+      {/* Sutil velo atmosférico lateral izquierdo para que las letras blancas brillen sobre las nubes */}
+      <div className="fixed inset-0 z-0 bg-gradient-to-r from-slate-950/45 via-transparent to-transparent pointer-events-none" />
+      <div className="fixed inset-0 z-0 bg-gradient-to-b from-slate-950/15 via-transparent to-slate-950/40 pointer-events-none" />
 
-      {/* 2. CAPA ANIMADA EN CANVAS: NIEBLA MÍSTICA, BANDADA DE AVES EN LA DISTANCIA Y BRILLO SOLAR */}
+      {/* 2. CAPA ANIMADA EN CANVAS: NIEBLA MÍSTICA, BANDADA DE AVES Y BRILLO EN LA CUMBRE */}
       <canvas ref={canvasAtmosferaRef} className="fixed inset-0 z-10 pointer-events-none" />
 
       {/* ====================================================================
-          PANTALLA 0: ANIMACIÓN DE ARRANQUE (BOOT CON EL LOGO OFICIAL)
+          PANTALLA 0: ANIMACIÓN DE ARRANQUE (ACTIVA MÚSICA INMEDIATA Y FULLSCREEN)
           ==================================================================== */}
       {pantalla === 'BOOT_LOGO' && (
         <section
-          onClick={() => setPantalla('MENU_PRINCIPAL')}
-          className={`fixed inset-0 z-50 flex flex-col items-center justify-center transition-all duration-1000 cursor-pointer ${
-            faseBoot === 2 ? 'bg-slate-950/0 opacity-0' : 'bg-slate-950/90 opacity-100'
+          onClick={entrarDesdeBoot}
+          className={`fixed inset-0 z-50 flex flex-col items-center justify-center transition-all duration-700 cursor-pointer ${
+            faseBoot === 2 ? 'bg-slate-950/0 opacity-0 pointer-events-none' : 'bg-slate-950/90 opacity-100'
           }`}
         >
           <div
@@ -1103,96 +1508,127 @@ export default function SecretoSagradoLanding() {
                 : 'scale-110 opacity-0'
             }`}
           >
-            {/* Halo luminoso detrás del logo */}
             <div className="absolute -inset-12 rounded-full bg-cyan-400/25 blur-3xl animate-pulse pointer-events-none" />
             <img
               src={URL_LOGO_OFICIAL}
               alt="Secreto Sagrado"
-              className="w-72 md:w-96 object-contain drop-shadow-[0_0_45px_rgba(255,255,255,0.85)]"
+              className="w-60 md:w-80 object-contain drop-shadow-[0_0_45px_rgba(255,255,255,0.85)]"
             />
-            <span className="mt-8 text-xs tracking-[0.35em] uppercase text-white/80 font-bold animate-pulse">
-              Toca para despertar la revelación
-            </span>
+            <h1 className="font-cinzel text-3xl md:text-4xl font-black tracking-[0.2em] uppercase text-white mt-5 drop-shadow-lg">
+              Secreto Sagrado
+            </h1>
+            <p className="font-cinzel text-xs md:text-sm tracking-[0.28em] text-amber-200/90 mt-1">
+              y su magnífica revelación
+            </p>
+            <div className="mt-10 px-7 py-3 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur-xl border border-white/50 text-xs tracking-[0.3em] uppercase text-white font-black animate-pulse shadow-[0_0_30px_rgba(255,255,255,0.35)]">
+              Toca para Iniciar en Pantalla Completa
+            </div>
           </div>
         </section>
       )}
 
       {/* ====================================================================
-          PANTALLA 1: MENÚ PRINCIPAL (TEXTO PURO A LA IZQUIERDA SIN CAJAS)
+          PANTALLA 1: MENÚ PRINCIPAL (LOGO + TÍTULO + LEMA Y OPCIONES A LA IZQUIERDA)
           ==================================================================== */}
       {pantalla === 'MENU_PRINCIPAL' && (
-        <section className="relative z-20 w-full h-full flex items-center justify-between px-10 md:px-24">
-          {/* Opciones a la izquierda: SOLO las palabras sin contenedores, brillan al tocarlas */}
-          <nav className="flex flex-col items-start gap-7">
-            <button
-              onClick={() => {
-                sonarAcordeSintetico([523.25, 659.25, 783.99]);
-                setPantalla('SETUP_NARRADOR');
-              }}
-              className="bg-transparent border-none text-left text-4xl md:text-6xl font-black tracking-wide text-white/90 hover:text-white active:scale-95 transition-all duration-300 hover:translate-x-3 hover:drop-shadow-[0_0_28px_rgba(255,255,255,1)] focus:outline-none"
-            >
-              Iniciar
-            </button>
+        <section className="relative z-20 w-full h-full flex flex-col justify-between px-10 md:px-20 py-10 md:py-14">
+          {/* Botón discreto de Pantalla Completa en la esquina superior derecha */}
+          <button
+            onClick={alternarPantallaCompleta}
+            title="Alternar Pantalla Completa"
+            className="fixed top-6 right-6 z-30 p-3 rounded-full bg-slate-950/35 hover:bg-white/25 backdrop-blur-xl border border-white/35 text-white/90 transition-all"
+          >
+            <IconoSagradoSVG tipo="fullscreen" className="w-5 h-5" />
+          </button>
 
-            {localStorage.getItem('ss_partida_guardada_v4') && (
+          {/* BLOQUE IZQUIERDO: LOGO COMPACTO + SECRETO SAGRADO + Y SU MAGNÍFICA REVELACIÓN */}
+          <div className="flex flex-col items-start max-w-md">
+            <div className="flex flex-col items-center text-center">
+              <img
+                src={URL_LOGO_OFICIAL}
+                alt="Logo Secreto Sagrado"
+                className="w-28 md:w-36 object-contain drop-shadow-[0_8px_25px_rgba(0,0,0,0.65)] animate-[pulse_5s_ease-in-out_infinite]"
+              />
+              <h1 className="font-cinzel text-2xl md:text-3xl font-black tracking-[0.14em] uppercase text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.85)] mt-2">
+                Secreto Sagrado
+              </h1>
+              <p className="font-cinzel text-xs md:text-sm tracking-[0.22em] text-amber-200 font-semibold drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)] mt-0.5">
+                y su magnífica revelación
+              </p>
+            </div>
+
+            {/* OPCIONES DEL MENÚ DEBAJO (SOLO LAS PALABRAS SIN CONTENEDORES, BRILLAN AL TOCAR) */}
+            <nav className="flex flex-col items-start gap-4 mt-12 md:mt-16 pl-2">
               <button
-                onClick={cargarPartidaGuardada}
-                className="bg-transparent border-none text-left text-3xl md:text-5xl font-extrabold tracking-wide text-amber-200/90 hover:text-amber-100 active:scale-95 transition-all duration-300 hover:translate-x-3 hover:drop-shadow-[0_0_28px_rgba(253,224,71,1)] focus:outline-none"
+                onClick={() => {
+                  activarPantallaCompleta();
+                  sonarAcordeSintetico([523.25, 659.25, 783.99]);
+                  setPantalla('SETUP_NARRADOR');
+                }}
+                className="bg-transparent border-none text-left text-3xl md:text-4xl font-extrabold tracking-wide text-white/90 hover:text-white active:scale-95 transition-all duration-300 hover:translate-x-3 drop-shadow-[0_4px_14px_rgba(0,0,0,0.75)] hover:drop-shadow-[0_0_28px_rgba(255,255,255,1)] focus:outline-none"
               >
-                Continuar
+                Iniciar
               </button>
-            )}
 
-            <button
-              onClick={() => {
-                sonarAcordeSintetico([440, 554.37, 659.25]);
-                setPantalla('CONFIGURACION');
-              }}
-              className="bg-transparent border-none text-left text-4xl md:text-6xl font-black tracking-wide text-white/85 hover:text-white active:scale-95 transition-all duration-300 hover:translate-x-3 hover:drop-shadow-[0_0_28px_rgba(255,255,255,1)] focus:outline-none"
-            >
-              Configuración
-            </button>
-          </nav>
+              {localStorage.getItem('ss_partida_guardada_v4') && (
+                <button
+                  onClick={cargarPartidaGuardada}
+                  className="bg-transparent border-none text-left text-2xl md:text-3xl font-extrabold tracking-wide text-amber-200/95 hover:text-amber-100 active:scale-95 transition-all duration-300 hover:translate-x-3 drop-shadow-[0_4px_14px_rgba(0,0,0,0.75)] hover:drop-shadow-[0_0_28px_rgba(253,224,71,1)] focus:outline-none"
+                >
+                  Continuar
+                </button>
+              )}
 
-          {/* Logo Oficial Flotando a la Derecha */}
-          <div className="hidden sm:flex flex-col items-end pointer-events-none">
-            <img
-              src={URL_LOGO_OFICIAL}
-              alt="Logo Secreto Sagrado"
-              className="w-64 md:w-80 object-contain drop-shadow-[0_12px_35px_rgba(0,0,0,0.45)] animate-[pulse_5s_ease-in-out_infinite]"
-            />
+              <button
+                onClick={() => {
+                  sonarAcordeSintetico([440, 554.37, 659.25]);
+                  setPantalla('CONFIGURACION');
+                }}
+                className="bg-transparent border-none text-left text-3xl md:text-4xl font-extrabold tracking-wide text-white/85 hover:text-white active:scale-95 transition-all duration-300 hover:translate-x-3 drop-shadow-[0_4px_14px_rgba(0,0,0,0.75)] hover:drop-shadow-[0_0_28px_rgba(255,255,255,1)] focus:outline-none"
+              >
+                Configuración
+              </button>
+            </nav>
           </div>
+
+          <div />
         </section>
       )}
 
       {/* ====================================================================
-          PASO LINEAL 1: NARRADOR (CAJAS GLASSMORPHIC PARA EL ESTILO DE DM)
+          PASO LINEAL 1: NARRADOR (CAJAS GLASSMORPHIC CON ÍCONOS SVG)
           ==================================================================== */}
       {pantalla === 'SETUP_NARRADOR' && (
         <section className="relative z-20 w-full h-full flex flex-col justify-between p-6 md:p-12">
-          {/* Barra Superior Izquierda: Regresar y Menú Principal */}
-          <header className="flex items-center gap-4">
+          <header className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setPantalla('MENU_PRINCIPAL')}
+                className="px-5 py-2.5 rounded-full bg-slate-950/45 hover:bg-white/30 backdrop-blur-xl border border-white/40 text-xs font-extrabold tracking-wider uppercase transition-all"
+              >
+                ← Regresar
+              </button>
+              <button
+                onClick={() => setPantalla('MENU_PRINCIPAL')}
+                className="px-5 py-2.5 rounded-full bg-slate-950/35 hover:bg-white/20 backdrop-blur-xl border border-white/25 text-xs font-bold tracking-wider uppercase transition-all"
+              >
+                Menú Principal
+              </button>
+            </div>
             <button
-              onClick={() => setPantalla('MENU_PRINCIPAL')}
-              className="px-5 py-2.5 rounded-full bg-white/15 hover:bg-white/30 backdrop-blur-xl border border-white/40 text-xs font-extrabold tracking-wider uppercase transition-all"
+              onClick={alternarPantallaCompleta}
+              className="p-2.5 rounded-full bg-slate-950/40 backdrop-blur-xl border border-white/30"
             >
-              ← Regresar
-            </button>
-            <button
-              onClick={() => setPantalla('MENU_PRINCIPAL')}
-              className="px-5 py-2.5 rounded-full bg-black/25 hover:bg-white/20 backdrop-blur-xl border border-white/25 text-xs font-bold tracking-wider uppercase transition-all"
-            >
-              Menú Principal
+              <IconoSagradoSVG tipo="fullscreen" className="w-4 h-4" />
             </button>
           </header>
 
-          {/* Centro: Selección Glassmorphic de Narrador */}
           <main className="my-auto max-w-5xl w-full mx-auto flex flex-col items-center gap-6">
             <div className="text-center">
               <span className="text-xs font-black tracking-[0.28em] uppercase text-amber-200 drop-shadow">
                 Paso 1 de 3 • Narrador
               </span>
-              <h2 className="text-3xl md:text-5xl font-black tracking-tight drop-shadow-lg mt-1">
+              <h2 className="font-cinzel text-3xl md:text-5xl font-black tracking-tight drop-shadow-lg mt-1">
                 Elige el Estilo del Guía
               </h2>
             </div>
@@ -1211,12 +1647,17 @@ export default function SecretoSagradoLanding() {
                       boxShadow: activo ? `0 0 35px ${dm.colorHex}66` : undefined,
                       borderColor: activo ? '#ffffff' : 'rgba(255,255,255,0.35)'
                     }}
-                    className={`p-5 rounded-3xl backdrop-blur-2xl border text-left transition-all duration-300 flex flex-col gap-2 ${
-                      activo ? 'bg-white/30 scale-[1.03]' : 'bg-slate-950/35 hover:bg-white/20'
+                    className={`p-5 rounded-3xl backdrop-blur-2xl border text-left transition-all duration-300 flex flex-col gap-3 ${
+                      activo ? 'bg-white/30 scale-[1.03]' : 'bg-slate-950/45 hover:bg-white/20'
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <span className="text-3xl">{dm.icono}</span>
+                    <div className="flex items-center gap-3.5">
+                      <div
+                        style={{ backgroundColor: `${dm.colorHex}33`, borderColor: dm.colorHex }}
+                        className="w-12 h-12 rounded-2xl border flex items-center justify-center text-white shrink-0 shadow-inner"
+                      >
+                        <IconoSagradoSVG tipo={dm.iconoTipo} className="w-6 h-6" />
+                      </div>
                       <span className="font-black text-base md:text-lg leading-tight">{dm.nombre}</span>
                     </div>
                     <p className="text-xs text-white/85 leading-relaxed">{dm.subtitulo}</p>
@@ -1226,14 +1667,13 @@ export default function SecretoSagradoLanding() {
             </div>
           </main>
 
-          {/* Abajo al Centro: Botón Continuar */}
           <footer className="flex justify-center">
             <button
               onClick={() => {
                 sonarAcordeSintetico([523.25, 659.25, 783.99]);
                 setPantalla('SETUP_PARTIDA');
               }}
-              className="px-12 py-4 rounded-full bg-white/25 hover:bg-white/40 backdrop-blur-2xl border border-white/70 font-black text-base tracking-widest uppercase shadow-[0_0_35px_rgba(255,255,255,0.5)] hover:scale-105 transition-all"
+              className="px-12 py-4 rounded-full bg-white/25 hover:bg-white/40 backdrop-blur-2xl border border-white/70 font-black text-sm tracking-widest uppercase shadow-[0_0_35px_rgba(255,255,255,0.5)] hover:scale-105 transition-all"
             >
               Continuar →
             </button>
@@ -1242,22 +1682,30 @@ export default function SecretoSagradoLanding() {
       )}
 
       {/* ====================================================================
-          PASO LINEAL 2: PARTIDA (NOMBRES Y ROLES, HASTA 8 JUGADORES MÁXIMO)
+          PASO LINEAL 2: PARTIDA (NOMBRES Y ROLES CON ÍCONOS SVG, HASTA 8 JUGADORES)
           ==================================================================== */}
       {pantalla === 'SETUP_PARTIDA' && (
         <section className="relative z-20 w-full h-full flex flex-col justify-between p-6 md:p-12">
-          <header className="flex items-center gap-4">
+          <header className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setPantalla('SETUP_NARRADOR')}
+                className="px-5 py-2.5 rounded-full bg-slate-950/45 hover:bg-white/30 backdrop-blur-xl border border-white/40 text-xs font-extrabold tracking-wider uppercase transition-all"
+              >
+                ← Regresar
+              </button>
+              <button
+                onClick={() => setPantalla('MENU_PRINCIPAL')}
+                className="px-5 py-2.5 rounded-full bg-slate-950/35 hover:bg-white/20 backdrop-blur-xl border border-white/25 text-xs font-bold tracking-wider uppercase transition-all"
+              >
+                Menú Principal
+              </button>
+            </div>
             <button
-              onClick={() => setPantalla('SETUP_NARRADOR')}
-              className="px-5 py-2.5 rounded-full bg-white/15 hover:bg-white/30 backdrop-blur-xl border border-white/40 text-xs font-extrabold tracking-wider uppercase transition-all"
+              onClick={alternarPantallaCompleta}
+              className="p-2.5 rounded-full bg-slate-950/40 backdrop-blur-xl border border-white/30"
             >
-              ← Regresar
-            </button>
-            <button
-              onClick={() => setPantalla('MENU_PRINCIPAL')}
-              className="px-5 py-2.5 rounded-full bg-black/25 hover:bg-white/20 backdrop-blur-xl border border-white/25 text-xs font-bold tracking-wider uppercase transition-all"
-            >
-              Menú Principal
+              <IconoSagradoSVG tipo="fullscreen" className="w-4 h-4" />
             </button>
           </header>
 
@@ -1266,29 +1714,28 @@ export default function SecretoSagradoLanding() {
               <span className="text-xs font-black tracking-[0.28em] uppercase text-amber-200 drop-shadow">
                 Paso 2 de 3 • Partida ({jugadores.length}/8 Jugadores)
               </span>
-              <h2 className="text-3xl md:text-4xl font-black tracking-tight drop-shadow-lg mt-1">
+              <h2 className="font-cinzel text-3xl md:text-4xl font-black tracking-tight drop-shadow-lg mt-1">
                 Registra a los Jugadores y su Rol
               </h2>
             </div>
 
-            {/* Caja Glassmorphic para Añadir Jugador (Máximo 8) */}
             {jugadores.length < 8 && (
-              <div className="w-full max-w-3xl p-4 rounded-3xl bg-white/20 backdrop-blur-2xl border border-white/50 flex flex-wrap items-center gap-3 shadow-2xl">
+              <div className="w-full max-w-3xl p-4 rounded-3xl bg-slate-950/45 backdrop-blur-2xl border border-white/50 flex flex-wrap items-center gap-3 shadow-2xl">
                 <input
                   type="text"
                   value={nuevoNombreInput}
                   onChange={(e) => setNuevoNombreInput(e.target.value)}
                   placeholder="Escribe el nombre del jugador..."
-                  className="flex-1 min-w-[180px] px-4 py-3 rounded-2xl bg-slate-950/40 border border-white/40 text-sm font-bold text-white placeholder-white/60 focus:outline-none focus:border-white"
+                  className="flex-1 min-w-[180px] px-4 py-3 rounded-2xl bg-black/45 border border-white/40 text-sm font-bold text-white placeholder-white/60 focus:outline-none focus:border-white"
                 />
                 <select
                   value={nuevoRolIdxInput}
                   onChange={(e) => setNuevoRolIdxInput(Number(e.target.value))}
-                  className="px-4 py-3 rounded-2xl bg-slate-950/50 border border-white/40 text-sm font-bold text-white focus:outline-none"
+                  className="px-4 py-3 rounded-2xl bg-black/55 border border-white/40 text-sm font-bold text-white focus:outline-none"
                 >
                   {CLASES_ROLES.map((r, i) => (
                     <option key={r.id} value={i} className="bg-slate-900 text-white">
-                      {r.icono} {r.nombre}
+                      {r.nombre}
                     </option>
                   ))}
                 </select>
@@ -1316,7 +1763,6 @@ export default function SecretoSagradoLanding() {
               </div>
             )}
 
-            {/* Tarjetas Glassmorphic de los Jugadores Registrados */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 w-full max-h-[42vh] overflow-y-auto p-1">
               {jugadores.map((jug, idx) => {
                 const clase = CLASES_ROLES[jug.rolIdx];
@@ -1324,14 +1770,14 @@ export default function SecretoSagradoLanding() {
                   <div
                     key={jug.id}
                     style={{ borderColor: clase.color }}
-                    className="p-4 rounded-3xl bg-slate-950/40 backdrop-blur-2xl border-2 flex flex-col items-center gap-2 relative shadow-xl"
+                    className="p-4 rounded-3xl bg-slate-950/50 backdrop-blur-2xl border-2 flex flex-col items-center gap-2 relative shadow-xl"
                   >
                     {jugadores.length > 1 && (
                       <button
                         onClick={() => setJugadores(jugadores.filter((_, i) => i !== idx))}
-                        className="absolute top-2.5 right-3 text-xs text-white/60 hover:text-white"
+                        className="absolute top-2.5 right-3 text-white/60 hover:text-white"
                       >
-                        ✕
+                        <IconoSagradoSVG tipo="cerrar" className="w-4 h-4" />
                       </button>
                     )}
                     <button
@@ -1340,11 +1786,11 @@ export default function SecretoSagradoLanding() {
                         copia[idx].rolIdx = (copia[idx].rolIdx + 1) % CLASES_ROLES.length;
                         setJugadores(copia);
                       }}
-                      style={{ backgroundColor: clase.color }}
-                      className="w-12 h-12 rounded-full grid place-items-center text-2xl shadow-lg"
+                      style={{ backgroundColor: `${clase.color}33`, borderColor: clase.color }}
+                      className="w-12 h-12 rounded-full border-2 flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform"
                       title="Toca para cambiar de Rol"
                     >
-                      {clase.icono}
+                      <IconoSagradoSVG tipo={clase.iconoTipo} className="w-6 h-6" />
                     </button>
                     <input
                       type="text"
@@ -1370,7 +1816,7 @@ export default function SecretoSagradoLanding() {
                 sonarAcordeSintetico([523.25, 659.25, 783.99]);
                 setPantalla('SETUP_ESTILO');
               }}
-              className="px-12 py-4 rounded-full bg-white/25 hover:bg-white/40 backdrop-blur-2xl border border-white/70 font-black text-base tracking-widest uppercase shadow-[0_0_35px_rgba(255,255,255,0.5)] hover:scale-105 transition-all"
+              className="px-12 py-4 rounded-full bg-white/25 hover:bg-white/40 backdrop-blur-2xl border border-white/70 font-black text-sm tracking-widest uppercase shadow-[0_0_35px_rgba(255,255,255,0.5)] hover:scale-105 transition-all"
             >
               Continuar →
             </button>
@@ -1379,22 +1825,30 @@ export default function SecretoSagradoLanding() {
       )}
 
       {/* ====================================================================
-          PASO LINEAL 3: ESTILO (EXPRESS 30 MIN VS ESTÁNDAR COMPLETO)
+          PASO LINEAL 3: ESTILO (EMBLEMAS VECTORIALES PREMIUM EN LUGAR DE EMOJIS)
           ==================================================================== */}
       {pantalla === 'SETUP_ESTILO' && (
         <section className="relative z-20 w-full h-full flex flex-col justify-between p-6 md:p-12">
-          <header className="flex items-center gap-4">
+          <header className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setPantalla('SETUP_PARTIDA')}
+                className="px-5 py-2.5 rounded-full bg-slate-950/45 hover:bg-white/30 backdrop-blur-xl border border-white/40 text-xs font-extrabold tracking-wider uppercase transition-all"
+              >
+                ← Regresar
+              </button>
+              <button
+                onClick={() => setPantalla('MENU_PRINCIPAL')}
+                className="px-5 py-2.5 rounded-full bg-slate-950/35 hover:bg-white/20 backdrop-blur-xl border border-white/25 text-xs font-bold tracking-wider uppercase transition-all"
+              >
+                Menú Principal
+              </button>
+            </div>
             <button
-              onClick={() => setPantalla('SETUP_PARTIDA')}
-              className="px-5 py-2.5 rounded-full bg-white/15 hover:bg-white/30 backdrop-blur-xl border border-white/40 text-xs font-extrabold tracking-wider uppercase transition-all"
+              onClick={alternarPantallaCompleta}
+              className="p-2.5 rounded-full bg-slate-950/40 backdrop-blur-xl border border-white/30"
             >
-              ← Regresar
-            </button>
-            <button
-              onClick={() => setPantalla('MENU_PRINCIPAL')}
-              className="px-5 py-2.5 rounded-full bg-black/25 hover:bg-white/20 backdrop-blur-xl border border-white/25 text-xs font-bold tracking-wider uppercase transition-all"
-            >
-              Menú Principal
+              <IconoSagradoSVG tipo="fullscreen" className="w-4 h-4" />
             </button>
           </header>
 
@@ -1403,7 +1857,7 @@ export default function SecretoSagradoLanding() {
               <span className="text-xs font-black tracking-[0.28em] uppercase text-amber-200 drop-shadow">
                 Paso 3 de 3 • Estilo
               </span>
-              <h2 className="text-3xl md:text-5xl font-black tracking-tight drop-shadow-lg mt-1">
+              <h2 className="font-cinzel text-3xl md:text-5xl font-black tracking-tight drop-shadow-lg mt-1">
                 Selecciona la Duración de la Partida
               </h2>
             </div>
@@ -1411,13 +1865,15 @@ export default function SecretoSagradoLanding() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
               <button
                 onClick={() => setModoEstilo('EXPRESS')}
-                className={`p-8 rounded-[34px] backdrop-blur-2xl border-2 text-left transition-all duration-300 flex flex-col gap-3 ${
+                className={`p-8 rounded-[34px] backdrop-blur-2xl border-2 text-left transition-all duration-300 flex flex-col gap-4 ${
                   modoEstilo === 'EXPRESS'
-                    ? 'bg-white/30 border-white scale-105 shadow-[0_0_45px_rgba(255,255,255,0.45)]'
-                    : 'bg-slate-950/40 border-white/30 hover:bg-white/15'
+                    ? 'bg-slate-950/55 border-amber-300 scale-105 shadow-[0_0_45px_rgba(253,224,71,0.35)]'
+                    : 'bg-slate-950/40 border-white/30 hover:bg-slate-950/55'
                 }`}
               >
-                <span className="text-4xl">⚡</span>
+                <div className="w-14 h-14 rounded-2xl bg-amber-400/20 border border-amber-300/60 flex items-center justify-center text-amber-200 shadow-[0_0_20px_rgba(251,191,36,0.4)]">
+                  <IconoSagradoSVG tipo="express" className="w-7 h-7" />
+                </div>
                 <h3 className="text-2xl font-black">Express (~30 Minutos)</h3>
                 <p className="text-sm text-white/90 leading-relaxed">
                   Recorre las <strong>8 Eras completas</strong> con una selección directa de retos clave por época, ideal para una sesión familiar ágil y dinámica.
@@ -1426,13 +1882,15 @@ export default function SecretoSagradoLanding() {
 
               <button
                 onClick={() => setModoEstilo('ESTANDAR')}
-                className={`p-8 rounded-[34px] backdrop-blur-2xl border-2 text-left transition-all duration-300 flex flex-col gap-3 ${
+                className={`p-8 rounded-[34px] backdrop-blur-2xl border-2 text-left transition-all duration-300 flex flex-col gap-4 ${
                   modoEstilo === 'ESTANDAR'
-                    ? 'bg-white/30 border-white scale-105 shadow-[0_0_45px_rgba(255,255,255,0.45)]'
-                    : 'bg-slate-950/40 border-white/30 hover:bg-white/15'
+                    ? 'bg-slate-950/55 border-cyan-300 scale-105 shadow-[0_0_45px_rgba(34,211,238,0.35)]'
+                    : 'bg-slate-950/40 border-white/30 hover:bg-slate-950/55'
                 }`}
               >
-                <span className="text-4xl">🗺️</span>
+                <div className="w-14 h-14 rounded-2xl bg-cyan-400/20 border border-cyan-300/60 flex items-center justify-center text-cyan-200 shadow-[0_0_20px_rgba(34,211,238,0.4)]">
+                  <IconoSagradoSVG tipo="estandar" className="w-7 h-7" />
+                </div>
                 <h3 className="text-2xl font-black">Estándar (Recorrido Completo)</h3>
                 <p className="text-sm text-white/90 leading-relaxed">
                   Experiencia profunda a través de todos los nodos y desafíos sensoriales de las <strong>8 Eras bíblicas</strong>.
@@ -1444,7 +1902,7 @@ export default function SecretoSagradoLanding() {
           <footer className="flex justify-center">
             <button
               onClick={iniciarJuegoTrasConfiguracion}
-              className="px-14 py-4 rounded-full bg-gradient-to-r from-amber-300 via-yellow-200 to-cyan-200 text-slate-950 font-black text-base tracking-widest uppercase shadow-[0_0_45px_rgba(254,240,138,0.85)] hover:scale-105 transition-all"
+              className="px-14 py-4 rounded-full bg-gradient-to-r from-amber-300 via-yellow-200 to-cyan-200 text-slate-950 font-black text-sm tracking-widest uppercase shadow-[0_0_45px_rgba(254,240,138,0.85)] hover:scale-105 transition-all"
             >
               Continuar al Ritual de Inicio →
             </button>
@@ -1453,47 +1911,86 @@ export default function SecretoSagradoLanding() {
       )}
 
       {/* ====================================================================
-          PANTALLA DE CONFIGURACIÓN GENERAL (APIs, SONIDO, SENSORES Y AJUSTES)
+          PANTALLA DE CONFIGURACIÓN GENERAL (APIs, VOZ NEURONAL, SONIDO Y FULLSCREEN)
           ==================================================================== */}
       {pantalla === 'CONFIGURACION' && (
         <section className="relative z-20 w-full h-full flex flex-col justify-between p-6 md:p-12 overflow-y-auto">
           <header className="flex items-center justify-between">
             <button
               onClick={() => setPantalla('MENU_PRINCIPAL')}
-              className="px-6 py-2.5 rounded-full bg-white/15 hover:bg-white/30 backdrop-blur-xl border border-white/40 text-xs font-extrabold tracking-wider uppercase transition-all"
+              className="px-6 py-2.5 rounded-full bg-slate-950/45 hover:bg-white/30 backdrop-blur-xl border border-white/40 text-xs font-extrabold tracking-wider uppercase transition-all"
             >
               ← Menú Principal
             </button>
-            <h2 className="text-2xl font-black tracking-wide">Configuración del Sistema</h2>
-            <div className="w-28" />
+            <h2 className="font-cinzel text-2xl font-black tracking-wide">Configuración del Sistema</h2>
+            <button
+              onClick={alternarPantallaCompleta}
+              className="px-4 py-2 rounded-full bg-white/15 border border-white/35 text-xs font-bold flex items-center gap-2"
+            >
+              <IconoSagradoSVG tipo="fullscreen" className="w-4 h-4" />
+              <span>Pantalla Completa</span>
+            </button>
           </header>
 
-          <main className="my-auto max-w-3xl w-full mx-auto p-7 rounded-[36px] bg-slate-950/55 backdrop-blur-2xl border border-white/35 shadow-2xl flex flex-col gap-5">
+          <main className="my-auto max-w-3xl w-full mx-auto p-7 rounded-[36px] bg-slate-950/60 backdrop-blur-2xl border border-white/35 shadow-2xl flex flex-col gap-5">
             {/* API Key de Gemini */}
             <div className="flex flex-col gap-2 pb-4 border-b border-white/15">
               <label className="text-xs font-black tracking-widest uppercase text-cyan-300">
-                🤖 Clave de API de Google Gemini (Storytelling, Preguntas y Visión)
+                Clave de API de Google Gemini (Storytelling, Preguntas y Visión)
               </label>
-              <div className="flex gap-3">
-                <input
-                  type="password"
-                  value={geminiApiKey}
-                  onChange={(e) => {
-                    setGeminiApiKey(e.target.value);
-                    try {
-                      localStorage.setItem('ss_gemini_api_key', e.target.value.trim());
-                    } catch (err) {}
-                  }}
-                  placeholder="AIzaSy..."
-                  className="flex-1 px-4 py-3 rounded-2xl bg-black/50 border border-white/30 text-sm text-white focus:outline-none focus:border-cyan-300"
-                />
+              <input
+                type="password"
+                value={geminiApiKey}
+                onChange={(e) => {
+                  setGeminiApiKey(e.target.value);
+                  try {
+                    localStorage.setItem('ss_gemini_api_key', e.target.value.trim());
+                  } catch (err) {}
+                }}
+                placeholder="AIzaSy... o AQ..."
+                className="w-full px-4 py-3 rounded-2xl bg-black/50 border border-white/30 text-sm text-white focus:outline-none focus:border-cyan-300"
+              />
+            </div>
+
+            {/* Selector de Voz Natural */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/15">
+              <div>
+                <div className="font-extrabold text-sm">Motor de Voz del Narrador</div>
+                <div className="text-xs text-white/70">
+                  Prioriza voces neuronales y pronuncia las citas bíblicas por capítulo y versículo
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <select
+                  value={vozSeleccionadaURI}
+                  onChange={(e) => setVozSeleccionadaURI(e.target.value)}
+                  className="px-3 py-2 rounded-xl bg-black/60 border border-white/30 text-xs font-bold text-white max-w-[220px]"
+                >
+                  {vocesDisponibles.length === 0 ? (
+                    <option value="">Voz Natural del Sistema</option>
+                  ) : (
+                    vocesDisponibles.map((v) => (
+                      <option key={v.voiceURI} value={v.voiceURI} className="bg-slate-900">
+                        {v.name}
+                      </option>
+                    ))
+                  )}
+                </select>
+                <button
+                  onClick={() =>
+                    hablarConVozDM('Abran su Biblia en Génesis 3:15; 4:4 para comenzar el estudio.')
+                  }
+                  className="px-3.5 py-2 rounded-xl bg-cyan-400 text-slate-950 font-black text-xs"
+                >
+                  Probar
+                </button>
               </div>
             </div>
 
             {/* Volumen de Música del Menú */}
             <div className="flex items-center justify-between gap-4 pb-4 border-b border-white/15">
               <div>
-                <div className="font-extrabold text-sm">🎵 Volumen de Música del Menú</div>
+                <div className="font-extrabold text-sm">Volumen de Música del Menú</div>
                 <div className="text-xs text-white/70">Se detiene automáticamente cuando comienza la partida</div>
               </div>
               <input
@@ -1502,7 +1999,7 @@ export default function SecretoSagradoLanding() {
                 max="1"
                 step="0.05"
                 value={volumenMusica}
-                onChange={(e) => setVolumenMusica( parseFloat(e.target.value) )}
+                onChange={(e) => setVolumenMusica(parseFloat(e.target.value))}
                 className="w-40 accent-cyan-400"
               />
             </div>
@@ -1511,32 +2008,41 @@ export default function SecretoSagradoLanding() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <button
                 onClick={() => setVozSinteticaActiva((v) => !v)}
-                className={`p-4 rounded-2xl border text-left transition-all ${
+                className={`p-4 rounded-2xl border text-left transition-all flex items-center gap-3 ${
                   vozSinteticaActiva ? 'bg-emerald-500/25 border-emerald-300' : 'bg-white/5 border-white/20 opacity-60'
                 }`}
               >
-                <div className="font-black text-xs uppercase">🔊 Voz del Narrador</div>
-                <div className="text-[11px] mt-1">{vozSinteticaActiva ? 'Activada' : 'Silenciada'}</div>
+                <IconoSagradoSVG tipo="audio" className="w-5 h-5 text-emerald-300 shrink-0" />
+                <div>
+                  <div className="font-black text-xs uppercase">Voz del Guía</div>
+                  <div className="text-[11px] mt-0.5">{vozSinteticaActiva ? 'Activada' : 'Silenciada'}</div>
+                </div>
               </button>
 
               <button
                 onClick={() => setVibracionActiva((v) => !v)}
-                className={`p-4 rounded-2xl border text-left transition-all ${
+                className={`p-4 rounded-2xl border text-left transition-all flex items-center gap-3 ${
                   vibracionActiva ? 'bg-cyan-500/25 border-cyan-300' : 'bg-white/5 border-white/20 opacity-60'
                 }`}
               >
-                <div className="font-black text-xs uppercase">📳 Vibración Háptica</div>
-                <div className="text-[11px] mt-1">{vibracionActiva ? 'Activada' : 'Desactivada'}</div>
+                <IconoSagradoSVG tipo="pulgar" className="w-5 h-5 text-cyan-300 shrink-0" />
+                <div>
+                  <div className="font-black text-xs uppercase">Vibración Háptica</div>
+                  <div className="text-[11px] mt-0.5">{vibracionActiva ? 'Activada' : 'Desactivada'}</div>
+                </div>
               </button>
 
               <button
                 onClick={() => setSensoresMovimientoActivos((v) => !v)}
-                className={`p-4 rounded-2xl border text-left transition-all ${
+                className={`p-4 rounded-2xl border text-left transition-all flex items-center gap-3 ${
                   sensoresMovimientoActivos ? 'bg-amber-500/25 border-amber-300' : 'bg-white/5 border-white/20 opacity-60'
                 }`}
               >
-                <div className="font-black text-xs uppercase">🧭 Contador de Pasos</div>
-                <div className="text-[11px] mt-1">{sensoresMovimientoActivos ? 'Activado' : 'Modo Manual'}</div>
+                <IconoSagradoSVG tipo="pasos" className="w-5 h-5 text-amber-300 shrink-0" />
+                <div>
+                  <div className="font-black text-xs uppercase">Contador de Pasos</div>
+                  <div className="text-[11px] mt-0.5">{sensoresMovimientoActivos ? 'Activado' : 'Modo Manual'}</div>
+                </div>
               </button>
             </div>
           </main>
@@ -1553,11 +2059,10 @@ export default function SecretoSagradoLanding() {
       )}
 
       {/* ====================================================================
-          RITUAL DE 3 SEGUNDOS CON AMBOS PULGARES (TOMAR / DEVOLVER CONTROL)
+          RITUAL DE 3 SEGUNDOS CON AMBOS PULGARES (CON HUELLA VECTORIAL SVG)
           ==================================================================== */}
       {pantalla === 'RITUAL_PULGARES' && (
-        <section className="fixed inset-0 z-40 flex items-center justify-between px-8 md:px-20 bg-slate-950/60 backdrop-blur-2xl overflow-hidden">
-          {/* Resplandor que se extiende desde ambos pulgares hasta inundar toda la pantalla */}
+        <section className="fixed inset-0 z-40 flex items-center justify-between px-8 md:px-20 bg-slate-950/65 backdrop-blur-2xl overflow-hidden">
           <div
             style={{
               transform: `scale(${0.2 + (progresoPulgares / 100) * 3.8})`,
@@ -1567,7 +2072,6 @@ export default function SecretoSagradoLanding() {
             className="fixed inset-0 pointer-events-none transition-transform duration-100"
           />
 
-          {/* Pantalla blanca total al llegar al 100% */}
           <div
             className={`fixed inset-0 bg-white pointer-events-none transition-opacity duration-500 z-50 ${
               explosionLuzCompleta ? 'opacity-100' : 'opacity-0'
@@ -1583,11 +2087,11 @@ export default function SecretoSagradoLanding() {
               borderColor: pulgarIzqActivo ? '#ffffff' : configRitual.colorLuz,
               boxShadow: pulgarIzqActivo ? `0 0 60px ${configRitual.colorLuz}` : undefined
             }}
-            className={`relative z-20 w-36 h-36 md:w-44 md:h-44 rounded-full backdrop-blur-2xl border-4 flex flex-col items-center justify-center transition-all duration-200 ${
+            className={`relative z-20 w-36 h-36 md:w-44 md:h-44 rounded-full backdrop-blur-2xl border-4 flex flex-col items-center justify-center gap-2 transition-all duration-200 ${
               pulgarIzqActivo ? 'bg-white/40 scale-110' : 'bg-white/10 animate-pulse'
             }`}
           >
-            <span className="text-3xl mb-1">👍</span>
+            <IconoSagradoSVG tipo="pulgar" className="w-10 h-10 text-white" />
             <span className="text-xs font-black tracking-widest uppercase">Pulgar Izq.</span>
           </button>
 
@@ -1596,14 +2100,13 @@ export default function SecretoSagradoLanding() {
             <span className="text-xs font-black tracking-[0.28em] uppercase text-amber-200">
               Transición de Control • {Math.ceil((100 - progresoPulgares) / 33.4)}s
             </span>
-            <h2 className="text-2xl md:text-4xl font-black leading-tight drop-shadow-lg">
+            <h2 className="font-cinzel text-2xl md:text-4xl font-black leading-tight drop-shadow-lg">
               {configRitual.titulo}
             </h2>
             <p className="text-xs md:text-sm text-white/85 leading-relaxed">
               {configRitual.subtitulo}
             </p>
 
-            {/* Barra circular/lineal de carga */}
             <div className="w-64 h-2.5 rounded-full bg-white/20 overflow-hidden border border-white/40">
               <div
                 style={{ width: `${progresoPulgares}%`, backgroundColor: configRitual.colorLuz }}
@@ -1611,7 +2114,6 @@ export default function SecretoSagradoLanding() {
               />
             </div>
 
-            {/* Botón de soporte para pruebas con un solo dedo o ratón en PC */}
             <button
               onPointerDown={() => {
                 setPulgarIzqActivo(true);
@@ -1636,11 +2138,11 @@ export default function SecretoSagradoLanding() {
               borderColor: pulgarDerActivo ? '#ffffff' : configRitual.colorLuz,
               boxShadow: pulgarDerActivo ? `0 0 60px ${configRitual.colorLuz}` : undefined
             }}
-            className={`relative z-20 w-36 h-36 md:w-44 md:h-44 rounded-full backdrop-blur-2xl border-4 flex flex-col items-center justify-center transition-all duration-200 ${
+            className={`relative z-20 w-36 h-36 md:w-44 md:h-44 rounded-full backdrop-blur-2xl border-4 flex flex-col items-center justify-center gap-2 transition-all duration-200 ${
               pulgarDerActivo ? 'bg-white/40 scale-110' : 'bg-white/10 animate-pulse'
             }`}
           >
-            <span className="text-3xl mb-1">👍</span>
+            <IconoSagradoSVG tipo="pulgar" className="w-10 h-10 text-white" />
             <span className="text-xs font-black tracking-widest uppercase">Pulgar Der.</span>
           </button>
         </section>
@@ -1651,9 +2153,7 @@ export default function SecretoSagradoLanding() {
           ==================================================================== */}
       {pantalla === 'JUEGO' && (
         <section className="relative z-20 w-full h-full flex flex-col justify-between p-6 md:p-10">
-          {/* ----------------------------------------------------------------
-              ESQUINA SUPERIOR IZQUIERDA: ORBE DEL DM RETIRADO CUANDO JUEGA EL JUGADOR
-              ---------------------------------------------------------------- */}
+          {/* ESQUINA SUPERIOR IZQUIERDA: ORBE DEL DM RETIRADO CUANDO JUEGA EL JUGADOR */}
           <div className="fixed top-5 left-6 z-30 flex items-center gap-3">
             {subFaseJuego === 'JUGADOR_ACTIVO' ? (
               <div className="flex items-center gap-3 animate-[fadeIn_0.5s_ease-out]">
@@ -1662,7 +2162,7 @@ export default function SecretoSagradoLanding() {
                   colorSecundario={dmPerfil.colorSecundario}
                   amplitudVoz={amplitudVozDM}
                   tamano={76}
-                  iconoCentral={dmPerfil.icono}
+                  iconoTipo={dmPerfil.iconoTipo}
                   nombreCentral="Guía"
                   enEsquina={true}
                   onClick={() => hablarConVozDM(`${retoActual.pregunta}. ${retoActual.instruccionInput}`)}
@@ -1672,19 +2172,18 @@ export default function SecretoSagradoLanding() {
                 </span>
               </div>
             ) : (
-              <div className="px-4 py-2 rounded-full bg-slate-950/40 backdrop-blur-xl border border-white/35 text-xs font-black tracking-widest uppercase">
+              <div className="px-4 py-2 rounded-full bg-slate-950/45 backdrop-blur-xl border border-white/35 text-xs font-black tracking-widest uppercase">
                 Era {eraActualNum} de 8 • {TITULOS_OCHO_ERAS[eraActualNum - 1].nombre}
               </div>
             )}
           </div>
 
-          {/* ----------------------------------------------------------------
-              PARTE SUPERIOR CENTRAL (70% DEL ANCHO): CAJA GLASSMORPHIC DE PREGUNTA
-              ---------------------------------------------------------------- */}
+          {/* PARTE SUPERIOR CENTRAL (70% DEL ANCHO): CAJA GLASSMORPHIC DE PREGUNTA */}
           {subFaseJuego === 'JUGADOR_ACTIVO' && (
-            <div className="w-[70vw] mx-auto mt-1 p-5 rounded-3xl bg-slate-950/45 backdrop-blur-2xl border border-white/45 shadow-[0_15px_45px_rgba(0,0,0,0.45)] text-center z-20 transition-all duration-500">
+            <div className="w-[70vw] mx-auto mt-1 p-5 rounded-3xl bg-slate-950/50 backdrop-blur-2xl border border-white/45 shadow-[0_15px_45px_rgba(0,0,0,0.45)] text-center z-20 transition-all duration-500">
               <div className="inline-flex items-center gap-2 px-3.5 py-0.5 rounded-full bg-amber-300/20 border border-amber-300/60 text-amber-200 text-[11px] font-black tracking-widest uppercase mb-1.5">
-                📖 Biblia Física: {retoActual.citaBiblia}
+                <IconoSagradoSVG tipo="biblia" className="w-3.5 h-3.5" />
+                <span>Biblia Física: {retoActual.citaBiblia}</span>
               </div>
               <h2 className="text-lg md:text-2xl font-black leading-snug text-white">
                 {retoActual.pregunta}
@@ -1695,20 +2194,18 @@ export default function SecretoSagradoLanding() {
             </div>
           )}
 
-          {/* ----------------------------------------------------------------
-              ESQUINA SUPERIOR DERECHA: HP, HERRAMIENTAS, GUARDAR Y CERRAR
-              ---------------------------------------------------------------- */}
+          {/* ESQUINA SUPERIOR DERECHA: HP, HERRAMIENTAS, FULLSCREEN, GUARDAR Y CERRAR */}
           <div className="fixed top-5 right-6 z-30 flex items-center gap-2.5">
             {notificacionGuardado && (
               <span className="px-3 py-1.5 rounded-full bg-emerald-500/80 text-xs font-black">
-                ✓ {notificacionGuardado}
+                {notificacionGuardado}
               </span>
             )}
 
             {/* Convicción (HP) */}
             <div className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-slate-950/45 backdrop-blur-xl border border-white/35">
+              <IconoSagradoSVG tipo="hp" className="w-4 h-4 text-cyan-300" />
               <span className="text-[11px] font-black text-amber-200">HP {conviccionHP}/10</span>
-              <span className="text-sm">💎</span>
             </div>
 
             {/* Herramienta: Oración */}
@@ -1720,9 +2217,10 @@ export default function SecretoSagradoLanding() {
                 sonarAcordeSintetico([523.25, 659.25, 1046.5]);
               }}
               title="Herramienta de Oración (+2 HP)"
-              className="px-3.5 py-2 rounded-full bg-amber-400/25 hover:bg-amber-400/40 backdrop-blur-xl border border-amber-300/60 text-xs font-black"
+              className="px-3.5 py-2 rounded-full bg-amber-400/25 hover:bg-amber-400/40 backdrop-blur-xl border border-amber-300/60 text-xs font-black flex items-center gap-1.5"
             >
-              🙏 {tokensOracion}
+              <IconoSagradoSVG tipo="oracion" className="w-4 h-4 text-amber-200" />
+              <span>{tokensOracion}</span>
             </button>
 
             {/* Herramienta: Poder del Rol Activo */}
@@ -1745,19 +2243,30 @@ export default function SecretoSagradoLanding() {
                   setJugadores(copia);
                   sonarAcordeSintetico([659.25, 880, 1174.66]);
                 }}
-                className="px-3.5 py-2 rounded-full bg-purple-500/35 hover:bg-purple-500/55 backdrop-blur-xl border border-purple-300 text-xs font-black"
+                className="px-3.5 py-2 rounded-full bg-purple-500/35 hover:bg-purple-500/55 backdrop-blur-xl border border-purple-300 text-xs font-black flex items-center gap-1.5"
               >
-                ⚡ {claseJugadorActivo.nombre}
+                <IconoSagradoSVG tipo="express" className="w-3.5 h-3.5" />
+                <span>{claseJugadorActivo.nombre}</span>
               </button>
             )}
+
+            {/* Botón Pantalla Completa */}
+            <button
+              onClick={alternarPantallaCompleta}
+              title="Pantalla Completa"
+              className="w-9 h-9 rounded-full bg-white/15 hover:bg-white/30 backdrop-blur-xl border border-white/40 flex items-center justify-center"
+            >
+              <IconoSagradoSVG tipo="fullscreen" className="w-4 h-4" />
+            </button>
 
             {/* Botón Guardar */}
             <button
               onClick={guardarPartidaActual}
               title="Guardar Partida"
-              className="px-3.5 py-2 rounded-full bg-white/15 hover:bg-white/30 backdrop-blur-xl border border-white/40 text-xs font-black"
+              className="px-3.5 py-2 rounded-full bg-white/15 hover:bg-white/30 backdrop-blur-xl border border-white/40 text-xs font-black flex items-center gap-1.5"
             >
-              💾 Guardar
+              <IconoSagradoSVG tipo="guardar" className="w-3.5 h-3.5" />
+              <span>Guardar</span>
             </button>
 
             {/* Botón Cerrar */}
@@ -1767,9 +2276,9 @@ export default function SecretoSagradoLanding() {
                 setPantalla('MENU_PRINCIPAL');
               }}
               title="Cerrar y salir al Menú Principal"
-              className="w-9 h-9 rounded-full bg-rose-500/30 hover:bg-rose-500/55 backdrop-blur-xl border border-rose-300/60 grid place-items-center text-xs font-black"
+              className="w-9 h-9 rounded-full bg-rose-500/30 hover:bg-rose-500/55 backdrop-blur-xl border border-rose-300/60 flex items-center justify-center"
             >
-              ✕
+              <IconoSagradoSVG tipo="cerrar" className="w-4 h-4" />
             </button>
           </div>
 
@@ -1785,12 +2294,12 @@ export default function SecretoSagradoLanding() {
                   colorSecundario={dmPerfil.colorSecundario}
                   amplitudVoz={amplitudVozDM}
                   tamano={235}
-                  iconoCentral={dmPerfil.icono}
+                  iconoTipo={dmPerfil.iconoTipo}
                   etiquetaSuperior="Guía del Sistema"
                   nombreCentral={dmPerfil.nombre}
                 />
 
-                <div className="p-6 rounded-3xl bg-slate-950/45 backdrop-blur-2xl border border-white/40 shadow-2xl">
+                <div className="p-6 rounded-3xl bg-slate-950/50 backdrop-blur-2xl border border-white/40 shadow-2xl">
                   <p className="text-sm md:text-base text-white/95 leading-relaxed">
                     {dmPerfil.introHistoria}
                   </p>
@@ -1801,19 +2310,20 @@ export default function SecretoSagradoLanding() {
                     onClick={() => concederPermisoYPrepararReto(1, 0)}
                     className="px-9 py-4 rounded-full bg-white/25 hover:bg-white/40 backdrop-blur-2xl border border-white/80 font-black text-sm tracking-widest uppercase shadow-[0_0_35px_rgba(255,255,255,0.5)] hover:scale-105 transition-all"
                   >
-                    ✨ Conceder Permiso y Comenzar
+                    Conceder Permiso y Comenzar
                   </button>
 
                   <button
                     onPointerDown={iniciarEscuchaPushToTalk}
                     onPointerUp={soltarEscuchaPushToTalk}
-                    className={`px-7 py-4 rounded-full backdrop-blur-2xl border font-black text-xs tracking-wider uppercase transition-all ${
+                    className={`px-7 py-4 rounded-full backdrop-blur-2xl border font-black text-xs tracking-wider uppercase transition-all flex items-center gap-2 ${
                       manteniendoMic
                         ? 'bg-emerald-400 text-slate-950 border-white scale-105 shadow-[0_0_35px_#34d399]'
                         : 'bg-slate-950/45 border-white/40 text-white'
                     }`}
                   >
-                    🎙️ {manteniendoMic ? 'Escuchando tu permiso...' : 'Mantén para dar permiso con voz'}
+                    <IconoSagradoSVG tipo="mic" className="w-4 h-4" />
+                    <span>{manteniendoMic ? 'Escuchando tu permiso...' : 'Mantén para dar permiso con voz'}</span>
                   </button>
                 </div>
               </div>
@@ -1827,7 +2337,7 @@ export default function SecretoSagradoLanding() {
                   colorSecundario={dmPerfil.colorSecundario}
                   amplitudVoz={amplitudVozDM}
                   tamano={210}
-                  iconoCentral={dmPerfil.icono}
+                  iconoTipo={dmPerfil.iconoTipo}
                   etiquetaSuperior={`Vuelta ${vueltaNumero}`}
                   nombreCentral={dmPerfil.nombre}
                 />
@@ -1838,7 +2348,6 @@ export default function SecretoSagradoLanding() {
                     : '¿Quién tomará el desafío en este turno?'}
                 </p>
 
-                {/* Círculos de los jugadores debajo del Orbe del DM */}
                 <div className="flex flex-wrap items-center justify-center gap-5">
                   {jugadores.map((jug) => {
                     const clase = CLASES_ROLES[jug.rolIdx];
@@ -1852,8 +2361,8 @@ export default function SecretoSagradoLanding() {
                         disabled={!jug.disponible || subFaseJuego === 'ANIMACION_DESVANECER_OTROS'}
                         onClick={() => elegirJugadorParaElTurno(jug)}
                         style={{
-                          backgroundColor: jug.disponible ? `${clase.color}33` : 'rgba(15,23,42,0.4)',
-                          borderColor: jug.disponible ? clase.color : 'rgba(148,163,184,0.3)',
+                          backgroundColor: jug.disponible ? `${clase.color}33` : 'rgba(15,23,42,0.45)',
+                          borderColor: jug.disponible ? clase.color : 'rgba(148,163,184,0.25)',
                           boxShadow: jug.disponible ? `0 0 28px ${clase.color}66` : 'none'
                         }}
                         className={`w-28 h-28 md:w-32 md:h-32 rounded-full backdrop-blur-2xl border-2 flex flex-col items-center justify-center p-2 transition-all duration-700 ${
@@ -1866,7 +2375,7 @@ export default function SecretoSagradoLanding() {
                             : 'grayscale opacity-35 cursor-not-allowed'
                         }`}
                       >
-                        <span className="text-2xl mb-1">{clase.icono}</span>
+                        <IconoSagradoSVG tipo={clase.iconoTipo} className="w-7 h-7 mb-1.5 text-white" />
                         <span className="font-black text-xs md:text-sm leading-tight truncate max-w-full">
                           {jug.nombre}
                         </span>
@@ -1888,11 +2397,11 @@ export default function SecretoSagradoLanding() {
                   colorSecundario={dmPerfil.colorSecundario}
                   amplitudVoz={amplitudVozDM}
                   tamano={230}
-                  iconoCentral={dmPerfil.icono}
+                  iconoTipo={dmPerfil.iconoTipo}
                   etiquetaSuperior={retoActual.citaBiblia}
                   nombreCentral={dmPerfil.nombre}
                 />
-                <div className="p-6 rounded-3xl bg-slate-950/50 backdrop-blur-2xl border border-white/40 shadow-2xl">
+                <div className="p-6 rounded-3xl bg-slate-950/55 backdrop-blur-2xl border border-white/40 shadow-2xl">
                   <h3 className="text-xl font-black text-amber-200 mb-2">{retoActual.tituloNodo}</h3>
                   <p className="text-base text-white/95 leading-relaxed mb-3">{retoActual.pregunta}</p>
                   <p className="text-xs text-cyan-200 font-bold">{retoActual.instruccionInput}</p>
@@ -1913,18 +2422,17 @@ export default function SecretoSagradoLanding() {
             {/* SUB-FASE 4: EL ORBE DEL JUGADOR OCUPA EL CENTRO + MECÁNICA DE INPUT ACTIVA */}
             {subFaseJuego === 'JUGADOR_ACTIVO' && jugadorActivo && (
               <div className="w-full flex flex-col items-center gap-5">
-                {/* Orbe del Jugador en el Centro Reaccionando a la Voz */}
                 <OrbeLiquidoReactivo
                   colorPrimario={claseJugadorActivo.color}
                   colorSecundario="#ffffff"
                   amplitudVoz={amplitudVozJugador}
                   tamano={165}
-                  iconoCentral={claseJugadorActivo.icono}
+                  iconoTipo={claseJugadorActivo.iconoTipo}
                   etiquetaSuperior={claseJugadorActivo.nombre}
                   nombreCentral={jugadorActivo.nombre}
                 />
 
-                {/* MECÁNICA A: SELECCIÓN MÚLTIPLE GLASSMORPHIC CON BRILLO */}
+                {/* MECÁNICA A: SELECCIÓN MÚLTIPLE GLASSMORPHIC CON ÍCONOS VECTORIALES */}
                 {retoActual.tipoMecanica === 'SELECCION_MULTIPLE' && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 w-full max-w-4xl">
                     {retoActual.opciones?.map((op) => {
@@ -1940,11 +2448,11 @@ export default function SecretoSagradoLanding() {
                               ? 'opacity-15 pointer-events-none grayscale bg-black/20 border-white/10'
                               : pistaEscriba
                               ? 'bg-amber-400/30 border-amber-200 shadow-[0_0_30px_rgba(253,224,71,0.55)] hover:scale-[1.02]'
-                              : 'bg-slate-950/45 hover:bg-white/25 border-white/45 hover:border-white hover:shadow-[0_0_28px_rgba(255,255,255,0.45)] hover:scale-[1.02]'
+                              : 'bg-slate-950/50 hover:bg-white/25 border-white/45 hover:border-white hover:shadow-[0_0_28px_rgba(255,255,255,0.45)] hover:scale-[1.02]'
                           }`}
                         >
-                          <span className="text-2xl w-12 h-12 rounded-2xl bg-white/15 border border-white/35 grid place-items-center shrink-0">
-                            {op.icono}
+                          <span className="w-12 h-12 rounded-2xl bg-white/15 border border-white/35 flex items-center justify-center shrink-0 text-amber-200">
+                            <IconoSagradoSVG tipo="opcion" className="w-6 h-6" />
                           </span>
                           <div>
                             <div className="font-black text-sm md:text-base text-white">{op.titulo}</div>
@@ -1958,9 +2466,10 @@ export default function SecretoSagradoLanding() {
 
                 {/* MECÁNICA B: CAMINATA FÍSICA CON CONTADOR DE PASOS Y GIROSCOPIO */}
                 {retoActual.tipoMecanica === 'CAMINATA_PEREGRINAJE' && (
-                  <div className="p-6 rounded-3xl bg-slate-950/50 backdrop-blur-2xl border border-white/45 max-w-xl w-full text-center flex flex-col items-center gap-4">
-                    <div className="text-xs font-black tracking-widest uppercase text-cyan-200">
-                      🚶 Contador de Pasos y Movimiento Activo
+                  <div className="p-6 rounded-3xl bg-slate-950/55 backdrop-blur-2xl border border-white/45 max-w-xl w-full text-center flex flex-col items-center gap-4">
+                    <div className="text-xs font-black tracking-widest uppercase text-cyan-200 flex items-center gap-2">
+                      <IconoSagradoSVG tipo="pasos" className="w-4 h-4" />
+                      <span>Contador de Pasos y Movimiento Activo</span>
                     </div>
                     <div className="text-3xl font-black">
                       {pasosCaminados} / {retoActual.pasosObjetivo || 12} Pasos
@@ -1988,14 +2497,14 @@ export default function SecretoSagradoLanding() {
                         }}
                         className="px-6 py-2.5 rounded-full bg-white/20 hover:bg-white/35 border border-white/50 text-xs font-black"
                       >
-                        👣 Dar Paso (+2)
+                        Registrar Paso (+2)
                       </button>
                       {pasosCaminados >= (retoActual.pasosObjetivo || 12) && (
                         <button
                           onClick={() => completarTurnoYDevolverControlAlDM(true)}
                           className="px-6 py-2.5 rounded-full bg-emerald-400 text-slate-950 text-xs font-black"
                         >
-                          ✓ Completar Recorrido
+                          Completar Recorrido
                         </button>
                       )}
                     </div>
@@ -2004,13 +2513,14 @@ export default function SecretoSagradoLanding() {
 
                 {/* MECÁNICA C: ESCANEO DE LA BIBLIA FÍSICA CON CÁMARA */}
                 {retoActual.tipoMecanica === 'CAMARA_ESCRITURA' && (
-                  <div className="p-5 rounded-3xl bg-slate-950/50 backdrop-blur-2xl border border-white/45 max-w-xl w-full text-center flex flex-col items-center gap-4">
+                  <div className="p-5 rounded-3xl bg-slate-950/55 backdrop-blur-2xl border border-white/45 max-w-xl w-full text-center flex flex-col items-center gap-4">
                     {!camaraActiva ? (
                       <button
                         onClick={abrirCamaraBiblia}
-                        className="px-8 py-4 rounded-full bg-cyan-400/30 hover:bg-cyan-400/50 border border-cyan-200 font-black text-sm tracking-wider uppercase shadow-[0_0_30px_rgba(34,211,238,0.45)]"
+                        className="px-8 py-4 rounded-full bg-cyan-400/30 hover:bg-cyan-400/50 border border-cyan-200 font-black text-sm tracking-wider uppercase shadow-[0_0_30px_rgba(34,211,238,0.45)] flex items-center gap-2.5"
                       >
-                        📷 Activar Cámara para Verificar {retoActual.citaBiblia}
+                        <IconoSagradoSVG tipo="camara" className="w-5 h-5" />
+                        <span>Activar Cámara para Verificar {retoActual.citaBiblia}</span>
                       </button>
                     ) : (
                       <div className="flex flex-col items-center gap-3">
@@ -2025,14 +2535,14 @@ export default function SecretoSagradoLanding() {
                           disabled={evaluandoIA}
                           className="px-8 py-3 rounded-full bg-emerald-400 text-slate-950 font-black text-xs uppercase tracking-widest"
                         >
-                          {evaluandoIA ? 'Verificando con IA...' : '✨ Capturar y Verificar Escritura'}
+                          {evaluandoIA ? 'Verificando con IA...' : 'Capturar y Verificar Escritura'}
                         </button>
                       </div>
                     )}
                   </div>
                 )}
 
-                {/* BOTÓN DEDICADO DE MICRÓFONO PUSH-TO-TALK (SIEMPRE DISPONIBLE PARA RESPONDER CON VOZ) */}
+                {/* BOTÓN DEDICADO DE MICRÓFONO PUSH-TO-TALK */}
                 <div className="flex flex-col items-center gap-2">
                   {transcripcionVoz && (
                     <div className="px-4 py-1.5 rounded-full bg-slate-950/60 border border-white/30 text-xs text-cyan-200 max-w-lg truncate">
@@ -2043,17 +2553,20 @@ export default function SecretoSagradoLanding() {
                     onPointerDown={iniciarEscuchaPushToTalk}
                     onPointerUp={soltarEscuchaPushToTalk}
                     disabled={evaluandoIA}
-                    className={`px-8 py-3.5 rounded-full backdrop-blur-2xl border-2 font-black text-xs tracking-widest uppercase transition-all ${
+                    className={`px-8 py-3.5 rounded-full backdrop-blur-2xl border-2 font-black text-xs tracking-widest uppercase transition-all flex items-center gap-2.5 ${
                       manteniendoMic
                         ? 'bg-rose-500 border-white text-white scale-110 shadow-[0_0_40px_#f43f5e]'
                         : 'bg-white/20 hover:bg-white/30 border-white/60 text-white shadow-lg'
                     }`}
                   >
-                    {evaluandoIA
-                      ? '⏳ Evaluando con Gemini...'
-                      : manteniendoMic
-                      ? '🔴 Escuchando a la IA... Suelta para enviar'
-                      : '🎙️ Mantén presionado para responder con voz'}
+                    <IconoSagradoSVG tipo="mic" className="w-4 h-4" />
+                    <span>
+                      {evaluandoIA
+                        ? 'Evaluando con Gemini...'
+                        : manteniendoMic
+                        ? 'Escuchando... Suelta para enviar'
+                        : 'Mantén presionado para responder con voz'}
+                    </span>
                   </button>
                 </div>
               </div>
@@ -2067,7 +2580,7 @@ export default function SecretoSagradoLanding() {
                   colorSecundario={dmPerfil.colorSecundario}
                   amplitudVoz={amplitudVozDM}
                   tamano={215}
-                  iconoCentral="✨"
+                  iconoTipo="estrella"
                   etiquetaSuperior={`Era ${eraActualNum} • El Hilo Dorado`}
                   nombreCentral={dmPerfil.nombre}
                 />
@@ -2093,12 +2606,12 @@ export default function SecretoSagradoLanding() {
                   colorSecundario="#38bdf8"
                   amplitudVoz={0.6}
                   tamano={240}
-                  iconoCentral="👑"
+                  iconoTipo="rey"
                   etiquetaSuperior="Revelación 10:7"
                   nombreCentral="¡Secreto Sagrado Terminado!"
                 />
                 <div className="p-7 rounded-3xl bg-slate-950/55 backdrop-blur-2xl border border-white/50 shadow-2xl">
-                  <h2 className="text-2xl md:text-4xl font-black text-amber-200 mb-3">
+                  <h2 className="font-cinzel text-2xl md:text-4xl font-black text-amber-200 mb-3">
                     ¡Victoria del Reino Mesiánico!
                   </h2>
                   <p className="text-sm md:text-base text-white/90 leading-relaxed">
