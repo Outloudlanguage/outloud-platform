@@ -741,17 +741,107 @@ export default function SecretoSagradoLanding() {
 
   useEffect(() => {
     setVocesDisponibles([
-      { voiceURI: 'Charon', name: 'IA Gemini — Charon (Barítono Profundo)' }
+      { voiceURI: 'Charon', name: 'IA Gemini — Charon (Voz Fija Estable)' }
     ]);
     setVozSeleccionadaURI('Charon');
   }, []);
 
+  // Divide textos largos en oraciones cortas (~8-16 palabras) para que Gemini TTS
+  // mantenga de principio a fin exactamente la misma voz inicial sin cambiar a mitad del párrafo
+  const dividirEnOracionesEstables = useCallback((textoMostrar) => {
+    const brutas = (textoMostrar || '')
+      .split(/(?<=[.!?])\s+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    const agrupadas = [];
+    let acumulador = '';
+
+    for (const oracion of brutas) {
+      const palabrasAcum = acumulador ? acumulador.split(/\s+/).length : 0;
+      const palabrasOracion = oracion.split(/\s+/).length;
+
+      // Si la primera frase es de 1 o 2 palabras (ej. "Bienvenidos."), unirla a la siguiente
+      if (acumulador && palabrasAcum < 3 && palabrasAcum + palabrasOracion <= 18) {
+        acumulador = `${acumulador} ${oracion}`;
+      } else if (acumulador) {
+        agrupadas.push(acumulador);
+        acumulador = oracion;
+      } else {
+        acumulador = oracion;
+      }
+    }
+    if (acumulador) agrupadas.push(acumulador);
+    return agrupadas.length > 0 ? agrupadas : [textoMostrar];
+  }, []);
+
+  const obtenerPCMOracionGemini = useCallback(
+    async (oracionVisible, apiKey, miId) => {
+      const textoLocucion = formatearCitasParaLocucion(oracionVisible);
+      if (cacheAudioTTSRef.current.has(textoLocucion)) {
+        return cacheAudioTTSRef.current.get(textoLocucion);
+      }
+
+      for (let intento = 1; intento <= 3; intento++) {
+        if (miId !== idLocucionActualRef.current) return null;
+        try {
+          const res = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey.trim()}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [
+                  {
+                    parts: [{ text: textoLocucion }]
+                  }
+                ],
+                generationConfig: {
+                  temperature: 0.1,
+                  responseModalities: ['AUDIO'],
+                  speechConfig: {
+                    voiceConfig: {
+                      prebuiltVoiceConfig: { voiceName: 'Charon' }
+                    }
+                  }
+                }
+              })
+            }
+          );
+
+          if (res.ok) {
+            const data = await res.json();
+            const b64 = data?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+            if (b64) {
+              const binaryStr = window.atob(b64);
+              const len = binaryStr.length;
+              const bytes = new Uint8Array(len);
+              for (let i = 0; i < len; i++) bytes[i] = binaryStr.charCodeAt(i);
+              const int16 = new Int16Array(bytes.buffer);
+              const float32 = new Float32Array(int16.length);
+              for (let i = 0; i < int16.length; i++) {
+                float32[i] = int16[i] / 32768.0;
+              }
+              cacheAudioTTSRef.current.set(textoLocucion, float32);
+              return float32;
+            }
+          }
+        } catch (err) {}
+
+        if (intento < 3) {
+          await new Promise((r) => setTimeout(r, 450 * intento));
+        }
+      }
+      return null;
+    },
+    []
+  );
+
   const hablarConVozDM = useCallback(
     async (textoCrudo, alTerminarCallback = null) => {
-      const textoLimpio = formatearCitasParaLocucion(textoCrudo);
-      const palabrasOriginales = (textoCrudo || '').trim().split(/\s+/);
+      // Asegurar que el navegador jamás tenga ninguna locución nativa activa
+      try { window.speechSynthesis?.cancel(); } catch (e) {}
 
-      // Identificador único para cancelar cualquier petición anterior en curso
       idLocucionActualRef.current += 1;
       const miIdLocucion = idLocucionActualRef.current;
 
@@ -768,7 +858,8 @@ export default function SecretoSagradoLanding() {
       setHablandoDM(false);
       setTextoSincronizadoDM('');
 
-      // Si el usuario silenció voluntariamente la voz en Configuración, revela el texto en silencio (sin voz del sistema)
+      const palabrasTotales = (textoCrudo || '').trim().split(/\s+/);
+
       if (!vozSinteticaActiva || !geminiApiKey || geminiApiKey.trim() === '') {
         setTimeout(() => {
           if (miIdLocucion !== idLocucionActualRef.current) return;
@@ -782,121 +873,104 @@ export default function SecretoSagradoLanding() {
             }
             idxPalabra += 1;
             setAmplitudVozDM(0.35 + Math.sin(idxPalabra * 0.7) * 0.3);
-            setTextoSincronizadoDM(palabrasOriginales.slice(0, idxPalabra).join(' '));
-            if (idxPalabra >= palabrasOriginales.length) {
+            setTextoSincronizadoDM(palabrasTotales.slice(0, idxPalabra).join(' '));
+            if (idxPalabra >= palabrasTotales.length) {
               clearInterval(intervaloTextoRef.current);
               setAmplitudVozDM(0);
               setHablandoDM(false);
               if (alTerminarCallback) alTerminarCallback();
             }
           }, 150);
-        }, 400);
+        }, 350);
         return;
       }
 
-      // EXCLUSIVAMENTE VOZ DE IA GEMINI ('Charon' con ecualización grave y reintento automático)
-      let base64Audio = cacheAudioTTSRef.current.get(textoLimpio) || null;
-
-      for (let intento = 1; intento <= 3 && !base64Audio; intento++) {
-        if (miIdLocucion !== idLocucionActualRef.current) return;
-        try {
-          const res = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${geminiApiKey.trim()}`,
-            {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                contents: [
-                  {
-                    parts: [{ text: textoLimpio }]
-                  }
-                ],
-                generationConfig: {
-                  responseModalities: ['AUDIO'],
-                  speechConfig: {
-                    voiceConfig: {
-                      prebuiltVoiceConfig: { voiceName: 'Charon' }
-                    }
-                  }
-                }
-              })
-            }
-          );
-
-          if (res.ok) {
-            const data = await res.json();
-            const extraido = data?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-            if (extraido) {
-              base64Audio = extraido;
-              cacheAudioTTSRef.current.set(textoLimpio, extraido);
-              break;
-            }
-          }
-        } catch (err) {}
-
-        // Si hubo un micro-corte o límite simultáneo, espera un instante y reintenta obtener la voz de IA
-        if (!base64Audio && intento < 3) {
-          await new Promise((r) => setTimeout(r, 650 * intento));
-        }
-      }
+      // 1. Dividir el párrafo en oraciones cortas y sintetizarlas en paralelo con 'Charon' (temp 0.1)
+      const oraciones = dividirEnOracionesEstables(textoCrudo);
+      const listaPCM = await Promise.all(
+        oraciones.map((oracion) => obtenerPCMOracionGemini(oracion, geminiApiKey, miIdLocucion))
+      );
 
       if (miIdLocucion !== idLocucionActualRef.current) return;
 
-      if (base64Audio) {
+      const segmentosValidos = [];
+      for (let i = 0; i < oraciones.length; i++) {
+        if (listaPCM[i] && listaPCM[i].length > 0) {
+          segmentosValidos.push({
+            oracion: oraciones[i],
+            palabras: oraciones[i].split(/\s+/),
+            pcm: listaPCM[i]
+          });
+        }
+      }
+
+      if (segmentosValidos.length > 0) {
         try {
           const Ctx = window.AudioContext || window.webkitAudioContext;
           if (!audioCtxRef.current) audioCtxRef.current = new Ctx();
           const ctx = audioCtxRef.current;
           if (ctx.state === 'suspended') await ctx.resume();
 
-          const binaryStr = window.atob(base64Audio);
-          const len = binaryStr.length;
-          const bytes = new Uint8Array(len);
-          for (let i = 0; i < len; i++) bytes[i] = binaryStr.charCodeAt(i);
+          const sampleRate = 24000;
+          const pausaSamples = Math.floor(sampleRate * 0.14); // Pausa natural de 140ms entre oraciones
+          const totalSamples =
+            segmentosValidos.reduce((acc, s) => acc + s.pcm.length, 0) +
+            Math.max(0, segmentosValidos.length - 1) * pausaSamples;
 
-          const int16 = new Int16Array(bytes.buffer);
-          const audioBuffer = ctx.createBuffer(1, int16.length, 24000);
-          const channelData = audioBuffer.getChannelData(0);
-          for (let i = 0; i < int16.length; i++) {
-            channelData[i] = int16[i] / 32768.0;
-          }
+          const audioBuffer = ctx.createBuffer(1, totalSamples, sampleRate);
+          const canal = audioBuffer.getChannelData(0);
+
+          // Mapa exacto de en qué segundo debe aparecer cada palabra en la pantalla
+          const mapaPalabrasTiempo = [];
+          let offsetSamples = 0;
+          const palabrasAcumuladas = [];
+
+          segmentosValidos.forEach((seg, idxSeg) => {
+            canal.set(seg.pcm, offsetSamples);
+            const inicioSeg = offsetSamples / sampleRate;
+            const duracionSeg = seg.pcm.length / sampleRate;
+
+            seg.palabras.forEach((pal, idxPal) => {
+              palabrasAcumuladas.push(pal);
+              const tAparicion = inicioSeg + (idxPal / seg.palabras.length) * (duracionSeg * 0.92);
+              mapaPalabrasTiempo.push({
+                tiempo: tAparicion,
+                textoHastaAqui: palabrasAcumuladas.join(' ')
+              });
+            });
+
+            offsetSamples += seg.pcm.length;
+            if (idxSeg < segmentosValidos.length - 1) {
+              offsetSamples += pausaSamples;
+            }
+          });
 
           const source = ctx.createBufferSource();
           source.buffer = audioBuffer;
+          // Velocidad 1.0x nativa sin detune para no deformar jamás el timbre natural de la voz de IA
+          source.playbackRate.value = 1.0;
 
-          // Registro grave, varonil y con presencia de mando (0.96x y -115 cents)
-          const velocidadVoz = 0.96;
-          source.playbackRate.value = velocidadVoz;
-          if (source.detune) source.detune.value = -115;
-
-          // Ecualizador de cuerpo masculino: refuerzo grave a 115 Hz (+6.5 dB) y suavidad en 3000 Hz (-2.5 dB)
-          const filtroCuerpoGrave = ctx.createBiquadFilter();
-          filtroCuerpoGrave.type = 'lowshelf';
-          filtroCuerpoGrave.frequency.value = 115;
-          filtroCuerpoGrave.gain.value = 6.5;
-
-          const filtroSuavidad = ctx.createBiquadFilter();
-          filtroSuavidad.type = 'peaking';
-          filtroSuavidad.frequency.value = 3000;
-          filtroSuavidad.Q.value = 1.0;
-          filtroSuavidad.gain.value = -2.5;
+          // Ecualización limpia de estudio para calidez varonil sin artefactos
+          const filtroCalidez = ctx.createBiquadFilter();
+          filtroCalidez.type = 'lowshelf';
+          filtroCalidez.frequency.value = 125;
+          filtroCalidez.gain.value = 3.5;
 
           const analyser = ctx.createAnalyser();
           analyser.fftSize = 64;
 
-          source.connect(filtroCuerpoGrave);
-          filtroCuerpoGrave.connect(filtroSuavidad);
-          filtroSuavidad.connect(analyser);
+          source.connect(filtroCalidez);
+          filtroCalidez.connect(analyser);
           analyser.connect(ctx.destination);
           fuenteAudioTTSRef.current = source;
 
-          const duracionRealSeg = (audioBuffer.duration / velocidadVoz) * 1.04;
           const tiempoInicio = ctx.currentTime;
           const dataArr = new Uint8Array(analyser.frequencyBinCount);
           let activo = true;
 
           setCargandoVozDM(false);
           setHablandoDM(true);
+          setTextoSincronizadoDM(mapaPalabrasTiempo[0]?.textoHastaAqui || '');
 
           const actualizarPulsoYTexto = () => {
             if (!activo || miIdLocucion !== idLocucionActualRef.current) return;
@@ -905,9 +979,15 @@ export default function SecretoSagradoLanding() {
             setAmplitudVozDM(Math.min(1.15, prom / 70));
 
             const transcurrido = Math.max(0, ctx.currentTime - tiempoInicio);
-            const progreso = Math.min(1, transcurrido / Math.max(0.4, duracionRealSeg * 0.95));
-            const numPalabras = Math.max(1, Math.ceil(progreso * palabrasOriginales.length));
-            setTextoSincronizadoDM(palabrasOriginales.slice(0, numPalabras).join(' '));
+            let ultimoTexto = mapaPalabrasTiempo[0]?.textoHastaAqui || '';
+            for (let i = 0; i < mapaPalabrasTiempo.length; i++) {
+              if (transcurrido >= mapaPalabrasTiempo[i].tiempo) {
+                ultimoTexto = mapaPalabrasTiempo[i].textoHastaAqui;
+              } else {
+                break;
+              }
+            }
+            setTextoSincronizadoDM(ultimoTexto);
 
             requestAnimationFrame(actualizarPulsoYTexto);
           };
@@ -927,14 +1007,14 @@ export default function SecretoSagradoLanding() {
         } catch (err) {}
       }
 
-      // Si no hubiera conexión a Internet tras 3 intentos, muestra el texto en silencio jamás usando voz robótica
+      // Silencio limpio en caso de desconexión total de Internet (nunca usa voz del sistema)
       setCargandoVozDM(false);
       setHablandoDM(false);
       setTextoSincronizadoDM(textoCrudo);
       setAmplitudVozDM(0);
       if (alTerminarCallback) alTerminarCallback();
     },
-    [vozSinteticaActiva, geminiApiKey]
+    [vozSinteticaActiva, geminiApiKey, dividirEnOracionesEstables, obtenerPCMOracionGemini]
   );
   
 
