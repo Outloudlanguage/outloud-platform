@@ -11,6 +11,7 @@ import StudentHub from './StudentHub';
 import TeacherHub from './TeacherHub'; // <-- NEW: Imported the Teacher Hub
 import PlacementTest from './components/PlacementTest'; // <-- NEW: Placement Test
 import CataLanding from './Cata-Beta/CataLanding'; // <-- NEW: CATA Beta
+import SecretoSagradoLanding from './Secreto-Sagrado/SecretoSagradoLanding'; // <-- NEW: Secreto Sagrado
 
 // ==========================================
 // RBAC & LOCALIZATION WRAPPER COMPONENT
@@ -101,6 +102,7 @@ export default function App() {
     // 2. Dynamic Anti-Theft Handlers
     const handleContextMenu = (e) => e.preventDefault();
     const handleKeyDown = (e) => {
+      if (window.location.hash === '#secreto-sagrado' || window.location.hash === '#cata-beta') return;
       if ((e.ctrlKey || e.metaKey) && ['c', 'v', 'x', 's', 'p'].includes(e.key.toLowerCase())) {
         e.preventDefault();
       }
@@ -182,11 +184,23 @@ export default function App() {
     const handlePopState = (event) => {
       if (event.state && event.state.page) {
         setCurrentPage(event.state.page);
+      } else {
+        const hash = window.location.hash.replace('#', '');
+        if (hash) setCurrentPage(hash);
       }
     };
 
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#', '');
+      if (hash) setCurrentPage(hash);
+    };
+
     window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+    window.addEventListener('hashchange', handleHashChange);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('hashchange', handleHashChange);
+    };
   }, [currentPage]);
 
   const navigate = useCallback((page) => {
@@ -283,6 +297,11 @@ export default function App() {
       {/* NEW: CATA Beta Route (Isolated) */}
       {currentPage === 'cata-beta' && (
         <CataLanding />
+      )}
+
+      {/* NEW: Secreto Sagrado Route (Isolated) */}
+      {currentPage === 'secreto-sagrado' && (
+        <SecretoSagradoLanding />
       )}
 
       {/* PROTECTED ROUTES */}
