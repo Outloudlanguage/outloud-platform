@@ -144,9 +144,9 @@ function IconoSagradoSVG({ tipo, className = 'w-6 h-6' }) {
       case 'oracion':
         return (
           <>
-            <path d="M12 2v4M4.93 4.93l2.83 2.83M19.07 4.93l-2.83 2.83" />
-            <path d="M9 21l3-9 3 9" />
-            <path d="M7 14c2.5-2 7.5-2 10 0" />
+            {/* Manos unidas en oración con destello superior */}
+            <path d="M12 2v2.5M7.5 4l1.5 1.5M16.5 4L15 5.5" />
+            <path d="M12 7c-1.2 0-2.2 1-2.5 2.3L8 16l-2.5 2.5c-.6.6-.6 1.5 0 2.1.6.6 1.5.6 2.1 0L11 17.5V9.5c0-.8.4-1.5 1-1.5s1 .7 1 1.5v8l3.4 3.1c.6.6 1.5.6 2.1 0 .6-.6.6-1.5 0-2.1L16 16l-1.5-6.7C14.2 8 13.2 7 12 7z" />
           </>
         );
       case 'guardar':
@@ -705,8 +705,10 @@ export default function SecretoSagradoLanding() {
   };
 
   /* ==========================================================================
-     EFECTO 3: CARGA DE VOCES NEURONALES NATURALES + LECTURA DE CITAS BÍBLICAS
+     EFECTO 3: MOTOR DE VOZ MASCULINA NEURAL (GEMINI TTS + FALLBACK MASCULINO)
      ========================================================================== */
+  const fuenteAudioTTSRef = useRef(null);
+
   useEffect(() => {
     if (typeof window.speechSynthesis === 'undefined') return;
 
@@ -714,19 +716,16 @@ export default function SecretoSagradoLanding() {
       const todas = window.speechSynthesis.getVoices() || [];
       const espanol = todas.filter((v) => v.lang && v.lang.toLowerCase().startsWith('es'));
 
-      // Ordenar priorizando voces "Natural", "Online", "Neural", "Google", "Premium"
+      // Priorizar estrictamente voces MASCULINAS y neuronales
+      const regexMasculino = /(alvaro|álvaro|jorge|pablo|raul|raúl|diego|carlos|miguel|alonso|tomas|tomás|male|hombre|masculin)/i;
+      const regexFemenino = /(helena|laura|sabina|paulina|paloma|elvira|monica|mónica|lucia|lucía|mia|mía|female|mujer|femenin)/i;
+
       espanol.sort((a, b) => {
-        const puntA =
-          (a.name.includes('Natural') ? 10 : 0) +
-          (a.name.includes('Online') ? 8 : 0) +
-          (a.name.includes('Google') ? 6 : 0) +
-          (!a.localService ? 4 : 0);
-        const puntB =
-          (b.name.includes('Natural') ? 10 : 0) +
-          (b.name.includes('Online') ? 8 : 0) +
-          (b.name.includes('Google') ? 6 : 0) +
-          (!b.localService ? 4 : 0);
-        return puntB - puntA;
+        const esHombreA = regexMasculino.test(a.name) ? 25 : regexFemenino.test(a.name) ? -20 : 0;
+        const esHombreB = regexMasculino.test(b.name) ? 25 : regexFemenino.test(b.name) ? -20 : 0;
+        const calA = esHombreA + (a.name.includes('Natural') || a.name.includes('Online') ? 12 : 0);
+        const calB = esHombreB + (b.name.includes('Natural') || b.name.includes('Online') ? 12 : 0);
+        return calB - calA;
       });
 
       setVocesDisponibles(espanol);
@@ -740,10 +739,17 @@ export default function SecretoSagradoLanding() {
   }, [vozSeleccionadaURI]);
 
   const hablarConVozDM = useCallback(
-    (textoCrudo, alTerminarCallback = null) => {
+    async (textoCrudo, alTerminarCallback = null) => {
       const textoLimpio = formatearCitasParaLocucion(textoCrudo);
 
-      if (!vozSinteticaActiva || typeof window.speechSynthesis === 'undefined') {
+      // Detener cualquier locución anterior
+      window.speechSynthesis?.cancel();
+      if (fuenteAudioTTSRef.current) {
+        try { fuenteAudioTTSRef.current.stop(); } catch (e) {}
+        fuenteAudioTTSRef.current = null;
+      }
+
+      if (!vozSinteticaActiva) {
         let ticks = 0;
         const sim = setInterval(() => {
           ticks++;
@@ -757,55 +763,144 @@ export default function SecretoSagradoLanding() {
         return;
       }
 
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(textoLimpio);
+      // 1. INTENTAR VOZ MASCULINA HUMANA ULTRA-REALISTA VÍA GEMINI 2.5 FLASH TTS
+      if (geminiApiKey && geminiApiKey.trim() !== '') {
+        try {
+          const mapaVocesMasculinasGemini = {
+            pastor: 'Orus',
+            historiador: 'Charon',
+            profeta: 'Fenrir',
+            rey: 'Orus',
+            angel: 'Puck',
+            guerrero: 'Fenrir'
+          };
+          const nombreVozGemini = mapaVocesMasculinasGemini[dmPerfil.id] || 'Orus';
 
-      const voces = window.speechSynthesis.getVoices() || [];
-      const vozElegida =
-        voces.find((v) => v.voiceURI === vozSeleccionadaURI) ||
-        voces.find(
-          (v) =>
-            v.lang?.toLowerCase().startsWith('es') &&
-            (v.name.includes('Natural') || v.name.includes('Online') || v.name.includes('Google'))
-        ) ||
-        voces.find((v) => v.lang?.toLowerCase().startsWith('es'));
+          const res = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${geminiApiKey.trim()}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [
+                  {
+                    parts: [
+                      {
+                        text: `Lee en español con voz masculina profunda, pausada, cálida y cinematográfica de narrador épico: ${textoLimpio}`
+                      }
+                    ]
+                  }
+                ],
+                generationConfig: {
+                  responseModalities: ['AUDIO'],
+                  speechConfig: {
+                    voiceConfig: {
+                      prebuiltVoiceConfig: { voiceName: nombreVozGemini }
+                    }
+                  }
+                }
+              })
+            }
+          );
 
-      if (vozElegida) {
-        utterance.voice = vozElegida;
-        utterance.lang = vozElegida.lang;
-      } else {
-        utterance.lang = 'es-ES';
+          if (res.ok) {
+            const data = await res.json();
+            const base64Audio = data?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+            if (base64Audio) {
+              const Ctx = window.AudioContext || window.webkitAudioContext;
+              if (!audioCtxRef.current) audioCtxRef.current = new Ctx();
+              const ctx = audioCtxRef.current;
+              if (ctx.state === 'suspended') await ctx.resume();
+
+              const binaryStr = window.atob(base64Audio);
+              const len = binaryStr.length;
+              const bytes = new Uint8Array(len);
+              for (let i = 0; i < len; i++) bytes[i] = binaryStr.charCodeAt(i);
+
+              // Convertir PCM16 24kHz de Gemini a AudioBuffer y medir amplitud real para el Orbe
+              const int16 = new Int16Array(bytes.buffer);
+              const audioBuffer = ctx.createBuffer(1, int16.length, 24000);
+              const channelData = audioBuffer.getChannelData(0);
+              for (let i = 0; i < int16.length; i++) {
+                channelData[i] = int16[i] / 32768.0;
+              }
+
+              const source = ctx.createBufferSource();
+              const analyser = ctx.createAnalyser();
+              analyser.fftSize = 64;
+              source.buffer = audioBuffer;
+              source.connect(analyser);
+              analyser.connect(ctx.destination);
+              fuenteAudioTTSRef.current = source;
+
+              const dataArr = new Uint8Array(analyser.frequencyBinCount);
+              let activo = true;
+              const actualizarPulsoOrbe = () => {
+                if (!activo) return;
+                analyser.getByteFrequencyData(dataArr);
+                const prom = dataArr.reduce((a, b) => a + b, 0) / dataArr.length;
+                setAmplitudVozDM(Math.min(1.1, prom / 75));
+                requestAnimationFrame(actualizarPulsoOrbe);
+              };
+
+              source.onended = () => {
+                activo = false;
+                setAmplitudVozDM(0);
+                if (alTerminarCallback) alTerminarCallback();
+              };
+
+              source.start(0);
+              actualizarPulsoOrbe();
+              return;
+            }
+          }
+        } catch (err) {
+          // Si falla la red, pasa silenciosamente al motor local masculino
+        }
       }
 
-      utterance.pitch = dmPerfil.pitchVoz || 1.0;
-      utterance.rate = dmPerfil.rateVoz || 1.0;
+      // 2. RESPALDO LOCAL FORZANDO VOZ MASCULINA Y TONO GRAVE
+      if (typeof window.speechSynthesis !== 'undefined') {
+        const utterance = new SpeechSynthesisUtterance(textoLimpio);
+        const voces = window.speechSynthesis.getVoices() || [];
+        const regexMasculino = /(alvaro|álvaro|jorge|pablo|raul|raúl|diego|carlos|miguel|alonso|male|hombre)/i;
+        const vozHombre =
+          voces.find((v) => v.voiceURI === vozSeleccionadaURI) ||
+          voces.find((v) => v.lang?.toLowerCase().startsWith('es') && regexMasculino.test(v.name)) ||
+          voces.find((v) => v.lang?.toLowerCase().startsWith('es'));
 
-      let animInterval = null;
-      utterance.onstart = () => {
-        animInterval = setInterval(() => {
-          setAmplitudVozDM(0.28 + Math.random() * 0.68);
-        }, 85);
-      };
+        if (vozHombre) {
+          utterance.voice = vozHombre;
+          utterance.lang = vozHombre.lang;
+        } else {
+          utterance.lang = 'es-ES';
+        }
 
-      utterance.onboundary = () => {
-        setAmplitudVozDM(0.55 + Math.random() * 0.45);
-      };
+        // Tono masculino grave para evitar timbre robótico agudo
+        utterance.pitch = 0.82;
+        utterance.rate = 0.96;
 
-      const finalizar = () => {
-        if (animInterval) clearInterval(animInterval);
-        setAmplitudVozDM(0);
-        if (alTerminarCallback) alTerminarCallback();
-      };
-
-      utterance.onend = finalizar;
-      utterance.onerror = finalizar;
-      window.speechSynthesis.speak(utterance);
+        let animInterval = null;
+        utterance.onstart = () => {
+          animInterval = setInterval(() => {
+            setAmplitudVozDM(0.32 + Math.random() * 0.65);
+          }, 85);
+        };
+        const finalizar = () => {
+          if (animInterval) clearInterval(animInterval);
+          setAmplitudVozDM(0);
+          if (alTerminarCallback) alTerminarCallback();
+        };
+        utterance.onend = finalizar;
+        utterance.onerror = finalizar;
+        window.speechSynthesis.speak(utterance);
+      }
     },
-    [vozSinteticaActiva, dmPerfil, vozSeleccionadaURI]
+    [vozSinteticaActiva, dmPerfil, vozSeleccionadaURI, geminiApiKey]
   );
 
   /* ==========================================================================
-     EFECTO 4: CAPA ATMOSFÉRICA VISIBLE (NIEBLA EN MOVIMIENTO, AVES Y BRILLO EN LA CUMBRE)
+     EFECTO 4: NIEBLA DENSA EN MOVIMIENTO, AVES REALISTAS Y DESTELLO EN LA CUMBRE
      ========================================================================== */
   useEffect(() => {
     const canvas = canvasAtmosferaRef.current;
@@ -820,159 +915,163 @@ export default function SecretoSagradoLanding() {
     ajustar();
     window.addEventListener('resize', ajustar);
 
-    // 1. Bancos densos y visibles de niebla cruzando la montaña y el valle
-    const bancosNiebla = Array.from({ length: 10 }, (_, i) => ({
-      x: (i / 10) * window.innerWidth * 1.4 - window.innerWidth * 0.2,
-      y: window.innerHeight * (0.28 + (i % 5) * 0.13),
-      radioX: window.innerWidth * (0.26 + (i % 3) * 0.12),
-      radioY: window.innerHeight * (0.08 + (i % 3) * 0.045),
-      velocidad: (i % 2 === 0 ? 1 : -1) * (0.45 + (i % 4) * 0.22),
-      opacidad: 0.26 + (i % 3) * 0.08
+    // 1. Nubes y bancos de niebla multicapa de alta visibilidad sobre el valle y las laderas
+    const bancosNiebla = Array.from({ length: 14 }, (_, i) => ({
+      x: (i / 14) * window.innerWidth * 1.5 - window.innerWidth * 0.25,
+      y: window.innerHeight * (0.34 + (i % 6) * 0.11),
+      radioX: window.innerWidth * (0.28 + (i % 4) * 0.09),
+      radioY: window.innerHeight * (0.09 + (i % 3) * 0.045),
+      velocidad: (i % 2 === 0 ? 1 : -1) * (0.65 + (i % 4) * 0.28),
+      opacidad: 0.42 + (i % 3) * 0.12
     }));
 
-    // 2. Bandada de aves volando en la distancia a través del cielo
-    const bandadaAves = Array.from({ length: 16 }, (_, i) => ({
-      x: window.innerWidth * 0.15 + i * 32 + (i % 3) * 14,
-      y: window.innerHeight * 0.16 + Math.abs(i - 8) * 9,
-      escala: 0.7 + (i % 4) * 0.18,
-      velX: 0.85 + (i % 3) * 0.18,
-      velY: -0.05 + (i % 2) * 0.1,
-      faseAla: i * 0.55
+    // 2. Bandada de aves lejanas con articulación doble de alas y planeo natural
+    const bandadaAves = Array.from({ length: 12 }, (_, i) => ({
+      x: window.innerWidth * 0.08 + i * 38 + (i % 3) * 16,
+      y: window.innerHeight * 0.14 + Math.abs(i - 6) * 11 + (i % 2) * 7,
+      escala: 0.42 + (i % 4) * 0.12,
+      velX: 0.55 + (i % 3) * 0.14,
+      velY: -0.04 + Math.sin(i) * 0.05,
+      faseAla: i * 0.9,
+      tiempoPlaneo: i * 25
     }));
 
-    // 3. Partículas luminosas ascendentes
-    const destellosSol = Array.from({ length: 45 }, () => ({
+    // 3. Brillo atmosférico ascendente
+    const destellosSol = Array.from({ length: 40 }, () => ({
       x: Math.random() * window.innerWidth,
       y: Math.random() * window.innerHeight,
-      r: Math.random() * 2.8 + 1.0,
-      vx: (Math.random() - 0.3) * 0.45,
-      vy: -Math.random() * 0.4 - 0.12,
+      r: Math.random() * 2.4 + 0.8,
+      vx: (Math.random() - 0.3) * 0.4,
+      vy: -Math.random() * 0.35 - 0.1,
       faseBrillo: Math.random() * Math.PI * 2
     }));
 
     let tiempo = 0;
 
     const animarPaisaje = () => {
-      tiempo += 0.022;
+      tiempo += 0.02;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // A. BRILLO ANIMADO EN LA CUMBRE DE LA MONTAÑA Y EL EMBLEMA (DERECHA)
-      const cumbreX = canvas.width * 0.84;
-      const cumbreY = canvas.height * 0.15;
-      const emblemaX = canvas.width * 0.84;
-      const emblemaY = canvas.height * 0.43;
+      // A. DESTELLO CORREGIDO: ÚNICAMENTE EN LA CUMBRE REAL DE LA MONTAÑA (ARRIBA A LA DERECHA)
+      const cumbreX = canvas.width * 0.885;
+      const cumbreY = canvas.height * 0.065;
 
       ctx.save();
       ctx.globalCompositeOperation = 'screen';
 
-      // Resplandor pulsante sobre la cumbre nevada
-      const pulsoCumbre = 0.38 + Math.sin(tiempo * 1.4) * 0.16;
+      const pulsoCumbre = 0.48 + Math.sin(tiempo * 1.5) * 0.18;
       const gradCumbre = ctx.createRadialGradient(
         cumbreX,
         cumbreY,
-        8,
+        4,
         cumbreX,
         cumbreY,
-        canvas.width * 0.32
+        canvas.width * 0.36
       );
-      gradCumbre.addColorStop(0, `rgba(255, 255, 255, ${pulsoCumbre + 0.25})`);
-      gradCumbre.addColorStop(0.3, `rgba(254, 240, 138, ${pulsoCumbre})`);
-      gradCumbre.addColorStop(0.65, `rgba(56, 189, 248, ${pulsoCumbre * 0.4})`);
+      gradCumbre.addColorStop(0, `rgba(255, 255, 255, ${Math.min(1, pulsoCumbre + 0.35)})`);
+      gradCumbre.addColorStop(0.22, `rgba(254, 249, 195, ${pulsoCumbre})`);
+      gradCumbre.addColorStop(0.55, `rgba(253, 224, 71, ${pulsoCumbre * 0.35})`);
       gradCumbre.addColorStop(1, 'transparent');
       ctx.fillStyle = gradCumbre;
       ctx.beginPath();
-      ctx.arc(cumbreX, cumbreY, canvas.width * 0.32, 0, Math.PI * 2);
+      ctx.arc(cumbreX, cumbreY, canvas.width * 0.36, 0, Math.PI * 2);
       ctx.fill();
 
-      // Rayos solares rotatorios que emanan de la cumbre de la montaña
+      // Haces de luz solar diagonales que bajan desde la cumbre nevada hacia el valle
       ctx.save();
       ctx.translate(cumbreX, cumbreY);
-      ctx.rotate(tiempo * 0.08);
-      for (let r = 0; r < 8; r++) {
-        ctx.rotate(Math.PI / 4);
-        const gradRayo = ctx.createLinearGradient(0, 0, canvas.width * 0.28, 0);
-        gradRayo.addColorStop(0, `rgba(254, 249, 195, ${pulsoCumbre * 0.55})`);
+      for (let r = 0; r < 6; r++) {
+        const anguloRayo = Math.PI * 0.58 + r * 0.14 + Math.sin(tiempo * 0.7 + r) * 0.03;
+        ctx.save();
+        ctx.rotate(anguloRayo);
+        const gradRayo = ctx.createLinearGradient(0, 0, canvas.width * 0.55, 0);
+        gradRayo.addColorStop(0, `rgba(255, 251, 235, ${pulsoCumbre * 0.38})`);
+        gradRayo.addColorStop(0.6, `rgba(254, 240, 138, ${pulsoCumbre * 0.12})`);
         gradRayo.addColorStop(1, 'transparent');
         ctx.fillStyle = gradRayo;
         ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(canvas.width * 0.28, -22);
-        ctx.lineTo(canvas.width * 0.28, 22);
+        ctx.moveTo(0, -8);
+        ctx.lineTo(canvas.width * 0.55, -45);
+        ctx.lineTo(canvas.width * 0.55, 45);
+        ctx.lineTo(0, 8);
         ctx.closePath();
         ctx.fill();
+        ctx.restore();
       }
       ctx.restore();
-
-      // Destello vivo sobre el emblema incrustado en la montaña
-      const pulsoEmblema = 0.42 + Math.cos(tiempo * 2.1) * 0.22;
-      const gradEmblema = ctx.createRadialGradient(
-        emblemaX,
-        emblemaY,
-        4,
-        emblemaX,
-        emblemaY,
-        canvas.width * 0.14
-      );
-      gradEmblema.addColorStop(0, `rgba(255, 255, 255, ${pulsoEmblema + 0.3})`);
-      gradEmblema.addColorStop(0.4, `rgba(253, 224, 71, ${pulsoEmblema})`);
-      gradEmblema.addColorStop(1, 'transparent');
-      ctx.fillStyle = gradEmblema;
-      ctx.beginPath();
-      ctx.arc(emblemaX, emblemaY, canvas.width * 0.14, 0, Math.PI * 2);
-      ctx.fill();
       ctx.restore();
 
-      // B. BANDADA DE AVES VOLANDO EN LA DISTANCIA
+      // B. BANDADA DE AVES CON CINEMÁTICA NATURAL (ALETEO SUAVE + PLANEO)
       ctx.save();
-      ctx.strokeStyle = 'rgba(15, 23, 42, 0.72)';
-      ctx.lineCap = 'round';
-      bandadaAves.forEach((ave) => {
+      bandadaAves.forEach((ave, idx) => {
         ave.x += ave.velX;
-        ave.y += ave.velY + Math.sin(tiempo * 1.6 + ave.faseAla) * 0.18;
-        ave.faseAla += 0.15;
+        ave.tiempoPlaneo += 1;
+        // Alterna entre aleteo suave y planeo con alas extendidas
+        const estaPlaneando = Math.sin(ave.tiempoPlaneo * 0.03 + idx) > 0.35;
+        ave.faseAla += estaPlaneando ? 0.03 : 0.16;
+        ave.y += ave.velY + Math.sin(tiempo + idx) * 0.12;
 
-        // Corrección del bug anterior: usar canvas.height en lugar de canvas.innerHeight
-        if (ave.x > canvas.width + 120) {
-          ave.x = -100;
-          ave.y = canvas.height * (0.12 + Math.random() * 0.22);
+        if (ave.x > canvas.width + 80) {
+          ave.x = -80;
+          ave.y = canvas.height * (0.1 + Math.random() * 0.18);
         }
 
-        const aleteoY = Math.sin(ave.faseAla) * 6.5 * ave.escala;
-        const anchoAla = 11 * ave.escala;
-
-        ctx.lineWidth = 1.9 * ave.escala;
-        ctx.beginPath();
-        ctx.moveTo(ave.x - anchoAla, ave.y - aleteoY);
-        ctx.quadraticCurveTo(ave.x - anchoAla * 0.4, ave.y - aleteoY * 0.35, ave.x, ave.y);
-        ctx.quadraticCurveTo(ave.x + anchoAla * 0.4, ave.y - aleteoY * 0.35, ave.x + anchoAla, ave.y - aleteoY);
-        ctx.stroke();
-      });
-      ctx.restore();
-
-      // C. NUBES Y NIEBLA MÍSTICA EN MOVIMIENTO CONTINUO
-      bancosNiebla.forEach((nube) => {
-        nube.x += nube.velocidad;
-        if (nube.velocidad > 0 && nube.x - nube.radioX > canvas.width + 100) {
-          nube.x = -nube.radioX - 80;
-        } else if (nube.velocidad < 0 && nube.x + nube.radioX < -100) {
-          nube.x = canvas.width + nube.radioX + 80;
-        }
+        const s = ave.escala;
+        const batido = estaPlaneando ? 0.25 : Math.sin(ave.faseAla);
+        const codoY = -Math.abs(batido) * 3.2 * s;
+        const puntaY = batido * 6.5 * s;
 
         ctx.save();
-        ctx.translate(nube.x, nube.y);
-        ctx.scale(1, nube.radioY / nube.radioX);
-        const gradNiebla = ctx.createRadialGradient(0, 0, 10, 0, 0, nube.radioX);
-        gradNiebla.addColorStop(0, `rgba(255, 255, 255, ${nube.opacidad})`);
-        gradNiebla.addColorStop(0.5, `rgba(241, 245, 249, ${nube.opacidad * 0.65})`);
-        gradNiebla.addColorStop(1, 'transparent');
-        ctx.fillStyle = gradNiebla;
+        ctx.translate(ave.x, ave.y);
+        ctx.rotate(-0.06);
+        ctx.fillStyle = `rgba(30, 41, 59, ${0.42 + s * 0.35})`;
+
         ctx.beginPath();
-        ctx.arc(0, 0, nube.radioX, 0, Math.PI * 2);
+        // Cuerpo estilizado y alas articuladas en dos tramos (codo y punta)
+        ctx.moveTo(0, 0);
+        ctx.quadraticCurveTo(-4 * s, codoY - 1.5 * s, -10 * s, puntaY);
+        ctx.quadraticCurveTo(-5 * s, codoY + 0.5 * s, 0, 1.6 * s);
+        ctx.quadraticCurveTo(5 * s, codoY + 0.5 * s, 10 * s, puntaY);
+        ctx.quadraticCurveTo(4 * s, codoY - 1.5 * s, 0, 0);
+        ctx.closePath();
         ctx.fill();
         ctx.restore();
       });
+      ctx.restore();
 
-      // D. MOTAS DE LUZ FLOTANTES
+      // C. NUBES Y NIEBLA VOLUMÉTRICA COMPUESTA (3 LÓBULOS POR NUBE)
+      bancosNiebla.forEach((nube) => {
+        nube.x += nube.velocidad;
+        if (nube.velocidad > 0 && nube.x - nube.radioX * 1.4 > canvas.width) {
+          nube.x = -nube.radioX * 1.4;
+        } else if (nube.velocidad < 0 && nube.x + nube.radioX * 1.4 < 0) {
+          nube.x = canvas.width + nube.radioX * 1.4;
+        }
+
+        const lobulos = [
+          { dx: 0, dy: 0, escX: 1, escY: 1 },
+          { dx: -nube.radioX * 0.42, dy: nube.radioY * 0.18, escX: 0.75, escY: 0.85 },
+          { dx: nube.radioX * 0.45, dy: nube.radioY * 0.12, escX: 0.8, escY: 0.8 }
+        ];
+
+        lobulos.forEach((lob) => {
+          ctx.save();
+          ctx.translate(nube.x + lob.dx, nube.y + lob.dy);
+          ctx.scale(lob.escX, (nube.radioY / nube.radioX) * lob.escY);
+          const gradNiebla = ctx.createRadialGradient(0, 0, 8, 0, 0, nube.radioX);
+          gradNiebla.addColorStop(0, `rgba(255, 255, 255, ${nube.opacidad})`);
+          gradNiebla.addColorStop(0.48, `rgba(241, 245, 249, ${nube.opacidad * 0.72})`);
+          gradNiebla.addColorStop(0.8, `rgba(226, 232, 240, ${nube.opacidad * 0.28})`);
+          gradNiebla.addColorStop(1, 'transparent');
+          ctx.fillStyle = gradNiebla;
+          ctx.beginPath();
+          ctx.arc(0, 0, nube.radioX, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        });
+      });
+
+      // D. PARTÍCULAS LUMINOSAS DORADAS
       destellosSol.forEach((d) => {
         d.x += d.vx;
         d.y += d.vy;
@@ -1004,33 +1103,72 @@ export default function SecretoSagradoLanding() {
   }, []);
 
   /* ==========================================================================
-     SINTETIZADOR DE SONIDOS Y VIBRACIÓN PROGRESIVA
+     SINTETIZADOR DE SONIDOS Y MOTOR HÁPTICO (VIBRACIÓN FÍSICA + SUB-GRAVE 60HZ)
      ========================================================================== */
-  const sonarAcordeSintetico = useCallback((frecuencias = [523.25, 659.25, 783.99], duracion = 0.55) => {
-    try {
-      const Ctx = window.AudioContext || window.webkitAudioContext;
-      if (!audioCtxRef.current) audioCtxRef.current = new Ctx();
-      if (audioCtxRef.current.state === 'suspended') audioCtxRef.current.resume();
+  const dispararVibracionHaptica = useCallback(
+    (patronMs = 60, intensidadGrave = 0.18) => {
+      if (!vibracionActiva) return;
+      try {
+        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+          navigator.vibrate(patronMs);
+        }
+      } catch (e) {}
 
-      const now = audioCtxRef.current.currentTime;
-      frecuencias.forEach((f, i) => {
-        const osc = audioCtxRef.current.createOscillator();
-        const gain = audioCtxRef.current.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(f, now + i * 0.05);
-        gain.gain.setValueAtTime(0.001, now + i * 0.05);
-        gain.gain.exponentialRampToValueAtTime(0.09, now + i * 0.05 + 0.03);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.05 + duracion);
+      // Pulso táctil sub-grave (58 Hz) que hace vibrar físicamente el chasis de cualquier Tablet
+      try {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (!audioCtxRef.current) audioCtxRef.current = new Ctx();
+        const ctx = audioCtxRef.current;
+        if (ctx.state === 'suspended') ctx.resume();
+
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(62, now);
+        osc.frequency.exponentialRampToValueAtTime(42, now + 0.14);
+
+        gain.gain.setValueAtTime(intensidadGrave, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+
         osc.connect(gain);
-        gain.connect(audioCtxRef.current.destination);
-        osc.start(now + i * 0.05);
-        osc.stop(now + i * 0.05 + duracion + 0.04);
-      });
-    } catch (e) {}
-  }, []);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.16);
+      } catch (e) {}
+    },
+    [vibracionActiva]
+  );
+
+  const sonarAcordeSintetico = useCallback(
+    (frecuencias = [523.25, 659.25, 783.99], duracion = 0.55) => {
+      dispararVibracionHaptica(45, 0.14);
+      try {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (!audioCtxRef.current) audioCtxRef.current = new Ctx();
+        if (audioCtxRef.current.state === 'suspended') audioCtxRef.current.resume();
+
+        const now = audioCtxRef.current.currentTime;
+        frecuencias.forEach((f, i) => {
+          const osc = audioCtxRef.current.createOscillator();
+          const gain = audioCtxRef.current.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(f, now + i * 0.05);
+          gain.gain.setValueAtTime(0.001, now + i * 0.05);
+          gain.gain.exponentialRampToValueAtTime(0.09, now + i * 0.05 + 0.03);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.05 + duracion);
+          osc.connect(gain);
+          gain.connect(audioCtxRef.current.destination);
+          osc.start(now + i * 0.05);
+          osc.stop(now + i * 0.05 + duracion + 0.04);
+        });
+      } catch (e) {}
+    },
+    [dispararVibracionHaptica]
+  );
 
   /* ==========================================================================
-     LÓGICA DEL RITUAL DE 3 SEGUNDOS CON AMBOS PULGARES (TOMAR / DEVOLVER CONTROL)
+     TRANSICIÓN DE 3 SEGUNDOS CON AMBOS PULGARES (TOMAR / DEVOLVER CONTROL)
      ========================================================================== */
   const lanzarRitualPulgares = ({ titulo, subtitulo, colorLuz, alCompletar }) => {
     setPulgarIzqActivo(false);
@@ -1050,25 +1188,24 @@ export default function SecretoSagradoLanding() {
       return;
     }
 
+    // Disparo inmediato de patrón de vibración al apoyar ambos pulgares
+    dispararVibracionHaptica([90, 40, 120, 40, 160, 40, 220], 0.25);
+
     const timer = setInterval(() => {
       setProgresoPulgares((prev) => {
         const nuevo = Math.min(100, prev + 3.4);
 
-        if (vibracionActiva && navigator.vibrate) {
-          const intensidadMs = Math.floor(25 + (nuevo / 100) * 95);
-          navigator.vibrate(intensidadMs);
-        }
+        // Vibración física y acústica creciente conforme se acerca al 100%
+        dispararVibracionHaptica(Math.floor(40 + (nuevo / 100) * 80), 0.12 + (nuevo / 100) * 0.28);
 
-        if (Math.floor(nuevo) % 12 === 0) {
-          sonarAcordeSintetico([260 + nuevo * 4.8, 390 + nuevo * 5.2], 0.18);
+        if (Math.floor(nuevo) % 9 === 0) {
+          sonarAcordeSintetico([180 + nuevo * 5.2, 270 + nuevo * 5.8], 0.16);
         }
 
         if (nuevo >= 100) {
           clearInterval(timer);
           setExplosionLuzCompleta(true);
-          if (vibracionActiva && navigator.vibrate) {
-            navigator.vibrate([120, 40, 260]);
-          }
+          dispararVibracionHaptica([180, 50, 350], 0.35);
           sonarAcordeSintetico([523.25, 659.25, 783.99, 1046.5, 1318.5], 1.2);
 
           setTimeout(() => {
@@ -1082,7 +1219,7 @@ export default function SecretoSagradoLanding() {
     }, 95);
 
     return () => clearInterval(timer);
-  }, [pantalla, pulgarIzqActivo, pulgarDerActivo, vibracionActiva, configRitual, sonarAcordeSintetico]);
+  }, [pantalla, pulgarIzqActivo, pulgarDerActivo, vibracionActiva, configRitual, sonarAcordeSintetico, dispararVibracionHaptica]);
 
   /* ==========================================================================
      REACTIVIDAD DEL ORBE DEL JUGADOR A LA VOZ AMBIENTAL DE LA SALA
@@ -1170,7 +1307,7 @@ export default function SecretoSagradoLanding() {
   const iniciarJuegoTrasConfiguracion = () => {
     activarPantallaCompleta();
     lanzarRitualPulgares({
-      titulo: 'Ritual de Apertura del Secreto Sagrado',
+      titulo: 'Apertura del Secreto Sagrado',
       subtitulo: 'Sostén la Tablet horizontalmente y mantén ambos pulgares en los círculos durante 3 segundos',
       colorLuz: dmPerfil.colorHex,
       alCompletar: () => {
@@ -1472,8 +1609,27 @@ export default function SecretoSagradoLanding() {
       className="relative w-screen h-screen overflow-hidden select-none font-sans text-white bg-slate-950"
     >
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-        .font-cinzel { font-family: 'Cinzel', serif; }
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Syne:wght@700;800&display=swap');
+        .font-cinzel {
+          font-family: 'Syne', 'Outfit', sans-serif;
+          letter-spacing: -0.02em;
+        }
+        @keyframes levitarLogo {
+          0%, 100% { transform: translateY(0px) scale(1); filter: drop-shadow(0 12px 28px rgba(0,0,0,0.6)) drop-shadow(0 0 22px rgba(254,240,138,0.45)); }
+          50% { transform: translateY(-9px) scale(1.03); filter: drop-shadow(0 20px 34px rgba(0,0,0,0.7)) drop-shadow(0 0 38px rgba(56,189,248,0.7)); }
+        }
+        @keyframes giroAnilloSagrado {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        .logo-interactivo {
+          animation: levitarLogo 4.5s ease-in-out infinite;
+          transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.35s ease;
+        }
+        .logo-interactivo:hover, .logo-interactivo:active {
+          transform: scale(1.12) rotate(-2deg) !important;
+          filter: drop-shadow(0 0 45px rgba(255,255,255,1)) drop-shadow(0 0 70px rgba(251,191,36,0.9)) !important;
+        }
       `}</style>
 
       {/* 1. IMAGEN DE FONDO PERSONALIZADA DE MONTAÑA */}
@@ -1483,7 +1639,7 @@ export default function SecretoSagradoLanding() {
       />
 
       {/* Sutil velo atmosférico lateral izquierdo para que las letras blancas brillen sobre las nubes */}
-      <div className="fixed inset-0 z-0 bg-gradient-to-r from-slate-950/45 via-transparent to-transparent pointer-events-none" />
+      <div className="fixed inset-0 z-0 bg-gradient-to-r from-slate-950/50 via-slate-950/15 to-transparent pointer-events-none" />
       <div className="fixed inset-0 z-0 bg-gradient-to-b from-slate-950/15 via-transparent to-slate-950/40 pointer-events-none" />
 
       {/* 2. CAPA ANIMADA EN CANVAS: NIEBLA MÍSTICA, BANDADA DE AVES Y BRILLO EN LA CUMBRE */}
@@ -1508,19 +1664,19 @@ export default function SecretoSagradoLanding() {
                 : 'scale-110 opacity-0'
             }`}
           >
-            <div className="absolute -inset-12 rounded-full bg-cyan-400/25 blur-3xl animate-pulse pointer-events-none" />
+            <div className="absolute -inset-16 rounded-full bg-cyan-400/30 blur-3xl animate-pulse pointer-events-none" />
             <img
               src={URL_LOGO_OFICIAL}
               alt="Secreto Sagrado"
-              className="w-60 md:w-80 object-contain drop-shadow-[0_0_45px_rgba(255,255,255,0.85)]"
+              className="w-72 md:w-96 object-contain logo-interactivo"
             />
-            <h1 className="font-cinzel text-3xl md:text-4xl font-black tracking-[0.2em] uppercase text-white mt-5 drop-shadow-lg">
+            <h1 className="font-cinzel text-4xl md:text-5xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-amber-100 to-cyan-200 mt-5 drop-shadow-lg">
               Secreto Sagrado
             </h1>
-            <p className="font-cinzel text-xs md:text-sm tracking-[0.28em] text-amber-200/90 mt-1">
+            <p className="text-xs md:text-sm font-bold tracking-[0.28em] uppercase text-amber-200/90 mt-1.5">
               y su magnífica revelación
             </p>
-            <div className="mt-10 px-7 py-3 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur-xl border border-white/50 text-xs tracking-[0.3em] uppercase text-white font-black animate-pulse shadow-[0_0_30px_rgba(255,255,255,0.35)]">
+            <div className="mt-10 px-8 py-3.5 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur-xl border border-white/50 text-xs tracking-[0.25em] uppercase text-white font-black animate-pulse shadow-[0_0_30px_rgba(255,255,255,0.35)]">
               Toca para Iniciar en Pantalla Completa
             </div>
           </div>
@@ -1528,10 +1684,10 @@ export default function SecretoSagradoLanding() {
       )}
 
       {/* ====================================================================
-          PANTALLA 1: MENÚ PRINCIPAL (LOGO + TÍTULO + LEMA Y OPCIONES A LA IZQUIERDA)
+          PANTALLA 1: MENÚ PRINCIPAL (LOGO GRANDE REACTIVO + TÍTULO MODERNO + OPCIONES)
           ==================================================================== */}
       {pantalla === 'MENU_PRINCIPAL' && (
-        <section className="relative z-20 w-full h-full flex flex-col justify-between px-10 md:px-20 py-10 md:py-14">
+        <section className="relative z-20 w-full h-full flex flex-col justify-between px-10 md:px-20 py-8 md:py-12">
           {/* Botón discreto de Pantalla Completa en la esquina superior derecha */}
           <button
             onClick={alternarPantallaCompleta}
@@ -1541,31 +1697,43 @@ export default function SecretoSagradoLanding() {
             <IconoSagradoSVG tipo="fullscreen" className="w-5 h-5" />
           </button>
 
-          {/* BLOQUE IZQUIERDO: LOGO COMPACTO + SECRETO SAGRADO + Y SU MAGNÍFICA REVELACIÓN */}
-          <div className="flex flex-col items-start max-w-md">
-            <div className="flex flex-col items-center text-center">
-              <img
-                src={URL_LOGO_OFICIAL}
-                alt="Logo Secreto Sagrado"
-                className="w-28 md:w-36 object-contain drop-shadow-[0_8px_25px_rgba(0,0,0,0.65)] animate-[pulse_5s_ease-in-out_infinite]"
-              />
-              <h1 className="font-cinzel text-2xl md:text-3xl font-black tracking-[0.14em] uppercase text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.85)] mt-2">
+          {/* BLOQUE IZQUIERDO: LOGO PROTAGONISTA CON ANILLOS DE LUZ Y REACCIÓN AL TACTO */}
+          <div className="flex flex-col items-start max-w-xl my-auto">
+            <div
+              onClick={() => sonarAcordeSintetico([523.25, 659.25, 783.99, 1046.5], 0.8)}
+              className="group relative flex flex-col items-center text-center cursor-pointer select-none"
+            >
+              {/* Anillos celestes y dorados animados detrás del emblema */}
+              <div className="relative flex items-center justify-center">
+                <div className="absolute -inset-6 rounded-full bg-gradient-to-r from-amber-300/25 via-cyan-300/25 to-amber-300/25 blur-2xl group-hover:scale-125 group-hover:opacity-100 opacity-75 transition-all duration-500 pointer-events-none" />
+                <div
+                  style={{ animation: 'giroAnilloSagrado 24s linear infinite' }}
+                  className="absolute w-48 h-48 md:w-60 md:h-60 rounded-full border border-dashed border-amber-200/40 group-hover:border-white/80 transition-colors pointer-events-none"
+                />
+                <img
+                  src={URL_LOGO_OFICIAL}
+                  alt="Logo Secreto Sagrado"
+                  className="relative z-10 w-52 md:w-68 object-contain logo-interactivo"
+                />
+              </div>
+
+              <h1 className="font-cinzel text-4xl md:text-5xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-amber-100 to-cyan-100 drop-shadow-[0_4px_20px_rgba(0,0,0,0.85)] mt-3 group-hover:scale-105 transition-transform">
                 Secreto Sagrado
               </h1>
-              <p className="font-cinzel text-xs md:text-sm tracking-[0.22em] text-amber-200 font-semibold drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)] mt-0.5">
+              <p className="text-xs md:text-sm font-extrabold tracking-[0.26em] uppercase text-amber-200 drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)] mt-1">
                 y su magnífica revelación
               </p>
             </div>
 
-            {/* OPCIONES DEL MENÚ DEBAJO (SOLO LAS PALABRAS SIN CONTENEDORES, BRILLAN AL TOCAR) */}
-            <nav className="flex flex-col items-start gap-4 mt-12 md:mt-16 pl-2">
+            {/* OPCIONES DEL MENÚ DEBAJO (SOLO LAS PALABRAS SIN CONTENEDORES, BRILLAN Y VIBRAN AL TOCAR) */}
+            <nav className="flex flex-col items-start gap-4 mt-10 md:mt-12 pl-2">
               <button
                 onClick={() => {
                   activarPantallaCompleta();
                   sonarAcordeSintetico([523.25, 659.25, 783.99]);
                   setPantalla('SETUP_NARRADOR');
                 }}
-                className="bg-transparent border-none text-left text-3xl md:text-4xl font-extrabold tracking-wide text-white/90 hover:text-white active:scale-95 transition-all duration-300 hover:translate-x-3 drop-shadow-[0_4px_14px_rgba(0,0,0,0.75)] hover:drop-shadow-[0_0_28px_rgba(255,255,255,1)] focus:outline-none"
+                className="bg-transparent border-none text-left text-3xl md:text-5xl font-black tracking-tight text-white/90 hover:text-white active:scale-95 transition-all duration-300 hover:translate-x-4 drop-shadow-[0_4px_16px_rgba(0,0,0,0.85)] hover:drop-shadow-[0_0_32px_rgba(255,255,255,1)] focus:outline-none"
               >
                 Iniciar
               </button>
@@ -1573,7 +1741,7 @@ export default function SecretoSagradoLanding() {
               {localStorage.getItem('ss_partida_guardada_v4') && (
                 <button
                   onClick={cargarPartidaGuardada}
-                  className="bg-transparent border-none text-left text-2xl md:text-3xl font-extrabold tracking-wide text-amber-200/95 hover:text-amber-100 active:scale-95 transition-all duration-300 hover:translate-x-3 drop-shadow-[0_4px_14px_rgba(0,0,0,0.75)] hover:drop-shadow-[0_0_28px_rgba(253,224,71,1)] focus:outline-none"
+                  className="bg-transparent border-none text-left text-2xl md:text-4xl font-extrabold tracking-tight text-amber-200/95 hover:text-amber-100 active:scale-95 transition-all duration-300 hover:translate-x-4 drop-shadow-[0_4px_16px_rgba(0,0,0,0.85)] hover:drop-shadow-[0_0_32px_rgba(253,224,71,1)] focus:outline-none"
                 >
                   Continuar
                 </button>
@@ -1584,14 +1752,12 @@ export default function SecretoSagradoLanding() {
                   sonarAcordeSintetico([440, 554.37, 659.25]);
                   setPantalla('CONFIGURACION');
                 }}
-                className="bg-transparent border-none text-left text-3xl md:text-4xl font-extrabold tracking-wide text-white/85 hover:text-white active:scale-95 transition-all duration-300 hover:translate-x-3 drop-shadow-[0_4px_14px_rgba(0,0,0,0.75)] hover:drop-shadow-[0_0_28px_rgba(255,255,255,1)] focus:outline-none"
+                className="bg-transparent border-none text-left text-3xl md:text-5xl font-black tracking-tight text-white/85 hover:text-white active:scale-95 transition-all duration-300 hover:translate-x-4 drop-shadow-[0_4px_16px_rgba(0,0,0,0.85)] hover:drop-shadow-[0_0_32px_rgba(255,255,255,1)] focus:outline-none"
               >
                 Configuración
               </button>
             </nav>
           </div>
-
-          <div />
         </section>
       )}
 
@@ -1904,7 +2070,7 @@ export default function SecretoSagradoLanding() {
               onClick={iniciarJuegoTrasConfiguracion}
               className="px-14 py-4 rounded-full bg-gradient-to-r from-amber-300 via-yellow-200 to-cyan-200 text-slate-950 font-black text-sm tracking-widest uppercase shadow-[0_0_45px_rgba(254,240,138,0.85)] hover:scale-105 transition-all"
             >
-              Continuar al Ritual de Inicio →
+              Comenzar la Aventura →
             </button>
           </footer>
         </section>
@@ -2059,10 +2225,18 @@ export default function SecretoSagradoLanding() {
       )}
 
       {/* ====================================================================
-          RITUAL DE 3 SEGUNDOS CON AMBOS PULGARES (CON HUELLA VECTORIAL SVG)
+          SINCRONIZACIÓN DE 3 SEGUNDOS CON AMBOS PULGARES (VIBRACIÓN + TEMBLOR FÍSICO)
           ==================================================================== */}
       {pantalla === 'RITUAL_PULGARES' && (
-        <section className="fixed inset-0 z-40 flex items-center justify-between px-8 md:px-20 bg-slate-950/65 backdrop-blur-2xl overflow-hidden">
+        <section
+          style={{
+            transform:
+              progresoPulgares > 0
+                ? `translate(${(Math.random() - 0.5) * (progresoPulgares * 0.14)}px, ${(Math.random() - 0.5) * (progresoPulgares * 0.14)}px)`
+                : 'none'
+          }}
+          className="fixed inset-0 z-40 flex items-center justify-between px-8 md:px-20 bg-slate-950/65 backdrop-blur-2xl overflow-hidden"
+        >
           <div
             style={{
               transform: `scale(${0.2 + (progresoPulgares / 100) * 3.8})`,
@@ -2080,12 +2254,15 @@ export default function SecretoSagradoLanding() {
 
           {/* CÍRCULO DEL PULGAR IZQUIERDO */}
           <button
-            onPointerDown={() => setPulgarIzqActivo(true)}
+            onPointerDown={() => {
+              dispararVibracionHaptica([120, 40, 180], 0.3);
+              setPulgarIzqActivo(true);
+            }}
             onPointerUp={() => setPulgarIzqActivo(false)}
             onPointerLeave={() => setPulgarIzqActivo(false)}
             style={{
               borderColor: pulgarIzqActivo ? '#ffffff' : configRitual.colorLuz,
-              boxShadow: pulgarIzqActivo ? `0 0 60px ${configRitual.colorLuz}` : undefined
+              boxShadow: pulgarIzqActivo ? `0 0 65px ${configRitual.colorLuz}` : undefined
             }}
             className={`relative z-20 w-36 h-36 md:w-44 md:h-44 rounded-full backdrop-blur-2xl border-4 flex flex-col items-center justify-center gap-2 transition-all duration-200 ${
               pulgarIzqActivo ? 'bg-white/40 scale-110' : 'bg-white/10 animate-pulse'
@@ -2100,7 +2277,7 @@ export default function SecretoSagradoLanding() {
             <span className="text-xs font-black tracking-[0.28em] uppercase text-amber-200">
               Transición de Control • {Math.ceil((100 - progresoPulgares) / 33.4)}s
             </span>
-            <h2 className="font-cinzel text-2xl md:text-4xl font-black leading-tight drop-shadow-lg">
+            <h2 className="font-cinzel text-2xl md:text-4xl font-extrabold leading-tight drop-shadow-lg">
               {configRitual.titulo}
             </h2>
             <p className="text-xs md:text-sm text-white/85 leading-relaxed">
@@ -2116,6 +2293,7 @@ export default function SecretoSagradoLanding() {
 
             <button
               onPointerDown={() => {
+                dispararVibracionHaptica([120, 40, 200, 40, 300], 0.3);
                 setPulgarIzqActivo(true);
                 setPulgarDerActivo(true);
               }}
@@ -2131,12 +2309,15 @@ export default function SecretoSagradoLanding() {
 
           {/* CÍRCULO DEL PULGAR DERECHO */}
           <button
-            onPointerDown={() => setPulgarDerActivo(true)}
+            onPointerDown={() => {
+              dispararVibracionHaptica([120, 40, 180], 0.3);
+              setPulgarDerActivo(true);
+            }}
             onPointerUp={() => setPulgarDerActivo(false)}
             onPointerLeave={() => setPulgarDerActivo(false)}
             style={{
               borderColor: pulgarDerActivo ? '#ffffff' : configRitual.colorLuz,
-              boxShadow: pulgarDerActivo ? `0 0 60px ${configRitual.colorLuz}` : undefined
+              boxShadow: pulgarDerActivo ? `0 0 65px ${configRitual.colorLuz}` : undefined
             }}
             className={`relative z-20 w-36 h-36 md:w-44 md:h-44 rounded-full backdrop-blur-2xl border-4 flex flex-col items-center justify-center gap-2 transition-all duration-200 ${
               pulgarDerActivo ? 'bg-white/40 scale-110' : 'bg-white/10 animate-pulse'
@@ -2149,43 +2330,56 @@ export default function SecretoSagradoLanding() {
       )}
 
       {/* ====================================================================
-          PANTALLA DE JUEGO EN VIVO (EL ORBE LÍQUIDO Y LA COREOGRAFÍA DINÁMICA)
+          PANTALLA DE JUEGO EN VIVO (ESFERA DEL DM CON VIAJE FLUIDO A LA ESQUINA)
           ==================================================================== */}
       {pantalla === 'JUEGO' && (
         <section className="relative z-20 w-full h-full flex flex-col justify-between p-6 md:p-10">
-          {/* ESQUINA SUPERIOR IZQUIERDA: ORBE DEL DM RETIRADO CUANDO JUEGA EL JUGADOR */}
-          <div className="fixed top-5 left-6 z-30 flex items-center gap-3">
-            {subFaseJuego === 'JUGADOR_ACTIVO' ? (
-              <div className="flex items-center gap-3 animate-[fadeIn_0.5s_ease-out]">
-                <OrbeLiquidoReactivo
-                  colorPrimario={dmPerfil.colorHex}
-                  colorSecundario={dmPerfil.colorSecundario}
-                  amplitudVoz={amplitudVozDM}
-                  tamano={76}
-                  iconoTipo={dmPerfil.iconoTipo}
-                  nombreCentral="Guía"
-                  enEsquina={true}
-                  onClick={() => hablarConVozDM(`${retoActual.pregunta}. ${retoActual.instruccionInput}`)}
-                />
-                <span className="hidden xl:inline-block text-[11px] font-bold text-white/80 bg-slate-950/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/25">
-                  Era {eraActualNum}/8
-                </span>
-              </div>
-            ) : (
-              <div className="px-4 py-2 rounded-full bg-slate-950/45 backdrop-blur-xl border border-white/35 text-xs font-black tracking-widest uppercase">
-                Era {eraActualNum} de 8 • {TITULOS_OCHO_ERAS[eraActualNum - 1].nombre}
-              </div>
-            )}
+          {/* ESFERA PERSISTENTE DEL DM: VIAJA Y SE ENCOGE FLUIDAMENTE DEL CENTRO A LA ESQUINA SUPERIOR IZQUIERDA */}
+          {subFaseJuego !== 'FIN_PARTIDA' && (
+            <div
+              className={`fixed z-30 transition-all duration-1000 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                subFaseJuego === 'JUGADOR_ACTIVO'
+                  ? 'top-4 left-5 translate-x-0 translate-y-0 scale-[0.36] origin-top-left'
+                  : 'top-[28%] left-1/2 -translate-x-1/2 -translate-y-1/2 scale-100 origin-center'
+              }`}
+            >
+              <OrbeLiquidoReactivo
+                colorPrimario={dmPerfil.colorHex}
+                colorSecundario={dmPerfil.colorSecundario}
+                amplitudVoz={amplitudVozDM}
+                tamano={225}
+                iconoTipo={subFaseJuego === 'REVELACION_HILO' ? 'estrella' : dmPerfil.iconoTipo}
+                etiquetaSuperior={
+                  subFaseJuego === 'DM_PREGUNTA'
+                    ? retoActual.citaBiblia
+                    : `Era ${eraActualNum} • Vuelta ${vueltaNumero}`
+                }
+                nombreCentral={dmPerfil.nombre}
+                enEsquina={false}
+                onClick={() => hablarConVozDM(`${retoActual.pregunta}. ${retoActual.instruccionInput}`)}
+              />
+            </div>
+          )}
+
+          {/* ETIQUETA DE ERA ARRIBA A LA IZQUIERDA (SE DESPLAZA AL LADO DE LA ESFERA CUANDO SE RETIRA) */}
+          <div
+            className={`fixed top-5 z-30 transition-all duration-700 ${
+              subFaseJuego === 'JUGADOR_ACTIVO' ? 'left-28' : 'left-6'
+            }`}
+          >
+            <div className="px-4 py-2 rounded-full bg-slate-950/45 backdrop-blur-xl border border-white/35 text-xs font-black tracking-widest uppercase">
+              Era {eraActualNum} de 8 • {TITULOS_OCHO_ERAS[eraActualNum - 1].nombre}
+            </div>
           </div>
 
-          {/* PARTE SUPERIOR CENTRAL (70% DEL ANCHO): CAJA GLASSMORPHIC DE PREGUNTA */}
+          {/* PARTE SUPERIOR CENTRAL (70% DEL ANCHO, DEBAJO DE LA BARRA SUPERIOR SIN SOLAPARSE) */}
           {subFaseJuego === 'JUGADOR_ACTIVO' && (
-            <div className="w-[70vw] mx-auto mt-1 p-5 rounded-3xl bg-slate-950/50 backdrop-blur-2xl border border-white/45 shadow-[0_15px_45px_rgba(0,0,0,0.45)] text-center z-20 transition-all duration-500">
-              <div className="inline-flex items-center gap-2 px-3.5 py-0.5 rounded-full bg-amber-300/20 border border-amber-300/60 text-amber-200 text-[11px] font-black tracking-widest uppercase mb-1.5">
+            <div className="w-[70vw] mx-auto mt-12 p-4 md:p-5 rounded-3xl bg-slate-950/55 backdrop-blur-2xl border border-white/45 shadow-[0_15px_45px_rgba(0,0,0,0.45)] text-center z-20 animate-[fadeIn_0.6s_ease-out]">
+              <div className="inline-flex items-center gap-2 px-3.5 py-0.5 rounded-full bg-amber-300/20 border border-amber-300/60 text-amber-200 text-[11px] font-black tracking-widest uppercase mb-1">
                 <IconoSagradoSVG tipo="biblia" className="w-3.5 h-3.5" />
                 <span>Biblia Física: {retoActual.citaBiblia}</span>
               </div>
-              <h2 className="text-lg md:text-2xl font-black leading-snug text-white">
+              <h2 className="font-cinzel text-lg md:text-2xl font-extrabold leading-snug text-white">
                 {retoActual.pregunta}
               </h2>
               <p className="text-xs text-cyan-200 font-semibold mt-1">
@@ -2194,8 +2388,8 @@ export default function SecretoSagradoLanding() {
             </div>
           )}
 
-          {/* ESQUINA SUPERIOR DERECHA: HP, HERRAMIENTAS, FULLSCREEN, GUARDAR Y CERRAR */}
-          <div className="fixed top-5 right-6 z-30 flex items-center gap-2.5">
+          {/* ESQUINA SUPERIOR DERECHA: HP, ORACIÓN CLARA, HERRAMIENTAS, GUARDAR Y CERRAR */}
+          <div className="fixed top-5 right-6 z-30 flex items-center gap-2">
             {notificacionGuardado && (
               <span className="px-3 py-1.5 rounded-full bg-emerald-500/80 text-xs font-black">
                 {notificacionGuardado}
@@ -2203,12 +2397,12 @@ export default function SecretoSagradoLanding() {
             )}
 
             {/* Convicción (HP) */}
-            <div className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-slate-950/45 backdrop-blur-xl border border-white/35">
+            <div className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-slate-950/50 backdrop-blur-xl border border-white/35">
               <IconoSagradoSVG tipo="hp" className="w-4 h-4 text-cyan-300" />
               <span className="text-[11px] font-black text-amber-200">HP {conviccionHP}/10</span>
             </div>
 
-            {/* Herramienta: Oración */}
+            {/* Herramienta: Oración con Icono Claro y Texto */}
             <button
               onClick={() => {
                 if (tokensOracion <= 0) return;
@@ -2217,10 +2411,10 @@ export default function SecretoSagradoLanding() {
                 sonarAcordeSintetico([523.25, 659.25, 1046.5]);
               }}
               title="Herramienta de Oración (+2 HP)"
-              className="px-3.5 py-2 rounded-full bg-amber-400/25 hover:bg-amber-400/40 backdrop-blur-xl border border-amber-300/60 text-xs font-black flex items-center gap-1.5"
+              className="px-3.5 py-2 rounded-full bg-amber-400/25 hover:bg-amber-400/45 backdrop-blur-xl border border-amber-300/70 text-xs font-black flex items-center gap-1.5 text-amber-100"
             >
               <IconoSagradoSVG tipo="oracion" className="w-4 h-4 text-amber-200" />
-              <span>{tokensOracion}</span>
+              <span>Oración ({tokensOracion})</span>
             </button>
 
             {/* Herramienta: Poder del Rol Activo */}
@@ -2288,18 +2482,8 @@ export default function SecretoSagradoLanding() {
           <main className="my-auto w-full max-w-5xl mx-auto flex flex-col items-center justify-center gap-6">
             {/* SUB-FASE 1: INTRODUCCIÓN DEL DM Y SOLICITUD DE PERMISO */}
             {subFaseJuego === 'INTRO_HISTORIA' && (
-              <div className="flex flex-col items-center gap-6 text-center max-w-2xl">
-                <OrbeLiquidoReactivo
-                  colorPrimario={dmPerfil.colorHex}
-                  colorSecundario={dmPerfil.colorSecundario}
-                  amplitudVoz={amplitudVozDM}
-                  tamano={235}
-                  iconoTipo={dmPerfil.iconoTipo}
-                  etiquetaSuperior="Guía del Sistema"
-                  nombreCentral={dmPerfil.nombre}
-                />
-
-                <div className="p-6 rounded-3xl bg-slate-950/50 backdrop-blur-2xl border border-white/40 shadow-2xl">
+              <div className="flex flex-col items-center gap-6 text-center max-w-2xl mt-52">
+                <div className="p-6 rounded-3xl bg-slate-950/55 backdrop-blur-2xl border border-white/40 shadow-2xl">
                   <p className="text-sm md:text-base text-white/95 leading-relaxed">
                     {dmPerfil.introHistoria}
                   </p>
@@ -2331,18 +2515,8 @@ export default function SecretoSagradoLanding() {
 
             {/* SUB-FASE 2: EL DM PREGUNTA QUIÉN VA A JUGAR Y MUESTRA LOS CÍRCULOS DE JUGADORES */}
             {(subFaseJuego === 'ELEGIR_JUGADOR' || subFaseJuego === 'ANIMACION_DESVANECER_OTROS') && (
-              <div className="flex flex-col items-center gap-8 text-center">
-                <OrbeLiquidoReactivo
-                  colorPrimario={dmPerfil.colorHex}
-                  colorSecundario={dmPerfil.colorSecundario}
-                  amplitudVoz={amplitudVozDM}
-                  tamano={210}
-                  iconoTipo={dmPerfil.iconoTipo}
-                  etiquetaSuperior={`Vuelta ${vueltaNumero}`}
-                  nombreCentral={dmPerfil.nombre}
-                />
-
-                <p className="text-lg md:text-2xl font-black tracking-wide drop-shadow-lg">
+              <div className="flex flex-col items-center gap-7 text-center mt-52">
+                <p className="font-cinzel text-xl md:text-3xl font-extrabold tracking-tight drop-shadow-lg">
                   {cargandoRetoIA
                     ? 'Preparando el desafío de las Escrituras...'
                     : '¿Quién tomará el desafío en este turno?'}
@@ -2389,18 +2563,9 @@ export default function SecretoSagradoLanding() {
               </div>
             )}
 
-            {/* SUB-FASE 3: EL DM ENUNCIA LA PREGUNTA ANTES DE RETIRARSE A LA ESQUINA */}
+            {/* SUB-FASE 3: EL DM ENUNCIA LA PREGUNTA ANTES DE RETIRARSE FLUIDAMENTE A LA ESQUINA */}
             {subFaseJuego === 'DM_PREGUNTA' && (
-              <div className="flex flex-col items-center gap-6 text-center max-w-2xl">
-                <OrbeLiquidoReactivo
-                  colorPrimario={dmPerfil.colorHex}
-                  colorSecundario={dmPerfil.colorSecundario}
-                  amplitudVoz={amplitudVozDM}
-                  tamano={230}
-                  iconoTipo={dmPerfil.iconoTipo}
-                  etiquetaSuperior={retoActual.citaBiblia}
-                  nombreCentral={dmPerfil.nombre}
-                />
+              <div className="flex flex-col items-center gap-6 text-center max-w-2xl mt-52">
                 <div className="p-6 rounded-3xl bg-slate-950/55 backdrop-blur-2xl border border-white/40 shadow-2xl">
                   <h3 className="text-xl font-black text-amber-200 mb-2">{retoActual.tituloNodo}</h3>
                   <p className="text-base text-white/95 leading-relaxed mb-3">{retoActual.pregunta}</p>
@@ -2574,16 +2739,7 @@ export default function SecretoSagradoLanding() {
 
             {/* SUB-FASE 5: REVELACIÓN DEL HILO DORADO CON EL DM EN EL CENTRO */}
             {subFaseJuego === 'REVELACION_HILO' && (
-              <div className="flex flex-col items-center gap-6 text-center max-w-2xl">
-                <OrbeLiquidoReactivo
-                  colorPrimario={dmPerfil.colorHex}
-                  colorSecundario={dmPerfil.colorSecundario}
-                  amplitudVoz={amplitudVozDM}
-                  tamano={215}
-                  iconoTipo="estrella"
-                  etiquetaSuperior={`Era ${eraActualNum} • El Hilo Dorado`}
-                  nombreCentral={dmPerfil.nombre}
-                />
+              <div className="flex flex-col items-center gap-6 text-center max-w-2xl mt-52">
                 <div className="p-6 rounded-3xl bg-slate-950/55 backdrop-blur-2xl border border-amber-300/60 shadow-[0_0_45px_rgba(251,191,36,0.3)]">
                   <p className="text-sm md:text-base text-white/95 leading-relaxed">
                     {mensajeFeedbackDM}
