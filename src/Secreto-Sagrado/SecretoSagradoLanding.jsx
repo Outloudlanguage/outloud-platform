@@ -704,10 +704,40 @@ export default function SecretoSagradoLanding() {
     }
   };
 
-  /* ==========================================================================
-     EFECTO 3: MOTOR DE VOZ MASCULINA NEURAL (GEMINI TTS + FALLBACK MASCULINO)
+/* ==========================================================================
+     EFECTO 3: VOZ VARONIL CÁLIDA Y PODEROSA + TEXTO SINCRONIZADO EN TIEMPO REAL
      ========================================================================== */
   const fuenteAudioTTSRef = useRef(null);
+  const intervaloTextoRef = useRef(null);
+  const [cargandoVozDM, setCargandoVozDM] = useState(false);
+  const [hablandoDM, setHablandoDM] = useState(false);
+  const [textoSincronizadoDM, setTextoSincronizadoDM] = useState('');
+
+  // Componente inmersivo con el Logo animado mientras el Narrador piensa / carga la voz
+  const renderizarEstadoPensandoDM = (mensaje = 'El Guía está meditando en las Escrituras...') => (
+    <div className="flex flex-col items-center justify-center py-4 px-6 gap-3.5 animate-[fadeIn_0.35s_ease-out]">
+      <div className="relative flex items-center justify-center">
+        <div className="absolute -inset-4 rounded-full bg-gradient-to-r from-amber-300/35 via-cyan-300/35 to-amber-300/35 blur-xl animate-pulse" />
+        <div
+          style={{ animation: 'giroAnilloSagrado 7s linear infinite' }}
+          className="absolute w-20 h-20 rounded-full border border-dashed border-amber-200/70"
+        />
+        <img
+          src={URL_LOGO_OFICIAL}
+          alt="Meditando..."
+          className="relative z-10 w-16 h-16 object-contain logo-interactivo"
+        />
+      </div>
+      <div className="flex items-center gap-2 text-xs md:text-sm font-extrabold tracking-[0.18em] uppercase text-amber-200">
+        <span>{mensaje}</span>
+        <span className="inline-flex gap-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-300 animate-bounce" style={{ animationDelay: '0ms' }} />
+          <span className="w-1.5 h-1.5 rounded-full bg-cyan-300 animate-bounce" style={{ animationDelay: '150ms' }} />
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-300 animate-bounce" style={{ animationDelay: '300ms' }} />
+        </span>
+      </div>
+    </div>
+  );
 
   useEffect(() => {
     if (typeof window.speechSynthesis === 'undefined') return;
@@ -716,15 +746,14 @@ export default function SecretoSagradoLanding() {
       const todas = window.speechSynthesis.getVoices() || [];
       const espanol = todas.filter((v) => v.lang && v.lang.toLowerCase().startsWith('es'));
 
-      // Priorizar estrictamente voces MASCULINAS y neuronales
       const regexMasculino = /(alvaro|álvaro|jorge|pablo|raul|raúl|diego|carlos|miguel|alonso|tomas|tomás|male|hombre|masculin)/i;
       const regexFemenino = /(helena|laura|sabina|paulina|paloma|elvira|monica|mónica|lucia|lucía|mia|mía|female|mujer|femenin)/i;
 
       espanol.sort((a, b) => {
-        const esHombreA = regexMasculino.test(a.name) ? 25 : regexFemenino.test(a.name) ? -20 : 0;
-        const esHombreB = regexMasculino.test(b.name) ? 25 : regexFemenino.test(b.name) ? -20 : 0;
-        const calA = esHombreA + (a.name.includes('Natural') || a.name.includes('Online') ? 12 : 0);
-        const calB = esHombreB + (b.name.includes('Natural') || b.name.includes('Online') ? 12 : 0);
+        const esHombreA = regexMasculino.test(a.name) ? 30 : regexFemenino.test(a.name) ? -25 : 0;
+        const esHombreB = regexMasculino.test(b.name) ? 30 : regexFemenino.test(b.name) ? -25 : 0;
+        const calA = esHombreA + (a.name.includes('Natural') || a.name.includes('Online') || a.name.includes('Google') ? 15 : 0);
+        const calB = esHombreB + (b.name.includes('Natural') || b.name.includes('Online') || b.name.includes('Google') ? 15 : 0);
         return calB - calA;
       });
 
@@ -741,40 +770,54 @@ export default function SecretoSagradoLanding() {
   const hablarConVozDM = useCallback(
     async (textoCrudo, alTerminarCallback = null) => {
       const textoLimpio = formatearCitasParaLocucion(textoCrudo);
+      const palabrasOriginales = (textoCrudo || '').trim().split(/\s+/);
 
-      // Detener cualquier locución anterior
+      // Limpiar cualquier locución y temporizador previo
       window.speechSynthesis?.cancel();
+      if (intervaloTextoRef.current) clearInterval(intervaloTextoRef.current);
       if (fuenteAudioTTSRef.current) {
         try { fuenteAudioTTSRef.current.stop(); } catch (e) {}
         fuenteAudioTTSRef.current = null;
       }
 
+      // Activar estado de "Pensando" con la caja vacía para que nadie se adelante
+      setCargandoVozDM(true);
+      setHablandoDM(false);
+      setTextoSincronizadoDM('');
+
       if (!vozSinteticaActiva) {
-        let ticks = 0;
-        const sim = setInterval(() => {
-          ticks++;
-          setAmplitudVozDM(0.35 + Math.sin(ticks * 0.6) * 0.3);
-          if (ticks > 32) {
-            clearInterval(sim);
-            setAmplitudVozDM(0);
-            if (alTerminarCallback) alTerminarCallback();
-          }
-        }, 100);
+        setTimeout(() => {
+          setCargandoVozDM(false);
+          setHablandoDM(true);
+          let idxPalabra = 0;
+          intervaloTextoRef.current = setInterval(() => {
+            idxPalabra += 1;
+            setAmplitudVozDM(0.35 + Math.sin(idxPalabra * 0.7) * 0.3);
+            setTextoSincronizadoDM(palabrasOriginales.slice(0, idxPalabra).join(' '));
+            if (idxPalabra >= palabrasOriginales.length) {
+              clearInterval(intervaloTextoRef.current);
+              setAmplitudVozDM(0);
+              setHablandoDM(false);
+              if (alTerminarCallback) alTerminarCallback();
+            }
+          }, 140);
+        }, 650);
         return;
       }
 
-      // 1. INTENTAR VOZ MASCULINA HUMANA ULTRA-REALISTA VÍA GEMINI 2.5 FLASH TTS
+      // 1. VOZ VARONIL CÁLIDA, PROFUNDA Y FLUIDA VÍA GEMINI (EXCLUSIVAMENTE BARÍTONOS CHARON / FENRIR)
       if (geminiApiKey && geminiApiKey.trim() !== '') {
         try {
-          const mapaVocesMasculinasGemini = {
-            pastor: 'Orus',
+          // Solo voces masculinas graves y cálidas (eliminados Orus y Puck por completo)
+          const mapaBaritonos = {
+            pastor: 'Charon',
             historiador: 'Charon',
             profeta: 'Fenrir',
-            rey: 'Orus',
-            angel: 'Puck',
+            rey: 'Fenrir',
+            angel: 'Charon',
             guerrero: 'Fenrir'
           };
-          const nombreVozGemini = mapaVocesMasculinasGemini[dmPerfil.id] || 'Orus';
+          const vozBaritono = mapaBaritonos[dmPerfil.id] || 'Charon';
 
           const res = await fetch(
             `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${geminiApiKey.trim()}`,
@@ -784,18 +827,14 @@ export default function SecretoSagradoLanding() {
               body: JSON.stringify({
                 contents: [
                   {
-                    parts: [
-                      {
-                        text: `Lee en español con voz masculina firme, dinámica, fluida, a ritmo ágil y continuo sin pausas largas entre frases: ${textoLimpio}`
-                      }
-                    ]
+                    parts: [{ text: textoLimpio }]
                   }
                 ],
                 generationConfig: {
                   responseModalities: ['AUDIO'],
                   speechConfig: {
                     voiceConfig: {
-                      prebuiltVoiceConfig: { voiceName: nombreVozGemini }
+                      prebuiltVoiceConfig: { voiceName: vozBaritono }
                     }
                   }
                 }
@@ -817,110 +856,136 @@ export default function SecretoSagradoLanding() {
               const bytes = new Uint8Array(len);
               for (let i = 0; i < len; i++) bytes[i] = binaryStr.charCodeAt(i);
 
-              // Convertir PCM16 24kHz y recortar automáticamente silencios iniciales e intermedios (>0.14s)
-              const int16Original = new Int16Array(bytes.buffer);
-              const muestrasCompactadas = [];
-              let contadorSilencio = 0;
-              const umbralSilencio = 260; // Amplitud mínima
-              const maxMuestrasSilencio = 3360; // Máximo 0.14 segundos de pausa permitida a 24kHz
-              let empezoVoz = false;
-
-              for (let i = 0; i < int16Original.length; i++) {
-                const muestra = int16Original[i];
-                if (Math.abs(muestra) > umbralSilencio) {
-                  empezoVoz = true;
-                  contadorSilencio = 0;
-                  muestrasCompactadas.push(muestra / 32768.0);
-                } else if (empezoVoz) {
-                  contadorSilencio++;
-                  if (contadorSilencio <= maxMuestrasSilencio) {
-                    muestrasCompactadas.push(muestra / 32768.0);
-                  }
-                }
-              }
-
-              const totalMuestras = muestrasCompactadas.length || 1;
-              const audioBuffer = ctx.createBuffer(1, totalMuestras, 24000);
+              const int16 = new Int16Array(bytes.buffer);
+              const audioBuffer = ctx.createBuffer(1, int16.length, 24000);
               const channelData = audioBuffer.getChannelData(0);
-              for (let i = 0; i < totalMuestras; i++) {
-                channelData[i] = muestrasCompactadas[i] || 0;
+              for (let i = 0; i < int16.length; i++) {
+                channelData[i] = int16[i] / 32768.0;
               }
 
               const source = ctx.createBufferSource();
-              // Acelerar la cadencia un 18% para una narración ágil y natural
-              source.playbackRate.value = 1.18;
+              source.buffer = audioBuffer;
+              // Velocidad ágil y dinámica (1.14x) con ligero ajuste de cuerpo varonil (-65 cents)
+              const velocidadVoz = 1.14;
+              source.playbackRate.value = velocidadVoz;
+              if (source.detune) source.detune.value = -65;
+
+              // Filtro de Estudio: Realce de pecho cálido (140 Hz) + Claridad sedosa (4200 Hz)
+              const filtroCalidez = ctx.createBiquadFilter();
+              filtroCalidez.type = 'lowshelf';
+              filtroCalidez.frequency.value = 140;
+              filtroCalidez.gain.value = 5.5;
+
+              const filtroPresencia = ctx.createBiquadFilter();
+              filtroPresencia.type = 'highshelf';
+              filtroPresencia.frequency.value = 4200;
+              filtroPresencia.gain.value = 2.0;
+
               const analyser = ctx.createAnalyser();
               analyser.fftSize = 64;
-              source.buffer = audioBuffer;
-              source.connect(analyser);
+
+              source.connect(filtroCalidez);
+              filtroCalidez.connect(filtroPresencia);
+              filtroPresencia.connect(analyser);
               analyser.connect(ctx.destination);
               fuenteAudioTTSRef.current = source;
 
+              const duracionRealSeg = audioBuffer.duration / velocidadVoz;
+              const tiempoInicio = ctx.currentTime;
               const dataArr = new Uint8Array(analyser.frequencyBinCount);
               let activo = true;
-              const actualizarPulsoOrbe = () => {
+
+              // En este instante exacto comienza a sonar la voz: ocultamos el logo y revelamos palabra por palabra
+              setCargandoVozDM(false);
+              setHablandoDM(true);
+
+              const actualizarPulsoYTexto = () => {
                 if (!activo) return;
                 analyser.getByteFrequencyData(dataArr);
                 const prom = dataArr.reduce((a, b) => a + b, 0) / dataArr.length;
-                setAmplitudVozDM(Math.min(1.1, prom / 75));
-                requestAnimationFrame(actualizarPulsoOrbe);
+                setAmplitudVozDM(Math.min(1.15, prom / 70));
+
+                // Revelar exactamente las palabras por las que va la voz
+                const transcurrido = Math.max(0, ctx.currentTime - tiempoInicio);
+                const progreso = Math.min(1, transcurrido / Math.max(0.4, duracionRealSeg * 0.94));
+                const numPalabras = Math.max(1, Math.ceil(progreso * palabrasOriginales.length));
+                setTextoSincronizadoDM(palabrasOriginales.slice(0, numPalabras).join(' '));
+
+                requestAnimationFrame(actualizarPulsoYTexto);
               };
 
               source.onended = () => {
                 activo = false;
+                setTextoSincronizadoDM(textoCrudo);
                 setAmplitudVozDM(0);
+                setHablandoDM(false);
                 if (alTerminarCallback) alTerminarCallback();
               };
 
               source.start(0);
-              actualizarPulsoOrbe();
+              actualizarPulsoYTexto();
               return;
             }
           }
         } catch (err) {
-          // Si falla la red, pasa silenciosamente al motor local masculino
+          // Pasa al motor nativo rápido si no hay red
         }
       }
 
-      // 2. RESPALDO LOCAL FORZANDO VOZ MASCULINA Y TONO GRAVE
+      // 2. MOTOR DEL DISPOSITIVO CON RITMO ÁGIL (1.18x) Y REVELACIÓN PALABRA POR PALABRA
       if (typeof window.speechSynthesis !== 'undefined') {
-        const utterance = new SpeechSynthesisUtterance(textoLimpio);
-        const voces = window.speechSynthesis.getVoices() || [];
-        const regexMasculino = /(alvaro|álvaro|jorge|pablo|raul|raúl|diego|carlos|miguel|alonso|male|hombre)/i;
-        const vozHombre =
-          voces.find((v) => v.voiceURI === vozSeleccionadaURI) ||
-          voces.find((v) => v.lang?.toLowerCase().startsWith('es') && regexMasculino.test(v.name)) ||
-          voces.find((v) => v.lang?.toLowerCase().startsWith('es'));
+        setTimeout(() => {
+          const utterance = new SpeechSynthesisUtterance(textoLimpio);
+          const voces = window.speechSynthesis.getVoices() || [];
+          const regexMasculino = /(alvaro|álvaro|jorge|pablo|raul|raúl|diego|carlos|miguel|alonso|male|hombre)/i;
+          const vozElegida =
+            voces.find((v) => v.voiceURI === vozSeleccionadaURI) ||
+            voces.find((v) => v.lang?.toLowerCase().startsWith('es') && regexMasculino.test(v.name)) ||
+            voces.find((v) => v.lang?.toLowerCase().startsWith('es'));
 
-        if (vozHombre) {
-          utterance.voice = vozHombre;
-          utterance.lang = vozHombre.lang;
-        } else {
-          utterance.lang = 'es-ES';
-        }
+          if (vozElegida) {
+            utterance.voice = vozElegida;
+            utterance.lang = vozElegida.lang;
+          } else {
+            utterance.lang = 'es-ES';
+          }
 
-        // Tono masculino firme con velocidad ágil y sin pausas lentas
-        utterance.pitch = 0.85;
-        utterance.rate = 1.15;
+          // Velocidad ágil (1.18x) y tono natural firme (0.96) para que nunca hable lento ni robótico
+          utterance.rate = 1.18;
+          utterance.pitch = 0.96;
 
-        let animInterval = null;
-        utterance.onstart = () => {
-          animInterval = setInterval(() => {
-            setAmplitudVozDM(0.32 + Math.random() * 0.65);
-          }, 85);
-        };
-        const finalizar = () => {
-          if (animInterval) clearInterval(animInterval);
-          setAmplitudVozDM(0);
-          if (alTerminarCallback) alTerminarCallback();
-        };
-        utterance.onend = finalizar;
-        utterance.onerror = finalizar;
-        window.speechSynthesis.speak(utterance);
+          let palabraIdx = 0;
+          utterance.onstart = () => {
+            setCargandoVozDM(false);
+            setHablandoDM(true);
+            setTextoSincronizadoDM(palabrasOriginales[0] || '');
+
+            // Avance progresivo sincronizado con la velocidad 1.18x (~185ms por palabra)
+            intervaloTextoRef.current = setInterval(() => {
+              palabraIdx = Math.min(palabrasOriginales.length, palabraIdx + 1);
+              setTextoSincronizadoDM(palabrasOriginales.slice(0, palabraIdx).join(' '));
+              setAmplitudVozDM(0.35 + Math.random() * 0.6);
+            }, 185);
+          };
+
+          const finalizar = () => {
+            if (intervaloTextoRef.current) clearInterval(intervaloTextoRef.current);
+            setCargandoVozDM(false);
+            setHablandoDM(false);
+            setTextoSincronizadoDM(textoCrudo);
+            setAmplitudVozDM(0);
+            if (alTerminarCallback) alTerminarCallback();
+          };
+
+          utterance.onend = finalizar;
+          utterance.onerror = finalizar;
+          window.speechSynthesis.speak(utterance);
+        }, 550);
       }
     },
     [vozSinteticaActiva, dmPerfil, vozSeleccionadaURI, geminiApiKey]
   );
+  
 
   /* ==========================================================================
      EFECTO 4: NIEBLA DENSA EN MOVIMIENTO, AVES REALISTAS Y DESTELLO EN LA CUMBRE
@@ -1399,7 +1464,7 @@ export default function SecretoSagradoLanding() {
           setPantalla('JUEGO');
           setSubFaseJuego('DM_PREGUNTA');
 
-          const locucionCompleta = `${retoActual.narrativaDM} Busquen en su Biblia física ${retoActual.citaBiblia}. ${retoActual.pregunta} ${retoActual.instruccionInput}`;
+          const locucionCompleta = `${retoActual.narrativaDM} ${retoActual.pregunta} ${retoActual.instruccionInput}`;
           hablarConVozDM(locucionCompleta, () => {
             setSubFaseJuego('JUGADOR_ACTIVO');
           });
@@ -2505,105 +2570,138 @@ export default function SecretoSagradoLanding() {
           <main className="my-auto w-full max-w-5xl mx-auto flex flex-col items-center justify-center gap-6">
             {/* SUB-FASE 1: INTRODUCCIÓN DEL DM Y SOLICITUD DE PERMISO */}
             {subFaseJuego === 'INTRO_HISTORIA' && (
-              <div className="flex flex-col items-center gap-6 text-center max-w-2xl mt-52">
-                <div className="p-6 rounded-3xl bg-slate-950/55 backdrop-blur-2xl border border-white/40 shadow-2xl">
-                  <p className="text-sm md:text-base text-white/95 leading-relaxed">
-                    {dmPerfil.introHistoria}
-                  </p>
+              <div className="flex flex-col items-center gap-6 text-center max-w-2xl w-full mt-52">
+                <div className="w-full min-h-[150px] p-6 rounded-3xl bg-slate-950/55 backdrop-blur-2xl border border-white/40 shadow-2xl flex items-center justify-center">
+                  {cargandoVozDM ? (
+                    renderizarEstadoPensandoDM('El Guía está abriendo las crónicas sagradas...')
+                  ) : (
+                    <p className="text-sm md:text-base text-white/95 leading-relaxed">
+                      {textoSincronizadoDM}
+                      {hablandoDM && (
+                        <span className="inline-block w-2 h-4 ml-1 align-middle bg-amber-300 animate-pulse" />
+                      )}
+                    </p>
+                  )}
                 </div>
 
-                <div className="flex flex-wrap items-center justify-center gap-4">
-                  <button
-                    onClick={() => concederPermisoYPrepararReto(1, 0)}
-                    className="px-9 py-4 rounded-full bg-white/25 hover:bg-white/40 backdrop-blur-2xl border border-white/80 font-black text-sm tracking-widest uppercase shadow-[0_0_35px_rgba(255,255,255,0.5)] hover:scale-105 transition-all"
-                  >
-                    Conceder Permiso y Comenzar
-                  </button>
+                {!cargandoVozDM && (
+                  <div className="flex flex-wrap items-center justify-center gap-4 animate-[fadeIn_0.4s_ease-out]">
+                    <button
+                      onClick={() => concederPermisoYPrepararReto(1, 0)}
+                      className="px-9 py-4 rounded-full bg-white/25 hover:bg-white/40 backdrop-blur-2xl border border-white/80 font-black text-sm tracking-widest uppercase shadow-[0_0_35px_rgba(255,255,255,0.5)] hover:scale-105 transition-all"
+                    >
+                      Conceder Permiso y Comenzar
+                    </button>
 
-                  <button
-                    onPointerDown={iniciarEscuchaPushToTalk}
-                    onPointerUp={soltarEscuchaPushToTalk}
-                    className={`px-7 py-4 rounded-full backdrop-blur-2xl border font-black text-xs tracking-wider uppercase transition-all flex items-center gap-2 ${
-                      manteniendoMic
-                        ? 'bg-emerald-400 text-slate-950 border-white scale-105 shadow-[0_0_35px_#34d399]'
-                        : 'bg-slate-950/45 border-white/40 text-white'
-                    }`}
-                  >
-                    <IconoSagradoSVG tipo="mic" className="w-4 h-4" />
-                    <span>{manteniendoMic ? 'Escuchando tu permiso...' : 'Mantén para dar permiso con voz'}</span>
-                  </button>
-                </div>
+                    <button
+                      onPointerDown={iniciarEscuchaPushToTalk}
+                      onPointerUp={soltarEscuchaPushToTalk}
+                      className={`px-7 py-4 rounded-full backdrop-blur-2xl border font-black text-xs tracking-wider uppercase transition-all flex items-center gap-2 ${
+                        manteniendoMic
+                          ? 'bg-emerald-400 text-slate-950 border-white scale-105 shadow-[0_0_35px_#34d399]'
+                          : 'bg-slate-950/45 border-white/40 text-white'
+                      }`}
+                    >
+                      <IconoSagradoSVG tipo="mic" className="w-4 h-4" />
+                      <span>{manteniendoMic ? 'Escuchando tu permiso...' : 'Mantén para dar permiso con voz'}</span>
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
             {/* SUB-FASE 2: EL DM PREGUNTA QUIÉN VA A JUGAR Y MUESTRA LOS CÍRCULOS DE JUGADORES */}
             {(subFaseJuego === 'ELEGIR_JUGADOR' || subFaseJuego === 'ANIMACION_DESVANECER_OTROS') && (
-              <div className="flex flex-col items-center gap-7 text-center mt-52">
-                <p className="font-cinzel text-xl md:text-3xl font-extrabold tracking-tight drop-shadow-lg">
-                  {cargandoRetoIA
-                    ? 'Preparando el desafío de las Escrituras...'
-                    : '¿Quién tomará el desafío en este turno?'}
-                </p>
-
-                <div className="flex flex-wrap items-center justify-center gap-5">
-                  {jugadores.map((jug) => {
-                    const clase = CLASES_ROLES[jug.rolIdx];
-                    const fueElegido = jugadorActivoId === jug.id;
-                    const desvanecer =
-                      subFaseJuego === 'ANIMACION_DESVANECER_OTROS' && !fueElegido;
-
-                    return (
-                      <button
-                        key={jug.id}
-                        disabled={!jug.disponible || subFaseJuego === 'ANIMACION_DESVANECER_OTROS'}
-                        onClick={() => elegirJugadorParaElTurno(jug)}
-                        style={{
-                          backgroundColor: jug.disponible ? `${clase.color}33` : 'rgba(15,23,42,0.45)',
-                          borderColor: jug.disponible ? clase.color : 'rgba(148,163,184,0.25)',
-                          boxShadow: jug.disponible ? `0 0 28px ${clase.color}66` : 'none'
-                        }}
-                        className={`w-28 h-28 md:w-32 md:h-32 rounded-full backdrop-blur-2xl border-2 flex flex-col items-center justify-center p-2 transition-all duration-700 ${
-                          desvanecer
-                            ? 'scale-0 opacity-0 pointer-events-none'
-                            : fueElegido
-                            ? 'scale-125 ring-4 ring-white'
-                            : jug.disponible
-                            ? 'hover:scale-110 cursor-pointer'
-                            : 'grayscale opacity-35 cursor-not-allowed'
-                        }`}
-                      >
-                        <IconoSagradoSVG tipo={clase.iconoTipo} className="w-7 h-7 mb-1.5 text-white" />
-                        <span className="font-black text-xs md:text-sm leading-tight truncate max-w-full">
-                          {jug.nombre}
-                        </span>
-                        <span className="text-[10px] font-bold text-white/80 mt-0.5">
-                          {jug.disponible ? clase.nombre.replace('El ', '') : 'En espera'}
-                        </span>
-                      </button>
-                    );
-                  })}
+              <div className="flex flex-col items-center gap-7 text-center max-w-2xl w-full mt-52">
+                <div className="w-full min-h-[120px] p-5 rounded-3xl bg-slate-950/50 backdrop-blur-2xl border border-white/35 shadow-2xl flex items-center justify-center">
+                  {cargandoVozDM || cargandoRetoIA ? (
+                    renderizarEstadoPensandoDM('El Guía está meditando en las Escrituras...')
+                  ) : (
+                    <p className="font-cinzel text-lg md:text-2xl font-extrabold tracking-tight text-white drop-shadow-lg">
+                      {textoSincronizadoDM || '¿Quién tomará el desafío en este turno?'}
+                      {hablandoDM && (
+                        <span className="inline-block w-2 h-4 ml-1 align-middle bg-amber-300 animate-pulse" />
+                      )}
+                    </p>
+                  )}
                 </div>
+
+                {!cargandoVozDM && !cargandoRetoIA && (
+                  <div className="flex flex-wrap items-center justify-center gap-5 animate-[fadeIn_0.4s_ease-out]">
+                    {jugadores.map((jug) => {
+                      const clase = CLASES_ROLES[jug.rolIdx];
+                      const fueElegido = jugadorActivoId === jug.id;
+                      const desvanecer =
+                        subFaseJuego === 'ANIMACION_DESVANECER_OTROS' && !fueElegido;
+
+                      return (
+                        <button
+                          key={jug.id}
+                          disabled={!jug.disponible || subFaseJuego === 'ANIMACION_DESVANECER_OTROS'}
+                          onClick={() => elegirJugadorParaElTurno(jug)}
+                          style={{
+                            backgroundColor: jug.disponible ? `${clase.color}33` : 'rgba(15,23,42,0.45)',
+                            borderColor: jug.disponible ? clase.color : 'rgba(148,163,184,0.25)',
+                            boxShadow: jug.disponible ? `0 0 28px ${clase.color}66` : 'none'
+                          }}
+                          className={`w-28 h-28 md:w-32 md:h-32 rounded-full backdrop-blur-2xl border-2 flex flex-col items-center justify-center p-2 transition-all duration-700 ${
+                            desvanecer
+                              ? 'scale-0 opacity-0 pointer-events-none'
+                              : fueElegido
+                              ? 'scale-125 ring-4 ring-white'
+                              : jug.disponible
+                              ? 'hover:scale-110 cursor-pointer'
+                              : 'grayscale opacity-35 cursor-not-allowed'
+                          }`}
+                        >
+                          <IconoSagradoSVG tipo={clase.iconoTipo} className="w-7 h-7 mb-1.5 text-white" />
+                          <span className="font-black text-xs md:text-sm leading-tight truncate max-w-full">
+                            {jug.nombre}
+                          </span>
+                          <span className="text-[10px] font-bold text-white/80 mt-0.5">
+                            {jug.disponible ? clase.nombre.replace('El ', '') : 'En espera'}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
 
-            {/* SUB-FASE 3: EL DM ENUNCIA LA PREGUNTA ANTES DE RETIRARSE FLUIDAMENTE A LA ESQUINA */}
+            {/* SUB-FASE 3: EL DM ENUNCIA LA PREGUNTA PALABRA POR PALABRA ANTES DE RETIRARSE A LA ESQUINA */}
             {subFaseJuego === 'DM_PREGUNTA' && (
-              <div className="flex flex-col items-center gap-6 text-center max-w-2xl mt-52">
-                <div className="p-6 rounded-3xl bg-slate-950/55 backdrop-blur-2xl border border-white/40 shadow-2xl">
-                  <h3 className="text-xl font-black text-amber-200 mb-2">{retoActual.tituloNodo}</h3>
-                  <p className="text-base text-white/95 leading-relaxed mb-3">{retoActual.pregunta}</p>
-                  <p className="text-xs text-cyan-200 font-bold">{retoActual.instruccionInput}</p>
+              <div className="flex flex-col items-center gap-6 text-center max-w-2xl w-full mt-52">
+                <div className="w-full min-h-[165px] p-6 rounded-3xl bg-slate-950/55 backdrop-blur-2xl border border-white/40 shadow-2xl flex flex-col items-center justify-center">
+                  {cargandoVozDM ? (
+                    renderizarEstadoPensandoDM('El Guía está consultando los rollos sagrados...')
+                  ) : (
+                    <>
+                      <div className="inline-flex items-center gap-2 px-3.5 py-0.5 rounded-full bg-amber-300/20 border border-amber-300/60 text-amber-200 text-[11px] font-black tracking-widest uppercase mb-2">
+                        <IconoSagradoSVG tipo="biblia" className="w-3.5 h-3.5" />
+                        <span>{retoActual.citaBiblia}</span>
+                      </div>
+                      <h3 className="font-cinzel text-lg md:text-xl font-black text-amber-200 mb-2">
+                        {retoActual.tituloNodo}
+                      </h3>
+                      <p className="text-sm md:text-base text-white/95 leading-relaxed">
+                        {textoSincronizadoDM}
+                        {hablandoDM && (
+                          <span className="inline-block w-2 h-4 ml-1 align-middle bg-cyan-300 animate-pulse" />
+                        )}
+                      </p>
+                    </>
+                  )}
                 </div>
-                <button
-                  onClick={() => {
-                    window.speechSynthesis?.cancel();
-                    setAmplitudVozDM(0);
-                    setSubFaseJuego('JUGADOR_ACTIVO');
-                  }}
-                  className="px-8 py-3 rounded-full bg-white/25 hover:bg-white/40 backdrop-blur-xl border border-white/60 text-xs font-black uppercase tracking-widest"
-                >
-                  Resolver Ahora →
-                </button>
+
+                {!cargandoVozDM && !hablandoDM && (
+                  <button
+                    onClick={() => setSubFaseJuego('JUGADOR_ACTIVO')}
+                    className="px-8 py-3 rounded-full bg-white/25 hover:bg-white/40 backdrop-blur-xl border border-white/60 text-xs font-black uppercase tracking-widest animate-[fadeIn_0.3s_ease-out]"
+                  >
+                    Resolver Ahora →
+                  </button>
+                )}
               </div>
             )}
 
@@ -2762,18 +2860,27 @@ export default function SecretoSagradoLanding() {
 
             {/* SUB-FASE 5: REVELACIÓN DEL HILO DORADO CON EL DM EN EL CENTRO */}
             {subFaseJuego === 'REVELACION_HILO' && (
-              <div className="flex flex-col items-center gap-6 text-center max-w-2xl mt-52">
-                <div className="p-6 rounded-3xl bg-slate-950/55 backdrop-blur-2xl border border-amber-300/60 shadow-[0_0_45px_rgba(251,191,36,0.3)]">
-                  <p className="text-sm md:text-base text-white/95 leading-relaxed">
-                    {mensajeFeedbackDM}
-                  </p>
+              <div className="flex flex-col items-center gap-6 text-center max-w-2xl w-full mt-52">
+                <div className="w-full min-h-[150px] p-6 rounded-3xl bg-slate-950/55 backdrop-blur-2xl border border-amber-300/60 shadow-[0_0_45px_rgba(251,191,36,0.3)] flex items-center justify-center">
+                  {cargandoVozDM ? (
+                    renderizarEstadoPensandoDM('Desvelando el Hilo Dorado de la revelación...')
+                  ) : (
+                    <p className="text-sm md:text-base text-white/95 leading-relaxed">
+                      {textoSincronizadoDM}
+                      {hablandoDM && (
+                        <span className="inline-block w-2 h-4 ml-1 align-middle bg-amber-300 animate-pulse" />
+                      )}
+                    </p>
+                  )}
                 </div>
-                <button
-                  onClick={avanzarAlSiguienteNodoOEra}
-                  className="px-10 py-4 rounded-full bg-gradient-to-r from-amber-300 to-cyan-300 text-slate-950 font-black text-sm tracking-widest uppercase shadow-2xl hover:scale-105 transition-all"
-                >
-                  Continuar al Siguiente Desafío →
-                </button>
+                {!cargandoVozDM && !hablandoDM && (
+                  <button
+                    onClick={avanzarAlSiguienteNodoOEra}
+                    className="px-10 py-4 rounded-full bg-gradient-to-r from-amber-300 to-cyan-300 text-slate-950 font-black text-sm tracking-widest uppercase shadow-2xl hover:scale-105 transition-all animate-[fadeIn_0.35s_ease-out]"
+                  >
+                    Continuar al Siguiente Desafío →
+                  </button>
+                )}
               </div>
             )}
 
