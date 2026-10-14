@@ -1,267 +1,458 @@
 // src/Secreto-Sagrado/SecretoSagradoLanding.jsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import {
+  NODOS_MULTIMODALES_POR_ERA,
+  generarDesafioConGemini,
+  evaluarExplicacionFamiliarConGemini,
+  verificarBibliaConCamaraGemini
+} from './geminiDirectorEngine';
 
 /* ==========================================================================
-   1. CATÁLOGO DE LOS 6 ARQUETIPOS DEL SYSTEM DM (NO ES DIOS • APOC. 19:10)
+   ACTIVOS OFICIALES EN CLOUDFLARE R2 PROPORCIONADOS
+   ========================================================================== */
+const URL_FONDO_MONTANA = 'https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/1791990986647.jpg';
+const URL_MUSICA_MENU = 'https://pub-f968bc599b9e4b30965522b355899a7e.r2.dev/crown_of_the_morning_mist.mp3';
+const URL_LOGO_OFICIAL = 'https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/S%20ECRETO%20SAGRADO.png';
+
+/* ==========================================================================
+   CATÁLOGO DE LOS 6 ARQUETIPOS DEL SYSTEM DM Y LOS 8 ROLES DE JUGADOR
    ========================================================================== */
 const CATALOGO_DMS = [
   {
     id: 'pastor',
     nombre: 'El Pastor Amoroso',
-    subtitulo: 'Cálido y Compasivo',
+    subtitulo: 'Cálido, paciente y consolador',
     icono: '🌿',
     colorHex: '#10b981',
-    gradiente: 'from-emerald-400 to-teal-600',
-    fraseControl: '«Aun cuando la sombra del pecado cayó en Edén, Jehová encendió de inmediato una lámpara de esperanza.»'
+    colorSecundario: '#34d399',
+    pitchVoz: 0.96,
+    rateVoz: 0.95,
+    introHistoria: 'Bienvenidos, queridos amigos. Soy su compañero de estudio en este viaje a través de las ocho eras bíblicas. Juntos veremos cómo Jehová fue revelando paso a paso el Secreto Sagrado desde Edén hasta el Reino Mesiánico. En cada turno les indicaré qué pasaje abrir en su Biblia física y qué acción realizar en la Tablet. ¿Me dan su permiso para comenzar?'
   },
   {
     id: 'historiador',
     nombre: 'El Historiador Dedicado',
-    subtitulo: 'Cronología y Mapas',
+    subtitulo: 'Cronología exacta, mapas y linajes',
     icono: '📜',
     colorHex: '#38bdf8',
-    gradiente: 'from-sky-400 to-blue-600',
-    fraseControl: '«Cada fecha, eslabón genealógico y decreto real quedó registrado con exactitud documental.»'
+    colorSecundario: '#60a5fa',
+    pitchVoz: 1.0,
+    rateVoz: 1.0,
+    introHistoria: 'Saludos, investigadores de las Escrituras. Como su cronista y compañero de estudio, los guiaré por las ocho eras históricas desde el año 4026 antes de nuestra era hasta el cumplimiento final en Revelación. En cada desafío verificaremos citas, fechas y pruebas en su Biblia impresa. ¿Me conceden su permiso para iniciar la travesía?'
   },
   {
     id: 'profeta',
     nombre: 'El Profeta Exhortador',
-    subtitulo: 'Tipos y Cumplimientos',
+    subtitulo: 'Sombras sagradas y visiones proféticas',
     icono: '🔥',
     colorHex: '#a855f7',
-    gradiente: 'from-purple-400 to-indigo-600',
-    fraseControl: '«¡Escuchen con atención! Ninguna palabra dicha por Jehová vuelve sin haber cumplido Su propósito.»'
+    colorSecundario: '#f59e0b',
+    pitchVoz: 0.92,
+    rateVoz: 0.98,
+    introHistoria: '¡Presten atención a la palabra profética! Como coesclavo de ustedes, hoy contemplaremos cómo cada sacrificio, pacto y profecía apuntaba con precisión infalible hacia el Mesías. Tengan lista su Biblia física y su discernimiento. ¿Me dan su permiso para abrir el primer sello?'
   },
   {
     id: 'rey',
     nombre: 'El Rey Valiente',
-    subtitulo: 'Pactos y Soberanía',
+    subtitulo: 'Pactos reales y defensa de la Soberanía',
     icono: '👑',
     colorHex: '#f59e0b',
-    gradiente: 'from-amber-400 to-orange-600',
-    fraseControl: '«Desde Edén hasta Sión, la cuestión suprema es la Soberanía legítima de Jehová y el trono de Su Ungido.»'
+    colorSecundario: '#fbbf24',
+    pitchVoz: 0.9,
+    rateVoz: 0.96,
+    introHistoria: '¡Bienvenidos a la sala del pacto! A lo largo de ocho eras veremos cómo Jehová defendió Su legítima Soberanía y protegió el derecho legal al trono de Su Rey Ungido. Yo dirigiré el orden de los turnos y les indicaré cómo superar cada prueba. ¿Me dan su permiso para comenzar?'
   },
   {
     id: 'angel',
     nombre: 'El Ángel Mensajero',
-    subtitulo: 'Siervo Fiel (Apoc. 19:10)',
+    subtitulo: 'Siervo revelador (Apocalipsis 19:10)',
     icono: '✨',
     colorHex: '#22d3ee',
-    gradiente: 'from-cyan-300 to-sky-500',
-    fraseControl: '«Solo soy un coesclavo tuyo y de tus hermanos. ¡Abran las Escrituras y contemplen la luz del Secreto Sagrado!»'
+    colorSecundario: '#818cf8',
+    pitchVoz: 1.08,
+    rateVoz: 0.98,
+    introHistoria: '¡Adoren a Dios! Todo lo que soy es un coesclavo de ustedes y de sus hermanos. Hoy recorreremos las cosas en las que los mismos ángeles deseaban mirar con atención a medida que se desvelaba el Secreto Sagrado. Abran sus Biblias y preparen su corazón. ¿Me dan su permiso para comenzar?'
   },
   {
     id: 'guerrero',
     nombre: 'El Poderoso Guerrero',
-    subtitulo: 'Defensa de la Fe',
+    subtitulo: 'Combate espiritual y firmeza bajo prueba',
     icono: '⚔️',
     colorHex: '#f97316',
-    gradiente: 'from-orange-400 to-red-600',
-    fraseControl: '«¡Empuñen la Espada del Espíritu! La Serpiente intentó cortar el linaje una y otra vez, pero fracasó.»'
+    colorSecundario: '#ef4444',
+    pitchVoz: 0.88,
+    rateVoz: 1.02,
+    introHistoria: '¡Empuñen la Espada del Espíritu, que es la Palabra de Dios! La Serpiente original intentó quebrar la fe de los siervos leales y cortar el linaje mesiánico en cada época, pero jamás pudo vencer el propósito de Jehová. ¿Están listos y me dan su permiso para entrar en acción?'
   }
 ];
 
-/* ==========================================================================
-   2. CATÁLOGO DE LAS 8 CLASES DE JUGADORES PARA EL ROSTER POR VUELTAS
-   ========================================================================== */
-const CLASES_JUGADOR = [
-  { id: 'escriba', nombre: 'El Escriba', icono: '📜', color: '#38bdf8', ventaja: 'Ilumina la opción conectada a la cita bíblica' },
-  { id: 'sacerdote', nombre: 'El Sacerdote', icono: '🏛️', color: '#facc15', ventaja: 'Escudo de Expiación: anula pérdida de HP' },
-  { id: 'profeta', nombre: 'El Profeta', icono: '👁️', color: '#c084fc', ventaja: 'Luz Profética: descarta 2 distractores' },
-  { id: 'noble', nombre: 'El Noble', icono: '👑', color: '#fb7185', ventaja: 'Decreto Real: no se apaga en este turno' },
-  { id: 'mayordomo', nombre: 'El Mayordomo', icono: '💼', color: '#34d399', ventaja: 'Revela el dato histórico o arqueológico' },
-  { id: 'juez', nombre: 'El Juez', icono: '🛡️', color: '#fb923c', ventaja: '+1 Convicción extra al responder bien' },
-  { id: 'proselito', nombre: 'El Prosélito', icono: '🕊️', color: '#22d3ee', ventaja: 'Hambre de Verdad: recupera +1 HP' },
-  { id: 'patriarca', nombre: 'El Patriarca', icono: '🌾', color: '#818cf8', ventaja: 'Bendición: reenciende a un compañero' }
+const CLASES_ROLES = [
+  { id: 'escriba', nombre: 'El Escriba', icono: '📜', color: '#38bdf8', ventaja: 'Ilumina pistas conectadas directamente con la cita bíblica' },
+  { id: 'sacerdote', nombre: 'El Sacerdote', icono: '🏛️', color: '#facc15', ventaja: 'Escudo de Expiación: evita perder Convicción ante un error' },
+  { id: 'profeta', nombre: 'El Profeta', icono: '👁️', color: '#c084fc', ventaja: 'Luz Profética: descarta 2 opciones falsas en pantalla' },
+  { id: 'noble', nombre: 'El Noble', icono: '👑', color: '#fb7185', ventaja: 'Decreto Real: puede participar sin entrar en enfriamiento' },
+  { id: 'mayordomo', nombre: 'El Mayordomo', icono: '💼', color: '#34d399', ventaja: 'Archivo Real: muestra contexto histórico y arqueológico' },
+  { id: 'juez', nombre: 'El Juez', icono: '🛡️', color: '#fb923c', ventaja: 'Llamado de Valor: otorga +1 Convicción extra al acertar' },
+  { id: 'proselito', nombre: 'El Prosélito', icono: '🕊️', color: '#22d3ee', ventaja: 'Hambre de Verdad: restaura +1 Convicción al explicar la verdad' },
+  { id: 'patriarca', nombre: 'El Patriarca', icono: '🌾', color: '#818cf8', ventaja: 'Bendición Ancestral: reactiva a un compañero en enfriamiento' }
+];
+
+const TITULOS_OCHO_ERAS = [
+  { era: 1, nombre: 'Edén y el Linaje Antediluviano' },
+  { era: 2, nombre: 'Los Patriarcas y la Promesa de Siló' },
+  { era: 3, nombre: 'La Ley Mosaica y el Santuario' },
+  { era: 4, nombre: 'Los Jueces y el Pacto Davídico' },
+  { era: 5, nombre: 'Los Profetas y las 70 Semanas' },
+  { era: 6, nombre: 'La Llegada del Mesías y el Rescate' },
+  { era: 7, nombre: 'La Congregación y los Coherederos' },
+  { era: 8, nombre: 'El Clímax de Revelación y el Paraíso' }
 ];
 
 /* ==========================================================================
-   3. LAS 8 ERAS NUCLEARES DEL SECRETO SAGRADO (FIDELIDAD 100% A WOL.JW.ORG)
+   COMPONENTE DEL ORBE LÍQUIDO GLASSMÓRFICO REACTIVO A LA VOZ
    ========================================================================== */
-const OCHO_ERAS_SECRETO_SAGRADO = [
-  {
-    era: 1,
-    nombre: 'Edén y la Primera Promesa',
-    paisajeUrl: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=2000&q=85',
-    citaBiblia: 'Génesis 3:15; 4:4',
-    tituloNodo: 'El Pecado Original, Génesis 3:15 y la Fe de Abel',
-    pregunta: 'Busquen Génesis 3:15 y 4:4 en su Biblia física. ¿Qué comprendió Abel al ofrecer los primogénitos de su rebaño?',
-    notaMayordomo: 'En Génesis 3:21 Jehová hizo largas prendas de vestir de piel para Adán y Eva, y en 2369 a. E.C. Noé edificó el primer altar mencionado en la Biblia.',
-    hiloDorado: 'En Edén se planteó la cuestión de la Soberanía Universal y se dio el primer destello del Secreto Sagrado (Gén. 3:15): una Descendencia aplastaría la cabeza de la Serpiente. El linaje fiel fue preservado de Abel a Set, Enoc, Noé y Sem.',
-    opciones: [
-      { id: '1a', icono: '🐑', titulo: 'Fe en la Promesa y Vida Entregada', subtitulo: 'Comprendió que acercarse a Dios tras el pecado exigía fe y ofrecer una vida inocente con sangre.', correcta: true },
-      { id: '1b', icono: '🌾', titulo: 'Rechazo a la Agricultura', subtitulo: 'Jehová prohibió para siempre presentar ofrendas de grano o frutos del suelo.', correcta: false },
-      { id: '1c', icono: '🍃', titulo: 'Hojas de Higuera Suficientes', subtitulo: 'La cubierta que cosieron Adán y Eva ya había borrado el pecado sin rescate.', correcta: false },
-      { id: '1d', icono: '🐍', titulo: 'Eva como la Mujer de la Profecía', subtitulo: 'Eva misma era la mujer sin pecado cuya prole con Caín traería la salvación.', correcta: false }
-    ]
-  },
-  {
-    era: 2,
-    nombre: 'Los Patriarcas y la Promesa de Siló',
-    paisajeUrl: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=2000&q=85',
-    citaBiblia: 'Génesis 22:16-18; 49:8-10',
-    tituloNodo: 'El Juramento en Moria y el Cetro de Judá («Siló»)',
-    pregunta: 'Lean Génesis 49:10 en su Biblia física. ¿Cómo canalizó Jehová la línea real de la Descendencia antes de morir Jacob?',
-    notaMayordomo: 'El Pacto Abrahámico entró en vigor el 14 de nisán de 1943 a. E.C. al cruzar el Éufrates, y Melquisedec bendijo a Abrahán como Rey de Salem y Sacerdote.',
-    hiloDorado: 'En la Era Patriarcal el Secreto Sagrado se sella con un juramento en el Monte Moria y se estrecha por Abrahán -> Isaac -> Jacob -> Judá, anunciando a «Siló» («Aquel a Quien Pertenece»), mientras Job vindica la integridad humana.',
-    opciones: [
-      { id: '2a', icono: '🦁', titulo: 'El Cetro Real para «Siló» en Judá', subtitulo: 'La autoridad real no se apartará de Judá hasta que venga Aquel a quien pertenece la obediencia de los pueblos.', correcta: true },
-      { id: '2b', icono: '🏹', titulo: 'Sucesión por Ismael y Esaú', subtitulo: 'El pacto de la Descendencia pasó automáticamente a los primogénitos carnales.', correcta: false },
-      { id: '2c', icono: '🏛️', titulo: 'Cetro Real Entregado a Leví', subtitulo: 'Jacob transfirió el derecho al trono real de Israel a la tribu de Leví.', correcta: false },
-      { id: '2d', icono: '🏺', titulo: 'Dinastía Faraónica de Gosén', subtitulo: 'El título Siló designaba a los gobernantes egipcios que protegieron a José.', correcta: false }
-    ]
-  },
-  {
-    era: 3,
-    nombre: 'La Ley Mosaica y las Sombras del Santuario',
-    paisajeUrl: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=2000&q=85',
-    citaBiblia: 'Éxodo 12:46; Levítico 17:11; Deuteronomio 18:15',
-    tituloNodo: 'El Cordero Pascual, el Santísimo y el Profeta como Moisés',
-    pregunta: 'Verifiquen Levítico 17:11 y Deuteronomio 18:15, 18. ¿Qué revelaron la Ley y el Tabernáculo sobre el futuro Mesías?',
-    notaMayordomo: 'El Éxodo ocurrió en 1513 a. E.C. (exactamente 430 años después de 1943 a. E.C.). Durante la marcha, Naasón encabezaba la tribu real de Judá.',
-    hiloDorado: 'La Ley Mosaica actuó como muralla protectora del linaje y tutor hacia el Cristo: enseñó mediante el Cordero Pascual y el Día de Expiación la necesidad de sangre perfecta y prometió a un gran Profeta-Mediador como Moisés.',
-    opciones: [
-      { id: '3a', icono: '🩸', titulo: 'Expiación por Sangre y un Profeta Mediador', subtitulo: 'La sangre sobre el altar prefiguró el rescate y Moisés anunció un Profeta de entre sus hermanos.', correcta: true },
-      { id: '3b', icono: '⚖️', titulo: 'Salvación por Obras sin Sacrificio', subtitulo: 'Los israelitas podían ser declarados justos sin necesidad de mediador ni sangre.', correcta: false },
-      { id: '3c', icono: '👑', titulo: 'Reyes de Judá Oficiando en el Altar', subtitulo: 'La Ley permitía que cualquier príncipe de Judá entrara al Santísimo como sumo sacerdote.', correcta: false },
-      { id: '3d', icono: '🐍', titulo: 'Adoración Perpetua a la Serpiente de Cobre', subtitulo: 'Moisés ordenó quemar incienso a la serpiente de cobre durante todas las generaciones.', correcta: false }
-    ]
-  },
-  {
-    era: 4,
-    nombre: 'Los Jueces y el Pacto del Reino Davídico',
-    paisajeUrl: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=2000&q=85',
-    citaBiblia: '2 Samuel 7:12-16; Salmo 2:2, 7; 110:1, 4',
-    tituloNodo: 'El Trono Eterno de David y el Sacerdocio de Melquisedec',
-    pregunta: 'Busquen 2 Samuel 7:16 y Salmo 110:4 en su Biblia física. ¿Qué dos promesas eternas se unieron en esta Era?',
-    notaMayordomo: 'El linaje en Belén pasó por Salmón y Rahab -> Boaz y Rut -> Obed -> Jesé -> David. Además, David compró la era de Ornán en el mismo Monte Moria (2 Crón. 3:1).',
-    hiloDorado: 'En la Era 4 el Secreto Sagrado adquiere forma de Reino: Jehová pacta con David que su dinastía tendrá un trono eterno y jura en el Salmo 110 que el Ungido (Mesías) será Rey en Sión y Sacerdote a la manera de Melquisedec.',
-    opciones: [
-      { id: '4a', icono: '👑', titulo: 'Pacto del Reino Davídico y Juramento de Melquisedec', subtitulo: 'El heredero de David reinará para siempre y será sacerdote por juramento de Jehová.', correcta: true },
-      { id: '4b', icono: '⚔️', titulo: 'Sucesión Real en la Casa de Saúl', subtitulo: 'Jehová mantuvo el pacto del Reino en la tribu de Benjamín a través de Jonatán.', correcta: false },
-      { id: '4c', icono: '🏛️', titulo: 'Herencia Sacerdotal de Belén', subtitulo: 'Boaz y David podían ser sacerdotes porque pertenecían a la tribu de Leví.', correcta: false },
-      { id: '4d', icono: '🕊️', titulo: 'Inmortalidad Terrenal de Salomón', subtitulo: 'Salomón permaneció fiel hasta su muerte y cumplió de forma total el Salmo 110.', correcta: false }
-    ]
-  },
-  {
-    era: 5,
-    nombre: 'Los Profetas y el Reloj de las 70 Semanas',
-    paisajeUrl: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=2000&q=85',
-    citaBiblia: 'Isaías 53:5, 12; Daniel 9:24-27; Miqueas 5:2',
-    tituloNodo: 'El Siervo Sufriente y las 70 Semanas de Años (455 a. E.C.)',
-    pregunta: 'Verifiquen Daniel 9:25, 26 e Isaías 53:5. ¿Qué revelaron los profetas sobre el año de llegada y el sacrificio del Mesías?',
-    notaMayordomo: 'Pese a los ataques de Atalía y Hamán y la caída de Jerusalén en 607 a. E.C., el linaje real sobrevivió en Zorobabel, y en 455 a. E.C. salió la orden de reedificar Jerusalén.',
-    hiloDorado: 'En la Era 5 los profetas dan las coordenadas exactas del Mesías: nacerá en Belén (Miq. 5:2), aparecerá 69 semanas de años (483 años) después de 455 a. E.C. y será cortado en la muerte como ofrenda por la culpa (Isa. 53) antes de que su Reino triture a todos los imperios (Dan. 2:44).',
-    opciones: [
-      { id: '5a', icono: '⏳', titulo: '69 Semanas de Años y Ofrenda por la Culpa', subtitulo: 'Llegaría 483 años después de 455 a. E.C. y sería traspasado para llevar el pecado de muchos.', correcta: true },
-      { id: '5b', icono: '🏰', titulo: 'Nacimiento Real en Babilonia', subtitulo: 'Miqueas predijo que el Mesías nacería en el palacio real de Nabucodonosor.', correcta: false },
-      { id: '5c', icono: '🛡️', titulo: 'Exención de Sufrimiento', subtitulo: 'Isaías 53 enseñaba que el Mesías jamás sufriría la herida en el talón.', correcta: false },
-      { id: '5d', icono: '📜', titulo: 'Fin del Linaje con Sedequías', subtitulo: 'En 607 a. E.C. murieron todos los descendientes de David sin quedar sobrevivientes.', correcta: false }
-    ]
-  },
-  {
-    era: 6,
-    nombre: 'La Llegada del Mesías y el Sacrificio de Rescate',
-    paisajeUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=2000&q=85',
-    citaBiblia: 'Lucas 1:32, 33; 22:20, 28-30; Mateo 20:28',
-    tituloNodo: 'El Ungido en el Jordán (29 E.C.), el Rescate y el Pacto del Reino',
-    pregunta: 'Lean Lucas 22:20, 28-30 en su Biblia física. ¿Qué dos pactos estableció Jesús la noche del 14 de nisán de 33 E.C.?',
-    notaMayordomo: 'Jesús reunió el derecho legal al trono de David vía Salomón/José (Mateo 1) y la descendencia física de sangre vía Natán/María (Lucas 3).',
-    hiloDorado: '¡Aparece la parte principal de la Descendencia! Jesús es ungido en 29 E.C., enseña el «secreto sagrado del reino de Dios», sufre la herida en el talón el 14 de nisán de 33 E.C. para pagar el rescate correspondiente y celebra con sus fieles el Nuevo Pacto y el Pacto para un Reino.',
-    opciones: [
-      { id: '6a', icono: '🍷', titulo: 'El Nuevo Pacto y el Pacto para un Reino', subtitulo: 'Validó con su sangre el Nuevo Pacto y pactó compartir su trono celestial con un rebaño pequeño.', correcta: true },
-      { id: '6b', icono: '⚔️', titulo: 'Alianza Militar contra Roma', subtitulo: 'Prometió derrocar a Poncio Pilato mediante una rebelión armada en Jerusalén.', correcta: false },
-      { id: '6c', icono: '🏛️', titulo: 'Renovación del Sacerdocio Levítico', subtitulo: 'Decretó que el templo físico de Herodes seguiría ofreciendo sacrificios para siempre.', correcta: false },
-      { id: '6d', icono: '👑', titulo: 'Reinado Solitario sin Coherederos', subtitulo: 'Anunció que ningún ser humano compartiría jamás su autoridad real en los cielos.', correcta: false }
-    ]
-  },
-  {
-    era: 7,
-    nombre: 'La Congregación Cristiana y los Coherederos',
-    paisajeUrl: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=2000&q=85',
-    citaBiblia: 'Gálatas 3:16, 29; Efesios 1:9, 10; 3:3-6',
-    tituloNodo: 'La Parte Secundaria de la Descendencia y la Administración de Dios',
-    pregunta: 'Busquen Gálatas 3:29 y Efesios 3:5, 6 en su Biblia física. ¿Qué aspecto del Secreto Sagrado se reveló en el siglo primero?',
-    notaMayordomo: 'Desde el Pentecostés de 33 E.C. y la conversión de Cornelio en 36 E.C. (fin de las 70 semanas), Dios abrió la puerta a gentiles para formar el «Israel de Dios».',
-    hiloDorado: 'Las cartas apostólicas desvelan que la Descendencia de Abrahán tiene como parte principal a Cristo y como parte secundaria a los coherederos ungidos (judíos y gentiles unidos en un solo cuerpo), bajo una administración para reunir las cosas en los cielos y las cosas en la tierra (Efesios 1:9, 10).',
-    opciones: [
-      { id: '7a', icono: '🕊️', titulo: 'Coherederos de Entre Judíos y Naciones Unidas a Cristo', subtitulo: 'Los ungidos por espíritu conforman junto con Cristo la Descendencia de Abrahán para bendecir la tierra.', correcta: true },
-      { id: '7b', icono: '📜', titulo: 'Obligación de la Circuncisión Física', subtitulo: 'El concilio de Jerusalén exigió guardar toda la Ley de Moisés para ser salvos.', correcta: false },
-      { id: '7c', icono: '🏛️', titulo: 'Exclusividad Carnal Judía', subtitulo: 'Pablo enseñó que ningún gentil incircunciso podía llegar a ser coheredero con Cristo.', correcta: false },
-      { id: '7d', icono: '🌍', titulo: 'Filosofía Griega como Base de la Fe', subtitulo: 'Los apóstoles adoptaron las enseñanzas del Areópago de Atenas sobre el alma inmortal.', correcta: false }
-    ]
-  },
-  {
-    era: 8,
-    nombre: 'La Realización del Reino y el Clímax de Revelación',
-    paisajeUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=2000&q=85',
-    citaBiblia: 'Revelación 10:7; 11:15; 12:9, 10; 20:10; 21:3, 4',
-    tituloNodo: 'El Secreto Sagrado Terminado y el Aplastamiento de la Serpiente',
-    pregunta: 'Lean Revelación 12:9, 10 y 20:10 en su Biblia física. ¿Cómo llega el Secreto Sagrado a su feliz término?',
-    notaMayordomo: 'En Revelación 14:1, 3 y 20:6 se revela que los coherederos comprados de la tierra para reinar con el Cordero en el Monte Sión celestial son exactamente 144.000.',
-    hiloDorado: '¡El Secreto Sagrado queda terminado (Rev. 10:7)! La mujer celestial da a luz al Reino Mesiánico, Miguel arroja del cielo a la Serpiente original (Satanás), Cristo y los 144.000 reinan por 1.000 años para restaurar el Paraíso terrenal y eliminar la muerte, y Satanás es aplastado para siempre en el lago de fuego.',
-    opciones: [
-      { id: '8a', icono: '👑', titulo: 'Triunfo del Reino Mesiánico y Destrucción Eterna de Satanás', subtitulo: 'Cristo y los 144.000 aplastan para siempre a la Serpiente original y restauran el Paraíso sin muerte ni dolor.', correcta: true },
-      { id: '8b', icono: '🐉', titulo: 'Tregua Perpetua con el Dragón', subtitulo: 'La Serpiente original conserva una parte del cielo después de los mil años.', correcta: false },
-      { id: '8c', icono: '🔥', titulo: 'Destrucción del Planeta Tierra Literal', subtitulo: 'El propósito original de Edén se abandona y ningún humano vivirá en la Tierra.', correcta: false },
-      { id: '8d', icono: '🏛️', titulo: 'Supervivencia de Babilonia la Grande', subtitulo: 'El imperio de la religión falsa se reforma para gobernar junto a la Nueva Jerusalén.', correcta: false }
-    ]
-  }
-];
-
-export default function SecretoSagradoLanding() {
-  const [cortinaLista, setCortinaLista] = useState(false);
-  const [vista, setVista] = useState('BIENVENIDA'); // BIENVENIDA | CONFIG_PARTY | JUEGO
-  const [codigoSala, setCodigoSala] = useState(() => 'SALA-' + Math.floor(1000 + Math.random() * 9000));
-  const [nombreFamilia, setNombreFamilia] = useState('Familia Sequea');
-  const [modoPartida, setModoPartida] = useState('ESTANDAR'); // ESTANDAR | EXPRESS
-  const [dmActivoId, setDmActivoId] = useState('historiador');
-  const [logoUrl, setLogoUrl] = useState(() => {
-    try { return localStorage.getItem('ss_custom_logo') || ''; } catch (e) { return ''; }
-  });
-
-  // Modales
-  const [modalLogoOpen, setModalLogoOpen] = useState(false);
-  const [modalCargarOpen, setModalCargarOpen] = useState(false);
-  const [partidasGuardadas, setPartidasGuardadas] = useState([]);
-  const [guardandoEstado, setGuardandoEstado] = useState(false);
-  const [modalHiloDorado, setModalHiloDorado] = useState(null);
-
-  // Estado del Juego en Vivo
-  const [indiceEra, setIndiceEra] = useState(0);
-  const [conviccionHP, setConviccionHP] = useState(10);
-  const [tokensOracion, setTokensOracion] = useState(1);
-  const [vueltaRoster, setVueltaRoster] = useState(1);
-  const [heroeEnTurnoId, setHeroeEnTurnoId] = useState(null);
-  const [opcionesDescartadas, setOpcionesDescartadas] = useState([]);
-
-  const [party, setParty] = useState([
-    { id: 'p1', nombre: 'Jesús', claseIdx: 0, disponible: true, poderUsado: false },
-    { id: 'p2', nombre: 'María', claseIdx: 2, disponible: true, poderUsado: false },
-    { id: 'p3', nombre: 'David', claseIdx: 3, disponible: true, poderUsado: false },
-    { id: 'p4', nombre: 'Sara', claseIdx: 1, disponible: true, poderUsado: false }
-  ]);
-
-  const canvasRef = useRef(null);
-  const chispasRef = useRef([]);
-  const ondasRef = useRef([]);
-  const audioRef = useRef(null);
-
-  const dmActual = CATALOGO_DMS.find(d => d.id === dmActivoId) || CATALOGO_DMS[0];
-  const eraDatos = OCHO_ERAS_SECRETO_SAGRADO[indiceEra % OCHO_ERAS_SECRETO_SAGRADO.length];
-  const heroeActivo = party.find(p => p.id === heroeEnTurnoId) || null;
-  const claseActiva = heroeActivo ? CLASES_JUGADOR[heroeActivo.claseIdx] : null;
+function OrbeLiquidoReactivo({
+  colorPrimario = '#38bdf8',
+  colorSecundario = '#818cf8',
+  amplitudVoz = 0,
+  tamano = 220,
+  etiquetaSuperior = '',
+  nombreCentral = '',
+  iconoCentral = '',
+  enEsquina = false,
+  onClick = null
+}) {
+  const canvasOrbRef = useRef(null);
+  const faseRef = useRef(0);
 
   useEffect(() => {
-    const t = setTimeout(() => setCortinaLista(true), 350);
-    return () => clearTimeout(t);
+    const canvas = canvasOrbRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let rafId;
+
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = tamano * dpr;
+    canvas.height = tamano * dpr;
+    ctx.scale(dpr, dpr);
+
+    const renderizarFluido = () => {
+      ctx.clearRect(0, 0, tamano, tamano);
+      const cx = tamano / 2;
+      const cy = tamano / 2;
+      const radioBase = tamano * 0.36;
+
+      // Velocidad y expansión moduladas por la voz en tiempo real
+      const energia = Math.min(1.2, amplitudVoz * 1.6);
+      faseRef.current += 0.032 + energia * 0.095;
+      const f = faseRef.current;
+
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+
+      // 3 Capas de fluido orgánico (Metaballs / Ondas armónicas)
+      const capas = [
+        { color: colorPrimario, velocidad: 1.0, desfase: 0, escala: 1.0 + energia * 0.22 },
+        { color: colorSecundario, velocidad: -1.3, desfase: 2.1, escala: 0.92 + energia * 0.28 },
+        { color: '#ffffff', velocidad: 1.7, desfase: 4.2, escala: 0.65 + energia * 0.35 }
+      ];
+
+      capas.forEach((capa, idx) => {
+        ctx.beginPath();
+        const puntos = 64;
+        for (let i = 0; i <= puntos; i++) {
+          const ang = (i / puntos) * Math.PI * 2;
+          const onda1 = Math.sin(ang * 3 + f * capa.velocidad + capa.desfase) * (6 + energia * 18);
+          const onda2 = Math.cos(ang * 5 - f * 1.4 + idx) * (4 + energia * 12);
+          const r = (radioBase + onda1 + onda2) * capa.escala;
+          const x = cx + Math.cos(ang) * r;
+          const y = cy + Math.sin(ang) * r;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+
+        const grad = ctx.createRadialGradient(cx, cy, 4, cx, cy, radioBase * 1.35);
+        grad.addColorStop(0, '#ffffff');
+        grad.addColorStop(0.45, capa.color);
+        grad.addColorStop(1, 'transparent');
+
+        ctx.fillStyle = grad;
+        ctx.globalAlpha = idx === 2 ? 0.45 + energia * 0.35 : 0.72;
+        ctx.fill();
+      });
+
+      ctx.restore();
+      rafId = requestAnimationFrame(renderizarFluido);
+    };
+
+    rafId = requestAnimationFrame(renderizarFluido);
+    return () => cancelAnimationFrame(rafId);
+  }, [colorPrimario, colorSecundario, amplitudVoz, tamano]);
+
+  return (
+    <div
+      onClick={onClick}
+      style={{
+        width: tamano,
+        height: tamano,
+        boxShadow: `0 0 ${35 + amplitudVoz * 65}px ${colorPrimario}77, inset 0 0 28px rgba(255,255,255,0.45)`
+      }}
+      className={`relative rounded-full bg-white/10 backdrop-blur-2xl border border-white/50 flex flex-col items-center justify-center overflow-hidden select-none transition-all duration-700 ${
+        onClick ? 'cursor-pointer hover:scale-105' : ''
+      }`}
+    >
+      {/* Fluido Interno Reactivo */}
+      <canvas
+        ref={canvasOrbRef}
+        style={{ width: tamano, height: tamano }}
+        className="absolute inset-0 pointer-events-none"
+      />
+
+      {/* Reflejo Especular Superior de Cristal */}
+      <div className="absolute top-2 left-1/4 right-1/4 h-1/4 rounded-full bg-gradient-to-b from-white/50 to-transparent pointer-events-none blur-[1px]" />
+
+      {/* Etiqueta y Nombre en el Núcleo del Orbe */}
+      <div className="relative z-10 flex flex-col items-center justify-center text-center px-4 pointer-events-none">
+        {iconoCentral && (
+          <span className={`${enEsquina ? 'text-xl' : 'text-3xl'} drop-shadow-[0_2px_10px_rgba(0,0,0,0.6)]`}>
+            {iconoCentral}
+          </span>
+        )}
+        {etiquetaSuperior && !enEsquina && (
+          <span className="text-[10px] font-black tracking-[0.22em] uppercase text-white/90 drop-shadow mt-1">
+            {etiquetaSuperior}
+          </span>
+        )}
+        {nombreCentral && (
+          <span
+            className={`font-black tracking-wide text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.85)] ${
+              enEsquina ? 'text-[10px] mt-0.5' : 'text-lg md:text-xl mt-0.5'
+            }`}
+          >
+            {nombreCentral}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ==========================================================================
+   COMPONENTE PRINCIPAL: SECRETO SAGRADO LANDING
+   ========================================================================== */
+export default function SecretoSagradoLanding() {
+  /* ------------------------------------------------------------------------
+     1. ESTADOS DE FLUJO DE PANTALLAS Y CONFIGURACIÓN LINEAL
+     ------------------------------------------------------------------------ */
+  // Pantallas: BOOT_LOGO | MENU_PRINCIPAL | SETUP_NARRADOR | SETUP_PARTIDA | SETUP_ESTILO | CONFIGURACION | RITUAL_PULGARES | JUEGO
+  const [pantalla, setPantalla] = useState('BOOT_LOGO');
+  const [faseBoot, setFaseBoot] = useState(0); // 0: Entrada Logo, 1: Brillo máximo, 2: Transición a Menú
+
+  // Configuración del Juego
+  const [dmId, setDmId] = useState('historiador');
+  const [modoEstilo, setModoEstilo] = useState('ESTANDAR'); // EXPRESS | ESTANDAR
+  const [jugadores, setJugadores] = useState([
+    { id: 'j1', nombre: 'Jesús', rolIdx: 0, disponible: true, poderUsado: false },
+    { id: 'j2', nombre: 'María', rolIdx: 2, disponible: true, poderUsado: false },
+    { id: 'j3', nombre: 'David', rolIdx: 3, disponible: true, poderUsado: false }
+  ]);
+  const [nuevoNombreInput, setNuevoNombreInput] = useState('');
+  const [nuevoRolIdxInput, setNuevoRolIdxInput] = useState(1);
+
+  // Ajustes en "Configuración"
+  const [geminiApiKey, setGeminiApiKey] = useState(() => {
+    try {
+      return localStorage.getItem('ss_gemini_api_key') || process.env.REACT_APP_GEMINI_API_KEY || '';
+    } catch (e) {
+      return '';
+    }
+  });
+  const [volumenMusica, setVolumenMusica] = useState(0.55);
+  const [vozSinteticaActiva, setVozSinteticaActiva] = useState(true);
+  const [vibracionActiva, setVibracionActiva] = useState(true);
+  const [sensoresMovimientoActivos, setSensoresMovimientoActivos] = useState(true);
+
+  /* ------------------------------------------------------------------------
+     2. ESTADOS DEL RITUAL DE PULGARES (3 SEGUNDOS) PARA TRANSICIONES DE CONTROL
+     ------------------------------------------------------------------------ */
+  const [configRitual, setConfigRitual] = useState({
+    titulo: 'Sostén la Tablet Horizontalmente',
+    subtitulo: 'Coloca ambos pulgares en los círculos laterales durante 3 segundos para iniciar',
+    colorLuz: '#38bdf8',
+    destinoCallback: null
+  });
+  const [pulgarIzqActivo, setPulgarIzqActivo] = useState(false);
+  const [pulgarDerActivo, setPulgarDerActivo] = useState(false);
+  const [progresoPulgares, setProgresoPulgares] = useState(0); // 0 a 100
+  const [explosionLuzCompleta, setExplosionLuzCompleta] = useState(false);
+
+  /* ------------------------------------------------------------------------
+     3. ESTADOS DEL JUEGO EN VIVO Y COREOGRAFÍA DEL ORBE
+     ------------------------------------------------------------------------ */
+  // Sub-fases dentro de JUEGO:
+  // INTRO_HISTORIA -> ELEGIR_JUGADOR -> ANIMACION_DESVANECER_OTROS -> DM_PREGUNTA -> JUGADOR_ACTIVO -> REVELACION_HILO -> FIN_PARTIDA
+  const [subFaseJuego, setSubFaseJuego] = useState('INTRO_HISTORIA');
+  const [eraActualNum, setEraActualNum] = useState(1);
+  const [indiceRetoEnEra, setIndiceRetoEnEra] = useState(0);
+  const [conviccionHP, setConviccionHP] = useState(10);
+  const [tokensOracion, setTokensOracion] = useState(2);
+  const [vueltaNumero, setVueltaNumero] = useState(1);
+
+  const [jugadorActivoId, setJugadorActivoId] = useState(null);
+  const [retoActual, setRetoActual] = useState(NODOS_MULTIMODALES_POR_ERA[1][0]);
+  const [cargandoRetoIA, setCargandoRetoIA] = useState(false);
+  const [opcionesOcultasIds, setOpcionesOcultasIds] = useState([]);
+  const [mensajeFeedbackDM, setMensajeFeedbackDM] = useState('');
+
+  // Estados de Voz, Micrófono Push-to-Talk, Contador de Pasos y Cámara
+  const [amplitudVozDM, setAmplitudVozDM] = useState(0);
+  const [amplitudVozJugador, setAmplitudVozJugador] = useState(0);
+  const [manteniendoMic, setManteniendoMic] = useState(false);
+  const [transcripcionVoz, setTranscripcionVoz] = useState('');
+  const [evaluandoIA, setEvaluandoIA] = useState(false);
+  const [pasosCaminados, setPasosCaminados] = useState(0);
+  const [camaraActiva, setCamaraActiva] = useState(false);
+  const [notificacionGuardado, setNotificacionGuardado] = useState('');
+
+  // Referencias
+  const canvasAtmosferaRef = useRef(null);
+  const audioMenuRef = useRef(null);
+  const audioCtxRef = useRef(null);
+  const reconocimientoVozRef = useRef(null);
+  const videoCamaraRef = useRef(null);
+  const streamCamaraRef = useRef(null);
+  const streamMicAmbienteRef = useRef(null);
+
+  const dmPerfil = CATALOGO_DMS.find((d) => d.id === dmId) || CATALOGO_DMS[0];
+  const jugadorActivo = jugadores.find((j) => j.id === jugadorActivoId) || null;
+  const claseJugadorActivo = jugadorActivo ? CLASES_ROLES[jugadorActivo.rolIdx] : null;
+  const retosMetaPorEra = modoEstilo === 'EXPRESS' ? 1 : 2;
+
+  /* ==========================================================================
+     EFECTO 1: ANIMACIÓN DE ARRANQUE (BOOT CON EL LOGO OFICIAL)
+     ========================================================================== */
+  useEffect(() => {
+    const t1 = setTimeout(() => setFaseBoot(1), 400);
+    const t2 = setTimeout(() => setFaseBoot(2), 2600);
+    const t3 = setTimeout(() => setPantalla('MENU_PRINCIPAL'), 3500);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
   }, []);
 
   /* ==========================================================================
-     MOTOR DE CHISPAS 3D, BRISA SOLAR Y ONDAS EXPANSIVAS EN CANVAS
+     EFECTO 2: MÚSICA DEL MENÚ Y SETUP (SE DETIENE AL INICIAR EL JUEGO REAL)
      ========================================================================== */
   useEffect(() => {
-    const canvas = canvasRef.current;
+    if (!audioMenuRef.current) {
+      const audio = new Audio(URL_MUSICA_MENU);
+      audio.loop = true;
+      audio.volume = volumenMusica;
+      audioMenuRef.current = audio;
+    } else {
+      audioMenuRef.current.volume = volumenMusica;
+    }
+
+    const enMenuOSetup = [
+      'BOOT_LOGO',
+      'MENU_PRINCIPAL',
+      'SETUP_NARRADOR',
+      'SETUP_PARTIDA',
+      'SETUP_ESTILO',
+      'CONFIGURACION'
+    ].includes(pantalla);
+
+    if (enMenuOSetup) {
+      audioMenuRef.current.play().catch(() => {
+        // Se desbloquea automáticamente al primer toque del usuario en la pantalla
+      });
+    } else if (pantalla === 'JUEGO') {
+      // Fade out suave y parada total cuando comienza el juego real
+      const audio = audioMenuRef.current;
+      let vol = audio.volume;
+      const fadeInterval = setInterval(() => {
+        if (vol > 0.05) {
+          vol -= 0.05;
+          audio.volume = Math.max(0, vol);
+        } else {
+          audio.pause();
+          audio.currentTime = 0;
+          clearInterval(fadeInterval);
+        }
+      }, 80);
+      return () => clearInterval(fadeInterval);
+    }
+  }, [pantalla, volumenMusica]);
+
+  const desbloquearAudioAlTocar = () => {
+    if (
+      audioMenuRef.current &&
+      audioMenuRef.current.paused &&
+      pantalla !== 'JUEGO'
+    ) {
+      audioMenuRef.current.volume = volumenMusica;
+      audioMenuRef.current.play().catch(() => {});
+    }
+  };
+
+  /* ==========================================================================
+     EFECTO 3: SÍNTESIS DE VOZ DEL SYSTEM DM + PULSO LÍQUIDO DEL ORBE
+     ========================================================================== */
+  const hablarConVozDM = useCallback(
+    (texto, alTerminarCallback = null) => {
+      if (!vozSinteticaActiva || typeof window.speechSynthesis === 'undefined') {
+        // Simulación de pulso del orbe durante 3.2 segundos si la voz está desactivada
+        let ticks = 0;
+        const sim = setInterval(() => {
+          ticks++;
+          setAmplitudVozDM(0.35 + Math.sin(ticks * 0.6) * 0.3);
+          if (ticks > 32) {
+            clearInterval(sim);
+            setAmplitudVozDM(0);
+            if (alTerminarCallback) alTerminarCallback();
+          }
+        }, 100);
+        return;
+      }
+
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(texto);
+      utterance.lang = 'es-ES';
+      utterance.pitch = dmPerfil.pitchVoz || 1.0;
+      utterance.rate = dmPerfil.rateVoz || 1.0;
+
+      let animInterval = null;
+      utterance.onstart = () => {
+        animInterval = setInterval(() => {
+          setAmplitudVozDM(0.25 + Math.random() * 0.7);
+        }, 90);
+      };
+
+      utterance.onboundary = () => {
+        setAmplitudVozDM(0.5 + Math.random() * 0.5);
+      };
+
+      const finalizar = () => {
+        if (animInterval) clearInterval(animInterval);
+        setAmplitudVozDM(0);
+        if (alTerminarCallback) alTerminarCallback();
+      };
+
+      utterance.onend = finalizar;
+      utterance.onerror = finalizar;
+      window.speechSynthesis.speak(utterance);
+    },
+    [vozSinteticaActiva, dmPerfil]
+  );
+
+  /* ==========================================================================
+     EFECTO 4: CAPA DE FONDO EN CANVAS (NIEBLA EN MONTAÑA, BANDADA DE AVES Y BRILLO)
+     ========================================================================== */
+  useEffect(() => {
+    const canvas = canvasAtmosferaRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     let raf;
@@ -273,805 +464,1659 @@ export default function SecretoSagradoLanding() {
     ajustar();
     window.addEventListener('resize', ajustar);
 
-    const polenSolar = Array.from({ length: 40 }, () => ({
+    // 1. Bancos de niebla suave deslizándose sobre la montaña
+    const bancosNiebla = Array.from({ length: 7 }, (_, i) => ({
+      x: Math.random() * window.innerWidth,
+      y: window.innerHeight * (0.32 + (i % 4) * 0.14),
+      radioX: window.innerWidth * (0.28 + Math.random() * 0.22),
+      radioY: window.innerHeight * (0.09 + Math.random() * 0.06),
+      velocidad: (i % 2 === 0 ? 1 : -1) * (0.18 + Math.random() * 0.25),
+      opacidad: 0.12 + Math.random() * 0.14
+    }));
+
+    // 2. Bandada de aves volando en la distancia
+    const bandadaAves = Array.from({ length: 14 }, (_, i) => ({
+      x: -120 - i * 28 + Math.random() * 40,
+      y: window.innerHeight * 0.22 + (i % 5) * 14 + Math.random() * 12,
+      escala: 0.55 + Math.random() * 0.45,
+      velX: 0.65 + Math.random() * 0.25,
+      velY: -0.06 + Math.random() * 0.12,
+      faseAla: Math.random() * Math.PI * 2
+    }));
+
+    // 3. Partículas de brillo solar flotante (Animated Shine)
+    const destellosSol = Array.from({ length: 38 }, () => ({
       x: Math.random() * window.innerWidth,
       y: Math.random() * window.innerHeight,
       r: Math.random() * 2.4 + 0.8,
-      vx: Math.random() * 0.55 + 0.15,
-      vy: -Math.random() * 0.3 - 0.1,
-      alfa: Math.random() * 0.55 + 0.25
+      vx: (Math.random() - 0.3) * 0.35,
+      vy: -Math.random() * 0.3 - 0.08,
+      faseBrillo: Math.random() * Math.PI * 2
     }));
 
-    const animar = () => {
+    let tiempo = 0;
+
+    const animarPaisaje = () => {
+      tiempo += 0.018;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      polenSolar.forEach(p => {
-        p.x += p.vx;
-        p.y += p.vy;
-        if (p.x > canvas.width + 10) p.x = -10;
-        if (p.y < -10) p.y = canvas.height + 10;
+      // A. Resplandor Solar Animado Superior (Animated Shine)
+      const pulsoSol = 0.22 + Math.sin(tiempo * 0.8) * 0.08;
+      const gradSol = ctx.createRadialGradient(
+        canvas.width * 0.5,
+        canvas.height * 0.12,
+        10,
+        canvas.width * 0.5,
+        canvas.height * 0.18,
+        canvas.width * 0.65
+      );
+      gradSol.addColorStop(0, `rgba(255, 251, 235, ${pulsoSol + 0.15})`);
+      gradSol.addColorStop(0.45, `rgba(253, 230, 138, ${pulsoSol * 0.55})`);
+      gradSol.addColorStop(1, 'transparent');
+      ctx.fillStyle = gradSol;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // B. Bandada de Aves Lejanas con Aleteo Orgánico
+      ctx.save();
+      ctx.strokeStyle = 'rgba(30, 41, 59, 0.58)';
+      ctx.lineCap = 'round';
+      bandadaAves.forEach((ave) => {
+        ave.x += ave.velX;
+        ave.y += ave.velY + Math.sin(tiempo * 1.5 + ave.faseAla) * 0.15;
+        ave.faseAla += 0.14;
+
+        if (ave.x > canvas.width + 140) {
+          ave.x = -120;
+          ave.y = canvas.innerHeight * (0.16 + Math.random() * 0.18);
+        }
+
+        const aleteoY = Math.sin(ave.faseAla) * 5.5 * ave.escala;
+        const anchoAla = 9.5 * ave.escala;
+
+        ctx.lineWidth = 1.6 * ave.escala;
+        ctx.beginPath();
+        // Ala izquierda
+        ctx.moveTo(ave.x - anchoAla, ave.y - aleteoY);
+        ctx.quadraticCurveTo(ave.x - anchoAla * 0.4, ave.y - aleteoY * 0.4, ave.x, ave.y);
+        // Ala derecha
+        ctx.quadraticCurveTo(ave.x + anchoAla * 0.4, ave.y - aleteoY * 0.4, ave.x + anchoAla, ave.y - aleteoY);
+        ctx.stroke();
+      });
+      ctx.restore();
+
+      // C. Bancos de Niebla Montañosa (Misty Clouds)
+      bancosNiebla.forEach((nube) => {
+        nube.x += nube.velocidad;
+        if (nube.velocidad > 0 && nube.x - nube.radioX > canvas.width) {
+          nube.x = -nube.radioX;
+        } else if (nube.velocidad < 0 && nube.x + nube.radioX < 0) {
+          nube.x = canvas.width + nube.radioX;
+        }
+
+        ctx.save();
+        ctx.translate(nube.x, nube.y);
+        ctx.scale(1, nube.radioY / nube.radioX);
+        const gradNiebla = ctx.createRadialGradient(0, 0, 10, 0, 0, nube.radioX);
+        gradNiebla.addColorStop(0, `rgba(255, 255, 255, ${nube.opacidad})`);
+        gradNiebla.addColorStop(0.55, `rgba(241, 245, 249, ${nube.opacidad * 0.55})`);
+        gradNiebla.addColorStop(1, 'transparent');
+        ctx.fillStyle = gradNiebla;
+        ctx.beginPath();
+        ctx.arc(0, 0, nube.radioX, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
+
+      // D. Motas de Brillo Flotantes
+      destellosSol.forEach((d) => {
+        d.x += d.vx;
+        d.y += d.vy;
+        d.faseBrillo += 0.04;
+        if (d.y < -10) d.y = canvas.height + 10;
+        if (d.x < -10) d.x = canvas.width + 10;
+        if (d.x > canvas.width + 10) d.x = -10;
+
+        const alfa = 0.25 + Math.abs(Math.sin(d.faseBrillo)) * 0.65;
         ctx.save();
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = '#fef08a';
-        ctx.globalAlpha = p.alfa;
-        ctx.shadowBlur = 10;
+        ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+        ctx.fillStyle = '#fffbeb';
+        ctx.globalAlpha = alfa;
+        ctx.shadowBlur = 12;
         ctx.shadowColor = '#fde047';
         ctx.fill();
         ctx.restore();
       });
 
-      for (let i = ondasRef.current.length - 1; i >= 0; i--) {
-        const o = ondasRef.current[i];
-        o.radio += (o.max - o.radio) * 0.15;
-        o.alfa *= 0.9;
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(o.x, o.y, o.radio, 0, Math.PI * 2);
-        ctx.strokeStyle = o.color;
-        ctx.lineWidth = 2.5;
-        ctx.globalAlpha = o.alfa;
-        ctx.shadowBlur = 16;
-        ctx.shadowColor = o.color;
-        ctx.stroke();
-        ctx.restore();
-        if (o.alfa < 0.03) ondasRef.current.splice(i, 1);
-      }
-
-      for (let i = chispasRef.current.length - 1; i >= 0; i--) {
-        const c = chispasRef.current[i];
-        c.x += c.vx;
-        c.y += c.vy;
-        c.vy += 0.15;
-        c.alfa *= 0.93;
-
-        ctx.save();
-        ctx.translate(c.x, c.y);
-        ctx.rotate(c.vx * 0.2);
-        ctx.beginPath();
-        ctx.moveTo(0, -c.tam * 1.7);
-        ctx.lineTo(c.tam * 0.45, -c.tam * 0.45);
-        ctx.lineTo(c.tam * 1.7, 0);
-        ctx.lineTo(c.tam * 0.45, c.tam * 0.45);
-        ctx.lineTo(0, c.tam * 1.7);
-        ctx.lineTo(-c.tam * 0.45, c.tam * 0.45);
-        ctx.lineTo(-c.tam * 1.7, 0);
-        ctx.lineTo(-c.tam * 0.45, -c.tam * 0.45);
-        ctx.closePath();
-        ctx.fillStyle = c.color;
-        ctx.globalAlpha = c.alfa;
-        ctx.shadowBlur = 14;
-        ctx.shadowColor = c.color;
-        ctx.fill();
-        ctx.restore();
-
-        if (c.alfa < 0.04) chispasRef.current.splice(i, 1);
-      }
-
-      raf = requestAnimationFrame(animar);
+      raf = requestAnimationFrame(animarPaisaje);
     };
 
-    raf = requestAnimationFrame(animar);
+    raf = requestAnimationFrame(animarPaisaje);
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener('resize', ajustar);
     };
   }, []);
 
-  const lanzarChispasYSonido = (e, color = '#fef08a', cant = 30, notas = [523.25, 659.25, 783.99]) => {
-    const x = e?.clientX || window.innerWidth / 2;
-    const y = e?.clientY || window.innerHeight / 2;
-
-    ondasRef.current.push({ x, y, radio: 8, max: 115, alfa: 0.85, color });
-    for (let i = 0; i < cant; i++) {
-      const ang = Math.random() * Math.PI * 2;
-      const vel = Math.random() * 7.5 + 2;
-      chispasRef.current.push({
-        x,
-        y,
-        vx: Math.cos(ang) * vel,
-        vy: Math.sin(ang) * vel - 2,
-        tam: Math.random() * 3.8 + 1.8,
-        alfa: 1,
-        color: i % 2 === 0 ? color : '#ffffff'
-      });
-    }
-
+  /* ==========================================================================
+     SINTETIZADOR DE SONIDOS Y VIBRACIÓN PROGRESIVA
+     ========================================================================== */
+  const sonarAcordeSintetico = useCallback((frecuencias = [523.25, 659.25, 783.99], duracion = 0.55) => {
     try {
       const Ctx = window.AudioContext || window.webkitAudioContext;
-      if (!audioRef.current) audioRef.current = new Ctx();
-      if (audioRef.current.state === 'suspended') audioRef.current.resume();
-      const now = audioRef.current.currentTime;
-      notas.forEach((f, idx) => {
-        const osc = audioRef.current.createOscillator();
-        const g = audioRef.current.createGain();
+      if (!audioCtxRef.current) audioCtxRef.current = new Ctx();
+      if (audioCtxRef.current.state === 'suspended') audioCtxRef.current.resume();
+
+      const now = audioCtxRef.current.currentTime;
+      frecuencias.forEach((f, i) => {
+        const osc = audioCtxRef.current.createOscillator();
+        const gain = audioCtxRef.current.createGain();
         osc.type = 'triangle';
-        osc.frequency.setValueAtTime(f, now + idx * 0.05);
-        g.gain.setValueAtTime(0.001, now + idx * 0.05);
-        g.gain.exponentialRampToValueAtTime(0.1, now + idx * 0.05 + 0.03);
-        g.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.05 + 0.48);
-        osc.connect(g);
-        g.connect(audioRef.current.destination);
-        osc.start(now + idx * 0.05);
-        osc.stop(now + idx * 0.05 + 0.52);
+        osc.frequency.setValueAtTime(f, now + i * 0.05);
+        gain.gain.setValueAtTime(0.001, now + i * 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.09, now + i * 0.05 + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.05 + duracion);
+        osc.connect(gain);
+        gain.connect(audioCtxRef.current.destination);
+        osc.start(now + i * 0.05);
+        osc.stop(now + i * 0.05 + duracion + 0.04);
       });
-    } catch (err) {}
-  };
+    } catch (e) {}
+  }, []);
 
   /* ==========================================================================
-     GUARDADO BLINDADO (LOCALSTORAGE + SUPABASE REST OPCIONAL SIN CRASHEAR)
+     LÓGICA DEL RITUAL DE 3 SEGUNDOS CON AMBOS PULGARES (TOMAR / DEVOLVER CONTROL)
      ========================================================================== */
-  const handleGuardarPartida = async (e) => {
-    e.stopPropagation();
-    setGuardandoEstado(true);
-    lanzarChispasYSonido(e, '#38bdf8', 45, [523.25, 783.99, 1046.5]);
-
-    const registro = {
-      codigo_sala: codigoSala,
-      nombre_familia: nombreFamilia,
-      modo_partida: modoPartida,
-      dm_activo: dmActivoId,
-      era_actual: eraDatos.era,
-      nodo_actual: indiceEra,
-      conviccion_hp: conviccionHP,
-      vuelta_roster: vueltaRoster,
-      roster_jugadores: party,
-      fecha: new Date().toLocaleString('es-ES')
-    };
-
-    try {
-      const prev = JSON.parse(localStorage.getItem('ss_partidas_lista') || '[]');
-      const filtradas = prev.filter(item => item.codigo_sala !== codigoSala);
-      filtradas.unshift(registro);
-      localStorage.setItem('ss_partidas_lista', JSON.stringify(filtradas.slice(0, 10)));
-    } catch (err) {}
-
-    setTimeout(() => setGuardandoEstado(false), 450);
+  const lanzarRitualPulgares = ({ titulo, subtitulo, colorLuz, alCompletar }) => {
+    setPulgarIzqActivo(false);
+    setPulgarDerActivo(false);
+    setProgresoPulgares(0);
+    setExplosionLuzCompleta(false);
+    setConfigRitual({ titulo, subtitulo, colorLuz, destinoCallback: alCompletar });
+    setPantalla('RITUAL_PULGARES');
   };
 
-  const abrirBuscadorPartidas = (e) => {
-    e.stopPropagation();
-    lanzarChispasYSonido(e, '#fef08a', 30);
-    try {
-      const lista = JSON.parse(localStorage.getItem('ss_partidas_lista') || '[]');
-      setPartidasGuardadas(lista);
-    } catch (err) {
-      setPartidasGuardadas([]);
-    }
-    setModalCargarOpen(true);
-  };
+  useEffect(() => {
+    if (pantalla !== 'RITUAL_PULGARES') return;
+    const ambosActivos = pulgarIzqActivo && pulgarDerActivo;
 
-  const restaurarPartidaSeleccionada = (registro, e) => {
-    lanzarChispasYSonido(e, '#4ade80', 55, [523.25, 659.25, 1046.5]);
-    setCodigoSala(registro.codigo_sala);
-    setNombreFamilia(registro.nombre_familia);
-    setModoPartida(registro.modo_partida || 'ESTANDAR');
-    setDmActivoId(registro.dm_activo || 'historiador');
-    setIndiceEra(registro.nodo_actual || 0);
-    setConviccionHP(registro.conviccion_hp || 10);
-    setVueltaRoster(registro.vuelta_roster || 1);
-    setParty(registro.roster_jugadores || party);
-    setModalCargarOpen(false);
-    setVista('JUEGO');
-  };
-
-  const evaluarRespuesta = (op, e) => {
-    e.stopPropagation();
-    if (!heroeActivo) {
-      lanzarChispasYSonido(e, '#fb7185', 25, [220, 196]);
+    if (!ambosActivos) {
+      setProgresoPulgares((prev) => Math.max(0, prev - 8));
       return;
     }
 
-    let nuevoRoster = party.map(p => {
-      if (p.id === heroeActivo.id && claseActiva.id !== 'noble') {
-        return { ...p, disponible: false };
+    // Incremento durante 3.0 segundos (30 intervalos de 100ms)
+    const timer = setInterval(() => {
+      setProgresoPulgares((prev) => {
+        const nuevo = Math.min(100, prev + 3.4);
+
+        // Vibración progresiva más y más intensa en la Tablet
+        if (vibracionActiva && navigator.vibrate) {
+          const intensidadMs = Math.floor(25 + (nuevo / 100) * 95);
+          navigator.vibrate(intensidadMs);
+        }
+
+        // Sonido ascendente de energía
+        if (Math.floor(nuevo) % 12 === 0) {
+          sonarAcordeSintetico([260 + nuevo * 4.8, 390 + nuevo * 5.2], 0.18);
+        }
+
+        if (nuevo >= 100) {
+          clearInterval(timer);
+          setExplosionLuzCompleta(true);
+          if (vibracionActiva && navigator.vibrate) {
+            navigator.vibrate([120, 40, 260]);
+          }
+          sonarAcordeSintetico([523.25, 659.25, 783.99, 1046.5, 1318.5], 1.2);
+
+          setTimeout(() => {
+            if (configRitual.destinoCallback) {
+              configRitual.destinoCallback();
+            }
+          }, 680);
+        }
+        return nuevo;
+      });
+    }, 95);
+
+    return () => clearInterval(timer);
+  }, [pantalla, pulgarIzqActivo, pulgarDerActivo, vibracionActiva, configRitual, sonarAcordeSintetico]);
+
+  /* ==========================================================================
+     REACTIVIDAD DEL ORBE DEL JUGADOR A LA VOZ AMBIENTAL DE LA SALA
+     ========================================================================== */
+  useEffect(() => {
+    if (pantalla !== 'JUEGO' || subFaseJuego !== 'JUGADOR_ACTIVO') {
+      setAmplitudVozJugador(0);
+      return;
+    }
+
+    let animId;
+    let audioContextMic;
+
+    navigator.mediaDevices
+      ?.getUserMedia({ audio: true })
+      .then((stream) => {
+        streamMicAmbienteRef.current = stream;
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        audioContextMic = new Ctx();
+        const source = audioContextMic.createMediaStreamSource(stream);
+        const analyser = audioContextMic.createAnalyser();
+        analyser.fftSize = 64;
+        source.connect(analyser);
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+        const leerVolumen = () => {
+          analyser.getByteFrequencyData(dataArray);
+          const promedio = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+          setAmplitudVozJugador(Math.min(1, promedio / 95));
+          animId = requestAnimationFrame(leerVolumen);
+        };
+        leerVolumen();
+      })
+      .catch(() => {
+        // Pulso orgánico suave si no se concedió micrófono ambiental
+        let t = 0;
+        const loopSuave = () => {
+          t += 0.05;
+          setAmplitudVozJugador(0.15 + Math.abs(Math.sin(t)) * 0.2);
+          animId = requestAnimationFrame(loopSuave);
+        };
+        loopSuave();
+      });
+
+    return () => {
+      if (animId) cancelAnimationFrame(animId);
+      if (streamMicAmbienteRef.current) {
+        streamMicAmbienteRef.current.getTracks().forEach((tr) => tr.stop());
       }
-      return p;
+      if (audioContextMic) audioContextMic.close().catch(() => {});
+    };
+  }, [pantalla, subFaseJuego]);
+
+  /* ==========================================================================
+     DETECTOR DE PASOS FÍSICOS (ACELERÓMETRO) PARA RETOS DE CAMINATA
+     ========================================================================== */
+  useEffect(() => {
+    if (
+      pantalla !== 'JUEGO' ||
+      subFaseJuego !== 'JUGADOR_ACTIVO' ||
+      retoActual?.tipoMecanica !== 'CAMINATA_PEREGRINAJE' ||
+      !sensoresMovimientoActivos
+    ) {
+      return;
+    }
+
+    let ultimoPasoMs = 0;
+    const manejarMovimiento = (e) => {
+      const acc = e.accelerationIncludingGravity;
+      if (!acc) return;
+      const magnitud = Math.sqrt((acc.x || 0) ** 2 + (acc.y || 0) ** 2 + (acc.z || 0) ** 2);
+      const ahora = Date.now();
+      if (magnitud > 13.2 && ahora - ultimoPasoMs > 420) {
+        ultimoPasoMs = ahora;
+        setPasosCaminados((prev) => prev + 1);
+      }
+    };
+
+    window.addEventListener('devicemotion', manejarMovimiento);
+    return () => window.removeEventListener('devicemotion', manejarMovimiento);
+  }, [pantalla, subFaseJuego, retoActual, sensoresMovimientoActivos]);
+
+  /* ==========================================================================
+     FLUJO DEL JUEGO EN VIVO: INICIO, SELECCIÓN DE JUGADOR Y PREGUNTA DEL DM
+     ========================================================================== */
+  const iniciarJuegoTrasConfiguracion = () => {
+    lanzarRitualPulgares({
+      titulo: 'Ritual de Apertura del Secreto Sagrado',
+      subtitulo: 'Sostén la Tablet horizontalmente y mantén ambos pulgares en los círculos durante 3 segundos',
+      colorLuz: dmPerfil.colorHex,
+      alCompletar: () => {
+        setPantalla('JUEGO');
+        setSubFaseJuego('INTRO_HISTORIA');
+        setEraActualNum(1);
+        setIndiceRetoEnEra(0);
+        setConviccionHP(10);
+        setVueltaNumero(1);
+        setJugadores((prev) => prev.map((j) => ({ ...j, disponible: true, poderUsado: false })));
+        hablarConVozDM(dmPerfil.introHistoria);
+      }
+    });
+  };
+
+  const concederPermisoYPrepararReto = async (eraNum = eraActualNum, idxReto = indiceRetoEnEra) => {
+    sonarAcordeSintetico([523.25, 659.25, 1046.5], 0.6);
+    setSubFaseJuego('ELEGIR_JUGADOR');
+    setOpcionesOcultasIds([]);
+    setPasosCaminados(0);
+    setTranscripcionVoz('');
+
+    // Cargar el reto (desde Gemini si hay API Key, o desde la matriz multimodal de la Era)
+    const listaEra = NODOS_MULTIMODALES_POR_ERA[eraNum] || NODOS_MULTIMODALES_POR_ERA[1];
+    const retoFallback = listaEra[idxReto % listaEra.length];
+    setRetoActual(retoFallback);
+
+    hablarConVozDM(
+      `Era ${eraNum}: ${TITULOS_OCHO_ERAS[eraNum - 1].nombre}. ¿Quién de los jugadores disponibles tomará el desafío en este turno?`
+    );
+
+    if (geminiApiKey && geminiApiKey.trim() !== '') {
+      setCargandoRetoIA(true);
+      try {
+        const generado = await generarDesafioConGemini({
+          apiKey: geminiApiKey,
+          numeroEra: eraNum,
+          dmPerfil,
+          nombreFamilia: 'el equipo',
+          conviccionHP,
+          modoPartida: modoEstilo,
+          indiceRetoEnEra: idxReto
+        });
+        setRetoActual(generado);
+      } catch (e) {
+        // Conserva el reto multimodal local si falla la red
+      } finally {
+        setCargandoRetoIA(false);
+      }
+    }
+  };
+
+  const elegirJugadorParaElTurno = (jugador) => {
+    if (!jugador.disponible) return;
+    const clase = CLASES_ROLES[jugador.rolIdx];
+    setJugadorActivoId(jugador.id);
+    sonarAcordeSintetico([523.25, 659.25, 783.99], 0.5);
+
+    // 1. Todos los demás jugadores desaparecen con una animación energética
+    setSubFaseJuego('ANIMACION_DESVANECER_OTROS');
+
+    setTimeout(() => {
+      // 2. Acción de Transición Poderosa cuando el jugador toma el control de la Tablet
+      lanzarRitualPulgares({
+        titulo: `${jugador.nombre} (${clase.nombre}) Toma el Control`,
+        subtitulo: `${jugador.nombre}, coloca ambos pulgares durante 3 segundos para recibir el desafío`,
+        colorLuz: clase.color,
+        alCompletar: () => {
+          setPantalla('JUEGO');
+          setSubFaseJuego('DM_PREGUNTA');
+
+          const locucionCompleta = `${retoActual.narrativaDM} Busquen en su Biblia física ${retoActual.citaBiblia}. ${retoActual.pregunta} ${retoActual.instruccionInput}`;
+          hablarConVozDM(locucionCompleta, () => {
+            // 3. Al terminar la pregunta, el círculo del DM se encoge hacia la esquina superior izquierda
+            // y el círculo del jugador ocupa el centro junto con la pregunta al 70% arriba
+            setSubFaseJuego('JUGADOR_ACTIVO');
+          });
+        }
+      });
+    }, 850);
+  };
+
+  /* ==========================================================================
+     RESOLUCIÓN DE DESAFÍOS Y DEVOLUCIÓN DE CONTROL AL SYSTEM DM
+     ========================================================================== */
+  const completarTurnoYDevolverControlAlDM = (fueCorrecto, comentarioExtraDM = '') => {
+    if (!jugadorActivo) return;
+    const clase = CLASES_ROLES[jugadorActivo.rolIdx];
+
+    // Poner al jugador en enfriamiento (gris) hasta que todos los demás jueguen
+    let nuevaLista = jugadores.map((j) => {
+      if (j.id === jugadorActivo.id && clase.id !== 'noble') {
+        return { ...j, disponible: false };
+      }
+      return j;
     });
 
-    if (!nuevoRoster.some(p => p.disponible)) {
-      nuevoRoster = nuevoRoster.map(p => ({ ...p, disponible: true }));
-      setVueltaRoster(v => v + 1);
+    if (!nuevaLista.some((j) => j.disponible)) {
+      nuevaLista = nuevaLista.map((j) => ({ ...j, disponible: true }));
+      setVueltaNumero((v) => v + 1);
+    }
+    setJugadores(nuevaLista);
+
+    if (fueCorrecto) {
+      if (clase.id === 'juez' || clase.id === 'proselito') {
+        setConviccionHP((hp) => Math.min(10, hp + 1));
+      }
+    } else if (clase.id !== 'sacerdote') {
+      setConviccionHP((hp) => Math.max(1, hp - 1));
     }
 
-    setParty(nuevoRoster);
-    setHeroeEnTurnoId(null);
-    setOpcionesDescartadas([]);
+    // Acción de transición cuando el jugador devuelve el control al System DM
+    lanzarRitualPulgares({
+      titulo: `${jugadorActivo.nombre} Devuelve el Control al Guía`,
+      subtitulo: 'Mantén ambos pulgares durante 3 segundos para sellar la respuesta y escuchar la revelación',
+      colorLuz: fueCorrecto ? '#10b981' : '#f43f5e',
+      alCompletar: () => {
+        setPantalla('JUEGO');
+        setSubFaseJuego('REVELACION_HILO');
+        setJugadorActivoId(null);
 
-    if (op.correcta) {
-      lanzarChispasYSonido(e, '#4ade80', 80, [523.25, 659.25, 783.99, 1046.5, 1318.5]);
-      if (claseActiva.id === 'juez' || claseActiva.id === 'proselito') {
-        setConviccionHP(hp => Math.min(10, hp + 1));
+        const textoFinal = fueCorrecto
+          ? `${comentarioExtraDM || `¡Excelente trabajo, ${jugadorActivo.nombre}!`} ${retoActual.hiloDorado}`
+          : `${comentarioExtraDM || `Necesitamos meditar un poco más en ${retoActual.citaBiblia}.`} ${retoActual.hiloDorado}`;
+
+        setMensajeFeedbackDM(textoFinal);
+        hablarConVozDM(textoFinal);
       }
-      setModalHiloDorado({
-        jugador: heroeActivo.nombre,
-        era: eraDatos.nombre,
-        sintesis: eraDatos.hiloDorado
-      });
+    });
+  };
+
+  const avanzarAlSiguienteNodoOEra = () => {
+    const siguienteRetoIdx = indiceRetoEnEra + 1;
+    if (siguienteRetoIdx < retosMetaPorEra) {
+      setIndiceRetoEnEra(siguienteRetoIdx);
+      concederPermisoYPrepararReto(eraActualNum, siguienteRetoIdx);
+    } else if (eraActualNum < 8) {
+      const siguienteEra = eraActualNum + 1;
+      setEraActualNum(siguienteEra);
+      setIndiceRetoEnEra(0);
+      concederPermisoYPrepararReto(siguienteEra, 0);
     } else {
-      lanzarChispasYSonido(e, '#fb7185', 45, [246.94, 207.65, 174.61]);
-      if (claseActiva.id !== 'sacerdote') {
-        setConviccionHP(hp => Math.max(1, hp - 1));
+      setSubFaseJuego('FIN_PARTIDA');
+      hablarConVozDM(
+        '¡Felicidades! Han completado las ocho eras del Secreto Sagrado, desde Génesis hasta Revelación. ¡El Reino Mesiánico ha triunfado para la gloria eterna de Jehová!'
+      );
+    }
+  };
+
+  /* ==========================================================================
+     MICRÓFONO DEDICADO (PUSH-TO-TALK: SOLO ESCUCHA AL MANTENER PRESIONADO)
+     ========================================================================== */
+  const iniciarEscuchaPushToTalk = (e) => {
+    e.preventDefault();
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    setManteniendoMic(true);
+
+    if (!SpeechRec) return;
+    const rec = new SpeechRec();
+    rec.lang = 'es-ES';
+    rec.continuous = true;
+    rec.interimResults = true;
+
+    rec.onresult = (event) => {
+      let texto = '';
+      for (let i = 0; i < event.results.length; i++) {
+        texto += event.results[i][0].transcript + ' ';
+      }
+      setTranscripcionVoz(texto.trim());
+    };
+
+    reconocimientoVozRef.current = rec;
+    try {
+      rec.start();
+    } catch (err) {}
+  };
+
+  const soltarEscuchaPushToTalk = async () => {
+    setManteniendoMic(false);
+    if (reconocimientoVozRef.current) {
+      try {
+        reconocimientoVozRef.current.stop();
+      } catch (err) {}
+    }
+
+    if (subFaseJuego === 'INTRO_HISTORIA' && transcripcionVoz.trim().length > 0) {
+      concederPermisoYPrepararReto(1, 0);
+      return;
+    }
+
+    if (subFaseJuego === 'JUGADOR_ACTIVO' && transcripcionVoz.trim().length > 3) {
+      setEvaluandoIA(true);
+      try {
+        const res = await evaluarExplicacionFamiliarConGemini({
+          apiKey: geminiApiKey,
+          numeroEra: eraActualNum,
+          dmPerfil,
+          nombreJugador: jugadorActivo?.nombre || 'Jugador',
+          citaBiblia: retoActual.citaBiblia,
+          preguntaActual: retoActual.pregunta,
+          explicacionDelJugador: transcripcionVoz
+        });
+        completarTurnoYDevolverControlAlDM(res.aprobado, res.comentarioDM);
+      } catch (e) {
+        completarTurnoYDevolverControlAlDM(true);
+      } finally {
+        setEvaluandoIA(false);
       }
     }
+  };
+
+  /* ==========================================================================
+     CÁMARA PARA VERIFICAR LA BIBLIA FÍSICA
+     ========================================================================== */
+  const abrirCamaraBiblia = async () => {
+    setCamaraActiva(true);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' }
+      });
+      streamCamaraRef.current = stream;
+      if (videoCamaraRef.current) {
+        videoCamaraRef.current.srcObject = stream;
+      }
+    } catch (e) {}
+  };
+
+  const capturarYVerificarBiblia = async () => {
+    setEvaluandoIA(true);
+    let base64 = '';
+    try {
+      if (videoCamaraRef.current && videoCamaraRef.current.videoWidth > 0) {
+        const c = document.createElement('canvas');
+        c.width = 480;
+        c.height = 360;
+        c.getContext('2d').drawImage(videoCamaraRef.current, 0, 0, c.width, c.height);
+        base64 = c.toDataURL('image/jpeg', 0.75).split(',')[1];
+      }
+      if (streamCamaraRef.current) {
+        streamCamaraRef.current.getTracks().forEach((t) => t.stop());
+      }
+      setCamaraActiva(false);
+
+      const veredicto = await verificarBibliaConCamaraGemini({
+        apiKey: geminiApiKey,
+        base64JpegSinPrefijo: base64,
+        citaBiblia: retoActual.citaBiblia,
+        dmPerfil,
+        nombreJugador: jugadorActivo?.nombre || 'Jugador'
+      });
+      completarTurnoYDevolverControlAlDM(veredicto.aprobado, veredicto.comentarioDM);
+    } catch (e) {
+      completarTurnoYDevolverControlAlDM(true);
+    } finally {
+      setEvaluandoIA(false);
+    }
+  };
+
+  /* ==========================================================================
+     GUARDAR Y CERRAR PARTIDA (SIEMPRE DISPONIBLES ARRIBA A LA DERECHA)
+     ========================================================================== */
+  const guardarPartidaActual = () => {
+    try {
+      const datos = {
+        dmId,
+        modoEstilo,
+        jugadores,
+        eraActualNum,
+        indiceRetoEnEra,
+        conviccionHP,
+        tokensOracion,
+        vueltaNumero,
+        fecha: new Date().toLocaleString('es-ES')
+      };
+      localStorage.setItem('ss_partida_guardada_v4', JSON.stringify(datos));
+      setNotificacionGuardado('Partida Guardada');
+      setTimeout(() => setNotificacionGuardado(''), 2200);
+    } catch (e) {}
+  };
+
+  const cargarPartidaGuardada = () => {
+    try {
+      const raw = localStorage.getItem('ss_partida_guardada_v4');
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      setDmId(d.dmId || 'historiador');
+      setModoEstilo(d.modoEstilo || 'ESTANDAR');
+      setJugadores(d.jugadores || jugadores);
+      setEraActualNum(d.eraActualNum || 1);
+      setIndiceRetoEnEra(d.indiceRetoEnEra || 0);
+      setConviccionHP(d.conviccionHP || 10);
+      setTokensOracion(d.tokensOracion ?? 2);
+      setVueltaNumero(d.vueltaNumero || 1);
+      setPantalla('JUEGO');
+      setSubFaseJuego('ELEGIR_JUGADOR');
+    } catch (e) {}
   };
 
   return (
     <div
-      className="relative w-screen h-screen overflow-hidden select-none text-white bg-slate-950"
-      onPointerDown={(e) => lanzarChispasYSonido(e, dmActual.colorHex, 12, [659.25])}
+      onClick={desbloquearAudioAlTocar}
+      className="relative w-screen h-screen overflow-hidden select-none font-sans text-white bg-slate-950"
     >
-      {/* CORTINA INICIAL SUAVE */}
+      {/* 1. IMAGEN DE FONDO PERSONALIZADA DE MONTAÑA */}
       <div
-        className={`fixed inset-0 z-50 bg-[#070b14] flex flex-col items-center justify-center transition-transform duration-1000 pointer-events-none ${
-          cortinaLista ? '-translate-y-full' : 'translate-y-0'
-        }`}
-      >
-        <span className="text-amber-300 text-xs font-black tracking-[0.35em] uppercase mb-3">
-          Estudio Familiar Interactivo • 8 Eras
-        </span>
-        <h1 className="text-4xl md:text-6xl font-black tracking-tight text-white">
-          EL SECRETO SAGRADO
-        </h1>
-      </div>
+        className="fixed inset-0 z-0 bg-cover bg-center transition-transform duration-[15000ms] ease-out scale-105"
+        style={{ backgroundImage: `url('${URL_FONDO_MONTANA}')` }}
+      />
 
-      {/* PAISAJE ATMOSFÉRICO A PANTALLA COMPLETA */}
-      <div
-        className="fixed inset-0 z-0 bg-cover bg-center transition-all duration-1000 scale-105"
-        style={{ backgroundImage: `url('${eraDatos.paisajeUrl}')` }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/30" />
-      </div>
+      {/* Sutil velo atmosférico para garantizar contraste con el cristal */}
+      <div className="fixed inset-0 z-0 bg-gradient-to-b from-slate-950/20 via-transparent to-slate-950/45 pointer-events-none" />
 
-      {/* LIENZO DE CHISPAS 3D Y BRISA LUMINOSA */}
-      <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-40" />
+      {/* 2. CAPA ANIMADA EN CANVAS: NIEBLA MÍSTICA, BANDADA DE AVES EN LA DISTANCIA Y BRILLO SOLAR */}
+      <canvas ref={canvasAtmosferaRef} className="fixed inset-0 z-10 pointer-events-none" />
 
       {/* ====================================================================
-          VISTA 1: BIENVENIDA ABIERTA (MENÚ GLASS LATERAL + HORIZONTE LIBRE)
+          PANTALLA 0: ANIMACIÓN DE ARRANQUE (BOOT CON EL LOGO OFICIAL)
           ==================================================================== */}
-      {vista === 'BIENVENIDA' && (
-        <section className="relative z-10 w-full h-full flex items-center justify-between px-6 md:px-16">
-          <aside className="h-full w-80 md:w-96 bg-black/40 backdrop-blur-xl border-x border-white/25 flex flex-col justify-center px-8 py-10 shadow-2xl">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-400/20 border border-amber-300/50 text-amber-200 text-[11px] font-black tracking-widest uppercase w-fit mb-6">
-              ✨ 8 Eras • Estudio Bíblico
-            </div>
-
-            <div className="flex flex-col gap-3">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setModoPartida('ESTANDAR');
-                  setVista('CONFIG_PARTY');
-                  lanzarChispasYSonido(e, '#fef08a', 45);
-                }}
-                className="group flex items-center justify-between px-5 py-4 rounded-2xl bg-white/15 hover:bg-white/25 border border-white/30 hover:border-amber-300 transition-all duration-300 hover:translate-x-2 text-left shadow-lg"
-              >
-                <span className="font-extrabold text-base">Nueva Partida (8 Eras)</span>
-                <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-black/40 text-amber-200">
-                  ESTÁNDAR
-                </span>
-              </button>
-
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setModoPartida('EXPRESS');
-                  setVista('CONFIG_PARTY');
-                  lanzarChispasYSonido(e, '#38bdf8', 45);
-                }}
-                className="group flex items-center justify-between px-5 py-4 rounded-2xl bg-white/10 hover:bg-white/25 border border-white/25 hover:border-sky-300 transition-all duration-300 hover:translate-x-2 text-left shadow-lg"
-              >
-                <span className="font-extrabold text-base">⚡ Partida Express</span>
-                <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-black/40 text-sky-200">
-                  8 ERAS RÁPIDAS
-                </span>
-              </button>
-
-              <button
-                onClick={abrirBuscadorPartidas}
-                className="flex items-center gap-3 px-5 py-3.5 rounded-2xl hover:bg-white/15 border border-transparent hover:border-white/30 transition-all duration-300 hover:translate-x-2 text-left"
-              >
-                <span className="font-bold text-sm">📂 Buscar Partidas Guardadas</span>
-              </button>
-
-              <button
-                onClick={(e) => { e.stopPropagation(); setModalLogoOpen(true); }}
-                className="flex items-center gap-3 px-5 py-3.5 rounded-2xl hover:bg-white/15 border border-transparent hover:border-white/30 transition-all duration-300 hover:translate-x-2 text-left text-white/80"
-              >
-                <span className="font-bold text-sm">🖼️ Personalizar URL del Logo</span>
-              </button>
-            </div>
-
-            <div className="mt-10 pt-6 border-t border-white/15 text-xs text-white/75 leading-relaxed">
-              Basado estrictamente en <strong>wol.jw.org</strong>.<br />
-              El System DM dirige cada turno.
-            </div>
-          </aside>
-
-          {/* Título y Logo a la Derecha */}
-          <div className="text-right max-w-xl">
-            {logoUrl && (
-              <img
-                src={logoUrl}
-                alt="Logo El Secreto Sagrado"
-                className="max-h-36 ml-auto mb-5 drop-shadow-2xl"
-              />
-            )}
-            <div className="inline-block px-4 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/40 text-amber-200 text-xs font-black tracking-[0.2em] uppercase mb-3">
-              El Camino de la Revelación
-            </div>
-            <h1 className="text-5xl md:text-7xl font-black tracking-tight leading-none drop-shadow-2xl">
-              EL SECRETO<br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-100 to-sky-200">
-                SAGRADO
-              </span>
-            </h1>
+      {pantalla === 'BOOT_LOGO' && (
+        <section
+          onClick={() => setPantalla('MENU_PRINCIPAL')}
+          className={`fixed inset-0 z-50 flex flex-col items-center justify-center transition-all duration-1000 cursor-pointer ${
+            faseBoot === 2 ? 'bg-slate-950/0 opacity-0' : 'bg-slate-950/90 opacity-100'
+          }`}
+        >
+          <div
+            className={`relative flex flex-col items-center transition-all duration-1000 transform ${
+              faseBoot === 0
+                ? 'scale-75 opacity-0 blur-md'
+                : faseBoot === 1
+                ? 'scale-100 opacity-100 blur-0'
+                : 'scale-110 opacity-0'
+            }`}
+          >
+            {/* Halo luminoso detrás del logo */}
+            <div className="absolute -inset-12 rounded-full bg-cyan-400/25 blur-3xl animate-pulse pointer-events-none" />
+            <img
+              src={URL_LOGO_OFICIAL}
+              alt="Secreto Sagrado"
+              className="w-72 md:w-96 object-contain drop-shadow-[0_0_45px_rgba(255,255,255,0.85)]"
+            />
+            <span className="mt-8 text-xs tracking-[0.35em] uppercase text-white/80 font-bold animate-pulse">
+              Toca para despertar la revelación
+            </span>
           </div>
         </section>
       )}
 
       {/* ====================================================================
-          VISTA 2: LOBBY DE CONFIGURACIÓN, ELECCIÓN DE DM Y ROSTER FAMILIAR
+          PANTALLA 1: MENÚ PRINCIPAL (TEXTO PURO A LA IZQUIERDA SIN CAJAS)
           ==================================================================== */}
-      {vista === 'CONFIG_PARTY' && (
-        <section className="relative z-10 w-full h-full flex flex-col justify-between p-6 md:p-10 overflow-y-auto">
-          <header className="flex flex-wrap items-center justify-between gap-4">
+      {pantalla === 'MENU_PRINCIPAL' && (
+        <section className="relative z-20 w-full h-full flex items-center justify-between px-10 md:px-24">
+          {/* Opciones a la izquierda: SOLO las palabras sin contenedores, brillan al tocarlas */}
+          <nav className="flex flex-col items-start gap-7">
             <button
-              onClick={(e) => { e.stopPropagation(); setVista('BIENVENIDA'); lanzarChispasYSonido(e); }}
-              className="px-5 py-2.5 rounded-full bg-black/45 backdrop-blur-xl border border-white/30 font-bold text-xs hover:bg-white/20"
-            >
-              ← Menú Principal
-            </button>
-
-            <div className="flex items-center gap-3 bg-black/45 backdrop-blur-xl border border-white/30 px-4 py-2 rounded-full">
-              <span className="text-xs font-extrabold text-amber-200">Familia:</span>
-              <input
-                type="text"
-                value={nombreFamilia}
-                onClick={(e) => e.stopPropagation()}
-                onChange={(e) => setNombreFamilia(e.target.value)}
-                className="bg-white/10 border border-white/25 rounded-full px-3 py-1 text-xs font-bold text-white focus:outline-none"
-              />
-              <span className="text-[11px] font-black text-sky-300">{codigoSala}</span>
-            </div>
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setParty(party.map(p => ({ ...p, disponible: true, poderUsado: false })));
-                setVista('JUEGO');
-                lanzarChispasYSonido(e, '#4ade80', 65);
+              onClick={() => {
+                sonarAcordeSintetico([523.25, 659.25, 783.99]);
+                setPantalla('SETUP_NARRADOR');
               }}
-              className="px-8 py-3 rounded-full bg-gradient-to-r from-amber-300 to-orange-500 text-slate-950 font-black text-sm shadow-2xl hover:scale-105 transition-all"
+              className="bg-transparent border-none text-left text-4xl md:text-6xl font-black tracking-wide text-white/90 hover:text-white active:scale-95 transition-all duration-300 hover:translate-x-3 hover:drop-shadow-[0_0_28px_rgba(255,255,255,1)] focus:outline-none"
             >
-              ✨ COMENZAR EN LA ERA 1 →
+              Iniciar
             </button>
-          </header>
 
-          {/* 1. Selección de los 6 Arquetipos de System DM */}
-          <div className="my-auto flex flex-col items-center gap-4">
-            <div className="text-center">
-              <span className="text-[11px] font-black tracking-[0.22em] uppercase text-amber-200 block">
-                1. Personalidad del System DM ({modoPartida === 'EXPRESS' ? 'Modo Express • 8 Eras' : 'Modo Estándar • 8 Eras'})
-              </span>
-              <p className="text-xs text-white/80 mt-1">{dmActual.fraseControl}</p>
-            </div>
+            {localStorage.getItem('ss_partida_guardada_v4') && (
+              <button
+                onClick={cargarPartidaGuardada}
+                className="bg-transparent border-none text-left text-3xl md:text-5xl font-extrabold tracking-wide text-amber-200/90 hover:text-amber-100 active:scale-95 transition-all duration-300 hover:translate-x-3 hover:drop-shadow-[0_0_28px_rgba(253,224,71,1)] focus:outline-none"
+              >
+                Continuar
+              </button>
+            )}
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 w-full max-w-6xl">
-              {CATALOGO_DMS.map((dm) => {
-                const seleccionado = dm.id === dmActivoId;
-                return (
-                  <div
-                    key={dm.id}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDmActivoId(dm.id);
-                      lanzarChispasYSonido(e, dm.colorHex, 35);
-                    }}
-                    className={`cursor-pointer p-4 rounded-3xl backdrop-blur-xl border transition-all duration-300 flex flex-col items-center text-center ${
-                      seleccionado
-                        ? 'bg-white/25 border-amber-300 scale-105 -translate-y-1.5 shadow-2xl'
-                        : 'bg-black/40 border-white/20 hover:bg-white/15'
-                    }`}
-                  >
-                    <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${dm.gradiente} grid place-items-center text-2xl shadow-lg mb-2`}>
-                      {dm.icono}
-                    </div>
-                    <div className="font-extrabold text-xs">{dm.nombre.replace('El ', '')}</div>
-                    <div className="text-[10px] text-amber-200/90 mt-0.5">{dm.subtitulo}</div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+            <button
+              onClick={() => {
+                sonarAcordeSintetico([440, 554.37, 659.25]);
+                setPantalla('CONFIGURACION');
+              }}
+              className="bg-transparent border-none text-left text-4xl md:text-6xl font-black tracking-wide text-white/85 hover:text-white active:scale-95 transition-all duration-300 hover:translate-x-3 hover:drop-shadow-[0_0_28px_rgba(255,255,255,1)] focus:outline-none"
+            >
+              Configuración
+            </button>
+          </nav>
 
-          {/* 2. Alineación Heroica del Roster Familiar */}
-          <div className="flex flex-col items-center gap-3">
-            <div className="flex items-center gap-3">
-              <span className="text-xs font-black tracking-[0.18em] uppercase text-amber-200">
-                2. Escuadrón Familiar (Toca el Icono para Cambiar de Rol)
-              </span>
-              {party.length < 8 && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setParty([
-                      ...party,
-                      {
-                        id: 'p_' + Date.now(),
-                        nombre: `Jugador ${party.length + 1}`,
-                        claseIdx: party.length % CLASES_JUGADOR.length,
-                        disponible: true,
-                        poderUsado: false
-                      }
-                    ]);
-                    lanzarChispasYSonido(e, '#38bdf8', 30);
-                  }}
-                  className="px-3.5 py-1 rounded-full bg-white/20 hover:bg-white/30 border border-white/40 text-xs font-extrabold"
-                >
-                  + Añadir Jugador
-                </button>
-              )}
-            </div>
-
-            <div className="flex flex-wrap justify-center gap-3.5">
-              {party.map((jug, idx) => {
-                const clase = CLASES_JUGADOR[jug.claseIdx];
-                return (
-                  <div
-                    key={jug.id}
-                    className="w-44 p-4 rounded-3xl bg-gradient-to-b from-white/25 to-black/65 backdrop-blur-xl border border-white/35 shadow-2xl flex flex-col items-center gap-2 hover:-translate-y-1.5 transition-all"
-                  >
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const copia = [...party];
-                        copia[idx].claseIdx = (copia[idx].claseIdx + 1) % CLASES_JUGADOR.length;
-                        setParty(copia);
-                        lanzarChispasYSonido(e, clase.color, 30);
-                      }}
-                      className="w-14 h-14 rounded-2xl bg-white text-3xl grid place-items-center shadow-lg hover:scale-110 transition-transform"
-                    >
-                      {clase.icono}
-                    </button>
-                    <input
-                      type="text"
-                      value={jug.nombre}
-                      onClick={(e) => e.stopPropagation()}
-                      onChange={(e) => {
-                        const copia = [...party];
-                        copia[idx].nombre = e.target.value;
-                        setParty(copia);
-                      }}
-                      className="w-full bg-black/45 border border-white/30 rounded-xl px-2 py-1 text-center font-extrabold text-xs text-white focus:outline-none"
-                    />
-                    <span className="text-[11px] font-extrabold text-amber-200">
-                      {clase.nombre}
-                    </span>
-                    <span className="text-[10px] text-white/80 text-center leading-tight">
-                      {clase.ventaja}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
+          {/* Logo Oficial Flotando a la Derecha */}
+          <div className="hidden sm:flex flex-col items-end pointer-events-none">
+            <img
+              src={URL_LOGO_OFICIAL}
+              alt="Logo Secreto Sagrado"
+              className="w-64 md:w-80 object-contain drop-shadow-[0_12px_35px_rgba(0,0,0,0.45)] animate-[pulse_5s_ease-in-out_infinite]"
+            />
           </div>
         </section>
       )}
 
       {/* ====================================================================
-          VISTA 3: ESCENARIO DE JUEGO EN VIVO (DESPEJADO Y ATMOSFÉRICO)
+          PASO LINEAL 1: NARRADOR (CAJAS GLASSMORPHIC PARA EL ESTILO DE DM)
           ==================================================================== */}
-      {vista === 'JUEGO' && (
-        <section className="relative z-10 w-full h-full flex flex-col justify-between p-6 md:p-10">
-          <header className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <button
-                onClick={(e) => { e.stopPropagation(); setVista('CONFIG_PARTY'); lanzarChispasYSonido(e); }}
-                className="px-4 py-2 rounded-full bg-black/45 backdrop-blur-xl border border-white/30 text-xs font-extrabold hover:bg-white/20"
-              >
-                ⚙️ Party
-              </button>
-              <div className="px-4 py-2 rounded-full bg-black/45 backdrop-blur-xl border border-white/30 text-xs font-black tracking-wider uppercase text-amber-200">
-                ERA {eraDatos.era} DE 8 • {eraDatos.nombre}
-              </div>
-              <div className="hidden lg:flex gap-1 bg-black/40 backdrop-blur-xl p-1 rounded-full border border-white/20">
-                {OCHO_ERAS_SECRETO_SAGRADO.map((eObj, i) => (
-                  <button
-                    key={eObj.era}
-                    onClick={(ev) => {
-                      ev.stopPropagation();
-                      setIndiceEra(i);
-                      lanzarChispasYSonido(ev, '#38bdf8', 25);
-                    }}
-                    className={`w-7 h-7 rounded-full text-xs font-black transition-all ${
-                      indiceEra === i ? 'bg-amber-400 text-slate-950' : 'text-white/75 hover:bg-white/15'
-                    }`}
-                  >
-                    {eObj.era}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* 10 Gemas de Convicción */}
-            <div className="flex items-center gap-1.5 px-5 py-2 rounded-full bg-black/45 backdrop-blur-xl border border-white/30">
-              <span className="text-[11px] font-black uppercase text-amber-200 mr-1.5">
-                Convicción
-              </span>
-              {Array.from({ length: 10 }).map((_, i) => (
-                <span
-                  key={i}
-                  className={`text-base transition-all ${
-                    i < conviccionHP ? 'scale-100' : 'opacity-25 grayscale scale-75'
-                  }`}
-                >
-                  💎
-                </span>
-              ))}
-            </div>
-
-            <div className="flex items-center gap-2">
-              {heroeActivo && !heroeActivo.poderUsado && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const copia = party.map(p => p.id === heroeActivo.id ? { ...p, poderUsado: true } : p);
-                    if (claseActiva.id === 'patriarca') {
-                      const idxApagado = copia.findIndex(p => !p.disponible);
-                      if (idxApagado !== -1) copia[idxApagado].disponible = true;
-                    } else {
-                      const falsas = eraDatos.opciones.filter(o => !o.correcta).slice(0, 2).map(o => o.id);
-                      setOpcionesDescartadas(falsas);
-                    }
-                    setParty(copia);
-                    lanzarChispasYSonido(e, claseActiva.color, 55);
-                  }}
-                  className="px-4 py-2 rounded-full bg-gradient-to-r from-purple-500 to-indigo-600 border border-white/60 text-xs font-black shadow-lg hover:scale-105 transition-all"
-                >
-                  ⚡ Poder de {claseActiva.nombre}
-                </button>
-              )}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (tokensOracion <= 0) return;
-                  setTokensOracion(0);
-                  setConviccionHP(hp => Math.min(10, hp + 2));
-                  lanzarChispasYSonido(e, '#fde047', 65);
-                }}
-                className="px-4 py-2 rounded-full bg-amber-400/25 backdrop-blur-xl border border-amber-300 text-amber-100 text-xs font-extrabold hover:bg-amber-400/40"
-              >
-                🙏 Oración (+2 HP)
-              </button>
-              <button
-                onClick={handleGuardarPartida}
-                className="px-4 py-2 rounded-full bg-black/45 backdrop-blur-xl border border-white/30 text-xs font-extrabold hover:bg-white/20"
-              >
-                {guardandoEstado ? '✅ Guardado' : '💾 Guardar'}
-              </button>
-            </div>
+      {pantalla === 'SETUP_NARRADOR' && (
+        <section className="relative z-20 w-full h-full flex flex-col justify-between p-6 md:p-12">
+          {/* Barra Superior Izquierda: Regresar y Menú Principal */}
+          <header className="flex items-center gap-4">
+            <button
+              onClick={() => setPantalla('MENU_PRINCIPAL')}
+              className="px-5 py-2.5 rounded-full bg-white/15 hover:bg-white/30 backdrop-blur-xl border border-white/40 text-xs font-extrabold tracking-wider uppercase transition-all"
+            >
+              ← Regresar
+            </button>
+            <button
+              onClick={() => setPantalla('MENU_PRINCIPAL')}
+              className="px-5 py-2.5 rounded-full bg-black/25 hover:bg-white/20 backdrop-blur-xl border border-white/25 text-xs font-bold tracking-wider uppercase transition-all"
+            >
+              Menú Principal
+            </button>
           </header>
 
-          {/* Centro Flotante Glassmórfico */}
-          <main className="my-auto max-w-4xl w-full mx-auto flex flex-col items-center gap-5">
-            <div className="w-full p-6 md:p-8 rounded-[30px] bg-black/45 backdrop-blur-2xl border border-white/35 shadow-2xl text-center">
-              <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-amber-400/20 border border-amber-300/60 text-amber-200 text-xs font-black tracking-widest uppercase mb-3">
-                📖 BUSCAR EN BIBLIA FÍSICA: {eraDatos.citaBiblia}
-              </div>
-              <h2 className="text-2xl md:text-4xl font-black text-white mb-2">
-                {eraDatos.tituloNodo}
+          {/* Centro: Selección Glassmorphic de Narrador */}
+          <main className="my-auto max-w-5xl w-full mx-auto flex flex-col items-center gap-6">
+            <div className="text-center">
+              <span className="text-xs font-black tracking-[0.28em] uppercase text-amber-200 drop-shadow">
+                Paso 1 de 3 • Narrador
+              </span>
+              <h2 className="text-3xl md:text-5xl font-black tracking-tight drop-shadow-lg mt-1">
+                Elige el Estilo del Guía
               </h2>
-              <p className="text-sm md:text-base text-white/90 max-w-2xl mx-auto">
-                <span className="text-amber-300 font-extrabold">{dmActual.icono} {dmActual.nombre}: </span>
-                {eraDatos.pregunta}
-              </p>
-              {claseActiva?.id === 'mayordomo' && (
-                <div className="mt-3 px-4 py-2 rounded-xl bg-emerald-500/20 border border-emerald-300/50 text-xs text-emerald-100">
-                  💼 <strong>Hallazgo del Mayordomo:</strong> {eraDatos.notaMayordomo}
-                </div>
-              )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
-              {eraDatos.opciones.map((op) => {
-                const descartada = opcionesDescartadas.includes(op.id);
-                const pistaEscriba = claseActiva?.id === 'escriba' && op.correcta;
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 w-full">
+              {CATALOGO_DMS.map((dm) => {
+                const activo = dm.id === dmId;
                 return (
                   <button
-                    key={op.id}
-                    disabled={descartada}
-                    onClick={(e) => evaluarRespuesta(op, e)}
-                    className={`group p-5 rounded-3xl backdrop-blur-xl border text-left flex items-center gap-4 transition-all duration-300 shadow-xl ${
-                      descartada
-                        ? 'opacity-20 pointer-events-none grayscale bg-black/20 border-white/10'
-                        : pistaEscriba
-                        ? 'bg-amber-400/30 border-amber-300'
-                        : 'bg-black/40 hover:bg-white/25 border-white/35 hover:border-amber-200 hover:-translate-y-1.5'
+                    key={dm.id}
+                    onClick={() => {
+                      setDmId(dm.id);
+                      sonarAcordeSintetico([523.25, 659.25]);
+                    }}
+                    style={{
+                      boxShadow: activo ? `0 0 35px ${dm.colorHex}66` : undefined,
+                      borderColor: activo ? '#ffffff' : 'rgba(255,255,255,0.35)'
+                    }}
+                    className={`p-5 rounded-3xl backdrop-blur-2xl border text-left transition-all duration-300 flex flex-col gap-2 ${
+                      activo ? 'bg-white/30 scale-[1.03]' : 'bg-slate-950/35 hover:bg-white/20'
                     }`}
                   >
-                    <div className="w-14 h-14 rounded-2xl bg-white/15 border border-white/40 grid place-items-center text-2xl shrink-0 group-hover:scale-110 transition-transform">
-                      {op.icono}
+                    <div className="flex items-center gap-3">
+                      <span className="text-3xl">{dm.icono}</span>
+                      <span className="font-black text-base md:text-lg leading-tight">{dm.nombre}</span>
                     </div>
-                    <div>
-                      <div className="font-extrabold text-base text-amber-200 group-hover:text-white">
-                        {op.titulo}
-                      </div>
-                      <div className="text-xs text-white/90 leading-snug mt-1">
-                        {op.subtitulo}
-                      </div>
-                    </div>
+                    <p className="text-xs text-white/85 leading-relaxed">{dm.subtitulo}</p>
                   </button>
                 );
               })}
             </div>
           </main>
 
-          {/* Dock Inferior del Roster por Vueltas */}
-          <footer className="flex flex-col items-center gap-2">
-            <span className="text-xs font-black tracking-[0.16em] uppercase text-amber-200 drop-shadow">
-              {heroeActivo
-                ? `⚡ EN TURNO: ${heroeActivo.nombre.toUpperCase()} (${claseActiva.nombre.toUpperCase()}) TIENE LA TABLET`
-                : `🔊 VUELTA ${vueltaRoster} • EL SYSTEM DM PIDE QUE ELIJAN A UN JUGADOR ENCENDIDO DEL ROSTER`}
-            </span>
-
-            <div className="flex flex-wrap justify-center gap-3">
-              {party.map((jug) => {
-                const clase = CLASES_JUGADOR[jug.claseIdx];
-                const activo = heroeEnTurnoId === jug.id;
-                return (
-                  <button
-                    key={jug.id}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (!jug.disponible) return;
-                      setHeroeEnTurnoId(jug.id);
-                      lanzarChispasYSonido(e, clase.color, 45);
-                    }}
-                    style={{ borderColor: activo ? '#fef08a' : clase.color }}
-                    className={`px-5 py-2.5 rounded-2xl backdrop-blur-xl border-2 flex items-center gap-3 transition-all duration-300 ${
-                      !jug.disponible
-                        ? 'opacity-35 grayscale cursor-not-allowed bg-black/40 scale-95'
-                        : activo
-                        ? 'bg-white/30 -translate-y-2 scale-110 shadow-2xl'
-                        : 'bg-black/45 hover:bg-white/20 hover:-translate-y-1'
-                    }`}
-                  >
-                    <span className="text-2xl">{clase.icono}</span>
-                    <div className="text-left">
-                      <div className="font-extrabold text-sm leading-none">{jug.nombre}</div>
-                      <div className="text-[10px] font-bold text-amber-200 mt-1">
-                        {!jug.disponible ? 'Apagado en esta vuelta' : activo ? '⚡ En Turno' : clase.nombre}
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+          {/* Abajo al Centro: Botón Continuar */}
+          <footer className="flex justify-center">
+            <button
+              onClick={() => {
+                sonarAcordeSintetico([523.25, 659.25, 783.99]);
+                setPantalla('SETUP_PARTIDA');
+              }}
+              className="px-12 py-4 rounded-full bg-white/25 hover:bg-white/40 backdrop-blur-2xl border border-white/70 font-black text-base tracking-widest uppercase shadow-[0_0_35px_rgba(255,255,255,0.5)] hover:scale-105 transition-all"
+            >
+              Continuar →
+            </button>
           </footer>
         </section>
       )}
 
-      {/* MODALES */}
-      {modalHiloDorado && (
-        <div
-          className="fixed inset-0 z-50 bg-black/65 backdrop-blur-md flex items-center justify-center p-6"
-          onClick={() => setModalHiloDorado(null)}
-        >
-          <div
-            className="relative w-full max-w-xl bg-[#111] border border-white/25 rounded-3xl p-8 text-center shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="text-5xl mb-3">✨</div>
-            <span className="text-xs font-black tracking-widest uppercase text-amber-300">
-              ¡Interpretación Confirmada por {modalHiloDorado.jugador}!
-            </span>
-            <h3 className="text-2xl font-black tracking-tight mt-1 mb-4">
-              El Hilo Dorado: {modalHiloDorado.era}
-            </h3>
-            <p className="text-gray-200 text-sm leading-relaxed bg-white/5 border border-white/15 rounded-2xl p-5 mb-6">
-              {modalHiloDorado.sintesis}
-            </p>
+      {/* ====================================================================
+          PASO LINEAL 2: PARTIDA (NOMBRES Y ROLES, HASTA 8 JUGADORES MÁXIMO)
+          ==================================================================== */}
+      {pantalla === 'SETUP_PARTIDA' && (
+        <section className="relative z-20 w-full h-full flex flex-col justify-between p-6 md:p-12">
+          <header className="flex items-center gap-4">
             <button
-              onClick={(e) => {
-                setModalHiloDorado(null);
-                setIndiceEra((i) => (i + 1) % OCHO_ERAS_SECRETO_SAGRADO.length);
-                setTokensOracion(1);
-                lanzarChispasYSonido(e, '#fef08a', 65);
-              }}
-              className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-300 to-orange-500 text-slate-950 font-black text-sm hover:scale-[1.02] transition-all"
+              onClick={() => setPantalla('SETUP_NARRADOR')}
+              className="px-5 py-2.5 rounded-full bg-white/15 hover:bg-white/30 backdrop-blur-xl border border-white/40 text-xs font-extrabold tracking-wider uppercase transition-all"
             >
-              Avanzar a la Siguiente Era de la Revelación →
+              ← Regresar
             </button>
-          </div>
-        </div>
-      )}
+            <button
+              onClick={() => setPantalla('MENU_PRINCIPAL')}
+              className="px-5 py-2.5 rounded-full bg-black/25 hover:bg-white/20 backdrop-blur-xl border border-white/25 text-xs font-bold tracking-wider uppercase transition-all"
+            >
+              Menú Principal
+            </button>
+          </header>
 
-      {modalCargarOpen && (
-        <div
-          className="fixed inset-0 z-50 bg-black/65 backdrop-blur-md flex items-center justify-center p-6"
-          onClick={() => setModalCargarOpen(false)}
-        >
-          <div
-            className="relative w-full max-w-lg bg-[#111] border border-white/20 rounded-3xl p-7 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-xl font-black mb-2">📂 Partidas Guardadas</h3>
-            <div className="flex flex-col gap-2.5 max-h-64 overflow-y-auto mb-5">
-              {partidasGuardadas.length === 0 ? (
-                <div className="p-4 rounded-2xl bg-white/5 text-xs text-gray-300 text-center">
-                  No hay partidas guardadas aún.
-                </div>
-              ) : (
-                partidasGuardadas.map((p, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center justify-between p-3.5 rounded-2xl bg-white/5 border border-white/15"
-                  >
-                    <div>
-                      <div className="font-extrabold text-sm text-amber-200">
-                        {p.nombre_familia} ({p.codigo_sala})
-                      </div>
-                      <div className="text-[11px] text-gray-400">
-                        Era {p.era_actual} de 8 • HP: {p.conviccion_hp}/10
-                      </div>
-                    </div>
-                    <button
-                      onClick={(e) => restaurarPartidaSeleccionada(p, e)}
-                      className="px-4 py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs"
-                    >
-                      Cargar
-                    </button>
-                  </div>
-                ))
-              )}
+          <main className="my-auto max-w-5xl w-full mx-auto flex flex-col items-center gap-5">
+            <div className="text-center">
+              <span className="text-xs font-black tracking-[0.28em] uppercase text-amber-200 drop-shadow">
+                Paso 2 de 3 • Partida ({jugadores.length}/8 Jugadores)
+              </span>
+              <h2 className="text-3xl md:text-4xl font-black tracking-tight drop-shadow-lg mt-1">
+                Registra a los Jugadores y su Rol
+              </h2>
             </div>
+
+            {/* Caja Glassmorphic para Añadir Jugador (Máximo 8) */}
+            {jugadores.length < 8 && (
+              <div className="w-full max-w-3xl p-4 rounded-3xl bg-white/20 backdrop-blur-2xl border border-white/50 flex flex-wrap items-center gap-3 shadow-2xl">
+                <input
+                  type="text"
+                  value={nuevoNombreInput}
+                  onChange={(e) => setNuevoNombreInput(e.target.value)}
+                  placeholder="Escribe el nombre del jugador..."
+                  className="flex-1 min-w-[180px] px-4 py-3 rounded-2xl bg-slate-950/40 border border-white/40 text-sm font-bold text-white placeholder-white/60 focus:outline-none focus:border-white"
+                />
+                <select
+                  value={nuevoRolIdxInput}
+                  onChange={(e) => setNuevoRolIdxInput(Number(e.target.value))}
+                  className="px-4 py-3 rounded-2xl bg-slate-950/50 border border-white/40 text-sm font-bold text-white focus:outline-none"
+                >
+                  {CLASES_ROLES.map((r, i) => (
+                    <option key={r.id} value={i} className="bg-slate-900 text-white">
+                      {r.icono} {r.nombre}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={() => {
+                    if (!nuevoNombreInput.trim() || jugadores.length >= 8) return;
+                    setJugadores([
+                      ...jugadores,
+                      {
+                        id: 'j_' + Date.now(),
+                        nombre: nuevoNombreInput.trim(),
+                        rolIdx: nuevoRolIdxInput,
+                        disponible: true,
+                        poderUsado: false
+                      }
+                    ]);
+                    setNuevoNombreInput('');
+                    setNuevoRolIdxInput((nuevoRolIdxInput + 1) % CLASES_ROLES.length);
+                    sonarAcordeSintetico([587.33, 880]);
+                  }}
+                  className="px-6 py-3 rounded-2xl bg-white text-slate-950 font-black text-xs uppercase tracking-wider hover:scale-105 transition-all"
+                >
+                  + Añadir ({8 - jugadores.length} disp.)
+                </button>
+              </div>
+            )}
+
+            {/* Tarjetas Glassmorphic de los Jugadores Registrados */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 w-full max-h-[42vh] overflow-y-auto p-1">
+              {jugadores.map((jug, idx) => {
+                const clase = CLASES_ROLES[jug.rolIdx];
+                return (
+                  <div
+                    key={jug.id}
+                    style={{ borderColor: clase.color }}
+                    className="p-4 rounded-3xl bg-slate-950/40 backdrop-blur-2xl border-2 flex flex-col items-center gap-2 relative shadow-xl"
+                  >
+                    {jugadores.length > 1 && (
+                      <button
+                        onClick={() => setJugadores(jugadores.filter((_, i) => i !== idx))}
+                        className="absolute top-2.5 right-3 text-xs text-white/60 hover:text-white"
+                      >
+                        ✕
+                      </button>
+                    )}
+                    <button
+                      onClick={() => {
+                        const copia = [...jugadores];
+                        copia[idx].rolIdx = (copia[idx].rolIdx + 1) % CLASES_ROLES.length;
+                        setJugadores(copia);
+                      }}
+                      style={{ backgroundColor: clase.color }}
+                      className="w-12 h-12 rounded-full grid place-items-center text-2xl shadow-lg"
+                      title="Toca para cambiar de Rol"
+                    >
+                      {clase.icono}
+                    </button>
+                    <input
+                      type="text"
+                      value={jug.nombre}
+                      onChange={(e) => {
+                        const copia = [...jugadores];
+                        copia[idx].nombre = e.target.value;
+                        setJugadores(copia);
+                      }}
+                      className="w-full bg-white/10 border border-white/25 rounded-xl px-2 py-1 text-center font-extrabold text-xs text-white focus:outline-none"
+                    />
+                    <span className="text-[11px] font-black text-amber-200">{clase.nombre}</span>
+                    <span className="text-[10px] text-white/75 text-center leading-tight">{clase.ventaja}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </main>
+
+          <footer className="flex justify-center">
             <button
-              onClick={() => setModalCargarOpen(false)}
-              className="w-full py-3 rounded-xl bg-white/10 text-xs font-bold"
+              onClick={() => {
+                sonarAcordeSintetico([523.25, 659.25, 783.99]);
+                setPantalla('SETUP_ESTILO');
+              }}
+              className="px-12 py-4 rounded-full bg-white/25 hover:bg-white/40 backdrop-blur-2xl border border-white/70 font-black text-base tracking-widest uppercase shadow-[0_0_35px_rgba(255,255,255,0.5)] hover:scale-105 transition-all"
             >
-              Cerrar
+              Continuar →
             </button>
-          </div>
-        </div>
+          </footer>
+        </section>
       )}
 
-      {modalLogoOpen && (
-        <div
-          className="fixed inset-0 z-50 bg-black/65 backdrop-blur-md flex items-center justify-center p-6"
-          onClick={() => setModalLogoOpen(false)}
-        >
-          <div
-            className="relative w-full max-w-md bg-[#111] border border-white/20 rounded-3xl p-7 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-xl font-black mb-2">🖼️ URL del Logo Personalizado</h3>
-            <input
-              type="url"
-              value={logoUrl}
-              onChange={(e) => setLogoUrl(e.target.value)}
-              placeholder="https://..."
-              className="w-full px-4 py-3 rounded-xl bg-black border border-white/25 text-sm text-white mb-4 focus:outline-none"
-            />
-            <div className="flex gap-3">
+      {/* ====================================================================
+          PASO LINEAL 3: ESTILO (EXPRESS 30 MIN VS ESTÁNDAR COMPLETO)
+          ==================================================================== */}
+      {pantalla === 'SETUP_ESTILO' && (
+        <section className="relative z-20 w-full h-full flex flex-col justify-between p-6 md:p-12">
+          <header className="flex items-center gap-4">
+            <button
+              onClick={() => setPantalla('SETUP_PARTIDA')}
+              className="px-5 py-2.5 rounded-full bg-white/15 hover:bg-white/30 backdrop-blur-xl border border-white/40 text-xs font-extrabold tracking-wider uppercase transition-all"
+            >
+              ← Regresar
+            </button>
+            <button
+              onClick={() => setPantalla('MENU_PRINCIPAL')}
+              className="px-5 py-2.5 rounded-full bg-black/25 hover:bg-white/20 backdrop-blur-xl border border-white/25 text-xs font-bold tracking-wider uppercase transition-all"
+            >
+              Menú Principal
+            </button>
+          </header>
+
+          <main className="my-auto max-w-4xl w-full mx-auto flex flex-col items-center gap-8">
+            <div className="text-center">
+              <span className="text-xs font-black tracking-[0.28em] uppercase text-amber-200 drop-shadow">
+                Paso 3 de 3 • Estilo
+              </span>
+              <h2 className="text-3xl md:text-5xl font-black tracking-tight drop-shadow-lg mt-1">
+                Selecciona la Duración de la Partida
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
               <button
-                onClick={() => setModalLogoOpen(false)}
-                className="flex-1 py-3 rounded-xl bg-white/10 text-xs font-bold"
+                onClick={() => setModoEstilo('EXPRESS')}
+                className={`p-8 rounded-[34px] backdrop-blur-2xl border-2 text-left transition-all duration-300 flex flex-col gap-3 ${
+                  modoEstilo === 'EXPRESS'
+                    ? 'bg-white/30 border-white scale-105 shadow-[0_0_45px_rgba(255,255,255,0.45)]'
+                    : 'bg-slate-950/40 border-white/30 hover:bg-white/15'
+                }`}
               >
-                Cancelar
+                <span className="text-4xl">⚡</span>
+                <h3 className="text-2xl font-black">Express (~30 Minutos)</h3>
+                <p className="text-sm text-white/90 leading-relaxed">
+                  Recorre las <strong>8 Eras completas</strong> con una selección directa de retos clave por época, ideal para una sesión familiar ágil y dinámica.
+                </p>
               </button>
+
+              <button
+                onClick={() => setModoEstilo('ESTANDAR')}
+                className={`p-8 rounded-[34px] backdrop-blur-2xl border-2 text-left transition-all duration-300 flex flex-col gap-3 ${
+                  modoEstilo === 'ESTANDAR'
+                    ? 'bg-white/30 border-white scale-105 shadow-[0_0_45px_rgba(255,255,255,0.45)]'
+                    : 'bg-slate-950/40 border-white/30 hover:bg-white/15'
+                }`}
+              >
+                <span className="text-4xl">🗺️</span>
+                <h3 className="text-2xl font-black">Estándar (Recorrido Completo)</h3>
+                <p className="text-sm text-white/90 leading-relaxed">
+                  Experiencia profunda a través de todos los nodos y desafíos sensoriales de las <strong>8 Eras bíblicas</strong>.
+                </p>
+              </button>
+            </div>
+          </main>
+
+          <footer className="flex justify-center">
+            <button
+              onClick={iniciarJuegoTrasConfiguracion}
+              className="px-14 py-4 rounded-full bg-gradient-to-r from-amber-300 via-yellow-200 to-cyan-200 text-slate-950 font-black text-base tracking-widest uppercase shadow-[0_0_45px_rgba(254,240,138,0.85)] hover:scale-105 transition-all"
+            >
+              Continuar al Ritual de Inicio →
+            </button>
+          </footer>
+        </section>
+      )}
+
+      {/* ====================================================================
+          PANTALLA DE CONFIGURACIÓN GENERAL (APIs, SONIDO, SENSORES Y AJUSTES)
+          ==================================================================== */}
+      {pantalla === 'CONFIGURACION' && (
+        <section className="relative z-20 w-full h-full flex flex-col justify-between p-6 md:p-12 overflow-y-auto">
+          <header className="flex items-center justify-between">
+            <button
+              onClick={() => setPantalla('MENU_PRINCIPAL')}
+              className="px-6 py-2.5 rounded-full bg-white/15 hover:bg-white/30 backdrop-blur-xl border border-white/40 text-xs font-extrabold tracking-wider uppercase transition-all"
+            >
+              ← Menú Principal
+            </button>
+            <h2 className="text-2xl font-black tracking-wide">Configuración del Sistema</h2>
+            <div className="w-28" />
+          </header>
+
+          <main className="my-auto max-w-3xl w-full mx-auto p-7 rounded-[36px] bg-slate-950/55 backdrop-blur-2xl border border-white/35 shadow-2xl flex flex-col gap-5">
+            {/* API Key de Gemini */}
+            <div className="flex flex-col gap-2 pb-4 border-b border-white/15">
+              <label className="text-xs font-black tracking-widest uppercase text-cyan-300">
+                🤖 Clave de API de Google Gemini (Storytelling, Preguntas y Visión)
+              </label>
+              <div className="flex gap-3">
+                <input
+                  type="password"
+                  value={geminiApiKey}
+                  onChange={(e) => {
+                    setGeminiApiKey(e.target.value);
+                    try {
+                      localStorage.setItem('ss_gemini_api_key', e.target.value.trim());
+                    } catch (err) {}
+                  }}
+                  placeholder="AIzaSy..."
+                  className="flex-1 px-4 py-3 rounded-2xl bg-black/50 border border-white/30 text-sm text-white focus:outline-none focus:border-cyan-300"
+                />
+              </div>
+            </div>
+
+            {/* Volumen de Música del Menú */}
+            <div className="flex items-center justify-between gap-4 pb-4 border-b border-white/15">
+              <div>
+                <div className="font-extrabold text-sm">🎵 Volumen de Música del Menú</div>
+                <div className="text-xs text-white/70">Se detiene automáticamente cuando comienza la partida</div>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                value={volumenMusica}
+                onChange={(e) => setVolumenMusica( parseFloat(e.target.value) )}
+                className="w-40 accent-cyan-400"
+              />
+            </div>
+
+            {/* Interruptores de Voz, Vibración y Sensores */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <button
+                onClick={() => setVozSinteticaActiva((v) => !v)}
+                className={`p-4 rounded-2xl border text-left transition-all ${
+                  vozSinteticaActiva ? 'bg-emerald-500/25 border-emerald-300' : 'bg-white/5 border-white/20 opacity-60'
+                }`}
+              >
+                <div className="font-black text-xs uppercase">🔊 Voz del Narrador</div>
+                <div className="text-[11px] mt-1">{vozSinteticaActiva ? 'Activada' : 'Silenciada'}</div>
+              </button>
+
+              <button
+                onClick={() => setVibracionActiva((v) => !v)}
+                className={`p-4 rounded-2xl border text-left transition-all ${
+                  vibracionActiva ? 'bg-cyan-500/25 border-cyan-300' : 'bg-white/5 border-white/20 opacity-60'
+                }`}
+              >
+                <div className="font-black text-xs uppercase">📳 Vibración Háptica</div>
+                <div className="text-[11px] mt-1">{vibracionActiva ? 'Activada' : 'Desactivada'}</div>
+              </button>
+
+              <button
+                onClick={() => setSensoresMovimientoActivos((v) => !v)}
+                className={`p-4 rounded-2xl border text-left transition-all ${
+                  sensoresMovimientoActivos ? 'bg-amber-500/25 border-amber-300' : 'bg-white/5 border-white/20 opacity-60'
+                }`}
+              >
+                <div className="font-black text-xs uppercase">🧭 Contador de Pasos</div>
+                <div className="text-[11px] mt-1">{sensoresMovimientoActivos ? 'Activado' : 'Modo Manual'}</div>
+              </button>
+            </div>
+          </main>
+
+          <footer className="flex justify-center">
+            <button
+              onClick={() => setPantalla('MENU_PRINCIPAL')}
+              className="px-10 py-3.5 rounded-full bg-white text-slate-950 font-black text-xs tracking-widest uppercase"
+            >
+              Guardar y Volver
+            </button>
+          </footer>
+        </section>
+      )}
+
+      {/* ====================================================================
+          RITUAL DE 3 SEGUNDOS CON AMBOS PULGARES (TOMAR / DEVOLVER CONTROL)
+          ==================================================================== */}
+      {pantalla === 'RITUAL_PULGARES' && (
+        <section className="fixed inset-0 z-40 flex items-center justify-between px-8 md:px-20 bg-slate-950/60 backdrop-blur-2xl overflow-hidden">
+          {/* Resplandor que se extiende desde ambos pulgares hasta inundar toda la pantalla */}
+          <div
+            style={{
+              transform: `scale(${0.2 + (progresoPulgares / 100) * 3.8})`,
+              opacity: progresoPulgares / 100,
+              background: `radial-gradient(circle, #ffffff 0%, ${configRitual.colorLuz} 55%, transparent 75%)`
+            }}
+            className="fixed inset-0 pointer-events-none transition-transform duration-100"
+          />
+
+          {/* Pantalla blanca total al llegar al 100% */}
+          <div
+            className={`fixed inset-0 bg-white pointer-events-none transition-opacity duration-500 z-50 ${
+              explosionLuzCompleta ? 'opacity-100' : 'opacity-0'
+            }`}
+          />
+
+          {/* CÍRCULO DEL PULGAR IZQUIERDO */}
+          <button
+            onPointerDown={() => setPulgarIzqActivo(true)}
+            onPointerUp={() => setPulgarIzqActivo(false)}
+            onPointerLeave={() => setPulgarIzqActivo(false)}
+            style={{
+              borderColor: pulgarIzqActivo ? '#ffffff' : configRitual.colorLuz,
+              boxShadow: pulgarIzqActivo ? `0 0 60px ${configRitual.colorLuz}` : undefined
+            }}
+            className={`relative z-20 w-36 h-36 md:w-44 md:h-44 rounded-full backdrop-blur-2xl border-4 flex flex-col items-center justify-center transition-all duration-200 ${
+              pulgarIzqActivo ? 'bg-white/40 scale-110' : 'bg-white/10 animate-pulse'
+            }`}
+          >
+            <span className="text-3xl mb-1">👍</span>
+            <span className="text-xs font-black tracking-widest uppercase">Pulgar Izq.</span>
+          </button>
+
+          {/* TEXTO CENTRAL E INDICADOR DE LOS 3 SEGUNDOS */}
+          <div className="relative z-20 max-w-md text-center flex flex-col items-center gap-4 px-4">
+            <span className="text-xs font-black tracking-[0.28em] uppercase text-amber-200">
+              Transición de Control • {Math.ceil((100 - progresoPulgares) / 33.4)}s
+            </span>
+            <h2 className="text-2xl md:text-4xl font-black leading-tight drop-shadow-lg">
+              {configRitual.titulo}
+            </h2>
+            <p className="text-xs md:text-sm text-white/85 leading-relaxed">
+              {configRitual.subtitulo}
+            </p>
+
+            {/* Barra circular/lineal de carga */}
+            <div className="w-64 h-2.5 rounded-full bg-white/20 overflow-hidden border border-white/40">
+              <div
+                style={{ width: `${progresoPulgares}%`, backgroundColor: configRitual.colorLuz }}
+                className="h-full transition-all duration-100"
+              />
+            </div>
+
+            {/* Botón de soporte para pruebas con un solo dedo o ratón en PC */}
+            <button
+              onPointerDown={() => {
+                setPulgarIzqActivo(true);
+                setPulgarDerActivo(true);
+              }}
+              onPointerUp={() => {
+                setPulgarIzqActivo(false);
+                setPulgarDerActivo(false);
+              }}
+              className="mt-2 px-5 py-2 rounded-full bg-white/15 border border-white/30 text-[11px] font-bold text-white/85 hover:bg-white/25"
+            >
+              Mantén presionado aquí si estás en PC con ratón
+            </button>
+          </div>
+
+          {/* CÍRCULO DEL PULGAR DERECHO */}
+          <button
+            onPointerDown={() => setPulgarDerActivo(true)}
+            onPointerUp={() => setPulgarDerActivo(false)}
+            onPointerLeave={() => setPulgarDerActivo(false)}
+            style={{
+              borderColor: pulgarDerActivo ? '#ffffff' : configRitual.colorLuz,
+              boxShadow: pulgarDerActivo ? `0 0 60px ${configRitual.colorLuz}` : undefined
+            }}
+            className={`relative z-20 w-36 h-36 md:w-44 md:h-44 rounded-full backdrop-blur-2xl border-4 flex flex-col items-center justify-center transition-all duration-200 ${
+              pulgarDerActivo ? 'bg-white/40 scale-110' : 'bg-white/10 animate-pulse'
+            }`}
+          >
+            <span className="text-3xl mb-1">👍</span>
+            <span className="text-xs font-black tracking-widest uppercase">Pulgar Der.</span>
+          </button>
+        </section>
+      )}
+
+      {/* ====================================================================
+          PANTALLA DE JUEGO EN VIVO (EL ORBE LÍQUIDO Y LA COREOGRAFÍA DINÁMICA)
+          ==================================================================== */}
+      {pantalla === 'JUEGO' && (
+        <section className="relative z-20 w-full h-full flex flex-col justify-between p-6 md:p-10">
+          {/* ----------------------------------------------------------------
+              ESQUINA SUPERIOR IZQUIERDA: ORBE DEL DM RETIRADO CUANDO JUEGA EL JUGADOR
+              ---------------------------------------------------------------- */}
+          <div className="fixed top-5 left-6 z-30 flex items-center gap-3">
+            {subFaseJuego === 'JUGADOR_ACTIVO' ? (
+              <div className="flex items-center gap-3 animate-[fadeIn_0.5s_ease-out]">
+                <OrbeLiquidoReactivo
+                  colorPrimario={dmPerfil.colorHex}
+                  colorSecundario={dmPerfil.colorSecundario}
+                  amplitudVoz={amplitudVozDM}
+                  tamano={76}
+                  iconoCentral={dmPerfil.icono}
+                  nombreCentral="Guía"
+                  enEsquina={true}
+                  onClick={() => hablarConVozDM(`${retoActual.pregunta}. ${retoActual.instruccionInput}`)}
+                />
+                <span className="hidden xl:inline-block text-[11px] font-bold text-white/80 bg-slate-950/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/25">
+                  Era {eraActualNum}/8
+                </span>
+              </div>
+            ) : (
+              <div className="px-4 py-2 rounded-full bg-slate-950/40 backdrop-blur-xl border border-white/35 text-xs font-black tracking-widest uppercase">
+                Era {eraActualNum} de 8 • {TITULOS_OCHO_ERAS[eraActualNum - 1].nombre}
+              </div>
+            )}
+          </div>
+
+          {/* ----------------------------------------------------------------
+              PARTE SUPERIOR CENTRAL (70% DEL ANCHO): CAJA GLASSMORPHIC DE PREGUNTA
+              ---------------------------------------------------------------- */}
+          {subFaseJuego === 'JUGADOR_ACTIVO' && (
+            <div className="w-[70vw] mx-auto mt-1 p-5 rounded-3xl bg-slate-950/45 backdrop-blur-2xl border border-white/45 shadow-[0_15px_45px_rgba(0,0,0,0.45)] text-center z-20 transition-all duration-500">
+              <div className="inline-flex items-center gap-2 px-3.5 py-0.5 rounded-full bg-amber-300/20 border border-amber-300/60 text-amber-200 text-[11px] font-black tracking-widest uppercase mb-1.5">
+                📖 Biblia Física: {retoActual.citaBiblia}
+              </div>
+              <h2 className="text-lg md:text-2xl font-black leading-snug text-white">
+                {retoActual.pregunta}
+              </h2>
+              <p className="text-xs text-cyan-200 font-semibold mt-1">
+                {retoActual.instruccionInput}
+              </p>
+            </div>
+          )}
+
+          {/* ----------------------------------------------------------------
+              ESQUINA SUPERIOR DERECHA: HP, HERRAMIENTAS, GUARDAR Y CERRAR
+              ---------------------------------------------------------------- */}
+          <div className="fixed top-5 right-6 z-30 flex items-center gap-2.5">
+            {notificacionGuardado && (
+              <span className="px-3 py-1.5 rounded-full bg-emerald-500/80 text-xs font-black">
+                ✓ {notificacionGuardado}
+              </span>
+            )}
+
+            {/* Convicción (HP) */}
+            <div className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-slate-950/45 backdrop-blur-xl border border-white/35">
+              <span className="text-[11px] font-black text-amber-200">HP {conviccionHP}/10</span>
+              <span className="text-sm">💎</span>
+            </div>
+
+            {/* Herramienta: Oración */}
+            <button
+              onClick={() => {
+                if (tokensOracion <= 0) return;
+                setTokensOracion((t) => t - 1);
+                setConviccionHP((hp) => Math.min(10, hp + 2));
+                sonarAcordeSintetico([523.25, 659.25, 1046.5]);
+              }}
+              title="Herramienta de Oración (+2 HP)"
+              className="px-3.5 py-2 rounded-full bg-amber-400/25 hover:bg-amber-400/40 backdrop-blur-xl border border-amber-300/60 text-xs font-black"
+            >
+              🙏 {tokensOracion}
+            </button>
+
+            {/* Herramienta: Poder del Rol Activo */}
+            {subFaseJuego === 'JUGADOR_ACTIVO' && jugadorActivo && !jugadorActivo.poderUsado && (
               <button
                 onClick={() => {
-                  try { localStorage.setItem('ss_custom_logo', logoUrl); } catch (e) {}
-                  setModalLogoOpen(false);
+                  const copia = jugadores.map((j) =>
+                    j.id === jugadorActivo.id ? { ...j, poderUsado: true } : j
+                  );
+                  if (claseJugadorActivo.id === 'patriarca') {
+                    const idxApagado = copia.findIndex((j) => !j.disponible);
+                    if (idxApagado !== -1) copia[idxApagado].disponible = true;
+                  } else if (retoActual.opciones?.length) {
+                    const falsas = retoActual.opciones
+                      .filter((o) => !o.correcta)
+                      .slice(0, 2)
+                      .map((o) => o.id);
+                    setOpcionesOcultasIds(falsas);
+                  }
+                  setJugadores(copia);
+                  sonarAcordeSintetico([659.25, 880, 1174.66]);
                 }}
-                className="flex-1 py-3 rounded-xl bg-amber-400 text-slate-950 text-xs font-black"
+                className="px-3.5 py-2 rounded-full bg-purple-500/35 hover:bg-purple-500/55 backdrop-blur-xl border border-purple-300 text-xs font-black"
               >
-                Aplicar Logo
+                ⚡ {claseJugadorActivo.nombre}
               </button>
-            </div>
+            )}
+
+            {/* Botón Guardar */}
+            <button
+              onClick={guardarPartidaActual}
+              title="Guardar Partida"
+              className="px-3.5 py-2 rounded-full bg-white/15 hover:bg-white/30 backdrop-blur-xl border border-white/40 text-xs font-black"
+            >
+              💾 Guardar
+            </button>
+
+            {/* Botón Cerrar */}
+            <button
+              onClick={() => {
+                window.speechSynthesis?.cancel();
+                setPantalla('MENU_PRINCIPAL');
+              }}
+              title="Cerrar y salir al Menú Principal"
+              className="w-9 h-9 rounded-full bg-rose-500/30 hover:bg-rose-500/55 backdrop-blur-xl border border-rose-300/60 grid place-items-center text-xs font-black"
+            >
+              ✕
+            </button>
           </div>
-        </div>
+
+          {/* ================================================================
+              NÚCLEO CENTRAL DE LA PANTALLA SEGÚN LA SUB-FASE DEL TURNO
+              ================================================================ */}
+          <main className="my-auto w-full max-w-5xl mx-auto flex flex-col items-center justify-center gap-6">
+            {/* SUB-FASE 1: INTRODUCCIÓN DEL DM Y SOLICITUD DE PERMISO */}
+            {subFaseJuego === 'INTRO_HISTORIA' && (
+              <div className="flex flex-col items-center gap-6 text-center max-w-2xl">
+                <OrbeLiquidoReactivo
+                  colorPrimario={dmPerfil.colorHex}
+                  colorSecundario={dmPerfil.colorSecundario}
+                  amplitudVoz={amplitudVozDM}
+                  tamano={235}
+                  iconoCentral={dmPerfil.icono}
+                  etiquetaSuperior="Guía del Sistema"
+                  nombreCentral={dmPerfil.nombre}
+                />
+
+                <div className="p-6 rounded-3xl bg-slate-950/45 backdrop-blur-2xl border border-white/40 shadow-2xl">
+                  <p className="text-sm md:text-base text-white/95 leading-relaxed">
+                    {dmPerfil.introHistoria}
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-center gap-4">
+                  <button
+                    onClick={() => concederPermisoYPrepararReto(1, 0)}
+                    className="px-9 py-4 rounded-full bg-white/25 hover:bg-white/40 backdrop-blur-2xl border border-white/80 font-black text-sm tracking-widest uppercase shadow-[0_0_35px_rgba(255,255,255,0.5)] hover:scale-105 transition-all"
+                  >
+                    ✨ Conceder Permiso y Comenzar
+                  </button>
+
+                  <button
+                    onPointerDown={iniciarEscuchaPushToTalk}
+                    onPointerUp={soltarEscuchaPushToTalk}
+                    className={`px-7 py-4 rounded-full backdrop-blur-2xl border font-black text-xs tracking-wider uppercase transition-all ${
+                      manteniendoMic
+                        ? 'bg-emerald-400 text-slate-950 border-white scale-105 shadow-[0_0_35px_#34d399]'
+                        : 'bg-slate-950/45 border-white/40 text-white'
+                    }`}
+                  >
+                    🎙️ {manteniendoMic ? 'Escuchando tu permiso...' : 'Mantén para dar permiso con voz'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* SUB-FASE 2: EL DM PREGUNTA QUIÉN VA A JUGAR Y MUESTRA LOS CÍRCULOS DE JUGADORES */}
+            {(subFaseJuego === 'ELEGIR_JUGADOR' || subFaseJuego === 'ANIMACION_DESVANECER_OTROS') && (
+              <div className="flex flex-col items-center gap-8 text-center">
+                <OrbeLiquidoReactivo
+                  colorPrimario={dmPerfil.colorHex}
+                  colorSecundario={dmPerfil.colorSecundario}
+                  amplitudVoz={amplitudVozDM}
+                  tamano={210}
+                  iconoCentral={dmPerfil.icono}
+                  etiquetaSuperior={`Vuelta ${vueltaNumero}`}
+                  nombreCentral={dmPerfil.nombre}
+                />
+
+                <p className="text-lg md:text-2xl font-black tracking-wide drop-shadow-lg">
+                  {cargandoRetoIA
+                    ? 'Preparando el desafío de las Escrituras...'
+                    : '¿Quién tomará el desafío en este turno?'}
+                </p>
+
+                {/* Círculos de los jugadores debajo del Orbe del DM */}
+                <div className="flex flex-wrap items-center justify-center gap-5">
+                  {jugadores.map((jug) => {
+                    const clase = CLASES_ROLES[jug.rolIdx];
+                    const fueElegido = jugadorActivoId === jug.id;
+                    const desvanecer =
+                      subFaseJuego === 'ANIMACION_DESVANECER_OTROS' && !fueElegido;
+
+                    return (
+                      <button
+                        key={jug.id}
+                        disabled={!jug.disponible || subFaseJuego === 'ANIMACION_DESVANECER_OTROS'}
+                        onClick={() => elegirJugadorParaElTurno(jug)}
+                        style={{
+                          backgroundColor: jug.disponible ? `${clase.color}33` : 'rgba(15,23,42,0.4)',
+                          borderColor: jug.disponible ? clase.color : 'rgba(148,163,184,0.3)',
+                          boxShadow: jug.disponible ? `0 0 28px ${clase.color}66` : 'none'
+                        }}
+                        className={`w-28 h-28 md:w-32 md:h-32 rounded-full backdrop-blur-2xl border-2 flex flex-col items-center justify-center p-2 transition-all duration-700 ${
+                          desvanecer
+                            ? 'scale-0 opacity-0 pointer-events-none'
+                            : fueElegido
+                            ? 'scale-125 ring-4 ring-white'
+                            : jug.disponible
+                            ? 'hover:scale-110 cursor-pointer'
+                            : 'grayscale opacity-35 cursor-not-allowed'
+                        }`}
+                      >
+                        <span className="text-2xl mb-1">{clase.icono}</span>
+                        <span className="font-black text-xs md:text-sm leading-tight truncate max-w-full">
+                          {jug.nombre}
+                        </span>
+                        <span className="text-[10px] font-bold text-white/80 mt-0.5">
+                          {jug.disponible ? clase.nombre.replace('El ', '') : 'En espera'}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* SUB-FASE 3: EL DM ENUNCIA LA PREGUNTA ANTES DE RETIRARSE A LA ESQUINA */}
+            {subFaseJuego === 'DM_PREGUNTA' && (
+              <div className="flex flex-col items-center gap-6 text-center max-w-2xl">
+                <OrbeLiquidoReactivo
+                  colorPrimario={dmPerfil.colorHex}
+                  colorSecundario={dmPerfil.colorSecundario}
+                  amplitudVoz={amplitudVozDM}
+                  tamano={230}
+                  iconoCentral={dmPerfil.icono}
+                  etiquetaSuperior={retoActual.citaBiblia}
+                  nombreCentral={dmPerfil.nombre}
+                />
+                <div className="p-6 rounded-3xl bg-slate-950/50 backdrop-blur-2xl border border-white/40 shadow-2xl">
+                  <h3 className="text-xl font-black text-amber-200 mb-2">{retoActual.tituloNodo}</h3>
+                  <p className="text-base text-white/95 leading-relaxed mb-3">{retoActual.pregunta}</p>
+                  <p className="text-xs text-cyan-200 font-bold">{retoActual.instruccionInput}</p>
+                </div>
+                <button
+                  onClick={() => {
+                    window.speechSynthesis?.cancel();
+                    setAmplitudVozDM(0);
+                    setSubFaseJuego('JUGADOR_ACTIVO');
+                  }}
+                  className="px-8 py-3 rounded-full bg-white/25 hover:bg-white/40 backdrop-blur-xl border border-white/60 text-xs font-black uppercase tracking-widest"
+                >
+                  Resolver Ahora →
+                </button>
+              </div>
+            )}
+
+            {/* SUB-FASE 4: EL ORBE DEL JUGADOR OCUPA EL CENTRO + MECÁNICA DE INPUT ACTIVA */}
+            {subFaseJuego === 'JUGADOR_ACTIVO' && jugadorActivo && (
+              <div className="w-full flex flex-col items-center gap-5">
+                {/* Orbe del Jugador en el Centro Reaccionando a la Voz */}
+                <OrbeLiquidoReactivo
+                  colorPrimario={claseJugadorActivo.color}
+                  colorSecundario="#ffffff"
+                  amplitudVoz={amplitudVozJugador}
+                  tamano={165}
+                  iconoCentral={claseJugadorActivo.icono}
+                  etiquetaSuperior={claseJugadorActivo.nombre}
+                  nombreCentral={jugadorActivo.nombre}
+                />
+
+                {/* MECÁNICA A: SELECCIÓN MÚLTIPLE GLASSMORPHIC CON BRILLO */}
+                {retoActual.tipoMecanica === 'SELECCION_MULTIPLE' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 w-full max-w-4xl">
+                    {retoActual.opciones?.map((op) => {
+                      const oculta = opcionesOcultasIds.includes(op.id);
+                      const pistaEscriba = claseJugadorActivo.id === 'escriba' && op.correcta;
+                      return (
+                        <button
+                          key={op.id}
+                          disabled={oculta}
+                          onClick={() => completarTurnoYDevolverControlAlDM(op.correcta)}
+                          className={`p-4 md:p-5 rounded-3xl backdrop-blur-2xl border text-left flex items-center gap-4 transition-all duration-300 ${
+                            oculta
+                              ? 'opacity-15 pointer-events-none grayscale bg-black/20 border-white/10'
+                              : pistaEscriba
+                              ? 'bg-amber-400/30 border-amber-200 shadow-[0_0_30px_rgba(253,224,71,0.55)] hover:scale-[1.02]'
+                              : 'bg-slate-950/45 hover:bg-white/25 border-white/45 hover:border-white hover:shadow-[0_0_28px_rgba(255,255,255,0.45)] hover:scale-[1.02]'
+                          }`}
+                        >
+                          <span className="text-2xl w-12 h-12 rounded-2xl bg-white/15 border border-white/35 grid place-items-center shrink-0">
+                            {op.icono}
+                          </span>
+                          <div>
+                            <div className="font-black text-sm md:text-base text-white">{op.titulo}</div>
+                            <div className="text-xs text-white/85 leading-snug mt-0.5">{op.subtitulo}</div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* MECÁNICA B: CAMINATA FÍSICA CON CONTADOR DE PASOS Y GIROSCOPIO */}
+                {retoActual.tipoMecanica === 'CAMINATA_PEREGRINAJE' && (
+                  <div className="p-6 rounded-3xl bg-slate-950/50 backdrop-blur-2xl border border-white/45 max-w-xl w-full text-center flex flex-col items-center gap-4">
+                    <div className="text-xs font-black tracking-widest uppercase text-cyan-200">
+                      🚶 Contador de Pasos y Movimiento Activo
+                    </div>
+                    <div className="text-3xl font-black">
+                      {pasosCaminados} / {retoActual.pasosObjetivo || 12} Pasos
+                    </div>
+                    <div className="w-full h-3 rounded-full bg-white/15 overflow-hidden border border-white/30">
+                      <div
+                        style={{
+                          width: `${Math.min(100, (pasosCaminados / (retoActual.pasosObjetivo || 12)) * 100)}%`,
+                          backgroundColor: claseJugadorActivo.color
+                        }}
+                        className="h-full transition-all duration-300"
+                      />
+                    </div>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => {
+                          const nuevo = pasosCaminados + 2;
+                          setPasosCaminados(nuevo);
+                          if (nuevo >= (retoActual.pasosObjetivo || 12)) {
+                            completarTurnoYDevolverControlAlDM(
+                              true,
+                              `¡Peregrinaje completado con fe por ${jugadorActivo.nombre}!`
+                            );
+                          }
+                        }}
+                        className="px-6 py-2.5 rounded-full bg-white/20 hover:bg-white/35 border border-white/50 text-xs font-black"
+                      >
+                        👣 Dar Paso (+2)
+                      </button>
+                      {pasosCaminados >= (retoActual.pasosObjetivo || 12) && (
+                        <button
+                          onClick={() => completarTurnoYDevolverControlAlDM(true)}
+                          className="px-6 py-2.5 rounded-full bg-emerald-400 text-slate-950 text-xs font-black"
+                        >
+                          ✓ Completar Recorrido
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* MECÁNICA C: ESCANEO DE LA BIBLIA FÍSICA CON CÁMARA */}
+                {retoActual.tipoMecanica === 'CAMARA_ESCRITURA' && (
+                  <div className="p-5 rounded-3xl bg-slate-950/50 backdrop-blur-2xl border border-white/45 max-w-xl w-full text-center flex flex-col items-center gap-4">
+                    {!camaraActiva ? (
+                      <button
+                        onClick={abrirCamaraBiblia}
+                        className="px-8 py-4 rounded-full bg-cyan-400/30 hover:bg-cyan-400/50 border border-cyan-200 font-black text-sm tracking-wider uppercase shadow-[0_0_30px_rgba(34,211,238,0.45)]"
+                      >
+                        📷 Activar Cámara para Verificar {retoActual.citaBiblia}
+                      </button>
+                    ) : (
+                      <div className="flex flex-col items-center gap-3">
+                        <video
+                          ref={videoCamaraRef}
+                          autoPlay
+                          playsInline
+                          className="w-64 h-44 object-cover rounded-2xl border-2 border-cyan-300"
+                        />
+                        <button
+                          onClick={capturarYVerificarBiblia}
+                          disabled={evaluandoIA}
+                          className="px-8 py-3 rounded-full bg-emerald-400 text-slate-950 font-black text-xs uppercase tracking-widest"
+                        >
+                          {evaluandoIA ? 'Verificando con IA...' : '✨ Capturar y Verificar Escritura'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* BOTÓN DEDICADO DE MICRÓFONO PUSH-TO-TALK (SIEMPRE DISPONIBLE PARA RESPONDER CON VOZ) */}
+                <div className="flex flex-col items-center gap-2">
+                  {transcripcionVoz && (
+                    <div className="px-4 py-1.5 rounded-full bg-slate-950/60 border border-white/30 text-xs text-cyan-200 max-w-lg truncate">
+                      «{transcripcionVoz}»
+                    </div>
+                  )}
+                  <button
+                    onPointerDown={iniciarEscuchaPushToTalk}
+                    onPointerUp={soltarEscuchaPushToTalk}
+                    disabled={evaluandoIA}
+                    className={`px-8 py-3.5 rounded-full backdrop-blur-2xl border-2 font-black text-xs tracking-widest uppercase transition-all ${
+                      manteniendoMic
+                        ? 'bg-rose-500 border-white text-white scale-110 shadow-[0_0_40px_#f43f5e]'
+                        : 'bg-white/20 hover:bg-white/30 border-white/60 text-white shadow-lg'
+                    }`}
+                  >
+                    {evaluandoIA
+                      ? '⏳ Evaluando con Gemini...'
+                      : manteniendoMic
+                      ? '🔴 Escuchando a la IA... Suelta para enviar'
+                      : '🎙️ Mantén presionado para responder con voz'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* SUB-FASE 5: REVELACIÓN DEL HILO DORADO CON EL DM EN EL CENTRO */}
+            {subFaseJuego === 'REVELACION_HILO' && (
+              <div className="flex flex-col items-center gap-6 text-center max-w-2xl">
+                <OrbeLiquidoReactivo
+                  colorPrimario={dmPerfil.colorHex}
+                  colorSecundario={dmPerfil.colorSecundario}
+                  amplitudVoz={amplitudVozDM}
+                  tamano={215}
+                  iconoCentral="✨"
+                  etiquetaSuperior={`Era ${eraActualNum} • El Hilo Dorado`}
+                  nombreCentral={dmPerfil.nombre}
+                />
+                <div className="p-6 rounded-3xl bg-slate-950/55 backdrop-blur-2xl border border-amber-300/60 shadow-[0_0_45px_rgba(251,191,36,0.3)]">
+                  <p className="text-sm md:text-base text-white/95 leading-relaxed">
+                    {mensajeFeedbackDM}
+                  </p>
+                </div>
+                <button
+                  onClick={avanzarAlSiguienteNodoOEra}
+                  className="px-10 py-4 rounded-full bg-gradient-to-r from-amber-300 to-cyan-300 text-slate-950 font-black text-sm tracking-widest uppercase shadow-2xl hover:scale-105 transition-all"
+                >
+                  Continuar al Siguiente Desafío →
+                </button>
+              </div>
+            )}
+
+            {/* SUB-FASE 6: GRAN FINAL DE LAS 8 ERAS */}
+            {subFaseJuego === 'FIN_PARTIDA' && (
+              <div className="flex flex-col items-center gap-6 text-center max-w-2xl">
+                <OrbeLiquidoReactivo
+                  colorPrimario="#facc15"
+                  colorSecundario="#38bdf8"
+                  amplitudVoz={0.6}
+                  tamano={240}
+                  iconoCentral="👑"
+                  etiquetaSuperior="Revelación 10:7"
+                  nombreCentral="¡Secreto Sagrado Terminado!"
+                />
+                <div className="p-7 rounded-3xl bg-slate-950/55 backdrop-blur-2xl border border-white/50 shadow-2xl">
+                  <h2 className="text-2xl md:text-4xl font-black text-amber-200 mb-3">
+                    ¡Victoria del Reino Mesiánico!
+                  </h2>
+                  <p className="text-sm md:text-base text-white/90 leading-relaxed">
+                    Han recorrido en unidad las 8 Eras bíblicas verificando en su Biblia física cómo Jehová cumplió cada promesa desde Génesis 3:15 hasta el Paraíso restaurado de Revelación.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setPantalla('MENU_PRINCIPAL')}
+                  className="px-10 py-4 rounded-full bg-white text-slate-950 font-black text-xs tracking-widest uppercase"
+                >
+                  Volver al Menú Principal
+                </button>
+              </div>
+            )}
+          </main>
+
+          <div className="h-2" />
+        </section>
       )}
     </div>
   );
