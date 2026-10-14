@@ -318,7 +318,7 @@ const CATALOGO_DMS = [
     pitchVoz: 0.96,
     rateVoz: 0.98,
     introHistoria:
-      '¡Presten atención a la palabra profética! Como coesclavo de ustedes, hoy contemplaremos cómo cada sacrificio, pacto y profecía apuntaba con precisión infalible hacia el Mesías. Tengan lista su Biblia física y su discernimiento. ¿Me dan su permiso para abrir el primer sello?'
+      '¡Presten atención a la palabra profética! Como coesclavo de ustedes, hoy contemplaremos cómo cada sacrificio, pacto y profecía apuntaba con precisión infalible hacia el Mesías. Tengan lista su Biblia física y su discernimiento. ¿Me dan su permiso para comenzar nuestro estudio?'
   },
   {
     id: 'rey',
@@ -786,7 +786,7 @@ export default function SecretoSagradoLanding() {
                   {
                     parts: [
                       {
-                        text: `Lee en español con voz masculina profunda, pausada, cálida y cinematográfica de narrador épico: ${textoLimpio}`
+                        text: `Lee en español con voz masculina firme, dinámica, fluida, a ritmo ágil y continuo sin pausas largas entre frases: ${textoLimpio}`
                       }
                     ]
                   }
@@ -817,15 +817,38 @@ export default function SecretoSagradoLanding() {
               const bytes = new Uint8Array(len);
               for (let i = 0; i < len; i++) bytes[i] = binaryStr.charCodeAt(i);
 
-              // Convertir PCM16 24kHz de Gemini a AudioBuffer y medir amplitud real para el Orbe
-              const int16 = new Int16Array(bytes.buffer);
-              const audioBuffer = ctx.createBuffer(1, int16.length, 24000);
+              // Convertir PCM16 24kHz y recortar automáticamente silencios iniciales e intermedios (>0.14s)
+              const int16Original = new Int16Array(bytes.buffer);
+              const muestrasCompactadas = [];
+              let contadorSilencio = 0;
+              const umbralSilencio = 260; // Amplitud mínima
+              const maxMuestrasSilencio = 3360; // Máximo 0.14 segundos de pausa permitida a 24kHz
+              let empezoVoz = false;
+
+              for (let i = 0; i < int16Original.length; i++) {
+                const muestra = int16Original[i];
+                if (Math.abs(muestra) > umbralSilencio) {
+                  empezoVoz = true;
+                  contadorSilencio = 0;
+                  muestrasCompactadas.push(muestra / 32768.0);
+                } else if (empezoVoz) {
+                  contadorSilencio++;
+                  if (contadorSilencio <= maxMuestrasSilencio) {
+                    muestrasCompactadas.push(muestra / 32768.0);
+                  }
+                }
+              }
+
+              const totalMuestras = muestrasCompactadas.length || 1;
+              const audioBuffer = ctx.createBuffer(1, totalMuestras, 24000);
               const channelData = audioBuffer.getChannelData(0);
-              for (let i = 0; i < int16.length; i++) {
-                channelData[i] = int16[i] / 32768.0;
+              for (let i = 0; i < totalMuestras; i++) {
+                channelData[i] = muestrasCompactadas[i] || 0;
               }
 
               const source = ctx.createBufferSource();
+              // Acelerar la cadencia un 18% para una narración ágil y natural
+              source.playbackRate.value = 1.18;
               const analyser = ctx.createAnalyser();
               analyser.fftSize = 64;
               source.buffer = audioBuffer;
@@ -876,9 +899,9 @@ export default function SecretoSagradoLanding() {
           utterance.lang = 'es-ES';
         }
 
-        // Tono masculino grave para evitar timbre robótico agudo
-        utterance.pitch = 0.82;
-        utterance.rate = 0.96;
+        // Tono masculino firme con velocidad ágil y sin pausas lentas
+        utterance.pitch = 0.85;
+        utterance.rate = 1.15;
 
         let animInterval = null;
         utterance.onstart = () => {
@@ -1418,7 +1441,7 @@ export default function SecretoSagradoLanding() {
 
     lanzarRitualPulgares({
       titulo: `${jugadorActivo.nombre} Devuelve el Control al Guía`,
-      subtitulo: 'Mantén ambos pulgares durante 3 segundos para sellar la respuesta y escuchar la revelación',
+      subtitulo: 'Mantén ambos pulgares durante 3 segundos para confirmar tu respuesta y escuchar la explicación',
       colorLuz: fueCorrecto ? '#10b981' : '#f43f5e',
       alCompletar: () => {
         setPantalla('JUEGO');
@@ -1684,10 +1707,10 @@ export default function SecretoSagradoLanding() {
       )}
 
       {/* ====================================================================
-          PANTALLA 1: MENÚ PRINCIPAL (LOGO GRANDE REACTIVO + TÍTULO MODERNO + OPCIONES)
+          PANTALLA 1: MENÚ PRINCIPAL (LOGO Y TÍTULO ALINEADOS A LA IZQUIERDA SOBRE EL MENÚ)
           ==================================================================== */}
       {pantalla === 'MENU_PRINCIPAL' && (
-        <section className="relative z-20 w-full h-full flex flex-col justify-between px-10 md:px-20 py-8 md:py-12">
+        <section className="relative z-20 w-full h-full flex flex-col justify-between pl-6 pr-8 md:pl-12 md:pr-16 py-6 md:py-10">
           {/* Botón discreto de Pantalla Completa en la esquina superior derecha */}
           <button
             onClick={alternarPantallaCompleta}
@@ -1697,36 +1720,36 @@ export default function SecretoSagradoLanding() {
             <IconoSagradoSVG tipo="fullscreen" className="w-5 h-5" />
           </button>
 
-          {/* BLOQUE IZQUIERDO: LOGO PROTAGONISTA CON ANILLOS DE LUZ Y REACCIÓN AL TACTO */}
-          <div className="flex flex-col items-start max-w-xl my-auto">
+          {/* BLOQUE IZQUIERDO ALINEADO DIRECTAMENTE SOBRE EL MENÚ */}
+          <div className="flex flex-col items-start max-w-md my-auto">
             <div
               onClick={() => sonarAcordeSintetico([523.25, 659.25, 783.99, 1046.5], 0.8)}
-              className="group relative flex flex-col items-center text-center cursor-pointer select-none"
+              className="group relative flex flex-col items-start text-left cursor-pointer select-none -ml-2"
             >
               {/* Anillos celestes y dorados animados detrás del emblema */}
-              <div className="relative flex items-center justify-center">
-                <div className="absolute -inset-6 rounded-full bg-gradient-to-r from-amber-300/25 via-cyan-300/25 to-amber-300/25 blur-2xl group-hover:scale-125 group-hover:opacity-100 opacity-75 transition-all duration-500 pointer-events-none" />
+              <div className="relative flex items-center justify-center ml-4">
+                <div className="absolute -inset-5 rounded-full bg-gradient-to-r from-amber-300/25 via-cyan-300/25 to-amber-300/25 blur-2xl group-hover:scale-125 group-hover:opacity-100 opacity-75 transition-all duration-500 pointer-events-none" />
                 <div
                   style={{ animation: 'giroAnilloSagrado 24s linear infinite' }}
-                  className="absolute w-48 h-48 md:w-60 md:h-60 rounded-full border border-dashed border-amber-200/40 group-hover:border-white/80 transition-colors pointer-events-none"
+                  className="absolute w-40 h-40 md:w-48 md:h-48 rounded-full border border-dashed border-amber-200/40 group-hover:border-white/80 transition-colors pointer-events-none"
                 />
                 <img
                   src={URL_LOGO_OFICIAL}
                   alt="Logo Secreto Sagrado"
-                  className="relative z-10 w-52 md:w-68 object-contain logo-interactivo"
+                  className="relative z-10 w-44 md:w-56 object-contain logo-interactivo"
                 />
               </div>
 
-              <h1 className="font-cinzel text-4xl md:text-5xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-amber-100 to-cyan-100 drop-shadow-[0_4px_20px_rgba(0,0,0,0.85)] mt-3 group-hover:scale-105 transition-transform">
+              <h1 className="font-cinzel text-3xl md:text-5xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-amber-100 to-cyan-100 drop-shadow-[0_4px_20px_rgba(0,0,0,0.85)] mt-2 pl-2 group-hover:translate-x-1 transition-transform">
                 Secreto Sagrado
               </h1>
-              <p className="text-xs md:text-sm font-extrabold tracking-[0.26em] uppercase text-amber-200 drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)] mt-1">
+              <p className="text-[11px] md:text-xs font-extrabold tracking-[0.24em] uppercase text-amber-200 drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)] mt-1 pl-2">
                 y su magnífica revelación
               </p>
             </div>
 
-            {/* OPCIONES DEL MENÚ DEBAJO (SOLO LAS PALABRAS SIN CONTENEDORES, BRILLAN Y VIBRAN AL TOCAR) */}
-            <nav className="flex flex-col items-start gap-4 mt-10 md:mt-12 pl-2">
+            {/* OPCIONES DEL MENÚ JUSTO DEBAJO Y EN LA MISMA LÍNEA VERTICAL IZQUIERDA */}
+            <nav className="flex flex-col items-start gap-3.5 mt-8 md:mt-10 pl-1">
               <button
                 onClick={() => {
                   activarPantallaCompleta();

@@ -96,9 +96,73 @@ export const NODOS_MULTIMODALES_POR_ERA = {
   1: [
     {
       tipoMecanica: "SELECCION_MULTIPLE",
+      tituloNodo: "El Árbol del Conocimiento y la Soberanía de Jehová",
+      citaBiblia: "Génesis 2:16, 17; 3:1-5",
+      narrativaDM: "En el jardín de Edén, la Serpiente lanzó una calumnia directa contra el nombre y la gobernación de Jehová para inducir el pecado original.",
+      instruccionInput: "Toquen el recuadro luminoso que identifique qué representaba realmente el árbol prohibido y cuál fue la cuestión moral planteada en Edén.",
+      pregunta: "Según Génesis 2:16, 17 y 3:4, 5, ¿qué desafiaron la Serpiente, Eva y Adán con el pecado original?",
+      pasosObjetivo: 0,
+      hiloDorado: "El árbol representaba el derecho exclusivo de Jehová como Soberano Universal de decidir qué es bueno y qué es malo para Sus criaturas. El Secreto Sagrado nació para vindicar la Soberanía y el santo nombre de Jehová.",
+      opciones: [
+        { id: "1s1", icono: "👑", titulo: "El Derecho Soberano de Jehová de Fijar Normas", subtitulo: "El árbol representaba la autoridad legítima de Dios para decidir qué es bueno y qué es malo.", correcta: true },
+        { id: "1s2", icono: "🍎", titulo: "Un Veneno Físico Mortal en el Fruto", subtitulo: "El fruto tenía una toxina química que quitaba la vida sin relación con la obediencia.", correcta: false },
+        { id: "1s3", icono: "🐍", titulo: "La Creación de un Nuevo Jardín por Adán", subtitulo: "Adán pecó porque Jehová no le había dado suficientes árboles frutales para alimentarse.", correcta: false },
+        { id: "1s4", icono: "📜", titulo: "La Ignorancia del Mandato Divino", subtitulo: "Ni Adán ni Eva conocían la orden de Jehová respecto al árbol antes de comer.", correcta: false }
+      ]
+    },
+    {
+      tipoMecanica: "SELECCION_MULTIPLE",
+      tituloNodo: "La Enemistad y las Dos Descendencias de Génesis 3:15",
+      citaBiblia: "Génesis 3:14, 15",
+      narrativaDM: "Antes de expulsar a Adán y Eva de Edén, Jehová dictó sentencia en Génesis 3:15, revelando el núcleo profético de todo el Secreto Sagrado.",
+      instruccionInput: "Seleccionen en los recuadros de cristal qué decretó Jehová sobre la herida en el talón y el aplastamiento en la cabeza.",
+      pregunta: "¿Qué contraste profético estableció Jehová entre los dos golpes mencionados en Génesis 3:15?",
+      pasosObjetivo: 0,
+      hiloDorado: "La herida en el talón de la Descendencia de la mujer sería dolorosa pero temporal y sanable, mientras que el aplastamiento de la cabeza de la Serpiente significaría la destrucción eterna de Satanás.",
+      opciones: [
+        { id: "1e1", icono: "✨", titulo: "Herida Temporal Frente a Destrucción Definitiva", subtitulo: "La Descendencia sufriría un golpe recuperable en el talón, pero aplastaría para siempre la cabeza de la Serpiente.", correcta: true },
+        { id: "1e2", icono: "🤝", titulo: "Reconciliación Final Entre las Dos Descendencias", subtitulo: "Jehová prometió que la Serpiente y la Descendencia gobernarían juntas en paz.", correcta: false },
+        { id: "1e3", icono: "🐍", titulo: "Victoria Permanente de la Serpiente en Edén", subtitulo: "El golpe en el talón impediría para siempre que la Descendencia cumpliera el propósito divino.", correcta: false },
+        { id: "1e4", icono: "🌿", titulo: "Aplicación Exclusiva a Serpientes Reptiles", subtitulo: "Génesis 3:15 solo hablaba de animales literales del campo sin significado espiritual.", correcta: false }
+      ]
+    },
+    {
+      tipoMecanica: "SELECCION_MULTIPLE",
+      tituloNodo: "Las Prendas de Piel y la Espada Llameante de los Querubines",
+      citaBiblia: "Génesis 3:7, 21, 24",
+      narrativaDM: "Tras el pecado original, Adán y Eva intentaron cubrirse con hojas de higuera, pero Jehová intervino antes de colocar querubines al este de Edén.",
+      instruccionInput: "Toquen el recuadro que explique el significado de Génesis 3:21 y 3:24.",
+      pregunta: "¿Qué demostró Jehová al vestir a la pareja con largas prendas de piel y custodiar el camino al árbol de la vida?",
+      pasosObjetivo: 0,
+      hiloDorado: "Las hojas de higuera humanas no podían cubrir el pecado; Jehová proveyó prendas de piel y cerró con querubines el acceso al árbol de la vida hasta que la Descendencia abriera legalmente el camino.",
+      opciones: [
+        { id: "1p1", icono: "🔥", titulo: "Provisión Divina y Custodia de la Vida Eterna", subtitulo: "Solo Jehová podía proveer una cubierta digna y resguardar el árbol de la vida contra la humanidad pecadora.", correcta: true },
+        { id: "1p2", icono: "🍃", titulo: "Aprobación de las Hojas de Higuera", subtitulo: "Las hojas que cosieron Adán y Eva bastaron para devolverles la perfección en Edén.", correcta: false },
+        { id: "1p3", icono: "🗡️", titulo: "Destrucción Inmediata del Árbol de la Vida", subtitulo: "Los querubines quemaron el árbol de la vida porque ningún humano volvería jamás al Paraíso.", correcta: false },
+        { id: "1p4", icono: "👑", titulo: "Entrega del Jardín a Caín", subtitulo: "Jehová permitió que Caín entrara libremente más allá de la espada llameante.", correcta: false }
+      ]
+    },
+    {
+      tipoMecanica: "SELECCION_MULTIPLE",
+      tituloNodo: "La Rebelión de Nemrod en Babel y la Preservación del Linaje",
+      citaBiblia: "Génesis 10:8, 9; 11:4, 7-9",
+      narrativaDM: "Después del Diluvio, la descendencia de la Serpiente intentó desafiar nuevamente a Jehová edificando Babel bajo el mando de Nemrod.",
+      instruccionInput: "Toquen la opción que explique por qué Jehová confundió el lenguaje de los edificadores de Babel.",
+      pregunta: "Según Génesis 11:4-9, ¿cómo frustró Jehová la conspiración colectiva en las llanuras de Sinar?",
+      pasosObjetivo: 0,
+      hiloDorado: "Mientras Babel buscaba hacerse un nombre célebre en oposición a Jehová, Dios desbarató su unidad rebelde y preservó pura la línea de Sem que llevaría hasta Abrahán.",
+      opciones: [
+        { id: "1b1", icono: "🏛️", titulo: "Frustró la Rebelión Contra Su Mandato de Llenar la Tierra", subtitulo: "Confundió su idioma para impedir que un imperio unificado en adoración falsa ahogara el linaje de Sem.", correcta: true },
+        { id: "1b2", icono: "👑", titulo: "Nombró a Nemrod Protector del Pacto", subtitulo: "Nemrod edificó la torre de Babel siguiendo instrucciones proféticas dadas a Noé.", correcta: false },
+        { id: "1b3", icono: "🌊", titulo: "Envió un Segundo Diluvio Global en Sinar", subtitulo: "Jehová destruyó la torre de Babel sumergiendo toda la tierra bajo las aguas otra vez.", correcta: false },
+        { id: "1b4", icono: "📜", titulo: "Eliminó el Idioma Hebreo de la Familia de Sem", subtitulo: "Sem participó en la rebelión de Nemrod y perdió la bendición de Noé.", correcta: false }
+      ]
+    },
+    {
+      tipoMecanica: "SELECCION_MULTIPLE",
       tituloNodo: "La Primera Profecía y la Ofrenda de Abel",
       citaBiblia: "Génesis 3:15; 4:4",
-      narrativaDM: "En Edén surgió la gran rebelión, pero Jehová pronunció de inmediato la primera profecía del Secreto Sagrado. Abran su Biblia física en Génesis 3:15 y 4:4.",
+      narrativaDM: "Al meditar en la promesa que Jehová dio en Edén, Abel se acercó al altar con una actitud de corazón muy distinta a la de su hermano Caín.",
       instruccionInput: "Toquen el recuadro luminoso que explique por qué Jehová miró con favor el sacrificio de Abel.",
       pregunta: "¿Qué comprendió Abel por fe al presentar los primogénitos de su rebaño ante Jehová?",
       pasosObjetivo: 0,
@@ -212,7 +276,7 @@ export const NODOS_MULTIMODALES_POR_ERA = {
       tituloNodo: "El Nuevo Pacto y el Pacto para un Reino",
       citaBiblia: "Lucas 22:20, 28-30",
       narrativaDM: "En la noche del 14 de nisán de 33 E.C., antes de entregar su vida como rescate, Jesús reveló a sus apóstoles fieles que compartirían su trono celestial.",
-      instruccionInput: "Busquen Lucas 22:28-30 en su Biblia física y escanéenlo con la cámara de la Tablet para sellar el Pacto para un Reino.",
+      instruccionInput: "Busquen Lucas 22:28-30 en su Biblia física y escanéenlo con la cámara de la Tablet para confirmar el pasaje sobre el Pacto para un Reino.",
       pregunta: "Enfoquen con la cámara su Biblia abierta en Lucas 22:28-30.",
       pasosObjetivo: 0,
       hiloDorado: "Jesús, la parte principal de la Descendencia, pagó el rescate correspondiente y celebró el Pacto para un Reino para que un rebaño pequeño reine con él en los cielos.",
@@ -262,24 +326,32 @@ export async function generarDesafioConGemini({
   nombreFamilia,
   conviccionHP,
   modoPartida,
-  indiceRetoEnEra = 0
+  indiceRetoEnEra = 0,
+  historialTitulos = []
 }) {
   if (!apiKey || apiKey.trim() === "") {
     throw new Error("SIN_API_KEY");
   }
 
   const base = CONOCIMIENTO_NUCLEAR_POR_ERA[numeroEra] || CONOCIMIENTO_NUCLEAR_POR_ERA[1];
-  const mecanicasDisponibles = ["SELECCION_MULTIPLE", "VOZ_MANTENER", "CAMINATA_PEREGRINAJE", "CAMARA_ESCRITURA"];
+  const mecanicasDisponibles = ["SELECCION_MULTIPLE", "SELECCION_MULTIPLE", "VOZ_MANTENER", "CAMINATA_PEREGRINAJE", "CAMARA_ESCRITURA"];
   const mecanicaElegida = mecanicasDisponibles[indiceRetoEnEra % mecanicasDisponibles.length];
+
+  // Seleccionar al azar uno de los hechos de la Era para que nunca empiece siempre por el mismo tema
+  const hechoFocalObligatorio =
+    base.hechosVerificados[Math.floor(Math.random() * base.hechosVerificados.length)];
 
   const prompt = `
 Eres "${dmPerfil.nombre}" (${dmPerfil.subtitulo}), el narrador "System DM" del juego cooperativo familiar "El Secreto Sagrado".
 REGLAS ESTRICTAS:
-1. Idioma: Español puro (sin Spanglish).
+1. Idioma: Español natural, claro y edificante (sin Spanglish). PROHIBIDO usar expresiones como "abrir el sello", "sellar" o variantes místicas.
 2. Tú NO eres Jehová Dios ni Jesucristo; eres un siervo fiel compañero de estudio (Apocalipsis 19:10).
-3. Usa ÚNICA Y EXCLUSIVAMENTE los siguientes hechos verificados de wol.jw.org para la ${base.titulo} (${base.rangoBiblico}):
-${base.hechosVerificados.map((h, i) => `${i + 1}. ${h}`).join("\n")}
-4. Mecánica requerida para este turno: "${mecanicaElegida}".
+3. TEMA CENTRAL OBLIGATORIO DE ESTE TURNO: Debes enfocar la pregunta y el reto específicamente en este punto de la Era ${numeroEra}:
+   >>> "${hechoFocalObligatorio}" <<<
+   explicado desde el ángulo característico de "${dmPerfil.nombre}" (${dmPerfil.subtitulo}).
+   PROHIBIDO repetir cualquiera de estos temas ya jugados: ${historialTitulos.join(", ") || "Ninguno"}.
+4. Contexto verificado de wol.jw.org para la ${base.titulo} (${base.rangoBiblico}):${base.hechosVerificados.map((h, i) => `${i + 1}. ${h}`).join("\n")}
+5. Mecánica requerida para este turno: "${mecanicaElegida}".
    - Si es "SELECCION_MULTIPLE": indica en "instruccionInput" que deben tocar una de las 4 cajas de cristal iluminadas, y genera las 4 opciones en el arreglo "opciones" (1 correcta y 3 falsas).
    - Si es "VOZ_MANTENER": indica en "instruccionInput" que deben abrir su Biblia física, mantener presionado el botón de micrófono y explicar el pasaje con su propia voz.
    - Si es "CAMINATA_PEREGRINAJE": indica en "instruccionInput" que deben caminar físicamente entre 10 y 15 pasos por la sala sosteniendo la Tablet para representar un recorrido bíblico de esta Era, y pon ese número en "pasosObjetivo".
