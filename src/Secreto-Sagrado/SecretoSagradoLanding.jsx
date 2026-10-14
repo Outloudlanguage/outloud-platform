@@ -286,75 +286,75 @@ function formatearCitasParaLocucion(textoOriginal) {
 const CATALOGO_DMS = [
   {
     id: 'pastor',
-    nombre: 'El Pastor Amoroso',
-    subtitulo: 'Cálido, paciente y consolador',
+    nombre: 'El Pastor',
+    subtitulo: 'Enfoque reflexivo y guiado',
     iconoTipo: 'pastor',
     colorHex: '#10b981',
     colorSecundario: '#34d399',
-    pitchVoz: 1.0,
+    pitchVoz: 0.78,
     rateVoz: 0.96,
     introHistoria:
-      'Bienvenidos, queridos amigos. Soy su compañero de estudio en este viaje a través de las ocho eras bíblicas. Juntos veremos cómo Jehová fue revelando paso a paso el Secreto Sagrado desde Edén hasta el Reino Mesiánico. En cada turno les indicaré qué pasaje abrir en su Biblia física y qué acción realizar en la Tablet. ¿Me dan su permiso para comenzar?'
+      'Bienvenidos. A lo largo de ocho eras analizaremos cómo se desarrolló el propósito bíblico desde Génesis hasta Revelación. En cada turno les indicaré el pasaje que deben consultar en su Biblia y la mecánica correspondiente. Cuando estén listos, podemos comenzar.'
   },
   {
     id: 'historiador',
-    nombre: 'El Historiador Dedicado',
+    nombre: 'El Historiador',
     subtitulo: 'Cronología exacta, mapas y linajes',
     iconoTipo: 'historiador',
     colorHex: '#38bdf8',
     colorSecundario: '#60a5fa',
-    pitchVoz: 1.0,
-    rateVoz: 1.0,
+    pitchVoz: 0.76,
+    rateVoz: 0.96,
     introHistoria:
-      'Saludos, investigadores de las Escrituras. Como su cronista y compañero de estudio, los guiaré por las ocho eras históricas desde el año 4026 antes de nuestra era hasta el cumplimiento final en Revelación. En cada desafío verificaremos citas, fechas y pruebas en su Biblia impresa. ¿Me conceden su permiso para iniciar la travesía?'
+      'Bienvenidos. Recorreremos en orden cronológico las ocho eras bíblicas, verificando fechas, linajes y sucesos clave directamente en las Escrituras. En cada ronda les indicaré la referencia a consultar y cómo resolver el desafío. Indiquen cuando estén listos para empezar.'
   },
   {
     id: 'profeta',
-    nombre: 'El Profeta Exhortador',
-    subtitulo: 'Sombras sagradas y visiones proféticas',
+    nombre: 'El Profeta',
+    subtitulo: 'Conexión profética y cumplimiento',
     iconoTipo: 'profeta',
     colorHex: '#a855f7',
     colorSecundario: '#f59e0b',
-    pitchVoz: 0.96,
-    rateVoz: 0.98,
+    pitchVoz: 0.74,
+    rateVoz: 0.95,
     introHistoria:
-      '¡Presten atención a la palabra profética! Como coesclavo de ustedes, hoy contemplaremos cómo cada sacrificio, pacto y profecía apuntaba con precisión infalible hacia el Mesías. Tengan lista su Biblia física y su discernimiento. ¿Me dan su permiso para comenzar nuestro estudio?'
+      'Bienvenidos. Examinaremos la relación entre las profecías antiguas, los pactos y su cumplimiento a través de las ocho eras. Tengan su Biblia a la mano para verificar cada referencia. Cuando estén listos, iniciamos.'
   },
   {
     id: 'rey',
-    nombre: 'El Rey Valiente',
-    subtitulo: 'Pactos reales y defensa de la Soberanía',
+    nombre: 'El Rey',
+    subtitulo: 'Pactos reales y soberanía',
     iconoTipo: 'rey',
     colorHex: '#f59e0b',
     colorSecundario: '#fbbf24',
-    pitchVoz: 0.95,
-    rateVoz: 0.97,
+    pitchVoz: 0.72,
+    rateVoz: 0.95,
     introHistoria:
-      '¡Bienvenidos a la sala del pacto! A lo largo de ocho eras veremos cómo Jehová defendió Su legítima Soberanía y protegió el derecho legal al trono de Su Rey Ungido. Yo dirigiré el orden de los turnos y les indicaré cómo superar cada prueba. ¿Me dan su permiso para comenzar?'
+      'Bienvenidos. En esta partida estudiaremos el desarrollo de los pactos reales y la cuestión de la soberanía a lo largo de las ocho eras bíblicas. Yo coordinaré el orden de los turnos y las pruebas de cada etapa. Confirmen cuando estén listos para comenzar.'
   },
   {
     id: 'angel',
-    nombre: 'El Ángel Mensajero',
-    subtitulo: 'Siervo revelador (Apocalipsis 19:10)',
+    nombre: 'El Mensajero',
+    subtitulo: 'Revelación progresiva (Apocalipsis 19:10)',
     iconoTipo: 'angel',
     colorHex: '#22d3ee',
     colorSecundario: '#818cf8',
-    pitchVoz: 1.04,
-    rateVoz: 0.99,
+    pitchVoz: 0.76,
+    rateVoz: 0.96,
     introHistoria:
-      '¡Adoren a Dios! Todo lo que soy es un coesclavo de ustedes y de sus hermanos. Hoy recorreremos las cosas en las que los mismos ángeles deseaban mirar con atención a medida que se desvelaba el Secreto Sagrado. Abran sus Biblias y preparen su corazón. ¿Me dan su permiso para comenzar?'
+      'Bienvenidos. Exploraremos paso a paso cómo se fue revelando el propósito divino a través de ocho etapas históricas. En cada desafío usarán su Biblia y la interfaz en pantalla para responder. Confirmen cuando deseen comenzar.'
   },
   {
     id: 'guerrero',
-    nombre: 'El Poderoso Guerrero',
-    subtitulo: 'Combate espiritual y firmeza bajo prueba',
+    nombre: 'El Estratega',
+    subtitulo: 'Defensa bíblica y pruebas bajo presión',
     iconoTipo: 'guerrero',
     colorHex: '#f97316',
     colorSecundario: '#ef4444',
-    pitchVoz: 0.94,
-    rateVoz: 1.01,
+    pitchVoz: 0.72,
+    rateVoz: 0.95,
     introHistoria:
-      '¡Empuñen la Espada del Espíritu, que es la Palabra de Dios! La Serpiente original intentó quebrar la fe de los siervos leales y cortar el linaje mesiánico en cada época, pero jamás pudo vencer el propósito de Jehová. ¿Están listos y me dan su permiso para entrar en acción?'
+      'Bienvenidos. A lo largo de ocho eras pondremos a prueba su conocimiento y discernimiento de las Escrituras frente a los desafíos de cada época. Tengan su Biblia lista para respaldar cada respuesta. Confirmen cuando estén listos para iniciar.'
   }
 ];
 
@@ -713,28 +713,25 @@ export default function SecretoSagradoLanding() {
   const [hablandoDM, setHablandoDM] = useState(false);
   const [textoSincronizadoDM, setTextoSincronizadoDM] = useState('');
 
-  // Componente inmersivo con el Logo animado mientras el Narrador piensa / carga la voz
-  const renderizarEstadoPensandoDM = (mensaje = 'El Guía está meditando en las Escrituras...') => (
-    <div className="flex flex-col items-center justify-center py-4 px-6 gap-3.5 animate-[fadeIn_0.35s_ease-out]">
+  // Indicador minimalista y sobrio mientras se procesa el audio
+  const renderizarEstadoPensandoDM = () => (
+    <div className="flex flex-col items-center justify-center py-3 px-6 gap-3 animate-[fadeIn_0.3s_ease-out]">
       <div className="relative flex items-center justify-center">
-        <div className="absolute -inset-4 rounded-full bg-gradient-to-r from-amber-300/35 via-cyan-300/35 to-amber-300/35 blur-xl animate-pulse" />
+        <div className="absolute -inset-3 rounded-full bg-cyan-400/25 blur-xl animate-pulse" />
         <div
-          style={{ animation: 'giroAnilloSagrado 7s linear infinite' }}
-          className="absolute w-20 h-20 rounded-full border border-dashed border-amber-200/70"
+          style={{ animation: 'giroAnilloSagrado 8s linear infinite' }}
+          className="absolute w-16 h-16 rounded-full border border-dashed border-white/50"
         />
         <img
           src={URL_LOGO_OFICIAL}
-          alt="Meditando..."
-          className="relative z-10 w-16 h-16 object-contain logo-interactivo"
+          alt="Cargando"
+          className="relative z-10 w-14 h-14 object-contain logo-interactivo"
         />
       </div>
-      <div className="flex items-center gap-2 text-xs md:text-sm font-extrabold tracking-[0.18em] uppercase text-amber-200">
-        <span>{mensaje}</span>
-        <span className="inline-flex gap-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-300 animate-bounce" style={{ animationDelay: '0ms' }} />
-          <span className="w-1.5 h-1.5 rounded-full bg-cyan-300 animate-bounce" style={{ animationDelay: '150ms' }} />
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-300 animate-bounce" style={{ animationDelay: '300ms' }} />
-        </span>
+      <div className="flex items-center gap-1.5">
+        <span className="w-1.5 h-1.5 rounded-full bg-white/80 animate-bounce" style={{ animationDelay: '0ms' }} />
+        <span className="w-1.5 h-1.5 rounded-full bg-white/80 animate-bounce" style={{ animationDelay: '150ms' }} />
+        <span className="w-1.5 h-1.5 rounded-full bg-white/80 animate-bounce" style={{ animationDelay: '300ms' }} />
       </div>
     </div>
   );
@@ -746,12 +743,12 @@ export default function SecretoSagradoLanding() {
       const todas = window.speechSynthesis.getVoices() || [];
       const espanol = todas.filter((v) => v.lang && v.lang.toLowerCase().startsWith('es'));
 
-      const regexMasculino = /(alvaro|álvaro|jorge|pablo|raul|raúl|diego|carlos|miguel|alonso|tomas|tomás|male|hombre|masculin)/i;
-      const regexFemenino = /(helena|laura|sabina|paulina|paloma|elvira|monica|mónica|lucia|lucía|mia|mía|female|mujer|femenin)/i;
+      const regexMasculino = /(alvaro|álvaro|jorge|pablo|raul|raúl|diego|carlos|miguel|alonso|tomas|tomás|enrique|male|hombre|masculin)/i;
+      const regexFemenino = /(helena|laura|sabina|paulina|paloma|elvira|monica|mónica|lucia|lucía|mia|mía|francisca|female|mujer|femenin)/i;
 
       espanol.sort((a, b) => {
-        const esHombreA = regexMasculino.test(a.name) ? 30 : regexFemenino.test(a.name) ? -25 : 0;
-        const esHombreB = regexMasculino.test(b.name) ? 30 : regexFemenino.test(b.name) ? -25 : 0;
+        const esHombreA = regexMasculino.test(a.name) ? 40 : regexFemenino.test(a.name) ? -40 : 0;
+        const esHombreB = regexMasculino.test(b.name) ? 40 : regexFemenino.test(b.name) ? -40 : 0;
         const calA = esHombreA + (a.name.includes('Natural') || a.name.includes('Online') || a.name.includes('Google') ? 15 : 0);
         const calB = esHombreB + (b.name.includes('Natural') || b.name.includes('Online') || b.name.includes('Google') ? 15 : 0);
         return calB - calA;
@@ -772,7 +769,6 @@ export default function SecretoSagradoLanding() {
       const textoLimpio = formatearCitasParaLocucion(textoCrudo);
       const palabrasOriginales = (textoCrudo || '').trim().split(/\s+/);
 
-      // Limpiar cualquier locución y temporizador previo
       window.speechSynthesis?.cancel();
       if (intervaloTextoRef.current) clearInterval(intervaloTextoRef.current);
       if (fuenteAudioTTSRef.current) {
@@ -780,7 +776,6 @@ export default function SecretoSagradoLanding() {
         fuenteAudioTTSRef.current = null;
       }
 
-      // Activar estado de "Pensando" con la caja vacía para que nadie se adelante
       setCargandoVozDM(true);
       setHablandoDM(false);
       setTextoSincronizadoDM('');
@@ -800,25 +795,14 @@ export default function SecretoSagradoLanding() {
               setHablandoDM(false);
               if (alTerminarCallback) alTerminarCallback();
             }
-          }, 140);
-        }, 650);
+          }, 150);
+        }, 450);
         return;
       }
 
-      // 1. VOZ VARONIL CÁLIDA, PROFUNDA Y FLUIDA VÍA GEMINI (EXCLUSIVAMENTE BARÍTONOS CHARON / FENRIR)
+      // 1. VOZ PROFUNDA DE BARÍTONO BAJO VÍA GEMINI (SIEMPRE 'Charon' + PROCESAMIENTO GRAVE)
       if (geminiApiKey && geminiApiKey.trim() !== '') {
         try {
-          // Solo voces masculinas graves y cálidas (eliminados Orus y Puck por completo)
-          const mapaBaritonos = {
-            pastor: 'Charon',
-            historiador: 'Charon',
-            profeta: 'Fenrir',
-            rey: 'Fenrir',
-            angel: 'Charon',
-            guerrero: 'Fenrir'
-          };
-          const vozBaritono = mapaBaritonos[dmPerfil.id] || 'Charon';
-
           const res = await fetch(
             `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${geminiApiKey.trim()}`,
             {
@@ -834,7 +818,8 @@ export default function SecretoSagradoLanding() {
                   responseModalities: ['AUDIO'],
                   speechConfig: {
                     voiceConfig: {
-                      prebuiltVoiceConfig: { voiceName: vozBaritono }
+                      // Charon es la voz masculina más grave y sobria (la misma que sonó bien en la muestra)
+                      prebuiltVoiceConfig: { voiceName: 'Charon' }
                     }
                   }
                 }
@@ -865,37 +850,38 @@ export default function SecretoSagradoLanding() {
 
               const source = ctx.createBufferSource();
               source.buffer = audioBuffer;
-              // Velocidad ágil y dinámica (1.14x) con ligero ajuste de cuerpo varonil (-65 cents)
-              const velocidadVoz = 1.14;
+
+              // Registro grave y masculino: velocidad 0.96x y detune negativo (-115 cents) para bajar el tono sin acelerar
+              const velocidadVoz = 0.96;
               source.playbackRate.value = velocidadVoz;
-              if (source.detune) source.detune.value = -65;
+              if (source.detune) source.detune.value = -115;
 
-              // Filtro de Estudio: Realce de pecho cálido (140 Hz) + Claridad sedosa (4200 Hz)
-              const filtroCalidez = ctx.createBiquadFilter();
-              filtroCalidez.type = 'lowshelf';
-              filtroCalidez.frequency.value = 140;
-              filtroCalidez.gain.value = 5.5;
+              // Ecualizador de cuerpo masculino: refuerzo grave a 115 Hz (+6.5 dB) y recorte de brillo agudo a 3000 Hz (-2.5 dB)
+              const filtroCuerpoGrave = ctx.createBiquadFilter();
+              filtroCuerpoGrave.type = 'lowshelf';
+              filtroCuerpoGrave.frequency.value = 115;
+              filtroCuerpoGrave.gain.value = 6.5;
 
-              const filtroPresencia = ctx.createBiquadFilter();
-              filtroPresencia.type = 'highshelf';
-              filtroPresencia.frequency.value = 4200;
-              filtroPresencia.gain.value = 2.0;
+              const filtroSuavidad = ctx.createBiquadFilter();
+              filtroSuavidad.type = 'peaking';
+              filtroSuavidad.frequency.value = 3000;
+              filtroSuavidad.Q.value = 1.0;
+              filtroSuavidad.gain.value = -2.5;
 
               const analyser = ctx.createAnalyser();
               analyser.fftSize = 64;
 
-              source.connect(filtroCalidez);
-              filtroCalidez.connect(filtroPresencia);
-              filtroPresencia.connect(analyser);
+              source.connect(filtroCuerpoGrave);
+              filtroCuerpoGrave.connect(filtroSuavidad);
+              filtroSuavidad.connect(analyser);
               analyser.connect(ctx.destination);
               fuenteAudioTTSRef.current = source;
 
-              const duracionRealSeg = audioBuffer.duration / velocidadVoz;
+              const duracionRealSeg = (audioBuffer.duration / velocidadVoz) * 1.04;
               const tiempoInicio = ctx.currentTime;
               const dataArr = new Uint8Array(analyser.frequencyBinCount);
               let activo = true;
 
-              // En este instante exacto comienza a sonar la voz: ocultamos el logo y revelamos palabra por palabra
               setCargandoVozDM(false);
               setHablandoDM(true);
 
@@ -905,9 +891,8 @@ export default function SecretoSagradoLanding() {
                 const prom = dataArr.reduce((a, b) => a + b, 0) / dataArr.length;
                 setAmplitudVozDM(Math.min(1.15, prom / 70));
 
-                // Revelar exactamente las palabras por las que va la voz
                 const transcurrido = Math.max(0, ctx.currentTime - tiempoInicio);
-                const progreso = Math.min(1, transcurrido / Math.max(0.4, duracionRealSeg * 0.94));
+                const progreso = Math.min(1, transcurrido / Math.max(0.4, duracionRealSeg * 0.95));
                 const numPalabras = Math.max(1, Math.ceil(progreso * palabrasOriginales.length));
                 setTextoSincronizadoDM(palabrasOriginales.slice(0, numPalabras).join(' '));
 
@@ -928,16 +913,16 @@ export default function SecretoSagradoLanding() {
             }
           }
         } catch (err) {
-          // Pasa al motor nativo rápido si no hay red
+          // Respaldo nativo grave
         }
       }
 
-      // 2. MOTOR DEL DISPOSITIVO CON RITMO ÁGIL (1.18x) Y REVELACIÓN PALABRA POR PALABRA
+      // 2. RESPALDO NATIVO CON REGISTRO GRAVE MASCULINO (PITCH 0.74, RATE 0.96)
       if (typeof window.speechSynthesis !== 'undefined') {
         setTimeout(() => {
           const utterance = new SpeechSynthesisUtterance(textoLimpio);
           const voces = window.speechSynthesis.getVoices() || [];
-          const regexMasculino = /(alvaro|álvaro|jorge|pablo|raul|raúl|diego|carlos|miguel|alonso|male|hombre)/i;
+          const regexMasculino = /(alvaro|álvaro|jorge|pablo|raul|raúl|diego|carlos|miguel|alonso|enrique|male|hombre)/i;
           const vozElegida =
             voces.find((v) => v.voiceURI === vozSeleccionadaURI) ||
             voces.find((v) => v.lang?.toLowerCase().startsWith('es') && regexMasculino.test(v.name)) ||
@@ -950,9 +935,9 @@ export default function SecretoSagradoLanding() {
             utterance.lang = 'es-ES';
           }
 
-          // Velocidad ágil (1.18x) y tono natural firme (0.96) para que nunca hable lento ni robótico
-          utterance.rate = 1.18;
-          utterance.pitch = 0.96;
+          // Registro grave (0.74) y cadencia serena de mando (0.96)
+          utterance.pitch = 0.74;
+          utterance.rate = 0.96;
 
           let palabraIdx = 0;
           utterance.onstart = () => {
@@ -960,12 +945,11 @@ export default function SecretoSagradoLanding() {
             setHablandoDM(true);
             setTextoSincronizadoDM(palabrasOriginales[0] || '');
 
-            // Avance progresivo sincronizado con la velocidad 1.18x (~185ms por palabra)
             intervaloTextoRef.current = setInterval(() => {
               palabraIdx = Math.min(palabrasOriginales.length, palabraIdx + 1);
               setTextoSincronizadoDM(palabrasOriginales.slice(0, palabraIdx).join(' '));
               setAmplitudVozDM(0.35 + Math.random() * 0.6);
-            }, 185);
+            }, 240);
           };
 
           const finalizar = () => {
@@ -980,7 +964,7 @@ export default function SecretoSagradoLanding() {
           utterance.onend = finalizar;
           utterance.onerror = finalizar;
           window.speechSynthesis.speak(utterance);
-        }, 550);
+        }, 400);
       }
     },
     [vozSinteticaActiva, dmPerfil, vozSeleccionadaURI, geminiApiKey]
@@ -1733,13 +1717,13 @@ export default function SecretoSagradoLanding() {
       {/* 2. CAPA ANIMADA EN CANVAS: NIEBLA MÍSTICA, BANDADA DE AVES Y BRILLO EN LA CUMBRE */}
       <canvas ref={canvasAtmosferaRef} className="fixed inset-0 z-10 pointer-events-none" />
 
-      {/* ====================================================================
-          PANTALLA 0: ANIMACIÓN DE ARRANQUE (ACTIVA MÚSICA INMEDIATA Y FULLSCREEN)
+{/* ====================================================================
+          PANTALLA 0: ANIMACIÓN DE ARRANQUE (BOTÓN MÁS ALTO Y LIMPIO)
           ==================================================================== */}
       {pantalla === 'BOOT_LOGO' && (
         <section
           onClick={entrarDesdeBoot}
-          className={`fixed inset-0 z-50 flex flex-col items-center justify-center transition-all duration-700 cursor-pointer ${
+          className={`fixed inset-0 z-50 flex flex-col items-center justify-center pb-14 transition-all duration-700 cursor-pointer ${
             faseBoot === 2 ? 'bg-slate-950/0 opacity-0 pointer-events-none' : 'bg-slate-950/90 opacity-100'
           }`}
         >
@@ -1756,34 +1740,37 @@ export default function SecretoSagradoLanding() {
             <img
               src={URL_LOGO_OFICIAL}
               alt="Secreto Sagrado"
-              className="w-72 md:w-96 object-contain logo-interactivo"
+              className="w-60 md:w-80 object-contain logo-interactivo"
             />
-            <h1 className="font-cinzel text-4xl md:text-5xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-amber-100 to-cyan-200 mt-5 drop-shadow-lg">
+            <h1 className="font-cinzel text-3xl md:text-5xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-amber-100 to-cyan-200 mt-3 drop-shadow-lg">
               Secreto Sagrado
             </h1>
-            <p className="text-xs md:text-sm font-bold tracking-[0.28em] uppercase text-amber-200/90 mt-1.5">
+            <p className="text-xs md:text-sm font-bold tracking-[0.28em] uppercase text-amber-200/90 mt-1">
               y su magnífica revelación
             </p>
-            <div className="mt-10 px-8 py-3.5 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur-xl border border-white/50 text-xs tracking-[0.25em] uppercase text-white font-black animate-pulse shadow-[0_0_30px_rgba(255,255,255,0.35)]">
-              Toca para Iniciar en Pantalla Completa
-            </div>
+            <button
+              onClick={entrarDesdeBoot}
+              className="mt-6 px-10 py-3 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-xl border border-white/60 text-xs tracking-[0.28em] uppercase text-white font-black shadow-[0_0_30px_rgba(255,255,255,0.35)] hover:scale-105 transition-all"
+            >
+              Entrar
+            </button>
           </div>
         </section>
       )}
 
       {/* ====================================================================
-          PANTALLA 1: MENÚ PRINCIPAL (LOGO Y TÍTULO ALINEADOS A LA IZQUIERDA SOBRE EL MENÚ)
+          PANTALLA 1: MENÚ PRINCIPAL (LOGO GRANDE REACTIVO + TÍTULO MODERNO + OPCIONES)
           ==================================================================== */}
       {pantalla === 'MENU_PRINCIPAL' && (
-        <section className="relative z-20 w-full h-full flex flex-col justify-between pl-6 pr-8 md:pl-12 md:pr-16 py-6 md:py-10">
-          {/* Botón discreto de Pantalla Completa en la esquina superior derecha */}
+        <section className="relative z-20 w-full h-full flex flex-col justify-between px-10 md:px-20 py-8 md:py-12">
+          {/* Botón de Pantalla Completa más alto y sin texto emergente */}
           <button
             onClick={alternarPantallaCompleta}
-            title="Alternar Pantalla Completa"
-            className="fixed top-6 right-6 z-30 p-3 rounded-full bg-slate-950/35 hover:bg-white/25 backdrop-blur-xl border border-white/35 text-white/90 transition-all"
+            className="fixed top-4 right-5 z-30 p-2.5 rounded-full bg-slate-950/35 hover:bg-white/25 backdrop-blur-xl border border-white/35 text-white/90 transition-all"
           >
             <IconoSagradoSVG tipo="fullscreen" className="w-5 h-5" />
           </button>
+        
 
           {/* BLOQUE IZQUIERDO ALINEADO DIRECTAMENTE SOBRE EL MENÚ */}
           <div className="flex flex-col items-start max-w-md my-auto">
@@ -2568,12 +2555,12 @@ export default function SecretoSagradoLanding() {
               NÚCLEO CENTRAL DE LA PANTALLA SEGÚN LA SUB-FASE DEL TURNO
               ================================================================ */}
           <main className="my-auto w-full max-w-5xl mx-auto flex flex-col items-center justify-center gap-6">
-            {/* SUB-FASE 1: INTRODUCCIÓN DEL DM Y SOLICITUD DE PERMISO */}
+            {/* SUB-FASE 1: INTRODUCCIÓN DEL DM Y CONFIRMACIÓN DE INICIO */}
             {subFaseJuego === 'INTRO_HISTORIA' && (
               <div className="flex flex-col items-center gap-6 text-center max-w-2xl w-full mt-52">
-                <div className="w-full min-h-[150px] p-6 rounded-3xl bg-slate-950/55 backdrop-blur-2xl border border-white/40 shadow-2xl flex items-center justify-center">
+                <div className="w-full min-h-[140px] p-6 rounded-3xl bg-slate-950/55 backdrop-blur-2xl border border-white/40 shadow-2xl flex items-center justify-center">
                   {cargandoVozDM ? (
-                    renderizarEstadoPensandoDM('El Guía está abriendo las crónicas sagradas...')
+                    renderizarEstadoPensandoDM()
                   ) : (
                     <p className="text-sm md:text-base text-white/95 leading-relaxed">
                       {textoSincronizadoDM}
@@ -2588,9 +2575,9 @@ export default function SecretoSagradoLanding() {
                   <div className="flex flex-wrap items-center justify-center gap-4 animate-[fadeIn_0.4s_ease-out]">
                     <button
                       onClick={() => concederPermisoYPrepararReto(1, 0)}
-                      className="px-9 py-4 rounded-full bg-white/25 hover:bg-white/40 backdrop-blur-2xl border border-white/80 font-black text-sm tracking-widest uppercase shadow-[0_0_35px_rgba(255,255,255,0.5)] hover:scale-105 transition-all"
+                      className="px-10 py-4 rounded-full bg-white/25 hover:bg-white/40 backdrop-blur-2xl border border-white/80 font-black text-sm tracking-widest uppercase shadow-[0_0_35px_rgba(255,255,255,0.5)] hover:scale-105 transition-all"
                     >
-                      Conceder Permiso y Comenzar
+                      Comenzar Partida
                     </button>
 
                     <button
@@ -2603,7 +2590,7 @@ export default function SecretoSagradoLanding() {
                       }`}
                     >
                       <IconoSagradoSVG tipo="mic" className="w-4 h-4" />
-                      <span>{manteniendoMic ? 'Escuchando tu permiso...' : 'Mantén para dar permiso con voz'}</span>
+                      <span>{manteniendoMic ? 'Escuchando...' : 'Confirmar con Voz'}</span>
                     </button>
                   </div>
                 )}
@@ -2615,7 +2602,7 @@ export default function SecretoSagradoLanding() {
               <div className="flex flex-col items-center gap-7 text-center max-w-2xl w-full mt-52">
                 <div className="w-full min-h-[120px] p-5 rounded-3xl bg-slate-950/50 backdrop-blur-2xl border border-white/35 shadow-2xl flex items-center justify-center">
                   {cargandoVozDM || cargandoRetoIA ? (
-                    renderizarEstadoPensandoDM('El Guía está meditando en las Escrituras...')
+                    renderizarEstadoPensandoDM()
                   ) : (
                     <p className="font-cinzel text-lg md:text-2xl font-extrabold tracking-tight text-white drop-shadow-lg">
                       {textoSincronizadoDM || '¿Quién tomará el desafío en este turno?'}
@@ -2674,7 +2661,7 @@ export default function SecretoSagradoLanding() {
               <div className="flex flex-col items-center gap-6 text-center max-w-2xl w-full mt-52">
                 <div className="w-full min-h-[165px] p-6 rounded-3xl bg-slate-950/55 backdrop-blur-2xl border border-white/40 shadow-2xl flex flex-col items-center justify-center">
                   {cargandoVozDM ? (
-                    renderizarEstadoPensandoDM('El Guía está consultando los rollos sagrados...')
+                    renderizarEstadoPensandoDM()
                   ) : (
                     <>
                       <div className="inline-flex items-center gap-2 px-3.5 py-0.5 rounded-full bg-amber-300/20 border border-amber-300/60 text-amber-200 text-[11px] font-black tracking-widest uppercase mb-2">
