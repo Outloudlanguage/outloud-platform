@@ -736,43 +736,31 @@ export default function SecretoSagradoLanding() {
     </div>
   );
 
+  const cacheAudioTTSRef = useRef(new Map());
+  const idLocucionActualRef = useRef(0);
+
   useEffect(() => {
-    if (typeof window.speechSynthesis === 'undefined') return;
-
-    const cargarVoces = () => {
-      const todas = window.speechSynthesis.getVoices() || [];
-      const espanol = todas.filter((v) => v.lang && v.lang.toLowerCase().startsWith('es'));
-
-      const regexMasculino = /(alvaro|álvaro|jorge|pablo|raul|raúl|diego|carlos|miguel|alonso|tomas|tomás|enrique|male|hombre|masculin)/i;
-      const regexFemenino = /(helena|laura|sabina|paulina|paloma|elvira|monica|mónica|lucia|lucía|mia|mía|francisca|female|mujer|femenin)/i;
-
-      espanol.sort((a, b) => {
-        const esHombreA = regexMasculino.test(a.name) ? 40 : regexFemenino.test(a.name) ? -40 : 0;
-        const esHombreB = regexMasculino.test(b.name) ? 40 : regexFemenino.test(b.name) ? -40 : 0;
-        const calA = esHombreA + (a.name.includes('Natural') || a.name.includes('Online') || a.name.includes('Google') ? 15 : 0);
-        const calB = esHombreB + (b.name.includes('Natural') || b.name.includes('Online') || b.name.includes('Google') ? 15 : 0);
-        return calB - calA;
-      });
-
-      setVocesDisponibles(espanol);
-      if (espanol.length > 0 && !vozSeleccionadaURI) {
-        setVozSeleccionadaURI(espanol[0].voiceURI);
-      }
-    };
-
-    cargarVoces();
-    window.speechSynthesis.onvoiceschanged = cargarVoces;
-  }, [vozSeleccionadaURI]);
+    setVocesDisponibles([
+      { voiceURI: 'Charon', name: 'IA Gemini — Charon (Barítono Profundo)' }
+    ]);
+    setVozSeleccionadaURI('Charon');
+  }, []);
 
   const hablarConVozDM = useCallback(
     async (textoCrudo, alTerminarCallback = null) => {
       const textoLimpio = formatearCitasParaLocucion(textoCrudo);
       const palabrasOriginales = (textoCrudo || '').trim().split(/\s+/);
 
-      window.speechSynthesis?.cancel();
+      // Identificador único para cancelar cualquier petición anterior en curso
+      idLocucionActualRef.current += 1;
+      const miIdLocucion = idLocucionActualRef.current;
+
       if (intervaloTextoRef.current) clearInterval(intervaloTextoRef.current);
       if (fuenteAudioTTSRef.current) {
-        try { fuenteAudioTTSRef.current.stop(); } catch (e) {}
+        try {
+          fuenteAudioTTSRef.current.onended = null;
+          fuenteAudioTTSRef.current.stop();
+        } catch (e) {}
         fuenteAudioTTSRef.current = null;
       }
 
@@ -780,12 +768,18 @@ export default function SecretoSagradoLanding() {
       setHablandoDM(false);
       setTextoSincronizadoDM('');
 
-      if (!vozSinteticaActiva) {
+      // Si el usuario silenció voluntariamente la voz en Configuración, revela el texto en silencio (sin voz del sistema)
+      if (!vozSinteticaActiva || !geminiApiKey || geminiApiKey.trim() === '') {
         setTimeout(() => {
+          if (miIdLocucion !== idLocucionActualRef.current) return;
           setCargandoVozDM(false);
           setHablandoDM(true);
           let idxPalabra = 0;
           intervaloTextoRef.current = setInterval(() => {
+            if (miIdLocucion !== idLocucionActualRef.current) {
+              clearInterval(intervaloTextoRef.current);
+              return;
+            }
             idxPalabra += 1;
             setAmplitudVozDM(0.35 + Math.sin(idxPalabra * 0.7) * 0.3);
             setTextoSincronizadoDM(palabrasOriginales.slice(0, idxPalabra).join(' '));
@@ -796,12 +790,15 @@ export default function SecretoSagradoLanding() {
               if (alTerminarCallback) alTerminarCallback();
             }
           }, 150);
-        }, 450);
+        }, 400);
         return;
       }
 
-      // 1. VOZ PROFUNDA DE BARÍTONO BAJO VÍA GEMINI (SIEMPRE 'Charon' + PROCESAMIENTO GRAVE)
-      if (geminiApiKey && geminiApiKey.trim() !== '') {
+      // EXCLUSIVAMENTE VOZ DE IA GEMINI ('Charon' con ecualización grave y reintento automático)
+      let base64Audio = cacheAudioTTSRef.current.get(textoLimpio) || null;
+
+      for (let intento = 1; intento <= 3 && !base64Audio; intento++) {
+        if (miIdLocucion !== idLocucionActualRef.current) return;
         try {
           const res = await fetch(
             `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${geminiApiKey.trim()}`,
@@ -818,7 +815,6 @@ export default function SecretoSagradoLanding() {
                   responseModalities: ['AUDIO'],
                   speechConfig: {
                     voiceConfig: {
-                      // Charon es la voz masculina más grave y sobria (la misma que sonó bien en la muestra)
                       prebuiltVoiceConfig: { voiceName: 'Charon' }
                     }
                   }
@@ -829,145 +825,116 @@ export default function SecretoSagradoLanding() {
 
           if (res.ok) {
             const data = await res.json();
-            const base64Audio = data?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-            if (base64Audio) {
-              const Ctx = window.AudioContext || window.webkitAudioContext;
-              if (!audioCtxRef.current) audioCtxRef.current = new Ctx();
-              const ctx = audioCtxRef.current;
-              if (ctx.state === 'suspended') await ctx.resume();
-
-              const binaryStr = window.atob(base64Audio);
-              const len = binaryStr.length;
-              const bytes = new Uint8Array(len);
-              for (let i = 0; i < len; i++) bytes[i] = binaryStr.charCodeAt(i);
-
-              const int16 = new Int16Array(bytes.buffer);
-              const audioBuffer = ctx.createBuffer(1, int16.length, 24000);
-              const channelData = audioBuffer.getChannelData(0);
-              for (let i = 0; i < int16.length; i++) {
-                channelData[i] = int16[i] / 32768.0;
-              }
-
-              const source = ctx.createBufferSource();
-              source.buffer = audioBuffer;
-
-              // Registro grave y masculino: velocidad 0.96x y detune negativo (-115 cents) para bajar el tono sin acelerar
-              const velocidadVoz = 0.96;
-              source.playbackRate.value = velocidadVoz;
-              if (source.detune) source.detune.value = -115;
-
-              // Ecualizador de cuerpo masculino: refuerzo grave a 115 Hz (+6.5 dB) y recorte de brillo agudo a 3000 Hz (-2.5 dB)
-              const filtroCuerpoGrave = ctx.createBiquadFilter();
-              filtroCuerpoGrave.type = 'lowshelf';
-              filtroCuerpoGrave.frequency.value = 115;
-              filtroCuerpoGrave.gain.value = 6.5;
-
-              const filtroSuavidad = ctx.createBiquadFilter();
-              filtroSuavidad.type = 'peaking';
-              filtroSuavidad.frequency.value = 3000;
-              filtroSuavidad.Q.value = 1.0;
-              filtroSuavidad.gain.value = -2.5;
-
-              const analyser = ctx.createAnalyser();
-              analyser.fftSize = 64;
-
-              source.connect(filtroCuerpoGrave);
-              filtroCuerpoGrave.connect(filtroSuavidad);
-              filtroSuavidad.connect(analyser);
-              analyser.connect(ctx.destination);
-              fuenteAudioTTSRef.current = source;
-
-              const duracionRealSeg = (audioBuffer.duration / velocidadVoz) * 1.04;
-              const tiempoInicio = ctx.currentTime;
-              const dataArr = new Uint8Array(analyser.frequencyBinCount);
-              let activo = true;
-
-              setCargandoVozDM(false);
-              setHablandoDM(true);
-
-              const actualizarPulsoYTexto = () => {
-                if (!activo) return;
-                analyser.getByteFrequencyData(dataArr);
-                const prom = dataArr.reduce((a, b) => a + b, 0) / dataArr.length;
-                setAmplitudVozDM(Math.min(1.15, prom / 70));
-
-                const transcurrido = Math.max(0, ctx.currentTime - tiempoInicio);
-                const progreso = Math.min(1, transcurrido / Math.max(0.4, duracionRealSeg * 0.95));
-                const numPalabras = Math.max(1, Math.ceil(progreso * palabrasOriginales.length));
-                setTextoSincronizadoDM(palabrasOriginales.slice(0, numPalabras).join(' '));
-
-                requestAnimationFrame(actualizarPulsoYTexto);
-              };
-
-              source.onended = () => {
-                activo = false;
-                setTextoSincronizadoDM(textoCrudo);
-                setAmplitudVozDM(0);
-                setHablandoDM(false);
-                if (alTerminarCallback) alTerminarCallback();
-              };
-
-              source.start(0);
-              actualizarPulsoYTexto();
-              return;
+            const extraido = data?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+            if (extraido) {
+              base64Audio = extraido;
+              cacheAudioTTSRef.current.set(textoLimpio, extraido);
+              break;
             }
           }
-        } catch (err) {
-          // Respaldo nativo grave
+        } catch (err) {}
+
+        // Si hubo un micro-corte o límite simultáneo, espera un instante y reintenta obtener la voz de IA
+        if (!base64Audio && intento < 3) {
+          await new Promise((r) => setTimeout(r, 650 * intento));
         }
       }
 
-      // 2. RESPALDO NATIVO CON REGISTRO GRAVE MASCULINO (PITCH 0.74, RATE 0.96)
-      if (typeof window.speechSynthesis !== 'undefined') {
-        setTimeout(() => {
-          const utterance = new SpeechSynthesisUtterance(textoLimpio);
-          const voces = window.speechSynthesis.getVoices() || [];
-          const regexMasculino = /(alvaro|álvaro|jorge|pablo|raul|raúl|diego|carlos|miguel|alonso|enrique|male|hombre)/i;
-          const vozElegida =
-            voces.find((v) => v.voiceURI === vozSeleccionadaURI) ||
-            voces.find((v) => v.lang?.toLowerCase().startsWith('es') && regexMasculino.test(v.name)) ||
-            voces.find((v) => v.lang?.toLowerCase().startsWith('es'));
+      if (miIdLocucion !== idLocucionActualRef.current) return;
 
-          if (vozElegida) {
-            utterance.voice = vozElegida;
-            utterance.lang = vozElegida.lang;
-          } else {
-            utterance.lang = 'es-ES';
+      if (base64Audio) {
+        try {
+          const Ctx = window.AudioContext || window.webkitAudioContext;
+          if (!audioCtxRef.current) audioCtxRef.current = new Ctx();
+          const ctx = audioCtxRef.current;
+          if (ctx.state === 'suspended') await ctx.resume();
+
+          const binaryStr = window.atob(base64Audio);
+          const len = binaryStr.length;
+          const bytes = new Uint8Array(len);
+          for (let i = 0; i < len; i++) bytes[i] = binaryStr.charCodeAt(i);
+
+          const int16 = new Int16Array(bytes.buffer);
+          const audioBuffer = ctx.createBuffer(1, int16.length, 24000);
+          const channelData = audioBuffer.getChannelData(0);
+          for (let i = 0; i < int16.length; i++) {
+            channelData[i] = int16[i] / 32768.0;
           }
 
-          // Registro grave (0.74) y cadencia serena de mando (0.96)
-          utterance.pitch = 0.74;
-          utterance.rate = 0.96;
+          const source = ctx.createBufferSource();
+          source.buffer = audioBuffer;
 
-          let palabraIdx = 0;
-          utterance.onstart = () => {
-            setCargandoVozDM(false);
-            setHablandoDM(true);
-            setTextoSincronizadoDM(palabrasOriginales[0] || '');
+          // Registro grave, varonil y con presencia de mando (0.96x y -115 cents)
+          const velocidadVoz = 0.96;
+          source.playbackRate.value = velocidadVoz;
+          if (source.detune) source.detune.value = -115;
 
-            intervaloTextoRef.current = setInterval(() => {
-              palabraIdx = Math.min(palabrasOriginales.length, palabraIdx + 1);
-              setTextoSincronizadoDM(palabrasOriginales.slice(0, palabraIdx).join(' '));
-              setAmplitudVozDM(0.35 + Math.random() * 0.6);
-            }, 240);
+          // Ecualizador de cuerpo masculino: refuerzo grave a 115 Hz (+6.5 dB) y suavidad en 3000 Hz (-2.5 dB)
+          const filtroCuerpoGrave = ctx.createBiquadFilter();
+          filtroCuerpoGrave.type = 'lowshelf';
+          filtroCuerpoGrave.frequency.value = 115;
+          filtroCuerpoGrave.gain.value = 6.5;
+
+          const filtroSuavidad = ctx.createBiquadFilter();
+          filtroSuavidad.type = 'peaking';
+          filtroSuavidad.frequency.value = 3000;
+          filtroSuavidad.Q.value = 1.0;
+          filtroSuavidad.gain.value = -2.5;
+
+          const analyser = ctx.createAnalyser();
+          analyser.fftSize = 64;
+
+          source.connect(filtroCuerpoGrave);
+          filtroCuerpoGrave.connect(filtroSuavidad);
+          filtroSuavidad.connect(analyser);
+          analyser.connect(ctx.destination);
+          fuenteAudioTTSRef.current = source;
+
+          const duracionRealSeg = (audioBuffer.duration / velocidadVoz) * 1.04;
+          const tiempoInicio = ctx.currentTime;
+          const dataArr = new Uint8Array(analyser.frequencyBinCount);
+          let activo = true;
+
+          setCargandoVozDM(false);
+          setHablandoDM(true);
+
+          const actualizarPulsoYTexto = () => {
+            if (!activo || miIdLocucion !== idLocucionActualRef.current) return;
+            analyser.getByteFrequencyData(dataArr);
+            const prom = dataArr.reduce((a, b) => a + b, 0) / dataArr.length;
+            setAmplitudVozDM(Math.min(1.15, prom / 70));
+
+            const transcurrido = Math.max(0, ctx.currentTime - tiempoInicio);
+            const progreso = Math.min(1, transcurrido / Math.max(0.4, duracionRealSeg * 0.95));
+            const numPalabras = Math.max(1, Math.ceil(progreso * palabrasOriginales.length));
+            setTextoSincronizadoDM(palabrasOriginales.slice(0, numPalabras).join(' '));
+
+            requestAnimationFrame(actualizarPulsoYTexto);
           };
 
-          const finalizar = () => {
-            if (intervaloTextoRef.current) clearInterval(intervaloTextoRef.current);
-            setCargandoVozDM(false);
-            setHablandoDM(false);
+          source.onended = () => {
+            if (miIdLocucion !== idLocucionActualRef.current) return;
+            activo = false;
             setTextoSincronizadoDM(textoCrudo);
             setAmplitudVozDM(0);
+            setHablandoDM(false);
             if (alTerminarCallback) alTerminarCallback();
           };
 
-          utterance.onend = finalizar;
-          utterance.onerror = finalizar;
-          window.speechSynthesis.speak(utterance);
-        }, 400);
+          source.start(0);
+          actualizarPulsoYTexto();
+          return;
+        } catch (err) {}
       }
+
+      // Si no hubiera conexión a Internet tras 3 intentos, muestra el texto en silencio jamás usando voz robótica
+      setCargandoVozDM(false);
+      setHablandoDM(false);
+      setTextoSincronizadoDM(textoCrudo);
+      setAmplitudVozDM(0);
+      if (alTerminarCallback) alTerminarCallback();
     },
-    [vozSinteticaActiva, dmPerfil, vozSeleccionadaURI, geminiApiKey]
+    [vozSinteticaActiva, geminiApiKey]
   );
   
 
