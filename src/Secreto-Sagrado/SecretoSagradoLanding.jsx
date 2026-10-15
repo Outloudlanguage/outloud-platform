@@ -6,6 +6,7 @@ import {
   evaluarExplicacionFamiliarConGemini,
   verificarBibliaConCamaraGemini
 } from './geminiDirectorEngine';
+import Mundo3DSagrado from './Mundo3DSagrado';
 
 /* ==========================================================================
    ACTIVOS OFICIALES EN CLOUDFLARE R2 PROPORCIONADOS
@@ -2248,6 +2249,17 @@ if (geminiApiKey && geminiApiKey.trim() !== '') {
 
               <button
                 onClick={() => {
+                  activarPantallaCompleta();
+                  sonarAcordeSintetico([523.25, 659.25, 1046.5]);
+                  setPantalla('MUNDO_3D');
+                }}
+                className="bg-transparent border-none text-left text-3xl md:text-5xl font-black tracking-tight text-cyan-200/95 hover:text-white active:scale-95 transition-all duration-300 hover:translate-x-4 drop-shadow-[0_4px_16px_rgba(0,0,0,0.85)] hover:drop-shadow-[0_0_32px_rgba(34,211,238,1)] focus:outline-none"
+              >
+                Mundos 3D
+              </button>
+
+              <button
+                onClick={() => {
                   sonarAcordeSintetico([440, 554.37, 659.25]);
                   setPantalla('CONFIGURACION');
                 }}
@@ -3285,12 +3297,20 @@ if (geminiApiKey && geminiApiKey.trim() !== '') {
                   )}
                 </div>
                 {!cargandoVozDM && !hablandoDM && (
-                  <button
-                    onClick={avanzarAlSiguienteNodoOEra}
-                    className="px-10 py-4 rounded-full bg-gradient-to-r from-amber-300 to-cyan-300 text-slate-950 font-black text-sm tracking-widest uppercase shadow-2xl hover:scale-105 transition-all animate-[fadeIn_0.35s_ease-out]"
-                  >
-                    Continuar al Siguiente Desafío →
-                  </button>
+                  <div className="flex flex-wrap items-center justify-center gap-4 animate-[fadeIn_0.35s_ease-out]">
+                    <button
+                      onClick={() => setPantalla('MUNDO_3D_JUEGO')}
+                      className="px-8 py-4 rounded-full bg-cyan-400/25 hover:bg-cyan-400/40 border border-cyan-200 text-cyan-100 font-black text-xs tracking-widest uppercase shadow-[0_0_30px_rgba(34,211,238,0.45)] hover:scale-105 transition-all"
+                    >
+                      Explorar Mundo 3D de la Era {eraActualNum}
+                    </button>
+                    <button
+                      onClick={avanzarAlSiguienteNodoOEra}
+                      className="px-10 py-4 rounded-full bg-gradient-to-r from-amber-300 to-cyan-300 text-slate-950 font-black text-sm tracking-widest uppercase shadow-2xl hover:scale-105 transition-all"
+                    >
+                      Continuar al Siguiente Desafío →
+                    </button>
+                  </div>
                 )}
               </div>
             )}
@@ -3315,18 +3335,39 @@ if (geminiApiKey && geminiApiKey.trim() !== '') {
                     Han recorrido en unidad las 8 Eras bíblicas verificando en su Biblia física cómo Jehová cumplió cada promesa desde Génesis 3:15 hasta el Paraíso restaurado de Revelación.
                   </p>
                 </div>
-                <button
-                  onClick={() => setPantalla('MENU_PRINCIPAL')}
-                  className="px-10 py-4 rounded-full bg-white text-slate-950 font-black text-xs tracking-widest uppercase"
-                >
-                  Volver al Menú Principal
-                </button>
+                <div className="flex flex-wrap justify-center gap-4">
+                  <button
+                    onClick={() => setPantalla('MUNDO_3D')}
+                    className="px-8 py-4 rounded-full bg-cyan-400 text-slate-950 font-black text-xs tracking-widest uppercase"
+                  >
+                    Explorar Todos los Mundos 3D
+                  </button>
+                  <button
+                    onClick={() => setPantalla('MENU_PRINCIPAL')}
+                    className="px-10 py-4 rounded-full bg-white text-slate-950 font-black text-xs tracking-widest uppercase"
+                  >
+                    Volver al Menú Principal
+                  </button>
+                </div>
               </div>
             )}
           </main>
 
           <div className="h-2" />
         </section>
+      )}
+
+      {/* ====================================================================
+          3D WALKABLE ENGINE & AR WINDOW (FROM MENU OR AT THE END OF EACH ERA)
+          ==================================================================== */}
+      {(pantalla === 'MUNDO_3D' || pantalla === 'MUNDO_3D_JUEGO') && (
+        <Mundo3DSagrado
+          eraInicial={eraActualNum}
+          hablarConVozDM={hablarConVozDM}
+          onCerrar={() =>
+            setPantalla(pantalla === 'MUNDO_3D_JUEGO' ? 'JUEGO' : 'MENU_PRINCIPAL')
+          }
+        />
       )}
     </div>
   );
