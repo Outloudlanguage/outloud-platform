@@ -319,6 +319,45 @@ export const NODOS_MULTIMODALES_POR_ERA = {
 /* ==========================================================================
    GENERADOR DE DESAFÍOS MULTIMODALES CON GEMINI 2.5 FLASH
    ========================================================================== */
+export const ANGULOS_PECADO_ORIGINAL_POR_DM = {
+  pastor: {
+    enfoque: "El ataque a la bondad de Jehová y la obediencia por amor filial",
+    narrativaDM: "En el jardín de Edén, Satanás utilizó una serpiente para sembrar dudas sobre la generosidad y el amor de Jehová al cuestionar Su mandato sobre el árbol del conocimiento. Abran su Biblia en Génesis 3:1-5.",
+    pregunta: "¿Cómo intentó la Serpiente debilitar el amor y la confianza de Eva en su Padre celestial?",
+    hiloDorado: "La rebelión en Edén comenzó cuando se puso en duda la bondad de Jehová; sin embargo, ese mismo día Jehová prometió en Génesis 3:15 una Descendencia que restauraría a la familia humana."
+  },
+  historiador: {
+    enfoque: "El registro histórico de la rebelión en Edén y el inicio del linaje en Génesis 3:15",
+    narrativaDM: "El registro histórico de Génesis capítulos 2 y 3 documenta el origen real del pecado humano en Edén y el primer decreto profético de la historia. Consulten Génesis 2:16, 17 y 3:15.",
+    pregunta: "¿Qué hecho histórico ocurrió en Edén que dio origen a la promesa del Secreto Sagrado en Génesis 3:15?",
+    hiloDorado: "La desobediencia de Adán y Eva introdujo el pecado en la historia humana, pero Génesis 3:15 fijó el punto de partida legal y genealógico hacia el Mesías."
+  },
+  profeta: {
+    enfoque: "La primera profecía de las Escrituras (Génesis 3:15) nacida tras el pecado original",
+    narrativaDM: "Apenas se consumó la transgresión con el fruto del árbol en Edén, Jehová pronunció la profecía matriz de toda la Biblia. Lean Génesis 3:14, 15.",
+    pregunta: "Tras el pecado original, ¿qué predijo Jehová en Génesis 3:15 sobre la Descendencia de la mujer y la Serpiente?",
+    hiloDorado: "En el mismo escenario de la caída nació la profecía de Génesis 3:15: la Descendencia prometida aplastará definitivamente la cabeza de la Serpiente original."
+  },
+  rey: {
+    enfoque: "La cuestión universal de la Soberanía legítima de Jehová representada por el árbol",
+    narrativaDM: "El árbol del conocimiento de lo bueno y lo malo representaba el derecho soberano de Jehová como Rey Supremo de fijar las normas para Sus criaturas. Abran su Biblia en Génesis 2:16, 17 y 3:4, 5.",
+    pregunta: "¿Qué derecho legítimo de Jehová desafiaron Satanás, Eva y Adán al comer del fruto prohibido?",
+    hiloDorado: "El pecado original fue un desafío directo a la Soberanía de Jehová; por ello, el Reino Mesiánico nacido de Génesis 3:15 vindicará para siempre el gobierno de Dios."
+  },
+  angel: {
+    enfoque: "La calumnia espiritual contra el nombre de Dios y el nacimiento del Secreto Sagrado",
+    narrativaDM: "En Edén, un espíritu rebelde se ocultó tras una serpiente para calumniar el nombre de Jehová diciendo que Dios mentía a Sus hijos terrestres. Consulten Génesis 3:1-5, 15.",
+    pregunta: "¿Qué calumnia levantó Satanás en Edén contra el nombre de Jehová y cómo respondió Dios en Génesis 3:15?",
+    hiloDorado: "Ante los observadores angélicos, Jehová reveló en Génesis 3:15 el inicio del Secreto Sagrado que santificaría Su nombre y eliminaría las obras del Calumniador."
+  },
+  guerrero: {
+    enfoque: "La táctica de engaño de la Serpiente en Edén y el golpe final a su cabeza",
+    narrativaDM: "El conflicto espiritual comenzó en Edén cuando el adversario empleó el engaño y la codicia para inducir a Eva y Adán a quebrantar el mandato divino. Lean Génesis 3:1-6, 15.",
+    pregunta: "¿Qué estrategia utilizó la Serpiente en Edén para vencer la lealtad de la primera pareja humana?",
+    hiloDorado: "Aunque la Serpiente logró que Adán y Eva pecaran, Génesis 3:15 dictó su sentencia: el Guerrero Mesiánico de Jehová le aplastará la cabeza para siempre."
+  }
+};
+
 export async function generarDesafioConGemini({
   apiKey,
   numeroEra,
@@ -326,15 +365,59 @@ export async function generarDesafioConGemini({
   nombreFamilia,
   conviccionHP,
   modoPartida,
-  indiceRetoEnEra = 0,
-  historialTitulos = []
+  indiceRetoEnEra = 0
 }) {
+  // LA PRIMERA PREGUNTA ES SIEMPRE SOBRE EL PECADO ORIGINAL DESDE EL ÁNGULO DEL NARRADOR ELEGIDO
+  if (numeroEra === 1 && indiceRetoEnEra === 0) {
+    const angulo = ANGULOS_PECADO_ORIGINAL_POR_DM[dmPerfil?.id] || ANGULOS_PECADO_ORIGINAL_POR_DM.historiador;
+    return {
+      tipoMecanica: "SELECCION_MULTIPLE",
+      tituloNodo: "El Pecado Original y el Nacimiento del Secreto Sagrado",
+      citaBiblia: "Génesis 2:16, 17; 3:1-6, 15",
+      narrativaDM: angulo.narrativaDM,
+      instruccionInput: "Consulten Génesis 3:1-6, 15 en su Biblia física y seleccionen la lección correcta según el enfoque de su Guía.",
+      pregunta: angulo.pregunta,
+      pasosObjetivo: 0,
+      hiloDorado: angulo.hiloDorado,
+      opciones: [
+        {
+          id: "po_1",
+          icono: "opcion",
+          titulo: "Rebelión contra la Soberanía de Jehová y Promesa de la Descendencia",
+          subtitulo: "Cuestionaron el derecho de Dios de decidir lo bueno y lo malo, dando lugar a la profecía de Génesis 3:15.",
+          correcta: true
+        },
+        {
+          id: "po_2",
+          icono: "opcion",
+          titulo: "Un Árbol con Veneno Físico Mortal",
+          subtitulo: "El árbol tenía una toxina química independiente de la ley moral de Jehová.",
+          correcta: false
+        },
+        {
+          id: "po_3",
+          icono: "opcion",
+          titulo: "Ausencia de Responsabilidad Personal",
+          subtitulo: "Adán no sabía cuál era el mandato de Jehová cuando decidió comer del fruto.",
+          correcta: false
+        },
+        {
+          id: "po_4",
+          icono: "opcion",
+          titulo: "Cancelación del Propósito para la Tierra",
+          subtitulo: "Tras el pecado en Edén, Jehová abandonó Su propósito original para la humanidad.",
+          correcta: false
+        }
+      ]
+    };
+  }
+
   if (!apiKey || apiKey.trim() === "") {
     throw new Error("SIN_API_KEY");
   }
 
   const base = CONOCIMIENTO_NUCLEAR_POR_ERA[numeroEra] || CONOCIMIENTO_NUCLEAR_POR_ERA[1];
-  const mecanicasDisponibles = ["SELECCION_MULTIPLE", "SELECCION_MULTIPLE", "VOZ_MANTENER", "CAMINATA_PEREGRINAJE", "CAMARA_ESCRITURA"];
+  const mecanicasDisponibles = ["SELECCION_MULTIPLE", "VOZ_MANTENER", "CAMINATA_PEREGRINAJE", "CAMARA_ESCRITURA"];
   const mecanicaElegida = mecanicasDisponibles[indiceRetoEnEra % mecanicasDisponibles.length];
 
   // Seleccionar al azar uno de los hechos de la Era para que nunca empiece siempre por el mismo tema

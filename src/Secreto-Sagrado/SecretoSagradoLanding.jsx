@@ -3046,18 +3046,21 @@ if (geminiApiKey && geminiApiKey.trim() !== '') {
                 </div>
                 {!cargandoVozDM && !hablandoDM && (
                   <div className="flex flex-wrap items-center justify-center gap-4 animate-[fadeIn_0.35s_ease-out]">
-                    <button
-                      onClick={() => setPantalla('MUNDO_3D_JUEGO')}
-                      className="px-8 py-4 rounded-full bg-cyan-400/25 hover:bg-cyan-400/40 border border-cyan-200 text-cyan-100 font-black text-xs tracking-widest uppercase shadow-[0_0_30px_rgba(34,211,238,0.45)] hover:scale-105 transition-all"
-                    >
-                      Explorar Mundo 3D de la Era {eraActualNum}
-                    </button>
-                    <button
-                      onClick={avanzarAlSiguienteNodoOEra}
-                      className="px-10 py-4 rounded-full bg-gradient-to-r from-amber-300 to-cyan-300 text-slate-950 font-black text-sm tracking-widest uppercase shadow-2xl hover:scale-105 transition-all"
-                    >
-                      Continuar al Siguiente Desafío →
-                    </button>
+                    {eraActualNum === 1 && indiceRetoEnEra === 0 ? (
+                      <button
+                        onClick={() => setPantalla('MUNDO_3D_JUEGO')}
+                        className="px-10 py-4 rounded-full bg-gradient-to-r from-emerald-300 via-amber-200 to-cyan-300 text-slate-950 font-black text-sm tracking-widest uppercase shadow-[0_0_40px_rgba(52,211,153,0.6)] hover:scale-105 transition-all"
+                      >
+                        Entrar al Jardín de Edén (3D) →
+                      </button>
+                    ) : (
+                      <button
+                        onClick={avanzarAlSiguienteNodoOEra}
+                        className="px-10 py-4 rounded-full bg-gradient-to-r from-amber-300 to-cyan-300 text-slate-950 font-black text-sm tracking-widest uppercase shadow-2xl hover:scale-105 transition-all"
+                      >
+                        Continuar al Siguiente Desafío →
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -3110,11 +3113,16 @@ if (geminiApiKey && geminiApiKey.trim() !== '') {
           ==================================================================== */}
       {(pantalla === 'MUNDO_3D' || pantalla === 'MUNDO_3D_JUEGO') && (
         <Mundo3DSagrado
-          eraInicial={eraActualNum}
+          modoMenu={pantalla === 'MUNDO_3D'}
           hablarConVozDM={hablarConVozDM}
-          onCerrar={() =>
-            setPantalla(pantalla === 'MUNDO_3D_JUEGO' ? 'JUEGO' : 'MENU_PRINCIPAL')
-          }
+          onCerrar={() => {
+            if (pantalla === 'MUNDO_3D_JUEGO') {
+              setPantalla('JUEGO');
+              avanzarAlSiguienteNodoOEra();
+            } else {
+              setPantalla('MENU_PRINCIPAL');
+            }
+          }}
         />
       )}
     </div>
