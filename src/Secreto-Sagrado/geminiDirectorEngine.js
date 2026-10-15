@@ -99,15 +99,15 @@ export const NODOS_MULTIMODALES_POR_ERA = {
       tituloNodo: "El Engaño en Edén",
       citaBiblia: "Génesis 3:1-5",
       narrativaDM: "Lean Génesis 3:1-5 en su Biblia.",
-      instruccionInput: "Verifiquen el argumento exacto que empleó la serpiente.",
+      instruccionInput: "Verifiquen el argumento que empleó la serpiente.",
       pregunta: "Según Génesis 3:4, 5, ¿qué afirmó la serpiente que ocurriría el día en que comieran del árbol?",
       pasosObjetivo: 0,
       hiloDorado: "Satanás negó la sentencia de muerte y afirmó que llegarían a ser como Dios, conociendo lo bueno y lo malo, cuestionando el derecho de Jehová a fijar normas.",
       opciones: [
-        { id: "1s1", icono: "opcion", titulo: "Se les abrirían los ojos y serían como Dios, conociendo lo bueno y lo malo", subtitulo: "Prometió independencia moral para decidir por sí mismos qué es correcto.", correcta: true },
-        { id: "1s2", icono: "opcion", titulo: "Morirían solo si tocaban la raíz del árbol sin haber comido antes del árbol de la vida", subtitulo: "Aseguró que el fruto del otro árbol anularía la sentencia dictada a Adán.", correcta: false },
-        { id: "1s3", icono: "opcion", titulo: "Jehová pasaría por alto la desobediencia si presentaban una ofrenda de los frutos del suelo", subtitulo: "Afirmó que la prohibición era temporal hasta que poblaran el jardín.", correcta: false },
-        { id: "1s4", icono: "opcion", titulo: "Solo Adán sería responsable ante Dios porque el mandato se dictó antes de ser creada Eva", subtitulo: "Sostuvo que la ley de Génesis 2:17 no aplicaba legalmente a la mujer.", correcta: false }
+        { id: "1s1", icono: "opcion", titulo: "Se les abrirían los ojos y serían como Dios, conociendo lo bueno y lo malo", subtitulo: "Tendrían autonomía para decidir por sí mismos qué es correcto y qué es incorrecto.", correcta: true },
+        { id: "1s2", icono: "opcion", titulo: "Morirían solo si tocaban la raíz del árbol sin haber comido antes del árbol de la vida", subtitulo: "El fruto del segundo árbol neutralizaría el efecto de la prohibición.", correcta: false },
+        { id: "1s3", icono: "opcion", titulo: "Jehová pasaría por alto la acción si presentaban una ofrenda de los frutos del suelo", subtitulo: "Un sacrificio inmediato sobre un altar cubriría la falta cometida en el jardín.", correcta: false },
+        { id: "1s4", icono: "opcion", titulo: "Solo Adán sería responsable porque el mandato se dio antes de ser creada Eva", subtitulo: "La restricción legal de Génesis 2:17 aplicaba únicamente al cabeza de familia.", correcta: false }
       ]
     },
     {
@@ -115,15 +115,15 @@ export const NODOS_MULTIMODALES_POR_ERA = {
       tituloNodo: "La Sentencia de Génesis 3:15",
       citaBiblia: "Génesis 3:15",
       narrativaDM: "Consulten Génesis 3:15.",
-      instruccionInput: "Seleccionen el término exacto con que inicia la profecía.",
+      instruccionInput: "Seleccionen la palabra que completa el versículo.",
       pregunta: "«Y pondré [ _____ ] entre tú y la mujer, y entre tu descendencia y la descendencia de ella».",
       pasosObjetivo: 0,
       hiloDorado: "Jehová estableció la enemistad entre la Serpiente y la mujer celestial, garantizando que la Descendencia aplastaría la cabeza del adversario.",
       opciones: [
-        { id: "1c1", icono: "opcion", titulo: "Enemistad", subtitulo: "Término exacto empleado por Jehová en Génesis 3:15.", correcta: true },
-        { id: "1c2", icono: "opcion", titulo: "Juicio", subtitulo: "Término legal frecuente en los decretos proféticos.", correcta: false },
-        { id: "1c3", icono: "opcion", titulo: "División", subtitulo: "Separación establecida entre ambos linajes.", correcta: false },
-        { id: "1c4", icono: "opcion", titulo: "Contienda", subtitulo: "Conflicto prolongado a través de las eras.", correcta: false }
+        { id: "1c1", icono: "opcion", titulo: "Enemistad", subtitulo: "Oposición y antagonismo irreconciliable entre ambas partes.", correcta: true },
+        { id: "1c2", icono: "opcion", titulo: "Juicio", subtitulo: "Sentencia judicial dictada ante un tribunal legal.", correcta: false },
+        { id: "1c3", icono: "opcion", titulo: "División", subtitulo: "Frontera o separación territorial entre dos grupos.", correcta: false },
+        { id: "1c4", icono: "opcion", titulo: "Contienda", subtitulo: "Disputa prolongada por la supremacía entre dos rivales.", correcta: false }
       ]
     },
     {
@@ -131,13 +131,13 @@ export const NODOS_MULTIMODALES_POR_ERA = {
       tituloNodo: "El Sacrificio de Abel y Caín",
       citaBiblia: "Génesis 4:3-5; Hebreos 11:4",
       narrativaDM: "Comparen Génesis 4:3-5 con Hebreos 11:4.",
-      instruccionInput: "Verifiquen con cuidado ambos pasajes antes de elegir.",
+      instruccionInput: "Evalúen si la siguiente afirmación es verdadera o falsa.",
       pregunta: "¿Rechazó Jehová la ofrenda de Caín porque la ley dada a Adán prohibía ofrecer productos agrícolas?",
       pasosObjetivo: 0,
       hiloDorado: "El problema no era que fueran productos del suelo, sino la falta de fe de Caín y el hecho de que la ofrenda de Abel implicó fe y derramamiento de vida inocente (Hebreos 11:4).",
       opciones: [
-        { id: "1vf1", icono: "opcion", titulo: "Falso", subtitulo: "Fue por la falta de fe y actitud de corazón de Caín, no por una ley contra los frutos.", correcta: true },
-        { id: "1vf2", icono: "opcion", titulo: "Verdadero", subtitulo: "En Génesis capítulo 4 estaba prohibido presentar frutos de la tierra como ofrenda.", correcta: false }
+        { id: "1vf1", icono: "opcion", titulo: "Falso", subtitulo: "La diferencia radicó en la motivación de fe y el valor de la vida ofrecida.", correcta: true },
+        { id: "1vf2", icono: "opcion", titulo: "Verdadero", subtitulo: "Existía un mandato previo que invalidaba cualquier ofrenda vegetal.", correcta: false }
       ]
     },
     {
@@ -150,10 +150,10 @@ export const NODOS_MULTIMODALES_POR_ERA = {
       pasosObjetivo: 0,
       hiloDorado: "Cada intervención protegió el propósito divino desde la promesa en Edén hasta el decreto sobre la santidad de la sangre tras el Diluvio.",
       opciones: [
-        { id: "1o1", icono: "opcion", titulo: "Promesa sobre la Descendencia de la mujer", subtitulo: "Génesis 3:15", ordenCorrecto: 1, correcta: true },
-        { id: "1o2", icono: "opcion", titulo: "Querubines apostados al este del jardín de Edén", subtitulo: "Génesis 3:24", ordenCorrecto: 2, correcta: false },
-        { id: "1o3", icono: "opcion", titulo: "Mandato a Noé de construir el arca de madera resinosa", subtitulo: "Génesis 6:14", ordenCorrecto: 3, correcta: false },
-        { id: "1o4", icono: "opcion", titulo: "Prohibición de comer la sangre porque representa el alma", subtitulo: "Génesis 9:4", ordenCorrecto: 4, correcta: false }
+        { id: "1o1", icono: "opcion", titulo: "Promesa sobre la Descendencia de la mujer", subtitulo: "Declaración acerca del golpe en la cabeza y en el talón", ordenCorrecto: 1, correcta: true },
+        { id: "1o2", icono: "opcion", titulo: "Querubines apostados al este del jardín de Edén", subtitulo: "Custodia del camino hacia el árbol de la vida", ordenCorrecto: 2, correcta: false },
+        { id: "1o3", icono: "opcion", titulo: "Mandato a Noé de construir el arca de madera resinosa", subtitulo: "Instrucciones para preservar la vida ante el Diluvio", ordenCorrecto: 3, correcta: false },
+        { id: "1o4", icono: "opcion", titulo: "Prohibición de comer la sangre porque representa el alma", subtitulo: "Estatuto universal promulgado tras salir del arca", ordenCorrecto: 4, correcta: false }
       ]
     }
   ],
@@ -168,10 +168,10 @@ export const NODOS_MULTIMODALES_POR_ERA = {
       pasosObjetivo: 0,
       hiloDorado: "El pacto entró en vigor en 1943 a. E.C. cuando Abrahán, de 75 años, salió de Harán y cruzó el río Éufrates rumbo a Canaán.",
       opciones: [
-        { id: "2a", icono: "opcion", titulo: "Cuando Abrahán salió de Harán y cruzó el río Éufrates hacia Canaán", subtitulo: "Ocurrió en 1943 a. E.C., exactamente 430 años antes del Éxodo y el pacto de la Ley.", correcta: true },
-        { id: "2b", icono: "opcion", titulo: "Cuando Jehová le cambió el nombre de Abrán a Abrahán e instituyó la circuncisión", subtitulo: "Ocurrió en Génesis 17:5, un año antes del nacimiento de Isaac.", correcta: false },
-        { id: "2c", icono: "opcion", titulo: "Cuando Abrahán ofreció el carnero en lugar de Isaac en el monte Moria", subtitulo: "Ocurrió en Génesis 22:16-18 cuando Jehová añadió Su juramento.", correcta: false },
-        { id: "2d", icono: "opcion", titulo: "Cuando Melquisedec, rey de Salem y sacerdote, bendijo a Abrahán", subtitulo: "Ocurrió en Génesis 14:18-20 tras la victoria sobre los cuatro reyes.", correcta: false }
+        { id: "2a", icono: "opcion", titulo: "Cuando Abrahán salió de Harán y cruzó el río Éufrates hacia Canaán", subtitulo: "Partida ocurrida cuando el patriarca tenía setenta y cinco años de edad.", correcta: true },
+        { id: "2b", icono: "opcion", titulo: "Cuando Jehová le cambió el nombre de Abrán a Abrahán e instituyó la circuncisión", subtitulo: "Establecimiento de la señal física del pacto para toda su casa.", correcta: false },
+        { id: "2c", icono: "opcion", titulo: "Cuando Abrahán ofreció el carnero en lugar de Isaac en el monte Moria", subtitulo: "Declaración solemne reforzada mediante el juramento de Jehová.", correcta: false },
+        { id: "2d", icono: "opcion", titulo: "Cuando Melquisedec, rey de Salem y sacerdote, bendijo a Abrahán", subtitulo: "Encuentro ocurrido en el valle de Savé tras derrotar a los cuatro reyes.", correcta: false }
       ]
     }
   ],
@@ -186,10 +186,10 @@ export const NODOS_MULTIMODALES_POR_ERA = {
       pasosObjetivo: 0,
       hiloDorado: "La Ley puso de manifiesto las transgresiones —demostrando la necesidad de un rescate perfecto— y actuó como tutor para conducir a Israel hacia el Cristo.",
       opciones: [
-        { id: "3a", icono: "opcion", titulo: "Para poner de manifiesto las transgresiones y servir de tutor hacia Cristo", subtitulo: "Vigente hasta que llegara la Descendencia a quien se había hecho la promesa.", correcta: true },
-        { id: "3b", icono: "opcion", titulo: "Para reemplazar el pacto abrahámico al otorgar perdón definitivo mediante sacrificios", subtitulo: "La sangre de toros y machos cabríos quitaba el pecado de forma permanente.", correcta: false },
-        { id: "3c", icono: "opcion", titulo: "Para transferir el derecho al trono mesiánico de la tribu de Judá a la casa de Leví", subtitulo: "Unió en Aarón tanto el cetro real de Siló como el sumo sacerdocio.", correcta: false },
-        { id: "3d", icono: "opcion", titulo: "Para abrir de inmediato la entrada al Santísimo celestial antes de la venida del Mesías", subtitulo: "El sumo sacerdote entraba anualmente al cielo mismo en el Día de Expiación.", correcta: false }
+        { id: "3a", icono: "opcion", titulo: "Para poner de manifiesto las transgresiones y servir de tutor hacia Cristo", subtitulo: "Disposición temporal vigente hasta que llegara la Descendencia prometida.", correcta: true },
+        { id: "3b", icono: "opcion", titulo: "Para reemplazar el pacto abrahámico al otorgar perdón definitivo mediante sacrificios", subtitulo: "Las ofrendas anuales cancelaban a perpetuidad la deuda heredada de Adán.", correcta: false },
+        { id: "3c", icono: "opcion", titulo: "Para transferir el derecho al trono mesiánico de la tribu de Judá a la casa de Leví", subtitulo: "Concentración del poder real y sacerdotal en la familia de Aarón.", correcta: false },
+        { id: "3d", icono: "opcion", titulo: "Para abrir de inmediato la entrada al Santísimo celestial antes de la venida del Mesías", subtitulo: "Acceso directo al cielo otorgado a los sumos sacerdotes de Israel.", correcta: false }
       ]
     }
   ],
@@ -204,10 +204,10 @@ export const NODOS_MULTIMODALES_POR_ERA = {
       pasosObjetivo: 0,
       hiloDorado: "Bajo la Ley mosaica el trono pertenecía a Judá y el sacerdocio a Leví; pero mediante el juramento de Salmo 110:4, Jehová unió en Cristo el Reinado davídico y el Sacerdocio a la manera de Melquisedec.",
       opciones: [
-        { id: "4a", icono: "opcion", titulo: "Ser sacerdote hasta tiempo indefinido a la manera de Melquisedec además de Rey", subtitulo: "Unió por juramento divino la corona real y el sacerdocio sin depender de la tribu de Leví.", correcta: true },
-        { id: "4b", icono: "opcion", titulo: "Construir el templo de piedra sobre la era de Ornán el jebuseo en el monte Moria", subtitulo: "Comisión que Jehová reservó en 2 Samuel 7:13 para el hijo de David.", correcta: false },
-        { id: "4c", icono: "opcion", titulo: "Heredar el sacerdocio aarónico por descendencia materna de la casa de Finehás", subtitulo: "Cumplió el pacto de un sacerdocio eterno celebrado con la tribu de Leví.", correcta: false },
-        { id: "4d", icono: "opcion", titulo: "Gobernar desde Sión sin que ningún adversario se opusiera al inicio de su reinado", subtitulo: "El Salmo 110:2 indica que nunca tendría que sojuzgar en medio de sus enemigos.", correcta: false }
+        { id: "4a", icono: "opcion", titulo: "Ser sacerdote hasta tiempo indefinido a la manera de Melquisedec además de Rey", subtitulo: "Unión de la corona real y el oficio sacerdotal por nombramiento directo de Dios.", correcta: true },
+        { id: "4b", icono: "opcion", titulo: "Construir el templo de piedra sobre la era de Ornán el jebuseo en el monte Moria", subtitulo: "Edificación de una casa permanente para el Arca del Pacto en Jerusalén.", correcta: false },
+        { id: "4c", icono: "opcion", titulo: "Heredar el sacerdocio aarónico por descendencia materna de la casa de Finehás", subtitulo: "Sucesión genealógica dentro del pacto de sacerdocio dado a la tribu de Leví.", correcta: false },
+        { id: "4d", icono: "opcion", titulo: "Gobernar desde Sión sin que ningún adversario se opusiera al inicio de su reinado", subtitulo: "Eliminación de toda resistencia enemiga antes de sentarse a la diestra de Dios.", correcta: false }
       ]
     }
   ],
@@ -217,15 +217,15 @@ export const NODOS_MULTIMODALES_POR_ERA = {
       tituloNodo: "El Punto de Partida de las 70 Semanas",
       citaBiblia: "Daniel 9:24, 25; Nehemías 2:1-8",
       narrativaDM: "Consulten Daniel 9:25 y Nehemías 2:1-8.",
-      instruccionInput: "Identifiquen el decreto exacto con el que comenzó la cuenta profética.",
-      pregunta: "Según Daniel 9:25, ¿con qué suceso histórico de 455 a. E.C. comenzaron a contarse las 69 semanas de años hasta Mesías el Caudillo?",
+      instruccionInput: "Identifiquen el decreto con el que comenzó la cuenta profética.",
+      pregunta: "Según Daniel 9:25, ¿con qué suceso histórico comenzaron a contarse las 69 semanas de años hasta Mesías el Caudillo?",
       pasosObjetivo: 0,
       hiloDorado: "La cuenta inició en 455 a. E.C. con la orden del rey Artajerjes a Nehemías para restaurar y reedificar los muros y la ciudad de Jerusalén, cumpliéndose 483 años después en 29 E.C.",
       opciones: [
-        { id: "5a", icono: "opcion", titulo: "La salida de la palabra para restaurar y reedificar Jerusalén en el año 20 de Artajerjes", subtitulo: "Autorizó a Nehemías en 455 a. E.C. a reedificar la ciudad y sus murallas.", correcta: true },
-        { id: "5b", icono: "opcion", titulo: "El decreto de Ciro en 537 a. E.C. para que Zorobabel reconstruyera el templo de Jehová", subtitulo: "Puso fin a los setenta años de desolación predichos por el profeta Jeremías.", correcta: false },
-        { id: "5c", icono: "opcion", titulo: "La carta del rey Darío confirmando la terminación del segundo templo en 515 a. E.C.", subtitulo: "Registrada en Esdras 6:14, 15 tras la predicación de Hageo y Zacarías.", correcta: false },
-        { id: "5d", icono: "opcion", titulo: "La comisión dada al sacerdote Esdras en 468 a. E.C. para embellecer la casa de Jehová", subtitulo: "Entregó oro, plata y utensilios para el servicio del altar en Jerusalén.", correcta: false }
+        { id: "5a", icono: "opcion", titulo: "La salida de la palabra para restaurar y reedificar Jerusalén en el año 20 de Artajerjes", subtitulo: "Comisión otorgada a Nehemías para levantar las murallas y puertas de la ciudad.", correcta: true },
+        { id: "5b", icono: "opcion", titulo: "El decreto de Ciro en 537 a. E.C. para que Zorobabel reconstruyera el templo de Jehová", subtitulo: "Edicto real que puso fin a los setenta años de desolación de Judá.", correcta: false },
+        { id: "5c", icono: "opcion", titulo: "La carta del rey Darío confirmando la terminación del segundo templo en 515 a. E.C.", subtitulo: "Ratificación oficial tras la labor profética de Hageo y Zacarías.", correcta: false },
+        { id: "5d", icono: "opcion", titulo: "La comisión dada al sacerdote Esdras en 468 a. E.C. para embellecer la casa de Jehová", subtitulo: "Autorización persa para llevar oro, plata y utensilios al santuario.", correcta: false }
       ]
     }
   ],
@@ -240,10 +240,10 @@ export const NODOS_MULTIMODALES_POR_ERA = {
       pasosObjetivo: 0,
       hiloDorado: "Mateo registra el derecho legal al trono de David a través de Salomón y José, mientras que Lucas certifica la descendencia biológica de sangre de David a través de Natán y María.",
       opciones: [
-        { id: "6a", icono: "opcion", titulo: "Reunió tanto el derecho legal al trono vía Salomón como la descendencia física de David vía Natán", subtitulo: "Acreditó su derecho real por parte de José y su linaje natural de sangre por parte de María.", correcta: true },
-        { id: "6b", icono: "opcion", titulo: "Demostró que descendía por parte paterna de la tribu de Judá y por parte materna de Aarón", subtitulo: "Heredó de María el sacerdocio levítico gracias a su parentesco con Elisabet.", correcta: false },
-        { id: "6c", icono: "opcion", titulo: "Sustituyó el pacto davídico por el pacto abrahámico al descartar la rama real de Salomón", subtitulo: "Lucas anuló la lista de Mateo debido a la maldición dictada contra Jeconías.", correcta: false },
-        { id: "6d", icono: "opcion", titulo: "Confirmó que José era su padre biológico directo desde Zorobabel hasta el rey David", subtitulo: "Ambos evangelistas usaron nombres distintos para referirse a los mismos reyes de Judá.", correcta: false }
+        { id: "6a", icono: "opcion", titulo: "Reunió tanto el derecho legal al trono vía Salomón como la descendencia física de David vía Natán", subtitulo: "Doble validación real y biológica a través de las líneas de José y de María.", correcta: true },
+        { id: "6b", icono: "opcion", titulo: "Demostró que descendía por parte paterna de la tribu de Judá y por parte materna de Aarón", subtitulo: "Combinación de las genealogías reales y sacerdotales de Israel.", correcta: false },
+        { id: "6c", icono: "opcion", titulo: "Sustituyó el pacto davídico por el pacto abrahámico al descartar la rama real de Salomón", subtitulo: "Invalidación completa de la línea de los reyes de Judá tras el exilio.", correcta: false },
+        { id: "6d", icono: "opcion", titulo: "Confirmó que José era su padre biológico directo desde Zorobabel hasta el rey David", subtitulo: "Registro paralelo de los mismos monarcas utilizando sus segundos nombres.", correcta: false }
       ]
     }
   ],
@@ -258,10 +258,10 @@ export const NODOS_MULTIMODALES_POR_ERA = {
       pasosObjetivo: 0,
       hiloDorado: "Con la conversión y el ungimiento de Cornelio y su casa en 36 E.C. terminó el período de favor exclusivo a Israel y se abrió a gente de las naciones la oportunidad de ser coherederos con Cristo (Efesios 3:5, 6).",
       opciones: [
-        { id: "7a", icono: "opcion", titulo: "El ungimiento de Cornelio, abriendo a gente de las naciones incircuncisa el ser coherederos con Cristo", subtitulo: "Cerró los 7 años posteriores a 29 E.C. en que el pacto se mantuvo vigente solo para los judíos.", correcta: true },
-        { id: "7b", icono: "opcion", titulo: "El derramamiento del espíritu santo en el Pentecostés de 33 E.C. sobre 120 discípulos en Jerusalén", subtitulo: "Fundó el Israel espiritual exactamente tres años y medio después del bautismo de Jesús.", correcta: false },
-        { id: "7c", icono: "opcion", titulo: "El decreto del concilio de los apóstoles y ancianos en Jerusalén sobre la circuncisión en 49 E.C.", subtitulo: "Declaró concluida la septuagésima semana cuando Pablo y Bernabé regresaron de su primer viaje.", correcta: false },
-        { id: "7d", icono: "opcion", titulo: "La destrucción del templo de Jerusalén por las legiones romanas en el año 70 E.C.", subtitulo: "Puso fin al sistema ceremonial judío exactamente setenta semanas después del ministerio de Juan.", correcta: false }
+        { id: "7a", icono: "opcion", titulo: "El ungimiento de Cornelio, abriendo a gente de las naciones incircuncisa el ser coherederos con Cristo", subtitulo: "Incorporación de creyentes gentiles al cuerpo espiritual sin pasar por el proselitismo judío.", correcta: true },
+        { id: "7b", icono: "opcion", titulo: "El derramamiento del espíritu santo en el Pentecostés de 33 E.C. sobre 120 discípulos en Jerusalén", subtitulo: "Inauguración de la congregación cristiana tras la ascensión de Jesús al cielo.", correcta: false },
+        { id: "7c", icono: "opcion", titulo: "El decreto del concilio de los apóstoles y ancianos en Jerusalén sobre la circuncisión en 49 E.C.", subtitulo: "Resolución apostólica enviada por carta a las congregaciones de Siria y Cilicia.", correcta: false },
+        { id: "7d", icono: "opcion", titulo: "La destrucción del templo de Jerusalén por las legiones romanas en el año 70 E.C.", subtitulo: "Clausura definitiva de los registros genealógicos y de los sacrificios mosaicos.", correcta: false }
       ]
     }
   ],
@@ -276,10 +276,10 @@ export const NODOS_MULTIMODALES_POR_ERA = {
       pasosObjetivo: 0,
       hiloDorado: "En Revelación 12 Satanás es arrojado del cielo a la vecindad de la tierra teniendo un corto espacio de tiempo; tras Armagedón (Rev. 20) es atado en el abismo por 1.000 años y finalmente destruido en el lago de fuego.",
       opciones: [
-        { id: "8a", icono: "opcion", titulo: "En el cap. 12 es arrojado del cielo a la tierra; en el cap. 20 es abismado 1.000 años y luego destruido", subtitulo: "Primero pierde acceso al cielo tras nacer el Reino y más tarde queda inactivo en el abismo tras Armagedón.", correcta: true },
-        { id: "8b", icono: "opcion", titulo: "En el cap. 12 es encerrado en el abismo por Miguel; en el cap. 20 es arrojado del cielo tras los 1.000 años", subtitulo: "Queda sin poder engañar a las naciones desde el mismo día en que la mujer da a luz al hijo varón.", correcta: false },
-        { id: "8c", icono: "opcion", titulo: "En ambos capítulos se describe el mismo suceso visto desde el ángulo celestial y desde el ángulo terrenal", subtitulo: "La guerra en el cielo de Miguel coincide simultáneamente con el juicio final de los muertos ante el trono blanco.", correcta: false },
-        { id: "8d", icono: "opcion", titulo: "En el cap. 12 es destruido junto con Babilonia la Grande; en el cap. 20 solo son juzgados los reyes terrestres", subtitulo: "La serpiente original deja de existir antes de que comience el Reinado de Mil Años de Cristo.", correcta: false }
+        { id: "8a", icono: "opcion", titulo: "En el cap. 12 es arrojado del cielo a la tierra; en el cap. 20 es abismado 1.000 años y luego destruido", subtitulo: "Confinamiento inicial a la vecindad terrestre seguido más tarde por su inactividad en el abismo.", correcta: true },
+        { id: "8b", icono: "opcion", titulo: "En el cap. 12 es encerrado en el abismo por Miguel; en el cap. 20 es arrojado del cielo tras los 1.000 años", subtitulo: "Restricción total de su influencia sobre las naciones desde el nacimiento del Reino.", correcta: false },
+        { id: "8c", icono: "opcion", titulo: "En ambos capítulos se describe el mismo suceso visto desde el ángulo celestial y desde el ángulo terrenal", subtitulo: "Visión paralela de una única batalla simultánea al inicio del Día del Señor.", correcta: false },
+        { id: "8d", icono: "opcion", titulo: "En el cap. 12 es destruido junto con Babilonia la Grande; en el cap. 20 solo son juzgados los reyes terrestres", subtitulo: "Ejecución definitiva de la serpiente original antes del Reinado de Mil Años.", correcta: false }
       ]
     }
   ]
@@ -349,7 +349,7 @@ export async function generarDesafioConGemini({
 
   const prompt = `
 Eres "${dmPerfil.nombre}" (${dmPerfil.subtitulo}), director de estudio bíblico del juego educativo "Secreto Sagrado".
-ÚNICA FUENTE ADMISIBLE DE VERDAD TEOLÓGRICA E HISTÓRICA: La Biblioteca en Línea Watchtower (wol.jw.org), "Perspicacia para comprender las Escrituras" y la "Traducción del Nuevo Mundo de las Santas Escrituras".
+ÚNICA FUENTE ADMISIBLE DE VERDAD TEOLÓGICA E HISTÓRICA: La Biblioteca en Línea Watchtower (wol.jw.org), "Perspicacia para comprender las Escrituras" y la "Traducción del Nuevo Mundo de las Santas Escrituras".
 
 CONTEXTO OFICIAL DE LA ERA ${numeroEra} (${base.titulo} — ${base.rangoBiblico}):
 ${base.hechosVerificados.map((h, i) => `${i + 1}.${h}`).join("\n")}
@@ -358,20 +358,21 @@ PUNTO ESPECÍFICO A EVALUAR EN ESTE TURNO (elige un ángulo o detalle distinto a
 >>> "${hechoFocalObligatorio}" <<<
 Preguntas ya realizadas en esta sesión (PROHIBIDO repetirlas): ${historialPreguntasSesion.slice(-12).join(" | ") || "Ninguna"}.
 
-REGLAS ESTRICTAS DE RIGOR ACADÉMICO Y DISEÑO DE DISTRACTORES (CRÍTICO):
-1. CERO OPCIONES ABSURDAS O INFANTILES: Está terminantemente PROHIBIDO inventar opciones falsas fantasiosas, ridículas o fuera de época (jamás inventes cosas como "gobernar sobre los querubines" ni ideas ajenas al pasaje).
-2. DISTRACTORES ALTAMENTE PLAUSIBLES Y SERIOS:
-   - Las opciones incorrectas ("correcta": false) DEBEN estar redactadas con el mismo nivel de seriedad, vocabulario bíblico y longitud que la opción verdadera.
-   - Cada distractor debe representar una confusión sutil y realista que obligue a leer con cuidado la cita bíblica en la Biblia física: por ejemplo, confundir cuál pacto estableció cierta cláusula, atribuir el detalle a otro personaje del mismo contexto bíblico, invertir el orden o condición expresada en el versículo, o confundir la sombra típica con la realidad antitípica.
+REGLAS ESTRICTAS DE RIGOR ACADÉMICO Y SUBTÍTULOS NEUTROS (CRÍTICO):
+1. PROHIBIDO DELATAR LA RESPUESTA EN EL SUBTÍTULO:
+   - NUNCA pongas en "subtitulo" frases que revelen si la opción es verdadera o falsa (ESTÁ TERMINANTEMENTE PROHIBIDO escribir cosas como "Término exacto empleado en el versículo", "Así lo confirma la cita", "Respuesta correcta", "Idea falsa", etc.).
+   - Todos los "subtitulo" (tanto el de la opción correcta como los de las 3 incorrectas) deben ser descripciones conceptuales neutras, redactadas exactamente con el mismo tono afirmativo y académico.
+2. CERO OPCIONES ABSURDAS O INFANTILES:
+   - Las 3 opciones incorrectas ("correcta": false) DEBEN sonar igual de bíblicas, serias y plausibles que la verdadera, usando conceptos reales del mismo contexto pero con un matiz que solo se descarta leyendo con atención la cita en la Biblia física.
 3. BREVEDAD Y PRECISIÓN:
-   - "pregunta": 1 sola oración clara, aguda y directa (entre 10 y 18 palabras) que cite el pasaje exacto.
-   - "narrativaDM": 1 oración breve (máximo 14 palabras) indicando qué cita abrir.
-   - En cada opción: "titulo" de 6 a 14 palabras precisas; "subtitulo" de 8 a 14 palabras con matiz bíblico serio.
+   - "pregunta": 1 sola oración clara y directa (entre 10 y 18 palabras) que cite el pasaje exacto.
+   - "narrativaDM": 1 oración breve (máximo 12 palabras) indicando qué cita abrir.
+   - En cada opción: "titulo" de 1 a 12 palabras precisas; "subtitulo" de 6 a 12 palabras neutras (sin pistas).
 4. MECÁNICA DE ESTE TURNO: "${mecanicaElegida}".
    - Si es "SELECCION_MULTIPLE": devuelve 4 opciones de alto nivel analítico (1 con "correcta": true y 3 con "correcta": false).
-   - Si es "COMPLETAR_VERSICULO": en "pregunta" cita textualmente una frase clave del versículo con "[ _____ ]" según la Traducción del Nuevo Mundo, y en "opciones" da 4 términos bíblicos serios del mismo contexto (1 con "correcta": true y 3 con "correcta": false).
-   - Si es "VERDADERO_FALSO": en "pregunta" plantea una afirmación teológica o histórica sutil sobre el pasaje (a veces verdadera, a veces con un matiz inexacto para hacer pensar), y en "opciones" devuelve exactamente 2 objetos: uno con titulo "Verdadero" y otro con titulo "Falso" (con su explicación exacta en "subtitulo").
-   - Si es "ORDENAR_SECUENCIA": en "pregunta" pide ordenar 4 sucesos, eslabones genealógicos o pasos del pasaje, y en "opciones" devuelve los 4 elementos con "ordenCorrecto": 1, 2, 3 y 4.
+   - Si es "COMPLETAR_VERSICULO": en "pregunta" cita textualmente una frase clave del versículo con "[ _____ ]" según la Traducción del Nuevo Mundo, y en "opciones" da 4 términos bíblicos serios del mismo contexto, donde cada "subtitulo" sea únicamente la definición neutra de esa palabra (jamás digas cuál aparece en el versículo).
+   - Si es "VERDADERO_FALSO": en "pregunta" plantea una afirmación teológica o histórica sutil sobre el pasaje, y en "opciones" devuelve exactamente 2 objetos: uno con titulo "Verdadero" y otro con titulo "Falso" (con un resumen neutro de la postura en "subtitulo").
+   - Si es "ORDENAR_SECUENCIA": en "pregunta" pide ordenar 4 sucesos o eslabones del pasaje, y en "opciones" devuelve los 4 elementos con "ordenCorrecto": 1, 2, 3 y 4 (sin poner el número ni el versículo en el subtítulo).
 
 Devuelve ÚNICAMENTE este JSON válido:
 {
@@ -384,10 +385,10 @@ Devuelve ÚNICAMENTE este JSON válido:
   "pasosObjetivo": ${mecanicaElegida === "CAMINATA_PEREGRINAJE" ? 12 : 0},
   "hiloDorado": "Explicación concisa de 2 oraciones (según wol.jw.org) de cómo este pasaje esclarece el Secreto Sagrado.",
   "opciones": [
-    { "id": "op1", "icono": "opcion", "titulo": "Afirmación bíblica exacta", "subtitulo": "Sustento preciso según el pasaje.", "ordenCorrecto": 1, "correcta": true },
-    { "id": "op2", "icono": "opcion", "titulo": "Distractor serio y plausible 1", "subtitulo": "Matiz bíblico cercano pero inexacto según el versículo.", "ordenCorrecto": 2, "correcta": false },
-    { "id": "op3", "icono": "opcion", "titulo": "Distractor serio y plausible 2", "subtitulo": "Confusión sutil con otro pacto o versículo del contexto.", "ordenCorrecto": 3, "correcta": false },
-    { "id": "op4", "icono": "opcion", "titulo": "Distractor serio y plausible 3", "subtitulo": "Alteración sutil de causa, fecha o personaje en el texto.", "ordenCorrecto": 4, "correcta": false }
+    { "id": "op1", "icono": "opcion", "titulo": "Opción A", "subtitulo": "Definición o matiz conceptual neutro sin pistas.", "ordenCorrecto": 1, "correcta": true },
+    { "id": "op2", "icono": "opcion", "titulo": "Opción B", "subtitulo": "Definición o matiz conceptual neutro sin pistas.", "ordenCorrecto": 2, "correcta": false },
+    { "id": "op3", "icono": "opcion", "titulo": "Opción C", "subtitulo": "Definición o matiz conceptual neutro sin pistas.", "ordenCorrecto": 3, "correcta": false },
+    { "id": "op4", "icono": "opcion", "titulo": "Opción D", "subtitulo": "Definición o matiz conceptual neutro sin pistas.", "ordenCorrecto": 4, "correcta": false }
   ]
 }`;
 

@@ -512,7 +512,7 @@ function OrbeLiquidoReactivo({
       const capas = [
         { color: colorPrimario, velocidad: 1.0, desfase: 0, escala: 1.0 + energia * 0.22 },
         { color: colorSecundario, velocidad: -1.3, desfase: 2.1, escala: 0.92 + energia * 0.28 },
-        { color: '#ffffff', velocidad: 1.7, desfase: 4.2, escala: 0.65 + energia * 0.35 }
+        { color: colorPrimario, velocidad: 1.6, desfase: 4.2, escala: 0.72 + energia * 0.3 }
       ];
 
       capas.forEach((capa, idx) => {
@@ -530,13 +530,14 @@ function OrbeLiquidoReactivo({
         }
         ctx.closePath();
 
-        const grad = ctx.createRadialGradient(cx, cy, 4, cx, cy, radioBase * 1.35);
-        grad.addColorStop(0, '#ffffff');
-        grad.addColorStop(0.45, capa.color);
+        // Núcleo oscuro suave y bordes luminosos para que el texto blanco central tenga máximo contraste
+        const grad = ctx.createRadialGradient(cx, cy, radioBase * 0.12, cx, cy, radioBase * 1.35);
+        grad.addColorStop(0, 'rgba(15, 23, 42, 0.85)');
+        grad.addColorStop(0.5, capa.color);
         grad.addColorStop(1, 'transparent');
 
         ctx.fillStyle = grad;
-        ctx.globalAlpha = idx === 2 ? 0.45 + energia * 0.35 : 0.72;
+        ctx.globalAlpha = idx === 2 ? 0.55 + energia * 0.25 : 0.78;
         ctx.fill();
       });
 
@@ -554,9 +555,9 @@ function OrbeLiquidoReactivo({
       style={{
         width: tamano,
         height: tamano,
-        boxShadow: `0 0 ${35 + amplitudVoz * 65}px ${colorPrimario}77, inset 0 0 28px rgba(255,255,255,0.45)`
+        boxShadow: `0 0 ${35 + amplitudVoz * 65}px ${colorPrimario}88, inset 0 0 28px rgba(15,23,42,0.75)`
       }}
-      className={`relative rounded-full bg-white/10 backdrop-blur-2xl border border-white/50 flex flex-col items-center justify-center overflow-hidden select-none transition-all duration-700 ${
+      className={`relative rounded-full bg-slate-950/55 backdrop-blur-2xl border border-white/60 flex flex-col items-center justify-center overflow-hidden select-none transition-all duration-700 ${
         onClick ? 'cursor-pointer hover:scale-105' : ''
       }`}
     >
@@ -566,26 +567,38 @@ function OrbeLiquidoReactivo({
         className="absolute inset-0 pointer-events-none"
       />
 
-      <div className="absolute top-2 left-1/4 right-1/4 h-1/4 rounded-full bg-gradient-to-b from-white/50 to-transparent pointer-events-none blur-[1px]" />
+      {/* Viñeta central oscura translúcida para garantizar lectura impecable del texto blanco */}
+      <div
+        style={{
+          background: 'radial-gradient(circle, rgba(2,6,23,0.78) 0%, rgba(2,6,23,0.45) 52%, transparent 78%)'
+        }}
+        className="absolute inset-0 pointer-events-none"
+      />
 
-      <div className="relative z-10 flex flex-col items-center justify-center text-center px-4 pointer-events-none">
+      <div className="absolute top-2 left-1/4 right-1/4 h-1/5 rounded-full bg-gradient-to-b from-white/35 to-transparent pointer-events-none blur-[1px]" />
+
+      <div className="relative z-10 flex flex-col items-center justify-center text-center px-3 pointer-events-none">
         {iconoTipo && (
-          <div className="text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.85)]">
+          <div className="text-amber-200 drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">
             <IconoSagradoSVG
               tipo={iconoTipo}
-              className={enEsquina ? 'w-5 h-5' : 'w-8 h-8 md:w-9 md:h-9'}
+              className={enEsquina ? 'w-5 h-5' : 'w-7 h-7 md:w-8 md:h-8'}
             />
           </div>
         )}
         {etiquetaSuperior && !enEsquina && (
-          <span className="text-[10px] font-black tracking-[0.22em] uppercase text-white/90 drop-shadow mt-1.5">
+          <span
+            style={{ textShadow: '0 2px 6px rgba(0,0,0,1), 0 0 12px rgba(0,0,0,0.9)' }}
+            className="text-[10px] font-black tracking-[0.2em] uppercase text-amber-200 mt-1"
+          >
             {etiquetaSuperior}
           </span>
         )}
         {nombreCentral && (
           <span
-            className={`font-black tracking-wide text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.85)] ${
-              enEsquina ? 'text-[10px] mt-0.5' : 'text-lg md:text-xl mt-0.5'
+            style={{ textShadow: '0 2px 8px rgba(0,0,0,1), 0 0 14px rgba(0,0,0,0.95)' }}
+            className={`font-black tracking-wide text-white ${
+              enEsquina ? 'text-[10px] mt-0.5' : 'text-base md:text-xl mt-0.5'
             }`}
           >
             {nombreCentral}
