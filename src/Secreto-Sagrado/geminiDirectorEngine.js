@@ -97,268 +97,324 @@ export const NODOS_MULTIMODALES_POR_ERA = {
     {
       tipoMecanica: "SELECCION_MULTIPLE",
       tituloNodo: "La Cuestión en Edén",
-      citaBiblia: "Génesis 3:1-5",
-      narrativaDM: "Lean Génesis 3:1-5. En Edén, la serpiente cuestionó el mandato de Jehová.",
-      instruccionInput: "Lean la cita en su Biblia y seleccionen la respuesta exacta.",
-      pregunta: "Según Génesis 3:4, 5, ¿qué prometió la serpiente que pasaría al comer del fruto?",
+      citaBiblia: "Génesis 3:4, 5",
+      narrativaDM: "Lean Génesis 3:4, 5.",
+      instruccionInput: "Elijan la opción exacta según el versículo.",
+      pregunta: "¿Qué prometió la serpiente que ocurriría al comer del fruto?",
       pasosObjetivo: 0,
-      hiloDorado: "La serpiente afirmó que no morirían y que serían como Dios, conociendo lo bueno y lo malo, desafiando la Soberanía de Jehová.",
+      hiloDorado: "La serpiente afirmó que serían como Dios, conociendo lo bueno y lo malo, desafiando la Soberanía de Jehová.",
       opciones: [
-        { id: "1s1", icono: "opcion", titulo: "Serían como Dios, conociendo lo bueno y lo malo", subtitulo: "Aseguró que no morirían y que se les abrirían los ojos para decidir por sí mismos.", correcta: true },
-        { id: "1s2", icono: "opcion", titulo: "Tendrían acceso inmediato al árbol de la vida", subtitulo: "Aseguró que ese fruto les daría inmortalidad sin depender de ningún otro árbol del jardín.", correcta: false },
-        { id: "1s3", icono: "opcion", titulo: "Gobernarían sobre los ángeles y querubines", subtitulo: "Aseguró que al comer del árbol recibirían autoridad sobre las criaturas espirituales.", correcta: false },
-        { id: "1s4", icono: "opcion", titulo: "Ocultarían sus actos ante la vista de Jehová", subtitulo: "Aseguró que Dios no podría ver lo que hicieran en medio del jardín.", correcta: false }
+        { id: "1s1", icono: "opcion", titulo: "Serían como Dios, conociendo lo bueno y lo malo", subtitulo: "Prometió independencia moral para decidir por sí mismos.", correcta: true },
+        { id: "1s2", icono: "opcion", titulo: "Vivirían para siempre sin el árbol de la vida", subtitulo: "Prometió inmortalidad física inmediata en el jardín.", correcta: false },
+        { id: "1s3", icono: "opcion", titulo: "Gobernarían sobre los querubines del Edén", subtitulo: "Prometió autoridad sobre las criaturas espirituales.", correcta: false },
+        { id: "1s4", icono: "opcion", titulo: "Ocultarían sus actos ante la voz de Jehová", subtitulo: "Prometió que Dios no vería lo que hicieran.", correcta: false }
       ]
     },
     {
-      tipoMecanica: "SELECCION_MULTIPLE",
+      tipoMecanica: "COMPLETAR_VERSICULO",
       tituloNodo: "La Primera Profecía",
       citaBiblia: "Génesis 3:15",
-      narrativaDM: "Consulten Génesis 3:15. Antes de expulsar a la pareja, Jehová dictó la primera profecía.",
-      instruccionInput: "Verifiquen Génesis 3:15 en su Biblia y elijan la opción exacta.",
-      pregunta: "Según Génesis 3:15, ¿qué hará la descendencia de la mujer y qué sufrirá a cambio?",
+      narrativaDM: "Busquen Génesis 3:15.",
+      instruccionInput: "Completen la palabra exacta de la profecía.",
+      pregunta: "«Él te aplastará la [ _____ ] y tú le herirás el talón».",
       pasosObjetivo: 0,
-      hiloDorado: "La Descendencia sufriría una herida temporal en el talón, pero aplastaría de forma definitiva la cabeza de la Serpiente original.",
+      hiloDorado: "El aplastamiento de la cabeza de la Serpiente garantiza la destrucción definitiva de Satanás por medio del Mesías.",
       opciones: [
-        { id: "1e1", icono: "opcion", titulo: "Aplastará la cabeza de la serpiente y sufrirá una herida en el talón", subtitulo: "Un golpe mortal para el adversario frente a una herida recuperable en la Descendencia.", correcta: true },
-        { id: "1e2", icono: "opcion", titulo: "Atará a la serpiente en el desierto y sufrirá una herida en el costado", subtitulo: "Recluirá a la serpiente fuera de Edén tras recibir una herida de espada.", correcta: false },
-        { id: "1e3", icono: "opcion", titulo: "Arrojará a la serpiente al abismo y perderá su primogenitura terrenal", subtitulo: "Quitará el dominio a la serpiente entregando su herencia humana en sacrificio.", correcta: false },
-        { id: "1e4", icono: "opcion", titulo: "Quemará el árbol prohibido y será perseguida por las naciones", subtitulo: "Eliminará el origen de la transgresión mientras soporta la oposición de los reyes.", correcta: false }
+        { id: "1c1", icono: "opcion", titulo: "Cabeza", subtitulo: "Golpe mortal y definitivo contra la Serpiente.", correcta: true },
+        { id: "1c2", icono: "opcion", titulo: "Corona", subtitulo: "Símbolo de autoridad real sobre las naciones.", correcta: false },
+        { id: "1c3", icono: "opcion", titulo: "Espada", subtitulo: "Arma colocada al oriente del jardín.", correcta: false },
+        { id: "1c4", icono: "opcion", titulo: "Diestra", subtitulo: "Posición de poder y favor divino.", correcta: false }
       ]
     },
     {
-      tipoMecanica: "SELECCION_MULTIPLE",
-      tituloNodo: "La Custodia del Camino al Árbol de la Vida",
-      citaBiblia: "Génesis 3:21-24",
-      narrativaDM: "Abran su Biblia en Génesis 3:21-24. Jehová tomó medidas firmes tras dictar sentencia en Edén.",
-      instruccionInput: "Lean Génesis 3:24 y seleccionen qué colocó Dios al este del jardín.",
-      pregunta: "Según Génesis 3:24, ¿qué apostó Jehová al este de Edén para guardar el camino al árbol de la vida?",
+      tipoMecanica: "VERDADERO_FALSO",
+      tituloNodo: "La Ofrenda de Abel",
+      citaBiblia: "Génesis 4:4",
+      narrativaDM: "Verifiquen Génesis 4:4 en su Biblia.",
+      instruccionInput: "Indiquen si la afirmación es Verdadera o Falsa.",
+      pregunta: "¿Abel ofreció algunos primogénitos de su rebaño y sus partes grasas?",
       pasosObjetivo: 0,
-      hiloDorado: "Jehová vistió a la pareja con prendas de piel e impidió el acceso al árbol de la vida mediante los querubines y la espada llameante.",
+      hiloDorado: "Abel ofreció por fe una vida inocente con sus partes grasas, prefigurando el rescate perfecto.",
       opciones: [
-        { id: "1p1", icono: "opcion", titulo: "Los querubines y la hoja llameante de una espada que giraba", subtitulo: "Fueron apostados al este del jardín para impedir que el hombre tomara del árbol de la vida.", correcta: true },
-        { id: "1p2", icono: "opcion", titulo: "Una columna de fuego y dos serafines de seis alas", subtitulo: "Fueron situados sobre los cuatro ríos para cerrar la entrada oriental de Edén.", correcta: false },
-        { id: "1p3", icono: "opcion", titulo: "Un muro de espinos y el ángel del pacto con una lanza", subtitulo: "Rodeó el centro del jardín para que ningún descendiente de Adán cruzara el río Éufrates.", correcta: false },
-        { id: "1p4", icono: "opcion", titulo: "Siete lámparas de fuego y un carro de guerra celestial", subtitulo: "Resguardaban la colina central del jardín día y noche frente a la familia humana.", correcta: false }
+        { id: "1vf1", icono: "opcion", titulo: "Verdadero", subtitulo: "Así lo confirma exactamente Génesis 4:4.", correcta: true },
+        { id: "1vf2", icono: "opcion", titulo: "Falso", subtitulo: "El pasaje menciona otra ofrenda distinta.", correcta: false }
       ]
     },
     {
-      tipoMecanica: "SELECCION_MULTIPLE",
-      tituloNodo: "La Ofrenda de Fe de Abel",
-      citaBiblia: "Génesis 4:3-5; Hebreos 11:4",
-      narrativaDM: "Consulten Génesis 4:3-5. Fuera de Edén, Caín y Abel presentaron ofrendas ante Jehová.",
-      instruccionInput: "Lean Génesis 4:4 y elijan el detalle exacto sobre el sacrificio de Abel.",
-      pregunta: "Según Génesis 4:4, ¿qué presentó exactamente Abel que contó con la aprobación de Jehová?",
+      tipoMecanica: "ORDENAR_SECUENCIA",
+      tituloNodo: "El Linaje Antediluviano",
+      citaBiblia: "Génesis 5:3-32",
+      narrativaDM: "Consulten Génesis 5:3-32.",
+      instruccionInput: "Toquen a estos siervos en orden cronológico (1º a 4º).",
+      pregunta: "¿En qué orden nacieron estos antepasados del linaje mesiánico?",
       pasosObjetivo: 0,
-      hiloDorado: "Abel ofreció por fe primogénitos de su rebaño y sus partes grasas, reconociendo que acercarse a Dios requería entregar una vida inocente.",
+      hiloDorado: "Jehová preservó el registro genealógico intacto desde Set hasta Noé para traer a la Descendencia.",
       opciones: [
-        { id: "1a", icono: "opcion", titulo: "Algunos primogénitos de su rebaño, incluso sus partes grasas", subtitulo: "Entregó lo mejor de sus ovejas derramando vida en armonía con Génesis 3:15.", correcta: true },
-        { id: "1b", icono: "opcion", titulo: "Un carnero sin defecto acompañado de incienso y flor de harina", subtitulo: "Presentó una ofrenda quemada siguiendo el rito establecido para los primogénitos.", correcta: false },
-        { id: "1c", icono: "opcion", titulo: "Siete animales limpios de su ganado sobre un altar de piedra", subtitulo: "Reunió machos y hembras sin tacha para hacer expiación por la casa de Adán.", correcta: false },
-        { id: "1d", icono: "opcion", titulo: "La sangre de un cordero rociada a la entrada de la tienda", subtitulo: "Marcó el lugar de adoración al oriente del jardín como señal de fe en el rescate.", correcta: false }
-      ]
-    },
-    {
-      tipoMecanica: "SELECCION_MULTIPLE",
-      tituloNodo: "El Propósito de la Torre de Babel",
-      citaBiblia: "Génesis 11:1-9",
-      narrativaDM: "Lean Génesis 11:1-9. Tras el Diluvio, los habitantes de Sinar iniciaron un proyecto en oposición a Dios.",
-      instruccionInput: "Verifiquen Génesis 11:4 y seleccionen el motivo que expresaron los constructores.",
-      pregunta: "Según Génesis 11:4, ¿para qué querían edificar una ciudad y una torre cuya cúspide llegara a los cielos?",
-      pasosObjetivo: 0,
-      hiloDorado: "Jehová desbarató aquel proyecto rebelde confundiendo su idioma, mientras preservaba fiel la línea genealógica de Sem hacia Abrahán.",
-      opciones: [
-        { id: "1b1", icono: "opcion", titulo: "Para hacerse un nombre célebre y no ser esparcidos por la tierra", subtitulo: "Desafiaron directamente el mandato divino dado a Noé de llenar toda la tierra.", correcta: true },
-        { id: "1b2", icono: "opcion", titulo: "Para contar con un refugio alto en caso de otro diluvio", subtitulo: "Desconfiaron del pacto del arco iris y buscaron superar la altura de las montañas de Ararat.", correcta: false },
-        { id: "1b3", icono: "opcion", titulo: "Para coronar a Nemrod sobre las familias de Sem, Cam y Jafet", subtitulo: "Quisieron establecer un trono único en Mesopotamia que sustituyera la bendición de Sem.", correcta: false },
-        { id: "1b4", icono: "opcion", titulo: "Para ofrecer sacrificios a los astros desde las llanuras de Sinar", subtitulo: "Levantaron un santuario escalonado dedicado a los dioses protectores de Caldea.", correcta: false }
+        { id: "1o1", icono: "opcion", titulo: "Set", subtitulo: "Hijo nombrado tras la muerte de Abel", ordenCorrecto: 1, correcta: true },
+        { id: "1o2", icono: "opcion", titulo: "Enoc", subtitulo: "Séptimo en la línea desde Adán", ordenCorrecto: 2, correcta: false },
+        { id: "1o3", icono: "opcion", titulo: "Matusalén", subtitulo: "Hijo de Enoc y abuelo de Noé", ordenCorrecto: 3, correcta: false },
+        { id: "1o4", icono: "opcion", titulo: "Noé", subtitulo: "Constructor del arca", ordenCorrecto: 4, correcta: false }
       ]
     },
     {
       tipoMecanica: "CAMINATA_PEREGRINAJE",
-      tituloNodo: "El Andar Fiel de Noé con Dios",
-      citaBiblia: "Génesis 6:9, 22",
-      narrativaDM: "Lean Génesis 6:9. En un mundo violento, Noé anduvo con el Dios verdadero e hizo todo tal como Jehová le mandó.",
-      instruccionInput: "Lean Génesis 6:9 y caminen 12 pasos por la sala con la Tablet.",
-      pregunta: "Caminen 12 pasos representando el andar constante de Noé con Jehová.",
+      tituloNodo: "El Andar de Noé",
+      citaBiblia: "Génesis 6:9",
+      narrativaDM: "Lean Génesis 6:9.",
+      instruccionInput: "Den 12 pasos por la sala con la Tablet.",
+      pregunta: "Caminen 12 pasos representando el andar fiel de Noé con Dios.",
       pasosObjetivo: 12,
-      hiloDorado: "Gracias a la obediencia fiel de Noé, el linaje humano que conducía a Sem y al Mesías fue preservado a través del Diluvio.",
+      hiloDorado: "Por andar con el Dios verdadero, Noé y su familia preservaron vivo el linaje humano hacia Sem.",
       opciones: []
     },
     {
       tipoMecanica: "VOZ_MANTENER",
-      tituloNodo: "La Santidad de la Sangre y la Línea de Sem",
+      tituloNodo: "La Sangre y Sem",
       citaBiblia: "Génesis 9:4, 26",
-      narrativaDM: "Consulten Génesis 9:4, 26. Al salir del arca, Jehová dio un mandato sobre la sangre y Noé pronunció una bendición profética.",
-      instruccionInput: "Lean Génesis 9:4, 26, mantengan presionado el micrófono y respondan con su voz.",
-      pregunta: "Según Génesis 9:4 y 26, ¿qué prohibió Jehová respecto a la sangre y a cuál hijo de Noé se asoció con el nombre de Jehová?",
+      narrativaDM: "Lean Génesis 9:4, 26.",
+      instruccionInput: "Mantengan presionado el micrófono y respondan con voz.",
+      pregunta: "¿Qué representa la sangre según Génesis 9:4 y a qué hijo bendijo Noé?",
       pasosObjetivo: 0,
-      hiloDorado: "Jehová declaró sagrada la sangre porque representa la vida, y señaló a Sem como el antepasado por el que vendría la Descendencia.",
+      hiloDorado: "La sangre representa el alma o la vida, y mediante Sem continuó la línea hacia Abrahán.",
       opciones: []
     }
   ],
   2: [
     {
       tipoMecanica: "SELECCION_MULTIPLE",
-      tituloNodo: "El Juramento en el Monte Moria",
-      citaBiblia: "Génesis 22:16-18",
-      narrativaDM: "Lean Génesis 22:16-18. Tras la prueba de fe con Isaac en Moria, Jehová amplió Su promesa a Abrahán.",
-      instruccionInput: "Consulten Génesis 22:17, 18 y seleccionen qué prometió Jehová sobre la Descendencia.",
-      pregunta: "Según Génesis 22:17, 18, ¿qué dos cosas lograría la Descendencia de Abrahán?",
+      tituloNodo: "El Juramento en Moria",
+      citaBiblia: "Génesis 22:17, 18",
+      narrativaDM: "Lean Génesis 22:17, 18.",
+      instruccionInput: "Elijan qué prometió Jehová bajo juramento.",
+      pregunta: "¿Qué lograría la Descendencia de Abrahán según Génesis 22:17, 18?",
       pasosObjetivo: 0,
-      hiloDorado: "Jehová juró por Sí mismo que la Descendencia tomaría posesión de la puerta de sus enemigos y bendeciría a todas las naciones de la tierra.",
+      hiloDorado: "La Descendencia tomaría la puerta de sus enemigos y bendeciría a todas las naciones de la tierra.",
       opciones: [
-        { id: "2a", icono: "opcion", titulo: "Tomar la puerta de sus enemigos y bendecir a todas las naciones", subtitulo: "Unió la victoria total sobre los adversarios con la bendición universal para la humanidad.", correcta: true },
-        { id: "2b", icono: "opcion", titulo: "Heredar el trono de Salem y recibir el diezmo de los reyes", subtitulo: "Confirmó que sus hijos ejercerían el sacerdocio real en el monte de Melquisedec.", correcta: false },
-        { id: "2c", icono: "opcion", titulo: "Librar a sus hijos de la esclavitud antes de cuatrocientos años", subtitulo: "Prometió que ninguna nación extranjera podría oprimir jamás a los hijos de Isaac.", correcta: false },
-        { id: "2d", icono: "opcion", titulo: "Guardar el pacto de la Ley en las tablas del testimonio", subtitulo: "Estableció que la prole de Abrahán sería mediadora de un código legal en el desierto.", correcta: false }
+        { id: "2a", icono: "opcion", titulo: "Tomar la puerta de sus enemigos y bendecir a las naciones", subtitulo: "Victoria sobre el adversario y bendición mundial.", correcta: true },
+        { id: "2b", icono: "opcion", titulo: "Heredar el trono de Salem en días de Isaac", subtitulo: "Recibir el sacerdocio de manos de Melquisedec.", correcta: false },
+        { id: "2c", icono: "opcion", titulo: "Evitar toda opresión extranjera por 400 años", subtitulo: "Permanecer en Canaán sin bajar a Egipto.", correcta: false },
+        { id: "2d", icono: "opcion", titulo: "Recibir las tablas de piedra en el monte Moria", subtitulo: "Inaugurar el pacto de la Ley mediante Abrahán.", correcta: false }
+      ]
+    },
+    {
+      tipoMecanica: "COMPLETAR_VERSICULO",
+      tituloNodo: "La Promesa de Siló",
+      citaBiblia: "Génesis 49:10",
+      narrativaDM: "Consulten Génesis 49:10.",
+      instruccionInput: "Seleccionen el nombre profético que completa el texto.",
+      pregunta: "«El cetro no se apartará de Judá [...] hasta que venga [ _____ ]».",
+      pasosObjetivo: 0,
+      hiloDorado: "Siló significa «Aquel a Quien Pertenece» y señala a Jesucristo como heredero del cetro de Judá.",
+      opciones: [
+        { id: "2c1", icono: "opcion", titulo: "Siló", subtitulo: "Significa «Aquel a Quien Pertenece».", correcta: true },
+        { id: "2c2", icono: "opcion", titulo: "Melquisedec", subtitulo: "Rey y sacerdote de la antigua Salem.", correcta: false },
+        { id: "2c3", icono: "opcion", titulo: "Efraín", subtitulo: "Hijo menor de José bendecido por Jacob.", correcta: false },
+        { id: "2c4", icono: "opcion", titulo: "Brote", subtitulo: "Título profético usado por Zacarías.", correcta: false }
       ]
     },
     {
       tipoMecanica: "CAMARA_ESCRITURA",
-      tituloNodo: "El Cetro de Judá y «Siló»",
+      tituloNodo: "Verificación de Génesis 49:10",
       citaBiblia: "Génesis 49:10",
-      narrativaDM: "Abran su Biblia en Génesis 49:10. Antes de morir, Jacob identificó la tribu real del Mesías.",
-      instruccionInput: "Enfoquen con la cámara su Biblia abierta en Génesis 49:10.",
-      pregunta: "Verifiquen con la cámara el pasaje de Génesis 49:10 sobre el cetro de Judá y la venida de Siló.",
+      narrativaDM: "Abran su Biblia en Génesis 49:10.",
+      instruccionInput: "Apunten con la cámara a Génesis 49:10.",
+      pregunta: "Escaneen en su Biblia física el pasaje de Génesis 49:10.",
       pasosObjetivo: 0,
-      hiloDorado: "El cetro real no se apartaría de Judá hasta que viniera Siló («Aquel a Quien Pertenece»), a quien pertenecerá la obediencia de los pueblos.",
+      hiloDorado: "La tribu de Judá recibió la promesa real que culminaría en el trono eterno del Mesías.",
       opciones: []
     }
   ],
   3: [
     {
-      tipoMecanica: "SELECCION_MULTIPLE",
-      tituloNodo: "El Cordero Pascual y la Expiación",
-      citaBiblia: "Éxodo 12:46; Levítico 17:11",
-      narrativaDM: "Consulten Éxodo 12:46 y Levítico 17:11. La Pascua y los sacrificios de la Ley señalaban hacia el Mesías.",
-      instruccionInput: "Lean Éxodo 12:46 y seleccionen el requisito exacto sobre el cordero pascual.",
-      pregunta: "Según Éxodo 12:46, ¿qué instrucción estricta se dio sobre el cordero pascual que luego se cumplió en Jesús?",
+      tipoMecanica: "VERDADERO_FALSO",
+      tituloNodo: "El Cordero Pascual",
+      citaBiblia: "Éxodo 12:46",
+      narrativaDM: "Lean Éxodo 12:46.",
+      instruccionInput: "Respondan Verdadero o Falso según el versículo.",
+      pregunta: "¿Mandó Jehová que no quebraran ningún hueso del cordero pascual?",
       pasosObjetivo: 0,
-      hiloDorado: "Ningún hueso del cordero pascual debía ser quebrado (Juan 19:36), y Levítico 17:11 confirmó que la sangre es la que hace expiación por el alma.",
+      hiloDorado: "Esta ley se cumplió literalmente en Jesús cuando los soldados no le quebraron las piernas (Juan 19:36).",
       opciones: [
-        { id: "3a", icono: "opcion", titulo: "No debían sacar nada de la carne fuera de la casa ni quebrar ningún hueso", subtitulo: "Prefiguró la integridad del sacrificio de Cristo y la unidad de quienes se refugian bajo su sangre.", correcta: true },
-        { id: "3b", icono: "opcion", titulo: "Debían rociar su sangre siete veces frente al velo del santuario", subtitulo: "El cabeza de familia debía presentar la sangre ante los ancianos de la tribu de Leví.", correcta: false },
-        { id: "3c", icono: "opcion", titulo: "Debían ofrecerlo junto con dos tórtolas al pie del monte Sinaí", subtitulo: "La ley exigía acompañar el cordero con una ofrenda de purificación al tercer día.", correcta: false },
-        { id: "3d", icono: "opcion", titulo: "Debían reservar las partes grasas para el sumo sacerdote de Aarón", subtitulo: "Solo la casa sacerdotal podía consumir el pecho mecido en la noche del 14 de nisán.", correcta: false }
+        { id: "3vf1", icono: "opcion", titulo: "Verdadero", subtitulo: "Éxodo 12:46 prohíbe quebrar hueso alguno.", correcta: true },
+        { id: "3vf2", icono: "opcion", titulo: "Falso", subtitulo: "La ley permitía partir los huesos del cordero.", correcta: false }
+      ]
+    },
+    {
+      tipoMecanica: "SELECCION_MULTIPLE",
+      tituloNodo: "Un Profeta como Moisés",
+      citaBiblia: "Deuteronomio 18:15, 18",
+      narrativaDM: "Consulten Deuteronomio 18:15, 18.",
+      instruccionInput: "Elijan la promesa exacta dada por medio de Moisés.",
+      pregunta: "¿A quién prometió levantar Jehová de en medio de los hermanos de Israel?",
+      pasosObjetivo: 0,
+      hiloDorado: "Pedro y Esteban confirmaron en Hechos 3:22 y 7:37 que ese Profeta mayor que Moisés es Jesucristo.",
+      opciones: [
+        { id: "3a", icono: "opcion", titulo: "Un profeta como Moisés que hablaría todo lo que Dios le mandara", subtitulo: "El pueblo tenía la obligación de escuchar sus palabras.", correcta: true },
+        { id: "3b", icono: "opcion", titulo: "Un sumo sacerdote de la tribu de Rubén para el santuario", subtitulo: "Encargado de llevar el pectoral de juicio en Canaán.", correcta: false },
+        { id: "3c", icono: "opcion", titulo: "Un juez vitalicio de la casa de Josué en Siquem", subtitulo: "Designado para repartir las tierras al cruzar el Jordán.", correcta: false },
+        { id: "3d", icono: "opcion", titulo: "Un rey de la familia de Aarón sobre el monte Sinaí", subtitulo: "Autorizado para modificar las diez palabras del pacto.", correcta: false }
       ]
     }
   ],
   4: [
     {
-      tipoMecanica: "VOZ_MANTENER",
-      tituloNodo: "El Pacto Davídico y el Sacerdocio Real",
-      citaBiblia: "2 Samuel 7:16; Salmo 110:4",
-      narrativaDM: "Lean 2 Samuel 7:16 y Salmo 110:4. Jehová prometió a David un reino eterno y reveló un juramento sobre el Mesías.",
-      instruccionInput: "Lean ambos versículos, mantengan presionado el micrófono y respondan con su voz.",
-      pregunta: "Según 2 Samuel 7:16 y Salmo 110:4, ¿qué dos cargos eternos unió Jehová en el futuro Mesías?",
+      tipoMecanica: "ORDENAR_SECUENCIA",
+      tituloNodo: "El Linaje hasta David",
+      citaBiblia: "Rut 4:18-22",
+      narrativaDM: "Lean Rut 4:18-22.",
+      instruccionInput: "Toquen los nombres en orden genealógico (1º a 4º).",
+      pregunta: "¿Cuál es el orden familiar correcto en Belén hasta el rey David?",
       pasosObjetivo: 0,
-      hiloDorado: "El Mesías heredaría por derecho legal el trono eterno de David y sería a la vez sacerdote para siempre a la manera de Melquisedec.",
+      hiloDorado: "El matrimonio de Boaz y Rut en Belén conectó la tribu de Judá con el nacimiento del rey David.",
+      opciones: [
+        { id: "4o1", icono: "opcion", titulo: "Boaz", subtitulo: "Esposo de Rut la moabita", ordenCorrecto: 1, correcta: true },
+        { id: "4o2", icono: "opcion", titulo: "Obed", subtitulo: "Hijo de Boaz y Rut", ordenCorrecto: 2, correcta: false },
+        { id: "4o3", icono: "opcion", titulo: "Jesé", subtitulo: "Padre de ocho hijos en Belén", ordenCorrecto: 3, correcta: false },
+        { id: "4o4", icono: "opcion", titulo: "David", subtitulo: "Ungido por Samuel como rey", ordenCorrecto: 4, correcta: false }
+      ]
+    },
+    {
+      tipoMecanica: "VOZ_MANTENER",
+      tituloNodo: "Rey y Sacerdote",
+      citaBiblia: "Salmo 110:1, 4",
+      narrativaDM: "Lean Salmo 110:1, 4.",
+      instruccionInput: "Mantengan presionado el micrófono y respondan con voz.",
+      pregunta: "¿Qué juró Jehová en el Salmo 110:4 acerca del Mesías?",
+      pasosObjetivo: 0,
+      hiloDorado: "Jehová juró que el Rey Mesiánico sería también sacerdote para siempre a la manera de Melquisedec.",
       opciones: []
     }
   ],
   5: [
     {
-      tipoMecanica: "SELECCION_MULTIPLE",
-      tituloNodo: "Las 70 Semanas de Años de Daniel",
-      citaBiblia: "Daniel 9:24-27",
-      narrativaDM: "Abran su Biblia en Daniel 9:24-27. El ángel Gabriel reveló el calendario exacto para la llegada y muerte del Mesías.",
-      instruccionInput: "Lean Daniel 9:25, 26 y elijan lo que ocurriría tras las 69 semanas.",
-      pregunta: "Según Daniel 9:25, 26, ¿cuándo aparecería Mesías el Caudillo y qué le sucedería después de las 62 semanas?",
+      tipoMecanica: "COMPLETAR_VERSICULO",
+      tituloNodo: "El Lugar de Nacimiento del Mesías",
+      citaBiblia: "Miqueas 5:2",
+      narrativaDM: "Busquen Miqueas 5:2.",
+      instruccionInput: "Elijan la ciudad exacta mencionada por el profeta.",
+      pregunta: "«Y tú, oh [ _____ ] Éfrata, [...] de ti me saldrá el que ha de llegar a ser gobernante en Israel».",
       pasosObjetivo: 0,
-      hiloDorado: "Tras 69 semanas de años (483 años desde 455 a. E.C. hasta 29 E.C.) apareció el Mesías, y a la mitad de la semana 70 fue cortado en la muerte.",
+      hiloDorado: "Siglos antes, Miqueas precisó que el Mesías nacería en Belén Éfrata, la ciudad del rey David.",
       opciones: [
-        { id: "5a", icono: "opcion", titulo: "Aparecería tras 7 y 62 semanas, y después sería cortado sin nada para sí", subtitulo: "Cumplidas las 69 semanas de años en 29 E.C., entregaría su vida a la mitad de la semana 70.", correcta: true },
-        { id: "5b", icono: "opcion", titulo: "Aparecería al concluir las 70 semanas y restauraría el trono en Jerusalén", subtitulo: "Al finalizar los 490 años expulsaría a los ejércitos invasores y coronaría al linaje de Judá.", correcta: false },
-        { id: "5c", icono: "opcion", titulo: "Aparecería tras 7 semanas de años y edificaría el tercer templo con Zorobabel", subtitulo: "Guiaría personalmente el regreso de los desterrados desde Babilonia tras los primeros 49 años.", correcta: false },
-        { id: "5d", icono: "opcion", titulo: "Aparecería a la mitad de las 62 semanas para confirmar el pacto de la Ley", subtitulo: "Renovaría los sacrificios del templo durante tres tiempos y la mitad de un tiempo.", correcta: false }
+        { id: "5c1", icono: "opcion", titulo: "Belén", subtitulo: "Aldea de Judá donde nació David.", correcta: true },
+        { id: "5c2", icono: "opcion", titulo: "Hebrón", subtitulo: "Primera capital del reinado de David.", correcta: false },
+        { id: "5c3", icono: "opcion", titulo: "Nazaret", subtitulo: "Ciudad de Galilea donde creció Jesús.", correcta: false },
+        { id: "5c4", icono: "opcion", titulo: "Silo", subtitulo: "Lugar donde estuvo el tabernáculo.", correcta: false }
+      ]
+    },
+    {
+      tipoMecanica: "SELECCION_MULTIPLE",
+      tituloNodo: "Las 70 Semanas de Daniel",
+      citaBiblia: "Daniel 9:25, 26",
+      narrativaDM: "Lean Daniel 9:25, 26.",
+      instruccionInput: "Elijan lo que ocurriría tras las 69 semanas de años.",
+      pregunta: "¿Qué suceso marcó el fin de las 69 semanas y qué pasaría después?",
+      pasosObjetivo: 0,
+      hiloDorado: "Tras 483 años desde 455 a. E.C. apareció el Mesías en 29 E.C., y en 33 E.C. fue cortado en la muerte.",
+      opciones: [
+        { id: "5a", icono: "opcion", titulo: "Aparecería Mesías el Caudillo y luego sería cortado", subtitulo: "Llegaría en 29 E.C. y entregaría su vida en 33 E.C.", correcta: true },
+        { id: "5b", icono: "opcion", titulo: "Sería reedificado el templo de Salomón por Ciro", subtitulo: "Se restauraría el arca del pacto en el Santísimo.", correcta: false },
+        { id: "5c", icono: "opcion", titulo: "Terminaría el exilio de setenta años en Babilonia", subtitulo: "Zorobabel sería coronado rey sobre Judá.", correcta: false },
+        { id: "5d", icono: "opcion", titulo: "Cesaban para siempre las fiestas en toda Galilea", subtitulo: "Se cerraban las sinagogas durante siete semanas.", correcta: false }
       ]
     }
   ],
   6: [
     {
+      tipoMecanica: "VERDADERO_FALSO",
+      tituloNodo: "El Rescate Correspondiente",
+      citaBiblia: "Mateo 20:28",
+      narrativaDM: "Lean Mateo 20:28.",
+      instruccionInput: "Indiquen si es Verdadero o Falso.",
+      pregunta: "¿Dijo Jesús que el Hijo del Hombre vino para dar su vida como rescate a cambio de muchos?",
+      pasosObjetivo: 0,
+      hiloDorado: "Su vida humana perfecta pagó el precio exacto para liberar a la descendencia de Adán.",
+      opciones: [
+        { id: "6vf1", icono: "opcion", titulo: "Verdadero", subtitulo: "Así lo declaró Jesús en Mateo 20:28.", correcta: true },
+        { id: "6vf2", icono: "opcion", titulo: "Falso", subtitulo: "El texto dice que vino a reinar en Jerusalén.", correcta: false }
+      ]
+    },
+    {
       tipoMecanica: "CAMARA_ESCRITURA",
       tituloNodo: "El Pacto para un Reino",
       citaBiblia: "Lucas 22:28-30",
-      narrativaDM: "Lean Lucas 22:28-30. La noche del 14 de nisán de 33 E.C., Jesús celebró un pacto con sus apóstoles fieles.",
-      instruccionInput: "Enfoquen con la cámara su Biblia abierta en Lucas 22:28-30.",
-      pregunta: "Verifiquen con la cámara el pasaje de Lucas 22:28-30 donde Jesús hace el pacto para un reino.",
+      narrativaDM: "Abran Lucas 22:28-30.",
+      instruccionInput: "Enfoquen con la cámara Lucas 22:28-30.",
+      pregunta: "Escaneen en su Biblia el pasaje de Lucas 22:28-30.",
       pasosObjetivo: 0,
-      hiloDorado: "Jesús pagó el rescate correspondiente y abrió el camino para que sus coherederos fieles gobiernen con él en su Reino celestial.",
+      hiloDorado: "Jesús pactó con sus discípulos fieles que compartirían tronos en su Reino celestial.",
       opciones: []
     }
   ],
   7: [
     {
-      tipoMecanica: "VOZ_MANTENER",
-      tituloNodo: "La Descendencia de Abrahán y la Administración",
-      citaBiblia: "Gálatas 3:16, 29; Efesios 1:9, 10",
-      narrativaDM: "Consulten Gálatas 3:16, 29 y Efesios 1:9, 10. Pablo explicó quiénes componen la Descendencia y cómo reunirá Dios todas las cosas.",
-      instruccionInput: "Lean los pasajes, mantengan presionado el micrófono y explíquenlo con su voz.",
-      pregunta: "Según Gálatas 3:16, 29 y Efesios 1:10, ¿quiénes forman la Descendencia de Abrahán y qué dos grupos reunirá Dios en el Cristo?",
+      tipoMecanica: "COMPLETAR_VERSICULO",
+      tituloNodo: "La Parte Principal de la Descendencia",
+      citaBiblia: "Gálatas 3:16, 29",
+      narrativaDM: "Lean Gálatas 3:16.",
+      instruccionInput: "Completen el nombre que identifica a la Descendencia.",
+      pregunta: "«Y a tu descendencia, que es [ _____ ]».",
       pasosObjetivo: 0,
-      hiloDorado: "Cristo es la parte principal y los 144.000 ungidos la parte secundaria de la Descendencia, mediante la cual Dios reúne las cosas en los cielos y en la tierra.",
+      hiloDorado: "Cristo es la parte principal de la Descendencia de Abrahán, y los ungidos son la parte secundaria.",
+      opciones: [
+        { id: "7c1", icono: "opcion", titulo: "Cristo", subtitulo: "Identificado directamente en Gálatas 3:16.", correcta: true },
+        { id: "7c2", icono: "opcion", titulo: "Moisés", subtitulo: "Mediador del antiguo pacto de la Ley.", correcta: false },
+        { id: "7c3", icono: "opcion", titulo: "Leví", subtitulo: "Tribu encargada del sacerdocio antiguo.", correcta: false },
+        { id: "7c4", icono: "opcion", titulo: "Salomón", subtitulo: "Constructor del primer templo en Jerusalén.", correcta: false }
+      ]
+    },
+    {
+      tipoMecanica: "VOZ_MANTENER",
+      tituloNodo: "La Administración de Dios",
+      citaBiblia: "Efesios 1:9, 10",
+      narrativaDM: "Lean Efesios 1:9, 10.",
+      instruccionInput: "Mantengan presionado el micrófono y respondan con voz.",
+      pregunta: "¿Qué dos grupos de cosas reunirá Dios de nuevo en el Cristo según Efesios 1:10?",
+      pasosObjetivo: 0,
+      hiloDorado: "Reunirá las cosas en los cielos (los coherederos ungidos) y las cosas en la tierra (la humanidad obediente).",
       opciones: []
     }
   ],
   8: [
     {
-      tipoMecanica: "SELECCION_MULTIPLE",
-      tituloNodo: "El Nacimiento del Reino y la Caída de la Serpiente",
-      citaBiblia: "Revelación 12:7-10",
-      narrativaDM: "Lean Revelación 12:7-10. Tras el nacimiento del Reino, estalla la guerra en el cielo entre Miguel y el dragón.",
-      instruccionInput: "Consulten Revelación 12:9, 10 en su Biblia y seleccionen la respuesta exacta.",
-      pregunta: "Según Revelación 12:9, 10, ¿qué se proclama en el cielo inmediatamente después de que la serpiente original es arrojada a la tierra?",
+      tipoMecanica: "ORDENAR_SECUENCIA",
+      tituloNodo: "El Clímax de Revelación",
+      citaBiblia: "Revelación 12:9; 19:11; 20:2; 21:4",
+      narrativaDM: "Repasen el orden profético de Revelación.",
+      instruccionInput: "Toquen estos sucesos en el orden en que se cumplen (1º a 4º).",
+      pregunta: "¿En qué secuencia ocurren estos hitos finales del propósito divino?",
       pasosObjetivo: 0,
-      hiloDorado: "Con el establecimiento del Reino de Dios y la autoridad de su Cristo, Satanás es expulsado del cielo, acercando el aplastamiento final de su cabeza en Revelación 20:10.",
+      hiloDorado: "Desde la expulsión de Satanás del cielo hasta el Paraíso sin muerte, cada promesa de Jehová se cumple en orden.",
       opciones: [
-        { id: "8a", icono: "opcion", titulo: "Han llegado la salvación, el poder, el Reino de Dios y la autoridad de su Cristo", subtitulo: "Se anuncia la victoria del Reino porque ha sido arrojado hacia abajo el acusador de los hermanos.", correcta: true },
-        { id: "8b", icono: "opcion", titulo: "El dragón ha sido atado por mil años en el abismo para no engañar a las naciones", subtitulo: "Un ángel desciende con la llave del abismo y encadena a Satanás inmediatamente después de la guerra.", correcta: false },
-        { id: "8c", icono: "opcion", titulo: "Ha caído Babilonia la Grande y han comenzado las bodas del Cordero", subtitulo: "Los veinticuatro ancianos proclaman la destrucción final de todos los reinos de la tierra.", correcta: false },
-        { id: "8d", icono: "opcion", titulo: "La tienda de Dios está con la humanidad y la muerte no será más", subtitulo: "Se inaugura de inmediato el Paraíso terrenal sin pasar por el corto espacio de tiempo de la gran tribulación.", correcta: false }
+        { id: "8o1", icono: "opcion", titulo: "Satanás es arrojado del cielo a la tierra", subtitulo: "Revelación 12:9", ordenCorrecto: 1, correcta: true },
+        { id: "8o2", icono: "opcion", titulo: "El Rey de reyes vence en la guerra de Armagedón", subtitulo: "Revelación 19:11-16", ordenCorrecto: 2, correcta: false },
+        { id: "8o3", icono: "opcion", titulo: "El dragón es atado en el abismo por mil años", subtitulo: "Revelación 20:1-3", ordenCorrecto: 3, correcta: false },
+        { id: "8o4", icono: "opcion", titulo: "La muerte deja de existir en el Paraíso", subtitulo: "Revelación 21:3, 4", ordenCorrecto: 4, correcta: false }
+      ]
+    },
+    {
+      tipoMecanica: "SELECCION_MULTIPLE",
+      tituloNodo: "La Victoria en el Cielo",
+      citaBiblia: "Revelación 12:9, 10",
+      narrativaDM: "Lean Revelación 12:9, 10.",
+      instruccionInput: "Elijan qué se proclama tras ser arrojado el dragón.",
+      pregunta: "¿Qué nace en el cielo cuando Miguel arroja a la serpiente original?",
+      pasosObjetivo: 0,
+      hiloDorado: "Queda establecido el Reino de nuestro Dios y la autoridad de su Cristo, encaminando el fin definitivo de Satanás.",
+      opciones: [
+        { id: "8a", icono: "opcion", titulo: "La salvación, el poder, el Reino de Dios y la autoridad de su Cristo", subtitulo: "Proclamación exacta de Revelación 12:10.", correcta: true },
+        { id: "8b", icono: "opcion", titulo: "El atamiento inmediato del dragón por mil años en el abismo", subtitulo: "Suceso que ocurre después de Armagedón.", correcta: false },
+        { id: "8c", icono: "opcion", titulo: "La apertura de los rollos al final del Reinado de Mil Años", subtitulo: "Juicio descrito en Revelación capítulo 20.", correcta: false },
+        { id: "8d", icono: "opcion", titulo: "La entrega del Reino al Padre tras eliminar el último enemigo", subtitulo: "Clímax final de 1 Corintios 15:24-28.", correcta: false }
       ]
     }
   ]
 };
 
 /* ==========================================================================
-   GENERADOR DE DESAFÍOS MULTIMODALES CON GEMINI 2.5 FLASH
+   GENERADOR DE DESAFÍOS MULTIMODALES VARIADOS Y ULTRACORTOS CON GEMINI
    ========================================================================== */
-export const ANGULOS_PECADO_ORIGINAL_POR_DM = {
-  pastor: {
-    narrativaDM: "Lean Génesis 3:1-5. En Edén, la serpiente distorsionó las palabras de Dios para sembrar desconfianza en el corazón de Eva.",
-    pregunta: "Según Génesis 3:4, 5, ¿qué argumento usó la serpiente para convencer a Eva de comer del fruto?",
-    hiloDorado: "Satanás atacó la bondad de Jehová afirmando que Dios les ocultaba el poder de decidir por sí mismos lo bueno y lo malo."
-  },
-  historiador: {
-    narrativaDM: "Consulten Génesis 3:1-5. El registro muestra con exactitud cómo se planteó la primera rebelión contra la autoridad divina.",
-    pregunta: "Según Génesis 3:5, ¿qué afirmó la serpiente que ocurriría el mismo día en que comieran del árbol?",
-    hiloDorado: "La serpiente afirmó que se les abrirían los ojos y serían como Dios, conociendo lo bueno y lo malo, iniciando así el conflicto por la soberanía."
-  },
-  profeta: {
-    narrativaDM: "Abran su Biblia en Génesis 3:1-5 y 15. Antes de dictarse la primera profecía, la serpiente lanzó una acusación directa contra Dios.",
-    pregunta: "Según Génesis 3:4, 5, ¿con qué promesa engañosa contradijo la serpiente la ley de Jehová?",
-    hiloDorado: "Negó la sentencia de muerte y prometió independencia moral para decidir lo bueno y lo malo, lo que llevó a Jehová a dictar Génesis 3:15."
-  },
-  rey: {
-    narrativaDM: "Lean Génesis 3:1-5. El árbol en medio del jardín representaba la autoridad de Jehová como Soberano.",
-    pregunta: "Según Génesis 3:5, ¿qué prerrogativa exclusiva de Dios ofreció la serpiente a Eva si desobedecía?",
-    hiloDorado: "Le ofreció ser como Dios, determinando por cuenta propia lo bueno y lo malo, desafiando directamente la Soberanía legítima de Jehová."
-  },
-  angel: {
-    narrativaDM: "Consulten Génesis 3:1-5. En Edén se levantó la primera calumnia contra el nombre y la veracidad de Jehová.",
-    pregunta: "Según Génesis 3:4, 5, ¿qué acusación lanzó la serpiente acerca del motivo por el que Dios prohibió el árbol?",
-    hiloDorado: "Acusó a Dios de mentir sobre la muerte y de retener egoístamente la capacidad de decidir lo bueno y lo malo."
-  },
-  guerrero: {
-    narrativaDM: "Lean Génesis 3:1-5. El adversario utilizó una mentira calculada para quebrar la lealtad en Edén.",
-    pregunta: "Según Génesis 3:4, 5, ¿qué mentira directa dijo la serpiente para anular el temor a desobedecer?",
-    hiloDorado: "Aseguró que de ningún modo morirían y que llegarían a ser como Dios, conociendo lo bueno y lo malo."
-  }
-};
-
-// Registro en memoria para no repetir temas durante la sesión
-const historialTitulos = [];
+const historialHechosUsados = [];
 
 export async function generarDesafioConGemini({
   apiKey,
@@ -369,95 +425,63 @@ export async function generarDesafioConGemini({
   modoPartida,
   indiceRetoEnEra = 0
 }) {
-  // PRIMERA PREGUNTA CONCISA Y CON 4 OPCIONES PLAUSIBLES QUE EXIGEN LEER GÉNESIS 3:1-5
-  if (numeroEra === 1 && indiceRetoEnEra === 0) {
-    const angulo = ANGULOS_PECADO_ORIGINAL_POR_DM[dmPerfil?.id] || ANGULOS_PECADO_ORIGINAL_POR_DM.historiador;
-    const opcionesBase = [
-      {
-        id: "po_1",
-        icono: "opcion",
-        titulo: "Ser como Dios, conociendo lo bueno y lo malo",
-        subtitulo: "Afirmó que de ningún modo morirían y que se les abrirían los ojos para decidir por sí mismos.",
-        correcta: true
-      },
-      {
-        id: "po_2",
-        icono: "opcion",
-        titulo: "Obtener vida eterna sin depender del árbol de la vida",
-        subtitulo: "Afirmó que ese fruto les daría inmortalidad inmediata sin necesidad de comer de ningún otro árbol.",
-        correcta: false
-      },
-      {
-        id: "po_3",
-        icono: "opcion",
-        titulo: "Recibir el dominio sobre los querubines del jardín",
-        subtitulo: "Afirmó que al comer del fruto los ángeles les entregarían la custodia completa del Edén.",
-        correcta: false
-      },
-      {
-        id: "po_4",
-        icono: "opcion",
-        titulo: "Ocultar su transgresión ante la voz de Jehová",
-        subtitulo: "Afirmó que Dios no podría ver lo que hicieran en medio del jardín al caer la brisa del día.",
-        correcta: false
-      }
-    ];
-    for (let i = opcionesBase.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [opcionesBase[i], opcionesBase[j]] = [opcionesBase[j], opcionesBase[i]];
-    }
-    return {
-      tipoMecanica: "SELECCION_MULTIPLE",
-      tituloNodo: "La Cuestión Planteada en Edén",
-      citaBiblia: "Génesis 3:1-5",
-      narrativaDM: angulo.narrativaDM,
-      instruccionInput: "Lean Génesis 3:1-5 en su Biblia y elijan la respuesta exacta.",
-      pregunta: angulo.pregunta,
-      pasosObjetivo: 0,
-      hiloDorado: angulo.hiloDorado,
-      opciones: opcionesBase
-    };
-  }
-
   if (!apiKey || apiKey.trim() === "") {
     throw new Error("SIN_API_KEY");
   }
 
   const base = CONOCIMIENTO_NUCLEAR_POR_ERA[numeroEra] || CONOCIMIENTO_NUCLEAR_POR_ERA[1];
-  const mecanicasDisponibles = ["SELECCION_MULTIPLE", "VOZ_MANTENER", "CAMINATA_PEREGRINAJE", "CAMARA_ESCRITURA"];
-  const mecanicaElegida = mecanicasDisponibles[indiceRetoEnEra % mecanicasDisponibles.length];
 
-  const hechoFocalObligatorio =
-    base.hechosVerificados[Math.floor(Math.random() * base.hechosVerificados.length)];
+  // Rotación completa de 7 tipos de desafíos educativos (nunca se queda atascado en uno solo)
+  const mecanicasRotativas = [
+    "SELECCION_MULTIPLE",
+    "VERDADERO_FALSO",
+    "COMPLETAR_VERSICULO",
+    "ORDENAR_SECUENCIA",
+    "VOZ_MANTENER",
+    "CAMINATA_PEREGRINAJE",
+    "CAMARA_ESCRITURA"
+  ];
+  const mecanicaElegida = mecanicasRotativas[indiceRetoEnEra % mecanicasRotativas.length];
+
+  // Elegir un hecho que no se haya preguntado recientemente
+  const hechosNoUsados = base.hechosVerificados.filter((h) => !historialHechosUsados.includes(h));
+  const poolHechos = hechosNoUsados.length > 0 ? hechosNoUsados : base.hechosVerificados;
+  const hechoFocalObligatorio = poolHechos[indiceRetoEnEra % poolHechos.length];
+  historialHechosUsados.push(hechoFocalObligatorio);
 
   const prompt = `
-Eres "${dmPerfil.nombre}" (${dmPerfil.subtitulo}), narrador del juego bíblico "Secreto Sagrado".
-REGLAS ESTRICTAS DE CONCISIÓN Y ALTA DIFICULTAD:
-1. Idioma: Español natural, sobrio y directo.
-2. TEMA DE ESTE TURNO (Era ${numeroEra}): "${hechoFocalObligatorio}".
-   Temas ya usados que NO debes repetir: ${historialTitulos.slice(-10).join(", ") || "Ninguno"}.
-3. PREGUNTA CONCISA: "pregunta" debe tener UNA SOLA ORACIÓN corta y directa (máximo 16 palabras) basada en una cita bíblica específica que obligue al jugador a abrir su Biblia y leer el versículo.
-4. NARRATIVA BREVE: "narrativaDM" debe tener máximo 1 o 2 oraciones cortas (máximo 22 palabras en total).
-5. DISTRACTORES INTELIGENTES Y PLAUSIBLES (MUY IMPORTANTE):
-   - PROHIBIDO crear opciones falsas absurdas, ridículas o desconectadas del tema.
-   - Las 3 opciones falsas ("correcta": false) DEBEN sonar bíblicas, serias, del mismo largo y usar términos del mismo contexto bíblico, pero contener un matiz o detalle inexacto que solo se descubre leyendo con cuidado la cita bíblica indicada.
-6. Mecánica requerida: "${mecanicaElegida}".
+Eres "${dmPerfil.nombre}" en el juego educativo bíblico "Secreto Sagrado".
+Genera un reto de tipo "${mecanicaElegida}" para la Era ${numeroEra} basado en este hecho de wol.jw.org:
+"${hechoFocalObligatorio}"
 
-Devuelve ÚNICAMENTE un JSON válido con esta estructura:
+REGLAS ESTRICTAS DE BREVEDAD (PARA QUE NO SE CORTE EN PANTALLA):
+1. "pregunta": MÁXIMO 12 PALABRAS. Directa, clara y sin rodeos.
+2. "narrativaDM": MÁXIMO 10 PALABRAS (ej. "Lean Génesis 3:15 en su Biblia.").
+3. "hiloDorado": MÁXIMO 22 PALABRAS en total.
+4. En cada opción de "opciones":
+   - "titulo": MÁXIMO 7 PALABRAS.
+   - "subtitulo": MÁXIMO 9 PALABRAS.
+5. REGLAS SEGÚN EL TIPO DE MECÁNICA ("${mecanicaElegida}"):
+   - Si es "SELECCION_MULTIPLE": 4 opciones serias y bíblicas (1 con "correcta": true y 3 con "correcta": false que alteren un detalle sutil del versículo).
+   - Si es "COMPLETAR_VERSICULO": En "pregunta" pon una frase clave del versículo con "[ _____ ]" y en "opciones" pon 4 palabras o frases cortas bíblicas (1 con "correcta": true y 3 con "correcta": false).
+   - Si es "VERDADERO_FALSO": En "pregunta" haz una afirmación específica sobre el versículo, y en "opciones" devuelve exactamente 2 elementos: uno con titulo "Verdadero" y otro con titulo "Falso" (marca con "correcta": true el que corresponda).
+   - Si es "ORDENAR_SECUENCIA": En "pregunta" pide ordenar 4 elementos o sucesos del pasaje, y en "opciones" devuelve 4 elementos con "ordenCorrecto": 1, 2, 3 y 4.
+
+Devuelve ÚNICAMENTE este JSON válido:
 {
   "tipoMecanica": "${mecanicaElegida}",
-  "tituloNodo": "Título corto (máximo 6 palabras)",
-  "citaBiblia": "Cita bíblica exacta (ej. Génesis 4:3-5)",
-  "narrativaDM": "Contexto breve y directo de 1 oración invitando a abrir la cita.",
-  "instruccionInput": "Instrucción breve de 1 línea.",
-  "pregunta": "Pregunta directa y concisa (máximo 16 palabras) sobre el versículo.",
+  "tituloNodo": "Título corto (máx 4 palabras)",
+  "citaBiblia": "Cita exacta (ej. Génesis 4:4)",
+  "narrativaDM": "Frase de máx 10 palabras.",
+  "instruccionInput": "Instrucción de máx 8 palabras.",
+  "pregunta": "Pregunta directa de máximo 12 palabras.",
   "pasosObjetivo": ${mecanicaElegida === "CAMINATA_PEREGRINAJE" ? 12 : 0},
-  "hiloDorado": "Explicación concisa de 2 oraciones conectando este versículo con el propósito del Reino Mesiánico.",
+  "hiloDorado": "Enseñanza breve de máximo 22 palabras.",
   "opciones": [
-    { "id": "op1", "icono": "opcion", "titulo": "Respuesta exacta según el versículo (6-10 palabras)", "subtitulo": "Explicación precisa basada en el texto bíblico.", "correcta": true },
-    { "id": "op2", "icono": "opcion", "titulo": "Distractor bíblico plausible 1 (6-10 palabras)", "subtitulo": "Suena muy bíblico y del mismo tema, pero altera un detalle clave del pasaje.", "correcta": false },
-    { "id": "op3", "icono": "opcion", "titulo": "Distractor bíblico plausible 2 (6-10 palabras)", "subtitulo": "Mezcla otro suceso o pacto cercano de las Escrituras para exigir lectura atenta.", "correcta": false },
-    { "id": "op4", "icono": "opcion", "titulo": "Distractor bíblico plausible 3 (6-10 palabras)", "subtitulo": "Interpretación inexacta pero bien redactada del mismo capítulo.", "correcta": false }
+    { "id": "op1", "icono": "opcion", "titulo": "Texto corto (máx 7 palabras)", "subtitulo": "Detalle corto (máx 9 palabras)", "ordenCorrecto": 1, "correcta": true },
+    { "id": "op2", "icono": "opcion", "titulo": "Texto corto (máx 7 palabras)", "subtitulo": "Detalle corto (máx 9 palabras)", "ordenCorrecto": 2, "correcta": false },
+    { "id": "op3", "icono": "opcion", "titulo": "Texto corto (máx 7 palabras)", "subtitulo": "Detalle corto (máx 9 palabras)", "ordenCorrecto": 3, "correcta": false },
+    { "id": "op4", "icono": "opcion", "titulo": "Texto corto (máx 7 palabras)", "subtitulo": "Detalle corto (máx 9 palabras)", "ordenCorrecto": 4, "correcta": false }
   ]
 }`;
 
@@ -475,11 +499,6 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura:
   const data = await res.json();
   const parsed = JSON.parse(data?.candidates?.[0]?.content?.parts?.[0]?.text);
 
-  if (parsed?.tituloNodo) {
-    historialTitulos.push(parsed.tituloNodo);
-  }
-
-  // Barajado Fisher-Yates para garantizar que la opción correcta cambie siempre de lugar
   if (Array.isArray(parsed.opciones)) {
     for (let i = parsed.opciones.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));

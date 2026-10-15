@@ -1562,7 +1562,12 @@ export default function SecretoSagradoLanding() {
     });
   };
 
-// Mezcla aleatoriamente las opciones (algoritmo Fisher-Yates) para que la correcta cambie siempre de posición
+const [feedbackRespuesta, setFeedbackRespuesta] = useState(null); // { esCorrecto, idSeleccionado, textoCorrecto }
+  const [ordenElegidoIds, setOrdenElegidoIds] = useState([]);
+  const contadorTurnosGlobalRef = useRef(0);
+  const usadosLocalesRef = useRef(new Set());
+
+  // Mezcla aleatoriamente las opciones en retos de selección o desordena los pasos en retos de secuencia
   const barajarOpcionesReto = useCallback((reto) => {
     if (!reto || !Array.isArray(reto.opciones)) return reto;
     const copiaOpciones = [...reto.opciones];
@@ -1579,10 +1584,19 @@ export default function SecretoSagradoLanding() {
     setOpcionesOcultasIds([]);
     setPasosCaminados(0);
     setTranscripcionVoz('');
+    setFeedbackRespuesta(null);
+    setOrdenElegidoIds([]);
+
+    const turnoActual = contadorTurnosGlobalRef.current;
+    contadorTurnosGlobalRef.current += 1;
 
     const listaEra = NODOS_MULTIMODALES_POR_ERA[eraNum] || NODOS_MULTIMODALES_POR_ERA[1];
-    const retoFallback = barajarOpcionesReto(listaEra[idxReto % listaEra.length]);
-    setRetoActual(retoFallback);
+    const noUsados = listaEra.filter((r) => !usadosLocalesRef.current.has(r.tituloNodo));
+    const poolElegible = noUsados.length > 0 ? noUsados : listaEra;
+    const elegidoLocal = poolElegible[turnoActual % poolElegible.length];
+    usadosLocalesRef.current.add(elegidoLocal.tituloNodo);
+
+    setRetoActual(barajarOpcionesReto(elegidoLocal));
 
     hablarConVozDM('¿Quién de los jugadores disponibles tomará el desafío en este turno?');
 
@@ -1597,11 +1611,11 @@ export default function SecretoSagradoLanding() {
           nombreFamilia: 'el equipo',
           conviccionHP,
           modoPartida: modoEstilo,
-          indiceRetoEnEra: idxReto
+          indiceRetoEnEra: turnoActual
         });
         setRetoActual(barajarOpcionesReto(generado));
       } catch (e) {
-        // Conserva el reto multimodal local ya barajado si falla la red
+        // Conserva el reto local variado si falla la red
       } finally {
         setCargandoRetoIA(false);
       }
@@ -1625,8 +1639,8 @@ export default function SecretoSagradoLanding() {
           setPantalla('JUEGO');
           setSubFaseJuego('DM_PREGUNTA');
 
-          const locucionCompleta = `${retoActual.narrativaDM} ${retoActual.pregunta} ${retoActual.instruccionInput}`;
-          hablarConVozDM(locucionCompleta, () => {
+          const locucionCorta = `Abran ${retoActual.citaBiblia}. ${retoActual.pregunta}`;
+          hablarConVozDM(locucionCorta, () => {
             setSubFaseJuego('JUGADOR_ACTIVO');
           });
         }
@@ -1635,53 +1649,75 @@ export default function SecretoSagradoLanding() {
   };
 
   /* ==========================================================================
-     RESOLUCIÓN DE DESAFÍOS Y ENFRIAMIENTO ESTRICTO POR VUELTAS (TODOS SE APAGAN)
+     ANIMACIÓN EDUCATIVA DE RESPUESTA (CORRECTO / INCORRECTO) + RESOLUCIÓN
      ========================================================================== */
-  const completarTurnoYDevolverControlAlDM = (fueCorrecto, comentarioExtraDM = '') => {
-    if (!jugadorActivo) return;
+  const completarTurnoYDevolverControlAlDM = (fueCorrecto, comentarioExtraDM = '', idOpcionElegida = null) => {
+    if (!jugadorActivo || feedbackRespuesta) return;
     const clase = CLASES_ROLES[jugadorActivo.rolIdx];
 
-    // CORRECCIÓN VIDEO 4: TODOS los jugadores (incluido David / El Noble) entran en enfriamiento
-    // tras su turno hasta que todos los demás hayan jugado en la vuelta actual.
-    let nuevaLista = jugadores.map((j) => {
-      if (j.id === jugadorActivo.id) {
-        return { ...j, disponible: false };
-      }
-      return j;
-    });
-
-    // Solo cuando todos los jugadores ya jugaron en esta vuelta se reactivan para la siguiente
-    if (!nuevaLista.some((j) => j.disponible)) {
-      nuevaLista = nuevaLista.map((j) => ({ ...j, disponible: true }));
-      setVueltaNumero((v) => v + 1);
-    }
-    setJugadores(nuevaLista);
-
+    // Sonido y vibración diferenciados según acierto o fallo
     if (fueCorrecto) {
-      if (clase.id === 'juez' || clase.id === 'proselito' || clase.id === 'noble') {
-        setConviccionHP((hp) => Math.min(10, hp + 1));
-      }
-    } else if (clase.id !== 'sacerdote') {
-      setConviccionHP((hp) => Math.max(1, hp - 1));
+      sonarAcordeSintetico([523.25, 659.25, 783.99, 1046.5], 0.85);
+      dispararVibracionHaptica([70, 40, 140], 0.25);
+    } else {
+      sonarAcordeSintetico([220, 196, 164.81], 0.75);
+      dispararVibracionHaptica([180, 60, 220], 0.35);
     }
 
-    lanzarRitualPulgares({
-      titulo: `${jugadorActivo.nombre} Devuelve el Control al Guía`,
-      subtitulo: 'Mantén ambos pulgares durante 3 segundos para confirmar tu respuesta y escuchar la explicación',
-      colorLuz: fueCorrecto ? '#10b981' : '#f43f5e',
-      alCompletar: () => {
-        setPantalla('JUEGO');
-        setSubFaseJuego('REVELACION_HILO');
-        setJugadorActivoId(null);
+    const opCorrectaObj = retoActual.opciones?.find((o) => o.correcta);
+    const textoCorrecto = opCorrectaObj
+      ? opCorrectaObj.titulo
+      : retoActual.hiloDorado;
 
-        const textoFinal = fueCorrecto
-          ? `${comentarioExtraDM || `¡Excelente trabajo, ${jugadorActivo.nombre}!`} ${retoActual.hiloDorado}`
-          : `${comentarioExtraDM || `Necesitamos meditar un poco más en ${retoActual.citaBiblia}.`} ${retoActual.hiloDorado}`;
-
-        setMensajeFeedbackDM(textoFinal);
-        hablarConVozDM(textoFinal);
-      }
+    // Mostrar animación educativa en pantalla durante 2.2 segundos antes de pasar a los pulgares
+    setFeedbackRespuesta({
+      esCorrecto: fueCorrecto,
+      idSeleccionado: idOpcionElegida,
+      textoCorrecto
     });
+
+    setTimeout(() => {
+      setFeedbackRespuesta(null);
+
+      let nuevaLista = jugadores.map((j) => {
+        if (j.id === jugadorActivo.id) {
+          return { ...j, disponible: false };
+        }
+        return j;
+      });
+
+      if (!nuevaLista.some((j) => j.disponible)) {
+        nuevaLista = nuevaLista.map((j) => ({ ...j, disponible: true }));
+        setVueltaNumero((v) => v + 1);
+      }
+      setJugadores(nuevaLista);
+
+      if (fueCorrecto) {
+        if (clase.id === 'juez' || clase.id === 'proselito' || clase.id === 'noble') {
+          setConviccionHP((hp) => Math.min(10, hp + 1));
+        }
+      } else if (clase.id !== 'sacerdote') {
+        setConviccionHP((hp) => Math.max(1, hp - 1));
+      }
+
+      lanzarRitualPulgares({
+        titulo: `${jugadorActivo.nombre} Devuelve el Control al Guía`,
+        subtitulo: 'Mantén ambos pulgares durante 3 segundos para escuchar la enseñanza bíblica',
+        colorLuz: fueCorrecto ? '#10b981' : '#f43f5e',
+        alCompletar: () => {
+          setPantalla('JUEGO');
+          setSubFaseJuego('REVELACION_HILO');
+          setJugadorActivoId(null);
+
+          const textoFinal = fueCorrecto
+            ? `${comentarioExtraDM || `¡Correcto, ${jugadorActivo.nombre}!`} ${retoActual.hiloDorado}`
+            : `${comentarioExtraDM || `Repasemos ${retoActual.citaBiblia}.`} ${retoActual.hiloDorado}`;
+
+          setMensajeFeedbackDM(textoFinal);
+          hablarConVozDM(textoFinal);
+        }
+      });
+    }, 2200);
   };
 
   const avanzarAlSiguienteNodoOEra = () => {
@@ -2586,10 +2622,24 @@ export default function SecretoSagradoLanding() {
       )}
 
       {/* ====================================================================
-          PANTALLA DE JUEGO EN VIVO (ESFERA DEL DM CON VIAJE FLUIDO A LA ESQUINA)
+          PANTALLA DE JUEGO EN VIVO (CON SCROLL VERTICAL LIBRE Y ANIMACIÓN EDUCATIVA)
           ==================================================================== */}
       {pantalla === 'JUEGO' && (
-        <section className="relative z-20 w-full h-full flex flex-col justify-between p-6 md:p-10">
+        <section className="relative z-20 w-full h-full flex flex-col justify-between px-4 md:px-10 pt-4 pb-10 overflow-y-auto overflow-x-hidden">
+          <style>{`
+            @keyframes aciertoPulso {
+              0% { transform: scale(0.95); box-shadow: 0 0 0px rgba(16,185,129,0); }
+              50% { transform: scale(1.04); box-shadow: 0 0 55px rgba(16,185,129,0.9); }
+              100% { transform: scale(1.02); box-shadow: 0 0 35px rgba(16,185,129,0.7); }
+            }
+            @keyframes errorSacudida {
+              0%, 100% { transform: translateX(0); }
+              20%, 60% { transform: translateX(-10px); }
+              40%, 80% { transform: translateX(10px); }
+            }
+            .anim-acierto { animation: aciertoPulso 0.6s ease-out forwards; }
+            .anim-error { animation: errorSacudida 0.45s ease-in-out; }
+          `}</style>
           {/* ESFERA PERSISTENTE DEL DM: VIAJA Y SE ENCOGE FLUIDAMENTE DEL CENTRO A LA ESQUINA SUPERIOR IZQUIERDA */}
           {subFaseJuego !== 'FIN_PARTIDA' && (
             <div
@@ -2628,19 +2678,38 @@ export default function SecretoSagradoLanding() {
             </div>
           </div>
 
-          {/* PARTE SUPERIOR CENTRAL (70% DEL ANCHO, DEBAJO DE LA BARRA SUPERIOR SIN SOLAPARSE) */}
+          {/* PARTE SUPERIOR CENTRAL COMPACTA (70% DEL ANCHO) */}
           {subFaseJuego === 'JUGADOR_ACTIVO' && (
-            <div className="w-[70vw] mx-auto mt-12 p-4 md:p-5 rounded-3xl bg-slate-950/55 backdrop-blur-2xl border border-white/45 shadow-[0_15px_45px_rgba(0,0,0,0.45)] text-center z-20 animate-[fadeIn_0.6s_ease-out]">
-              <div className="inline-flex items-center gap-2 px-3.5 py-0.5 rounded-full bg-amber-300/20 border border-amber-300/60 text-amber-200 text-[11px] font-black tracking-widest uppercase mb-1">
+            <div className="w-[82vw] md:w-[70vw] mx-auto mt-11 px-5 py-3.5 rounded-3xl bg-slate-950/65 backdrop-blur-2xl border border-white/45 shadow-2xl text-center z-20 animate-[fadeIn_0.5s_ease-out]">
+              <div className="inline-flex items-center gap-2 px-3 py-0.5 rounded-full bg-amber-300/20 border border-amber-300/60 text-amber-200 text-[11px] font-black tracking-widest uppercase mb-1">
                 <IconoSagradoSVG tipo="biblia" className="w-3.5 h-3.5" />
-                <span>Biblia Física: {retoActual.citaBiblia}</span>
+                <span>Biblia: {retoActual.citaBiblia}</span>
               </div>
-              <h2 className="font-cinzel text-lg md:text-2xl font-extrabold leading-snug text-white">
+              <h2 className="font-cinzel text-base md:text-xl font-extrabold leading-snug text-white">
                 {retoActual.pregunta}
               </h2>
-              <p className="text-xs text-cyan-200 font-semibold mt-1">
-                {retoActual.instruccionInput}
-              </p>
+            </div>
+          )}
+
+          {/* BANNER EDUCATIVO ANIMADO DE ACIERTO O CORRECCIÓN */}
+          {feedbackRespuesta && (
+            <div
+              className={`fixed top-20 left-1/2 -translate-x-1/2 z-50 px-8 py-4 rounded-3xl backdrop-blur-3xl border-2 shadow-2xl flex flex-col items-center text-center max-w-lg w-[90vw] ${
+                feedbackRespuesta.esCorrecto
+                  ? 'bg-emerald-950/90 border-emerald-300 text-emerald-100 anim-acierto'
+                  : 'bg-rose-950/90 border-rose-300 text-rose-100 anim-error'
+              }`}
+            >
+              <div className="text-base md:text-xl font-black tracking-wide uppercase">
+                {feedbackRespuesta.esCorrecto
+                  ? '¡Respuesta Correcta! +Conocimiento Bíblico'
+                  : 'Respuesta Incorrecta'}
+              </div>
+              {!feedbackRespuesta.esCorrecto && feedbackRespuesta.textoCorrecto && (
+                <div className="text-xs md:text-sm text-amber-200 font-bold mt-1">
+                  Respuesta correcta: «{feedbackRespuesta.textoCorrecto}»
+                </div>
+              )}
             </div>
           )}
 
@@ -2873,45 +2942,155 @@ export default function SecretoSagradoLanding() {
               </div>
             )}
 
-            {/* SUB-FASE 4: EL ORBE DEL JUGADOR OCUPA EL CENTRO + MECÁNICA DE INPUT ACTIVA */}
+            {/* SUB-FASE 4: ORBE COMPACTO + DESAFÍOS MULTIMODALES VARIADOS CON ANIMACIÓN */}
             {subFaseJuego === 'JUGADOR_ACTIVO' && jugadorActivo && (
-              <div className="w-full flex flex-col items-center gap-5">
+              <div className="w-full flex flex-col items-center gap-3.5 pb-6">
                 <OrbeLiquidoReactivo
                   colorPrimario={claseJugadorActivo.color}
                   colorSecundario="#ffffff"
                   amplitudVoz={amplitudVozJugador}
-                  tamano={165}
+                  tamano={105}
                   iconoTipo={claseJugadorActivo.iconoTipo}
                   etiquetaSuperior={claseJugadorActivo.nombre}
                   nombreCentral={jugadorActivo.nombre}
                 />
 
-                {/* MECÁNICA A: SELECCIÓN MÚLTIPLE (SIN BRILLO EN LA RESPUESTA CORRECTA) */}
-                {retoActual.tipoMecanica === 'SELECCION_MULTIPLE' && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 w-full max-w-4xl">
+                {/* MECÁNICA 1 y 2: SELECCIÓN MÚLTIPLE O COMPLETAR VERSÍCULO */}
+                {(retoActual.tipoMecanica === 'SELECCION_MULTIPLE' ||
+                  retoActual.tipoMecanica === 'COMPLETAR_VERSICULO') && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-4xl">
                     {retoActual.opciones?.map((op) => {
                       const oculta = opcionesOcultasIds.includes(op.id);
+                      const fueTocada = feedbackRespuesta?.idSeleccionado === op.id;
+                      const mostrarComoCorrecta = feedbackRespuesta && op.correcta;
+                      const mostrarComoError = feedbackRespuesta && fueTocada && !op.correcta;
+
                       return (
                         <button
                           key={op.id}
-                          disabled={oculta}
-                          onClick={() => completarTurnoYDevolverControlAlDM(op.correcta)}
-                          className={`p-4 md:p-5 rounded-3xl backdrop-blur-2xl border text-left flex items-center gap-4 transition-all duration-300 ${
+                          disabled={oculta || Boolean(feedbackRespuesta)}
+                          onClick={() =>
+                            completarTurnoYDevolverControlAlDM(op.correcta, '', op.id)
+                          }
+                          className={`p-3.5 md:p-4 rounded-3xl backdrop-blur-2xl border-2 text-left flex items-center gap-3.5 transition-all duration-300 ${
                             oculta
                               ? 'opacity-15 pointer-events-none grayscale bg-black/20 border-white/10'
-                              : 'bg-slate-950/55 hover:bg-white/20 border-white/40 hover:border-white hover:shadow-[0_0_28px_rgba(255,255,255,0.35)] hover:scale-[1.01]'
+                              : mostrarComoCorrecta
+                              ? 'bg-emerald-500/40 border-emerald-300 anim-acierto'
+                              : mostrarComoError
+                              ? 'bg-rose-500/45 border-rose-300 anim-error'
+                              : 'bg-slate-950/60 hover:bg-white/20 border-white/40 hover:border-white'
                           }`}
                         >
-                          <span className="w-12 h-12 rounded-2xl bg-white/15 border border-white/35 flex items-center justify-center shrink-0 text-amber-200">
-                            <IconoSagradoSVG tipo="opcion" className="w-6 h-6" />
+                          <span className="w-10 h-10 rounded-2xl bg-white/15 border border-white/35 flex items-center justify-center shrink-0 text-amber-200">
+                            <IconoSagradoSVG tipo="opcion" className="w-5 h-5" />
                           </span>
                           <div>
-                            <div className="font-black text-sm md:text-base text-white">{op.titulo}</div>
-                            <div className="text-xs text-white/85 leading-snug mt-0.5">{op.subtitulo}</div>
+                            <div className="font-black text-sm md:text-base text-white leading-tight">
+                              {op.titulo}
+                            </div>
+                            {op.subtitulo && (
+                              <div className="text-xs text-white/80 leading-snug mt-0.5">
+                                {op.subtitulo}
+                              </div>
+                            )}
                           </div>
                         </button>
                       );
                     })}
+                  </div>
+                )}
+
+                {/* MECÁNICA 3: VERDADERO O FALSO BÍBLICO */}
+                {retoActual.tipoMecanica === 'VERDADERO_FALSO' && (
+                  <div className="grid grid-cols-2 gap-4 w-full max-w-2xl">
+                    {retoActual.opciones?.map((op) => {
+                      const mostrarComoCorrecta = feedbackRespuesta && op.correcta;
+                      const mostrarComoError =
+                        feedbackRespuesta &&
+                        feedbackRespuesta.idSeleccionado === op.id &&
+                        !op.correcta;
+
+                      return (
+                        <button
+                          key={op.id}
+                          disabled={Boolean(feedbackRespuesta)}
+                          onClick={() =>
+                            completarTurnoYDevolverControlAlDM(op.correcta, '', op.id)
+                          }
+                          className={`p-6 rounded-3xl backdrop-blur-2xl border-2 flex flex-col items-center justify-center gap-2 transition-all ${
+                            mostrarComoCorrecta
+                              ? 'bg-emerald-500/45 border-emerald-300 anim-acierto'
+                              : mostrarComoError
+                              ? 'bg-rose-500/45 border-rose-300 anim-error'
+                              : 'bg-slate-950/60 hover:bg-white/25 border-white/45 hover:scale-105'
+                          }`}
+                        >
+                          <span className="font-cinzel text-xl md:text-2xl font-black tracking-wider uppercase text-amber-200">
+                            {op.titulo}
+                          </span>
+                          <span className="text-xs text-white/85 text-center">{op.subtitulo}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* MECÁNICA 4: ORDENAR SECUENCIA CRONOLÓGICA / BÍBLICA */}
+                {retoActual.tipoMecanica === 'ORDENAR_SECUENCIA' && (
+                  <div className="flex flex-col items-center gap-3 w-full max-w-3xl">
+                    <span className="text-xs font-extrabold uppercase tracking-widest text-amber-200">
+                      Toca las tarjetas en el orden correcto (1º a {retoActual.opciones?.length || 4}º)
+                    </span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full">
+                      {retoActual.opciones?.map((op) => {
+                        const posElegida = ordenElegidoIds.indexOf(op.id);
+                        const yaElegida = posElegida !== -1;
+
+                        return (
+                          <button
+                            key={op.id}
+                            disabled={yaElegida || Boolean(feedbackRespuesta)}
+                            onClick={() => {
+                              const nuevoOrden = [...ordenElegidoIds, op.id];
+                              setOrdenElegidoIds(nuevoOrden);
+                              sonarAcordeSintetico([440 + nuevoOrden.length * 110], 0.25);
+
+                              if (nuevoOrden.length === retoActual.opciones.length) {
+                                const esOrdenCorrecto = nuevoOrden.every((idSel, idx) => {
+                                  const item = retoActual.opciones.find((o) => o.id === idSel);
+                                  return item && Number(item.ordenCorrecto) === idx + 1;
+                                });
+                                completarTurnoYDevolverControlAlDM(esOrdenCorrecto, '', op.id);
+                              }
+                            }}
+                            className={`p-3.5 rounded-3xl backdrop-blur-2xl border-2 text-left flex items-center gap-3.5 transition-all ${
+                              yaElegida
+                                ? 'bg-amber-400/30 border-amber-300 scale-[0.98]'
+                                : 'bg-slate-950/60 hover:bg-white/20 border-white/40'
+                            }`}
+                          >
+                            <span className="w-9 h-9 rounded-full bg-white/20 border border-white/50 flex items-center justify-center font-black text-sm text-amber-200 shrink-0">
+                              {yaElegida ? `${posElegida + 1}º` : '?'}
+                            </span>
+                            <div>
+                              <div className="font-black text-sm text-white">{op.titulo}</div>
+                              {op.subtitulo && (
+                                <div className="text-xs text-white/75">{op.subtitulo}</div>
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {ordenElegidoIds.length > 0 && !feedbackRespuesta && (
+                      <button
+                        onClick={() => setOrdenElegidoIds([])}
+                        className="px-4 py-1.5 rounded-full bg-white/15 border border-white/30 text-xs font-bold"
+                      >
+                        Reiniciar Orden
+                      </button>
+                    )}
                   </div>
                 )}
 
