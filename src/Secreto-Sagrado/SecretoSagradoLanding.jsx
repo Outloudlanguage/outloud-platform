@@ -13,7 +13,95 @@ import {
 const URL_FONDO_MONTANA = 'https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/1791990986647.jpg';
 const URL_MUSICA_MENU = 'https://pub-f968bc599b9e4b30965522b355899a7e.r2.dev/crown_of_the_morning_mist.mp3';
 const URL_LOGO_OFICIAL = 'https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/S%20ECRETO%20SAGRADO.png';
-const DEFAULT_GEMINI_API_KEY = 'AQ.Ab8RN6LiD0PYs8Jdu9p7VrlSRG8Ut4FuYs8c8ykWZTJRyhmXkQ';
+/* ==========================================================================
+   POOL OFICIAL DE 50 LLAVES DE API DE GEMINI + BALANCEADOR DE CARGA FLUIDO
+   ========================================================================== */
+const POOL_CLAVES_GEMINI = [
+  'AQ.Ab8RN6LiD0PYs8Jdu9p7VrlSRG8Ut4FuYs8c8ykWZTJRyhmXkQ', // Llave 01
+  'AQ.Ab8RN6KgGB6WR-gf1_MLQ2RQ_LpVpd1cekTo5cL7jFvuSY52uw', // Llave 02
+  'AQ.Ab8RN6IChZMzbumOtEzZkmO1JR_v1lltFjIn0_m0_Ice_kfpdQ', // Llave 03
+  'AQ.Ab8RN6IkBlRxaHF0aS5ER8_8RRXdJgwdjLpvbxOBb526UxvBjw', // Llave 04
+  'AQ.Ab8RN6JUIUSCl65Gw57W4qzFG-4MMbEjyiXZwcgENE7tYsRprA', // Llave 05
+  'AQ.Ab8RN6ICCvNh7ZFyh6teZoLlstV9V-9_lhwGro1kmgXjUH5c9w', // Llave 06
+  'AQ.Ab8RN6Klj859g_H5vnHenKxm_Yk1OzQ2fynzQJ_k8Sn8cAdr5A', // Llave 07
+  'AQ.Ab8RN6IjSLQMTtxv7UdK6VuEadGzpu8OvIlxz8xSyg6Z6tNndA', // Llave 08
+  'AQ.Ab8RN6L-i0ZEvajoMf17vjN02iCiYcNnIDXd8ip3FAGDJcQHkw', // Llave 09
+  'AQ.Ab8RN6I7VvcQn_G-N9ndd6eXbkMrnGIVwdEzmS4S59hxUV0rAQ', // Llave 10
+  'AQ.Ab8RN6J9LEGQtKJBj3NDIXMGE6ylLfE4B473Ehk_w3wZEFpzFg', // Llave 11
+  'AQ.Ab8RN6LaMYpMYps-U1VAzeZHsMYKhNE6QDd0OvlWPQPyI7bgeQ', // Llave 12
+  'AQ.Ab8RN6LiSFi9Gw7K9yy68UXLBx7_LFjs1I327jlmbTY5JT2Ldw', // Llave 13
+  'AQ.Ab8RN6Kem_2ZRrgwwbun8MM_60Y8n20cMmbqBCYa0lUkAuvv4g', // Llave 14
+  'AQ.Ab8RN6LOrX5UBmbshfDE0PJ3VuPnRz0duPulL-O_RYCSPdGuiA', // Llave 15
+  'AQ.Ab8RN6I4hC8CKfS-0bSlYMl13iIDdmWJ2syyNxC9RCrpEk4-FA', // Llave 16
+  'AQ.Ab8RN6IGrxK4rKxJXWhhtYFDFiKQ1mnEDt0zSjVszNU_fRim8Q', // Llave 17
+  'AQ.Ab8RN6ItOO29y1ia_hdVfZek5gG0hiEacAhYEt7a3ZN29ddqIA', // Llave 18
+  'AQ.Ab8RN6JSEwcpz1uRp-X_812ExXJo7SiD0sa5iTYQv2c1xJ_xZg', // Llave 19
+  'AQ.Ab8RN6KeJnl2i7a-YpnvZ3znJWYBB2YwbqaLX4J25PFGXe1A1g', // Llave 20
+  'AQ.Ab8RN6KkEduRFevRO8SeNOjm_NQXJVO9vgyYD41GVcnnYO_yww', // Llave 21
+  'AQ.Ab8RN6IQmB7OsxZMOdWZkt_9SzdomHqAQdvNOqlYJxmzNbM_5w', // Llave 22
+  'AQ.Ab8RN6L6dGBQbLUKdmIW_uJhI6CUBOLDUZpwKPTGGEkfeenaWw', // Llave 23
+  'AQ.Ab8RN6Igz1cBlTZd1cplbatZqPNscc8rYsVR-1QGxikMPrDtCA', // Llave 24
+  'AQ.Ab8RN6IrJyr0dlpRlT4GGiIQYYp1LkemSaANxhN1ZenqwElysQ', // Llave 25
+  'AQ.Ab8RN6KSKwEVq-OWwfSbPxgIB6r2-5T4seg82Iew03lLVBB0eQ', // Llave 26
+  'AQ.Ab8RN6LGogfrdG7A8rgxLdOeFscEPmiNkJuEjlZCxz1VfPKPMA', // Llave 27
+  'AQ.Ab8RN6KxCiQosXbA-ei_ecj-aOmfKfln82op0fJjZn7j3wrQEQ', // Llave 28
+  'AQ.Ab8RN6ILvoXysfuFo29-Z5PtwkmsvXrHakr3gO1-Tj0Df_RPng', // Llave 29
+  'AQ.Ab8RN6LQm66b31EU5uxvvvPdm-6HbTiUTL2S8X9MaGb3BLoiGA', // Llave 30
+  'AQ.Ab8RN6LkCqb7FEe4EzhcPu4wLWqdNqBVC8SDPyS87llK8LKhew', // Llave 31
+  'AQ.Ab8RN6LhIKOki2t-V-8_Z7DRn_w9YIaPVFDyLPmg6FuAyJzFYA', // Llave 32
+  'AQ.Ab8RN6LwJHzs-QTaLqoiwuOET2GFeg527hm08Jd5VKLsN0cSvg', // Llave 33
+  'AQ.Ab8RN6JPcQ6jGxL79oQxg5Av3FYBSrF1gktaDuPGyZ8uxPAOOA', // Llave 34
+  'AQ.Ab8RN6JaVFejANTo_nNyYXVua0igM3evvh52isvzVo2TQO77qw', // Llave 35
+  'AQ.Ab8RN6Ib33qtG2bhJpPiIjHrPI2CvOaREMlwJmWa_Flw1nGDQg', // Llave 36
+  'AQ.Ab8RN6KRwijhIqjBeiArIokQYDyDRGcjvpZXK6xpNMt5Z31g_g', // Llave 37
+  'AQ.Ab8RN6I26alih36_fQOq-Dx767Ca-UdjDN31HradPDKbRnNgkQ', // Llave 38
+  'AQ.Ab8RN6IJy4q1VdpP5NosFxKolNlMTytEZ419T8Z6eVx3j0PQ7Q', // Llave 39
+  'AQ.Ab8RN6KTm31BSS0zR7CulaENCbIDNmooe_JUMfRbwoOPJXtRoA', // Llave 40
+  'AQ.Ab8RN6JXmUlYqSPmUhDSpFVb8UbuBeaaELmJK87HgNYYqyZQMQ', // Llave 41
+  'AQ.Ab8RN6LencR-SPJGeZ-yRVoECWK5mBNbohDM-NObjIp83_TWag', // Llave 42
+  'AQ.Ab8RN6I9OczeKWj4QznPjLJcYfjmTjHQBmTIg0bpkDcZ5IerDQ', // Llave 43
+  'AQ.Ab8RN6IU4TD1tovt1BDEheRMGp_RijEy5zYwbL1QItAJ6nkAJA', // Llave 44
+  'AQ.Ab8RN6L-wzfAgbll7DvBhDnLkjmIYDXAFBwWKUlJFDLKG3ORsg', // Llave 45
+  'AQ.Ab8RN6IUSwjdr-PyoSBdB1tkIZ_YdYKYGjGjqXr7o-ShP3Sgdg', // Llave 46
+  'AQ.Ab8RN6LG-Np3AW1SDfikMMDlJ4PDjy1JexNNNPH30qS0CCIJzQ', // Llave 47
+  'AQ.Ab8RN6I5ZOYND0MyaazkENB2UDyWxevy1otu8MBwzUCiYTX-aA', // Llave 48
+  'AQ.Ab8RN6JNXPJcect1XMuelLavMIgVjvtjWz9hg3EwpeFyPPlZEQ', // Llave 49
+  'AQ.Ab8RN6LeQrkEaO8XaAlAUmgsWS3X-h8v3V2oUshShRZrTe-BXg'  // Llave 50
+];
+
+const DEFAULT_GEMINI_API_KEY = POOL_CLAVES_GEMINI.join(', ');
+
+// Devuelve la lista de llaves disponibles (excluyendo las que ya agotaron su cuota hoy)
+function obtenerPoolClavesDisponibles(cadenaClaves = '') {
+  if (!window.__ssClavesAgotadas) {
+    window.__ssClavesAgotadas = new Set();
+  }
+  const desdeInput = (cadenaClaves || '')
+    .split(',')
+    .map((k) => k.trim())
+    .filter(Boolean);
+
+  // Unir siempre con las 50 llaves oficiales sin duplicados
+  const todas = Array.from(new Set([...desdeInput, ...POOL_CLAVES_GEMINI]));
+  const activas = todas.filter((k) => !window.__ssClavesAgotadas.has(k));
+
+  // Si todas las llaves fueron marcadas en algún modelo, liberar el listado para reintentar
+  if (activas.length === 0) {
+    window.__ssClavesAgotadas.clear();
+    return todas;
+  }
+  return activas;
+}
+
+function obtenerSiguienteClaveRotativa(cadenaClaves = '') {
+  const disponibles = obtenerPoolClavesDisponibles(cadenaClaves);
+  if (typeof window.__ssIndiceClaveActiva !== 'number') {
+    window.__ssIndiceClaveActiva = 0;
+  }
+  const clave = disponibles[window.__ssIndiceClaveActiva % disponibles.length];
+  window.__ssIndiceClaveActiva = (window.__ssIndiceClaveActiva + 1) % disponibles.length;
+  return clave;
+}
 
 /* ==========================================================================
    SISTEMA DE ICONOGRAFÍA VECTORIAL SVG DE LUJO (CERO EMOJIS)
@@ -530,17 +618,12 @@ export default function SecretoSagradoLanding() {
   const [nuevoNombreInput, setNuevoNombreInput] = useState('');
   const [nuevoRolIdxInput, setNuevoRolIdxInput] = useState(1);
 
-  // Ajustes en "Configuración" (Con tu API Key ya inyectada por defecto)
+  // Ajustes en "Configuración" (Carga automáticamente el Pool completo de 50 Llaves)
   const [geminiApiKey, setGeminiApiKey] = useState(() => {
     try {
-      return (
-        localStorage.getItem('ss_gemini_api_key') ||
-        process.env.REACT_APP_GEMINI_API_KEY ||
-        DEFAULT_GEMINI_API_KEY
-      );
-    } catch (e) {
-      return DEFAULT_GEMINI_API_KEY;
-    }
+      localStorage.setItem('ss_gemini_api_key', DEFAULT_GEMINI_API_KEY);
+    } catch (e) {}
+    return DEFAULT_GEMINI_API_KEY;
   });
   const [volumenMusica, setVolumenMusica] = useState(0.65);
   const [vozSinteticaActiva, setVozSinteticaActiva] = useState(true);
@@ -713,30 +796,346 @@ export default function SecretoSagradoLanding() {
   const [hablandoDM, setHablandoDM] = useState(false);
   const [textoSincronizadoDM, setTextoSincronizadoDM] = useState('');
 
-  // Catálogo verificado en wol.jw.org de rollos proféticos y libros bíblicos sobre el Mesías y el Secreto Sagrado
+  // Lista corta y limpia de rollos bíblicos (nunca repite el anterior)
   const ROLLOS_SECRETO_SAGRADO = useRef([
-    'Investigando el rollo de Génesis: la primera profecía en Edén sobre la Descendencia que aplastará la cabeza de la Serpiente (Gén. 3:15).',
-    'Investigando el rollo de Moisés: el juramento a Abrahán de que mediante su Descendencia se bendecirán todas las naciones (Gén. 22:18).',
-    'Investigando el rollo patriarcal de Génesis: el cetro real no se apartará de Judá hasta que venga Siló, a quien pertenecerá la obediencia de los pueblos (Gén. 49:10).',
-    'Investigando el rollo de Deuteronomio: la promesa de que Jehová levantaría a un profeta semejante a Moisés para hablar en Su nombre (Deut. 18:15, 18).',
-    'Investigando el rollo de Samuel: el pacto para un Reino con David que garantiza que su trono permanecerá firme hasta tiempo indefinido (2 Sam. 7:12-16).',
-    'Investigando el rollo de los Salmos: el decreto de Jehová que une el trono real y el sacerdocio en el Ungido a la manera de Melquisedec (Sal. 2:2; 110:4).',
-    'Investigando el rollo del profeta Isaías: la venida del Príncipe de Paz de la raíz de Jesé y la entrega de su vida como ofrenda por la culpa (Isa. 9:6; 53:5, 10).',
-    'Investigando el rollo del profeta Jeremías: el anuncio del Nuevo Pacto y del Brote justo de David que obrará con derecho y justicia (Jer. 23:5; 31:31-34).',
-    'Investigando el rollo del profeta Ezequiel: la corona real reservada hasta que llegue Aquel que tiene el derecho legal otorgado por Jehová (Ezeq. 21:25-27).',
-    'Investigando el rollo del profeta Daniel: el reloj profético de las 70 semanas de años hasta Mesías el Caudillo y la Piedra que tritura a los reinos (Dan. 2:44; 9:24-27).',
-    'Investigando el rollo del profeta Miqueas: la señal exacta de que el Gobernante de Israel de origen antiguo nacería en Belén Éfrata (Miq. 5:2).',
-    'Investigando el rollo del profeta Zacarías: el varón cuyo nombre es Brote, quien edificará el templo de Jehová y será sacerdote sobre su trono (Zac. 6:12, 13; 9:9).',
-    'Investigando el rollo del profeta Malaquías: la llegada del mensajero del pacto para refinar y purificar a los hijos de Leví (Mal. 3:1-3).',
-    'Investigando el Evangelio de Mateo: el registro genealógico del derecho legal al trono de David y la entrega del rescate correspondiente (Mat. 1:1; 20:28).',
-    'Investigando el Evangelio de Lucas: el Pacto para un Reino que Jesús celebró con su rebaño pequeño la noche del 14 de nisán (Luc. 12:32; 22:28-30).',
-    'Investigando la carta a los Romanos: la revelación del Secreto Sagrado mantenido en silencio por tiempos de larga duración y la victoria sobre Satanás (Rom. 16:20, 25).',
-    'Investigando la carta a los Gálatas: Cristo como la parte principal de la Descendencia de Abrahán y los ungidos como coherederos de la promesa (Gál. 3:16, 29).',
-    'Investigando la carta a los Efesios: la administración de Dios para reunir todas las cosas de nuevo en el Cristo, las cosas en los cielos y en la tierra (Efes. 1:9, 10; 3:3-6).',
-    'Investigando la carta a los Colosenses: el Secreto Sagrado de Dios, a saber, Cristo, en quien están cuidadosamente ocultos todos los tesoros de la sabiduría (Col. 1:26; 2:2, 3).',
-    'Investigando la carta a los Hebreos: la entrada de Jesús con su propia sangre en el cielo mismo para comparecer ante Dios a nuestro favor (Heb. 9:12, 24).',
-    'Investigando el rollo de Revelación: el toque de la séptima trompeta con el que el Secreto Sagrado de Dios queda felizmente terminado (Rev. 10:7; 11:15; 12:9, 10).'
+    'Revisando el rollo de Génesis...',
+    'Revisando el rollo de Éxodo...',
+    'Revisando el rollo de Levítico...',
+    'Revisando el rollo de Números...',
+    'Revisando el rollo de Deuteronomio...',
+    'Revisando el rollo de Rut...',
+    'Revisando el rollo de Samuel...',
+    'Revisando el rollo de las Crónicas...',
+    'Revisando el rollo de los Salmos...',
+    'Revisando el rollo de Isaías...',
+    'Revisando el rollo de Jeremías...',
+    'Revisando el rollo de Ezequiel...',
+    'Revisando el rollo de Daniel...',
+    'Revisando el rollo de Oseas...',
+    'Revisando el rollo de Miqueas...',
+    'Revisando el rollo de Ageo...',
+    'Revisando el rollo de Zacarías...',
+    'Revisando el rollo de Malaquías...',
+    'Revisando el rollo de Mateo...',
+    'Revisando el rollo de Marcos...',
+    'Revisando el rollo de Lucas...',
+    'Revisando el rollo de Juan...',
+    'Revisando el rollo de los Hechos...',
+    'Revisando el rollo de los Romanos...',
+    'Revisando el rollo de los Corintios...',
+    'Revisando el rollo de los Gálatas...',
+    'Revisando el rollo de los Efesios...',
+    'Revisando el rollo de los Colosenses...',
+    'Revisando el rollo de los Hebreos...',
+    'Revisando el rollo de Pedro...',
+    'Revisando el rollo de Revelación...'
   ]);
+
+  const mazoIndicesRollosRef = useRef([]);
+  const ultimoIndiceRolloRef = useRef(-1);
+  const [leyendaRolloActual, setLeyendaRolloActual] = useState(
+    ROLLOS_SECRETO_SAGRADO.current[0]
+  );
+
+  const obtenerSiguienteLeyendaRollo = useCallback(() => {
+    const lista = ROLLOS_SECRETO_SAGRADO.current;
+    if (mazoIndicesRollosRef.current.length === 0) {
+      const indices = lista.map((_, idx) => idx);
+      for (let i = indices.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [indices[i], indices[j]] = [indices[j], indices[i]];
+      }
+      if (indices[0] === ultimoIndiceRolloRef.current && indices.length > 1) {
+        [indices[0], indices[indices.length - 1]] = [indices[indices.length - 1], indices[0]];
+      }
+      mazoIndicesRollosRef.current = indices;
+    }
+    const sigIdx = mazoIndicesRollosRef.current.shift();
+    ultimoIndiceRolloRef.current = sigIdx;
+    return lista[sigIdx];
+  }, []);
+
+  // Indicador con el Logo animado y el nombre corto del rollo
+  const renderizarEstadoPensandoDM = () => (
+    <div className="flex flex-col items-center justify-center py-4 px-6 gap-3 animate-[fadeIn_0.3s_ease-out]">
+      <div className="relative flex items-center justify-center">
+        <div className="absolute -inset-3 rounded-full bg-cyan-400/25 blur-xl animate-pulse" />
+        <div
+          style={{ animation: 'giroAnilloSagrado 8s linear infinite' }}
+          className="absolute w-16 h-16 rounded-full border border-dashed border-amber-200/60"
+        />
+        <img
+          src={URL_LOGO_OFICIAL}
+          alt="Cargando"
+          className="relative z-10 w-14 h-14 object-contain logo-interactivo"
+        />
+      </div>
+      <p className="text-xs md:text-sm font-extrabold text-amber-200 tracking-[0.14em] uppercase text-center">
+        {leyendaRolloActual}
+      </p>
+      <div className="flex items-center gap-1.5">
+        <span className="w-1.5 h-1.5 rounded-full bg-amber-300 animate-bounce" style={{ animationDelay: '0ms' }} />
+        <span className="w-1.5 h-1.5 rounded-full bg-cyan-300 animate-bounce" style={{ animationDelay: '150ms' }} />
+        <span className="w-1.5 h-1.5 rounded-full bg-amber-300 animate-bounce" style={{ animationDelay: '300ms' }} />
+      </div>
+    </div>
+  );
+
+  const cacheAudioTTSRef = useRef(new Map());
+  const idLocucionActualRef = useRef(0);
+
+  // Caché persistente en IndexedDB para que los audios generados se guarden en la Tablet y no gasten cuota al recargar
+  const leerAudioDeIndexedDB = useCallback((claveTexto) => {
+    return new Promise((resolve) => {
+      try {
+        const req = window.indexedDB.open('SecretoSagradoAudioDB', 1);
+        req.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains('audios')) {
+            db.createObjectStore('audios');
+          }
+        };
+        req.onsuccess = (e) => {
+          const db = e.target.result;
+          const tx = db.transaction('audios', 'readonly');
+          const getReq = tx.objectStore('audios').get(claveTexto);
+          getReq.onsuccess = () => resolve(getReq.result || null);
+          getReq.onerror = () => resolve(null);
+        };
+        req.onerror = () => resolve(null);
+      } catch (err) {
+        resolve(null);
+      }
+    });
+  }, []);
+
+  const guardarAudioEnIndexedDB = useCallback((claveTexto, base64Data) => {
+    try {
+      const req = window.indexedDB.open('SecretoSagradoAudioDB', 1);
+      req.onsuccess = (e) => {
+        const db = e.target.result;
+        const tx = db.transaction('audios', 'readwrite');
+        tx.objectStore('audios').put(base64Data, claveTexto);
+      };
+    } catch (err) {}
+  }, []);
+
+  useEffect(() => {
+    setVocesDisponibles([
+      { voiceURI: 'Charon', name: 'IA Gemini — Charon (Barítono Profundo)' }
+    ]);
+    setVozSeleccionadaURI('Charon');
+  }, []);
+
+  const hablarConVozDM = useCallback(
+    async (textoCrudo, alTerminarCallback = null) => {
+      const textoLimpio = formatearCitasParaLocucion(textoCrudo);
+      const palabrasOriginales = (textoCrudo || '').trim().split(/\s+/);
+
+      try { window.speechSynthesis?.cancel(); } catch (e) {}
+
+      idLocucionActualRef.current += 1;
+      const miIdLocucion = idLocucionActualRef.current;
+
+      if (intervaloTextoRef.current) clearInterval(intervaloTextoRef.current);
+      if (fuenteAudioTTSRef.current) {
+        try {
+          fuenteAudioTTSRef.current.onended = null;
+          fuenteAudioTTSRef.current.stop();
+        } catch (e) {}
+        fuenteAudioTTSRef.current = null;
+      }
+
+      setLeyendaRolloActual(obtenerSiguienteLeyendaRollo());
+      setCargandoVozDM(true);
+      setHablandoDM(false);
+      setTextoSincronizadoDM('');
+
+      // Función que revela el texto palabra por palabra si la voz está silenciada o si la llave agotó sus 15 audios diarios gratuitos
+      const revelarPalabraPorPalabraSinCorte = () => {
+        if (miIdLocucion !== idLocucionActualRef.current) return;
+        setCargandoVozDM(false);
+        setHablandoDM(true);
+        let idxPalabra = 0;
+        intervaloTextoRef.current = setInterval(() => {
+          if (miIdLocucion !== idLocucionActualRef.current) {
+            clearInterval(intervaloTextoRef.current);
+            return;
+          }
+          idxPalabra += 1;
+          setAmplitudVozDM(0.38 + Math.sin(idxPalabra * 0.8) * 0.32);
+          setTextoSincronizadoDM(palabrasOriginales.slice(0, idxPalabra).join(' '));
+          if (idxPalabra >= palabrasOriginales.length) {
+            clearInterval(intervaloTextoRef.current);
+            setAmplitudVozDM(0);
+            setHablandoDM(false);
+            if (alTerminarCallback) alTerminarCallback();
+          }
+        }, 175);
+      };
+
+      if (!vozSinteticaActiva || !geminiApiKey || geminiApiKey.trim() === '') {
+        setTimeout(revelarPalabraPorPalabraSinCorte, 650);
+        return;
+      }
+
+      // 1. Buscar primero en RAM o en el disco permanente de la Tablet (0 consumo de cuota)
+      let base64Audio = cacheAudioTTSRef.current.get(textoLimpio) || null;
+      if (!base64Audio) {
+        base64Audio = await leerAudioDeIndexedDB(textoLimpio);
+        if (base64Audio) cacheAudioTTSRef.current.set(textoLimpio, base64Audio);
+      }
+
+      // 2. Rotar inteligentemente entre todas las API Keys (recordando la última llave activa que funcionó)
+      const listaClaves = geminiApiKey
+        .split(',')
+        .map((k) => k.trim())
+        .filter(Boolean);
+      const modelosTTS = ['gemini-2.5-flash-preview-tts', 'gemini-2.5-pro-preview-tts'];
+
+      if (typeof window.__ssIndiceClaveActiva !== 'number') {
+        window.__ssIndiceClaveActiva = 0;
+      }
+
+      for (let m = 0; m < modelosTTS.length && !base64Audio; m++) {
+        const modeloActual = modelosTTS[m];
+        for (let paso = 0; paso < listaClaves.length && !base64Audio; paso++) {
+          if (miIdLocucion !== idLocucionActualRef.current) return;
+          const idxReal = (window.__ssIndiceClaveActiva + paso) % listaClaves.length;
+          const claveActual = listaClaves[idxReal];
+          try {
+            const res = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/${modeloActual}:generateContent?key=${claveActual}`,
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  contents: [
+                    {
+                      parts: [{ text: textoLimpio }]
+                    }
+                  ],
+                  generationConfig: {
+                    responseModalities: ['AUDIO'],
+                    speechConfig: {
+                      voiceConfig: {
+                        prebuiltVoiceConfig: { voiceName: 'Charon' }
+                      }
+                    }
+                  }
+                })
+              }
+            );
+
+            if (res.ok) {
+              const data = await res.json();
+              const extraido = data?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+              if (extraido) {
+                // Guardar esta llave como la activa para que el próximo turno sea instantáneo
+                window.__ssIndiceClaveActiva = idxReal;
+                base64Audio = extraido;
+                cacheAudioTTSRef.current.set(textoLimpio, extraido);
+                guardarAudioEnIndexedDB(textoLimpio, extraido);
+                break;
+              }
+            }
+          } catch (err) {}
+        }
+      }
+
+      if (miIdLocucion !== idLocucionActualRef.current) return;
+
+      if (base64Audio) {
+        try {
+          const Ctx = window.AudioContext || window.webkitAudioContext;
+          if (!audioCtxRef.current) audioCtxRef.current = new Ctx();
+          const ctx = audioCtxRef.current;
+          if (ctx.state === 'suspended') await ctx.resume();
+
+          const binaryStr = window.atob(base64Audio);
+          const len = binaryStr.length;
+          const bytes = new Uint8Array(len);
+          for (let i = 0; i < len; i++) bytes[i] = binaryStr.charCodeAt(i);
+
+          const int16 = new Int16Array(bytes.buffer);
+          const audioBuffer = ctx.createBuffer(1, int16.length, 24000);
+          const channelData = audioBuffer.getChannelData(0);
+          for (let i = 0; i < int16.length; i++) {
+            channelData[i] = int16[i] / 32768.0;
+          }
+
+          const source = ctx.createBufferSource();
+          source.buffer = audioBuffer;
+
+          // Barítono profundo ('Charon' con velocidad 0.96x y detune -115 cents)
+          const velocidadVoz = 0.96;
+          source.playbackRate.value = velocidadVoz;
+          if (source.detune) source.detune.value = -115;
+
+          const filtroCuerpoGrave = ctx.createBiquadFilter();
+          filtroCuerpoGrave.type = 'lowshelf';
+          filtroCuerpoGrave.frequency.value = 115;
+          filtroCuerpoGrave.gain.value = 6.5;
+
+          const filtroSuavidad = ctx.createBiquadFilter();
+          filtroSuavidad.type = 'peaking';
+          filtroSuavidad.frequency.value = 3000;
+          filtroSuavidad.Q.value = 1.0;
+          filtroSuavidad.gain.value = -2.5;
+
+          const analyser = ctx.createAnalyser();
+          analyser.fftSize = 64;
+
+          source.connect(filtroCuerpoGrave);
+          filtroCuerpoGrave.connect(filtroSuavidad);
+          filtroSuavidad.connect(analyser);
+          analyser.connect(ctx.destination);
+          fuenteAudioTTSRef.current = source;
+
+          const duracionRealSeg = (audioBuffer.duration / velocidadVoz) * 1.04;
+          const tiempoInicio = ctx.currentTime;
+          const dataArr = new Uint8Array(analyser.frequencyBinCount);
+          let activo = true;
+
+          setCargandoVozDM(false);
+          setHablandoDM(true);
+
+          const actualizarPulsoYTexto = () => {
+            if (!activo || miIdLocucion !== idLocucionActualRef.current) return;
+            analyser.getByteFrequencyData(dataArr);
+            const prom = dataArr.reduce((a, b) => a + b, 0) / dataArr.length;
+            setAmplitudVozDM(Math.min(1.15, prom / 70));
+
+            const transcurrido = Math.max(0, ctx.currentTime - tiempoInicio);
+            const progreso = Math.min(1, transcurrido / Math.max(0.4, duracionRealSeg * 0.95));
+            const numPalabras = Math.max(1, Math.ceil(progreso * palabrasOriginales.length));
+            setTextoSincronizadoDM(palabrasOriginales.slice(0, numPalabras).join(' '));
+
+            requestAnimationFrame(actualizarPulsoYTexto);
+          };
+
+          source.onended = () => {
+            if (miIdLocucion !== idLocucionActualRef.current) return;
+            activo = false;
+            setTextoSincronizadoDM(textoCrudo);
+            setAmplitudVozDM(0);
+            setHablandoDM(false);
+            if (alTerminarCallback) alTerminarCallback();
+          };
+
+          source.start(0);
+          actualizarPulsoYTexto();
+          return;
+        } catch (err) {}
+      }
+
+      // Si las llaves agotaron su cuota gratuita en ambos modelos, mantiene la animación del rollo 900ms
+      // y luego revela el texto palabra por palabra (nunca de golpe)
+      await new Promise((r) => setTimeout(r, 900));
+      revelarPalabraPorPalabraSinCorte();
+    },
+    [vozSinteticaActiva, geminiApiKey, obtenerSiguienteLeyendaRollo, leerAudioDeIndexedDB, guardarAudioEnIndexedDB]
+  );
 
   const mazoIndicesRollosRef = useRef([]);
   const ultimoIndiceRolloRef = useRef(-1);
@@ -1430,11 +1829,12 @@ export default function SecretoSagradoLanding() {
       `Era ${eraNum}: ${TITULOS_OCHO_ERAS[eraNum - 1].nombre}. ¿Quién de los jugadores disponibles tomará el desafío en este turno?`
     );
 
-    if (geminiApiKey && geminiApiKey.trim() !== '') {
+if (geminiApiKey && geminiApiKey.trim() !== '') {
+      const claveRotativa = obtenerSiguienteClaveRotativa(geminiApiKey);
       setCargandoRetoIA(true);
       try {
         const generado = await generarDesafioConGemini({
-          apiKey: geminiApiKey,
+          apiKey: claveRotativa,
           numeroEra: eraNum,
           dmPerfil,
           nombreFamilia: 'el equipo',
@@ -1589,8 +1989,10 @@ export default function SecretoSagradoLanding() {
     if (subFaseJuego === 'JUGADOR_ACTIVO' && transcripcionVoz.trim().length > 3) {
       setEvaluandoIA(true);
       try {
+        const clavesLimpias = geminiApiKey.split(',').map((k) => k.trim()).filter(Boolean);
+        const claveActiva = clavesLimpias[(window.__ssIndiceClaveActiva || 0) % Math.max(1, clavesLimpias.length)] || '';
         const res = await evaluarExplicacionFamiliarConGemini({
-          apiKey: geminiApiKey,
+          apiKey: claveActiva,
           numeroEra: eraActualNum,
           dmPerfil,
           nombreJugador: jugadorActivo?.nombre || 'Jugador',
@@ -1639,8 +2041,10 @@ export default function SecretoSagradoLanding() {
       }
       setCamaraActiva(false);
 
+      const clavesLimpias = geminiApiKey.split(',').map((k) => k.trim()).filter(Boolean);
+      const claveActiva = clavesLimpias[(window.__ssIndiceClaveActiva || 0) % Math.max(1, clavesLimpias.length)] || '';
       const veredicto = await verificarBibliaConCamaraGemini({
-        apiKey: geminiApiKey,
+        apiKey: claveActiva,
         base64JpegSinPrefijo: base64,
         citaBiblia: retoActual.citaBiblia,
         dmPerfil,
