@@ -96,325 +96,232 @@ export const NODOS_MULTIMODALES_POR_ERA = {
   1: [
     {
       tipoMecanica: "SELECCION_MULTIPLE",
-      tituloNodo: "La Cuestión en Edén",
-      citaBiblia: "Génesis 3:4, 5",
-      narrativaDM: "Lean Génesis 3:4, 5.",
-      instruccionInput: "Elijan la opción exacta según el versículo.",
-      pregunta: "¿Qué prometió la serpiente que ocurriría al comer del fruto?",
+      tituloNodo: "El Engaño en Edén",
+      citaBiblia: "Génesis 3:1-5",
+      narrativaDM: "Lean Génesis 3:1-5 en su Biblia.",
+      instruccionInput: "Verifiquen el argumento exacto que empleó la serpiente.",
+      pregunta: "Según Génesis 3:4, 5, ¿qué afirmó la serpiente que ocurriría el día en que comieran del árbol?",
       pasosObjetivo: 0,
-      hiloDorado: "La serpiente afirmó que serían como Dios, conociendo lo bueno y lo malo, desafiando la Soberanía de Jehová.",
+      hiloDorado: "Satanás negó la sentencia de muerte y afirmó que llegarían a ser como Dios, conociendo lo bueno y lo malo, cuestionando el derecho de Jehová a fijar normas.",
       opciones: [
-        { id: "1s1", icono: "opcion", titulo: "Serían como Dios, conociendo lo bueno y lo malo", subtitulo: "Prometió independencia moral para decidir por sí mismos.", correcta: true },
-        { id: "1s2", icono: "opcion", titulo: "Vivirían para siempre sin el árbol de la vida", subtitulo: "Prometió inmortalidad física inmediata en el jardín.", correcta: false },
-        { id: "1s3", icono: "opcion", titulo: "Gobernarían sobre los querubines del Edén", subtitulo: "Prometió autoridad sobre las criaturas espirituales.", correcta: false },
-        { id: "1s4", icono: "opcion", titulo: "Ocultarían sus actos ante la voz de Jehová", subtitulo: "Prometió que Dios no vería lo que hicieran.", correcta: false }
+        { id: "1s1", icono: "opcion", titulo: "Se les abrirían los ojos y serían como Dios, conociendo lo bueno y lo malo", subtitulo: "Prometió independencia moral para decidir por sí mismos qué es correcto.", correcta: true },
+        { id: "1s2", icono: "opcion", titulo: "Morirían solo si tocaban la raíz del árbol sin haber comido antes del árbol de la vida", subtitulo: "Aseguró que el fruto del otro árbol anularía la sentencia dictada a Adán.", correcta: false },
+        { id: "1s3", icono: "opcion", titulo: "Jehová pasaría por alto la desobediencia si presentaban una ofrenda de los frutos del suelo", subtitulo: "Afirmó que la prohibición era temporal hasta que poblaran el jardín.", correcta: false },
+        { id: "1s4", icono: "opcion", titulo: "Solo Adán sería responsable ante Dios porque el mandato se dictó antes de ser creada Eva", subtitulo: "Sostuvo que la ley de Génesis 2:17 no aplicaba legalmente a la mujer.", correcta: false }
       ]
     },
     {
       tipoMecanica: "COMPLETAR_VERSICULO",
-      tituloNodo: "La Primera Profecía",
+      tituloNodo: "La Sentencia de Génesis 3:15",
       citaBiblia: "Génesis 3:15",
-      narrativaDM: "Busquen Génesis 3:15.",
-      instruccionInput: "Completen la palabra exacta de la profecía.",
-      pregunta: "«Él te aplastará la [ _____ ] y tú le herirás el talón».",
+      narrativaDM: "Consulten Génesis 3:15.",
+      instruccionInput: "Seleccionen el término exacto con que inicia la profecía.",
+      pregunta: "«Y pondré [ _____ ] entre tú y la mujer, y entre tu descendencia y la descendencia de ella».",
       pasosObjetivo: 0,
-      hiloDorado: "El aplastamiento de la cabeza de la Serpiente garantiza la destrucción definitiva de Satanás por medio del Mesías.",
+      hiloDorado: "Jehová estableció la enemistad entre la Serpiente y la mujer celestial, garantizando que la Descendencia aplastaría la cabeza del adversario.",
       opciones: [
-        { id: "1c1", icono: "opcion", titulo: "Cabeza", subtitulo: "Golpe mortal y definitivo contra la Serpiente.", correcta: true },
-        { id: "1c2", icono: "opcion", titulo: "Corona", subtitulo: "Símbolo de autoridad real sobre las naciones.", correcta: false },
-        { id: "1c3", icono: "opcion", titulo: "Espada", subtitulo: "Arma colocada al oriente del jardín.", correcta: false },
-        { id: "1c4", icono: "opcion", titulo: "Diestra", subtitulo: "Posición de poder y favor divino.", correcta: false }
+        { id: "1c1", icono: "opcion", titulo: "Enemistad", subtitulo: "Término exacto empleado por Jehová en Génesis 3:15.", correcta: true },
+        { id: "1c2", icono: "opcion", titulo: "Juicio", subtitulo: "Término legal frecuente en los decretos proféticos.", correcta: false },
+        { id: "1c3", icono: "opcion", titulo: "División", subtitulo: "Separación establecida entre ambos linajes.", correcta: false },
+        { id: "1c4", icono: "opcion", titulo: "Contienda", subtitulo: "Conflicto prolongado a través de las eras.", correcta: false }
       ]
     },
     {
       tipoMecanica: "VERDADERO_FALSO",
-      tituloNodo: "La Ofrenda de Abel",
-      citaBiblia: "Génesis 4:4",
-      narrativaDM: "Verifiquen Génesis 4:4 en su Biblia.",
-      instruccionInput: "Indiquen si la afirmación es Verdadera o Falsa.",
-      pregunta: "¿Abel ofreció algunos primogénitos de su rebaño y sus partes grasas?",
+      tituloNodo: "El Sacrificio de Abel y Caín",
+      citaBiblia: "Génesis 4:3-5; Hebreos 11:4",
+      narrativaDM: "Comparen Génesis 4:3-5 con Hebreos 11:4.",
+      instruccionInput: "Verifiquen con cuidado ambos pasajes antes de elegir.",
+      pregunta: "¿Rechazó Jehová la ofrenda de Caín porque la ley dada a Adán prohibía ofrecer productos agrícolas?",
       pasosObjetivo: 0,
-      hiloDorado: "Abel ofreció por fe una vida inocente con sus partes grasas, prefigurando el rescate perfecto.",
+      hiloDorado: "El problema no era que fueran productos del suelo, sino la falta de fe de Caín y el hecho de que la ofrenda de Abel implicó fe y derramamiento de vida inocente (Hebreos 11:4).",
       opciones: [
-        { id: "1vf1", icono: "opcion", titulo: "Verdadero", subtitulo: "Así lo confirma exactamente Génesis 4:4.", correcta: true },
-        { id: "1vf2", icono: "opcion", titulo: "Falso", subtitulo: "El pasaje menciona otra ofrenda distinta.", correcta: false }
+        { id: "1vf1", icono: "opcion", titulo: "Falso", subtitulo: "Fue por la falta de fe y actitud de corazón de Caín, no por una ley contra los frutos.", correcta: true },
+        { id: "1vf2", icono: "opcion", titulo: "Verdadero", subtitulo: "En Génesis capítulo 4 estaba prohibido presentar frutos de la tierra como ofrenda.", correcta: false }
       ]
     },
     {
       tipoMecanica: "ORDENAR_SECUENCIA",
-      tituloNodo: "El Linaje Antediluviano",
-      citaBiblia: "Génesis 5:3-32",
-      narrativaDM: "Consulten Génesis 5:3-32.",
-      instruccionInput: "Toquen a estos siervos en orden cronológico (1º a 4º).",
-      pregunta: "¿En qué orden nacieron estos antepasados del linaje mesiánico?",
+      tituloNodo: "Sucesos Clave de Génesis 3 a 9",
+      citaBiblia: "Génesis 3:15, 24; 6:14; 9:4",
+      narrativaDM: "Repasen el orden de los capítulos 3 al 9 de Génesis.",
+      instruccionInput: "Toquen estos cuatro hechos en orden cronológico (1º a 4º).",
+      pregunta: "¿En qué orden se registran estas intervenciones de Jehová en Génesis?",
       pasosObjetivo: 0,
-      hiloDorado: "Jehová preservó el registro genealógico intacto desde Set hasta Noé para traer a la Descendencia.",
+      hiloDorado: "Cada intervención protegió el propósito divino desde la promesa en Edén hasta el decreto sobre la santidad de la sangre tras el Diluvio.",
       opciones: [
-        { id: "1o1", icono: "opcion", titulo: "Set", subtitulo: "Hijo nombrado tras la muerte de Abel", ordenCorrecto: 1, correcta: true },
-        { id: "1o2", icono: "opcion", titulo: "Enoc", subtitulo: "Séptimo en la línea desde Adán", ordenCorrecto: 2, correcta: false },
-        { id: "1o3", icono: "opcion", titulo: "Matusalén", subtitulo: "Hijo de Enoc y abuelo de Noé", ordenCorrecto: 3, correcta: false },
-        { id: "1o4", icono: "opcion", titulo: "Noé", subtitulo: "Constructor del arca", ordenCorrecto: 4, correcta: false }
+        { id: "1o1", icono: "opcion", titulo: "Promesa sobre la Descendencia de la mujer", subtitulo: "Génesis 3:15", ordenCorrecto: 1, correcta: true },
+        { id: "1o2", icono: "opcion", titulo: "Querubines apostados al este del jardín de Edén", subtitulo: "Génesis 3:24", ordenCorrecto: 2, correcta: false },
+        { id: "1o3", icono: "opcion", titulo: "Mandato a Noé de construir el arca de madera resinosa", subtitulo: "Génesis 6:14", ordenCorrecto: 3, correcta: false },
+        { id: "1o4", icono: "opcion", titulo: "Prohibición de comer la sangre porque representa el alma", subtitulo: "Génesis 9:4", ordenCorrecto: 4, correcta: false }
       ]
-    },
-    {
-      tipoMecanica: "CAMINATA_PEREGRINAJE",
-      tituloNodo: "El Andar de Noé",
-      citaBiblia: "Génesis 6:9",
-      narrativaDM: "Lean Génesis 6:9.",
-      instruccionInput: "Den 12 pasos por la sala con la Tablet.",
-      pregunta: "Caminen 12 pasos representando el andar fiel de Noé con Dios.",
-      pasosObjetivo: 12,
-      hiloDorado: "Por andar con el Dios verdadero, Noé y su familia preservaron vivo el linaje humano hacia Sem.",
-      opciones: []
-    },
-    {
-      tipoMecanica: "VOZ_MANTENER",
-      tituloNodo: "La Sangre y Sem",
-      citaBiblia: "Génesis 9:4, 26",
-      narrativaDM: "Lean Génesis 9:4, 26.",
-      instruccionInput: "Mantengan presionado el micrófono y respondan con voz.",
-      pregunta: "¿Qué representa la sangre según Génesis 9:4 y a qué hijo bendijo Noé?",
-      pasosObjetivo: 0,
-      hiloDorado: "La sangre representa el alma o la vida, y mediante Sem continuó la línea hacia Abrahán.",
-      opciones: []
     }
   ],
   2: [
     {
       tipoMecanica: "SELECCION_MULTIPLE",
-      tituloNodo: "El Juramento en Moria",
-      citaBiblia: "Génesis 22:17, 18",
-      narrativaDM: "Lean Génesis 22:17, 18.",
-      instruccionInput: "Elijan qué prometió Jehová bajo juramento.",
-      pregunta: "¿Qué lograría la Descendencia de Abrahán según Génesis 22:17, 18?",
+      tituloNodo: "La Vigencia del Pacto Abrahámico",
+      citaBiblia: "Génesis 12:1-4; Éxodo 12:40, 41; Gálatas 3:17",
+      narrativaDM: "Consulten Génesis 12:1-4 y Gálatas 3:17.",
+      instruccionInput: "Verifiquen qué suceso marcó el inicio legal de los 430 años.",
+      pregunta: "¿En qué momento exacto entró en vigor el pacto abrahámico e inició el período de 430 años hasta la Ley?",
       pasosObjetivo: 0,
-      hiloDorado: "La Descendencia tomaría la puerta de sus enemigos y bendeciría a todas las naciones de la tierra.",
+      hiloDorado: "El pacto entró en vigor en 1943 a. E.C. cuando Abrahán, de 75 años, salió de Harán y cruzó el río Éufrates rumbo a Canaán.",
       opciones: [
-        { id: "2a", icono: "opcion", titulo: "Tomar la puerta de sus enemigos y bendecir a las naciones", subtitulo: "Victoria sobre el adversario y bendición mundial.", correcta: true },
-        { id: "2b", icono: "opcion", titulo: "Heredar el trono de Salem en días de Isaac", subtitulo: "Recibir el sacerdocio de manos de Melquisedec.", correcta: false },
-        { id: "2c", icono: "opcion", titulo: "Evitar toda opresión extranjera por 400 años", subtitulo: "Permanecer en Canaán sin bajar a Egipto.", correcta: false },
-        { id: "2d", icono: "opcion", titulo: "Recibir las tablas de piedra en el monte Moria", subtitulo: "Inaugurar el pacto de la Ley mediante Abrahán.", correcta: false }
+        { id: "2a", icono: "opcion", titulo: "Cuando Abrahán salió de Harán y cruzó el río Éufrates hacia Canaán", subtitulo: "Ocurrió en 1943 a. E.C., exactamente 430 años antes del Éxodo y el pacto de la Ley.", correcta: true },
+        { id: "2b", icono: "opcion", titulo: "Cuando Jehová le cambió el nombre de Abrán a Abrahán e instituyó la circuncisión", subtitulo: "Ocurrió en Génesis 17:5, un año antes del nacimiento de Isaac.", correcta: false },
+        { id: "2c", icono: "opcion", titulo: "Cuando Abrahán ofreció el carnero en lugar de Isaac en el monte Moria", subtitulo: "Ocurrió en Génesis 22:16-18 cuando Jehová añadió Su juramento.", correcta: false },
+        { id: "2d", icono: "opcion", titulo: "Cuando Melquisedec, rey de Salem y sacerdote, bendijo a Abrahán", subtitulo: "Ocurrió en Génesis 14:18-20 tras la victoria sobre los cuatro reyes.", correcta: false }
       ]
-    },
-    {
-      tipoMecanica: "COMPLETAR_VERSICULO",
-      tituloNodo: "La Promesa de Siló",
-      citaBiblia: "Génesis 49:10",
-      narrativaDM: "Consulten Génesis 49:10.",
-      instruccionInput: "Seleccionen el nombre profético que completa el texto.",
-      pregunta: "«El cetro no se apartará de Judá [...] hasta que venga [ _____ ]».",
-      pasosObjetivo: 0,
-      hiloDorado: "Siló significa «Aquel a Quien Pertenece» y señala a Jesucristo como heredero del cetro de Judá.",
-      opciones: [
-        { id: "2c1", icono: "opcion", titulo: "Siló", subtitulo: "Significa «Aquel a Quien Pertenece».", correcta: true },
-        { id: "2c2", icono: "opcion", titulo: "Melquisedec", subtitulo: "Rey y sacerdote de la antigua Salem.", correcta: false },
-        { id: "2c3", icono: "opcion", titulo: "Efraín", subtitulo: "Hijo menor de José bendecido por Jacob.", correcta: false },
-        { id: "2c4", icono: "opcion", titulo: "Brote", subtitulo: "Título profético usado por Zacarías.", correcta: false }
-      ]
-    },
-    {
-      tipoMecanica: "CAMARA_ESCRITURA",
-      tituloNodo: "Verificación de Génesis 49:10",
-      citaBiblia: "Génesis 49:10",
-      narrativaDM: "Abran su Biblia en Génesis 49:10.",
-      instruccionInput: "Apunten con la cámara a Génesis 49:10.",
-      pregunta: "Escaneen en su Biblia física el pasaje de Génesis 49:10.",
-      pasosObjetivo: 0,
-      hiloDorado: "La tribu de Judá recibió la promesa real que culminaría en el trono eterno del Mesías.",
-      opciones: []
     }
   ],
   3: [
     {
-      tipoMecanica: "VERDADERO_FALSO",
-      tituloNodo: "El Cordero Pascual",
-      citaBiblia: "Éxodo 12:46",
-      narrativaDM: "Lean Éxodo 12:46.",
-      instruccionInput: "Respondan Verdadero o Falso según el versículo.",
-      pregunta: "¿Mandó Jehová que no quebraran ningún hueso del cordero pascual?",
-      pasosObjetivo: 0,
-      hiloDorado: "Esta ley se cumplió literalmente en Jesús cuando los soldados no le quebraron las piernas (Juan 19:36).",
-      opciones: [
-        { id: "3vf1", icono: "opcion", titulo: "Verdadero", subtitulo: "Éxodo 12:46 prohíbe quebrar hueso alguno.", correcta: true },
-        { id: "3vf2", icono: "opcion", titulo: "Falso", subtitulo: "La ley permitía partir los huesos del cordero.", correcta: false }
-      ]
-    },
-    {
       tipoMecanica: "SELECCION_MULTIPLE",
-      tituloNodo: "Un Profeta como Moisés",
-      citaBiblia: "Deuteronomio 18:15, 18",
-      narrativaDM: "Consulten Deuteronomio 18:15, 18.",
-      instruccionInput: "Elijan la promesa exacta dada por medio de Moisés.",
-      pregunta: "¿A quién prometió levantar Jehová de en medio de los hermanos de Israel?",
+      tituloNodo: "El Propósito del Pacto de la Ley",
+      citaBiblia: "Éxodo 19:5, 6; Gálatas 3:19, 24",
+      narrativaDM: "Lean Éxodo 19:5, 6 y Gálatas 3:19, 24.",
+      instruccionInput: "Identifiquen la función legal que cumplió la Ley mosaica respecto a la Descendencia.",
+      pregunta: "Según Gálatas 3:19, 24, ¿por qué se añadió la Ley mosaica 430 años después del pacto abrahámico?",
       pasosObjetivo: 0,
-      hiloDorado: "Pedro y Esteban confirmaron en Hechos 3:22 y 7:37 que ese Profeta mayor que Moisés es Jesucristo.",
+      hiloDorado: "La Ley puso de manifiesto las transgresiones —demostrando la necesidad de un rescate perfecto— y actuó como tutor para conducir a Israel hacia el Cristo.",
       opciones: [
-        { id: "3a", icono: "opcion", titulo: "Un profeta como Moisés que hablaría todo lo que Dios le mandara", subtitulo: "El pueblo tenía la obligación de escuchar sus palabras.", correcta: true },
-        { id: "3b", icono: "opcion", titulo: "Un sumo sacerdote de la tribu de Rubén para el santuario", subtitulo: "Encargado de llevar el pectoral de juicio en Canaán.", correcta: false },
-        { id: "3c", icono: "opcion", titulo: "Un juez vitalicio de la casa de Josué en Siquem", subtitulo: "Designado para repartir las tierras al cruzar el Jordán.", correcta: false },
-        { id: "3d", icono: "opcion", titulo: "Un rey de la familia de Aarón sobre el monte Sinaí", subtitulo: "Autorizado para modificar las diez palabras del pacto.", correcta: false }
+        { id: "3a", icono: "opcion", titulo: "Para poner de manifiesto las transgresiones y servir de tutor hacia Cristo", subtitulo: "Vigente hasta que llegara la Descendencia a quien se había hecho la promesa.", correcta: true },
+        { id: "3b", icono: "opcion", titulo: "Para reemplazar el pacto abrahámico al otorgar perdón definitivo mediante sacrificios", subtitulo: "La sangre de toros y machos cabríos quitaba el pecado de forma permanente.", correcta: false },
+        { id: "3c", icono: "opcion", titulo: "Para transferir el derecho al trono mesiánico de la tribu de Judá a la casa de Leví", subtitulo: "Unió en Aarón tanto el cetro real de Siló como el sumo sacerdocio.", correcta: false },
+        { id: "3d", icono: "opcion", titulo: "Para abrir de inmediato la entrada al Santísimo celestial antes de la venida del Mesías", subtitulo: "El sumo sacerdote entraba anualmente al cielo mismo en el Día de Expiación.", correcta: false }
       ]
     }
   ],
   4: [
     {
-      tipoMecanica: "ORDENAR_SECUENCIA",
-      tituloNodo: "El Linaje hasta David",
-      citaBiblia: "Rut 4:18-22",
-      narrativaDM: "Lean Rut 4:18-22.",
-      instruccionInput: "Toquen los nombres en orden genealógico (1º a 4º).",
-      pregunta: "¿Cuál es el orden familiar correcto en Belén hasta el rey David?",
+      tipoMecanica: "SELECCION_MULTIPLE",
+      tituloNodo: "El Rey y Sacerdote del Salmo 110",
+      citaBiblia: "2 Samuel 7:12-16; Salmo 110:1, 4",
+      narrativaDM: "Comparen 2 Samuel 7:12-16 con Salmo 110:1, 4.",
+      instruccionInput: "Analicen la diferencia entre los reyes davídicos terrestres y el Mesías.",
+      pregunta: "¿Qué privilegio exclusivo recibió el Mesías por juramento en Salmo 110:4 que ningún rey de la línea de David en Jerusalén podía ejercer bajo la Ley?",
       pasosObjetivo: 0,
-      hiloDorado: "El matrimonio de Boaz y Rut en Belén conectó la tribu de Judá con el nacimiento del rey David.",
+      hiloDorado: "Bajo la Ley mosaica el trono pertenecía a Judá y el sacerdocio a Leví; pero mediante el juramento de Salmo 110:4, Jehová unió en Cristo el Reinado davídico y el Sacerdocio a la manera de Melquisedec.",
       opciones: [
-        { id: "4o1", icono: "opcion", titulo: "Boaz", subtitulo: "Esposo de Rut la moabita", ordenCorrecto: 1, correcta: true },
-        { id: "4o2", icono: "opcion", titulo: "Obed", subtitulo: "Hijo de Boaz y Rut", ordenCorrecto: 2, correcta: false },
-        { id: "4o3", icono: "opcion", titulo: "Jesé", subtitulo: "Padre de ocho hijos en Belén", ordenCorrecto: 3, correcta: false },
-        { id: "4o4", icono: "opcion", titulo: "David", subtitulo: "Ungido por Samuel como rey", ordenCorrecto: 4, correcta: false }
+        { id: "4a", icono: "opcion", titulo: "Ser sacerdote hasta tiempo indefinido a la manera de Melquisedec además de Rey", subtitulo: "Unió por juramento divino la corona real y el sacerdocio sin depender de la tribu de Leví.", correcta: true },
+        { id: "4b", icono: "opcion", titulo: "Construir el templo de piedra sobre la era de Ornán el jebuseo en el monte Moria", subtitulo: "Comisión que Jehová reservó en 2 Samuel 7:13 para el hijo de David.", correcta: false },
+        { id: "4c", icono: "opcion", titulo: "Heredar el sacerdocio aarónico por descendencia materna de la casa de Finehás", subtitulo: "Cumplió el pacto de un sacerdocio eterno celebrado con la tribu de Leví.", correcta: false },
+        { id: "4d", icono: "opcion", titulo: "Gobernar desde Sión sin que ningún adversario se opusiera al inicio de su reinado", subtitulo: "El Salmo 110:2 indica que nunca tendría que sojuzgar en medio de sus enemigos.", correcta: false }
       ]
-    },
-    {
-      tipoMecanica: "VOZ_MANTENER",
-      tituloNodo: "Rey y Sacerdote",
-      citaBiblia: "Salmo 110:1, 4",
-      narrativaDM: "Lean Salmo 110:1, 4.",
-      instruccionInput: "Mantengan presionado el micrófono y respondan con voz.",
-      pregunta: "¿Qué juró Jehová en el Salmo 110:4 acerca del Mesías?",
-      pasosObjetivo: 0,
-      hiloDorado: "Jehová juró que el Rey Mesiánico sería también sacerdote para siempre a la manera de Melquisedec.",
-      opciones: []
     }
   ],
   5: [
     {
-      tipoMecanica: "COMPLETAR_VERSICULO",
-      tituloNodo: "El Lugar de Nacimiento del Mesías",
-      citaBiblia: "Miqueas 5:2",
-      narrativaDM: "Busquen Miqueas 5:2.",
-      instruccionInput: "Elijan la ciudad exacta mencionada por el profeta.",
-      pregunta: "«Y tú, oh [ _____ ] Éfrata, [...] de ti me saldrá el que ha de llegar a ser gobernante en Israel».",
-      pasosObjetivo: 0,
-      hiloDorado: "Siglos antes, Miqueas precisó que el Mesías nacería en Belén Éfrata, la ciudad del rey David.",
-      opciones: [
-        { id: "5c1", icono: "opcion", titulo: "Belén", subtitulo: "Aldea de Judá donde nació David.", correcta: true },
-        { id: "5c2", icono: "opcion", titulo: "Hebrón", subtitulo: "Primera capital del reinado de David.", correcta: false },
-        { id: "5c3", icono: "opcion", titulo: "Nazaret", subtitulo: "Ciudad de Galilea donde creció Jesús.", correcta: false },
-        { id: "5c4", icono: "opcion", titulo: "Silo", subtitulo: "Lugar donde estuvo el tabernáculo.", correcta: false }
-      ]
-    },
-    {
       tipoMecanica: "SELECCION_MULTIPLE",
-      tituloNodo: "Las 70 Semanas de Daniel",
-      citaBiblia: "Daniel 9:25, 26",
-      narrativaDM: "Lean Daniel 9:25, 26.",
-      instruccionInput: "Elijan lo que ocurriría tras las 69 semanas de años.",
-      pregunta: "¿Qué suceso marcó el fin de las 69 semanas y qué pasaría después?",
+      tituloNodo: "El Punto de Partida de las 70 Semanas",
+      citaBiblia: "Daniel 9:24, 25; Nehemías 2:1-8",
+      narrativaDM: "Consulten Daniel 9:25 y Nehemías 2:1-8.",
+      instruccionInput: "Identifiquen el decreto exacto con el que comenzó la cuenta profética.",
+      pregunta: "Según Daniel 9:25, ¿con qué suceso histórico de 455 a. E.C. comenzaron a contarse las 69 semanas de años hasta Mesías el Caudillo?",
       pasosObjetivo: 0,
-      hiloDorado: "Tras 483 años desde 455 a. E.C. apareció el Mesías en 29 E.C., y en 33 E.C. fue cortado en la muerte.",
+      hiloDorado: "La cuenta inició en 455 a. E.C. con la orden del rey Artajerjes a Nehemías para restaurar y reedificar los muros y la ciudad de Jerusalén, cumpliéndose 483 años después en 29 E.C.",
       opciones: [
-        { id: "5a", icono: "opcion", titulo: "Aparecería Mesías el Caudillo y luego sería cortado", subtitulo: "Llegaría en 29 E.C. y entregaría su vida en 33 E.C.", correcta: true },
-        { id: "5b", icono: "opcion", titulo: "Sería reedificado el templo de Salomón por Ciro", subtitulo: "Se restauraría el arca del pacto en el Santísimo.", correcta: false },
-        { id: "5c", icono: "opcion", titulo: "Terminaría el exilio de setenta años en Babilonia", subtitulo: "Zorobabel sería coronado rey sobre Judá.", correcta: false },
-        { id: "5d", icono: "opcion", titulo: "Cesaban para siempre las fiestas en toda Galilea", subtitulo: "Se cerraban las sinagogas durante siete semanas.", correcta: false }
+        { id: "5a", icono: "opcion", titulo: "La salida de la palabra para restaurar y reedificar Jerusalén en el año 20 de Artajerjes", subtitulo: "Autorizó a Nehemías en 455 a. E.C. a reedificar la ciudad y sus murallas.", correcta: true },
+        { id: "5b", icono: "opcion", titulo: "El decreto de Ciro en 537 a. E.C. para que Zorobabel reconstruyera el templo de Jehová", subtitulo: "Puso fin a los setenta años de desolación predichos por el profeta Jeremías.", correcta: false },
+        { id: "5c", icono: "opcion", titulo: "La carta del rey Darío confirmando la terminación del segundo templo en 515 a. E.C.", subtitulo: "Registrada en Esdras 6:14, 15 tras la predicación de Hageo y Zacarías.", correcta: false },
+        { id: "5d", icono: "opcion", titulo: "La comisión dada al sacerdote Esdras en 468 a. E.C. para embellecer la casa de Jehová", subtitulo: "Entregó oro, plata y utensilios para el servicio del altar en Jerusalén.", correcta: false }
       ]
     }
   ],
   6: [
     {
-      tipoMecanica: "VERDADERO_FALSO",
-      tituloNodo: "El Rescate Correspondiente",
-      citaBiblia: "Mateo 20:28",
-      narrativaDM: "Lean Mateo 20:28.",
-      instruccionInput: "Indiquen si es Verdadero o Falso.",
-      pregunta: "¿Dijo Jesús que el Hijo del Hombre vino para dar su vida como rescate a cambio de muchos?",
+      tipoMecanica: "SELECCION_MULTIPLE",
+      tituloNodo: "Las Dos Genealogías Mesiánicas",
+      citaBiblia: "Mateo 1:1-16; Lucas 3:23-38",
+      narrativaDM: "Comparen los registros genealógicos de Mateo 1 y Lucas 3.",
+      instruccionInput: "Analicen por qué ambos evangelios trazan la línea desde David por dos hijos distintos.",
+      pregunta: "¿Qué demuestran en conjunto las genealogías de Mateo (vía Salomón) y de Lucas (vía Natán) sobre Jesús?",
       pasosObjetivo: 0,
-      hiloDorado: "Su vida humana perfecta pagó el precio exacto para liberar a la descendencia de Adán.",
+      hiloDorado: "Mateo registra el derecho legal al trono de David a través de Salomón y José, mientras que Lucas certifica la descendencia biológica de sangre de David a través de Natán y María.",
       opciones: [
-        { id: "6vf1", icono: "opcion", titulo: "Verdadero", subtitulo: "Así lo declaró Jesús en Mateo 20:28.", correcta: true },
-        { id: "6vf2", icono: "opcion", titulo: "Falso", subtitulo: "El texto dice que vino a reinar en Jerusalén.", correcta: false }
+        { id: "6a", icono: "opcion", titulo: "Reunió tanto el derecho legal al trono vía Salomón como la descendencia física de David vía Natán", subtitulo: "Acreditó su derecho real por parte de José y su linaje natural de sangre por parte de María.", correcta: true },
+        { id: "6b", icono: "opcion", titulo: "Demostró que descendía por parte paterna de la tribu de Judá y por parte materna de Aarón", subtitulo: "Heredó de María el sacerdocio levítico gracias a su parentesco con Elisabet.", correcta: false },
+        { id: "6c", icono: "opcion", titulo: "Sustituyó el pacto davídico por el pacto abrahámico al descartar la rama real de Salomón", subtitulo: "Lucas anuló la lista de Mateo debido a la maldición dictada contra Jeconías.", correcta: false },
+        { id: "6d", icono: "opcion", titulo: "Confirmó que José era su padre biológico directo desde Zorobabel hasta el rey David", subtitulo: "Ambos evangelistas usaron nombres distintos para referirse a los mismos reyes de Judá.", correcta: false }
       ]
-    },
-    {
-      tipoMecanica: "CAMARA_ESCRITURA",
-      tituloNodo: "El Pacto para un Reino",
-      citaBiblia: "Lucas 22:28-30",
-      narrativaDM: "Abran Lucas 22:28-30.",
-      instruccionInput: "Enfoquen con la cámara Lucas 22:28-30.",
-      pregunta: "Escaneen en su Biblia el pasaje de Lucas 22:28-30.",
-      pasosObjetivo: 0,
-      hiloDorado: "Jesús pactó con sus discípulos fieles que compartirían tronos en su Reino celestial.",
-      opciones: []
     }
   ],
   7: [
     {
-      tipoMecanica: "COMPLETAR_VERSICULO",
-      tituloNodo: "La Parte Principal de la Descendencia",
-      citaBiblia: "Gálatas 3:16, 29",
-      narrativaDM: "Lean Gálatas 3:16.",
-      instruccionInput: "Completen el nombre que identifica a la Descendencia.",
-      pregunta: "«Y a tu descendencia, que es [ _____ ]».",
+      tipoMecanica: "SELECCION_MULTIPLE",
+      tituloNodo: "El Final de las 70 Semanas en 36 E.C.",
+      citaBiblia: "Daniel 9:24, 27; Hechos 10:34-48; Efesios 3:5, 6",
+      narrativaDM: "Relacionen Daniel 9:27 con Hechos 10:44-48.",
+      instruccionInput: "Verifiquen qué ocurrió al concluir el favor especial de la semana 70.",
+      pregunta: "¿Qué suceso de 36 E.C. marcó el fin de las 70 semanas de años y reveló un nuevo aspecto del Secreto Sagrado?",
       pasosObjetivo: 0,
-      hiloDorado: "Cristo es la parte principal de la Descendencia de Abrahán, y los ungidos son la parte secundaria.",
+      hiloDorado: "Con la conversión y el ungimiento de Cornelio y su casa en 36 E.C. terminó el período de favor exclusivo a Israel y se abrió a gente de las naciones la oportunidad de ser coherederos con Cristo (Efesios 3:5, 6).",
       opciones: [
-        { id: "7c1", icono: "opcion", titulo: "Cristo", subtitulo: "Identificado directamente en Gálatas 3:16.", correcta: true },
-        { id: "7c2", icono: "opcion", titulo: "Moisés", subtitulo: "Mediador del antiguo pacto de la Ley.", correcta: false },
-        { id: "7c3", icono: "opcion", titulo: "Leví", subtitulo: "Tribu encargada del sacerdocio antiguo.", correcta: false },
-        { id: "7c4", icono: "opcion", titulo: "Salomón", subtitulo: "Constructor del primer templo en Jerusalén.", correcta: false }
+        { id: "7a", icono: "opcion", titulo: "El ungimiento de Cornelio, abriendo a gente de las naciones incircuncisa el ser coherederos con Cristo", subtitulo: "Cerró los 7 años posteriores a 29 E.C. en que el pacto se mantuvo vigente solo para los judíos.", correcta: true },
+        { id: "7b", icono: "opcion", titulo: "El derramamiento del espíritu santo en el Pentecostés de 33 E.C. sobre 120 discípulos en Jerusalén", subtitulo: "Fundó el Israel espiritual exactamente tres años y medio después del bautismo de Jesús.", correcta: false },
+        { id: "7c", icono: "opcion", titulo: "El decreto del concilio de los apóstoles y ancianos en Jerusalén sobre la circuncisión en 49 E.C.", subtitulo: "Declaró concluida la septuagésima semana cuando Pablo y Bernabé regresaron de su primer viaje.", correcta: false },
+        { id: "7d", icono: "opcion", titulo: "La destrucción del templo de Jerusalén por las legiones romanas en el año 70 E.C.", subtitulo: "Puso fin al sistema ceremonial judío exactamente setenta semanas después del ministerio de Juan.", correcta: false }
       ]
-    },
-    {
-      tipoMecanica: "VOZ_MANTENER",
-      tituloNodo: "La Administración de Dios",
-      citaBiblia: "Efesios 1:9, 10",
-      narrativaDM: "Lean Efesios 1:9, 10.",
-      instruccionInput: "Mantengan presionado el micrófono y respondan con voz.",
-      pregunta: "¿Qué dos grupos de cosas reunirá Dios de nuevo en el Cristo según Efesios 1:10?",
-      pasosObjetivo: 0,
-      hiloDorado: "Reunirá las cosas en los cielos (los coherederos ungidos) y las cosas en la tierra (la humanidad obediente).",
-      opciones: []
     }
   ],
   8: [
     {
-      tipoMecanica: "ORDENAR_SECUENCIA",
-      tituloNodo: "El Clímax de Revelación",
-      citaBiblia: "Revelación 12:9; 19:11; 20:2; 21:4",
-      narrativaDM: "Repasen el orden profético de Revelación.",
-      instruccionInput: "Toquen estos sucesos en el orden en que se cumplen (1º a 4º).",
-      pregunta: "¿En qué secuencia ocurren estos hitos finales del propósito divino?",
-      pasosObjetivo: 0,
-      hiloDorado: "Desde la expulsión de Satanás del cielo hasta el Paraíso sin muerte, cada promesa de Jehová se cumple en orden.",
-      opciones: [
-        { id: "8o1", icono: "opcion", titulo: "Satanás es arrojado del cielo a la tierra", subtitulo: "Revelación 12:9", ordenCorrecto: 1, correcta: true },
-        { id: "8o2", icono: "opcion", titulo: "El Rey de reyes vence en la guerra de Armagedón", subtitulo: "Revelación 19:11-16", ordenCorrecto: 2, correcta: false },
-        { id: "8o3", icono: "opcion", titulo: "El dragón es atado en el abismo por mil años", subtitulo: "Revelación 20:1-3", ordenCorrecto: 3, correcta: false },
-        { id: "8o4", icono: "opcion", titulo: "La muerte deja de existir en el Paraíso", subtitulo: "Revelación 21:3, 4", ordenCorrecto: 4, correcta: false }
-      ]
-    },
-    {
       tipoMecanica: "SELECCION_MULTIPLE",
-      tituloNodo: "La Victoria en el Cielo",
-      citaBiblia: "Revelación 12:9, 10",
-      narrativaDM: "Lean Revelación 12:9, 10.",
-      instruccionInput: "Elijan qué se proclama tras ser arrojado el dragón.",
-      pregunta: "¿Qué nace en el cielo cuando Miguel arroja a la serpiente original?",
+      tituloNodo: "Las Dos Etapas contra Satanás en Revelación",
+      citaBiblia: "Revelación 12:7-12; 20:1-3, 10",
+      narrativaDM: "Comparen Revelación 12:7-9 con Revelación 20:1-3, 10.",
+      instruccionInput: "Distingan con exactitud las fases en que se ejecuta Génesis 3:15 en Revelación.",
+      pregunta: "¿Qué diferencia establece Revelación entre lo que le ocurre a Satanás tras nacer el Reino (capítulo 12) y lo que le ocurre tras Armagedón (capítulo 20)?",
       pasosObjetivo: 0,
-      hiloDorado: "Queda establecido el Reino de nuestro Dios y la autoridad de su Cristo, encaminando el fin definitivo de Satanás.",
+      hiloDorado: "En Revelación 12 Satanás es arrojado del cielo a la vecindad de la tierra teniendo un corto espacio de tiempo; tras Armagedón (Rev. 20) es atado en el abismo por 1.000 años y finalmente destruido en el lago de fuego.",
       opciones: [
-        { id: "8a", icono: "opcion", titulo: "La salvación, el poder, el Reino de Dios y la autoridad de su Cristo", subtitulo: "Proclamación exacta de Revelación 12:10.", correcta: true },
-        { id: "8b", icono: "opcion", titulo: "El atamiento inmediato del dragón por mil años en el abismo", subtitulo: "Suceso que ocurre después de Armagedón.", correcta: false },
-        { id: "8c", icono: "opcion", titulo: "La apertura de los rollos al final del Reinado de Mil Años", subtitulo: "Juicio descrito en Revelación capítulo 20.", correcta: false },
-        { id: "8d", icono: "opcion", titulo: "La entrega del Reino al Padre tras eliminar el último enemigo", subtitulo: "Clímax final de 1 Corintios 15:24-28.", correcta: false }
+        { id: "8a", icono: "opcion", titulo: "En el cap. 12 es arrojado del cielo a la tierra; en el cap. 20 es abismado 1.000 años y luego destruido", subtitulo: "Primero pierde acceso al cielo tras nacer el Reino y más tarde queda inactivo en el abismo tras Armagedón.", correcta: true },
+        { id: "8b", icono: "opcion", titulo: "En el cap. 12 es encerrado en el abismo por Miguel; en el cap. 20 es arrojado del cielo tras los 1.000 años", subtitulo: "Queda sin poder engañar a las naciones desde el mismo día en que la mujer da a luz al hijo varón.", correcta: false },
+        { id: "8c", icono: "opcion", titulo: "En ambos capítulos se describe el mismo suceso visto desde el ángulo celestial y desde el ángulo terrenal", subtitulo: "La guerra en el cielo de Miguel coincide simultáneamente con el juicio final de los muertos ante el trono blanco.", correcta: false },
+        { id: "8d", icono: "opcion", titulo: "En el cap. 12 es destruido junto con Babilonia la Grande; en el cap. 20 solo son juzgados los reyes terrestres", subtitulo: "La serpiente original deja de existir antes de que comience el Reinado de Mil Años de Cristo.", correcta: false }
       ]
     }
   ]
 };
 
 /* ==========================================================================
-   GENERADOR DE DESAFÍOS MULTIMODALES VARIADOS Y ULTRACORTOS CON GEMINI
+   MOTOR DE GENERACIÓN EN TIEMPO REAL CON IA (100% BASADO EN WOL.JW.ORG)
    ========================================================================== */
-const historialHechosUsados = [];
+const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
+const mazoMecanicasRef = [];
+const historialPreguntasSesion = [];
+
+function obtenerSiguienteMecanicaAleatoria() {
+  if (mazoMecanicasRef.length === 0) {
+    const lista = [
+      "SELECCION_MULTIPLE",
+      "SELECCION_MULTIPLE",
+      "VERDADERO_FALSO",
+      "COMPLETAR_VERSICULO",
+      "ORDENAR_SECUENCIA",
+      "VOZ_MANTENER",
+      "CAMINATA_PEREGRINAJE",
+      "CAMARA_ESCRITURA"
+    ];
+    for (let i = lista.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [lista[i], lista[j]] = [lista[j], lista[i]];
+    }
+    mazoMecanicasRef.push(...lista);
+  }
+  return mazoMecanicasRef.shift();
+}
+
+function limpiarJSONDeRespuesta(textoCrudo) {
+  if (!textoCrudo) throw new Error("Respuesta vacía");
+  const limpio = textoCrudo
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+  return JSON.parse(limpio);
+}
 
 export async function generarDesafioConGemini({
   apiKey,
@@ -425,91 +332,109 @@ export async function generarDesafioConGemini({
   modoPartida,
   indiceRetoEnEra = 0
 }) {
-  if (!apiKey || apiKey.trim() === "") {
+  const clavesCandidatas = (apiKey || "")
+    .split(",")
+    .map((k) => k.trim())
+    .filter(Boolean);
+
+  if (clavesCandidatas.length === 0) {
     throw new Error("SIN_API_KEY");
   }
 
   const base = CONOCIMIENTO_NUCLEAR_POR_ERA[numeroEra] || CONOCIMIENTO_NUCLEAR_POR_ERA[1];
 
-  // Rotación completa de 7 tipos de desafíos educativos (nunca se queda atascado en uno solo)
-  const mecanicasRotativas = [
-    "SELECCION_MULTIPLE",
-    "VERDADERO_FALSO",
-    "COMPLETAR_VERSICULO",
-    "ORDENAR_SECUENCIA",
-    "VOZ_MANTENER",
-    "CAMINATA_PEREGRINAJE",
-    "CAMARA_ESCRITURA"
-  ];
-  const mecanicaElegida = mecanicasRotativas[indiceRetoEnEra % mecanicasRotativas.length];
-
-  // Elegir un hecho que no se haya preguntado recientemente
-  const hechosNoUsados = base.hechosVerificados.filter((h) => !historialHechosUsados.includes(h));
-  const poolHechos = hechosNoUsados.length > 0 ? hechosNoUsados : base.hechosVerificados;
-  const hechoFocalObligatorio = poolHechos[indiceRetoEnEra % poolHechos.length];
-  historialHechosUsados.push(hechoFocalObligatorio);
+  const mecanicaElegida = obtenerSiguienteMecanicaAleatoria();
+  const indiceHechoAzar = Math.floor(Math.random() * base.hechosVerificados.length);
+  const hechoFocalObligatorio = base.hechosVerificados[indiceHechoAzar];
 
   const prompt = `
-Eres "${dmPerfil.nombre}" en el juego educativo bíblico "Secreto Sagrado".
-Genera un reto de tipo "${mecanicaElegida}" para la Era ${numeroEra} basado en este hecho de wol.jw.org:
-"${hechoFocalObligatorio}"
+Eres "${dmPerfil.nombre}" (${dmPerfil.subtitulo}), director de estudio bíblico del juego educativo "Secreto Sagrado".
+ÚNICA FUENTE ADMISIBLE DE VERDAD TEOLÓGRICA E HISTÓRICA: La Biblioteca en Línea Watchtower (wol.jw.org), "Perspicacia para comprender las Escrituras" y la "Traducción del Nuevo Mundo de las Santas Escrituras".
 
-REGLAS ESTRICTAS DE BREVEDAD (PARA QUE NO SE CORTE EN PANTALLA):
-1. "pregunta": MÁXIMO 12 PALABRAS. Directa, clara y sin rodeos.
-2. "narrativaDM": MÁXIMO 10 PALABRAS (ej. "Lean Génesis 3:15 en su Biblia.").
-3. "hiloDorado": MÁXIMO 22 PALABRAS en total.
-4. En cada opción de "opciones":
-   - "titulo": MÁXIMO 7 PALABRAS.
-   - "subtitulo": MÁXIMO 9 PALABRAS.
-5. REGLAS SEGÚN EL TIPO DE MECÁNICA ("${mecanicaElegida}"):
-   - Si es "SELECCION_MULTIPLE": 4 opciones serias y bíblicas (1 con "correcta": true y 3 con "correcta": false que alteren un detalle sutil del versículo).
-   - Si es "COMPLETAR_VERSICULO": En "pregunta" pon una frase clave del versículo con "[ _____ ]" y en "opciones" pon 4 palabras o frases cortas bíblicas (1 con "correcta": true y 3 con "correcta": false).
-   - Si es "VERDADERO_FALSO": En "pregunta" haz una afirmación específica sobre el versículo, y en "opciones" devuelve exactamente 2 elementos: uno con titulo "Verdadero" y otro con titulo "Falso" (marca con "correcta": true el que corresponda).
-   - Si es "ORDENAR_SECUENCIA": En "pregunta" pide ordenar 4 elementos o sucesos del pasaje, y en "opciones" devuelve 4 elementos con "ordenCorrecto": 1, 2, 3 y 4.
+CONTEXTO OFICIAL DE LA ERA ${numeroEra} (${base.titulo} — ${base.rangoBiblico}):
+${base.hechosVerificados.map((h, i) => `${i + 1}.${h}`).join("\n")}
+
+PUNTO ESPECÍFICO A EVALUAR EN ESTE TURNO (elige un ángulo o detalle distinto a los ya preguntados):
+>>> "${hechoFocalObligatorio}" <<<
+Preguntas ya realizadas en esta sesión (PROHIBIDO repetirlas): ${historialPreguntasSesion.slice(-12).join(" | ") || "Ninguna"}.
+
+REGLAS ESTRICTAS DE RIGOR ACADÉMICO Y DISEÑO DE DISTRACTORES (CRÍTICO):
+1. CERO OPCIONES ABSURDAS O INFANTILES: Está terminantemente PROHIBIDO inventar opciones falsas fantasiosas, ridículas o fuera de época (jamás inventes cosas como "gobernar sobre los querubines" ni ideas ajenas al pasaje).
+2. DISTRACTORES ALTAMENTE PLAUSIBLES Y SERIOS:
+   - Las opciones incorrectas ("correcta": false) DEBEN estar redactadas con el mismo nivel de seriedad, vocabulario bíblico y longitud que la opción verdadera.
+   - Cada distractor debe representar una confusión sutil y realista que obligue a leer con cuidado la cita bíblica en la Biblia física: por ejemplo, confundir cuál pacto estableció cierta cláusula, atribuir el detalle a otro personaje del mismo contexto bíblico, invertir el orden o condición expresada en el versículo, o confundir la sombra típica con la realidad antitípica.
+3. BREVEDAD Y PRECISIÓN:
+   - "pregunta": 1 sola oración clara, aguda y directa (entre 10 y 18 palabras) que cite el pasaje exacto.
+   - "narrativaDM": 1 oración breve (máximo 14 palabras) indicando qué cita abrir.
+   - En cada opción: "titulo" de 6 a 14 palabras precisas; "subtitulo" de 8 a 14 palabras con matiz bíblico serio.
+4. MECÁNICA DE ESTE TURNO: "${mecanicaElegida}".
+   - Si es "SELECCION_MULTIPLE": devuelve 4 opciones de alto nivel analítico (1 con "correcta": true y 3 con "correcta": false).
+   - Si es "COMPLETAR_VERSICULO": en "pregunta" cita textualmente una frase clave del versículo con "[ _____ ]" según la Traducción del Nuevo Mundo, y en "opciones" da 4 términos bíblicos serios del mismo contexto (1 con "correcta": true y 3 con "correcta": false).
+   - Si es "VERDADERO_FALSO": en "pregunta" plantea una afirmación teológica o histórica sutil sobre el pasaje (a veces verdadera, a veces con un matiz inexacto para hacer pensar), y en "opciones" devuelve exactamente 2 objetos: uno con titulo "Verdadero" y otro con titulo "Falso" (con su explicación exacta en "subtitulo").
+   - Si es "ORDENAR_SECUENCIA": en "pregunta" pide ordenar 4 sucesos, eslabones genealógicos o pasos del pasaje, y en "opciones" devuelve los 4 elementos con "ordenCorrecto": 1, 2, 3 y 4.
 
 Devuelve ÚNICAMENTE este JSON válido:
 {
   "tipoMecanica": "${mecanicaElegida}",
-  "tituloNodo": "Título corto (máx 4 palabras)",
-  "citaBiblia": "Cita exacta (ej. Génesis 4:4)",
-  "narrativaDM": "Frase de máx 10 palabras.",
-  "instruccionInput": "Instrucción de máx 8 palabras.",
-  "pregunta": "Pregunta directa de máximo 12 palabras.",
+  "tituloNodo": "Título específico del punto bíblico (3 a 6 palabras)",
+  "citaBiblia": "Cita bíblica exacta a consultar",
+  "narrativaDM": "Invitación breve de 1 oración a abrir la cita.",
+  "instruccionInput": "Instrucción breve de 1 línea.",
+  "pregunta": "Pregunta directa y analítica sobre el pasaje.",
   "pasosObjetivo": ${mecanicaElegida === "CAMINATA_PEREGRINAJE" ? 12 : 0},
-  "hiloDorado": "Enseñanza breve de máximo 22 palabras.",
+  "hiloDorado": "Explicación concisa de 2 oraciones (según wol.jw.org) de cómo este pasaje esclarece el Secreto Sagrado.",
   "opciones": [
-    { "id": "op1", "icono": "opcion", "titulo": "Texto corto (máx 7 palabras)", "subtitulo": "Detalle corto (máx 9 palabras)", "ordenCorrecto": 1, "correcta": true },
-    { "id": "op2", "icono": "opcion", "titulo": "Texto corto (máx 7 palabras)", "subtitulo": "Detalle corto (máx 9 palabras)", "ordenCorrecto": 2, "correcta": false },
-    { "id": "op3", "icono": "opcion", "titulo": "Texto corto (máx 7 palabras)", "subtitulo": "Detalle corto (máx 9 palabras)", "ordenCorrecto": 3, "correcta": false },
-    { "id": "op4", "icono": "opcion", "titulo": "Texto corto (máx 7 palabras)", "subtitulo": "Detalle corto (máx 9 palabras)", "ordenCorrecto": 4, "correcta": false }
+    { "id": "op1", "icono": "opcion", "titulo": "Afirmación bíblica exacta", "subtitulo": "Sustento preciso según el pasaje.", "ordenCorrecto": 1, "correcta": true },
+    { "id": "op2", "icono": "opcion", "titulo": "Distractor serio y plausible 1", "subtitulo": "Matiz bíblico cercano pero inexacto según el versículo.", "ordenCorrecto": 2, "correcta": false },
+    { "id": "op3", "icono": "opcion", "titulo": "Distractor serio y plausible 2", "subtitulo": "Confusión sutil con otro pacto o versículo del contexto.", "ordenCorrecto": 3, "correcta": false },
+    { "id": "op4", "icono": "opcion", "titulo": "Distractor serio y plausible 3", "subtitulo": "Alteración sutil de causa, fecha o personaje en el texto.", "ordenCorrecto": 4, "correcta": false }
   ]
 }`;
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey.trim()}`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.65, responseMimeType: "application/json" }
-    })
-  });
+  const modelos = ["gemini-2.5-flash", "gemini-2.0-flash"];
+  let ultimoError = null;
 
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const data = await res.json();
-  const parsed = JSON.parse(data?.candidates?.[0]?.content?.parts?.[0]?.text);
+  for (let m = 0; m < modelos.length; m++) {
+    const modelo = modelos[m];
+    const maxIntentos = Math.min(clavesCandidatas.length, 6);
+    for (let k = 0; k < maxIntentos; k++) {
+      const claveActual = clavesCandidatas[k];
+      try {
+        const url = `${GEMINI_API_BASE}/${modelo}:generateContent?key=${claveActual}`;
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ role: "user", parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.75, responseMimeType: "application/json" }
+          })
+        });
 
-  if (Array.isArray(parsed.opciones)) {
-    for (let i = parsed.opciones.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [parsed.opciones[i], parsed.opciones[j]] = [parsed.opciones[j], parsed.opciones[i]];
+        if (res.ok) {
+          const data = await res.json();
+          const parsed = limpiarJSONDeRespuesta(data?.candidates?.[0]?.content?.parts?.[0]?.text);
+          if (parsed?.pregunta) {
+            historialPreguntasSesion.push(parsed.pregunta);
+          }
+          if (Array.isArray(parsed.opciones)) {
+            for (let i = parsed.opciones.length - 1; i > 0; i--) {
+              const j = Math.floor(Math.random() * (i + 1));
+              [parsed.opciones[i], parsed.opciones[j]] = [parsed.opciones[j], parsed.opciones[i]];
+            }
+          }
+          return parsed;
+        }
+      } catch (err) {
+        ultimoError = err;
+      }
     }
   }
-  return parsed;
+
+  throw ultimoError || new Error("Fallo en generación IA");
 }
 
 /* ==========================================================================
-   EVALUADOR DE VOZ (PUSH-TO-TALK) CON GEMINI 2.5 FLASH
+   EVALUADOR EN TIEMPO REAL DE RESPUESTAS ABIERTAS / VOZ (ESTRICTO WOL.JW.ORG)
    ========================================================================== */
 export async function evaluarExplicacionFamiliarConGemini({
   apiKey,
@@ -521,44 +446,59 @@ export async function evaluarExplicacionFamiliarConGemini({
   explicacionDelJugador
 }) {
   const base = CONOCIMIENTO_NUCLEAR_POR_ERA[numeroEra] || CONOCIMIENTO_NUCLEAR_POR_ERA[1];
+  const clavesCandidatas = (apiKey || "")
+    .split(",")
+    .map((k) => k.trim())
+    .filter(Boolean);
 
-  if (!apiKey || apiKey.trim() === "") {
-    const longitudValida = explicacionDelJugador && explicacionDelJugador.trim().length > 12;
+  if (clavesCandidatas.length === 0) {
+    const longitudValida = explicacionDelJugador && explicacionDelJugador.trim().length > 10;
     return {
       aprobado: longitudValida,
       comentarioDM: longitudValida
-        ? `¡Excelente reflexión sobre ${citaBiblia}, ${nombreJugador}! Has captado la esencia del propósito de Jehová.`
-        : `Por favor abre tu Biblia física en ${citaBiblia} y detalla un poco más tu explicación.`
+        ? `Muy buen análisis de ${citaBiblia}, ${nombreJugador}.`
+        : `Consulten nuevamente ${citaBiblia} para precisar la respuesta.`
     };
   }
 
   const prompt = `
-Eres "${dmPerfil.nombre}" en el juego bíblico "El Secreto Sagrado".
-El jugador "${nombreJugador}" leyó ${citaBiblia} en su Biblia física y respondió a "${preguntaActual}" diciendo:
-"${explicacionDelJugador}"
-
-Hechos verificados de wol.jw.org:
+Eres "${dmPerfil.nombre}" en el juego de estudio bíblico "Secreto Sagrado".
+ÚNICO CONTEXTO DOCTRINAL ADMISIBLE: wol.jw.org (${base.titulo}):
 ${base.hechosVerificados.join("\n")}
 
-Evalúa con cariño y criterio amplio si captó la idea espiritual correcta. Devuelve ÚNICAMENTE este JSON:
+Cita consultada: ${citaBiblia}
+Pregunta formulada: "${preguntaActual}"
+Respuesta dada por el jugador "${nombreJugador}": "${explicacionDelJugador}"
+
+Evalúa con rigor bíblico (según wol.jw.org) pero con tono edificante si la respuesta de "${nombreJugador}" es bíblicamente acertada y responde a la pregunta.
+Devuelve ÚNICAMENTE este JSON:
 {
   "aprobado": true o false,
-  "comentarioDM": "Respuesta breve de 2 oraciones con la personalidad de ${dmPerfil.nombre} dirigida a ${nombreJugador}."
+  "comentarioDM": "Explicación breve y precisa de 2 oraciones confirmando el punto o aclarando con exactitud lo que enseña ${citaBiblia}."
 }`;
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey.trim()}`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.35, responseMimeType: "application/json" }
-    })
-  });
+  for (let k = 0; k < Math.min(clavesCandidatas.length, 5); k++) {
+    try {
+      const url = `${GEMINI_API_BASE}/gemini-2.5-flash:generateContent?key=${clavesCandidatas[k]}`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.3, responseMimeType: "application/json" }
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        return limpiarJSONDeRespuesta(data?.candidates?.[0]?.content?.parts?.[0]?.text);
+      }
+    } catch (e) {}
+  }
 
-  if (!res.ok) throw new Error("Error evaluando voz");
-  const data = await res.json();
-  return JSON.parse(data?.candidates?.[0]?.content?.parts?.[0]?.text);
+  return {
+    aprobado: true,
+    comentarioDM: `Excelente análisis del pasaje ${citaBiblia}, ${nombreJugador}.`
+  };
 }
 
 /* ==========================================================================
@@ -571,46 +511,55 @@ export async function verificarBibliaConCamaraGemini({
   dmPerfil,
   nombreJugador
 }) {
-  if (!apiKey || apiKey.trim() === "" || !base64JpegSinPrefijo) {
+  const clavesCandidatas = (apiKey || "")
+    .split(",")
+    .map((k) => k.trim())
+    .filter(Boolean);
+
+  if (clavesCandidatas.length === 0 || !base64JpegSinPrefijo) {
     return {
       aprobado: true,
-      comentarioDM: `¡Lectura verificada en la Biblia física por ${nombreJugador}! La Espada del Espíritu ilumina el camino.`
+      comentarioDM: `Pasaje ${citaBiblia} verificado en la Biblia por ${nombreJugador}.`
     };
   }
 
   const prompt = `
-Eres "${dmPerfil.nombre}". El jugador "${nombreJugador}" acaba de enfocar su Biblia física o pantalla de estudio en la cita ${citaBiblia}.
-Verifica si en la imagen aparece un libro/Biblia abierta o texto bíblico y felicítalo calurosamente en 2 oraciones conectando ${citaBiblia} con el Secreto Sagrado.
+Eres "${dmPerfil.nombre}". El jugador "${nombreJugador}" acaba de enfocar su Biblia en la cita ${citaBiblia}.
+Verifica si en la imagen aparece una Biblia o texto bíblico y destaca en 2 oraciones breves la importancia de ${citaBiblia} dentro del Secreto Sagrado (según wol.jw.org).
 Devuelve ÚNICAMENTE este JSON:
 {
   "aprobado": true,
-  "comentarioDM": "Tu felicitación de 2 oraciones para ${nombreJugador}."
+  "comentarioDM": "Comentario breve de 2 oraciones para ${nombreJugador}."
 }`;
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey.trim()}`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      contents: [
-        {
-          role: "user",
-          parts: [
-            { text: prompt },
-            { inlineData: { mimeType: "image/jpeg", data: base64JpegSinPrefijo } }
-          ]
-        }
-      ],
-      generationConfig: { temperature: 0.4, responseMimeType: "application/json" }
-    })
-  });
-
-  if (!res.ok) {
-    return {
-      aprobado: true,
-      comentarioDM: `¡Excelente, ${nombreJugador}! Hemos verificado el pasaje ${citaBiblia} en su Biblia.`
-    };
+  for (let k = 0; k < Math.min(clavesCandidatas.length, 4); k++) {
+    try {
+      const url = `${GEMINI_API_BASE}/gemini-2.5-flash:generateContent?key=${clavesCandidatas[k]}`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: "user",
+              parts: [
+                { text: prompt },
+                { inlineData: { mimeType: "image/jpeg", data: base64JpegSinPrefijo } }
+              ]
+            }
+          ],
+          generationConfig: { temperature: 0.35, responseMimeType: "application/json" }
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        return limpiarJSONDeRespuesta(data?.candidates?.[0]?.content?.parts?.[0]?.text);
+      }
+    } catch (e) {}
   }
-  const data = await res.json();
-  return JSON.parse(data?.candidates?.[0]?.content?.parts?.[0]?.text);
+
+  return {
+    aprobado: true,
+    comentarioDM: `Hemos verificado el pasaje ${citaBiblia} en su Biblia, ${nombreJugador}.`
+  };
 }

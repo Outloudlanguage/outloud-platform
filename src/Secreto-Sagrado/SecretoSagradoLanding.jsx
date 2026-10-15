@@ -1593,7 +1593,8 @@ const [feedbackRespuesta, setFeedbackRespuesta] = useState(null); // { esCorrect
     const listaEra = NODOS_MULTIMODALES_POR_ERA[eraNum] || NODOS_MULTIMODALES_POR_ERA[1];
     const noUsados = listaEra.filter((r) => !usadosLocalesRef.current.has(r.tituloNodo));
     const poolElegible = noUsados.length > 0 ? noUsados : listaEra;
-    const elegidoLocal = poolElegible[turnoActual % poolElegible.length];
+    const idxAzarLocal = Math.floor(Math.random() * poolElegible.length);
+    const elegidoLocal = poolElegible[idxAzarLocal];
     usadosLocalesRef.current.add(elegidoLocal.tituloNodo);
 
     setRetoActual(barajarOpcionesReto(elegidoLocal));
@@ -1601,11 +1602,16 @@ const [feedbackRespuesta, setFeedbackRespuesta] = useState(null); // { esCorrect
     hablarConVozDM('¿Quién de los jugadores disponibles tomará el desafío en este turno?');
 
     if (geminiApiKey && geminiApiKey.trim() !== '') {
-      const claveRotativa = obtenerSiguienteClaveRotativa(geminiApiKey);
+      // Pasar hasta 6 llaves rotativas del pool para garantizar que la IA genere siempre en tiempo real
+      const poolDisponible = obtenerPoolClavesDisponibles(geminiApiKey);
+      const subPoolRotativo = Array.from({ length: Math.min(6, poolDisponible.length) }, () =>
+        obtenerSiguienteClaveRotativa(geminiApiKey)
+      ).join(', ');
+
       setCargandoRetoIA(true);
       try {
         const generado = await generarDesafioConGemini({
-          apiKey: claveRotativa,
+          apiKey: subPoolRotativo,
           numeroEra: eraNum,
           dmPerfil,
           nombreFamilia: 'el equipo',
@@ -1615,7 +1621,7 @@ const [feedbackRespuesta, setFeedbackRespuesta] = useState(null); // { esCorrect
         });
         setRetoActual(barajarOpcionesReto(generado));
       } catch (e) {
-        // Conserva el reto local variado si falla la red
+        // Conserva el reto de respaldo si no hay conexión a Internet
       } finally {
         setCargandoRetoIA(false);
       }
