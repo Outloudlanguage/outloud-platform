@@ -6,7 +6,6 @@ import {
   evaluarExplicacionFamiliarConGemini,
   verificarBibliaConCamaraGemini
 } from './geminiDirectorEngine';
-import Mundo3DSagrado from './Mundo3DSagrado';
 
 /* ==========================================================================
    ACTIVOS OFICIALES EN CLOUDFLARE R2 PROPORCIONADOS
@@ -448,7 +447,7 @@ const CATALOGO_DMS = [
 ];
 
 const CLASES_ROLES = [
-  { id: 'escriba', nombre: 'El Escriba', iconoTipo: 'escriba', color: '#38bdf8', ventaja: 'Ilumina pistas conectadas directamente con la cita bíblica' },
+  { id: 'escriba', nombre: 'El Escriba', iconoTipo: 'escriba', color: '#38bdf8', ventaja: 'Análisis del Texto: permite descartar 2 opciones falsas una vez por partida' },
   { id: 'sacerdote', nombre: 'El Sacerdote', iconoTipo: 'sacerdote', color: '#facc15', ventaja: 'Escudo de Expiación: evita perder Convicción ante un error' },
   { id: 'profeta', nombre: 'El Profeta', iconoTipo: 'profeta', color: '#c084fc', ventaja: 'Luz Profética: descarta 2 opciones falsas en pantalla' },
   { id: 'noble', nombre: 'El Noble', iconoTipo: 'noble', color: '#fb7185', ventaja: 'Decreto Real: otorga +1 de Convicción extra al equipo al acertar' },
@@ -1563,6 +1562,17 @@ export default function SecretoSagradoLanding() {
     });
   };
 
+// Mezcla aleatoriamente las opciones (algoritmo Fisher-Yates) para que la correcta cambie siempre de posición
+  const barajarOpcionesReto = useCallback((reto) => {
+    if (!reto || !Array.isArray(reto.opciones)) return reto;
+    const copiaOpciones = [...reto.opciones];
+    for (let i = copiaOpciones.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copiaOpciones[i], copiaOpciones[j]] = [copiaOpciones[j], copiaOpciones[i]];
+    }
+    return { ...reto, opciones: copiaOpciones };
+  }, []);
+
   const concederPermisoYPrepararReto = async (eraNum = eraActualNum, idxReto = indiceRetoEnEra) => {
     sonarAcordeSintetico([523.25, 659.25, 1046.5], 0.6);
     setSubFaseJuego('ELEGIR_JUGADOR');
@@ -1571,14 +1581,12 @@ export default function SecretoSagradoLanding() {
     setTranscripcionVoz('');
 
     const listaEra = NODOS_MULTIMODALES_POR_ERA[eraNum] || NODOS_MULTIMODALES_POR_ERA[1];
-    const retoFallback = listaEra[idxReto % listaEra.length];
+    const retoFallback = barajarOpcionesReto(listaEra[idxReto % listaEra.length]);
     setRetoActual(retoFallback);
 
-    hablarConVozDM(
-      `Era ${eraNum}: ${TITULOS_OCHO_ERAS[eraNum - 1].nombre}. ¿Quién de los jugadores disponibles tomará el desafío en este turno?`
-    );
+    hablarConVozDM('¿Quién de los jugadores disponibles tomará el desafío en este turno?');
 
-if (geminiApiKey && geminiApiKey.trim() !== '') {
+    if (geminiApiKey && geminiApiKey.trim() !== '') {
       const claveRotativa = obtenerSiguienteClaveRotativa(geminiApiKey);
       setCargandoRetoIA(true);
       try {
@@ -1591,9 +1599,9 @@ if (geminiApiKey && geminiApiKey.trim() !== '') {
           modoPartida: modoEstilo,
           indiceRetoEnEra: idxReto
         });
-        setRetoActual(generado);
+        setRetoActual(barajarOpcionesReto(generado));
       } catch (e) {
-        // Conserva el reto multimodal local si falla la red
+        // Conserva el reto multimodal local ya barajado si falla la red
       } finally {
         setCargandoRetoIA(false);
       }
@@ -1994,17 +2002,6 @@ if (geminiApiKey && geminiApiKey.trim() !== '') {
                   Continuar
                 </button>
               )}
-
-              <button
-                onClick={() => {
-                  activarPantallaCompleta();
-                  sonarAcordeSintetico([523.25, 659.25, 1046.5]);
-                  setPantalla('MUNDO_3D');
-                }}
-                className="bg-transparent border-none text-left text-3xl md:text-5xl font-black tracking-tight text-cyan-200/95 hover:text-white active:scale-95 transition-all duration-300 hover:translate-x-4 drop-shadow-[0_4px_16px_rgba(0,0,0,0.85)] hover:drop-shadow-[0_0_32px_rgba(34,211,238,1)] focus:outline-none"
-              >
-                Mundos 3D
-              </button>
 
               <button
                 onClick={() => {
@@ -2889,12 +2886,11 @@ if (geminiApiKey && geminiApiKey.trim() !== '') {
                   nombreCentral={jugadorActivo.nombre}
                 />
 
-                {/* MECÁNICA A: SELECCIÓN MÚLTIPLE GLASSMORPHIC CON ÍCONOS VECTORIALES */}
+                {/* MECÁNICA A: SELECCIÓN MÚLTIPLE (SIN BRILLO EN LA RESPUESTA CORRECTA) */}
                 {retoActual.tipoMecanica === 'SELECCION_MULTIPLE' && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 w-full max-w-4xl">
                     {retoActual.opciones?.map((op) => {
                       const oculta = opcionesOcultasIds.includes(op.id);
-                      const pistaEscriba = claseJugadorActivo.id === 'escriba' && op.correcta;
                       return (
                         <button
                           key={op.id}
@@ -2903,9 +2899,7 @@ if (geminiApiKey && geminiApiKey.trim() !== '') {
                           className={`p-4 md:p-5 rounded-3xl backdrop-blur-2xl border text-left flex items-center gap-4 transition-all duration-300 ${
                             oculta
                               ? 'opacity-15 pointer-events-none grayscale bg-black/20 border-white/10'
-                              : pistaEscriba
-                              ? 'bg-amber-400/30 border-amber-200 shadow-[0_0_30px_rgba(253,224,71,0.55)] hover:scale-[1.02]'
-                              : 'bg-slate-950/50 hover:bg-white/25 border-white/45 hover:border-white hover:shadow-[0_0_28px_rgba(255,255,255,0.45)] hover:scale-[1.02]'
+                              : 'bg-slate-950/55 hover:bg-white/20 border-white/40 hover:border-white hover:shadow-[0_0_28px_rgba(255,255,255,0.35)] hover:scale-[1.01]'
                           }`}
                         >
                           <span className="w-12 h-12 rounded-2xl bg-white/15 border border-white/35 flex items-center justify-center shrink-0 text-amber-200">
@@ -3045,23 +3039,12 @@ if (geminiApiKey && geminiApiKey.trim() !== '') {
                   )}
                 </div>
                 {!cargandoVozDM && !hablandoDM && (
-                  <div className="flex flex-wrap items-center justify-center gap-4 animate-[fadeIn_0.35s_ease-out]">
-                    {eraActualNum === 1 && indiceRetoEnEra === 0 ? (
-                      <button
-                        onClick={() => setPantalla('MUNDO_3D_JUEGO')}
-                        className="px-10 py-4 rounded-full bg-gradient-to-r from-emerald-300 via-amber-200 to-cyan-300 text-slate-950 font-black text-sm tracking-widest uppercase shadow-[0_0_40px_rgba(52,211,153,0.6)] hover:scale-105 transition-all"
-                      >
-                        Entrar al Jardín de Edén (3D) →
-                      </button>
-                    ) : (
-                      <button
-                        onClick={avanzarAlSiguienteNodoOEra}
-                        className="px-10 py-4 rounded-full bg-gradient-to-r from-amber-300 to-cyan-300 text-slate-950 font-black text-sm tracking-widest uppercase shadow-2xl hover:scale-105 transition-all"
-                      >
-                        Continuar al Siguiente Desafío →
-                      </button>
-                    )}
-                  </div>
+                  <button
+                    onClick={avanzarAlSiguienteNodoOEra}
+                    className="px-10 py-4 rounded-full bg-gradient-to-r from-amber-300 to-cyan-300 text-slate-950 font-black text-sm tracking-widest uppercase shadow-2xl hover:scale-105 transition-all animate-[fadeIn_0.35s_ease-out]"
+                  >
+                    Continuar al Siguiente Desafío →
+                  </button>
                 )}
               </div>
             )}
@@ -3086,44 +3069,18 @@ if (geminiApiKey && geminiApiKey.trim() !== '') {
                     Han recorrido en unidad las 8 Eras bíblicas verificando en su Biblia física cómo Jehová cumplió cada promesa desde Génesis 3:15 hasta el Paraíso restaurado de Revelación.
                   </p>
                 </div>
-                <div className="flex flex-wrap justify-center gap-4">
-                  <button
-                    onClick={() => setPantalla('MUNDO_3D')}
-                    className="px-8 py-4 rounded-full bg-cyan-400 text-slate-950 font-black text-xs tracking-widest uppercase"
-                  >
-                    Explorar Todos los Mundos 3D
-                  </button>
-                  <button
-                    onClick={() => setPantalla('MENU_PRINCIPAL')}
-                    className="px-10 py-4 rounded-full bg-white text-slate-950 font-black text-xs tracking-widest uppercase"
-                  >
-                    Volver al Menú Principal
-                  </button>
-                </div>
+                <button
+                  onClick={() => setPantalla('MENU_PRINCIPAL')}
+                  className="px-10 py-4 rounded-full bg-white text-slate-950 font-black text-xs tracking-widest uppercase"
+                >
+                  Volver al Menú Principal
+                </button>
               </div>
             )}
           </main>
 
           <div className="h-2" />
         </section>
-      )}
-
-      {/* ====================================================================
-          3D WALKABLE ENGINE & AR WINDOW (FROM MENU OR AT THE END OF EACH ERA)
-          ==================================================================== */}
-      {(pantalla === 'MUNDO_3D' || pantalla === 'MUNDO_3D_JUEGO') && (
-        <Mundo3DSagrado
-          modoMenu={pantalla === 'MUNDO_3D'}
-          hablarConVozDM={hablarConVozDM}
-          onCerrar={() => {
-            if (pantalla === 'MUNDO_3D_JUEGO') {
-              setPantalla('JUEGO');
-              avanzarAlSiguienteNodoOEra();
-            } else {
-              setPantalla('MENU_PRINCIPAL');
-            }
-          }}
-        />
       )}
     </div>
   );
