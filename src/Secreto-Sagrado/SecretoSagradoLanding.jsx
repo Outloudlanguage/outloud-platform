@@ -510,9 +510,9 @@ function OrbeLiquidoReactivo({
       ctx.globalCompositeOperation = 'screen';
 
       const capas = [
-        { color: colorPrimario, velocidad: 1.0, desfase: 0, escala: 1.0 + energia * 0.22 },
-        { color: colorSecundario, velocidad: -1.3, desfase: 2.1, escala: 0.92 + energia * 0.28 },
-        { color: colorPrimario, velocidad: 1.6, desfase: 4.2, escala: 0.72 + energia * 0.3 }
+        { color: colorPrimario, velocidad: 1.0, desfase: 0, escala: 1.04 + energia * 0.24 },
+        { color: '#fde047', velocidad: -1.3, desfase: 2.1, escala: 0.94 + energia * 0.28 },
+        { color: colorSecundario || '#ffffff', velocidad: 1.6, desfase: 4.2, escala: 0.78 + energia * 0.32 }
       ];
 
       capas.forEach((capa, idx) => {
@@ -530,14 +530,15 @@ function OrbeLiquidoReactivo({
         }
         ctx.closePath();
 
-        // Núcleo oscuro suave y bordes luminosos para que el texto blanco central tenga máximo contraste
-        const grad = ctx.createRadialGradient(cx, cy, radioBase * 0.12, cx, cy, radioBase * 1.35);
-        grad.addColorStop(0, 'rgba(15, 23, 42, 0.85)');
-        grad.addColorStop(0.5, capa.color);
+        // Núcleo blanco-dorado angelical y halo vivo con el color de cada personaje
+        const grad = ctx.createRadialGradient(cx, cy, radioBase * 0.08, cx, cy, radioBase * 1.38);
+        grad.addColorStop(0, '#ffffff');
+        grad.addColorStop(0.42, capa.color);
+        grad.addColorStop(0.78, '#fef08a');
         grad.addColorStop(1, 'transparent');
 
         ctx.fillStyle = grad;
-        ctx.globalAlpha = idx === 2 ? 0.55 + energia * 0.25 : 0.78;
+        ctx.globalAlpha = idx === 2 ? 0.65 + energia * 0.25 : 0.85;
         ctx.fill();
       });
 
@@ -549,56 +550,158 @@ function OrbeLiquidoReactivo({
     return () => cancelAnimationFrame(rafId);
   }, [colorPrimario, colorSecundario, amplitudVoz, tamano]);
 
+  // Motor háptico físico sincronizado con gestos táctiles (vibración nativa + resonancia táctil de 55 Hz)
+  useEffect(() => {
+    if (window.__ssMotorHapticoInstalado) return;
+    window.__ssMotorHapticoInstalado = true;
+
+    let oscTactil = null;
+    let gainTactil = null;
+    let intervaloPulso = null;
+
+    const detenerResonancia = () => {
+      if (intervaloPulso) {
+        clearInterval(intervaloPulso);
+        intervaloPulso = null;
+      }
+      try {
+        if (navigator.vibrate) navigator.vibrate(0);
+      } catch (e) {}
+      if (oscTactil) {
+        try {
+          oscTactil.stop();
+          oscTactil.disconnect();
+        } catch (e) {}
+        oscTactil = null;
+      }
+    };
+
+    const alTocarPantalla = (e) => {
+      const numToques = e.touches ? e.touches.length : 1;
+      try {
+        if (navigator.vibrate) {
+          if (numToques >= 2) {
+            // Patrón largo e intenso de 3 segundos cuando se colocan los dos pulgares
+            navigator.vibrate([90, 40, 120, 40, 150, 40, 180, 40, 220, 40, 280, 40, 350]);
+          } else {
+            navigator.vibrate(35);
+          }
+        }
+      } catch (err) {}
+
+      // Si coloca ambos pulgares, activar también vibración acústica sub-grave (55 Hz) que hace vibrar el chasis de la Tablet
+      if (numToques >= 2) {
+        detenerResonancia();
+        try {
+          const Ctx = window.AudioContext || window.webkitAudioContext;
+          if (!window.__ssHapticAudioCtx) window.__ssHapticAudioCtx = new Ctx();
+          const ctx = window.__ssHapticAudioCtx;
+          if (ctx.state === 'suspended') ctx.resume();
+
+          oscTactil = ctx.createOscillator();
+          gainTactil = ctx.createGain();
+          oscTactil.type = 'sine';
+          oscTactil.frequency.setValueAtTime(55, ctx.currentTime);
+          gainTactil.gain.setValueAtTime(0.32, ctx.currentTime);
+
+          oscTactil.connect(gainTactil);
+          gainTactil.connect(ctx.destination);
+          oscTactil.start();
+
+          let paso = 0;
+          intervaloPulso = setInterval(() => {
+            paso += 1;
+            if (gainTactil && ctx) {
+              const nivel = paso % 2 === 0 ? 0.36 : 0.12;
+              gainTactil.gain.setTargetAtTime(nivel, ctx.currentTime, 0.04);
+            }
+            try {
+              if (navigator.vibrate) navigator.vibrate(110);
+            } catch (err) {}
+          }, 220);
+        } catch (err) {}
+      }
+    };
+
+    window.addEventListener('touchstart', alTocarPantalla, { passive: true });
+    window.addEventListener('touchend', detenerResonancia, { passive: true });
+    window.addEventListener('touchcancel', detenerResonancia, { passive: true });
+    window.addEventListener('pointerup', detenerResonancia, { passive: true });
+  }, []);
+
+  // Auto-escalado inteligente para teléfonos móviles (vertical u horizontal)
+  const esPantallaMovil =
+    typeof window !== 'undefined' && (window.innerWidth < 768 || window.innerHeight < 520);
+  const tamanoMostrado = esPantallaMovil
+    ? enEsquina
+      ? Math.min(tamano, 52)
+      : Math.max(74, Math.round(tamano * 0.62))
+    : tamano;
+
   return (
     <div
-      onClick={onClick}
-      style={{
-        width: tamano,
-        height: tamano,
-        boxShadow: `0 0 ${35 + amplitudVoz * 65}px ${colorPrimario}88, inset 0 0 28px rgba(15,23,42,0.75)`
+      onClick={(e) => {
+        try {
+          if (navigator.vibrate) navigator.vibrate(40);
+        } catch (err) {}
+        if (onClick) onClick(e);
       }}
-      className={`relative rounded-full bg-slate-950/55 backdrop-blur-2xl border border-white/60 flex flex-col items-center justify-center overflow-hidden select-none transition-all duration-700 ${
-        onClick ? 'cursor-pointer hover:scale-105' : ''
+      style={{
+        width: tamanoMostrado,
+        height: tamanoMostrado,
+        boxShadow: `0 0 ${30 + amplitudVoz * 60}px ${colorPrimario}, 0 0 ${20 + amplitudVoz * 35}px rgba(253,224,71,0.85), inset 0 0 26px rgba(255,255,255,0.95)`
+      }}
+      className={`orbe-adaptativo relative rounded-full bg-white/80 backdrop-blur-2xl border-2 border-amber-200 flex flex-col items-center justify-center overflow-hidden select-none shrink-0 transition-all duration-500 ${
+        onClick ? 'cursor-pointer active:scale-95' : ''
       }`}
     >
       <canvas
         ref={canvasOrbRef}
-        style={{ width: tamano, height: tamano }}
+        style={{ width: tamanoMostrado, height: tamanoMostrado }}
         className="absolute inset-0 pointer-events-none"
       />
 
-      {/* Viñeta central oscura translúcida para garantizar lectura impecable del texto blanco */}
       <div
         style={{
-          background: 'radial-gradient(circle, rgba(2,6,23,0.78) 0%, rgba(2,6,23,0.45) 52%, transparent 78%)'
+          background:
+            'radial-gradient(circle, rgba(255,255,255,0.92) 0%, rgba(254,249,195,0.72) 48%, rgba(255,255,255,0.15) 76%, transparent 100%)'
         }}
         className="absolute inset-0 pointer-events-none"
       />
 
-      <div className="absolute top-2 left-1/4 right-1/4 h-1/5 rounded-full bg-gradient-to-b from-white/35 to-transparent pointer-events-none blur-[1px]" />
+      <div className="absolute top-1.5 left-1/4 right-1/4 h-1/4 rounded-full bg-gradient-to-b from-white/90 to-transparent pointer-events-none blur-[1px]" />
 
-      <div className="relative z-10 flex flex-col items-center justify-center text-center px-3 pointer-events-none">
+      <div className="relative z-10 flex flex-col items-center justify-center text-center px-2 pointer-events-none">
         {iconoTipo && (
-          <div className="text-amber-200 drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">
+          <div
+            style={{ color: colorPrimario }}
+            className="drop-shadow-[0_1px_6px_rgba(255,255,255,1)] brightness-75"
+          >
             <IconoSagradoSVG
               tipo={iconoTipo}
-              className={enEsquina ? 'w-5 h-5' : 'w-7 h-7 md:w-8 md:h-8'}
+              className={
+                enEsquina || esPantallaMovil ? 'w-4 h-4 md:w-5 md:h-5' : 'w-7 h-7 md:w-8 md:h-8'
+              }
             />
           </div>
         )}
         {etiquetaSuperior && !enEsquina && (
           <span
-            style={{ textShadow: '0 2px 6px rgba(0,0,0,1), 0 0 12px rgba(0,0,0,0.9)' }}
-            className="text-[10px] font-black tracking-[0.2em] uppercase text-amber-200 mt-1"
+            style={{ textShadow: '0 1px 8px rgba(255,255,255,1), 0 0 4px rgba(255,255,255,1)' }}
+            className="text-[8px] md:text-[10px] font-black tracking-[0.15em] uppercase text-amber-900 mt-0.5 leading-none"
           >
             {etiquetaSuperior}
           </span>
         )}
         {nombreCentral && (
           <span
-            style={{ textShadow: '0 2px 8px rgba(0,0,0,1), 0 0 14px rgba(0,0,0,0.95)' }}
-            className={`font-black tracking-wide text-white ${
-              enEsquina ? 'text-[10px] mt-0.5' : 'text-base md:text-xl mt-0.5'
+            style={{ textShadow: '0 1px 10px rgba(255,255,255,1), 0 0 6px rgba(255,255,255,1)' }}
+            className={`font-black tracking-wide text-slate-900 leading-tight ${
+              enEsquina
+                ? 'text-[9px] mt-0.5'
+                : esPantallaMovil
+                ? 'text-xs md:text-base mt-0.5'
+                : 'text-base md:text-xl mt-0.5'
             }`}
           >
             {nombreCentral}
@@ -938,6 +1041,67 @@ export default function SecretoSagradoLanding() {
       { voiceURI: 'Charon', name: 'IA Gemini — Charon (Barítono Profundo)' }
     ]);
     setVozSeleccionadaURI('Charon');
+
+    // Detector de dispositivo (Móvil / Pantalla Táctil vs. Escritorio)
+    const actualizarModoDispositivo = () => {
+      const esTactil = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      const esMovil = window.innerWidth < 768 || window.innerHeight < 520;
+      document.documentElement.setAttribute('data-touch', esTactil ? 'true' : 'false');
+      document.documentElement.setAttribute('data-mobile', esMovil ? 'true' : 'false');
+    };
+
+    actualizarModoDispositivo();
+    window.addEventListener('resize', actualizarModoDispositivo);
+
+    // Inyectar reglas globales para desbloquear el scroll móvil en todas las pantallas y ocultar controles de PC
+    let estiloMovil = document.getElementById('ss-adaptacion-movil-global');
+    if (!estiloMovil) {
+      estiloMovil = document.createElement('style');
+      estiloMovil.id = 'ss-adaptacion-movil-global';
+      estiloMovil.innerHTML = `
+        /* Ocultar elementos exclusivos de laptop/escritorio en dispositivos táctiles */
+        html[data-touch="true"] button[title*="Pantalla"],
+        html[data-touch="true"] .solo-escritorio {
+          display: none !important;
+        }
+
+        /* Adaptación integral para teléfonos móviles (vertical y horizontal) */
+        @media (max-width: 768px), (max-height: 540px) {
+          /* Permitir scroll táctil fluido en absolutamente todas las pantallas */
+          div.fixed.inset-0,
+          section.relative.z-20 {
+            height: 100dvh !important;
+            max-height: 100dvh !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+            -webkit-overflow-scrolling: touch !important;
+            touch-action: pan-y !important;
+          }
+
+          /* Evitar que los contenedores hijos bloqueen el scroll vertical */
+          section.relative.z-20 {
+            justify-content: flex-start !important;
+            gap: 0.65rem !important;
+            padding: 0.65rem 0.75rem 4.5rem 0.75rem !important;
+          }
+
+          section.relative.z-20 > main {
+            justify-content: flex-start !important;
+            height: auto !important;
+            min-height: min-content !important;
+            padding-bottom: 3.5rem !important;
+          }
+
+          /* Compactar textos gigantes de menú y cabeceras en teléfonos */
+          .font-cinzel {
+            line-height: 1.2 !important;
+          }
+        }
+      `;
+      document.head.appendChild(estiloMovil);
+    }
+
+    return () => window.removeEventListener('resize', actualizarModoDispositivo);
   }, []);
 
   const hablarConVozDM = useCallback(
@@ -2641,10 +2805,10 @@ const [feedbackRespuesta, setFeedbackRespuesta] = useState(null); // { esCorrect
       )}
 
       {/* ====================================================================
-          PANTALLA DE JUEGO EN VIVO (CON SCROLL VERTICAL LIBRE Y ANIMACIÓN EDUCATIVA)
+          PANTALLA DE JUEGO EN VIVO (ESTÉTICA ANGELICAL BLANCO Y ORO + TIPOGRAFÍA OSCURA)
           ==================================================================== */}
       {pantalla === 'JUEGO' && (
-        <section className="relative z-20 w-full h-full flex flex-col justify-between px-4 md:px-10 pt-4 pb-10 overflow-y-auto overflow-x-hidden">
+        <section className="tema-angelical relative z-20 w-full h-full flex flex-col justify-between px-4 md:px-10 pt-4 pb-10 overflow-y-auto overflow-x-hidden">
           <style>{`
             @keyframes aciertoPulso {
               0% { transform: scale(0.95); box-shadow: 0 0 0px rgba(16,185,129,0); }
@@ -2658,6 +2822,28 @@ const [feedbackRespuesta, setFeedbackRespuesta] = useState(null); // { esCorrect
             }
             .anim-acierto { animation: aciertoPulso 0.6s ease-out forwards; }
             .anim-error { animation: errorSacudida 0.45s ease-in-out; }
+
+            /* Transformación global de cajas oscuras en cristal luminoso blanco y dorado con letra oscura */
+            .tema-angelical [class*="bg-slate-950"] {
+              background: linear-gradient(135deg, rgba(255, 255, 255, 0.78) 0%, rgba(254, 249, 195, 0.68) 100%) !important;
+              border-color: rgba(251, 191, 36, 0.75) !important;
+              color: #0f172a !important;
+              box-shadow: 0 12px 36px rgba(251, 191, 36, 0.22), 0 4px 16px rgba(255, 255, 255, 0.65), inset 0 0 20px rgba(255, 255, 255, 0.85) !important;
+            }
+            .tema-angelical [class*="bg-slate-950"] h1,
+            .tema-angelical [class*="bg-slate-950"] h2,
+            .tema-angelical [class*="bg-slate-950"] h3,
+            .tema-angelical [class*="bg-slate-950"] p,
+            .tema-angelical [class*="bg-slate-950"] span,
+            .tema-angelical [class*="bg-slate-950"] div {
+              color: #0f172a !important;
+              text-shadow: 0 1px 2px rgba(255, 255, 255, 0.9);
+            }
+            .tema-angelical [class*="bg-slate-950"] .text-amber-200,
+            .tema-angelical [class*="bg-slate-950"] .text-amber-300,
+            .tema-angelical [class*="bg-slate-950"] .text-cyan-200 {
+              color: #92400e !important;
+            }
           `}</style>
           {/* ESFERA PERSISTENTE DEL DM: VIAJA Y SE ENCOGE FLUIDAMENTE DEL CENTRO A LA ESQUINA SUPERIOR IZQUIERDA */}
           {subFaseJuego !== 'FIN_PARTIDA' && (
@@ -2697,26 +2883,26 @@ const [feedbackRespuesta, setFeedbackRespuesta] = useState(null); // { esCorrect
             </div>
           </div>
 
-          {/* PARTE SUPERIOR CENTRAL COMPACTA (70% DEL ANCHO) */}
+          {/* PARTE SUPERIOR CENTRAL ADAPTADA A MÓVIL Y TABLET */}
           {subFaseJuego === 'JUGADOR_ACTIVO' && (
-            <div className="w-[82vw] md:w-[70vw] mx-auto mt-11 px-5 py-3.5 rounded-3xl bg-slate-950/65 backdrop-blur-2xl border border-white/45 shadow-2xl text-center z-20 animate-[fadeIn_0.5s_ease-out]">
-              <div className="inline-flex items-center gap-2 px-3 py-0.5 rounded-full bg-amber-300/20 border border-amber-300/60 text-amber-200 text-[11px] font-black tracking-widest uppercase mb-1">
-                <IconoSagradoSVG tipo="biblia" className="w-3.5 h-3.5" />
+            <div className="w-[94vw] md:w-[72vw] mx-auto mt-2 md:mt-8 px-3.5 py-2.5 md:px-5 md:py-3.5 rounded-2xl md:rounded-3xl bg-white/80 backdrop-blur-2xl border-2 border-amber-300/80 shadow-[0_0_35px_rgba(253,224,71,0.35),inset_0_0_20px_rgba(255,255,255,0.9)] text-center z-20 shrink-0 animate-[fadeIn_0.5s_ease-out]">
+              <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-amber-400/25 border border-amber-500/60 text-amber-900 text-[10px] md:text-[11px] font-black tracking-widest uppercase mb-0.5">
+                <IconoSagradoSVG tipo="biblia" className="w-3 h-3 md:w-3.5 md:h-3.5" />
                 <span>Biblia: {retoActual.citaBiblia}</span>
               </div>
-              <h2 className="font-cinzel text-base md:text-xl font-extrabold leading-snug text-white">
+              <h2 className="font-cinzel text-sm md:text-xl font-extrabold leading-snug text-slate-900">
                 {retoActual.pregunta}
               </h2>
             </div>
           )}
 
-          {/* BANNER EDUCATIVO ANIMADO DE ACIERTO O CORRECCIÓN */}
+          {/* BANNER EDUCATIVO ANIMADO DE ACIERTO O CORRECCIÓN (LUMINOSO) */}
           {feedbackRespuesta && (
             <div
               className={`fixed top-20 left-1/2 -translate-x-1/2 z-50 px-8 py-4 rounded-3xl backdrop-blur-3xl border-2 shadow-2xl flex flex-col items-center text-center max-w-lg w-[90vw] ${
                 feedbackRespuesta.esCorrecto
-                  ? 'bg-emerald-950/90 border-emerald-300 text-emerald-100 anim-acierto'
-                  : 'bg-rose-950/90 border-rose-300 text-rose-100 anim-error'
+                  ? 'bg-emerald-50/95 border-emerald-400 text-emerald-950 anim-acierto'
+                  : 'bg-rose-50/95 border-rose-400 text-rose-950 anim-error'
               }`}
             >
               <div className="text-base md:text-xl font-black tracking-wide uppercase">
@@ -2725,7 +2911,7 @@ const [feedbackRespuesta, setFeedbackRespuesta] = useState(null); // { esCorrect
                   : 'Respuesta Incorrecta'}
               </div>
               {!feedbackRespuesta.esCorrecto && feedbackRespuesta.textoCorrecto && (
-                <div className="text-xs md:text-sm text-amber-200 font-bold mt-1">
+                <div className="text-xs md:text-sm text-amber-900 font-bold mt-1">
                   Respuesta correcta: «{feedbackRespuesta.textoCorrecto}»
                 </div>
               )}
