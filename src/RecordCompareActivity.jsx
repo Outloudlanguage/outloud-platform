@@ -36,23 +36,25 @@ export default function RecordCompareActivity({
   const recordingStartTimeRef = useRef(0);
   
   const isRecordingRef = useRef(false);
-  const stopTimeoutRef = useRef(null);
+  const activeStreamRef = useRef(null); // NUEVO: Control maestro del hardware del micrófono
 
   const wordsList = targetText.trim().split(/\s+/);
 
-  // Clean up hardware completely on unmount or exercise swap
   useEffect(() => {
     return () => {
+      // Limpieza total al cambiar de ejercicio
       if (studentAudioUrl) URL.revokeObjectURL(studentAudioUrl);
       if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
         audioCtxRef.current.close();
       }
       cancelAnimationFrame(animationFrameRef.current);
-      clearTimeout(stopTimeoutRef.current);
       
-      // ZOMBIE KILLER: Forcefully abort any lingering speech engine
       if (recognitionRef.current) {
         try { recognitionRef.current.abort(); } catch(e) {}
+      }
+
+      if (activeStreamRef.current) {
+        activeStreamRef.current.getTracks().forEach((track) => track.stop());
       }
     };
   }, [studentAudioUrl]);
@@ -96,14 +98,12 @@ export default function RecordCompareActivity({
       speechTranscriptRef.current = '';
       lastSpeechErrorRef.current = '';
       isRecordingRef.current = true; 
-      clearTimeout(stopTimeoutRef.current);
 
-      // LIFECYCLE FIX: Abort any old engine from previous exercises
       if (recognitionRef.current) {
         try { recognitionRef.current.abort(); } catch(e) {}
       }
 
-      // LIFECYCLE FIX: Boot a brand new, clean STT Engine for every attempt
+      // Reiniciamos el motor de voz completamente limpio
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (SpeechRecognition) {
         const recognition = new SpeechRecognition();
@@ -130,7 +130,6 @@ export default function RecordCompareActivity({
         };
 
         recognitionRef.current = recognition;
-        try { recognition.start(); } catch(e) {}
       }
 
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -142,6 +141,8 @@ export default function RecordCompareActivity({
           sampleRate: 16000 
         }
       });
+
+      activeStreamRef.current = stream; // Guardamos la referencia para apagarlo luego
 
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       if (!audioCtxRef.current || audioCtxRef.current.state === 'closed') {
@@ -173,9 +174,9 @@ export default function RecordCompareActivity({
         const url = URL.createObjectURL(audioBlob);
         setStudentAudioUrl(url);
 
-        stream.getTracks().forEach((track) => track.stop());
-        cancelAnimationFrame(animationFrameRef.current);
-
+        // AQUÍ ESTABA EL ERROR QUE CAUSABA EL [aborted]:
+        // stream.getTracks().forEach((track) => track.stop()); <-- ¡Eliminado!
+        
         runPlaybackReview(url);
       };
 
@@ -183,6 +184,13 @@ export default function RecordCompareActivity({
       mediaRecorder.start();
       recordingStartTimeRef.current = Date.now();
       setPhase('recording');
+
+      // Iniciamos el motor de voz 200ms después de que el micrófono físico está estable
+      setTimeout(() => {
+        if (recognitionRef.current && isRecordingRef.current) {
+          try { recognitionRef.current.start(); } catch (e) {}
+        }
+      }, 200);
 
     } catch (err) {
       console.error("Microphone access denied or audio initialization failed", err);
@@ -193,16 +201,23 @@ export default function RecordCompareActivity({
   const stopRecording = () => {
     isRecordingRef.current = false; 
     
+    // 1. Detenemos la grabación de audio local (desencadena la creación del Blob al instante)
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
       mediaRecorderRef.current.stop();
     }
     
-    // Safely track the timeout so it can be cancelled if the user immediately leaves the exercise
-    stopTimeoutRef.current = setTimeout(() => {
-      if (recognitionRef.current) {
-        try { recognitionRef.current.stop(); } catch (e) {}
+    // 2. Le decimos al motor de voz que ya no escucharemos más palabras nuevas
+    if (recognitionRef.current) {
+      try { recognitionRef.current.stop(); } catch (e) {}
+    }
+
+    // 3. RETRASO CRÍTICO DE HARDWARE: Mantenemos el micrófono físico vivo por 2.5 segundos.
+    // Esto asegura que Android termine de compilar y enviar el texto sin arrojar [aborted].
+    setTimeout(() => {
+      if (activeStreamRef.current) {
+        activeStreamRef.current.getTracks().forEach((track) => track.stop());
       }
-    }, 1500);
+    }, 2500);
   };
 
   const runPlaybackReview = (studentBlobUrl) => {
@@ -229,7 +244,8 @@ export default function RecordCompareActivity({
   };
 
   const executeGrading = async () => {
-    let retries = 35; 
+    // Aumentamos los retries a 40 para darle holgura al retraso del hardware
+    let retries = 40; 
     while (!speechTranscriptRef.current && retries > 0) {
       await new Promise(resolve => setTimeout(resolve, 100));
       retries--;
