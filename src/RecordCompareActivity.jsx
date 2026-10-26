@@ -20,13 +20,15 @@ export default function RecordCompareActivity({
   const [overallScore, setOverallScore] = useState(null);
 
   const sampleAudioRef = useRef(null);
-  const studentAudioRef = useRef(null);
-  const [studentAudioUrl, setStudentAudioUrl] = useState(null);
+  const studentAudioUrlRef = useRef(null);
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const recognitionRef = useRef(null);
+  
   const speechTranscriptRef = useRef('');
+  const accumulatedTranscriptRef = useRef('');
+  const currentSessionTranscriptRef = useRef('');
   const lastSpeechErrorRef = useRef('');
 
   const audioCtxRef = useRef(null);
@@ -36,28 +38,63 @@ export default function RecordCompareActivity({
   const recordingStartTimeRef = useRef(0);
   
   const isRecordingRef = useRef(false);
-  const activeStreamRef = useRef(null); // NUEVO: Control maestro del hardware del micrófono
+  const activeStreamRef = useRef(null);
+  const stopTimeoutRef = useRef(null);
+  const hasFinalizedStopRef = useRef(false);
 
   const wordsList = targetText.trim().split(/\s+/);
 
+  // Full hardware cleanup helper between exercises and on unmount
+  const cleanupHardware = () => {
+    isRecordingRef.current = false;
+    clearTimeout(stopTimeoutRef.current);
+    cancelAnimationFrame(animationFrameRef.current);
+
+    if (recognitionRef.current) {
+      recognitionRef.current.onend = null;
+      recognitionRef.current.onerror = null;
+      recognitionRef.current.onresult = null;
+      try { recognitionRef.current.abort(); } catch (e) {}
+      recognitionRef.current = null;
+    }
+
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      try { mediaRecorderRef.current.stop(); } catch (e) {}
+    }
+    mediaRecorderRef.current = null;
+
+    if (activeStreamRef.current) {
+      activeStreamRef.current.getTracks().forEach((track) => track.stop());
+      activeStreamRef.current = null;
+    }
+
+    if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
+      try { audioCtxRef.current.close(); } catch (e) {}
+    }
+    audioCtxRef.current = null;
+  };
+
+  // Reset state and hardware cleanly whenever the user advances to a new exercise
+  useEffect(() => {
+    cleanupHardware();
+    setPhase('idle');
+    setAttempt(1);
+    setCanContinue(false);
+    setPointsAwarded(0);
+    setWordResults([]);
+    setFailedIndices(new Set());
+    setOverallScore(null);
+  }, [targetText, nodeId]);
+
+  // Unmount-only cleanup (NO studentAudioUrl dependency so it never self-aborts on stop)
   useEffect(() => {
     return () => {
-      // Limpieza total al cambiar de ejercicio
-      if (studentAudioUrl) URL.revokeObjectURL(studentAudioUrl);
-      if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
-        audioCtxRef.current.close();
-      }
-      cancelAnimationFrame(animationFrameRef.current);
-      
-      if (recognitionRef.current) {
-        try { recognitionRef.current.abort(); } catch(e) {}
-      }
-
-      if (activeStreamRef.current) {
-        activeStreamRef.current.getTracks().forEach((track) => track.stop());
+      cleanupHardware();
+      if (studentAudioUrlRef.current) {
+        URL.revokeObjectURL(studentAudioUrlRef.current);
       }
     };
-  }, [studentAudioUrl]);
+  }, []);
 
   const trackPitch = () => {
     if (!analyserRef.current || !audioCtxRef.current) return;
@@ -67,7 +104,7 @@ export default function RecordCompareActivity({
 
     let lastTime = 0;
     const update = (time) => {
-      if (time - lastTime > 100) { 
+      if (time - lastTime > 100 && audioCtxRef.current && audioCtxRef.current.state === 'running') { 
         analyser.getFloatTimeDomainData(inputBuffer);
         const [pitch, clarity] = detector.findPitch(inputBuffer, audioCtxRef.current.sampleRate);
         if (clarity > 0.8 && pitch > 50 && pitch < 500) {
@@ -75,7 +112,9 @@ export default function RecordCompareActivity({
         }
         lastTime = time;
       }
-      animationFrameRef.current = requestAnimationFrame(update);
+      if (isRecordingRef.current) {
+        animationFrameRef.current = requestAnimationFrame(update);
+      }
     };
 
     animationFrameRef.current = requestAnimationFrame(update);
@@ -93,17 +132,19 @@ export default function RecordCompareActivity({
 
   const startRecording = async () => {
     try {
+      // 1. Ensure 100% clean slate before starting (makes Exercise 2 identical to Exercise 1)
+      cleanupHardware();
+
       audioChunksRef.current = [];
       pitchValuesRef.current = [];
       speechTranscriptRef.current = '';
+      accumulatedTranscriptRef.current = '';
+      currentSessionTranscriptRef.current = '';
       lastSpeechErrorRef.current = '';
-      isRecordingRef.current = true; 
+      isRecordingRef.current = true;
+      hasFinalizedStopRef.current = false;
 
-      if (recognitionRef.current) {
-        try { recognitionRef.current.abort(); } catch(e) {}
-      }
-
-      // Reiniciamos el motor de voz completamente limpio
+      // 2. Start SpeechRecognition SYNCHRONOUSLY FIRST (locks in the user gesture & permission)
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (SpeechRecognition) {
         const recognition = new SpeechRecognition();
@@ -112,26 +153,41 @@ export default function RecordCompareActivity({
         recognition.lang = 'en-US';
 
         recognition.onresult = (event) => {
-          let fullTranscript = '';
+          let sessionText = '';
           for (let i = 0; i < event.results.length; ++i) {
-            fullTranscript += event.results[i][0].transcript + ' ';
+            sessionText += event.results[i][0].transcript + ' ';
           }
-          speechTranscriptRef.current = fullTranscript.trim();
+          currentSessionTranscriptRef.current = sessionText.trim();
+          speechTranscriptRef.current = (
+            accumulatedTranscriptRef.current + ' ' + currentSessionTranscriptRef.current
+          ).trim();
         };
 
         recognition.onerror = (event) => {
-          lastSpeechErrorRef.current = event.error;
+          if (event.error !== 'no-speech') {
+            lastSpeechErrorRef.current = event.error;
+          }
         };
 
         recognition.onend = () => {
+          if (currentSessionTranscriptRef.current) {
+            accumulatedTranscriptRef.current = (
+              accumulatedTranscriptRef.current + ' ' + currentSessionTranscriptRef.current
+            ).trim();
+            currentSessionTranscriptRef.current = '';
+            speechTranscriptRef.current = accumulatedTranscriptRef.current;
+          }
+
           if (isRecordingRef.current) {
             try { recognition.start(); } catch (e) {}
           }
         };
 
         recognitionRef.current = recognition;
+        try { recognition.start(); } catch (e) {}
       }
 
+      // 3. Request audio stream without echoCancellation lock
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { 
           echoCancellation: false, 
@@ -142,16 +198,17 @@ export default function RecordCompareActivity({
         }
       });
 
-      activeStreamRef.current = stream; // Guardamos la referencia para apagarlo luego
+      activeStreamRef.current = stream;
 
+      // 4. Create a fresh AudioContext for every attempt and close it after stopping
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      if (!audioCtxRef.current || audioCtxRef.current.state === 'closed') {
-        try {
-          audioCtxRef.current = new AudioCtx({ sampleRate: 16000 });
-        } catch (e) {
-          audioCtxRef.current = new AudioCtx();
-        }
-      } else if (audioCtxRef.current.state === 'suspended') {
+      try {
+        audioCtxRef.current = new AudioCtx({ sampleRate: 16000 });
+      } catch (e) {
+        audioCtxRef.current = new AudioCtx();
+      }
+
+      if (audioCtxRef.current.state === 'suspended') {
         await audioCtxRef.current.resume();
       }
 
@@ -170,13 +227,22 @@ export default function RecordCompareActivity({
 
       mediaRecorder.onstop = () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        if (studentAudioUrl) URL.revokeObjectURL(studentAudioUrl);
+        if (studentAudioUrlRef.current) {
+          URL.revokeObjectURL(studentAudioUrlRef.current);
+        }
         const url = URL.createObjectURL(audioBlob);
-        setStudentAudioUrl(url);
+        studentAudioUrlRef.current = url;
 
-        // AQUÍ ESTABA EL ERROR QUE CAUSABA EL [aborted]:
-        // stream.getTracks().forEach((track) => track.stop()); <-- ¡Eliminado!
-        
+        // Release mic tracks and AudioContext completely so the next exercise starts fresh
+        if (activeStreamRef.current) {
+          activeStreamRef.current.getTracks().forEach((track) => track.stop());
+          activeStreamRef.current = null;
+        }
+        if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
+          try { audioCtxRef.current.close(); } catch (e) {}
+          audioCtxRef.current = null;
+        }
+
         runPlaybackReview(url);
       };
 
@@ -185,39 +251,49 @@ export default function RecordCompareActivity({
       recordingStartTimeRef.current = Date.now();
       setPhase('recording');
 
-      // Iniciamos el motor de voz 200ms después de que el micrófono físico está estable
-      setTimeout(() => {
-        if (recognitionRef.current && isRecordingRef.current) {
-          try { recognitionRef.current.start(); } catch (e) {}
-        }
-      }, 200);
-
     } catch (err) {
       console.error("Microphone access denied or audio initialization failed", err);
       setPhase('idle');
     }
   };
 
-  const stopRecording = () => {
-    isRecordingRef.current = false; 
-    
-    // 1. Detenemos la grabación de audio local (desencadena la creación del Blob al instante)
+  const finalizeHardwareStop = () => {
+    if (hasFinalizedStopRef.current) return;
+    hasFinalizedStopRef.current = true;
+    clearTimeout(stopTimeoutRef.current);
+
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-      mediaRecorderRef.current.stop();
+      try { mediaRecorderRef.current.stop(); } catch (e) {}
     }
-    
-    // 2. Le decimos al motor de voz que ya no escucharemos más palabras nuevas
+  };
+
+  const stopRecording = () => {
+    isRecordingRef.current = false;
+    cancelAnimationFrame(animationFrameRef.current);
+
+    // 1. Stop SpeechRecognition FIRST while the mic stream is still alive so it flushes the final words
     if (recognitionRef.current) {
-      try { recognitionRef.current.stop(); } catch (e) {}
+      recognitionRef.current.onend = () => {
+        if (currentSessionTranscriptRef.current) {
+          accumulatedTranscriptRef.current = (
+            accumulatedTranscriptRef.current + ' ' + currentSessionTranscriptRef.current
+          ).trim();
+          currentSessionTranscriptRef.current = '';
+          speechTranscriptRef.current = accumulatedTranscriptRef.current;
+        }
+        finalizeHardwareStop();
+      };
+      try { recognitionRef.current.stop(); } catch (e) {
+        finalizeHardwareStop();
+      }
+    } else {
+      finalizeHardwareStop();
     }
 
-    // 3. RETRASO CRÍTICO DE HARDWARE: Mantenemos el micrófono físico vivo por 2.5 segundos.
-    // Esto asegura que Android termine de compilar y enviar el texto sin arrojar [aborted].
-    setTimeout(() => {
-      if (activeStreamRef.current) {
-        activeStreamRef.current.getTracks().forEach((track) => track.stop());
-      }
-    }, 2500);
+    // 2. Safety fallback: stop MediaRecorder & mic after 600ms if onend hasn't fired yet
+    stopTimeoutRef.current = setTimeout(() => {
+      finalizeHardwareStop();
+    }, 600);
   };
 
   const runPlaybackReview = (studentBlobUrl) => {
@@ -244,8 +320,7 @@ export default function RecordCompareActivity({
   };
 
   const executeGrading = async () => {
-    // Aumentamos los retries a 40 para darle holgura al retraso del hardware
-    let retries = 40; 
+    let retries = 15; 
     while (!speechTranscriptRef.current && retries > 0) {
       await new Promise(resolve => setTimeout(resolve, 100));
       retries--;
