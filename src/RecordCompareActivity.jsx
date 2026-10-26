@@ -21,7 +21,9 @@ export default function RecordCompareActivity({
   cefrLevel = "A1",
   onComplete = () => {}
 }) {
-  const [phase, setPhase] = useState('idle');
+  // Progressive Disclosure State Machine:
+  // 'listen' | 'playing_sample' | 'ready_to_record' | 'recording' | 'playing_review' | 'completed'
+  const [phase, setPhase] = useState(audioUrl ? 'listen' : 'ready_to_record');
   const [attempt, setAttempt] = useState(1);
   const [canContinue, setCanContinue] = useState(false);
   const [pointsAwarded, setPointsAwarded] = useState(0);
@@ -101,7 +103,6 @@ export default function RecordCompareActivity({
     };
 
     recognition.onend = () => {
-      // Lock in the current segment before restarting so pauses after "Hi!" or "Hello," never lose words
       if (currentSegmentRef.current) {
         committedSegmentsRef.current.push(currentSegmentRef.current);
         currentSegmentRef.current = '';
@@ -127,6 +128,10 @@ export default function RecordCompareActivity({
     isRecordingRef.current = false;
     cancelAnimationFrame(animationFrameRef.current);
 
+    if (sampleAudioRef.current) {
+      sampleAudioRef.current.pause();
+      sampleAudioRef.current = null;
+    }
     if (activeStreamRef.current) {
       activeStreamRef.current.getTracks().forEach((track) => track.stop());
       activeStreamRef.current = null;
@@ -136,7 +141,7 @@ export default function RecordCompareActivity({
       audioCtxRef.current = null;
     }
 
-    setPhase('idle');
+    setPhase(audioUrl ? 'listen' : 'ready_to_record');
     setAttempt(1);
     setCanContinue(false);
     setPointsAwarded(0);
@@ -149,6 +154,9 @@ export default function RecordCompareActivity({
     return () => {
       isRecordingRef.current = false;
       cancelAnimationFrame(animationFrameRef.current);
+      if (sampleAudioRef.current) {
+        sampleAudioRef.current.pause();
+      }
       if (recognitionRef.current) {
         recognitionRef.current.onend = null;
         try { recognitionRef.current.stop(); } catch (e) {}
@@ -160,7 +168,7 @@ export default function RecordCompareActivity({
         try { audioCtxRef.current.close(); } catch (e) {}
       }
     };
-  }, [targetText, nodeId]);
+  }, [targetText, nodeId, audioUrl]);
 
   useEffect(() => {
     return () => {
@@ -169,6 +177,168 @@ export default function RecordCompareActivity({
       }
     };
   }, []);
+
+  // Simple Levenshtein helper for client-side spelled-word detection
+  const getEditDistance = (a, b) => {
+    const dp = Array.from({ length: a.length + 1 }, () => Array(b.length + 1).fill(0));
+    for (let i = 0; i <= a.length; i++) dp[i][0] = i;
+    for (let j = 0; j <= b.length; j++) dp[0][j] = j;
+    for (let i = 1; i <= a.length; i++) {
+      for (let j = 1; j <= b.length; j++) {
+        dp[i][j] =
+          a[i - 1] === b[j - 1]
+            ? dp[i - 1][j - 1]
+            : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+      }
+    }
+    return dp[a.length][b.length];
+  };
+
+  // Pre-processor that normalizes spelled letters ("E R N E S T O") and numbers ("3 6 0 7 5 2...")
+  const normalizeTranscriptForTarget = (rawTranscript) => {
+    if (!rawTranscript) return '';
+
+    const cleanTargets = wordsList
+      .map((w) => w.toLowerCase().replace(/[^\w]/gi, ''))
+      .filter(Boolean);
+
+    const hasTargetDigits = cleanTargets.some((w) => /^\d+$/.test(w));
+    const hasSingleDigits = cleanTargets.some((w) => /^\d$/.test(w));
+
+    // Identify sequences of 2+ consecutive single letters in targetText (e.g., ["e","r","n","e","s","t","o"])
+    const spelledSequences = [];
+    let currentSeq = [];
+    for (const w of cleanTargets) {
+      if (w.length === 1 && /[a-z]/.test(w)) {
+        currentSeq.push(w);
+      } else {
+        if (currentSeq.length >= 2) spelledSequences.push(currentSeq.join(''));
+        currentSeq = [];
+      }
+    }
+    if (currentSeq.length >= 2) spelledSequences.push(currentSeq.join(''));
+
+    const hasSpelledLetters = spelledSequences.length > 0 || cleanTargets.some((w) => w.length === 1 && /[a-z]/.test(w));
+
+    let text = rawTranscript.toLowerCase();
+    text = text.replace(/\bdouble you\b/g, 'w').replace(/\bdouble u\b/g, 'w');
+
+    // 1. If target expects digits, convert spoken number words and homophones to digits
+    if (hasTargetDigits) {
+      const compoundTens = {
+        twenty: '2', thirty: '3', forty: '4', fifty: '5',
+        sixty: '6', seventy: '7', eighty: '8', ninety: '9'
+      };
+      const onesDigits = {
+        one: '1', won: '1', two: '2', to: '2', too: '2',
+        three: '3', free: '3', tree: '3', four: '4', for: '4', fore: '4',
+        five: '5', fine: '5', six: '6', sick: '6', seven: '7',
+        eight: '8', ate: '8', nine: '9', mine: '9'
+      };
+
+      // Convert compound tens like "thirty six" -> "36"
+      Object.entries(compoundTens).forEach(([tenWord, tenDigit]) => {
+        Object.entries(onesDigits).forEach(([oneWord, oneDigit]) => {
+          const regex = new RegExp(`\\b${tenWord}[\\s-]+${oneWord}\\b`, 'g');
+          text = text.replace(regex, `${tenDigit}${oneDigit}`);
+        });
+      });
+
+      const numberWordMap = {
+        zero: '0', oh: '0', o: '0', nil: '0',
+        ...onesDigits,
+        ten: '10', eleven: '11', twelve: '12', thirteen: '13',
+        fourteen: '14', fifteen: '15', sixteen: '16', seventeen: '17',
+        eighteen: '18', nineteen: '19', twenty: '20', thirty: '30',
+        forty: '40', fifty: '50', sixty: '60', seventy: '70',
+        eighty: '80', ninety: '90'
+      };
+
+      text = text
+        .split(/\s+/)
+        .map((token) => {
+          const clean = token.replace(/[^\w]/gi, '');
+          return numberWordMap[clean] !== undefined ? numberWordMap[clean] : token;
+        })
+        .join(' ');
+
+      if (hasSingleDigits) {
+        text = text.replace(/(\d)/g, ' $1 ');
+      }
+    }
+
+    // 2. If target expects spelled letters (e.g., E R N E S T O), expand grouped words and phonetic letter names
+    if (hasSpelledLetters) {
+      const letterPhonetics = {
+        hey: 'a', ay: 'a', eh: 'a',
+        bee: 'b', be: 'b',
+        see: 'c', sea: 'c', si: 'c',
+        dee: 'd', di: 'd', de: 'd',
+        he: 'e', ee: 'e', yi: 'e',
+        ef: 'f', eff: 'f',
+        gee: 'g', jee: 'g', ji: 'g',
+        aitch: 'h', hach: 'h', age: 'h',
+        eye: 'i',
+        jay: 'j', yay: 'j',
+        kay: 'k', okay: 'k', cay: 'k',
+        el: 'l', ell: 'l', al: 'l',
+        em: 'm', am: 'm',
+        en: 'n', in: 'n', and: 'n', an: 'n', end: 'n',
+        oh: 'o', owe: 'o', ou: 'o',
+        pee: 'p', pea: 'p',
+        cue: 'q', queue: 'q', kyu: 'q',
+        are: 'r', our: 'r', or: 'r', ar: 'r', er: 'r',
+        es: 's', ess: 's', is: 's', as: 's',
+        tee: 't', tea: 't', ti: 't', to: 't', too: 't',
+        you: 'u', yu: 'u',
+        vee: 'v', vi: 'v',
+        doubleyou: 'w', doubleu: 'w',
+        ex: 'x', ax: 'x', eggs: 'x',
+        why: 'y', wai: 'y',
+        zee: 'z', zed: 'z'
+      };
+
+      const nonSpelledTargets = new Set(cleanTargets.filter((w) => w.length > 1));
+      const fillers = new Set(['uhu', 'uh', 'um', 'ah', 'oh', 'hmm', 'mm', 'mhm', 'huh']);
+
+      let tokens = text.replace(/[^\w\s]/gi, ' ').split(/\s+/).filter(Boolean);
+
+      // Check if consecutive tokens combine to match the spelled target word (e.g. "ernest" + "oh" -> "ernesto")
+      spelledSequences.forEach((seqWord) => {
+        for (let i = 0; i < tokens.length; i++) {
+          let combined = '';
+          for (let k = i; k < Math.min(tokens.length, i + seqWord.length + 2); k++) {
+            const mapped = letterPhonetics[tokens[k]] || tokens[k];
+            combined += mapped;
+            const maxDist = seqWord.length >= 5 ? 2 : 1;
+            if (
+              combined === seqWord ||
+              (combined.length >= seqWord.length - 2 && getEditDistance(combined, seqWord) <= maxDist)
+            ) {
+              const expanded = seqWord.split('');
+              tokens.splice(i, k - i + 1, ...expanded);
+              break;
+            }
+          }
+        }
+      });
+
+      // Map individual phonetic letter names (like "are" -> "r", "tea" -> "t") when not part of regular sentence words
+      tokens = tokens.flatMap((tok) => {
+        if (nonSpelledTargets.has(tok) || (fillers.has(tok) && tok !== 'oh')) {
+          return [tok];
+        }
+        if (letterPhonetics[tok]) {
+          return [letterPhonetics[tok]];
+        }
+        return [tok];
+      });
+
+      text = tokens.join(' ');
+    }
+
+    return text.replace(/\s+/g, ' ').trim();
+  };
 
   // 1. Pitch & Acoustic Span Tracking Loop (AnalyserNode + Pitchy)
   const trackPitch = () => {
@@ -190,9 +360,8 @@ export default function RecordCompareActivity({
 
         const [pitch, clarity] = detector.findPitch(inputBuffer, audioCtxRef.current.sampleRate);
 
-        // Detect active voice across both vowels (pitched) and strong consonants (RMS energy)
-        const hasPitch = clarity > 0.60 && pitch > 50 && pitch < 550 && rms > 0.006;
-        const hasVocalEnergy = rms > 0.015;
+        const hasPitch = clarity > 0.58 && pitch > 50 && pitch < 550 && rms > 0.004;
+        const hasVocalEnergy = rms > 0.011;
 
         if (hasPitch) {
           pitchValuesRef.current.push(pitch);
@@ -218,18 +387,28 @@ export default function RecordCompareActivity({
     animationFrameRef.current = requestAnimationFrame(update);
   };
 
-  // 2. Play Sample Audio
+  // 2. Step 1 of Progressive Disclosure: Play Sample Audio -> Reveal "Repeat"
   const playSample = () => {
-    if (!audioUrl) return;
+    if (!audioUrl) {
+      setPhase('ready_to_record');
+      return;
+    }
     setPhase('playing_sample');
-    sampleAudioRef.current = new Audio(audioUrl);
-    sampleAudioRef.current.play();
-    sampleAudioRef.current.onended = () => {
-      setPhase('idle');
+    const audio = new Audio(audioUrl);
+    sampleAudioRef.current = audio;
+
+    audio.onended = () => {
+      setPhase('ready_to_record');
     };
+    audio.onerror = () => {
+      setPhase('ready_to_record');
+    };
+    audio.play().catch(() => {
+      setPhase('ready_to_record');
+    });
   };
 
-  // 3. Start Recording Phase
+  // 3. Step 2 of Progressive Disclosure: Start Recording Phase
   const startRecording = async () => {
     try {
       audioChunksRef.current = [];
@@ -276,7 +455,7 @@ export default function RecordCompareActivity({
 
       const source = audioCtxRef.current.createMediaStreamSource(stream);
       const analyser = audioCtxRef.current.createAnalyser();
-      analyser.fftSize = 1024; // 64ms window at 16kHz for fast syllable tracking
+      analyser.fftSize = 1024;
       source.connect(analyser);
       analyserRef.current = analyser;
 
@@ -296,7 +475,6 @@ export default function RecordCompareActivity({
         studentAudioUrlRef.current = url;
         setStudentAudioUrl(url);
 
-        // Keep mic stream open briefly so SpeechRecognition can flush the final words before closing
         setTimeout(() => {
           stream.getTracks().forEach((track) => track.stop());
           if (activeStreamRef.current === stream) {
@@ -317,17 +495,19 @@ export default function RecordCompareActivity({
       setPhase('recording');
     } catch (err) {
       console.error("Microphone access denied or audio initialization failed", err);
-      setPhase('idle');
+      setPhase('ready_to_record');
     }
   };
 
-  // 4. Stop Recording
+  // 4. Step 3 of Progressive Disclosure: Stop Recording
   const stopRecording = () => {
     isRecordingRef.current = false;
     cancelAnimationFrame(animationFrameRef.current);
 
     if (recognitionRef.current) {
-      try { recognitionRef.current.stop(); } catch (e) {
+      try {
+        recognitionRef.current.stop();
+      } catch (e) {
         speechFlushedRef.current = true;
       }
     } else {
@@ -339,33 +519,37 @@ export default function RecordCompareActivity({
     }
   };
 
-  // 5. Automated Comparative Playback Loop (Sample -> Student)
-  const runPlaybackReview = (studentBlobUrl) => {
-    setPhase('playing_review');
-    executeGrading();
+  // Helper to play an audio URL and resolve cleanly when finished
+  const playAudioPromise = (url) => {
+    return new Promise((resolve) => {
+      if (!url) {
+        resolve();
+        return;
+      }
+      const audio = new Audio(url);
+      audio.onended = () => resolve();
+      audio.onerror = () => resolve();
+      audio.play().catch(() => resolve());
+    });
+  };
 
-    if (audioUrl) {
-      const sample = new Audio(audioUrl);
-      sample.play();
-      sample.onended = () => {
-        const studentAudio = new Audio(studentBlobUrl);
-        studentAudio.play();
-        studentAudio.onended = () => {
-          setPhase('completed');
-        };
-      };
-    } else {
-      const studentAudio = new Audio(studentBlobUrl);
-      studentAudio.play();
-      studentAudio.onended = () => {
-        setPhase('completed');
-      };
-    }
+  // 5. Step 4 of Progressive Disclosure: "Comparing..." (Plays Original -> Student -> Grades)
+  const runPlaybackReview = async (studentBlobUrl) => {
+    setPhase('playing_review');
+
+    const playbackSequence = async () => {
+      if (audioUrl) {
+        await playAudioPromise(audioUrl);
+      }
+      await playAudioPromise(studentBlobUrl);
+    };
+
+    await Promise.all([playbackSequence(), executeGrading()]);
+    setPhase('completed');
   };
 
   // 6. Server-Side Grading Handshake
   const executeGrading = async () => {
-    // Wait up to 900ms for the speech engine to flush the final words after Stop is pressed
     let waitTicks = 9;
     while (!speechFlushedRef.current && waitTicks > 0) {
       await new Promise((resolve) => setTimeout(resolve, 100));
@@ -383,34 +567,47 @@ export default function RecordCompareActivity({
       const variance = pitches.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / pitches.length;
       pitchVariance = Math.sqrt(variance);
     } else if (activeVoiceFramesRef.current >= 3) {
-      pitchVariance = 18; // Ensure prosody credit when voice is detected
+      pitchVariance = 18;
     }
 
-    let finalTranscript = speechTranscriptRef.current.trim();
-    const sttWords = finalTranscript ? finalTranscript.split(/\s+/).filter(Boolean) : [];
+    // Normalize spelled letters and numbers first
+    let finalTranscript = normalizeTranscriptForTarget(speechTranscriptRef.current.trim());
 
-    // Calculate how many words the user acoustically spoke across the recording
     const scriptFillers = ['uhu', 'uh', 'um', 'ah', 'oh', 'hmm', 'mm', 'mhm', 'huh'];
     const contentWords = wordsList.filter(
       (w) => !scriptFillers.includes(w.toLowerCase().replace(/[^\w]/gi, ''))
     );
 
+    const sttContentWords = finalTranscript
+      ? finalTranscript
+          .split(/\s+/)
+          .filter((w) => w && !scriptFillers.includes(w.toLowerCase().replace(/[^\w]/gi, '')))
+      : [];
+
+    // Acoustic Span Supplement: If Android cut off STT during pauses between letters/numbers/words,
+    // supplement the remaining words that were acoustically spoken into the microphone
     if (activeVoiceFramesRef.current >= 3 && contentWords.length > 0) {
       const speakingSpanSec =
         lastVoiceTimeRef.current > firstVoiceTimeRef.current
-          ? (lastVoiceTimeRef.current - firstVoiceTimeRef.current) / 1000 + 0.18
+          ? (lastVoiceTimeRef.current - firstVoiceTimeRef.current) / 1000 + 0.20
           : activeVoiceFramesRef.current * 0.05;
 
       const voicedSec = activeVoiceFramesRef.current * 0.05;
-      const effectiveSpeechSec = Math.max(voicedSec * 1.35, speakingSpanSec * 0.85);
-      const expectedSec = Math.max(0.45, contentWords.length * 0.24);
+      const effectiveSpeechSec = Math.max(voicedSec * 1.4, speakingSpanSec * 0.9);
+
+      // Single-character targets (letters/digits) require ~0.18s each; full words ~0.24s each
+      const expectedSec = Math.max(
+        0.4,
+        contentWords.reduce((acc, w) => {
+          const clean = w.replace(/[^\w]/gi, '');
+          return acc + (clean.length === 1 ? 0.18 : 0.24);
+        }, 0)
+      );
 
       const coverageRatio = Math.min(1, effectiveSpeechSec / expectedSec);
       const acousticWordCount = Math.max(1, Math.round(contentWords.length * coverageRatio));
 
-      // If Android cut off STT completely OR dropped the words after the first pause ("Hi!" / "Hello,"),
-      // supplement the transcript up to the number of words acoustically spoken
-      if (sttWords.length < acousticWordCount) {
+      if (sttContentWords.length < acousticWordCount) {
         const clarities = clarityValuesRef.current;
         const avgClarity =
           clarities.length > 0
@@ -418,9 +615,8 @@ export default function RecordCompareActivity({
             : 0.85;
 
         const reconstructed = contentWords.slice(0, acousticWordCount).map((rawWord, idx) => {
-          // Keep any exact words that STT already captured at the start
-          if (idx < sttWords.length && sttWords[idx]) {
-            return sttWords[idx];
+          if (idx < sttContentWords.length && sttContentWords[idx]) {
+            return sttContentWords[idx];
           }
           const clean = rawWord.toLowerCase().replace(/[^\w]/gi, '');
           const segClarity = clarities[idx % Math.max(1, clarities.length)] || avgClarity;
@@ -430,7 +626,7 @@ export default function RecordCompareActivity({
           return clean;
         });
 
-        finalTranscript = reconstructed.join(' ');
+        finalTranscript = normalizeTranscriptForTarget(reconstructed.join(' '));
       }
     }
 
@@ -484,13 +680,13 @@ export default function RecordCompareActivity({
     }
   };
 
-  // 7. Retrying Attempts
+  // 7. Retrying Attempts (Resets back to Listen so student hears reference then repeats)
   const handleTryAgain = () => {
     setupSpeechRecognition();
     setAttempt((prev) => prev + 1);
     setOverallScore(null);
     setWordResults([]);
-    setPhase('idle');
+    setPhase(audioUrl ? 'listen' : 'ready_to_record');
   };
 
   // 8. Progress to next node
@@ -504,11 +700,13 @@ export default function RecordCompareActivity({
 
   return (
     <div className="flex flex-col items-center justify-center p-6 bg-slate-900/90 border border-slate-800 rounded-2xl max-w-2xl mx-auto shadow-2xl backdrop-blur-md">
+      {/* Top Meta Indicator */}
       <div className="flex items-center justify-between w-full mb-6 px-2 text-xs font-semibold tracking-wider uppercase text-slate-400">
         <span>Attempt {attempt} / 3</span>
         <span>Target: {cefrLevel}</span>
       </div>
 
+      {/* Dynamic Subtitle / Heatmap Display */}
       <div className="text-xl md:text-2xl text-center leading-relaxed mb-8 select-none min-h-[4rem] flex flex-wrap items-center justify-center gap-2">
         {wordsList.map((word, idx) => {
           if (phase === 'completed' && wordResults[idx]) {
@@ -543,65 +741,90 @@ export default function RecordCompareActivity({
         })}
       </div>
 
+      {/* Single Progressive-Disclosure Button Interface */}
       <div className="flex flex-col items-center gap-4 w-full">
-        {phase === 'idle' && (
-          <div className="flex items-center gap-4">
-            {audioUrl && (
-              <button onClick={playSample} className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold rounded-lg transition">
-                Hear Sample
-              </button>
-            )}
-            <button onClick={startRecording} className="flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl shadow-lg transition transform active:scale-95">
-              <span className="w-3 h-3 bg-white rounded-full animate-ping" />
-              Record
-            </button>
+        {phase === 'completed' && (
+          <div className="text-center mb-1">
+            <span className="text-3xl font-extrabold text-white">
+              {Math.round(overallScore || 0)}%
+            </span>
+            <p className="text-xs text-slate-400 mt-1">
+              {overallScore >= 60 ? "Pronunciation Approved" : "Needs Practice"}
+            </p>
           </div>
+        )}
+
+        {phase === 'listen' && (
+          <button
+            onClick={playSample}
+            className="flex items-center justify-center gap-2.5 px-8 py-3.5 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl shadow-lg transition transform active:scale-95"
+          >
+            <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+              <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
+            </svg>
+            Listen
+          </button>
         )}
 
         {phase === 'playing_sample' && (
-          <div className="text-sm font-semibold text-sky-400 animate-pulse">
-            Listening to sample...
-          </div>
+          <button
+            disabled
+            className="flex items-center justify-center gap-2.5 px-8 py-3.5 bg-sky-900/60 border border-sky-500/40 text-sky-300 font-bold rounded-xl shadow-lg animate-pulse cursor-not-allowed"
+          >
+            <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+              <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
+            </svg>
+            Listening...
+          </button>
+        )}
+
+        {phase === 'ready_to_record' && (
+          <button
+            onClick={startRecording}
+            className="flex items-center justify-center gap-2.5 px-8 py-3.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl shadow-lg transition transform active:scale-95"
+          >
+            <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+              <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.39-1.14-1-1.14z" />
+            </svg>
+            Repeat
+          </button>
         )}
 
         {phase === 'recording' && (
-          <button onClick={stopRecording} className="flex items-center gap-2 px-8 py-3 bg-slate-800 border border-red-500 text-red-400 font-bold rounded-xl shadow-lg transition transform active:scale-95 animate-pulse">
-            <span className="w-3 h-3 bg-red-500 rounded-sm" />
-            Stop Recording
+          <button
+            onClick={stopRecording}
+            className="flex items-center justify-center gap-2.5 px-8 py-3.5 bg-slate-800 border border-red-500 text-red-400 font-bold rounded-xl shadow-lg transition transform active:scale-95 animate-pulse"
+          >
+            <span className="w-3.5 h-3.5 bg-red-500 rounded-sm" />
+            Stop
           </button>
         )}
 
         {phase === 'playing_review' && (
-          <div className="text-sm font-semibold text-emerald-400 animate-pulse">
-            Comparing sample with your audio...
-          </div>
+          <button
+            disabled
+            className="flex items-center justify-center gap-2.5 px-8 py-3.5 bg-slate-800/80 border border-emerald-500/40 text-emerald-400 font-bold rounded-xl shadow-lg animate-pulse cursor-not-allowed"
+          >
+            Comparing...
+          </button>
         )}
 
-        {phase === 'completed' && (
-          <div className="flex flex-col items-center gap-4 w-full">
-            <div className="text-center">
-              <span className="text-3xl font-extrabold text-white">
-                {Math.round(overallScore || 0)}%
-              </span>
-              <p className="text-xs text-slate-400 mt-1">
-                {overallScore >= 60 ? "Pronunciation Approved" : "Needs Practice"}
-              </p>
-            </div>
+        {phase === 'completed' && !canContinue && attempt < 3 && (
+          <button
+            onClick={handleTryAgain}
+            className="flex items-center justify-center gap-2 px-8 py-3.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl shadow-lg transition transform active:scale-95"
+          >
+            Try Again
+          </button>
+        )}
 
-            <div className="flex items-center gap-3">
-              {!canContinue && attempt < 3 && (
-                <button onClick={handleTryAgain} className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-sm font-semibold rounded-xl transition">
-                  Try Again ({3 - attempt} left)
-                </button>
-              )}
-
-              {canContinue && (
-                <button onClick={handleContinue} className="px-8 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl shadow-lg transition transform active:scale-95">
-                  Continue
-                </button>
-              )}
-            </div>
-          </div>
+        {phase === 'completed' && (canContinue || attempt >= 3) && (
+          <button
+            onClick={handleContinue}
+            className="flex items-center justify-center gap-2 px-8 py-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl shadow-lg transition transform active:scale-95"
+          >
+            Continue
+          </button>
         )}
       </div>
     </div>
