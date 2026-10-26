@@ -16,7 +16,8 @@
     "react-phone-number-input": "^3.4.17",
     "recharts": "^3.10.1",
     "swiper": "^14.1.0",
-    "syllable": "^5.0.1"
+    "syllable": "^5.0.1",
+    "yaml": "^2.9.1"
   },
   "scripts": {
     "start": "react-scripts start",
