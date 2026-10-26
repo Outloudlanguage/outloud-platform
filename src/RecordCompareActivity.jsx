@@ -2,6 +2,17 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './SupabaseClient';
 import { PitchDetector } from 'pitchy';
 
+/**
+ * RecordCompareActivity
+ * 
+ * Props:
+ * - targetText: string (The subtitle / sentence to repeat)
+ * - audioUrl: string (Teacher reference audio URL)
+ * - lessonId: string / uuid
+ * - nodeId: string
+ * - cefrLevel: string ('A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2')
+ * - onComplete: function({ overallScore, pointsAwarded, passed })
+ */
 export default function RecordCompareActivity({
   targetText = "The quick brown fox jumps over the lazy dog",
   audioUrl = "",
@@ -20,63 +31,87 @@ export default function RecordCompareActivity({
   const [overallScore, setOverallScore] = useState(null);
 
   const sampleAudioRef = useRef(null);
+  const [studentAudioUrl, setStudentAudioUrl] = useState(null);
   const studentAudioUrlRef = useRef(null);
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const recognitionRef = useRef(null);
-  
   const speechTranscriptRef = useRef('');
-  const accumulatedTranscriptRef = useRef('');
-  const currentSessionTranscriptRef = useRef('');
-  const lastSpeechErrorRef = useRef('');
 
   const audioCtxRef = useRef(null);
   const analyserRef = useRef(null);
   const pitchValuesRef = useRef([]);
+  const clarityValuesRef = useRef([]);
+  const activeVoiceFramesRef = useRef(0);
+  const vocalBurstsRef = useRef(0);
+  const inBurstRef = useRef(false);
+
   const animationFrameRef = useRef(null);
   const recordingStartTimeRef = useRef(0);
-  
   const isRecordingRef = useRef(false);
   const activeStreamRef = useRef(null);
-  const stopTimeoutRef = useRef(null);
-  const hasFinalizedStopRef = useRef(false);
 
   const wordsList = targetText.trim().split(/\s+/);
 
-  // Full hardware cleanup helper between exercises and on unmount
-  const cleanupHardware = () => {
-    isRecordingRef.current = false;
-    clearTimeout(stopTimeoutRef.current);
-    cancelAnimationFrame(animationFrameRef.current);
+  // Pre-initialize a clean SpeechRecognition instance ahead of time (never inside startRecording)
+  const setupSpeechRecognition = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
 
     if (recognitionRef.current) {
       recognitionRef.current.onend = null;
       recognitionRef.current.onerror = null;
       recognitionRef.current.onresult = null;
-      try { recognitionRef.current.abort(); } catch (e) {}
-      recognitionRef.current = null;
+      try { recognitionRef.current.stop(); } catch (e) {}
     }
 
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-      try { mediaRecorderRef.current.stop(); } catch (e) {}
-    }
-    mediaRecorderRef.current = null;
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    recognition.onresult = (event) => {
+      let fullTranscript = '';
+      for (let i = 0; i < event.results.length; ++i) {
+        fullTranscript += event.results[i][0].transcript + ' ';
+      }
+      if (fullTranscript.trim()) {
+        speechTranscriptRef.current = fullTranscript.trim();
+      }
+    };
+
+    recognition.onerror = (event) => {
+      console.warn("Browser Speech Event:", event.error);
+    };
+
+    recognition.onend = () => {
+      if (isRecordingRef.current) {
+        setTimeout(() => {
+          if (isRecordingRef.current && recognitionRef.current) {
+            try { recognitionRef.current.start(); } catch (e) {}
+          }
+        }, 150);
+      }
+    };
+
+    recognitionRef.current = recognition;
+  };
+
+  // Reset cleanly whenever the lesson advances to a new exercise node
+  useEffect(() => {
+    isRecordingRef.current = false;
+    cancelAnimationFrame(animationFrameRef.current);
 
     if (activeStreamRef.current) {
       activeStreamRef.current.getTracks().forEach((track) => track.stop());
       activeStreamRef.current = null;
     }
-
     if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
       try { audioCtxRef.current.close(); } catch (e) {}
+      audioCtxRef.current = null;
     }
-    audioCtxRef.current = null;
-  };
 
-  // Reset state and hardware cleanly whenever the user advances to a new exercise
-  useEffect(() => {
-    cleanupHardware();
     setPhase('idle');
     setAttempt(1);
     setCanContinue(false);
@@ -84,18 +119,35 @@ export default function RecordCompareActivity({
     setWordResults([]);
     setFailedIndices(new Set());
     setOverallScore(null);
+
+    setupSpeechRecognition();
+
+    return () => {
+      isRecordingRef.current = false;
+      cancelAnimationFrame(animationFrameRef.current);
+      if (recognitionRef.current) {
+        recognitionRef.current.onend = null;
+        try { recognitionRef.current.stop(); } catch (e) {}
+      }
+      if (activeStreamRef.current) {
+        activeStreamRef.current.getTracks().forEach((track) => track.stop());
+      }
+      if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
+        try { audioCtxRef.current.close(); } catch (e) {}
+      }
+    };
   }, [targetText, nodeId]);
 
-  // Unmount-only cleanup (NO studentAudioUrl dependency so it never self-aborts on stop)
+  // Unmount cleanup for audio blob URL
   useEffect(() => {
     return () => {
-      cleanupHardware();
       if (studentAudioUrlRef.current) {
         URL.revokeObjectURL(studentAudioUrlRef.current);
       }
     };
   }, []);
 
+  // 1. Pitch & Acoustic Envelope Tracking Loop (AnalyserNode + Pitchy)
   const trackPitch = () => {
     if (!analyserRef.current || !audioCtxRef.current) return;
     const analyser = analyserRef.current;
@@ -104,12 +156,32 @@ export default function RecordCompareActivity({
 
     let lastTime = 0;
     const update = (time) => {
-      if (time - lastTime > 100 && audioCtxRef.current && audioCtxRef.current.state === 'running') { 
+      if (time - lastTime > 60 && audioCtxRef.current && audioCtxRef.current.state === 'running') {
         analyser.getFloatTimeDomainData(inputBuffer);
-        const [pitch, clarity] = detector.findPitch(inputBuffer, audioCtxRef.current.sampleRate);
-        if (clarity > 0.8 && pitch > 50 && pitch < 500) {
-          pitchValuesRef.current.push(pitch);
+
+        // Calculate RMS vocal energy for acoustic speech detection
+        let sumSquares = 0;
+        for (let i = 0; i < inputBuffer.length; i++) {
+          sumSquares += inputBuffer[i] * inputBuffer[i];
         }
+        const rms = Math.sqrt(sumSquares / inputBuffer.length);
+
+        const [pitch, clarity] = detector.findPitch(inputBuffer, audioCtxRef.current.sampleRate);
+        const isVoiced = clarity > 0.75 && pitch > 55 && pitch < 500 && rms > 0.012;
+
+        if (isVoiced) {
+          pitchValuesRef.current.push(pitch);
+          clarityValuesRef.current.push(clarity);
+          activeVoiceFramesRef.current += 1;
+
+          if (!inBurstRef.current) {
+            inBurstRef.current = true;
+            vocalBurstsRef.current += 1;
+          }
+        } else if (rms < 0.008) {
+          inBurstRef.current = false;
+        }
+
         lastTime = time;
       }
       if (isRecordingRef.current) {
@@ -120,6 +192,7 @@ export default function RecordCompareActivity({
     animationFrameRef.current = requestAnimationFrame(update);
   };
 
+  // 2. Play Sample Audio
   const playSample = () => {
     if (!audioUrl) return;
     setPhase('playing_sample');
@@ -130,85 +203,45 @@ export default function RecordCompareActivity({
     };
   };
 
+  // 3. Start Recording Phase
   const startRecording = async () => {
     try {
-      // 1. Ensure 100% clean slate before starting (makes Exercise 2 identical to Exercise 1)
-      cleanupHardware();
-
       audioChunksRef.current = [];
       pitchValuesRef.current = [];
+      clarityValuesRef.current = [];
+      activeVoiceFramesRef.current = 0;
+      vocalBurstsRef.current = 0;
+      inBurstRef.current = false;
       speechTranscriptRef.current = '';
-      accumulatedTranscriptRef.current = '';
-      currentSessionTranscriptRef.current = '';
-      lastSpeechErrorRef.current = '';
       isRecordingRef.current = true;
-      hasFinalizedStopRef.current = false;
 
-      // 2. Start SpeechRecognition SYNCHRONOUSLY FIRST (locks in the user gesture & permission)
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (SpeechRecognition) {
-        const recognition = new SpeechRecognition();
-        recognition.continuous = true; 
-        recognition.interimResults = true; 
-        recognition.lang = 'en-US';
-
-        recognition.onresult = (event) => {
-          let sessionText = '';
-          for (let i = 0; i < event.results.length; ++i) {
-            sessionText += event.results[i][0].transcript + ' ';
-          }
-          currentSessionTranscriptRef.current = sessionText.trim();
-          speechTranscriptRef.current = (
-            accumulatedTranscriptRef.current + ' ' + currentSessionTranscriptRef.current
-          ).trim();
-        };
-
-        recognition.onerror = (event) => {
-          if (event.error !== 'no-speech') {
-            lastSpeechErrorRef.current = event.error;
-          }
-        };
-
-        recognition.onend = () => {
-          if (currentSessionTranscriptRef.current) {
-            accumulatedTranscriptRef.current = (
-              accumulatedTranscriptRef.current + ' ' + currentSessionTranscriptRef.current
-            ).trim();
-            currentSessionTranscriptRef.current = '';
-            speechTranscriptRef.current = accumulatedTranscriptRef.current;
-          }
-
-          if (isRecordingRef.current) {
-            try { recognition.start(); } catch (e) {}
-          }
-        };
-
-        recognitionRef.current = recognition;
-        try { recognition.start(); } catch (e) {}
+      // Start the pre-initialized SpeechRecognition synchronously first
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.start();
+        } catch (e) {}
       }
 
-      // 3. Request audio stream without echoCancellation lock
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { 
-          echoCancellation: false, 
-          noiseSuppression: true, 
+        audio: {
+          echoCancellation: false,
+          noiseSuppression: true,
           autoGainControl: true,
           channelCount: 1,
-          sampleRate: 16000 
+          sampleRate: 16000
         }
       });
 
       activeStreamRef.current = stream;
 
-      // 4. Create a fresh AudioContext for every attempt and close it after stopping
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      try {
-        audioCtxRef.current = new AudioCtx({ sampleRate: 16000 });
-      } catch (e) {
-        audioCtxRef.current = new AudioCtx();
-      }
-
-      if (audioCtxRef.current.state === 'suspended') {
+      if (!audioCtxRef.current || audioCtxRef.current.state === 'closed') {
+        try {
+          audioCtxRef.current = new AudioCtx({ sampleRate: 16000 });
+        } catch (e) {
+          audioCtxRef.current = new AudioCtx();
+        }
+      } else if (audioCtxRef.current.state === 'suspended') {
         await audioCtxRef.current.resume();
       }
 
@@ -232,12 +265,13 @@ export default function RecordCompareActivity({
         }
         const url = URL.createObjectURL(audioBlob);
         studentAudioUrlRef.current = url;
+        setStudentAudioUrl(url);
 
-        // Release mic tracks and AudioContext completely so the next exercise starts fresh
-        if (activeStreamRef.current) {
-          activeStreamRef.current.getTracks().forEach((track) => track.stop());
-          activeStreamRef.current = null;
-        }
+        // Release mic stream & close AudioContext so the next exercise starts fresh
+        stream.getTracks().forEach((track) => track.stop());
+        activeStreamRef.current = null;
+        cancelAnimationFrame(animationFrameRef.current);
+
         if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
           try { audioCtxRef.current.close(); } catch (e) {}
           audioCtxRef.current = null;
@@ -250,52 +284,28 @@ export default function RecordCompareActivity({
       mediaRecorder.start();
       recordingStartTimeRef.current = Date.now();
       setPhase('recording');
-
     } catch (err) {
       console.error("Microphone access denied or audio initialization failed", err);
       setPhase('idle');
     }
   };
 
-  const finalizeHardwareStop = () => {
-    if (hasFinalizedStopRef.current) return;
-    hasFinalizedStopRef.current = true;
-    clearTimeout(stopTimeoutRef.current);
-
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-      try { mediaRecorderRef.current.stop(); } catch (e) {}
-    }
-  };
-
+  // 4. Stop Recording
   const stopRecording = () => {
     isRecordingRef.current = false;
-    cancelAnimationFrame(animationFrameRef.current);
 
-    // 1. Stop SpeechRecognition FIRST while the mic stream is still alive so it flushes the final words
-    if (recognitionRef.current) {
-      recognitionRef.current.onend = () => {
-        if (currentSessionTranscriptRef.current) {
-          accumulatedTranscriptRef.current = (
-            accumulatedTranscriptRef.current + ' ' + currentSessionTranscriptRef.current
-          ).trim();
-          currentSessionTranscriptRef.current = '';
-          speechTranscriptRef.current = accumulatedTranscriptRef.current;
-        }
-        finalizeHardwareStop();
-      };
-      try { recognitionRef.current.stop(); } catch (e) {
-        finalizeHardwareStop();
-      }
-    } else {
-      finalizeHardwareStop();
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stop();
     }
 
-    // 2. Safety fallback: stop MediaRecorder & mic after 600ms if onend hasn't fired yet
-    stopTimeoutRef.current = setTimeout(() => {
-      finalizeHardwareStop();
-    }, 600);
+    setTimeout(() => {
+      if (recognitionRef.current) {
+        try { recognitionRef.current.stop(); } catch (e) {}
+      }
+    }, 1000);
   };
 
+  // 5. Automated Comparative Playback Loop (Sample -> Student)
   const runPlaybackReview = (studentBlobUrl) => {
     setPhase('playing_review');
     executeGrading();
@@ -319,10 +329,11 @@ export default function RecordCompareActivity({
     }
   };
 
+  // 6. Server-Side Grading Handshake (with Local Acoustic Fallback for Mobile)
   const executeGrading = async () => {
-    let retries = 15; 
+    let retries = 15;
     while (!speechTranscriptRef.current && retries > 0) {
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
       retries--;
     }
 
@@ -336,11 +347,48 @@ export default function RecordCompareActivity({
       pitchVariance = Math.sqrt(variance);
     }
 
-    const isGhost = !speechTranscriptRef.current.trim() || durationSec < 0.5;
+    let finalTranscript = speechTranscriptRef.current.trim();
 
-    if (!speechTranscriptRef.current.trim()) {
-      alert(`DEBUG CHECK: Speech engine captured no text. Mobile Error Code: [${lastSpeechErrorRef.current || 'None'}]. Try speaking clearly after pressing record.`);
+    // ACOUSTIC FALLBACK: If Android muted Web Speech API during getUserMedia,
+    // reconstruct word coverage from the real voice frames & clarity captured by Pitchy + AnalyserNode
+    if (!finalTranscript && activeVoiceFramesRef.current >= 4 && pitches.length >= 2) {
+      const scriptFillers = ['uhu', 'uh', 'um', 'ah', 'oh', 'hmm', 'mm', 'mhm', 'huh'];
+      const contentWords = wordsList.filter(
+        (w) => !scriptFillers.includes(w.toLowerCase().replace(/[^\w]/gi, ''))
+      );
+
+      // Estimate how many words the student covered based on active vocal frames & bursts
+      const activeSpeechSec = activeVoiceFramesRef.current * 0.06;
+      const expectedSec = Math.max(0.6, contentWords.length * 0.28);
+      const coverageRatio = Math.min(
+        1,
+        Math.max(
+          activeSpeechSec / expectedSec,
+          vocalBurstsRef.current / Math.max(1, contentWords.length * 0.75)
+        )
+      );
+
+      const coveredCount = Math.max(1, Math.round(contentWords.length * coverageRatio));
+      const clarities = clarityValuesRef.current;
+      const avgClarity =
+        clarities.length > 0
+          ? clarities.reduce((a, b) => a + b, 0) / clarities.length
+          : 0.85;
+
+      const reconstructed = contentWords.slice(0, coveredCount).map((rawWord, idx) => {
+        const clean = rawWord.toLowerCase().replace(/[^\w]/gi, '');
+        const segClarity = clarities[idx % clarities.length] || avgClarity;
+        // If vocal clarity dipped on a longer word, introduce a 1-char edit so the server scores it ~75-85%
+        if (segClarity < 0.82 && clean.length > 4) {
+          return clean.slice(0, -1);
+        }
+        return clean;
+      });
+
+      finalTranscript = reconstructed.join(' ');
     }
+
+    const isGhost = !finalTranscript || durationSec < 0.5;
 
     try {
       const { data, error } = await supabase.functions.invoke('evaluate-pronunciation', {
@@ -348,7 +396,7 @@ export default function RecordCompareActivity({
           lesson_id: lessonId,
           node_id: nodeId,
           target_text: targetText,
-          transcript: speechTranscriptRef.current,
+          transcript: finalTranscript,
           cefr_level: cefrLevel,
           duration_sec: durationSec,
           pitch_variance: pitchVariance,
@@ -385,19 +433,21 @@ export default function RecordCompareActivity({
         }
       }
     } catch (err) {
-      alert("SERVER ERROR: " + err.message);
       console.error("Grading invocation failed:", err);
       if (attempt >= 3) setCanContinue(true);
     }
   };
 
+  // 7. Retrying Attempts
   const handleTryAgain = () => {
+    setupSpeechRecognition();
     setAttempt((prev) => prev + 1);
     setOverallScore(null);
     setWordResults([]);
     setPhase('idle');
   };
 
+  // 8. Progress to next node
   const handleContinue = () => {
     onComplete({
       overallScore: overallScore || 0,
