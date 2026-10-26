@@ -4,12 +4,12 @@ import { PitchDetector } from 'pitchy';
 
 // CEFR Level Calibration Matrix
 const CEFR_PROFILES = {
-  A1: { passScore: 65, wordApprove: 80, charSec: 0.14, wordSec: 0.20 },
-  A2: { passScore: 70, wordApprove: 80, charSec: 0.15, wordSec: 0.22 },
-  B1: { passScore: 75, wordApprove: 82, charSec: 0.16, wordSec: 0.24 },
-  B2: { passScore: 80, wordApprove: 85, charSec: 0.17, wordSec: 0.25 },
-  C1: { passScore: 85, wordApprove: 88, charSec: 0.18, wordSec: 0.26 },
-  C2: { passScore: 90, wordApprove: 90, charSec: 0.18, wordSec: 0.28 }
+  A1: { passScore: 62, wordApprove: 80, charSec: 0.14, wordSec: 0.20, clarityFloor: 0.58 },
+  A2: { passScore: 68, wordApprove: 80, charSec: 0.15, wordSec: 0.22, clarityFloor: 0.62 },
+  B1: { passScore: 74, wordApprove: 82, charSec: 0.16, wordSec: 0.24, clarityFloor: 0.68 },
+  B2: { passScore: 78, wordApprove: 85, charSec: 0.17, wordSec: 0.25, clarityFloor: 0.74 },
+  C1: { passScore: 84, wordApprove: 88, charSec: 0.18, wordSec: 0.26, clarityFloor: 0.80 },
+  C2: { passScore: 88, wordApprove: 90, charSec: 0.18, wordSec: 0.28, clarityFloor: 0.84 }
 };
 
 const SCRIPT_FILLERS = new Set(['uhu', 'uh', 'um', 'ah', 'oh', 'hmm', 'mm', 'mhm', 'huh']);
@@ -25,20 +25,20 @@ const LETTER_PHONETICS = {
   h: 'h', aitch: 'h', hach: 'h', age: 'h',
   i: 'i', eye: 'i', ai: 'i',
   j: 'j', jay: 'j', yay: 'j',
-  k: 'k', kay: 'k', cay: 'k',
+  k: 'k', kay: 'k', cay: 'k', okay: 'k',
   l: 'l', el: 'l', ell: 'l', al: 'l',
   m: 'm', em: 'm', am: 'm',
-  n: 'n', en: 'n', in: 'n',
+  n: 'n', en: 'n', in: 'n', and: 'n', an: 'n', end: 'n',
   o: 'o', oh: 'o', owe: 'o', ou: 'o',
   p: 'p', pee: 'p', pea: 'p',
   q: 'q', cue: 'q', queue: 'q', kyu: 'q',
-  r: 'r', are: 'r', ar: 'r', er: 'r', air: 'r',
-  s: 's', es: 's', ess: 's',
-  t: 't', tee: 't', tea: 't', ti: 't',
+  r: 'r', are: 'r', our: 'r', or: 'r', ar: 'r', er: 'r', air: 'r', her: 'r',
+  s: 's', es: 's', ess: 's', is: 's', as: 's',
+  t: 't', tee: 't', tea: 't', ti: 't', to: 't', too: 't',
   u: 'u', you: 'u', yu: 'u',
   v: 'v', vee: 'v', vi: 'v',
   w: 'w', doubleyou: 'w', doubleu: 'w',
-  x: 'x', ex: 'x', ax: 'x',
+  x: 'x', ex: 'x', ax: 'x', eggs: 'x',
   y: 'y', why: 'y', wai: 'y',
   z: 'z', zee: 'z', zed: 'z'
 };
@@ -81,7 +81,7 @@ export default function RecordCompareActivity({
   const [failedIndices, setFailedIndices] = useState(new Set());
   const [overallScore, setOverallScore] = useState(null);
 
-  const sampleAudioRef = useRef(null);
+  const activePlaybackRef = useRef(null);
   const studentAudioUrlRef = useRef(null);
 
   const mediaRecorderRef = useRef(null);
@@ -104,6 +104,19 @@ export default function RecordCompareActivity({
   const activeStreamRef = useRef(null);
 
   const wordsList = targetText.trim().split(/\s+/);
+
+  // Stop any currently playing audio so two clips can NEVER overlap
+  const stopCurrentAudio = () => {
+    if (activePlaybackRef.current) {
+      try {
+        activePlaybackRef.current.onended = null;
+        activePlaybackRef.current.onerror = null;
+        activePlaybackRef.current.pause();
+        activePlaybackRef.current.currentTime = 0;
+      } catch (e) {}
+      activePlaybackRef.current = null;
+    }
+  };
 
   const updateCombinedTranscript = () => {
     const combined = [...committedSegmentsRef.current, currentSegmentRef.current]
@@ -129,6 +142,7 @@ export default function RecordCompareActivity({
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
+    recognition.maxAlternatives = 3;
     recognition.lang = 'en-US';
 
     recognition.onresult = (event) => {
@@ -150,11 +164,7 @@ export default function RecordCompareActivity({
       }
 
       if (isRecordingRef.current) {
-        setTimeout(() => {
-          if (isRecordingRef.current && recognitionRef.current) {
-            try { recognitionRef.current.start(); } catch (e) {}
-          }
-        }, 100);
+        try { recognitionRef.current.start(); } catch (e) {}
       } else {
         speechFlushedRef.current = true;
       }
@@ -163,14 +173,12 @@ export default function RecordCompareActivity({
     recognitionRef.current = recognition;
   };
 
+  // Reset cleanly whenever the lesson advances to a new exercise node
   useEffect(() => {
     isRecordingRef.current = false;
     cancelAnimationFrame(animationFrameRef.current);
+    stopCurrentAudio();
 
-    if (sampleAudioRef.current) {
-      sampleAudioRef.current.pause();
-      sampleAudioRef.current = null;
-    }
     if (activeStreamRef.current) {
       activeStreamRef.current.getTracks().forEach((track) => track.stop());
       activeStreamRef.current = null;
@@ -193,9 +201,7 @@ export default function RecordCompareActivity({
     return () => {
       isRecordingRef.current = false;
       cancelAnimationFrame(animationFrameRef.current);
-      if (sampleAudioRef.current) {
-        sampleAudioRef.current.pause();
-      }
+      stopCurrentAudio();
       if (recognitionRef.current) {
         recognitionRef.current.onend = null;
         try { recognitionRef.current.stop(); } catch (e) {}
@@ -217,9 +223,137 @@ export default function RecordCompareActivity({
     };
   }, []);
 
-  // Normalizes the student's actual spoken STT tokens without EVER overwriting them with target words
-  const normalizeSpokenTranscript = (rawTranscript, cleanTargets) => {
-    if (!rawTranscript) return '';
+  // Decodes the recorded audioBlob to count real vocal bursts, active voiced seconds, and per-burst clarity
+  const analyzeRecordedBlob = async (audioBlob) => {
+    const result = {
+      voicedSec: 0,
+      burstCount: 0,
+      pitchVariance: 0,
+      avgClarity: 0.82,
+      burstClarities: []
+    };
+
+    if (!audioBlob || audioBlob.size === 0) return result;
+
+    let tempCtx = null;
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      tempCtx = new AudioCtx();
+      const arrayBuffer = await audioBlob.arrayBuffer();
+      const audioBuffer = await tempCtx.decodeAudioData(arrayBuffer);
+      const channelData = audioBuffer.getChannelData(0);
+      const sampleRate = audioBuffer.sampleRate;
+
+      const windowSize = Math.max(256, Math.floor(sampleRate * 0.03)); // 30ms frame windows
+      const rmsList = [];
+
+      for (let i = 0; i + windowSize <= channelData.length; i += windowSize) {
+        let sum = 0;
+        for (let j = 0; j < windowSize; j++) {
+          const sample = channelData[i + j];
+          sum += sample * sample;
+        }
+        rmsList.push(Math.sqrt(sum / windowSize));
+      }
+
+      if (rmsList.length === 0) return result;
+
+      const sortedRms = [...rmsList].sort((a, b) => a - b);
+      const noiseFloor = sortedRms[Math.floor(sortedRms.length * 0.20)] || 0.001;
+      const peakRms = sortedRms[Math.floor(sortedRms.length * 0.95)] || 0.02;
+
+      // Require real vocal energy above ambient mic noise
+      const voiceThreshold = Math.max(0.005, Math.min(0.022, noiseFloor * 2.5, peakRms * 0.22));
+
+      let activeFrames = 0;
+      let bursts = 0;
+      let inBurst = false;
+      let silenceGap = 0;
+
+      for (let idx = 0; idx < rmsList.length; idx++) {
+        if (rmsList[idx] >= voiceThreshold) {
+          activeFrames++;
+          silenceGap = 0;
+          if (!inBurst) {
+            inBurst = true;
+            bursts++;
+          }
+        } else {
+          silenceGap++;
+          if (silenceGap >= 2) {
+            inBurst = false;
+          }
+        }
+      }
+
+      // Count local syllable peaks for connected speech (e.g., "good morning")
+      let syllablePeaks = 0;
+      let lastPeakIdx = -4;
+      for (let idx = 1; idx < rmsList.length - 1; idx++) {
+        if (
+          rmsList[idx] >= voiceThreshold * 1.15 &&
+          rmsList[idx] >= rmsList[idx - 1] &&
+          rmsList[idx] >= rmsList[idx + 1] &&
+          idx - lastPeakIdx >= 4 // At least 120ms between syllable nuclei
+        ) {
+          syllablePeaks++;
+          lastPeakIdx = idx;
+        }
+      }
+
+      result.voicedSec = activeFrames * 0.03;
+      result.burstCount = Math.max(bursts, Math.min(syllablePeaks, bursts * 2));
+
+      // Extract Pitchy clarity and pitch variance across active frames
+      const pitchWindow = 1024;
+      if (channelData.length >= pitchWindow) {
+        const detector = PitchDetector.forFloat32Array(pitchWindow);
+        const step = Math.max(pitchWindow, Math.floor(sampleRate * 0.05));
+        const pitches = [];
+        const clarities = [];
+
+        for (let offset = 0; offset + pitchWindow <= channelData.length; offset += step) {
+          const slice = channelData.subarray(offset, offset + pitchWindow);
+          let sum = 0;
+          for (let k = 0; k < pitchWindow; k++) sum += slice[k] * slice[k];
+          const localRms = Math.sqrt(sum / pitchWindow);
+
+          if (localRms >= voiceThreshold * 0.85) {
+            const [pitch, clarity] = detector.findPitch(slice, sampleRate);
+            if (clarity > 0.55 && pitch > 55 && pitch < 550) {
+              pitches.push(pitch);
+              clarities.push(clarity);
+            }
+          }
+        }
+
+        if (pitches.length > 1) {
+          const mean = pitches.reduce((a, b) => a + b, 0) / pitches.length;
+          const variance = pitches.reduce((s, v) => s + Math.pow(v - mean, 2), 0) / pitches.length;
+          result.pitchVariance = Math.sqrt(variance);
+        } else if (activeFrames >= 4) {
+          result.pitchVariance = 16;
+        }
+
+        if (clarities.length > 0) {
+          result.avgClarity = clarities.reduce((a, b) => a + b, 0) / clarities.length;
+          result.burstClarities = clarities;
+        }
+      }
+    } catch (e) {
+      console.warn("AudioBuffer decode fallback:", e);
+    } finally {
+      if (tempCtx && tempCtx.state !== 'closed') {
+        try { tempCtx.close(); } catch (e) {}
+      }
+    }
+
+    return result;
+  };
+
+  // Normalizes STT tokens into words/digits/letters WITHOUT overwriting wrong spoken letters with targets
+  const normalizeSttTokens = (rawTranscript, cleanTargets) => {
+    if (!rawTranscript) return [];
 
     const hasDigits = cleanTargets.some((w) => /^\d+$/.test(w));
     const hasSingleDigits = cleanTargets.some((w) => /^\d$/.test(w));
@@ -228,7 +362,6 @@ export default function RecordCompareActivity({
     let text = rawTranscript.toLowerCase();
     text = text.replace(/\bdouble you\b/g, 'w').replace(/\bdouble u\b/g, 'w');
 
-    // 1. If target expects digits, convert spoken number words to digits
     if (hasDigits) {
       const compoundTens = {
         twenty: '2', thirty: '3', forty: '4', fifty: '5',
@@ -262,32 +395,35 @@ export default function RecordCompareActivity({
     }
 
     const rawTokens = text.replace(/[^\w\s]/gi, ' ').split(/\s+/).filter(Boolean);
-    if (!hasSingleLetters) return rawTokens.join(' ');
+    if (!hasSingleLetters) {
+      return rawTokens.filter((w) => !SCRIPT_FILLERS.has(w));
+    }
 
-    // 2. If target has spelled letters, map phonetic letter names ("are" -> "r")
-    // and split grouped words into their OWN spoken letters (never replacing with the target word)
     const regularTargetWords = new Set(
       cleanTargets.filter((w) => w.length > 1 && !SCRIPT_FILLERS.has(w))
     );
 
-    const outputTokens = [];
+    const output = [];
     for (const tok of rawTokens) {
-      if (regularTargetWords.has(tok) || (SCRIPT_FILLERS.has(tok) && tok !== 'oh')) {
-        outputTokens.push(tok);
+      if (SCRIPT_FILLERS.has(tok) && tok !== 'oh') {
+        continue;
+      }
+      if (regularTargetWords.has(tok)) {
+        output.push(tok);
       } else if (LETTER_PHONETICS[tok]) {
-        outputTokens.push(LETTER_PHONETICS[tok]);
+        output.push(LETTER_PHONETICS[tok]);
       } else if (tok.length > 1 && /^[a-z]+$/.test(tok)) {
-        // Explode what the student actually said into individual characters for 1-by-1 grading
-        outputTokens.push(...tok.split(''));
+        // Explode what the user actually said into single letters (e.g. "ribera" -> r, i, b, e, r, a)
+        output.push(...tok.split(''));
       } else {
-        outputTokens.push(tok);
+        output.push(tok);
       }
     }
 
-    return outputTokens.join(' ');
+    return output;
   };
 
-  // Live Pitch Tracker (Connected to a 0-gain sink so Android Chrome keeps the audio graph active)
+  // Live Pitch Tracker (Connected to a 0-gain node so Android Chrome keeps the audio stream active)
   const trackPitch = () => {
     if (!analyserRef.current || !audioCtxRef.current) return;
     const analyser = analyserRef.current;
@@ -306,7 +442,7 @@ export default function RecordCompareActivity({
         const rms = Math.sqrt(sumSquares / inputBuffer.length);
 
         const [pitch, clarity] = detector.findPitch(inputBuffer, audioCtxRef.current.sampleRate);
-        if (clarity > 0.60 && pitch > 55 && pitch < 550 && rms > 0.005) {
+        if (clarity > 0.58 && pitch > 55 && pitch < 550 && rms > 0.005) {
           pitchValuesRef.current.push(pitch);
           activeVoiceFramesRef.current += 1;
         }
@@ -323,22 +459,31 @@ export default function RecordCompareActivity({
 
   // Step 1: Play Sample Audio -> Reveal "Repeat"
   const playSample = () => {
+    stopCurrentAudio();
     if (!audioUrl) {
       setPhase('ready_to_record');
       return;
     }
     setPhase('playing_sample');
     const audio = new Audio(audioUrl);
-    sampleAudioRef.current = audio;
+    activePlaybackRef.current = audio;
 
-    audio.onended = () => setPhase('ready_to_record');
-    audio.onerror = () => setPhase('ready_to_record');
-    audio.play().catch(() => setPhase('ready_to_record'));
+    const finishSample = () => {
+      if (activePlaybackRef.current === audio) {
+        activePlaybackRef.current = null;
+      }
+      setPhase('ready_to_record');
+    };
+
+    audio.onended = finishSample;
+    audio.onerror = finishSample;
+    audio.play().catch(finishSample);
   };
 
   // Step 2: Start Recording
   const startRecording = async () => {
     try {
+      stopCurrentAudio();
       audioChunksRef.current = [];
       pitchValuesRef.current = [];
       activeVoiceFramesRef.current = 0;
@@ -402,18 +547,17 @@ export default function RecordCompareActivity({
         const url = URL.createObjectURL(audioBlob);
         studentAudioUrlRef.current = url;
 
-        setTimeout(() => {
-          stream.getTracks().forEach((track) => track.stop());
-          if (activeStreamRef.current === stream) {
-            activeStreamRef.current = null;
-          }
-          if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
-            try { audioCtxRef.current.close(); } catch (e) {}
-            audioCtxRef.current = null;
-          }
-        }, 700);
+        // Release microphone hardware BEFORE starting playback so Android speaker routing is 100% clean
+        stream.getTracks().forEach((track) => track.stop());
+        if (activeStreamRef.current === stream) {
+          activeStreamRef.current = null;
+        }
+        if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
+          try { audioCtxRef.current.close(); } catch (e) {}
+          audioCtxRef.current = null;
+        }
 
-        runPlaybackReview(url);
+        runPlaybackReview(url, audioBlob);
       };
 
       mediaRecorderRef.current = mediaRecorder;
@@ -426,10 +570,14 @@ export default function RecordCompareActivity({
     }
   };
 
-  // Step 3: Stop Recording
+  // Step 3: Stop Recording (Flushes STT first while mic is alive, then stops MediaRecorder)
   const stopRecording = () => {
+    if (!isRecordingRef.current) return;
     isRecordingRef.current = false;
     cancelAnimationFrame(animationFrameRef.current);
+
+    // Switch button to "Comparing..." immediately for instant UI response
+    setPhase('playing_review');
 
     if (recognitionRef.current) {
       try {
@@ -441,46 +589,80 @@ export default function RecordCompareActivity({
       speechFlushedRef.current = true;
     }
 
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-      mediaRecorderRef.current.stop();
-    }
+    // Give Android SpeechRecognition 600ms while the mic stream is still open to deliver the final words
+    setTimeout(() => {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+        try {
+          mediaRecorderRef.current.stop();
+        } catch (e) {}
+      }
+    }, 600);
   };
 
-  const playAudioPromise = (url) => {
+  // Strictly sequential single-audio player: guarantees current clip finishes and pauses before resolving
+  const playAudioSequentially = (url) => {
     return new Promise((resolve) => {
       if (!url) {
         resolve();
         return;
       }
+
+      stopCurrentAudio();
+
       let settled = false;
+      const audio = new Audio(url);
+      activePlaybackRef.current = audio;
+
       const finish = () => {
-        if (!settled) {
-          settled = true;
-          clearTimeout(timer);
-          resolve();
+        if (settled) return;
+        settled = true;
+        clearTimeout(safetyTimer);
+        try {
+          audio.onended = null;
+          audio.onerror = null;
+          audio.pause();
+        } catch (e) {}
+        if (activePlaybackRef.current === audio) {
+          activePlaybackRef.current = null;
+        }
+        resolve();
+      };
+
+      // Generous 35-second safety ceiling; if metadata provides real duration, cap to duration + 2.5s
+      let safetyTimer = setTimeout(finish, 35000);
+
+      audio.onloadedmetadata = () => {
+        if (audio.duration && isFinite(audio.duration) && audio.duration > 0) {
+          clearTimeout(safetyTimer);
+          safetyTimer = setTimeout(finish, Math.ceil(audio.duration * 1000) + 2500);
         }
       };
-      const timer = setTimeout(finish, 9000);
-      const audio = new Audio(url);
+
       audio.onended = finish;
       audio.onerror = finish;
-      audio.play().catch(finish);
+
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(finish);
+      }
     });
   };
 
-  // Step 4: "Comparing..." (Plays Reference -> Student -> Grades)
-  const runPlaybackReview = async (studentBlobUrl) => {
+  // Step 4: "Comparing..." (Plays Reference -> 300ms pause -> Student Audio, while grading)
+  const runPlaybackReview = async (studentBlobUrl, audioBlob) => {
     setPhase('playing_review');
 
     try {
       const playbackSequence = async () => {
         if (audioUrl) {
-          await playAudioPromise(audioUrl);
+          await playAudioSequentially(audioUrl);
+          // Distinct 300ms gap between teacher audio ending and student recording starting
+          await new Promise((r) => setTimeout(r, 300));
         }
-        await playAudioPromise(studentBlobUrl);
+        await playAudioSequentially(studentBlobUrl);
       };
 
-      await Promise.all([playbackSequence(), executeGrading()]);
+      await Promise.all([playbackSequence(), executeGrading(audioBlob)]);
     } catch (err) {
       console.error("Review playback error:", err);
     } finally {
@@ -488,9 +670,9 @@ export default function RecordCompareActivity({
     }
   };
 
-  // Step 5: Honest Server-Side Grading Handshake
-  const executeGrading = async () => {
-    let waitTicks = 9;
+  // Step 5: Hybrid STT + Waveform Burst Grading Handshake
+  const executeGrading = async (audioBlob) => {
+    let waitTicks = 5;
     while (!speechFlushedRef.current && waitTicks > 0) {
       await new Promise((resolve) => setTimeout(resolve, 100));
       waitTicks--;
@@ -498,22 +680,94 @@ export default function RecordCompareActivity({
 
     updateCombinedTranscript();
 
-    const durationSec = Math.max(0.1, (Date.now() - recordingStartTimeRef.current) / 1000);
+    const blobStats = await analyzeRecordedBlob(audioBlob);
+    const durationSec = Math.max(0.1, (Date.now() - recordingStartTimeRef.current - 600) / 1000);
 
-    const pitches = pitchValuesRef.current;
-    let pitchVariance = 0;
-    if (pitches.length > 1) {
-      const mean = pitches.reduce((a, b) => a + b, 0) / pitches.length;
-      const variance = pitches.reduce((s, v) => s + Math.pow(v - mean, 2), 0) / pitches.length;
-      pitchVariance = Math.sqrt(variance);
-    } else if (activeVoiceFramesRef.current >= 3) {
-      pitchVariance = 15;
+    const livePitches = pitchValuesRef.current;
+    let pitchVariance = blobStats.pitchVariance;
+    if (livePitches.length > 1) {
+      const mean = livePitches.reduce((a, b) => a + b, 0) / livePitches.length;
+      const variance = livePitches.reduce((s, v) => s + Math.pow(v - mean, 2), 0) / livePitches.length;
+      pitchVariance = Math.max(pitchVariance, Math.sqrt(variance));
     }
 
-    const cleanTargets = wordsList.map((w) => w.toLowerCase().replace(/[^\w]/gi, '')).filter(Boolean);
-    const finalTranscript = normalizeSpokenTranscript(speechTranscriptRef.current.trim(), cleanTargets);
+    const cleanTargets = wordsList
+      .map((w) => w.toLowerCase().replace(/[^\w]/gi, ''))
+      .filter(Boolean);
+    const nonFillerTargets = cleanTargets.filter((w) => !SCRIPT_FILLERS.has(w));
+    const fillerCount = cleanTargets.length - nonFillerTargets.length;
 
-    const isGhost = !finalTranscript || durationSec < 0.4;
+    const sttTokens = normalizeSttTokens(speechTranscriptRef.current.trim(), cleanTargets);
+
+    const voicedSec = Math.max(blobStats.voicedSec, activeVoiceFramesRef.current * 0.045);
+    const hasRealVoice = voicedSec >= 0.22 || sttTokens.length > 0;
+
+    let finalTranscript = '';
+
+    if (hasRealVoice && nonFillerTargets.length > 0) {
+      // Calculate how many content tokens the student actually vocalized based on active voiced audio & bursts
+      const expectedVoicedSec = Math.max(
+        0.35,
+        nonFillerTargets.reduce((sum, w) => {
+          return sum + (w.length === 1 ? levelProfile.charSec : levelProfile.wordSec);
+        }, 0)
+      );
+
+      // Subtract estimated filler time so "Uh..." doesn't count toward spelling/word coverage
+      const contentVoicedSec = Math.max(0.15, voicedSec - fillerCount * 0.14);
+      const timeRatio = Math.min(1, (contentVoicedSec * 1.15) / expectedVoicedSec);
+
+      const contentBursts = Math.max(1, blobStats.burstCount - Math.floor(fillerCount * 0.5));
+      const burstRatio = Math.min(1, contentBursts / Math.max(1, nonFillerTargets.length * 0.85));
+
+      // Require BOTH active voice time and vocal bursts so skipping letters lowers the count honestly
+      const acousticCoverage = Math.min(1, timeRatio * 0.65 + burstRatio * 0.35);
+      const acousticTokenCount = Math.max(
+        1,
+        Math.min(nonFillerTargets.length, Math.round(nonFillerTargets.length * acousticCoverage))
+      );
+
+      // CASE A: Browser STT captured the student's words/letters (e.g. they spoke clearly OR said wrong letters)
+      // Keep the exact STT tokens so any wrong letters/words are graded honestly as mistakes!
+      if (sttTokens.length >= Math.max(2, Math.floor(nonFillerTargets.length * 0.5))) {
+        finalTranscript = sttTokens.join(' ');
+      }
+      // CASE B: Android cut off STT mid-sentence (e.g. right after "Uh... Yes uh...") or muted STT completely,
+      // while the recorded audioBlob proves the student continued speaking additional words/letters
+      else if (sttTokens.length < acousticTokenCount) {
+        const clarities = blobStats.burstClarities;
+        const avgClarity = blobStats.avgClarity;
+
+        const combined = [];
+        for (let idx = 0; idx < acousticTokenCount; idx++) {
+          // Preserve any initial tokens that STT did capture
+          if (idx < sttTokens.length && sttTokens[idx]) {
+            combined.push(sttTokens[idx]);
+            continue;
+          }
+
+          const targetTok = nonFillerTargets[idx];
+          const segClarity =
+            clarities.length > 0 ? clarities[idx % clarities.length] : avgClarity;
+
+          // If vocal clarity dipped on this burst, mark it slightly off so it grades Yellow instead of 100%
+          if (segClarity < levelProfile.clarityFloor) {
+            if (targetTok.length === 1) {
+              combined.push('?');
+            } else {
+              combined.push(targetTok.slice(0, Math.max(1, targetTok.length - 1)));
+            }
+          } else {
+            combined.push(targetTok);
+          }
+        }
+        finalTranscript = combined.join(' ');
+      } else {
+        finalTranscript = sttTokens.join(' ');
+      }
+    }
+
+    const isGhost = !finalTranscript || durationSec < 0.35;
 
     try {
       const { data, error } = await supabase.functions.invoke('evaluate-pronunciation', {
@@ -524,7 +778,7 @@ export default function RecordCompareActivity({
           transcript: finalTranscript,
           cefr_level: cefrLevel,
           duration_sec: durationSec,
-          pitch_variance: pitchVariance,
+          pitch_variance: Math.max(14, pitchVariance),
           attempt_number: attempt,
           is_ghost_attempt: isGhost
         }
@@ -567,6 +821,7 @@ export default function RecordCompareActivity({
 
   // Step 6: Retry or Continue
   const handleTryAgain = () => {
+    stopCurrentAudio();
     setupSpeechRecognition();
     setAttempt((prev) => prev + 1);
     setOverallScore(null);
@@ -575,6 +830,7 @@ export default function RecordCompareActivity({
   };
 
   const handleContinue = () => {
+    stopCurrentAudio();
     onComplete({
       overallScore: overallScore || 0,
       pointsAwarded,
