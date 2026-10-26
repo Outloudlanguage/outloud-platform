@@ -2,17 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './SupabaseClient';
 import { PitchDetector } from 'pitchy';
 
-/**
- * RecordCompareActivity
- * 
- * Props:
- * - targetText: string (The subtitle / sentence to repeat)
- * - audioUrl: string (Teacher reference audio URL)
- * - lessonId: string / uuid
- * - nodeId: string
- * - cefrLevel: string ('A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2')
- * - onComplete: function({ overallScore, pointsAwarded, passed })
- */
 export default function RecordCompareActivity({
   targetText = "The quick brown fox jumps over the lazy dog",
   audioUrl = "",
@@ -21,23 +10,19 @@ export default function RecordCompareActivity({
   cefrLevel = "A1",
   onComplete = () => {}
 }) {
-  // State Machine
   const [phase, setPhase] = useState('idle');
   const [attempt, setAttempt] = useState(1);
   const [canContinue, setCanContinue] = useState(false);
   const [pointsAwarded, setPointsAwarded] = useState(0);
 
-  // Evaluation & Word Tracking
   const [wordResults, setWordResults] = useState([]);
   const [failedIndices, setFailedIndices] = useState(new Set());
   const [overallScore, setOverallScore] = useState(null);
 
-  // Audio References
   const sampleAudioRef = useRef(null);
   const studentAudioRef = useRef(null);
   const [studentAudioUrl, setStudentAudioUrl] = useState(null);
 
-  // Hardware & Web API References
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const recognitionRef = useRef(null);
@@ -51,52 +36,27 @@ export default function RecordCompareActivity({
   const recordingStartTimeRef = useRef(0);
   
   const isRecordingRef = useRef(false);
+  const stopTimeoutRef = useRef(null);
 
-  // Clean split of target words for rendering
   const wordsList = targetText.trim().split(/\s+/);
 
-  // Initialize Speech Recognition once
+  // Clean up hardware completely on unmount or exercise swap
   useEffect(() => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      const recognition = new SpeechRecognition();
-      recognition.continuous = true; 
-      recognition.interimResults = true; 
-      recognition.lang = 'en-US';
-
-      recognition.onresult = (event) => {
-        let fullTranscript = '';
-        for (let i = 0; i < event.results.length; ++i) {
-          fullTranscript += event.results[i][0].transcript + ' ';
-        }
-        speechTranscriptRef.current = fullTranscript.trim();
-      };
-
-      recognition.onerror = (event) => {
-        lastSpeechErrorRef.current = event.error;
-        console.warn("Browser Speech Event:", event.error);
-      };
-
-      // AUTO-REVIVER: Instantly wake up recognition if Android pauses it
-      recognition.onend = () => {
-        if (isRecordingRef.current) {
-          try { recognition.start(); } catch (e) {}
-        }
-      };
-
-      recognitionRef.current = recognition;
-    }
-
     return () => {
       if (studentAudioUrl) URL.revokeObjectURL(studentAudioUrl);
       if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
         audioCtxRef.current.close();
       }
       cancelAnimationFrame(animationFrameRef.current);
+      clearTimeout(stopTimeoutRef.current);
+      
+      // ZOMBIE KILLER: Forcefully abort any lingering speech engine
+      if (recognitionRef.current) {
+        try { recognitionRef.current.abort(); } catch(e) {}
+      }
     };
-  }, []);
+  }, [studentAudioUrl]);
 
-  // 1. Uncompromised Pitch Tracking Loop (AnalyserNode + Pitchy)
   const trackPitch = () => {
     if (!analyserRef.current || !audioCtxRef.current) return;
     const analyser = analyserRef.current;
@@ -119,7 +79,6 @@ export default function RecordCompareActivity({
     animationFrameRef.current = requestAnimationFrame(update);
   };
 
-  // 2. Play Sample Audio
   const playSample = () => {
     if (!audioUrl) return;
     setPhase('playing_sample');
@@ -130,7 +89,6 @@ export default function RecordCompareActivity({
     };
   };
 
-  // 3. Start Recording Phase
   const startRecording = async () => {
     try {
       audioChunksRef.current = [];
@@ -138,14 +96,43 @@ export default function RecordCompareActivity({
       speechTranscriptRef.current = '';
       lastSpeechErrorRef.current = '';
       isRecordingRef.current = true; 
+      clearTimeout(stopTimeoutRef.current);
 
-      // Boot up Speech Recognition first to secure the permission handle
+      // LIFECYCLE FIX: Abort any old engine from previous exercises
       if (recognitionRef.current) {
-        try { recognitionRef.current.start(); } catch (e) {}
+        try { recognitionRef.current.abort(); } catch(e) {}
       }
 
-      // ANDROID FIX: Removing echoCancellation: true prevents the OS-level hardware lock
-      // while keeping noiseSuppression and autoGainControl active for high-quality audio.
+      // LIFECYCLE FIX: Boot a brand new, clean STT Engine for every attempt
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        const recognition = new SpeechRecognition();
+        recognition.continuous = true; 
+        recognition.interimResults = true; 
+        recognition.lang = 'en-US';
+
+        recognition.onresult = (event) => {
+          let fullTranscript = '';
+          for (let i = 0; i < event.results.length; ++i) {
+            fullTranscript += event.results[i][0].transcript + ' ';
+          }
+          speechTranscriptRef.current = fullTranscript.trim();
+        };
+
+        recognition.onerror = (event) => {
+          lastSpeechErrorRef.current = event.error;
+        };
+
+        recognition.onend = () => {
+          if (isRecordingRef.current) {
+            try { recognition.start(); } catch (e) {}
+          }
+        };
+
+        recognitionRef.current = recognition;
+        try { recognition.start(); } catch(e) {}
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { 
           echoCancellation: false, 
@@ -203,7 +190,6 @@ export default function RecordCompareActivity({
     }
   };
 
-  // 4. Stop Recording
   const stopRecording = () => {
     isRecordingRef.current = false; 
     
@@ -211,15 +197,14 @@ export default function RecordCompareActivity({
       mediaRecorderRef.current.stop();
     }
     
-    // Give mobile networks and the STT engine 1.5 seconds to flush the final transcript
-    setTimeout(() => {
+    // Safely track the timeout so it can be cancelled if the user immediately leaves the exercise
+    stopTimeoutRef.current = setTimeout(() => {
       if (recognitionRef.current) {
         try { recognitionRef.current.stop(); } catch (e) {}
       }
     }, 1500);
   };
 
-  // 5. Automated Comparative Playback Loop (Sample -> Student)
   const runPlaybackReview = (studentBlobUrl) => {
     setPhase('playing_review');
     executeGrading();
@@ -243,7 +228,6 @@ export default function RecordCompareActivity({
     }
   };
 
-  // 6. Server-Side Grading Handshake
   const executeGrading = async () => {
     let retries = 35; 
     while (!speechTranscriptRef.current && retries > 0) {
@@ -316,7 +300,6 @@ export default function RecordCompareActivity({
     }
   };
 
-  // 7. Retrying Attempts
   const handleTryAgain = () => {
     setAttempt((prev) => prev + 1);
     setOverallScore(null);
@@ -324,7 +307,6 @@ export default function RecordCompareActivity({
     setPhase('idle');
   };
 
-  // 8. Progress to next node
   const handleContinue = () => {
     onComplete({
       overallScore: overallScore || 0,
