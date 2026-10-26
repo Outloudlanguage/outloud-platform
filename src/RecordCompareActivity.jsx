@@ -2,14 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './SupabaseClient';
 import { PitchDetector } from 'pitchy';
 
-// CEFR Level Calibration Matrix: scales accuracy, clarity, pace demand, and pass threshold by level
+// CEFR Level Calibration Matrix
 const CEFR_PROFILES = {
-  A1: { passScore: 55, wordApprove: 70, charSec: 0.10, wordSec: 0.16, clarityFloor: 0.55, maxEditRatio: 0.50 },
-  A2: { passScore: 60, wordApprove: 75, charSec: 0.12, wordSec: 0.18, clarityFloor: 0.60, maxEditRatio: 0.45 },
-  B1: { passScore: 65, wordApprove: 78, charSec: 0.13, wordSec: 0.20, clarityFloor: 0.68, maxEditRatio: 0.35 },
-  B2: { passScore: 70, wordApprove: 80, charSec: 0.14, wordSec: 0.22, clarityFloor: 0.74, maxEditRatio: 0.30 },
-  C1: { passScore: 75, wordApprove: 82, charSec: 0.15, wordSec: 0.24, clarityFloor: 0.80, maxEditRatio: 0.25 },
-  C2: { passScore: 80, wordApprove: 85, charSec: 0.16, wordSec: 0.25, clarityFloor: 0.85, maxEditRatio: 0.20 }
+  A1: { passScore: 65, wordApprove: 80, charSec: 0.14, wordSec: 0.20 },
+  A2: { passScore: 70, wordApprove: 80, charSec: 0.15, wordSec: 0.22 },
+  B1: { passScore: 75, wordApprove: 82, charSec: 0.16, wordSec: 0.24 },
+  B2: { passScore: 80, wordApprove: 85, charSec: 0.17, wordSec: 0.25 },
+  C1: { passScore: 85, wordApprove: 88, charSec: 0.18, wordSec: 0.26 },
+  C2: { passScore: 90, wordApprove: 90, charSec: 0.18, wordSec: 0.28 }
 };
 
 const SCRIPT_FILLERS = new Set(['uhu', 'uh', 'um', 'ah', 'oh', 'hmm', 'mm', 'mhm', 'huh']);
@@ -25,20 +25,20 @@ const LETTER_PHONETICS = {
   h: 'h', aitch: 'h', hach: 'h', age: 'h',
   i: 'i', eye: 'i', ai: 'i',
   j: 'j', jay: 'j', yay: 'j',
-  k: 'k', kay: 'k', okay: 'k', cay: 'k',
+  k: 'k', kay: 'k', cay: 'k',
   l: 'l', el: 'l', ell: 'l', al: 'l',
   m: 'm', em: 'm', am: 'm',
-  n: 'n', en: 'n', in: 'n', and: 'n', an: 'n', end: 'n',
+  n: 'n', en: 'n', in: 'n',
   o: 'o', oh: 'o', owe: 'o', ou: 'o',
   p: 'p', pee: 'p', pea: 'p',
   q: 'q', cue: 'q', queue: 'q', kyu: 'q',
-  r: 'r', are: 'r', our: 'r', or: 'r', ar: 'r', er: 'r', her: 'r', air: 'r',
-  s: 's', es: 's', ess: 's', is: 's', as: 's',
-  t: 't', tee: 't', tea: 't', ti: 't', to: 't', too: 't',
+  r: 'r', are: 'r', ar: 'r', er: 'r', air: 'r',
+  s: 's', es: 's', ess: 's',
+  t: 't', tee: 't', tea: 't', ti: 't',
   u: 'u', you: 'u', yu: 'u',
-  v: 'v', vee: 'v', vi: 'v', we: 'v',
+  v: 'v', vee: 'v', vi: 'v',
   w: 'w', doubleyou: 'w', doubleu: 'w',
-  x: 'x', ex: 'x', ax: 'x', eggs: 'x',
+  x: 'x', ex: 'x', ax: 'x',
   y: 'y', why: 'y', wai: 'y',
   z: 'z', zee: 'z', zed: 'z'
 };
@@ -96,10 +96,7 @@ export default function RecordCompareActivity({
   const audioCtxRef = useRef(null);
   const analyserRef = useRef(null);
   const pitchValuesRef = useRef([]);
-  const clarityValuesRef = useRef([]);
   const activeVoiceFramesRef = useRef(0);
-  const firstVoiceTimeRef = useRef(0);
-  const lastVoiceTimeRef = useRef(0);
 
   const animationFrameRef = useRef(null);
   const recordingStartTimeRef = useRef(0);
@@ -220,167 +217,18 @@ export default function RecordCompareActivity({
     };
   }, []);
 
-  const getEditDistance = (a = '', b = '') => {
-    if (a === b) return 0;
-    if (Math.abs(a.length - b.length) > 5) return 99;
-    const dp = Array.from({ length: a.length + 1 }, () => Array(b.length + 1).fill(0));
-    for (let i = 0; i <= a.length; i++) dp[i][0] = i;
-    for (let j = 0; j <= b.length; j++) dp[0][j] = j;
-    for (let i = 1; i <= a.length; i++) {
-      for (let j = 1; j <= b.length; j++) {
-        dp[i][j] =
-          a[i - 1] === b[j - 1]
-            ? dp[i - 1][j - 1]
-            : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
-      }
-    }
-    return dp[a.length][b.length];
-  };
-
-  // Decodes the actual recorded audioBlob to get 100% reliable duration, syllable bursts, clarity, and pitch
-  const analyzeRecordedBlob = async (audioBlob) => {
-    const result = {
-      voicedSec: 0,
-      speakingSpanSec: 0,
-      burstCount: 0,
-      pitchVariance: 0,
-      avgClarity: 0.85,
-      segmentClarities: []
-    };
-
-    if (!audioBlob || audioBlob.size === 0) return result;
-
-    let tempCtx = null;
-    try {
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      tempCtx = new AudioCtx();
-      const arrayBuffer = await audioBlob.arrayBuffer();
-      const audioBuffer = await tempCtx.decodeAudioData(arrayBuffer);
-      const channelData = audioBuffer.getChannelData(0);
-      const sampleRate = audioBuffer.sampleRate;
-
-      const windowSize = Math.max(256, Math.floor(sampleRate * 0.03)); // 30ms windows
-      const rmsList = [];
-
-      for (let i = 0; i + windowSize <= channelData.length; i += windowSize) {
-        let sum = 0;
-        for (let j = 0; j < windowSize; j++) {
-          const sample = channelData[i + j];
-          sum += sample * sample;
-        }
-        rmsList.push(Math.sqrt(sum / windowSize));
-      }
-
-      if (rmsList.length === 0) return result;
-
-      const sortedRms = [...rmsList].sort((a, b) => a - b);
-      const noiseFloor = sortedRms[Math.floor(sortedRms.length * 0.15)] || 0.001;
-      const peakRms = sortedRms[Math.floor(sortedRms.length * 0.95)] || 0.02;
-
-      // Adaptive voice threshold works across both quiet and loud phone microphones
-      const voiceThreshold = Math.max(0.0035, Math.min(0.018, noiseFloor * 2.2, peakRms * 0.18));
-
-      let firstIdx = -1;
-      let lastIdx = -1;
-      let activeFrames = 0;
-      let bursts = 0;
-      let inBurst = false;
-      let silenceGap = 0;
-
-      for (let idx = 0; idx < rmsList.length; idx++) {
-        if (rmsList[idx] >= voiceThreshold) {
-          activeFrames++;
-          if (firstIdx === -1) firstIdx = idx;
-          lastIdx = idx;
-          silenceGap = 0;
-          if (!inBurst) {
-            inBurst = true;
-            bursts++;
-          }
-        } else {
-          silenceGap++;
-          if (silenceGap >= 2) {
-            inBurst = false;
-          }
-        }
-      }
-
-      result.voicedSec = activeFrames * 0.03;
-      result.speakingSpanSec =
-        firstIdx !== -1 && lastIdx >= firstIdx ? (lastIdx - firstIdx + 1) * 0.03 : result.voicedSec;
-      result.burstCount = bursts;
-
-      // Run Pitchy across active windows of the decoded recording
-      const pitchWindow = 1024;
-      if (channelData.length >= pitchWindow) {
-        const detector = PitchDetector.forFloat32Array(pitchWindow);
-        const step = Math.max(pitchWindow, Math.floor(sampleRate * 0.05));
-        const pitches = [];
-        const clarities = [];
-
-        for (let offset = 0; offset + pitchWindow <= channelData.length; offset += step) {
-          const slice = channelData.subarray(offset, offset + pitchWindow);
-          let sum = 0;
-          for (let k = 0; k < pitchWindow; k++) sum += slice[k] * slice[k];
-          const localRms = Math.sqrt(sum / pitchWindow);
-
-          if (localRms >= voiceThreshold * 0.8) {
-            const [pitch, clarity] = detector.findPitch(slice, sampleRate);
-            if (clarity > 0.55 && pitch > 55 && pitch < 550) {
-              pitches.push(pitch);
-              clarities.push(clarity);
-            }
-          }
-        }
-
-        if (pitches.length > 1) {
-          const mean = pitches.reduce((a, b) => a + b, 0) / pitches.length;
-          const variance = pitches.reduce((s, v) => s + Math.pow(v - mean, 2), 0) / pitches.length;
-          result.pitchVariance = Math.sqrt(variance);
-        } else if (activeFrames >= 3) {
-          result.pitchVariance = 18;
-        }
-
-        if (clarities.length > 0) {
-          result.avgClarity = clarities.reduce((a, b) => a + b, 0) / clarities.length;
-          result.segmentClarities = clarities;
-        }
-      }
-    } catch (e) {
-      console.warn("AudioBuffer decode fallback:", e);
-    } finally {
-      if (tempCtx && tempCtx.state !== 'closed') {
-        try { tempCtx.close(); } catch (e) {}
-      }
-    }
-
-    return result;
-  };
-
-  // Normalizes STT tokens to handle spelled sequences ("E R N E S T O") and numbers ("3 6 0 7 5 2...")
-  const normalizeSttTokens = (rawTranscript, cleanTargets) => {
-    if (!rawTranscript) return [];
+  // Normalizes the student's actual spoken STT tokens without EVER overwriting them with target words
+  const normalizeSpokenTranscript = (rawTranscript, cleanTargets) => {
+    if (!rawTranscript) return '';
 
     const hasDigits = cleanTargets.some((w) => /^\d+$/.test(w));
     const hasSingleDigits = cleanTargets.some((w) => /^\d$/.test(w));
     const hasSingleLetters = cleanTargets.some((w) => w.length === 1 && /[a-z]/.test(w));
 
-    // Collect any multi-letter spelled sequences in target (e.g., "ernesto", "rivera")
-    const spelledSequences = [];
-    let seq = [];
-    for (const w of cleanTargets) {
-      if (w.length === 1 && /[a-z]/.test(w)) {
-        seq.push(w);
-      } else {
-        if (seq.length >= 2) spelledSequences.push(seq.join(''));
-        seq = [];
-      }
-    }
-    if (seq.length >= 2) spelledSequences.push(seq.join(''));
-
     let text = rawTranscript.toLowerCase();
     text = text.replace(/\bdouble you\b/g, 'w').replace(/\bdouble u\b/g, 'w');
 
+    // 1. If target expects digits, convert spoken number words to digits
     if (hasDigits) {
       const compoundTens = {
         twenty: '2', thirty: '3', forty: '4', fifty: '5',
@@ -414,76 +262,32 @@ export default function RecordCompareActivity({
     }
 
     const rawTokens = text.replace(/[^\w\s]/gi, ' ').split(/\s+/).filter(Boolean);
-    if (!hasSingleLetters) return rawTokens;
+    if (!hasSingleLetters) return rawTokens.join(' ');
 
+    // 2. If target has spelled letters, map phonetic letter names ("are" -> "r")
+    // and split grouped words into their OWN spoken letters (never replacing with the target word)
     const regularTargetWords = new Set(
       cleanTargets.filter((w) => w.length > 1 && !SCRIPT_FILLERS.has(w))
     );
 
-    const expanded = [];
-    let i = 0;
-
-    while (i < rawTokens.length) {
-      const tok = rawTokens[i];
-
+    const outputTokens = [];
+    for (const tok of rawTokens) {
       if (regularTargetWords.has(tok) || (SCRIPT_FILLERS.has(tok) && tok !== 'oh')) {
-        expanded.push(tok);
-        i++;
-        continue;
+        outputTokens.push(tok);
+      } else if (LETTER_PHONETICS[tok]) {
+        outputTokens.push(LETTER_PHONETICS[tok]);
+      } else if (tok.length > 1 && /^[a-z]+$/.test(tok)) {
+        // Explode what the student actually said into individual characters for 1-by-1 grading
+        outputTokens.push(...tok.split(''));
+      } else {
+        outputTokens.push(tok);
       }
-
-      // Check if tokens starting at `i` form a spelled word (e.g., "ernesto" or "ribera" -> "rivera")
-      let matchedSeq = null;
-      let endIdx = i;
-
-      for (const seqWord of spelledSequences) {
-        let combined = '';
-        const limit = Math.min(rawTokens.length, i + seqWord.length + 2);
-        for (let k = i; k < limit; k++) {
-          const cand = rawTokens[k];
-          if (regularTargetWords.has(cand)) break;
-          combined += LETTER_PHONETICS[cand] || cand;
-
-          const maxEdits = Math.max(1, Math.ceil(seqWord.length * levelProfile.maxEditRatio));
-          if (
-            combined === seqWord ||
-            (combined.length >= seqWord.length - 1 && getEditDistance(combined, seqWord) <= maxEdits)
-          ) {
-            matchedSeq = seqWord;
-            endIdx = k;
-            break;
-          }
-        }
-        if (matchedSeq) break;
-      }
-
-      if (matchedSeq) {
-        expanded.push(...matchedSeq.split(''));
-        i = endIdx + 1;
-        continue;
-      }
-
-      if (LETTER_PHONETICS[tok]) {
-        expanded.push(LETTER_PHONETICS[tok]);
-        i++;
-        continue;
-      }
-
-      // If STT clustered multiple letters into a single unknown word during a spelling task, split into letters
-      if (spelledSequences.length > 0 && tok.length > 1 && /^[a-z]+$/.test(tok)) {
-        expanded.push(...tok.split(''));
-        i++;
-        continue;
-      }
-
-      expanded.push(tok);
-      i++;
     }
 
-    return expanded;
+    return outputTokens.join(' ');
   };
 
-  // Live Pitch & Voice Tracker (Connected to a silent GainNode so Android Chrome never suspends the graph)
+  // Live Pitch Tracker (Connected to a 0-gain sink so Android Chrome keeps the audio graph active)
   const trackPitch = () => {
     if (!analyserRef.current || !audioCtxRef.current) return;
     const analyser = analyserRef.current;
@@ -492,7 +296,7 @@ export default function RecordCompareActivity({
 
     let lastTime = 0;
     const update = (time) => {
-      if (time - lastTime > 45 && audioCtxRef.current && audioCtxRef.current.state === 'running') {
+      if (time - lastTime > 50 && audioCtxRef.current && audioCtxRef.current.state === 'running') {
         analyser.getFloatTimeDomainData(inputBuffer);
 
         let sumSquares = 0;
@@ -502,22 +306,9 @@ export default function RecordCompareActivity({
         const rms = Math.sqrt(sumSquares / inputBuffer.length);
 
         const [pitch, clarity] = detector.findPitch(inputBuffer, audioCtxRef.current.sampleRate);
-
-        const hasPitch = clarity > 0.55 && pitch > 50 && pitch < 550 && rms > 0.003;
-        const hasVocalEnergy = rms > 0.008;
-
-        if (hasPitch) {
+        if (clarity > 0.60 && pitch > 55 && pitch < 550 && rms > 0.005) {
           pitchValuesRef.current.push(pitch);
-          clarityValuesRef.current.push(clarity);
-        }
-
-        if (hasPitch || hasVocalEnergy) {
           activeVoiceFramesRef.current += 1;
-          const now = Date.now();
-          if (firstVoiceTimeRef.current === 0) {
-            firstVoiceTimeRef.current = now;
-          }
-          lastVoiceTimeRef.current = now;
         }
 
         lastTime = time;
@@ -550,10 +341,7 @@ export default function RecordCompareActivity({
     try {
       audioChunksRef.current = [];
       pitchValuesRef.current = [];
-      clarityValuesRef.current = [];
       activeVoiceFramesRef.current = 0;
-      firstVoiceTimeRef.current = 0;
-      lastVoiceTimeRef.current = 0;
 
       committedSegmentsRef.current = [];
       currentSegmentRef.current = '';
@@ -592,7 +380,6 @@ export default function RecordCompareActivity({
       const analyser = audioCtxRef.current.createAnalyser();
       analyser.fftSize = 1024;
 
-      // Connect analyser to a 0-gain sink so Android Chrome never suspends audio frame pulling
       const silentGain = audioCtxRef.current.createGain();
       silentGain.gain.value = 0;
       source.connect(analyser);
@@ -626,7 +413,7 @@ export default function RecordCompareActivity({
           }
         }, 700);
 
-        runPlaybackReview(url, audioBlob);
+        runPlaybackReview(url);
       };
 
       mediaRecorderRef.current = mediaRecorder;
@@ -682,7 +469,7 @@ export default function RecordCompareActivity({
   };
 
   // Step 4: "Comparing..." (Plays Reference -> Student -> Grades)
-  const runPlaybackReview = async (studentBlobUrl, audioBlob) => {
+  const runPlaybackReview = async (studentBlobUrl) => {
     setPhase('playing_review');
 
     try {
@@ -693,7 +480,7 @@ export default function RecordCompareActivity({
         await playAudioPromise(studentBlobUrl);
       };
 
-      await Promise.all([playbackSequence(), executeGrading(audioBlob)]);
+      await Promise.all([playbackSequence(), executeGrading()]);
     } catch (err) {
       console.error("Review playback error:", err);
     } finally {
@@ -701,9 +488,9 @@ export default function RecordCompareActivity({
     }
   };
 
-  // Step 5: CEFR-Calibrated Grading Handshake (STT + Full AudioBuffer Acoustic Verification)
-  const executeGrading = async (audioBlob) => {
-    let waitTicks = 8;
+  // Step 5: Honest Server-Side Grading Handshake
+  const executeGrading = async () => {
+    let waitTicks = 9;
     while (!speechFlushedRef.current && waitTicks > 0) {
       await new Promise((resolve) => setTimeout(resolve, 100));
       waitTicks--;
@@ -711,122 +498,20 @@ export default function RecordCompareActivity({
 
     updateCombinedTranscript();
 
-    // Decode the actual recorded audioBlob so we have 100% accurate acoustic metrics on mobile
-    const blobStats = await analyzeRecordedBlob(audioBlob);
     const durationSec = Math.max(0.1, (Date.now() - recordingStartTimeRef.current) / 1000);
 
-    const livePitches = pitchValuesRef.current;
-    let pitchVariance = blobStats.pitchVariance;
-    if (livePitches.length > 1) {
-      const mean = livePitches.reduce((a, b) => a + b, 0) / livePitches.length;
-      const variance = livePitches.reduce((s, v) => s + Math.pow(v - mean, 2), 0) / livePitches.length;
-      pitchVariance = Math.max(pitchVariance, Math.sqrt(variance));
+    const pitches = pitchValuesRef.current;
+    let pitchVariance = 0;
+    if (pitches.length > 1) {
+      const mean = pitches.reduce((a, b) => a + b, 0) / pitches.length;
+      const variance = pitches.reduce((s, v) => s + Math.pow(v - mean, 2), 0) / pitches.length;
+      pitchVariance = Math.sqrt(variance);
+    } else if (activeVoiceFramesRef.current >= 3) {
+      pitchVariance = 15;
     }
 
-    const cleanTargets = wordsList.map((w) => w.toLowerCase().replace(/[^\w]/gi, ''));
-    const nonFillerTargets = cleanTargets.filter((w) => w && !SCRIPT_FILLERS.has(w));
-
-    const sttTokens = normalizeSttTokens(speechTranscriptRef.current.trim(), cleanTargets);
-    const sttNonFiller = sttTokens.filter((w) => w && !SCRIPT_FILLERS.has(w));
-
-    // Combine live and decoded-blob voice metrics
-    const liveSpanSec =
-      lastVoiceTimeRef.current > firstVoiceTimeRef.current
-        ? (lastVoiceTimeRef.current - firstVoiceTimeRef.current) / 1000 + 0.20
-        : activeVoiceFramesRef.current * 0.045;
-
-    const voicedSec = Math.max(blobStats.voicedSec, activeVoiceFramesRef.current * 0.045);
-    const speakingSpanSec = Math.max(blobStats.speakingSpanSec, liveSpanSec);
-
-    // Expected speaking duration calibrated by CEFR level
-    const expectedSec = Math.max(
-      0.35,
-      nonFillerTargets.reduce((sum, w) => {
-        return sum + (w.length === 1 ? levelProfile.charSec : levelProfile.wordSec);
-      }, 0)
-    );
-
-    const effectiveSpeechSec = Math.max(
-      voicedSec * 1.65,
-      speakingSpanSec * 0.92,
-      blobStats.burstCount * 0.22
-    );
-
-    const hasRealVoice = voicedSec >= 0.18 || activeVoiceFramesRef.current >= 3 || sttNonFiller.length > 0;
-
-    let finalTranscript = '';
-
-    if (hasRealVoice && nonFillerTargets.length > 0) {
-      const coverageRatio = Math.min(1, effectiveSpeechSec / expectedSec);
-      const acousticWordCount = Math.max(
-        sttNonFiller.length,
-        Math.min(nonFillerTargets.length, Math.max(1, Math.round(nonFillerTargets.length * coverageRatio)))
-      );
-
-      const clarities =
-        blobStats.segmentClarities.length > 0 ? blobStats.segmentClarities : clarityValuesRef.current;
-      const avgClarity =
-        clarities.length > 0
-          ? clarities.reduce((a, b) => a + b, 0) / clarities.length
-          : blobStats.avgClarity;
-
-      // Build 1-to-1 aligned token list (INCLUDING fillers in their exact slots so server pointers never drift)
-      let contentCounter = 0;
-      let sttCursor = 0;
-      const alignedTokens = [];
-
-      for (let idx = 0; idx < cleanTargets.length; idx++) {
-        const tWord = cleanTargets[idx];
-        if (!tWord) continue;
-
-        // Always include conversational fillers in their exact position so server's "uh" never steals a vowel letter
-        if (SCRIPT_FILLERS.has(tWord)) {
-          alignedTokens.push(tWord);
-          continue;
-        }
-
-        if (contentCounter >= acousticWordCount) {
-          break;
-        }
-
-        // Check if STT captured a matching token for this target slot
-        let matchedStt = null;
-        for (let look = sttCursor; look < Math.min(sttNonFiller.length, sttCursor + 3); look++) {
-          const cand = sttNonFiller[look];
-          const maxAllowedDist =
-            tWord.length === 1 ? 0 : Math.max(1, Math.ceil(tWord.length * levelProfile.maxEditRatio));
-          if (cand === tWord || getEditDistance(cand, tWord) <= maxAllowedDist) {
-            matchedStt = cand;
-            sttCursor = look + 1;
-            break;
-          }
-        }
-
-        if (matchedStt) {
-          // For A1/A2, if student came within CEFR phonetic tolerance, normalize to target so accent isn't over-penalized
-          if (
-            (cefrLevel === 'A1' || cefrLevel === 'A2') &&
-            getEditDistance(matchedStt, tWord) <= 2
-          ) {
-            alignedTokens.push(tWord);
-          } else {
-            alignedTokens.push(matchedStt);
-          }
-        } else {
-          // Reconstruct from acoustic clarity calibrated to the student's CEFR level
-          const segClarity = clarities[contentCounter % Math.max(1, clarities.length)] || avgClarity;
-          if (segClarity < levelProfile.clarityFloor && tWord.length > 4) {
-            alignedTokens.push(tWord.slice(0, -1));
-          } else {
-            alignedTokens.push(tWord);
-          }
-        }
-
-        contentCounter++;
-      }
-
-      finalTranscript = alignedTokens.join(' ');
-    }
+    const cleanTargets = wordsList.map((w) => w.toLowerCase().replace(/[^\w]/gi, '')).filter(Boolean);
+    const finalTranscript = normalizeSpokenTranscript(speechTranscriptRef.current.trim(), cleanTargets);
 
     const isGhost = !finalTranscript || durationSec < 0.4;
 
@@ -839,7 +524,7 @@ export default function RecordCompareActivity({
           transcript: finalTranscript,
           cefr_level: cefrLevel,
           duration_sec: durationSec,
-          pitch_variance: Math.max(16, pitchVariance),
+          pitch_variance: pitchVariance,
           attempt_number: attempt,
           is_ghost_attempt: isGhost
         }
@@ -848,6 +533,8 @@ export default function RecordCompareActivity({
       if (error) throw error;
 
       const score = data.overall_score || 0;
+      const passed = data.passed !== undefined ? data.passed : score >= levelProfile.passScore;
+
       setOverallScore(score);
       setWordResults(data.word_level_data || []);
 
@@ -859,7 +546,7 @@ export default function RecordCompareActivity({
       });
       setFailedIndices(newFailed);
 
-      if (score >= levelProfile.passScore) {
+      if (passed) {
         const yieldPercent = attempt === 1 ? 100 : attempt === 2 ? 85 : 70;
         setPointsAwarded(yieldPercent);
         setCanContinue(true);
@@ -891,7 +578,7 @@ export default function RecordCompareActivity({
     onComplete({
       overallScore: overallScore || 0,
       pointsAwarded,
-      passed: (overallScore || 0) >= levelProfile.passScore
+      passed: canContinue && (overallScore || 0) >= levelProfile.passScore
     });
   };
 
@@ -914,7 +601,7 @@ export default function RecordCompareActivity({
             if (res.score >= levelProfile.wordApprove) {
               return <span key={idx} className="text-emerald-400 font-bold">{word}</span>;
             }
-            if (res.score >= levelProfile.passScore) {
+            if (res.score >= 60) {
               return <span key={idx} className="text-[#fcd34d] font-bold">{word}</span>;
             }
             return <span key={idx} className="text-red-500 font-bold">{word}</span>;
@@ -946,7 +633,9 @@ export default function RecordCompareActivity({
               {Math.round(overallScore || 0)}%
             </span>
             <p className="text-xs text-slate-400 mt-1">
-              {overallScore >= levelProfile.passScore ? "Pronunciation Approved" : "Needs Practice"}
+              {canContinue && overallScore >= levelProfile.passScore
+                ? "Pronunciation Approved"
+                : "Needs Practice"}
             </p>
           </div>
         )}
