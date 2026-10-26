@@ -178,8 +178,10 @@ export default function RecordCompareActivity({
     };
   }, []);
 
-  // Simple Levenshtein helper for client-side spelled-word detection
-  const getEditDistance = (a, b) => {
+  // Safe Levenshtein helper (bounded to prevent heavy computation)
+  const getEditDistance = (a = '', b = '') => {
+    if (a === b) return 0;
+    if (Math.abs(a.length - b.length) > 4) return 99;
     const dp = Array.from({ length: a.length + 1 }, () => Array(b.length + 1).fill(0));
     for (let i = 0; i <= a.length; i++) dp[i][0] = i;
     for (let j = 0; j <= b.length; j++) dp[0][j] = j;
@@ -194,7 +196,7 @@ export default function RecordCompareActivity({
     return dp[a.length][b.length];
   };
 
-  // Pre-processor that normalizes spelled letters ("E R N E S T O") and numbers ("3 6 0 7 5 2...")
+  // Single-pass normalizer for spelled letters ("E R N E S T O") and numbers ("3 6 0 7 5 2...")
   const normalizeTranscriptForTarget = (rawTranscript) => {
     if (!rawTranscript) return '';
 
@@ -205,7 +207,7 @@ export default function RecordCompareActivity({
     const hasTargetDigits = cleanTargets.some((w) => /^\d+$/.test(w));
     const hasSingleDigits = cleanTargets.some((w) => /^\d$/.test(w));
 
-    // Identify sequences of 2+ consecutive single letters in targetText (e.g., ["e","r","n","e","s","t","o"])
+    // Find sequences of 2+ single letters in targetText (e.g. ["e","r","n","e","s","t","o"] -> "ernesto")
     const spelledSequences = [];
     let currentSeq = [];
     for (const w of cleanTargets) {
@@ -218,12 +220,13 @@ export default function RecordCompareActivity({
     }
     if (currentSeq.length >= 2) spelledSequences.push(currentSeq.join(''));
 
-    const hasSpelledLetters = spelledSequences.length > 0 || cleanTargets.some((w) => w.length === 1 && /[a-z]/.test(w));
+    const hasSpelledLetters =
+      spelledSequences.length > 0 || cleanTargets.some((w) => w.length === 1 && /[a-z]/.test(w));
 
     let text = rawTranscript.toLowerCase();
     text = text.replace(/\bdouble you\b/g, 'w').replace(/\bdouble u\b/g, 'w');
 
-    // 1. If target expects digits, convert spoken number words and homophones to digits
+    // 1. Normalize Spoken Numbers -> Digits
     if (hasTargetDigits) {
       const compoundTens = {
         twenty: '2', thirty: '3', forty: '4', fifty: '5',
@@ -236,7 +239,6 @@ export default function RecordCompareActivity({
         eight: '8', ate: '8', nine: '9', mine: '9'
       };
 
-      // Convert compound tens like "thirty six" -> "36"
       Object.entries(compoundTens).forEach(([tenWord, tenDigit]) => {
         Object.entries(onesDigits).forEach(([oneWord, oneDigit]) => {
           const regex = new RegExp(`\\b${tenWord}[\\s-]+${oneWord}\\b`, 'g');
@@ -267,7 +269,7 @@ export default function RecordCompareActivity({
       }
     }
 
-    // 2. If target expects spelled letters (e.g., E R N E S T O), expand grouped words and phonetic letter names
+    // 2. Normalize Spelled Words & Phonetic Letter Names (Guaranteed Single Pass — No Infinite Loop)
     if (hasSpelledLetters) {
       const letterPhonetics = {
         hey: 'a', ay: 'a', eh: 'a',
@@ -287,7 +289,7 @@ export default function RecordCompareActivity({
         oh: 'o', owe: 'o', ou: 'o',
         pee: 'p', pea: 'p',
         cue: 'q', queue: 'q', kyu: 'q',
-        are: 'r', our: 'r', or: 'r', ar: 'r', er: 'r',
+        are: 'r', our: 'r', or: 'r', ar: 'r', er: 'r', her: 'r', air: 'r',
         es: 's', ess: 's', is: 's', as: 's',
         tee: 't', tea: 't', ti: 't', to: 't', too: 't',
         you: 'u', yu: 'u',
@@ -298,43 +300,76 @@ export default function RecordCompareActivity({
         zee: 'z', zed: 'z'
       };
 
-      const nonSpelledTargets = new Set(cleanTargets.filter((w) => w.length > 1));
       const fillers = new Set(['uhu', 'uh', 'um', 'ah', 'oh', 'hmm', 'mm', 'mhm', 'huh']);
+      const nonSpelledTargets = new Set(
+        cleanTargets.filter((w) => w.length > 1 && !fillers.has(w))
+      );
 
-      let tokens = text.replace(/[^\w\s]/gi, ' ').split(/\s+/).filter(Boolean);
+      const tokens = text.replace(/[^\w\s]/gi, ' ').split(/\s+/).filter(Boolean);
+      const outputTokens = [];
 
-      // Check if consecutive tokens combine to match the spelled target word (e.g. "ernest" + "oh" -> "ernesto")
-      spelledSequences.forEach((seqWord) => {
-        for (let i = 0; i < tokens.length; i++) {
+      let i = 0;
+      while (i < tokens.length) {
+        const tok = tokens[i];
+
+        // Keep regular target words (like "yes") and conversational fillers intact
+        if (nonSpelledTargets.has(tok) || (fillers.has(tok) && tok !== 'oh')) {
+          outputTokens.push(tok);
+          i++;
+          continue;
+        }
+
+        // Check if a window of tokens starting at `i` forms one of the spelled sequences (e.g. "ernesto")
+        let matchedSeq = null;
+        let matchedEndIdx = i;
+
+        for (const seqWord of spelledSequences) {
           let combined = '';
-          for (let k = i; k < Math.min(tokens.length, i + seqWord.length + 2); k++) {
-            const mapped = letterPhonetics[tokens[k]] || tokens[k];
-            combined += mapped;
+          const maxWindow = Math.min(tokens.length, i + seqWord.length + 2);
+          for (let k = i; k < maxWindow; k++) {
+            const candidate = tokens[k];
+            if (nonSpelledTargets.has(candidate)) break;
+            combined += letterPhonetics[candidate] || candidate;
+
             const maxDist = seqWord.length >= 5 ? 2 : 1;
             if (
               combined === seqWord ||
-              (combined.length >= seqWord.length - 2 && getEditDistance(combined, seqWord) <= maxDist)
+              (combined.length >= seqWord.length - 1 && getEditDistance(combined, seqWord) <= maxDist)
             ) {
-              const expanded = seqWord.split('');
-              tokens.splice(i, k - i + 1, ...expanded);
+              matchedSeq = seqWord;
+              matchedEndIdx = k;
               break;
             }
           }
+          if (matchedSeq) break;
         }
-      });
 
-      // Map individual phonetic letter names (like "are" -> "r", "tea" -> "t") when not part of regular sentence words
-      tokens = tokens.flatMap((tok) => {
-        if (nonSpelledTargets.has(tok) || (fillers.has(tok) && tok !== 'oh')) {
-          return [tok];
+        if (matchedSeq) {
+          outputTokens.push(...matchedSeq.split(''));
+          i = matchedEndIdx + 1; // Advance completely past the matched tokens
+          continue;
         }
+
+        // If it's a known phonetic letter word (e.g. "are" -> "r", "tea" -> "t"), map to single letter
         if (letterPhonetics[tok]) {
-          return [letterPhonetics[tok]];
+          outputTokens.push(letterPhonetics[tok]);
+          i++;
+          continue;
         }
-        return [tok];
-      });
 
-      text = tokens.join(' ');
+        // If STT grouped multiple letters into an unknown cluster during a spelling exercise (e.g. "ern" or "esto"),
+        // explode it into individual letters so the server can grade each letter 1-by-1
+        if (spelledSequences.length > 0 && tok.length > 1 && /^[a-z]+$/.test(tok)) {
+          outputTokens.push(...tok.split(''));
+          i++;
+          continue;
+        }
+
+        outputTokens.push(tok);
+        i++;
+      }
+
+      text = outputTokens.join(' ');
     }
 
     return text.replace(/\s+/g, ' ').trim();
@@ -519,17 +554,26 @@ export default function RecordCompareActivity({
     }
   };
 
-  // Helper to play an audio URL and resolve cleanly when finished
+  // Helper to play an audio URL with a safety timeout so playback can never hang
   const playAudioPromise = (url) => {
     return new Promise((resolve) => {
       if (!url) {
         resolve();
         return;
       }
+      let settled = false;
+      const finish = () => {
+        if (!settled) {
+          settled = true;
+          clearTimeout(timer);
+          resolve();
+        }
+      };
+      const timer = setTimeout(finish, 9000);
       const audio = new Audio(url);
-      audio.onended = () => resolve();
-      audio.onerror = () => resolve();
-      audio.play().catch(() => resolve());
+      audio.onended = finish;
+      audio.onerror = finish;
+      audio.play().catch(finish);
     });
   };
 
@@ -537,15 +581,20 @@ export default function RecordCompareActivity({
   const runPlaybackReview = async (studentBlobUrl) => {
     setPhase('playing_review');
 
-    const playbackSequence = async () => {
-      if (audioUrl) {
-        await playAudioPromise(audioUrl);
-      }
-      await playAudioPromise(studentBlobUrl);
-    };
+    try {
+      const playbackSequence = async () => {
+        if (audioUrl) {
+          await playAudioPromise(audioUrl);
+        }
+        await playAudioPromise(studentBlobUrl);
+      };
 
-    await Promise.all([playbackSequence(), executeGrading()]);
-    setPhase('completed');
+      await Promise.all([playbackSequence(), executeGrading()]);
+    } catch (err) {
+      console.error("Review playback error:", err);
+    } finally {
+      setPhase('completed');
+    }
   };
 
   // 6. Server-Side Grading Handshake
@@ -570,7 +619,7 @@ export default function RecordCompareActivity({
       pitchVariance = 18;
     }
 
-    // Normalize spelled letters and numbers first
+    // Normalize spelled letters and numbers once
     let finalTranscript = normalizeTranscriptForTarget(speechTranscriptRef.current.trim());
 
     const scriptFillers = ['uhu', 'uh', 'um', 'ah', 'oh', 'hmm', 'mm', 'mhm', 'huh'];
@@ -585,7 +634,7 @@ export default function RecordCompareActivity({
       : [];
 
     // Acoustic Span Supplement: If Android cut off STT during pauses between letters/numbers/words,
-    // supplement the remaining words that were acoustically spoken into the microphone
+    // reconstruct the remaining words that were acoustically spoken into the microphone
     if (activeVoiceFramesRef.current >= 3 && contentWords.length > 0) {
       const speakingSpanSec =
         lastVoiceTimeRef.current > firstVoiceTimeRef.current
@@ -595,12 +644,11 @@ export default function RecordCompareActivity({
       const voicedSec = activeVoiceFramesRef.current * 0.05;
       const effectiveSpeechSec = Math.max(voicedSec * 1.4, speakingSpanSec * 0.9);
 
-      // Single-character targets (letters/digits) require ~0.18s each; full words ~0.24s each
       const expectedSec = Math.max(
         0.4,
         contentWords.reduce((acc, w) => {
           const clean = w.replace(/[^\w]/gi, '');
-          return acc + (clean.length === 1 ? 0.18 : 0.24);
+          return acc + (clean.length === 1 ? 0.16 : 0.24);
         }, 0)
       );
 
@@ -615,18 +663,27 @@ export default function RecordCompareActivity({
             : 0.85;
 
         const reconstructed = contentWords.slice(0, acousticWordCount).map((rawWord, idx) => {
-          if (idx < sttContentWords.length && sttContentWords[idx]) {
-            return sttContentWords[idx];
+          const cleanTarget = rawWord.toLowerCase().replace(/[^\w]/gi, '');
+          const sttCandidate = sttContentWords[idx];
+
+          // Only keep the STT token in this slot if it reasonably matches the expected target type
+          if (sttCandidate) {
+            if (cleanTarget.length === 1 && sttCandidate.length === 1) {
+              return sttCandidate;
+            }
+            if (cleanTarget.length > 1 && getEditDistance(sttCandidate, cleanTarget) <= 2) {
+              return sttCandidate;
+            }
           }
-          const clean = rawWord.toLowerCase().replace(/[^\w]/gi, '');
+
           const segClarity = clarities[idx % Math.max(1, clarities.length)] || avgClarity;
-          if (segClarity < 0.72 && clean.length > 4) {
-            return clean.slice(0, -1);
+          if (segClarity < 0.72 && cleanTarget.length > 4) {
+            return cleanTarget.slice(0, -1);
           }
-          return clean;
+          return cleanTarget;
         });
 
-        finalTranscript = normalizeTranscriptForTarget(reconstructed.join(' '));
+        finalTranscript = reconstructed.join(' ');
       }
     }
 
