@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './SupabaseClient';
 import { PitchDetector } from 'pitchy';
+import { doubleMetaphone } from 'double-metaphone';
+import { syllable } from 'syllable';
+import levenshtein from 'fast-levenshtein';
 
 /**
- * CEFR Level Calibration Matrix
+ * Progressive CEFR Calibration Matrix (A1 -> C2)
  */
 const CEFR_PROFILES = {
   A1: {
@@ -11,12 +14,14 @@ const CEFR_PROFILES = {
     wordApprove: 80,
     minWordPass: 60,
     minCoverageRatio: 0.75,
-    maxAllowedEditDistShort: 1,
-    maxAllowedEditDistLong: 2,
-    editPenalty: 16,
+    maxEditShort: 1,
+    maxEditLong: 2,
+    editPenalty: 15,
+    allowSecondaryMetaphone: true,
     closeLetterScore: 72,
-    phoneticMatchScore: 75,
-    acousticTolerance: 1.12,
+    phoneticWordScore: 75,
+    minConfidence: 0.58,
+    dtwTolerance: 1.15,
     wAccuracy: 0.55,
     wCompleteness: 0.35,
     wProsody: 0.10
@@ -26,12 +31,14 @@ const CEFR_PROFILES = {
     wordApprove: 80,
     minWordPass: 60,
     minCoverageRatio: 0.78,
-    maxAllowedEditDistShort: 1,
-    maxAllowedEditDistLong: 2,
-    editPenalty: 18,
+    maxEditShort: 1,
+    maxEditLong: 2,
+    editPenalty: 16,
+    allowSecondaryMetaphone: true,
     closeLetterScore: 70,
-    phoneticMatchScore: 74,
-    acousticTolerance: 1.08,
+    phoneticWordScore: 74,
+    minConfidence: 0.62,
+    dtwTolerance: 1.10,
     wAccuracy: 0.55,
     wCompleteness: 0.35,
     wProsody: 0.10
@@ -41,12 +48,14 @@ const CEFR_PROFILES = {
     wordApprove: 82,
     minWordPass: 60,
     minCoverageRatio: 0.80,
-    maxAllowedEditDistShort: 1,
-    maxAllowedEditDistLong: 2,
+    maxEditShort: 1,
+    maxEditLong: 2,
     editPenalty: 20,
-    closeLetterScore: 65,
-    phoneticMatchScore: 72,
-    acousticTolerance: 1.00,
+    allowSecondaryMetaphone: false,
+    closeLetterScore: 66,
+    phoneticWordScore: 72,
+    minConfidence: 0.66,
+    dtwTolerance: 1.00,
     wAccuracy: 0.60,
     wCompleteness: 0.30,
     wProsody: 0.10
@@ -56,12 +65,14 @@ const CEFR_PROFILES = {
     wordApprove: 85,
     minWordPass: 60,
     minCoverageRatio: 0.85,
-    maxAllowedEditDistShort: 1,
-    maxAllowedEditDistLong: 1,
+    maxEditShort: 1,
+    maxEditLong: 1,
     editPenalty: 24,
+    allowSecondaryMetaphone: false,
     closeLetterScore: 0,
-    phoneticMatchScore: 70,
-    acousticTolerance: 0.95,
+    phoneticWordScore: 70,
+    minConfidence: 0.70,
+    dtwTolerance: 0.95,
     wAccuracy: 0.65,
     wCompleteness: 0.25,
     wProsody: 0.10
@@ -71,12 +82,14 @@ const CEFR_PROFILES = {
     wordApprove: 88,
     minWordPass: 60,
     minCoverageRatio: 0.90,
-    maxAllowedEditDistShort: 0,
-    maxAllowedEditDistLong: 1,
+    maxEditShort: 0,
+    maxEditLong: 1,
     editPenalty: 28,
+    allowSecondaryMetaphone: false,
     closeLetterScore: 0,
-    phoneticMatchScore: 68,
-    acousticTolerance: 0.90,
+    phoneticWordScore: 68,
+    minConfidence: 0.75,
+    dtwTolerance: 0.90,
     wAccuracy: 0.70,
     wCompleteness: 0.15,
     wProsody: 0.15
@@ -86,35 +99,27 @@ const CEFR_PROFILES = {
     wordApprove: 90,
     minWordPass: 60,
     minCoverageRatio: 0.92,
-    maxAllowedEditDistShort: 0,
-    maxAllowedEditDistLong: 1,
+    maxEditShort: 0,
+    maxEditLong: 1,
     editPenalty: 32,
+    allowSecondaryMetaphone: false,
     closeLetterScore: 0,
-    phoneticMatchScore: 65,
-    acousticTolerance: 0.86,
+    phoneticWordScore: 65,
+    minConfidence: 0.80,
+    dtwTolerance: 0.85,
     wAccuracy: 0.75,
     wCompleteness: 0.10,
     wProsody: 0.15
   }
 };
 
-// Conversational interjections: rendered green in UI and excluded from scoring math
+// Conversational interjections: rendered green in UI and excluded from denominator
 const SCRIPT_FILLERS = new Set([
   'uhu', 'uh', 'um', 'ah', 'oh', 'hmm', 'mm', 'mhm', 'huh', 'er', 'erm'
 ]);
 
-// Unstressed grammar/function words that are naturally coarticulated in connected speech
-const FUNCTION_WORDS = new Set([
-  'a', 'an', 'the', 'can', 'you', 'that', 'this', 'i', 'see', 'what', 'is', 'are',
-  'am', 'was', 'were', 'your', 'my', 'his', 'her', 'our', 'their', 'its', 'mr',
-  'mrs', 'ms', 'dr', 'to', 'of', 'in', 'on', 'at', 'for', 'with', 'by', 'from',
-  'it', 'he', 'she', 'we', 'they', 'me', 'him', 'us', 'them', 'do', 'does', 'did',
-  'have', 'has', 'had', 'will', 'would', 'could', 'should', 'may', 'might',
-  'yes', 'yeah', 'yep', 'no', 'not', 'and', 'or', 'but', 'so', 'if', 'as', 'be',
-  'hi', 'hey', 'hello', 'good', 'ok', 'okay', 'please', 'thank', 'thanks'
-]);
-
-const LETTER_PHONETICS = {
+// Fixed 26-Letter English Alphabet Phonetic Transcription Map
+const ALPHABET_PHONETICS = {
   a: 'a', hey: 'a', ay: 'a', eh: 'a',
   b: 'b', bee: 'b', be: 'b',
   c: 'c', see: 'c', sea: 'c', si: 'c',
@@ -143,7 +148,8 @@ const LETTER_PHONETICS = {
   z: 'z', zee: 'z', zed: 'z'
 };
 
-const CLOSE_PHONETIC_LETTERS = {
+// L1 Phonetic Letter Confusions (Awards Yellow 66-72% at A1-B1, never 100%)
+const CLOSE_ALPHABET_PAIRS = {
   b: ['v', 'p'],
   v: ['b', 'f'],
   p: ['b'],
@@ -161,32 +167,8 @@ const CLOSE_PHONETIC_LETTERS = {
   a: ['e']
 };
 
-const EXACT_NUMBER_WORDS = {
-  zero: '0', oh: '0', o: '0', nil: '0',
-  one: '1', won: '1',
-  two: '2', to: '2', too: '2',
-  three: '3',
-  four: '4', for: '4', fore: '4',
-  five: '5',
-  six: '6',
-  seven: '7',
-  eight: '8', ate: '8',
-  nine: '9',
-  ten: '10', eleven: '11', twelve: '12', thirteen: '13',
-  fourteen: '14', fifteen: '15', sixteen: '16', seventeen: '17',
-  eighteen: '18', nineteen: '19', twenty: '20', thirty: '30',
-  forty: '40', fifty: '50', sixty: '60', seventy: '70',
-  eighty: '80', ninety: '90'
-};
-
-const CLOSE_NUMBER_HOMOPHONES = {
-  tree: '3', free: '3',
-  fine: '5',
-  sick: '6', sicks: '6',
-  mine: '9'
-};
-
-const WORD_EQUIVALENTS = {
+// Closed-set English Contractions & Titles
+const STRUCTURAL_EQUIVALENTS = {
   mr: ['mister'],
   mister: ['mr'],
   mrs: ['missus', 'misses'],
@@ -227,6 +209,48 @@ const WORD_EQUIVALENTS = {
   yeah: ['yes', 'yep']
 };
 
+// Universal English Number Lexicon (Units, Teens, Tens, Scales)
+const NUMBER_UNITS = {
+  zero: 0, oh: 0, nil: 0,
+  one: 1, won: 1, first: 1,
+  two: 2, to: 2, too: 2, second: 2,
+  three: 3, third: 3,
+  four: 4, for: 4, fore: 4, fourth: 4,
+  five: 5, fifth: 5,
+  six: 6, sixth: 6,
+  seven: 7, seventh: 7,
+  eight: 8, ate: 8, eighth: 8,
+  nine: 9, ninth: 9,
+  ten: 10, tenth: 10,
+  eleven: 11, eleventh: 11,
+  twelve: 12, twelfth: 12,
+  thirteen: 13, thirteenth: 13,
+  fourteen: 14, fourteenth: 14,
+  fifteen: 15, fifteenth: 15,
+  sixteen: 16, sixteenth: 16,
+  seventeen: 17, seventeenth: 17,
+  eighteen: 18, eighteenth: 18,
+  nineteen: 19, nineteenth: 19
+};
+
+const NUMBER_TENS = {
+  twenty: 20, twentieth: 20,
+  thirty: 30, thirtieth: 30,
+  forty: 40, fortieth: 40,
+  fifty: 50, fiftieth: 50,
+  sixty: 60, sixtieth: 60,
+  seventy: 70, seventieth: 70,
+  eighty: 80, eightieth: 80,
+  ninety: 90, ninetieth: 90
+};
+
+const CLOSE_DIGIT_HOMOPHONES = {
+  tree: '3', free: '3',
+  fine: '5',
+  sick: '6', sicks: '6',
+  mine: '9'
+};
+
 export default function RecordCompareActivity({
   targetText = "The quick brown fox jumps over the lazy dog",
   audioUrl = "",
@@ -253,32 +277,45 @@ export default function RecordCompareActivity({
   const teacherDSPRef = useRef(null);
   const cachedTeacherUrlRef = useRef('');
 
-  // Recording & SpeechRecognition Refs
-  const mediaRecorderRef = useRef(null);
-  const audioChunksRef = useRef([]);
-  const recognitionRef = useRef(null);
-  const sttRestartTimerRef = useRef(null);
-
-  const committedSegmentsRef = useRef([]);
-  const currentSegmentRef = useRef([]);
-  const speechFlushedRef = useRef(false);
-
-  // Live Backup Frame Capture Refs (In case mobile decodeAudioData fails on short WebM containers)
-  const audioCtxRef = useRef(null);
+  // Persistent AudioContext & Recording Refs
+  const sharedAudioCtxRef = useRef(null);
   const analyserRef = useRef(null);
   const liveRawSamplesRef = useRef([]);
   const liveSampleRateRef = useRef(44100);
   const animationFrameRef = useRef(null);
 
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const activeStreamRef = useRef(null);
+
+  // Stateful resultIndex SpeechRecognition Refs
+  const recognitionRef = useRef(null);
+  const sttRestartTimerRef = useRef(null);
+  const lockedSegmentsRef = useRef([]);
+  const activeInterimRef = useRef(null);
+  const speechFlushedRef = useRef(false);
+
   const recordingStartTimeRef = useRef(0);
   const isRecordingRef = useRef(false);
-  const activeStreamRef = useRef(null);
 
   const wordsList = targetText.trim().split(/\s+/);
 
   // ============================================================================
-  // 1. AUDIO PLAYBACK LOCK & PHONETIC SKELETON ANALYZER
+  // 1. UNIVERSAL NLP WRAPPERS (SYLLABLE, DOUBLE-METAPHONE, LEVENSHTEIN, NUMBERS)
   // ============================================================================
+
+  const getSharedAudioContext = async () => {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!sharedAudioCtxRef.current || sharedAudioCtxRef.current.state === 'closed') {
+      sharedAudioCtxRef.current = new AudioCtx();
+    }
+    if (sharedAudioCtxRef.current.state === 'suspended') {
+      try {
+        await sharedAudioCtxRef.current.resume();
+      } catch (e) {}
+    }
+    return sharedAudioCtxRef.current;
+  };
 
   const stopCurrentAudio = () => {
     if (activePlaybackRef.current) {
@@ -292,10 +329,15 @@ export default function RecordCompareActivity({
     }
   };
 
-  const getEditDistance = (a = '', b = '') => {
+  const computeEditDistance = (a = '', b = '') => {
     if (a === b) return 0;
     if (!a.length) return b.length;
     if (!b.length) return a.length;
+    try {
+      if (typeof levenshtein?.get === 'function') {
+        return levenshtein.get(a, b);
+      }
+    } catch (e) {}
     const dp = Array.from({ length: a.length + 1 }, () => Array(b.length + 1).fill(0));
     for (let i = 0; i <= a.length; i++) dp[i][0] = i;
     for (let j = 0; j <= b.length; j++) dp[0][j] = j;
@@ -310,246 +352,200 @@ export default function RecordCompareActivity({
     return dp[a.length][b.length];
   };
 
-  const getPhoneticSkeleton = (word = '') => {
+  const computeMetaphoneCodes = (word = '') => {
+    const clean = word.toLowerCase().replace(/[^a-z]/g, '');
+    if (!clean) return ['', ''];
+    try {
+      const fn = typeof doubleMetaphone === 'function' ? doubleMetaphone : doubleMetaphone?.default;
+      if (typeof fn === 'function') {
+        const codes = fn(clean);
+        if (Array.isArray(codes) && codes.length >= 1) {
+          return [codes[0] || '', codes[1] || codes[0] || ''];
+        }
+      }
+    } catch (e) {}
+    return [clean, clean];
+  };
+
+  const countWordSyllables = (word = '') => {
     const clean = word.toLowerCase().replace(/[^a-z0-9]/g, '');
-    if (!clean) return '';
-    if (/^\d+$/.test(clean) || clean.length === 1) return clean;
-
-    const s = clean
-      .replace(/^kn/, 'n')
-      .replace(/^gn/, 'n')
-      .replace(/^pn/, 'n')
-      .replace(/^wr/, 'r')
-      .replace(/^wh/, 'w')
-      .replace(/^ps/, 's')
-      .replace(/ph/g, 'f')
-      .replace(/gh/g, 'g')
-      .replace(/sh/g, 'x')
-      .replace(/ch/g, 'x')
-      .replace(/th/g, '0')
-      .replace(/ck/g, 'k')
-      .replace(/dg/g, 'j')
-      .replace(/qu/g, 'kw')
-      .replace(/c(?=[eiy])/g, 's')
-      .replace(/c/g, 'k')
-      .replace(/g(?=[eiy])/g, 'j')
-      .replace(/z/g, 's')
-      .replace(/v/g, 'f');
-
-    const firstChar = s[0];
-    const rest = s
-      .slice(1)
-      .replace(/[aeiouyhw]/g, '')
-      .replace(/(.)\1+/g, '$1');
-
-    const vowelKeep = /[aeiouy]/.test(firstChar) ? 'A' : firstChar;
-    return (vowelKeep + rest).toUpperCase();
+    if (!clean) return 1;
+    if (clean.length === 1) {
+      return clean === 'w' ? 3 : clean === '7' || clean === '0' ? 2 : 1;
+    }
+    try {
+      const fn = typeof syllable === 'function' ? syllable : syllable?.default;
+      if (typeof fn === 'function') {
+        const count = fn(clean);
+        if (count > 0) return count;
+      }
+    } catch (e) {}
+    // Universal algorithmic vowel-cluster heuristic fallback
+    const stripped = clean.replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/, '').replace(/^y/, '');
+    const matches = stripped.match(/[aeiouy]{1,2}/g);
+    return Math.max(1, matches ? matches.length : 1);
   };
 
-  /**
-   * Builds a rich Phonetic-Articulatory Profile for any target word, letter, or digit.
-   * Used to verify sibilants (/s/ in "spell", "passport"), syllable counts, vowel height/frontness,
-   * and duration weights when scoring audio segments.
-   */
-  const getWordArticulatoryModel = (rawWord = '') => {
-    const clean = rawWord.toLowerCase().replace(/[^a-z0-9]/g, '');
-    if (!clean) {
-      return {
-        clean: '',
-        isFiller: true,
-        isFunctionWord: true,
-        isSingleChar: false,
-        syllables: 1,
-        weight: 0.5,
-        hasStrongSibilant: false,
-        hasWeakFricative: false,
-        onsetSibilant: false,
-        vowelClass: 'mid'
-      };
+  // Universal English Number Parser: converts spoken number words into canonical digit strings
+  const convertSpokenNumbersInTokens = (tokens, hasTargetDigits, hasSingleDigits) => {
+    if (!hasTargetDigits) return tokens;
+
+    const result = [];
+    let i = 0;
+
+    while (i < tokens.length) {
+      const item = tokens[i];
+      const w = item.token;
+
+      if (CLOSE_DIGIT_HOMOPHONES[w] !== undefined) {
+        result.push({
+          token: CLOSE_DIGIT_HOMOPHONES[w],
+          confidence: Math.min(item.confidence, 0.74),
+          approx: true
+        });
+        i++;
+        continue;
+      }
+
+      // Check for compound tens + units (e.g., "twenty five" -> "25")
+      if (NUMBER_TENS[w] !== undefined) {
+        let val = NUMBER_TENS[w];
+        if (
+          i + 1 < tokens.length &&
+          NUMBER_UNITS[tokens[i + 1].token] !== undefined &&
+          NUMBER_UNITS[tokens[i + 1].token] < 10
+        ) {
+          val += NUMBER_UNITS[tokens[i + 1].token];
+          i += 2;
+        } else {
+          i++;
+        }
+        const strVal = String(val);
+        if (hasSingleDigits && strVal.length > 1) {
+          strVal.split('').forEach((d) =>
+            result.push({ token: d, confidence: item.confidence, approx: false })
+          );
+        } else {
+          result.push({ token: strVal, confidence: item.confidence, approx: false });
+        }
+        continue;
+      }
+
+      if (NUMBER_UNITS[w] !== undefined) {
+        const strVal = String(NUMBER_UNITS[w]);
+        if (hasSingleDigits && strVal.length > 1) {
+          strVal.split('').forEach((d) =>
+            result.push({ token: d, confidence: item.confidence, approx: false })
+          );
+        } else {
+          result.push({ token: strVal, confidence: item.confidence, approx: false });
+        }
+        i++;
+        continue;
+      }
+
+      // Strip ordinal suffixes on digits ("25th" -> "25")
+      const ordinalDigitMatch = w.match(/^(\d+)(?:st|nd|rd|th)$/);
+      if (ordinalDigitMatch) {
+        const dStr = ordinalDigitMatch[1];
+        if (hasSingleDigits && dStr.length > 1) {
+          dStr.split('').forEach((d) =>
+            result.push({ token: d, confidence: item.confidence, approx: false })
+          );
+        } else {
+          result.push({ token: dStr, confidence: item.confidence, approx: false });
+        }
+        i++;
+        continue;
+      }
+
+      if (hasSingleDigits && /^\d+$/.test(w) && w.length > 1) {
+        w.split('').forEach((d) =>
+          result.push({ token: d, confidence: item.confidence, approx: false })
+        );
+        i++;
+        continue;
+      }
+
+      result.push(item);
+      i++;
     }
 
-    const isFiller = SCRIPT_FILLERS.has(clean);
-    const isSingleChar = clean.length === 1;
-    const isFunctionWord = !isSingleChar && FUNCTION_WORDS.has(clean);
-
-    // 1. Single Spelled Letter or Digit Model
-    if (isSingleChar) {
-      const strongSibChars = new Set(['s', 'c', 'z', 'x', '6', '7']);
-      const weakFricChars = new Set(['f', 'h', 'j', 'v', '3']);
-      const highFrontChars = new Set(['b', 'c', 'd', 'e', 'g', 'p', 't', 'v', 'z', '3']);
-      const backRoundChars = new Set(['o', 'q', 'u', 'w', '0', '2', '4']);
-      const multiSyllableChars = new Set(['w', '7', '0']);
-
-      const syllables = clean === 'w' ? 3 : multiSyllableChars.has(clean) ? 2 : 1;
-      return {
-        clean,
-        isFiller: false,
-        isFunctionWord: false,
-        isSingleChar: true,
-        syllables,
-        weight: syllables * 0.85,
-        hasStrongSibilant: strongSibChars.has(clean),
-        hasWeakFricative: weakFricChars.has(clean),
-        onsetSibilant: new Set(['s', 'c', 'z', '6', '7']).has(clean),
-        vowelClass: highFrontChars.has(clean)
-          ? 'high_front'
-          : backRoundChars.has(clean)
-          ? 'back_round'
-          : 'open_mid'
-      };
-    }
-
-    // 2. Multi-Character Word Model
-    let vowelMatches = clean.replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/, '').match(/[aeiouy]{1,2}/g);
-    let syllables = Math.max(1, vowelMatches ? vowelMatches.length : 1);
-
-    // Explicit syllable overrides for common irregular words
-    const syllableOverrides = {
-      passport: 2,
-      telephone: 3,
-      repeat: 2,
-      spell: 1,
-      number: 2,
-      welcome: 2,
-      rivera: 3,
-      ernesto: 3,
-      morning: 2,
-      evening: 2,
-      name: 1,
-      please: 1,
-      where: 1,
-      there: 1,
-      here: 1
-    };
-    if (syllableOverrides[clean]) {
-      syllables = syllableOverrides[clean];
-    }
-
-    // Detect strong alveolar/palatal sibilants (/s/, /z/, /sh/, /ch/, /x/, soft /c/)
-    const hasStrongSibilant = /s|z|sh|ch|x|ce|ci|cy/.test(clean);
-    const onsetSibilant = /^(?:s|z|sh|ch|ce|ci|cy|ps)/.test(clean);
-    const hasWeakFricative = /f|v|th|ph|j|ge|gi/.test(clean);
-
-    // Dominant vowel formant class
-    let vowelClass = 'mid';
-    if (/ee|ea|ie|ey|i[^aeiou]*e$|^be$|^see$|^we$|^he$|^she$|^me$|repeat/.test(clean)) {
-      vowelClass = 'high_front';
-    } else if (/oo|ou|ow|oa|o[^aeiou]*e$|port|phone|no|go|so/.test(clean)) {
-      vowelClass = 'back_round';
-    } else if (/a|e|u/.test(clean)) {
-      vowelClass = 'open_mid';
-    }
-
-    const baseWeight = isFunctionWord
-      ? Math.max(0.55, syllables * 0.65)
-      : Math.max(1.0, syllables * 0.95 + clean.length * 0.06);
-
-    return {
-      clean,
-      isFiller,
-      isFunctionWord,
-      isSingleChar: false,
-      syllables,
-      weight: baseWeight,
-      hasStrongSibilant,
-      hasWeakFricative,
-      onsetSibilant,
-      vowelClass
-    };
+    return result;
   };
 
   // ============================================================================
-  // 2. 6-BAND MEL/FORMANT DSP ENGINE (DECODES BLOB OR LIVE PCM SAMPLES)
+  // 2. TEACHER-ANCHORED AUDIO DSP & PAUSE-INVARIANT DTW ENGINE
   // ============================================================================
 
-  const analyzePCMChannelData = (channelData, sampleRate) => {
+  const analyzePCMBuffer = (channelData, sampleRate) => {
     const empty = {
       valid: false,
       voicedSec: 0,
-      speakingSpanSec: 0,
       burstCount: 0,
       syllablePeaks: 0,
       pitchVariance: 0,
       avgClarity: 0,
-      frames: [],
       activeFrames: [],
       bursts: []
     };
 
     if (!channelData || channelData.length < 512) return empty;
 
-    const frameSize = Math.max(256, Math.floor(sampleRate * 0.025)); // 25ms frame resolution
+    const frameSize = Math.max(256, Math.floor(sampleRate * 0.025)); // 25ms frame window
     const pitchSize = 1024;
     const detector =
       channelData.length >= pitchSize ? PitchDetector.forFloat32Array(pitchSize) : null;
 
-    // 1-pole IIR low-pass filter coefficients for formant frequency cutoffs:
-    // 350Hz (F0/nasal), 900Hz (F1 open), 1850Hz (F2 back/mid), 3200Hz (F2/F3 front), >3200Hz (sibilant /s/)
     const calcAlpha = (cutoffHz) => {
       const dt = 1 / sampleRate;
       const rc = 1 / (2 * Math.PI * cutoffHz);
       return dt / (rc + dt);
     };
 
-    const a350 = calcAlpha(350);
-    const a900 = calcAlpha(900);
-    const a1850 = calcAlpha(1850);
-    const a3200 = calcAlpha(3200);
+    const a400 = calcAlpha(400);
+    const a1200 = calcAlpha(1200);
+    const a3000 = calcAlpha(3000);
 
     const rawFrames = [];
 
     for (let offset = 0; offset + frameSize <= channelData.length; offset += frameSize) {
       let sumSq = 0;
       let zeroCrossings = 0;
+      let lp400 = channelData[offset];
+      let lp1200 = lp400;
+      let lp3000 = lp400;
+      let prev = lp400;
 
-      let lp350 = channelData[offset];
-      let lp900 = lp350;
-      let lp1850 = lp350;
-      let lp3200 = lp350;
-      let prev = lp350;
-
-      let eBand1 = 0; // 85 - 350 Hz (Voicing / Nasal)
-      let eBand2 = 0; // 350 - 900 Hz (F1 Low/Mid Vowel Height)
-      let eBand3 = 0; // 900 - 1850 Hz (F2 Back/Central Vowel)
-      let eBand4 = 0; // 1850 - 3200 Hz (F2/F3 High-Front Vowel /i:/)
-      let eBand5 = 0; // 3200 - 7500+ Hz (Sibilant /s, z, sh, ch/)
+      let eLow = 0;
+      let eMid = 0;
+      let eHigh = 0;
+      let eSib = 0;
 
       for (let k = 0; k < frameSize; k++) {
         const s = channelData[offset + k];
         sumSq += s * s;
-
-        if ((s >= 0 && prev < 0) || (s < 0 && prev >= 0)) {
-          zeroCrossings++;
-        }
+        if ((s >= 0 && prev < 0) || (s < 0 && prev >= 0)) zeroCrossings++;
         prev = s;
 
-        lp350 += a350 * (s - lp350);
-        lp900 += a900 * (s - lp900);
-        lp1850 += a1850 * (s - lp1850);
-        lp3200 += a3200 * (s - lp3200);
+        lp400 += a400 * (s - lp400);
+        lp1200 += a1200 * (s - lp1200);
+        lp3000 += a3000 * (s - lp3000);
 
-        const b1 = lp350;
-        const b2 = lp900 - lp350;
-        const b3 = lp1850 - lp900;
-        const b4 = lp3200 - lp1850;
-        const b5 = s - lp3200;
+        const bLow = lp400;
+        const bMid = lp1200 - lp400;
+        const bHigh = lp3000 - lp1200;
+        const bSib = s - lp3000;
 
-        eBand1 += b1 * b1;
-        eBand2 += b2 * b2;
-        eBand3 += b3 * b3;
-        eBand4 += b4 * b4;
-        eBand5 += b5 * b5;
+        eLow += bLow * bLow;
+        eMid += bMid * bMid;
+        eHigh += bHigh * bHigh;
+        eSib += bSib * bSib;
       }
 
       const rms = Math.sqrt(sumSq / frameSize);
       const zcr = zeroCrossings / frameSize;
-      const totalE = Math.max(1e-8, eBand1 + eBand2 + eBand3 + eBand4 + eBand5);
-
-      const b1_low = eBand1 / totalE;
-      const b2_f1 = eBand2 / totalE;
-      const b3_f2low = eBand3 / totalE;
-      const b4_f2high = eBand4 / totalE;
-      const b5_sib = eBand5 / totalE;
+      const tot = Math.max(1e-8, eLow + eMid + eHigh + eSib);
 
       let pitch = 0;
       let clarity = 0;
@@ -565,12 +561,11 @@ export default function RecordCompareActivity({
       rawFrames.push({
         rms,
         zcr,
-        b1_low,
-        b2_f1,
-        b3_f2low,
-        b4_f2high,
-        b5_sib,
-        vowelEnergy: rms * (b1_low + b2_f1 + b3_f2low + b4_f2high),
+        rLow: eLow / tot,
+        rMid: eMid / tot,
+        rHigh: eHigh / tot,
+        rSib: eSib / tot,
+        vowelEnergy: rms * ((eLow + eMid + eHigh) / tot),
         pitch,
         clarity
       });
@@ -581,71 +576,52 @@ export default function RecordCompareActivity({
     const sortedRms = rawFrames.map((f) => f.rms).sort((a, b) => a - b);
     const noiseFloor = sortedRms[Math.floor(sortedRms.length * 0.18)] || 0.001;
     const peakRms = sortedRms[Math.floor(sortedRms.length * 0.95)] || 0.02;
+    const voiceThreshold = Math.max(0.0045, Math.min(0.020, noiseFloor * 2.4, peakRms * 0.18));
 
-    const voiceThreshold = Math.max(
-      0.0045,
-      Math.min(0.022, noiseFloor * 2.4, peakRms * 0.18)
-    );
-
-    let firstActive = -1;
-    let lastActive = -1;
     let activeCount = 0;
-
-    // Group contiguous active frames into discrete vocal bursts (words / spelled letters)
     const bursts = [];
-    let currentBurstFrames = [];
+    let curBurst = [];
     let silenceRun = 0;
 
-    rawFrames.forEach((f, idx) => {
+    rawFrames.forEach((f) => {
       f.normEnergy = Math.min(1, f.rms / Math.max(0.01, peakRms));
-      // Capture both voiced vowels AND high-frequency voiceless sibilants (like /s/ in "spell")
       const isVoiced = f.rms >= voiceThreshold;
-      const isSibilantOnset =
-        f.rms >= voiceThreshold * 0.55 && (f.b5_sib >= 0.25 || f.zcr >= 0.15);
-
-      f.active = isVoiced || isSibilantOnset;
+      const isSibilant = f.rms >= voiceThreshold * 0.55 && (f.rSib >= 0.25 || f.zcr >= 0.15);
+      f.active = isVoiced || isSibilant;
 
       if (f.active) {
         activeCount++;
-        if (firstActive === -1) firstActive = idx;
-        lastActive = idx;
         silenceRun = 0;
-        currentBurstFrames.push(f);
+        curBurst.push(f);
       } else {
         silenceRun++;
-        // A silence gap >= 3 frames (75ms) closes the current vocal burst
-        if (silenceRun >= 3 && currentBurstFrames.length >= 2) {
-          bursts.push(currentBurstFrames);
-          currentBurstFrames = [];
+        if (silenceRun >= 3 && curBurst.length >= 2) {
+          bursts.push(curBurst);
+          curBurst = [];
         } else if (silenceRun >= 3) {
-          currentBurstFrames = [];
+          curBurst = [];
         }
       }
     });
 
-    if (currentBurstFrames.length >= 2) {
-      bursts.push(currentBurstFrames);
-    }
+    if (curBurst.length >= 2) bursts.push(curBurst);
+    if (activeCount < 2) return empty;
 
-    if (firstActive === -1 || activeCount < 2) return empty;
+    const activeFrames = rawFrames.filter((f) => f.active);
 
-    const trimmedFrames = rawFrames.slice(firstActive, lastActive + 1);
-    const activeFrames = trimmedFrames.filter((f) => f.active);
-
-    // Count distinct syllable nuclei peaks across the utterance
     let syllablePeaks = 0;
-    let lastPeakIdx = -4;
-    for (let i = 1; i < trimmedFrames.length - 1; i++) {
-      const cur = trimmedFrames[i];
+    let lastPk = -4;
+    for (let i = 1; i < rawFrames.length - 1; i++) {
+      const cur = rawFrames[i];
       if (
         cur.active &&
         cur.normEnergy >= 0.18 &&
-        cur.vowelEnergy >= trimmedFrames[i - 1].vowelEnergy &&
-        cur.vowelEnergy >= trimmedFrames[i + 1].vowelEnergy &&
-        i - lastPeakIdx >= 4 // At least 100ms between syllable nuclei
+        cur.vowelEnergy >= rawFrames[i - 1].vowelEnergy &&
+        cur.vowelEnergy >= rawFrames[i + 1].vowelEnergy &&
+        i - lastPk >= 4
       ) {
         syllablePeaks++;
-        lastPeakIdx = i;
+        lastPk = i;
       }
     }
 
@@ -664,31 +640,26 @@ export default function RecordCompareActivity({
     const avgClarity =
       validPitches.length > 0
         ? validPitches.reduce((s, f) => s + f.clarity, 0) / validPitches.length
-        : 0.65;
+        : 0.72;
 
     return {
       valid: true,
       voicedSec: activeCount * 0.025,
-      speakingSpanSec: trimmedFrames.length * 0.025,
       burstCount: Math.max(1, bursts.length),
       syllablePeaks: Math.max(bursts.length, syllablePeaks),
       pitchVariance,
       avgClarity,
-      frames: trimmedFrames,
       activeFrames,
       bursts
     };
   };
 
-  // Extracts DSP features from a URL or Blob, falling back to live captured PCM samples if container decoding fails
   const extractAudioDSP = async (audioSource, allowLiveFallback = false) => {
-    let tempCtx = null;
     try {
       if (audioSource) {
-        const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        tempCtx = new AudioCtx();
-
+        const ctx = await getSharedAudioContext();
         let arrayBuffer = null;
+
         if (typeof audioSource === 'string') {
           const resp = await fetch(audioSource);
           if (resp.ok) arrayBuffer = await resp.arrayBuffer();
@@ -697,21 +668,18 @@ export default function RecordCompareActivity({
         }
 
         if (arrayBuffer && arrayBuffer.byteLength > 0) {
-          const audioBuffer = await tempCtx.decodeAudioData(arrayBuffer);
-          const channelData = audioBuffer.getChannelData(0);
-          const decoded = analyzePCMChannelData(channelData, audioBuffer.sampleRate);
+          const audioBuffer = await ctx.decodeAudioData(arrayBuffer.slice(0));
+          const decoded = analyzePCMBuffer(
+            audioBuffer.getChannelData(0),
+            audioBuffer.sampleRate
+          );
           if (decoded.valid) return decoded;
         }
       }
     } catch (e) {
       console.warn("Audio container decode fallback to live PCM:", e);
-    } finally {
-      if (tempCtx && tempCtx.state !== 'closed') {
-        try { tempCtx.close(); } catch (e) {}
-      }
     }
 
-    // Fallback to live captured PCM samples if WebM container decode failed on mobile
     if (allowLiveFallback && liveRawSamplesRef.current.length > 0) {
       const totalLen = liveRawSamplesRef.current.reduce((s, arr) => s + arr.length, 0);
       const merged = new Float32Array(totalLen);
@@ -720,13 +688,13 @@ export default function RecordCompareActivity({
         merged.set(chunk, offset);
         offset += chunk.length;
       }
-      return analyzePCMChannelData(merged, liveSampleRateRef.current || 44100);
+      return analyzePCMBuffer(merged, liveSampleRateRef.current || 44100);
     }
 
-    return analyzePCMChannelData(null, 44100);
+    return analyzePCMBuffer(null, 44100);
   };
 
-  // Pre-decode and cache Teacher Reference Audio whenever audioUrl changes
+  // Pre-decode Teacher Reference Audio during the Listen phase
   useEffect(() => {
     let cancelled = false;
     if (audioUrl && audioUrl !== cachedTeacherUrlRef.current) {
@@ -745,81 +713,9 @@ export default function RecordCompareActivity({
     };
   }, [audioUrl]);
 
-  // ============================================================================
-  // 3. PAUSE-STRIPPED WORD SEGMENTER & ARTICULATORY-SPECTRAL EVALUATOR
-  // ============================================================================
-
-  /**
-   * Segments active (pause-stripped) frames into word slices proportional to each word's
-   * articulatory weight, snapping boundaries to local energy valleys (consonant boundaries).
-   * Also strips leading filler bursts (like "Hmm." or "Uh...") from the Teacher Audio if needed.
-   */
-  const segmentActiveFramesIntoWords = (dsp, wordModels, stripLeadingFillersCount = 0) => {
-    if (!dsp || !dsp.valid || !dsp.activeFrames.length || !wordModels.length) return [];
-
-    let workingFrames = dsp.activeFrames;
-
-    // If Teacher Audio starts with conversational fillers ("Hmm.", "Uh..."),
-    // strip the leading filler burst(s) so Teacher Word 0 aligns with the first content word ("Can")
-    if (stripLeadingFillersCount > 0 && dsp.bursts.length > wordModels.length) {
-      const burstsToSkip = Math.min(
-        stripLeadingFillersCount,
-        dsp.bursts.length - wordModels.length
-      );
-      const remainingBursts = dsp.bursts.slice(burstsToSkip);
-      const flattened = remainingBursts.flat();
-      if (flattened.length >= wordModels.length * 2) {
-        workingFrames = flattened;
-      }
-    }
-
-    // If this is an isolated single-letter/digit sequence and the number of discrete bursts matches,
-    // use the exact discrete bursts for 1-to-1 letter accuracy
-    const allSingleChars = wordModels.every((m) => m.isSingleChar);
-    if (allSingleChars && dsp.bursts.length === wordModels.length) {
-      return dsp.bursts;
-    }
-
-    const totalWeight = wordModels.reduce((s, m) => s + m.weight, 0);
-    const totalFrames = workingFrames.length;
-    const slices = [];
-
-    let prevBoundary = 0;
-    let accumWeight = 0;
-
-    for (let i = 0; i < wordModels.length; i++) {
-      accumWeight += wordModels[i].weight;
-      if (i === wordModels.length - 1) {
-        slices.push(workingFrames.slice(prevBoundary, totalFrames));
-        break;
-      }
-
-      const idealBoundary = Math.round((accumWeight / totalWeight) * totalFrames);
-      const searchRadius = Math.max(2, Math.floor(totalFrames * 0.08));
-      const minIdx = Math.max(prevBoundary + 1, idealBoundary - searchRadius);
-      const maxIdx = Math.min(totalFrames - (wordModels.length - i), idealBoundary + searchRadius);
-
-      // Snap boundary to the lowest vowel-energy valley within the window
-      let bestBoundary = idealBoundary;
-      let minValleyEnergy = Infinity;
-      for (let k = minIdx; k <= maxIdx; k++) {
-        if (workingFrames[k] && workingFrames[k].vowelEnergy < minValleyEnergy) {
-          minValleyEnergy = workingFrames[k].vowelEnergy;
-          bestBoundary = k;
-        }
-      }
-
-      bestBoundary = Math.max(prevBoundary + 1, Math.min(totalFrames - 1, bestBoundary));
-      slices.push(workingFrames.slice(prevBoundary, bestBoundary));
-      prevBoundary = bestBoundary;
-    }
-
-    return slices;
-  };
-
-  // Computes 6-Band Formant + ZCR Dynamic Time Warping (DTW) similarity between Teacher & Student word slices
-  const computeWordSliceDTW = (teacherSlice = [], studentSlice = []) => {
-    if (!teacherSlice.length || !studentSlice.length) return null;
+  // Dynamic Time Warping (DTW) spectral envelope comparison between Teacher & Student slices
+  const computeSliceDTW = (teacherSlice = [], studentSlice = []) => {
+    if (!teacherSlice.length || !studentSlice.length) return 85;
 
     const N = teacherSlice.length;
     const M = studentSlice.length;
@@ -831,309 +727,27 @@ export default function RecordCompareActivity({
         const tf = teacherSlice[i - 1];
         const sf = studentSlice[j - 1];
 
-        // 6-Band Formant + Sibilant + ZCR distance (speaker-pitch invariant!)
-        const spectralDist =
-          Math.abs(tf.b1_low - sf.b1_low) * 0.7 +
-          Math.abs(tf.b2_f1 - sf.b2_f1) * 1.1 +
-          Math.abs(tf.b3_f2low - sf.b3_f2low) * 1.1 +
-          Math.abs(tf.b4_f2high - sf.b4_f2high) * 1.3 +
-          Math.abs(tf.b5_sib - sf.b5_sib) * 2.2 +
-          Math.abs(tf.zcr - sf.zcr) * 1.8;
+        const dist =
+          Math.abs(tf.rLow - sf.rLow) * 0.8 +
+          Math.abs(tf.rMid - sf.rMid) * 1.1 +
+          Math.abs(tf.rHigh - sf.rHigh) * 1.2 +
+          Math.abs(tf.rSib - sf.rSib) * 1.9 +
+          Math.abs(tf.zcr - sf.zcr) * 1.5;
 
-        dtw[i][j] =
-          spectralDist + Math.min(dtw[i - 1][j], dtw[i][j - 1], dtw[i - 1][j - 1]);
+        dtw[i][j] = dist + Math.min(dtw[i - 1][j], dtw[i][j - 1], dtw[i - 1][j - 1]);
       }
     }
 
     const avgDist = dtw[N][M] / (N + M);
-    // Calibrated mapping: avgDist <= 0.14 -> ~95%, avgDist ~ 0.30 -> ~70%, avgDist >= 0.48 -> < 45%
-    const rawScore = Math.round(114 - avgDist * 155);
+    const rawScore = Math.round((112 - avgDist * 145) * levelProfile.dtwTolerance);
     return Math.max(0, Math.min(100, rawScore));
   };
 
-  /**
-   * Scores a single student word slice against its Target Articulatory Model & Teacher Reference Slice.
-   * Pinpoints replaced words ("repeat" vs "spell", "telephone" vs "passport") and wrong letters ("R I V E R A").
-   */
-  const scoreAcousticWordSlice = (
-    model,
-    studentSlice,
-    teacherSlice,
-    totalStudentActiveFrames,
-    totalExpectedWeight
-  ) => {
-    if (!studentSlice || studentSlice.length === 0) {
-      return { score: 0, error_type: 'Omission' };
-    }
-
-    // 1. Short Function / Grammar Words ("Can", "you", "that", "I", "see", "What", "is", "your", "Mr.")
-    // In connected speech, function words are short and coarticulated; verify active vocal presence
-    if (model.isFunctionWord) {
-      const meanRms =
-        studentSlice.reduce((s, f) => s + f.normEnergy, 0) / studentSlice.length;
-      if (meanRms >= 0.10) {
-        return { score: 92, error_type: 'None' };
-      }
-      return { score: 74, error_type: 'Mispronunciation' };
-    }
-
-    // Extract articulatory features of the student's word slice
-    const maxSib = Math.max(...studentSlice.map((f) => f.b5_sib));
-    const maxZcr = Math.max(...studentSlice.map((f) => f.zcr));
-    const onsetSlice = studentSlice.slice(0, Math.max(2, Math.ceil(studentSlice.length * 0.45)));
-    const onsetSib = Math.max(...onsetSlice.map((f) => f.b5_sib));
-    const onsetZcr = Math.max(...onsetSlice.map((f) => f.zcr));
-
-    const avgB2F1 =
-      studentSlice.reduce((s, f) => s + f.b2_f1, 0) / studentSlice.length;
-    const avgB3F2Low =
-      studentSlice.reduce((s, f) => s + f.b3_f2low, 0) / studentSlice.length;
-    const avgB4F2High =
-      studentSlice.reduce((s, f) => s + f.b4_f2high, 0) / studentSlice.length;
-
-    // Count local syllable peaks inside this word slice
-    let localPeaks = 1;
-    let lastPk = -3;
-    for (let i = 1; i < studentSlice.length - 1; i++) {
-      if (
-        studentSlice[i].vowelEnergy > studentSlice[i - 1].vowelEnergy &&
-        studentSlice[i].vowelEnergy > studentSlice[i + 1].vowelEnergy &&
-        studentSlice[i].normEnergy >= 0.22 &&
-        i - lastPk >= 3
-      ) {
-        localPeaks++;
-        lastPk = i;
-      }
-    }
-    localPeaks = Math.min(4, Math.max(1, localPeaks - 1));
-
-    // Teacher DTW spectral similarity (if teacher audio slice is available)
-    const dtwScore =
-      teacherSlice && teacherSlice.length > 0
-        ? computeWordSliceDTW(teacherSlice, studentSlice)
-        : null;
-
-    let baseScore = dtwScore !== null ? dtwScore : 86;
-    let penalty = 0;
-
-    // CHECK A: Sibilant / Fricative Verification (Catches "repeat" for "spell" and "telephone" for "passport")
-    if (model.hasStrongSibilant) {
-      const teacherMaxSib =
-        teacherSlice && teacherSlice.length > 0
-          ? Math.max(...teacherSlice.map((f) => f.b5_sib))
-          : 0.28;
-      const requiredSib = Math.min(0.20, teacherMaxSib * 0.60);
-
-      const hasStudentSibilant = maxSib >= requiredSib || maxZcr >= 0.135;
-      if (!hasStudentSibilant) {
-        // Target word requires a strong /s, z, sh, ch, c/ sibilant, but student's word had NONE!
-        penalty += 42;
-      } else if (model.onsetSibilant && onsetSib < requiredSib * 0.75 && onsetZcr < 0.11) {
-        // Sibilant was expected at the onset (like "spell" or "S"), but was missing at onset
-        penalty += 24;
-      }
-    } else if (!model.hasStrongSibilant && !model.hasWeakFricative) {
-      // Target word has NO sibilant/fricative, but student spoke a strong sibilant word
-      if (maxSib >= 0.42 && maxZcr >= 0.22) {
-        penalty += 32;
-      }
-    }
-
-    // CHECK B: Vowel Formant Class Verification (High-Front /i:/ vs Open/Mid /e, a/ vs Back-Round /o, u/)
-    if (model.vowelClass === 'high_front') {
-      // Words/letters like "E", "I", "V", "B", "see", "repeat" require strong high-F2 (b4_f2high)
-      if (avgB4F2High < 0.08 && avgB2F1 > 0.48) {
-        penalty += 28;
-      }
-    } else if (model.vowelClass === 'open_mid') {
-      // Words like "spell" (/ɛl/) or letters like "A", "R" have dominant F1/F2-low, not tense /i:/
-      if (avgB4F2High > 0.34 && avgB2F1 < 0.18) {
-        penalty += 26;
-      }
-    } else if (model.vowelClass === 'back_round') {
-      // Words/letters like "O", "U", "passport" have strong low-F1 + F2-low
-      if (avgB4F2High > 0.32 && avgB3F2Low < 0.15) {
-        penalty += 26;
-      }
-    }
-
-    // CHECK C: Syllable Structure & Relative Duration Ratio (Catches 2-syllable "repeat" for 1-syllable "spell", or 3-syllable "telephone" for 2-syllable "passport")
-    if (!model.isSingleChar && totalStudentActiveFrames > 8) {
-      const expectedShare = model.weight / Math.max(1, totalExpectedWeight);
-      const actualShare = studentSlice.length / totalStudentActiveFrames;
-      const shareRatio = actualShare / Math.max(0.05, expectedShare);
-
-      // If teacher slice is available, compare relative duration ratio against teacher's word duration
-      if (teacherSlice && teacherSlice.length >= 3) {
-        const durationRatio = studentSlice.length / teacherSlice.length;
-        if (
-          (model.syllables === 1 && localPeaks >= 2 && durationRatio > 1.45) ||
-          durationRatio > 1.75 ||
-          durationRatio < 0.42
-        ) {
-          penalty += 26;
-        }
-      } else if (shareRatio > 1.65 || shareRatio < 0.45) {
-        penalty += 22;
-      }
-    }
-
-    const rawFinal = Math.round((baseScore - penalty) * levelProfile.acousticTolerance);
-    const clampedScore = Math.max(0, Math.min(100, rawFinal));
-
-    // If multiple phonetic checks failed (score < 60), mark as Red (0% substitution/mispronunciation)
-    if (clampedScore < levelProfile.minWordPass) {
-      return { score: 0, error_type: 'Mispronunciation' };
-    }
-
-    if (clampedScore < levelProfile.wordApprove) {
-      return { score: clampedScore, error_type: 'Mispronunciation' };
-    }
-
-    return { score: clampedScore, error_type: 'None' };
-  };
-
   // ============================================================================
-  // 4. SPEECH RECOGNITION ENGINE (WITH AUTO-RECOVERY & TWO-PASS ANCHORED DP)
+  // 3. UNIVERSAL TOKEN NORMALIZER & TWO-PASS ANCHORED ALIGNMENT
   // ============================================================================
 
-  const setupSpeechRecognition = () => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) return null;
-
-    if (recognitionRef.current) {
-      recognitionRef.current.onend = null;
-      recognitionRef.current.onerror = null;
-      recognitionRef.current.onresult = null;
-      try { recognitionRef.current.stop(); } catch (e) {}
-      recognitionRef.current = null;
-    }
-
-    const recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.maxAlternatives = 3;
-    recognition.lang = 'en-US';
-
-    recognition.onresult = (event) => {
-      const segItems = [];
-      for (let i = 0; i < event.results.length; ++i) {
-        const res = event.results[i];
-        const alts = [];
-        for (let a = 0; a < res.length; a++) {
-          const text = (res[a].transcript || '').trim();
-          const conf =
-            typeof res[a].confidence === 'number' && res[a].confidence > 0
-              ? res[a].confidence
-              : 0.88;
-          if (text) {
-            alts.push({ transcript: text, confidence: conf });
-          }
-        }
-        if (alts.length > 0) {
-          segItems.push({
-            bestTranscript: alts[0].transcript,
-            confidence: alts[0].confidence,
-            alternatives: alts
-          });
-        }
-      }
-      if (segItems.length > 0) {
-        currentSegmentRef.current = segItems;
-      }
-    };
-
-    recognition.onerror = () => {};
-
-    recognition.onend = () => {
-      if (currentSegmentRef.current && currentSegmentRef.current.length > 0) {
-        committedSegmentsRef.current.push(...currentSegmentRef.current);
-        currentSegmentRef.current = [];
-      }
-
-      if (isRecordingRef.current) {
-        clearTimeout(sttRestartTimerRef.current);
-        sttRestartTimerRef.current = setTimeout(() => {
-          if (isRecordingRef.current) {
-            try {
-              recognition.start();
-            } catch (e) {
-              const fresh = setupSpeechRecognition();
-              if (fresh) {
-                try { fresh.start(); } catch (err) {}
-              }
-            }
-          }
-        }, 120);
-      } else {
-        speechFlushedRef.current = true;
-      }
-    };
-
-    recognitionRef.current = recognition;
-    return recognition;
-  };
-
-  // Reset cleanly whenever the lesson advances to a new exercise node
-  useEffect(() => {
-    isRecordingRef.current = false;
-    clearTimeout(sttRestartTimerRef.current);
-    cancelAnimationFrame(animationFrameRef.current);
-    stopCurrentAudio();
-
-    if (recognitionRef.current) {
-      recognitionRef.current.onend = null;
-      try { recognitionRef.current.stop(); } catch (e) {}
-      recognitionRef.current = null;
-    }
-    if (activeStreamRef.current) {
-      activeStreamRef.current.getTracks().forEach((track) => track.stop());
-      activeStreamRef.current = null;
-    }
-    if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
-      try { audioCtxRef.current.close(); } catch (e) {}
-      audioCtxRef.current = null;
-    }
-
-    setPhase(audioUrl ? 'listen' : 'ready_to_record');
-    setAttempt(1);
-    setCanContinue(false);
-    setPointsAwarded(0);
-    setWordResults([]);
-    setFailedIndices(new Set());
-    setOverallScore(null);
-
-    return () => {
-      isRecordingRef.current = false;
-      clearTimeout(sttRestartTimerRef.current);
-      cancelAnimationFrame(animationFrameRef.current);
-      stopCurrentAudio();
-      if (recognitionRef.current) {
-        recognitionRef.current.onend = null;
-        try { recognitionRef.current.stop(); } catch (e) {}
-      }
-      if (activeStreamRef.current) {
-        activeStreamRef.current.getTracks().forEach((track) => track.stop());
-      }
-      if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
-        try { audioCtxRef.current.close(); } catch (e) {}
-      }
-    };
-  }, [targetText, nodeId, audioUrl]);
-
-  useEffect(() => {
-    return () => {
-      if (studentAudioUrlRef.current) {
-        URL.revokeObjectURL(studentAudioUrlRef.current);
-      }
-    };
-  }, []);
-
-  // ============================================================================
-  // 5. STT TOKENIZER & TWO-PASS ANCHORED ALIGNMENT (WHEN STT IS AVAILABLE)
-  // ============================================================================
-
-  const tokenizeTranscriptString = (rawString, cleanTargets, defaultConfidence = 0.88) => {
+  const normalizeSpokenStream = (rawString, cleanTargets, defaultConfidence = 0.88) => {
     if (!rawString || !rawString.trim()) return [];
 
     const hasDigits = cleanTargets.some((w) => /^\d+$/.test(w));
@@ -1143,174 +757,217 @@ export default function RecordCompareActivity({
     let text = rawString.toLowerCase();
     text = text.replace(/\bdouble you\b/g, 'w').replace(/\bdouble u\b/g, 'w');
 
+    // 1. Bidirectional Contraction & Title Normalization against Target Format
     const rawWords = text.replace(/[^\w\s]/gi, ' ').split(/\s+/).filter(Boolean);
-    const normalizedWords = [];
-    for (const w of rawWords) {
-      if (WORD_EQUIVALENTS[w] && !cleanTargets.includes(w)) {
-        const eq = WORD_EQUIVALENTS[w];
-        if (eq.length === 1 && cleanTargets.includes(eq[0])) {
-          normalizedWords.push(eq[0]);
-          continue;
-        }
-        if (eq.length === 2 && cleanTargets.includes(eq[0]) && cleanTargets.includes(eq[1])) {
-          normalizedWords.push(eq[0], eq[1]);
-          continue;
-        }
-      }
-      normalizedWords.push(w);
-    }
-    text = normalizedWords.join(' ');
+    const structurallyAligned = [];
 
-    if (hasDigits) {
-      const compoundTens = {
-        twenty: '2', thirty: '3', forty: '4', fifty: '5',
-        sixty: '6', seventy: '7', eighty: '8', ninety: '9'
-      };
-      const onesDigits = {
-        one: '1', won: '1', two: '2', to: '2', too: '2',
-        three: '3', free: '3', tree: '3', four: '4', for: '4', fore: '4',
-        five: '5', fine: '5', six: '6', sick: '6', seven: '7',
-        eight: '8', ate: '8', nine: '9', mine: '9'
-      };
+    let k = 0;
+    while (k < rawWords.length) {
+      const w = rawWords[k];
+      const nextW = k + 1 < rawWords.length ? rawWords[k + 1] : '';
 
-      Object.entries(compoundTens).forEach(([tenWord, tenDigit]) => {
-        Object.entries(onesDigits).forEach(([oneWord, oneDigit]) => {
-          const regex = new RegExp(`\\b${tenWord}[\\s-]+${oneWord}\\b`, 'g');
-          text = text.replace(regex, `${tenDigit}${oneDigit}`);
-        });
-      });
-
-      const digitTokens = [];
-      for (const tok of text.split(/\s+/).filter(Boolean)) {
-        const clean = tok.replace(/[^\w]/gi, '');
-        if (EXACT_NUMBER_WORDS[clean] !== undefined) {
-          const dStr = EXACT_NUMBER_WORDS[clean];
-          if (hasSingleDigits && dStr.length > 1) {
-            dStr.split('').forEach((d) =>
-              digitTokens.push({ token: d, confidence: defaultConfidence, approx: false })
-            );
-          } else {
-            digitTokens.push({ token: dStr, confidence: defaultConfidence, approx: false });
+      // Check if 2 consecutive spoken words ("it is") should collapse into a target contraction ("its")
+      let collapsedMatch = null;
+      if (nextW) {
+        for (const [contraction, parts] of Object.entries(STRUCTURAL_EQUIVALENTS)) {
+          if (
+            parts.length === 2 &&
+            parts[0] === w &&
+            parts[1] === nextW &&
+            cleanTargets.includes(contraction) &&
+            !cleanTargets.includes(w)
+          ) {
+            collapsedMatch = contraction;
+            break;
           }
-        } else if (CLOSE_NUMBER_HOMOPHONES[clean] !== undefined) {
-          digitTokens.push({
-            token: CLOSE_NUMBER_HOMOPHONES[clean],
-            confidence: Math.min(defaultConfidence, 0.72),
-            approx: true
-          });
-        } else if (hasSingleDigits && /^\d+$/.test(clean) && clean.length > 1) {
-          clean.split('').forEach((d) =>
-            digitTokens.push({ token: d, confidence: defaultConfidence, approx: false })
-          );
-        } else if (clean && !SCRIPT_FILLERS.has(clean)) {
-          digitTokens.push({ token: clean, confidence: defaultConfidence, approx: false });
         }
       }
 
-      if (!hasSingleLetters) return digitTokens;
-    }
+      if (collapsedMatch) {
+        structurallyAligned.push({
+          token: collapsedMatch,
+          confidence: defaultConfidence,
+          approx: false
+        });
+        k += 2;
+        continue;
+      }
 
-    const regularTargetWords = new Set(
-      cleanTargets.filter((w) => w.length > 1 && !SCRIPT_FILLERS.has(w))
-    );
-
-    const baseTokens = text.replace(/[^\w\s]/gi, ' ').split(/\s+/).filter(Boolean);
-    const finalTokens = [];
-
-    for (const tok of baseTokens) {
-      if (SCRIPT_FILLERS.has(tok) && tok !== 'oh') continue;
-
-      if (hasSingleLetters) {
-        if (regularTargetWords.has(tok)) {
-          finalTokens.push({ token: tok, confidence: defaultConfidence, approx: false });
-        } else if (LETTER_PHONETICS[tok]) {
-          finalTokens.push({
-            token: LETTER_PHONETICS[tok],
+      // Check if a single spoken contraction/title ("mister", "whats") should expand/map to target
+      if (STRUCTURAL_EQUIVALENTS[w] && !cleanTargets.includes(w)) {
+        const eq = STRUCTURAL_EQUIVALENTS[w];
+        if (eq.length === 1 && cleanTargets.includes(eq[0])) {
+          structurallyAligned.push({
+            token: eq[0],
             confidence: defaultConfidence,
             approx: false
           });
+          k++;
+          continue;
+        }
+        if (eq.length === 2 && cleanTargets.includes(eq[0]) && cleanTargets.includes(eq[1])) {
+          structurallyAligned.push(
+            { token: eq[0], confidence: defaultConfidence, approx: false },
+            { token: eq[1], confidence: defaultConfidence, approx: false }
+          );
+          k++;
+          continue;
+        }
+      }
+
+      if (!SCRIPT_FILLERS.has(w) || w === 'oh') {
+        structurallyAligned.push({ token: w, confidence: defaultConfidence, approx: false });
+      }
+      k++;
+    }
+
+    // 2. Universal Number Normalization
+    const numberNormalized = convertSpokenNumbersInTokens(
+      structurallyAligned,
+      hasDigits,
+      hasSingleDigits
+    );
+
+    // 3. Spelled Letter Canonicalization (if target expects single letters)
+    const nonSpelledTargets = new Set(
+      cleanTargets.filter((w) => w.length > 1 && !SCRIPT_FILLERS.has(w))
+    );
+
+    const letterExpanded = [];
+    for (const item of numberNormalized) {
+      const tok = item.token;
+      if (SCRIPT_FILLERS.has(tok)) continue;
+
+      if (hasSingleLetters) {
+        if (nonSpelledTargets.has(tok)) {
+          letterExpanded.push(item);
+        } else if (ALPHABET_PHONETICS[tok]) {
+          letterExpanded.push({
+            token: ALPHABET_PHONETICS[tok],
+            confidence: item.confidence,
+            approx: item.approx
+          });
         } else if (tok.length > 1 && /^[a-z]+$/.test(tok)) {
           tok.split('').forEach((ch) =>
-            finalTokens.push({ token: ch, confidence: defaultConfidence, approx: false })
+            letterExpanded.push({
+              token: ch,
+              confidence: item.confidence,
+              approx: item.approx
+            })
           );
         } else {
-          finalTokens.push({ token: tok, confidence: defaultConfidence, approx: false });
+          letterExpanded.push(item);
         }
       } else {
-        finalTokens.push({ token: tok, confidence: defaultConfidence, approx: false });
+        letterExpanded.push(item);
       }
     }
 
-    return finalTokens;
+    // 4. Stutter / Self-Correction Deduplication (unless target itself repeats the token)
+    const targetHasImmediateRepeat = cleanTargets.some(
+      (w, idx) => idx > 0 && w === cleanTargets[idx - 1]
+    );
+    if (targetHasImmediateRepeat) return letterExpanded;
+
+    const deduplicated = [];
+    for (const item of letterExpanded) {
+      const prev = deduplicated[deduplicated.length - 1];
+      if (prev && prev.token === item.token && item.token.length > 1) {
+        prev.confidence = Math.max(prev.confidence, item.confidence);
+      } else {
+        deduplicated.push(item);
+      }
+    }
+
+    return deduplicated;
   };
 
-  const evaluateSttPairMatch = (tWord, sObj) => {
+  /**
+   * Universal Pairwise Evaluator using `double-metaphone`, `syllable`, and `fast-levenshtein`:
+   * - Exact or True Homophone Match -> 100% (Green)
+   * - Secondary Metaphone / Bounded Levenshtein / L1 Close Letter / Low Confidence -> 64-78% (Yellow)
+   * - Unrelated Word -> 0% (Red Mismatch)
+   */
+  const scoreTokenPairUniversal = (tWord, sObj) => {
     if (!sObj || !sObj.token) return { score: 0, matchType: 'None' };
 
     const sWord = sObj.token;
     const conf = typeof sObj.confidence === 'number' ? sObj.confidence : 0.88;
-    const lowConfCap = conf < 0.62 ? 74 : 100;
+    const isLowConfidence = conf < levelProfile.minConfidence;
 
+    // 1. Digit Target
     if (/^\d+$/.test(tWord)) {
       if (tWord === sWord) {
         if (sObj.approx) {
           return { score: levelProfile.closeLetterScore || 72, matchType: 'Close' };
         }
-        return { score: Math.min(100, lowConfCap), matchType: 'Exact' };
+        return { score: isLowConfidence ? 76 : 100, matchType: isLowConfidence ? 'Close' : 'Exact' };
       }
       return { score: 0, matchType: 'None' };
     }
 
+    // 2. Single Spelled Letter Target (a-z)
     if (tWord.length === 1 && /[a-z]/.test(tWord)) {
-      const mapped = LETTER_PHONETICS[sWord] || sWord;
+      const mapped = ALPHABET_PHONETICS[sWord] || sWord;
       if (tWord === mapped) {
-        return { score: Math.min(100, lowConfCap), matchType: 'Exact' };
+        return { score: isLowConfidence ? 76 : 100, matchType: isLowConfidence ? 'Close' : 'Exact' };
       }
       if (
         levelProfile.closeLetterScore > 0 &&
-        CLOSE_PHONETIC_LETTERS[tWord] &&
-        CLOSE_PHONETIC_LETTERS[tWord].includes(mapped)
+        CLOSE_ALPHABET_PAIRS[tWord] &&
+        CLOSE_ALPHABET_PAIRS[tWord].includes(mapped)
       ) {
-        return { score: Math.min(76, levelProfile.closeLetterScore), matchType: 'Close' };
+        return { score: levelProfile.closeLetterScore, matchType: 'Close' };
       }
       return { score: 0, matchType: 'None' };
     }
 
-    if (tWord === sWord) {
-      return { score: Math.min(100, lowConfCap), matchType: 'Exact' };
-    }
-
+    // 3. Exact Lexical or Structural Equivalent Match
     if (
-      WORD_EQUIVALENTS[tWord] &&
-      (WORD_EQUIVALENTS[tWord].includes(sWord) ||
-        WORD_EQUIVALENTS[tWord].join('') === sWord)
+      tWord === sWord ||
+      (STRUCTURAL_EQUIVALENTS[tWord] &&
+        (STRUCTURAL_EQUIVALENTS[tWord].includes(sWord) ||
+          STRUCTURAL_EQUIVALENTS[tWord].join('') === sWord))
     ) {
-      return { score: Math.min(100, lowConfCap), matchType: 'Exact' };
+      return { score: isLowConfidence ? 76 : 100, matchType: isLowConfidence ? 'Close' : 'Exact' };
     }
 
-    const dist = getEditDistance(tWord, sWord);
+    // 4. Universal Phonetic & Edit Distance Evaluation
+    const dist = computeEditDistance(tWord, sWord);
     const maxLen = Math.max(tWord.length, sWord.length);
     const editRatio = dist / maxLen;
 
-    const tSkel = getPhoneticSkeleton(tWord);
-    const sSkel = getPhoneticSkeleton(sWord);
+    const [tPri, tSec] = computeMetaphoneCodes(tWord);
+    const [sPri, sSec] = computeMetaphoneCodes(sWord);
+    const tSyl = countWordSyllables(tWord);
+    const sSyl = countWordSyllables(sWord);
 
-    if (tSkel && sSkel && tSkel === sSkel && editRatio <= 0.42) {
-      const pScore = Math.min(78, Math.max(64, levelProfile.phoneticMatchScore));
+    const primaryMetaphoneMatch = Boolean(tPri && sPri && tPri === sPri);
+    const secondaryMetaphoneMatch = Boolean(
+      levelProfile.allowSecondaryMetaphone &&
+        ((tSec && sPri && tSec === sPri) || (tPri && sSec && tPri === sSec))
+    );
+
+    // True Homophone Check (Identical primary Double Metaphone, identical syllable count, small edit distance) -> 100% Green
+    if (primaryMetaphoneMatch && tSyl === sSyl && dist <= 2 && editRatio <= 0.40) {
+      return { score: isLowConfidence ? 76 : 100, matchType: isLowConfidence ? 'Close' : 'Exact' };
+    }
+
+    // Phonetic Approximation Check -> Yellow (65 - 78%)
+    if ((primaryMetaphoneMatch || secondaryMetaphoneMatch) && editRatio <= 0.45) {
+      const pScore = Math.min(78, Math.max(65, levelProfile.phoneticWordScore));
       return { score: pScore, matchType: 'Close' };
     }
 
+    // Bounded Levenshtein Edit Tolerance -> Yellow (62 - 78%)
     const allowedEdits =
-      tWord.length > 4
-        ? levelProfile.maxAllowedEditDistLong
-        : levelProfile.maxAllowedEditDistShort;
-
-    const onsetAgrees =
+      tWord.length > 4 ? levelProfile.maxEditLong : levelProfile.maxEditShort;
+    const firstCharAgrees =
       tWord[0] === sWord[0] ||
-      tSkel[0] === sSkel[0] ||
-      (CLOSE_PHONETIC_LETTERS[tWord[0]] && CLOSE_PHONETIC_LETTERS[tWord[0]].includes(sWord[0]));
+      (tPri && sPri && tPri[0] === sPri[0]) ||
+      (CLOSE_ALPHABET_PAIRS[tWord[0]] && CLOSE_ALPHABET_PAIRS[tWord[0]].includes(sWord[0]));
 
-    if (dist <= allowedEdits && editRatio <= 0.40 && onsetAgrees) {
+    if (dist <= allowedEdits && editRatio <= 0.40 && firstCharAgrees) {
       const eScore = Math.min(78, Math.max(62, 100 - dist * levelProfile.editPenalty));
       return { score: eScore, matchType: 'Close' };
     }
@@ -1318,7 +975,14 @@ export default function RecordCompareActivity({
     return { score: 0, matchType: 'None' };
   };
 
-  const runTwoPassSttAlignment = (targetContentTokens, spokenTokenObjs) => {
+  /**
+   * Two-Pass Anchored Sequence Alignment:
+   * - Pass 1: Locks all valid Exact & Close matches (anchors) via Dynamic Programming.
+   * - Pass 2: Inspects every inter-anchor gap:
+   *     * Unmatched spoken words in gap -> RED (`score: 0`, `error_type: 'Mispronunciation'`)
+   *     * Empty gap (0 spoken words) -> GREY STRIKETHROUGH (`score: 0`, `error_type: 'Omission'`)
+   */
+  const runTwoPassAnchoredAlignment = (targetContentTokens, spokenTokenObjs) => {
     const N = targetContentTokens.length;
     const M = spokenTokenObjs.length;
 
@@ -1327,7 +991,7 @@ export default function RecordCompareActivity({
 
     for (let i = 1; i <= N; i++) {
       for (let j = 1; j <= M; j++) {
-        const pair = evaluateSttPairMatch(targetContentTokens[i - 1], spokenTokenObjs[j - 1]);
+        const pair = scoreTokenPairUniversal(targetContentTokens[i - 1], spokenTokenObjs[j - 1]);
         const posBias = Math.max(0, 2 - Math.abs(i - j) * 0.25);
         const takeDiag =
           pair.score > 0 ? dp[i - 1][j - 1] + pair.score + posBias : -Infinity;
@@ -1372,11 +1036,10 @@ export default function RecordCompareActivity({
 
       if (curr.tIdx >= 0 && curr.tIdx < N) {
         const sObj = spokenTokenObjs[curr.sIdx];
-        const pair = evaluateSttPairMatch(targetContentTokens[curr.tIdx], sObj);
-        const isYellow = pair.score < levelProfile.wordApprove;
+        const pair = scoreTokenPairUniversal(targetContentTokens[curr.tIdx], sObj);
         slotResults[curr.tIdx] = {
           score: pair.score,
-          error_type: isYellow ? 'Mispronunciation' : 'None'
+          error_type: pair.score < levelProfile.wordApprove ? 'Mispronunciation' : 'None'
         };
       }
 
@@ -1405,168 +1068,250 @@ export default function RecordCompareActivity({
   };
 
   // ============================================================================
-  // 6. ACOUSTIC-PHONETIC SEQUENCE ALIGNER (WHEN MOBILE OS BLOCKS STT)
+  // 4. TEACHER-ANCHORED DTW FALLBACK (WHEN MOBILE OS BLOCKS STT)
   // ============================================================================
 
-  /**
-   * Aligns the student's recorded audio against the target words and teacher reference audio
-   * when Android blocks webkitSpeechRecognition.
-   * Accurately distinguishes:
-   * - Omitted words (Grey Strikethrough: `error_type: 'Omission'`, `score: 0`)
-   * - Replaced / Wrong words (Red: `error_type: 'Mispronunciation'`, `score: 0`)
-   * - Imperfect pronunciation (Yellow: `error_type: 'Mispronunciation'`, `score: 60-79`)
-   * - Clear pronunciation (Green: `error_type: 'None'`, `score: 80-100`)
-   */
-  const runAcousticPhoneticEvaluation = (
-    targetContentModels,
-    studentDSP,
-    teacherDSP,
-    leadingFillerCount
-  ) => {
-    const N = targetContentModels.length;
+  const evaluateViaTeacherDTW = (targetContentTokens, studentDSP, teacherDSP, leadingFillers) => {
+    const N = targetContentTokens.length;
     if (!studentDSP || !studentDSP.valid || studentDSP.voicedSec < 0.18 || N === 0) {
-      return targetContentModels.map(() => ({ score: 0, error_type: 'Omission' }));
+      return targetContentTokens.map(() => ({ score: 0, error_type: 'Omission' }));
     }
 
-    const totalExpectedSyllables = targetContentModels.reduce((s, m) => s + m.syllables, 0);
-    const totalExpectedWeight = targetContentModels.reduce((s, m) => s + m.weight, 0);
-
-    // Segment Teacher Reference Audio into per-word reference slices (stripping leading fillers)
-    const teacherWordSlices =
-      teacherDSP && teacherDSP.valid
-        ? segmentActiveFramesIntoWords(teacherDSP, targetContentModels, leadingFillerCount)
-        : [];
-
-    // Estimate how many content words the student actually spoke (Omission Detection)
-    let expectedVoicedSec = targetContentModels.reduce(
-      (s, m) => s + (m.isSingleChar ? 0.17 : m.isFunctionWord ? 0.14 : m.syllables * 0.21),
+    const wordWeights = targetContentTokens.map((w) =>
+      Math.max(0.8, countWordSyllables(w) * 0.9 + (w.length === 1 ? 0 : w.length * 0.05))
+    );
+    const totalWeight = wordWeights.reduce((a, b) => a + b, 0);
+    const expectedSyllables = targetContentTokens.reduce(
+      (s, w) => s + countWordSyllables(w),
       0
     );
-    if (teacherDSP && teacherDSP.valid && teacherWordSlices.length === N) {
-      const teacherContentFrames = teacherWordSlices.reduce((s, sl) => s + sl.length, 0);
-      expectedVoicedSec = Math.max(0.35, teacherContentFrames * 0.025 * 0.85);
+
+    const sliceFramesByWeights = (frames, weights) => {
+      if (!frames.length || !weights.length) return [];
+      const sumW = weights.reduce((a, b) => a + b, 0);
+      const out = [];
+      let prev = 0;
+      let acc = 0;
+      for (let i = 0; i < weights.length; i++) {
+        acc += weights[i];
+        const end =
+          i === weights.length - 1
+            ? frames.length
+            : Math.max(prev + 1, Math.min(frames.length - 1, Math.round((acc / sumW) * frames.length)));
+        out.push(frames.slice(prev, end));
+        prev = end;
+      }
+      return out;
+    };
+
+    let teacherActive = teacherDSP && teacherDSP.valid ? teacherDSP.activeFrames : [];
+    if (
+      leadingFillers > 0 &&
+      teacherDSP &&
+      teacherDSP.valid &&
+      teacherDSP.bursts.length > N
+    ) {
+      const skip = Math.min(leadingFillers, teacherDSP.bursts.length - N);
+      const stripped = teacherDSP.bursts.slice(skip).flat();
+      if (stripped.length >= N * 2) teacherActive = stripped;
     }
 
-    const durationCoverage = studentDSP.voicedSec / Math.max(0.30, expectedVoicedSec);
-    const syllableCoverage =
-      studentDSP.syllablePeaks / Math.max(1, totalExpectedSyllables * 0.80);
-    const burstCoverage = studentDSP.burstCount / Math.max(1, N * 0.75);
+    const teacherSlices = teacherActive.length
+      ? sliceFramesByWeights(teacherActive, wordWeights)
+      : [];
 
-    const combinedCoverage = Math.min(
+    const expectedSec =
+      teacherActive.length > 0
+        ? teacherActive.length * 0.025 * 0.82
+        : Math.max(0.35, expectedSyllables * 0.18);
+
+    const coverage = Math.min(
       1,
       Math.max(
-        durationCoverage * 0.65 + syllableCoverage * 0.35,
-        burstCoverage * 0.85
+        studentDSP.voicedSec / Math.max(0.30, expectedSec),
+        studentDSP.syllablePeaks / Math.max(1, expectedSyllables * 0.80)
       )
     );
 
-    // Determine how many target content words were actually spoken
-    let spokenWordCount = N;
-    if (combinedCoverage < 0.84) {
-      spokenWordCount = Math.max(1, Math.min(N - 1, Math.round(N * combinedCoverage)));
-    }
+    const spokenCount =
+      coverage < 0.84 ? Math.max(1, Math.min(N - 1, Math.round(N * coverage))) : N;
 
-    // If the student omitted 1 or more words (spokenWordCount < N), find which subset of size
-    // `spokenWordCount` best matches the student's spoken audio, and mark the rest as Omission!
-    if (spokenWordCount < N) {
-      // Check if the student spoke from the start, skipped a middle word, or skipped the end
-      let bestSubsetIndices = [];
-      let bestSubsetScore = -Infinity;
-      let bestSubsetEvaluations = [];
-
-      // Generate candidate subsets of length `spokenWordCount` (contiguous prefixes, suffixes, and single-word skips)
-      const candidateSubsets = [];
-
-      // Prefix (spoke first K words, omitted the end)
-      candidateSubsets.push(Array.from({ length: spokenWordCount }, (_, i) => i));
-
-      // Suffix (omitted initial word(s), spoke the rest)
-      candidateSubsets.push(
-        Array.from({ length: spokenWordCount }, (_, i) => N - spokenWordCount + i)
-      );
-
-      // Single-word omissions (e.g., omitted "welcome" or a middle word)
-      if (spokenWordCount === N - 1) {
-        for (let skipIdx = 0; skipIdx < N; skipIdx++) {
-          const sub = [];
-          for (let i = 0; i < N; i++) {
-            if (i !== skipIdx) sub.push(i);
-          }
-          candidateSubsets.push(sub);
-        }
-      }
-
-      for (const subset of candidateSubsets) {
-        const subModels = subset.map((idx) => targetContentModels[idx]);
-        const subWeight = subModels.reduce((s, m) => s + m.weight, 0);
-        const studentSlices = segmentActiveFramesIntoWords(studentDSP, subModels, 0);
-
-        let sumScore = 0;
-        const evals = [];
-        for (let k = 0; k < subset.length; k++) {
-          const origIdx = subset[k];
-          const res = scoreAcousticWordSlice(
-            subModels[k],
-            studentSlices[k],
-            teacherWordSlices[origIdx] || null,
-            studentDSP.activeFrames.length,
-            subWeight
-          );
-          sumScore += res.score;
-          evals.push(res);
-        }
-
-        if (sumScore > bestSubsetScore) {
-          bestSubsetScore = sumScore;
-          bestSubsetIndices = subset;
-          bestSubsetEvaluations = evals;
-        }
-      }
-
-      const finalResults = new Array(N).fill(null).map(() => ({
-        score: 0,
-        error_type: 'Omission'
-      }));
-
-      bestSubsetIndices.forEach((targetIdx, k) => {
-        finalResults[targetIdx] = bestSubsetEvaluations[k];
-      });
-
-      return finalResults;
-    }
-
-    // Student spoke all N word slots: segment active frames across the N models and evaluate each word
-    const studentWordSlices = segmentActiveFramesIntoWords(
-      studentDSP,
-      targetContentModels,
-      0
+    const studentSlices = sliceFramesByWeights(
+      studentDSP.activeFrames,
+      wordWeights.slice(0, spokenCount)
     );
 
-    return targetContentModels.map((model, idx) =>
-      scoreAcousticWordSlice(
-        model,
-        studentWordSlices[idx] || [],
-        teacherWordSlices[idx] || null,
-        studentDSP.activeFrames.length,
-        totalExpectedWeight
-      )
-    );
+    return targetContentTokens.map((w, idx) => {
+      if (idx >= spokenCount) {
+        return { score: 0, error_type: 'Omission' };
+      }
+      const sSlice = studentSlices[idx] || [];
+      const tSlice = teacherSlices[idx] || [];
+      if (!sSlice.length) return { score: 0, error_type: 'Omission' };
+
+      const dtwScore = tSlice.length
+        ? computeSliceDTW(tSlice, sSlice)
+        : Math.round(Math.min(100, studentDSP.avgClarity * 115));
+
+      if (dtwScore >= levelProfile.wordApprove) {
+        return { score: 100, error_type: 'None' };
+      }
+      if (dtwScore >= levelProfile.minWordPass) {
+        return { score: dtwScore, error_type: 'Mispronunciation' };
+      }
+      return { score: 0, error_type: 'Mispronunciation' };
+    });
   };
 
   // ============================================================================
-  // 7. RECORDING, SEQUENTIAL PLAYBACK & HYBRID GRADING WORKFLOW
+  // 5. STATEFUL `resultIndex` SPEECH RECOGNITION & RECORDING LIFECYCLE
   // ============================================================================
 
-  // Captures passive PCM samples in the background as a backup in case mobile decodeAudioData fails
+  const setupSpeechRecognition = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return null;
+
+    if (recognitionRef.current) {
+      recognitionRef.current.onend = null;
+      recognitionRef.current.onerror = null;
+      recognitionRef.current.onresult = null;
+      try { recognitionRef.current.stop(); } catch (e) {}
+      recognitionRef.current = null;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 3;
+    recognition.lang = 'en-US';
+
+    recognition.onresult = (event) => {
+      let interimAlts = null;
+
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        const res = event.results[i];
+        const alts = [];
+        for (let a = 0; a < res.length; a++) {
+          const text = (res[a].transcript || '').trim();
+          const conf =
+            typeof res[a].confidence === 'number' && res[a].confidence > 0
+              ? res[a].confidence
+              : 0.88;
+          if (text) {
+            alts.push({ transcript: text, confidence: conf });
+          }
+        }
+
+        if (alts.length > 0) {
+          if (res.isFinal) {
+            lockedSegmentsRef.current.push({ alternatives: alts });
+            activeInterimRef.current = null;
+          } else {
+            interimAlts = { alternatives: alts };
+          }
+        }
+      }
+
+      if (interimAlts) {
+        activeInterimRef.current = interimAlts;
+      }
+    };
+
+    recognition.onerror = () => {};
+
+    recognition.onend = () => {
+      // Commit any in-progress interim speech before restarting so pause cutoffs never lose words
+      if (activeInterimRef.current) {
+        lockedSegmentsRef.current.push(activeInterimRef.current);
+        activeInterimRef.current = null;
+      }
+
+      if (isRecordingRef.current) {
+        clearTimeout(sttRestartTimerRef.current);
+        sttRestartTimerRef.current = setTimeout(() => {
+          if (isRecordingRef.current) {
+            try {
+              recognition.start();
+            } catch (e) {
+              const fresh = setupSpeechRecognition();
+              if (fresh) {
+                try { fresh.start(); } catch (err) {}
+              }
+            }
+          }
+        }, 80);
+      } else {
+        speechFlushedRef.current = true;
+      }
+    };
+
+    recognitionRef.current = recognition;
+    return recognition;
+  };
+
+  useEffect(() => {
+    isRecordingRef.current = false;
+    clearTimeout(sttRestartTimerRef.current);
+    cancelAnimationFrame(animationFrameRef.current);
+    stopCurrentAudio();
+
+    if (recognitionRef.current) {
+      recognitionRef.current.onend = null;
+      try { recognitionRef.current.stop(); } catch (e) {}
+      recognitionRef.current = null;
+    }
+    if (activeStreamRef.current) {
+      activeStreamRef.current.getTracks().forEach((track) => track.stop());
+      activeStreamRef.current = null;
+    }
+
+    setPhase(audioUrl ? 'listen' : 'ready_to_record');
+    setAttempt(1);
+    setCanContinue(false);
+    setPointsAwarded(0);
+    setWordResults([]);
+    setFailedIndices(new Set());
+    setOverallScore(null);
+
+    return () => {
+      isRecordingRef.current = false;
+      clearTimeout(sttRestartTimerRef.current);
+      cancelAnimationFrame(animationFrameRef.current);
+      stopCurrentAudio();
+      if (recognitionRef.current) {
+        recognitionRef.current.onend = null;
+        try { recognitionRef.current.stop(); } catch (e) {}
+      }
+      if (activeStreamRef.current) {
+        activeStreamRef.current.getTracks().forEach((track) => track.stop());
+      }
+    };
+  }, [targetText, nodeId, audioUrl]);
+
+  useEffect(() => {
+    return () => {
+      if (studentAudioUrlRef.current) {
+        URL.revokeObjectURL(studentAudioUrlRef.current);
+      }
+      if (sharedAudioCtxRef.current && sharedAudioCtxRef.current.state !== 'closed') {
+        try { sharedAudioCtxRef.current.close(); } catch (e) {}
+      }
+    };
+  }, []);
+
   const startLivePCMBackupLoop = () => {
-    if (!analyserRef.current || !audioCtxRef.current) return;
+    if (!analyserRef.current || !sharedAudioCtxRef.current) return;
     const analyser = analyserRef.current;
     const buffer = new Float32Array(analyser.fftSize);
-    liveSampleRateRef.current = audioCtxRef.current.sampleRate || 44100;
+    liveSampleRateRef.current = sharedAudioCtxRef.current.sampleRate || 44100;
 
     let lastCaptureTime = 0;
     const loop = (now) => {
-      if (now - lastCaptureTime >= 24 && audioCtxRef.current && audioCtxRef.current.state === 'running') {
+      if (
+        now - lastCaptureTime >= 24 &&
+        sharedAudioCtxRef.current &&
+        sharedAudioCtxRef.current.state === 'running'
+      ) {
         analyser.getFloatTimeDomainData(buffer);
         liveRawSamplesRef.current.push(new Float32Array(buffer));
         lastCaptureTime = now;
@@ -1611,12 +1356,12 @@ export default function RecordCompareActivity({
 
       audioChunksRef.current = [];
       liveRawSamplesRef.current = [];
-      committedSegmentsRef.current = [];
-      currentSegmentRef.current = [];
+      lockedSegmentsRef.current = [];
+      activeInterimRef.current = null;
       speechFlushedRef.current = false;
       isRecordingRef.current = true;
 
-      // 1. Acquire microphone stream for MediaRecorder
+      // 1. Acquire microphone at native hardware sample rate
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: false,
@@ -1627,22 +1372,17 @@ export default function RecordCompareActivity({
 
       activeStreamRef.current = stream;
 
-      // 2. Attach passive AnalyserNode backup (NOT connected to destination so it never causes speaker feedback)
+      // 2. Attach passive AnalyserNode to shared AudioContext
       try {
-        const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        if (!audioCtxRef.current || audioCtxRef.current.state === 'closed') {
-          audioCtxRef.current = new AudioCtx();
-        } else if (audioCtxRef.current.state === 'suspended') {
-          await audioCtxRef.current.resume();
-        }
-        const source = audioCtxRef.current.createMediaStreamSource(stream);
-        const analyser = audioCtxRef.current.createAnalyser();
+        const ctx = await getSharedAudioContext();
+        const source = ctx.createMediaStreamSource(stream);
+        const analyser = ctx.createAnalyser();
         analyser.fftSize = 1024;
         source.connect(analyser);
         analyserRef.current = analyser;
         startLivePCMBackupLoop();
-      } catch (audioCtxErr) {
-        console.warn("Passive AnalyserNode backup skipped:", audioCtxErr);
+      } catch (e) {
+        console.warn("Passive analyser skipped:", e);
       }
 
       // 3. Start MediaRecorder
@@ -1661,17 +1401,11 @@ export default function RecordCompareActivity({
         const url = URL.createObjectURL(audioBlob);
         studentAudioUrlRef.current = url;
 
-        // Release getUserMedia hardware immediately so speaker playback has 100% clean routing
         stream.getTracks().forEach((track) => track.stop());
         if (activeStreamRef.current === stream) {
           activeStreamRef.current = null;
         }
-        if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
-          try { audioCtxRef.current.close(); } catch (e) {}
-          audioCtxRef.current = null;
-        }
 
-        // Allow SpeechRecognition 600ms after mic release to flush any pending transcript
         setTimeout(() => {
           if (recognitionRef.current) {
             try {
@@ -1682,17 +1416,17 @@ export default function RecordCompareActivity({
           } else {
             speechFlushedRef.current = true;
           }
-        }, 600);
+        }, 550);
 
         runPlaybackReview(url, audioBlob);
       };
 
       mediaRecorderRef.current = mediaRecorder;
-      mediaRecorder.start(100); // Request data slices every 100ms so short recordings are never empty
+      mediaRecorder.start(100);
       recordingStartTimeRef.current = Date.now();
       setPhase('recording');
 
-      // 4. Start SpeechRecognition 150ms after MediaRecorder stabilizes
+      // 4. Start SpeechRecognition 150ms after stream stabilizes
       sttRestartTimerRef.current = setTimeout(() => {
         if (isRecordingRef.current) {
           const rec = setupSpeechRecognition();
@@ -1708,7 +1442,7 @@ export default function RecordCompareActivity({
     }
   };
 
-  // Step 3: Stop Recording
+  // Step 3: Stop Recording (With 280ms Voice-Tail Buffer)
   const stopRecording = () => {
     if (!isRecordingRef.current) return;
     isRecordingRef.current = false;
@@ -1717,17 +1451,15 @@ export default function RecordCompareActivity({
 
     setPhase('playing_review');
 
-    // 180ms tail buffer prevents clipping the final consonant
     setTimeout(() => {
       if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
         try {
           mediaRecorderRef.current.stop();
         } catch (e) {}
       }
-    }, 180);
+    }, 280);
   };
 
-  // Strictly sequential single-audio player: Teacher Sample finishes completely before Student Recording starts
   const playAudioSequentially = (url) => {
     return new Promise((resolve) => {
       if (!url) {
@@ -1775,7 +1507,7 @@ export default function RecordCompareActivity({
     });
   };
 
-  // Step 4: "Comparing..." (Plays Reference -> 350ms pause -> Student Audio, while grading)
+  // Step 4: "Comparing..." (Plays Reference -> 350ms gap -> Student Audio, while grading)
   const runPlaybackReview = async (studentBlobUrl, audioBlob) => {
     setPhase('playing_review');
 
@@ -1796,21 +1528,19 @@ export default function RecordCompareActivity({
     }
   };
 
-  // Step 5: Dual-Engine Evaluation (Two-Pass STT + 6-Band Formant/Sibilant/Syllable DSP)
+  // Step 5: Execute Universal Two-Pass Anchored Alignment & Teacher-Anchored DTW Verification
   const executeGrading = async (audioBlob) => {
-    // Wait up to 900ms for SpeechRecognition to flush if the browser supports concurrent STT
     let waitTicks = 9;
     while (!speechFlushedRef.current && waitTicks > 0) {
       await new Promise((resolve) => setTimeout(resolve, 100));
       waitTicks--;
     }
 
-    if (currentSegmentRef.current && currentSegmentRef.current.length > 0) {
-      committedSegmentsRef.current.push(...currentSegmentRef.current);
-      currentSegmentRef.current = [];
+    if (activeInterimRef.current) {
+      lockedSegmentsRef.current.push(activeInterimRef.current);
+      activeInterimRef.current = null;
     }
 
-    // Decode student recording (with automatic fallback to live PCM buffer) and teacher reference audio
     const [studentDSP, teacherDSP] = await Promise.all([
       extractAudioDSP(audioBlob, true),
       teacherDSPRef.current
@@ -1825,41 +1555,31 @@ export default function RecordCompareActivity({
       cachedTeacherUrlRef.current = audioUrl;
     }
 
-    const durationSec = Math.max(0.1, (Date.now() - recordingStartTimeRef.current - 180) / 1000);
+    const durationSec = Math.max(0.1, (Date.now() - recordingStartTimeRef.current - 280) / 1000);
     const pitchVariance = Math.max(14, studentDSP.pitchVariance || 15);
 
     const cleanRawTargets = wordsList.map((w) => w.toLowerCase().replace(/[^\w\s]/gi, ''));
     const targetContentIndices = [];
     const targetContentTokens = [];
-    const targetContentModels = [];
 
-    let leadingFillerCount = 0;
-    let seenContentWord = false;
+    let leadingFillers = 0;
+    let seenContent = false;
 
     cleanRawTargets.forEach((tWord, idx) => {
       if (!tWord) return;
       if (SCRIPT_FILLERS.has(tWord)) {
-        if (!seenContentWord) leadingFillerCount++;
+        if (!seenContent) leadingFillers++;
       } else {
-        seenContentWord = true;
+        seenContent = true;
         targetContentIndices.push(idx);
         targetContentTokens.push(tWord);
-        targetContentModels.push(getWordArticulatoryModel(tWord));
       }
     });
 
     const totalContentWords = targetContentTokens.length;
+    const allSegments = lockedSegmentsRef.current;
 
-    // 1. Always run the 6-Band Formant, Sibilant & Syllable Acoustic Evaluator on the student's recording
-    const acousticEvaluations = runAcousticPhoneticEvaluation(
-      targetContentModels,
-      studentDSP,
-      teacherDSP,
-      leadingFillerCount
-    );
-
-    // 2. If Browser STT captured segments, also run Two-Pass Anchored STT Alignment
-    const allSegments = committedSegmentsRef.current;
+    // 1. Run Two-Pass Anchored Alignment across STT alternatives
     let bestSttAlignment = null;
 
     if (allSegments.length > 0 && totalContentWords > 0) {
@@ -1869,7 +1589,7 @@ export default function RecordCompareActivity({
           const chosenAlt =
             seg.alternatives[Math.min(altIdx, seg.alternatives.length - 1)] || seg.alternatives[0];
           if (chosenAlt && chosenAlt.transcript) {
-            const toks = tokenizeTranscriptString(
+            const toks = normalizeSpokenStream(
               chosenAlt.transcript,
               cleanRawTargets,
               chosenAlt.confidence
@@ -1879,7 +1599,7 @@ export default function RecordCompareActivity({
         }
 
         if (candidateObjs.length > 0) {
-          const alignment = runTwoPassSttAlignment(targetContentTokens, candidateObjs);
+          const alignment = runTwoPassAnchoredAlignment(targetContentTokens, candidateObjs);
           if (!bestSttAlignment || alignment.totalScore > bestSttAlignment.totalScore) {
             bestSttAlignment = alignment;
           }
@@ -1887,55 +1607,46 @@ export default function RecordCompareActivity({
       }
     }
 
-    // 3. Fuse STT Alignment (when present) with Acoustic-Phonetic Evaluation
+    // 2. Run Teacher-Anchored DTW Evaluation for fallback/isolated single-char verification
+    const dtwEvaluations = evaluateViaTeacherDTW(
+      targetContentTokens,
+      studentDSP,
+      teacherDSP,
+      leadingFillers
+    );
+
     const contentSlotFinal = new Array(totalContentWords).fill(null);
 
     for (let cIdx = 0; cIdx < totalContentWords; cIdx++) {
-      const acRes = acousticEvaluations[cIdx] || { score: 0, error_type: 'Omission' };
-      const model = targetContentModels[cIdx];
+      const tWord = targetContentTokens[cIdx];
+      const dtwRes = dtwEvaluations[cIdx] || { score: 0, error_type: 'Omission' };
 
       if (bestSttAlignment && bestSttAlignment.slotResults[cIdx]) {
         const sttRes = bestSttAlignment.slotResults[cIdx];
 
         if (sttRes.error_type === 'Omission') {
-          // If STT dropped isolated spelled letters/digits after a pause, check if the acoustic burst evaluator verified them
+          // If Android STT cut off isolated single letters/digits after an intro word, check Teacher DTW bursts
           if (
-            model.isSingleChar &&
+            tWord.length === 1 &&
             bestSttAlignment.anchorCount <= 2 &&
-            acRes.error_type !== 'Omission' &&
-            acRes.score >= levelProfile.minWordPass
+            dtwRes.error_type !== 'Omission' &&
+            dtwRes.score >= levelProfile.minWordPass
           ) {
-            contentSlotFinal[cIdx] = acRes;
+            contentSlotFinal[cIdx] = dtwRes;
           } else {
             contentSlotFinal[cIdx] = { score: 0, error_type: 'Omission' };
           }
-        } else if (sttRes.score === 0 && sttRes.error_type === 'Mispronunciation') {
-          // STT explicitly caught a wrong/substituted word ("repeat" for "spell", "telephone" for "passport") -> RED!
-          contentSlotFinal[cIdx] = { score: 0, error_type: 'Mispronunciation' };
         } else {
-          // STT matched the word: blend with acoustic pronunciation quality (if acoustic caught a severe error on a lexical word, pull down)
-          if (!model.isFunctionWord && acRes.score === 0) {
-            contentSlotFinal[cIdx] = { score: 66, error_type: 'Mispronunciation' };
-          } else {
-            const blended = Math.round(sttRes.score * 0.72 + Math.max(65, acRes.score) * 0.28);
-            const finalWordScore =
-              sttRes.score < levelProfile.wordApprove
-                ? Math.min(levelProfile.wordApprove - 2, blended)
-                : blended;
-            contentSlotFinal[cIdx] = {
-              score: finalWordScore,
-              error_type:
-                finalWordScore >= levelProfile.wordApprove ? 'None' : 'Mispronunciation'
-            };
-          }
+          // Trust the Two-Pass Anchored STT Alignment directly (100% Green stays 100% Green; 0% Red stays 0% Red)
+          contentSlotFinal[cIdx] = sttRes;
         }
       } else {
-        // Android blocked webkitSpeechRecognition: use the 6-Band Formant, Sibilant & Syllable Acoustic Evaluator
-        contentSlotFinal[cIdx] = acRes;
+        // Only if mobile OS blocked STT completely, use Teacher-Anchored DTW Evaluation
+        contentSlotFinal[cIdx] = dtwRes;
       }
     }
 
-    // 4. Assemble Full Word-Level Heatmap & Compute CEFR Score
+    // 3. Assemble Heatmap & Compute CEFR Score
     const localWordLevelData = [];
     let totalWordScore = 0;
     let matchedContentCount = 0;
@@ -1985,7 +1696,7 @@ export default function RecordCompareActivity({
     if (hasRealAttempt && totalContentWords > 0 && durationSec >= 0.30) {
       const accuracyScore = totalWordScore / totalContentWords;
       const completenessScore = (matchedContentCount / totalContentWords) * 100;
-      const rawProsody = pitchVariance > 12 ? 100 : Math.max(50, pitchVariance * 6);
+      const rawProsody = pitchVariance > 12 ? 100 : Math.max(60, pitchVariance * 6.5);
       const prosodyScore = rawProsody * (completenessScore / 100);
 
       localOverallScore =
@@ -1998,13 +1709,20 @@ export default function RecordCompareActivity({
         localOverallScore = Math.max(0, localOverallScore - penalty);
       }
 
+      // Clean 100% Ceiling Guarantee: if all content words are Green, score is 100%
+      const allContentGreen = contentSlotFinal.every(
+        (item) => item && item.score >= levelProfile.wordApprove && item.error_type === 'None'
+      );
+      if (allContentGreen) {
+        localOverallScore = 100;
+      }
+
       const coverageRatio = matchedContentCount / totalContentWords;
       localPassed =
         localOverallScore >= levelProfile.passScore &&
         coverageRatio >= levelProfile.minCoverageRatio;
     }
 
-    // Apply authoritative local evaluation to UI immediately so Red / Yellow / Grey Strikethrough / Green never get overwritten
     setOverallScore(localOverallScore);
     setWordResults(localWordLevelData);
 
@@ -2027,26 +1745,18 @@ export default function RecordCompareActivity({
       setCanContinue(false);
     }
 
-    // Encode a structured transcript for the Supabase Edge Function so database logs match 1-to-1
-    const syncedTranscriptTokens = [];
+    // Sync structured transcript & authoritative results to Supabase Edge Function
+    const syncedTokens = [];
     targetContentIndices.forEach((origIdx, cIdx) => {
       const res = contentSlotFinal[cIdx];
       const tWord = targetContentTokens[cIdx];
-      if (!res || res.error_type === 'Omission') {
-        return; // Omitted token is excluded so server also marks Omission
-      }
+      if (!res || res.error_type === 'Omission') return;
       if (res.score < levelProfile.minWordPass) {
-        syncedTranscriptTokens.push('wrong_' + cIdx);
+        syncedTokens.push('wrong_' + cIdx);
       } else if (res.score < levelProfile.wordApprove) {
-        if (tWord.length === 1 && CLOSE_PHONETIC_LETTERS[tWord]) {
-          syncedTranscriptTokens.push(CLOSE_PHONETIC_LETTERS[tWord][0]);
-        } else if (tWord.length > 2) {
-          syncedTranscriptTokens.push(tWord.slice(0, -1));
-        } else {
-          syncedTranscriptTokens.push('?');
-        }
+        syncedTokens.push('?');
       } else {
-        syncedTranscriptTokens.push(tWord);
+        syncedTokens.push(tWord);
       }
     });
 
@@ -2056,7 +1766,7 @@ export default function RecordCompareActivity({
           lesson_id: lessonId,
           node_id: nodeId,
           target_text: targetText,
-          transcript: syncedTranscriptTokens.join(' '),
+          transcript: syncedTokens.join(' '),
           cefr_level: cefrLevel,
           duration_sec: durationSec,
           pitch_variance: pitchVariance,
@@ -2102,7 +1812,7 @@ export default function RecordCompareActivity({
         {wordsList.map((word, idx) => {
           if (phase === 'completed' && wordResults[idx]) {
             const res = wordResults[idx];
-            // 1. Skipped / Omitted Word -> Grey with Strikethrough
+            // 1. Omitted Word -> Grey with Strikethrough
             if (res.error_type === 'Omission') {
               return (
                 <span key={idx} className="text-slate-500 line-through opacity-40">
