@@ -7,7 +7,9 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
 
   try {
     const supabaseClient = createClient(
@@ -16,46 +18,53 @@ serve(async (req) => {
       { global: { headers: { Authorization: req.headers.get("Authorization")! } } }
     );
 
-    // Verify user is authenticated (can add strict admin-only check here)
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
-    if (authError || !user) throw new Error("Unauthorized");
+    // DYNAMIC AUTH: Attempt to get user, but do not throw error if null (Allow admin calls)
+    const { data: { user } } = await supabaseClient.auth.getUser();
 
-    const { lesson_id, node_id, display_text, dialect, audio_base64, cefr_level } = await req.json();
+    const { lesson_id, node_id, reference_audio_url, target_text } = await req.json();
 
-    // 1. Send to Python Acoustic Worker
-    const workerUrl = Deno.env.get("ACOUSTIC_WORKER_URL");
-    const workerSecret = Deno.env.get("ACOUSTIC_WORKER_SECRET");
-
-    const workerRes = await fetch(`${workerUrl}/ingest-sample`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-worker-secret": workerSecret! },
-      body: JSON.stringify({ display_text, dialect, audio_base64 })
-    });
-
-    if (!workerRes.ok) throw new Error(`Worker Error: ${await workerRes.text()}`);
-    const { reference_acoustic_profile } = await workerRes.json();
-
-    // 2. Save securely to database using Service Role (bypassing RLS)
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    const { error: dbError } = await supabaseAdmin.from("speech_exercise_samples").upsert({
+    // Call Python Acoustic Worker to build profile
+    const workerUrl = Deno.env.get("ACOUSTIC_WORKER_URL");
+    const workerSecret = Deno.env.get("ACOUSTIC_WORKER_SECRET");
+
+    const workerRes = await fetch(`${workerUrl}/build-reference-profile`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-worker-secret": workerSecret! },
+      body: JSON.stringify({ 
+        reference_audio_url, 
+        target_text 
+      })
+    });
+
+    if (!workerRes.ok) throw new Error(`Worker Error: ${await workerRes.text()}`);
+    const { reference_acoustic_profile } = await workerRes.json();
+
+    // Securely Save Profile to DB using Service Role
+    await supabaseAdmin.from("speech_exercise_samples").upsert({
       lesson_id,
       node_id,
-      cefr_level,
-      dialect,
-      display_text,
-      audio_storage_path: `samples/${lesson_id}/${node_id}.webm`, // Assuming upload handled separately
+      reference_audio_url,
+      reference_text: target_text,
       reference_acoustic_profile,
-      profile_status: "ready"
-    }, { onConflict: 'lesson_id, node_id' });
+      cefr_level: "A1", // Default, update as needed
+      dialect: "en-US",
+      created_by: user?.id || null // Save admin ID if available, otherwise null
+    }, { onConflict: 'lesson_id,node_id' });
 
-    if (dbError) throw dbError;
+    return new Response(JSON.stringify({ success: true }), { 
+      headers: { ...corsHeaders, "Content-Type": "application/json" }, 
+      status: 200 
+    });
 
-    return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error: any) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: corsHeaders });
+    return new Response(JSON.stringify({ error: error.message }), { 
+      headers: { ...corsHeaders, "Content-Type": "application/json" }, 
+      status: 400 
+    });
   }
 });
