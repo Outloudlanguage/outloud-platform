@@ -19,6 +19,7 @@ const cleanStr = (str) => {
 
 const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
   const [loading, setLoading] = useState(true);
+  const [lessonId, setLessonId] = useState(null);
   const [screensData, setScreensData] = useState([]);
   const [allElements, setAllElements] = useState([]);
   const [currentStep, setCurrentStep] = useState(0);
@@ -86,6 +87,7 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
         });
 
         if (structuredScreens.length === 0) throw new Error("This blueprint is completely empty.");
+        setLessonId(data.id);
         setAllElements(elementsArr);
         setScreensData(structuredScreens);
       } catch (err) {
@@ -417,7 +419,7 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
             <div className="flex items-center gap-4">
               <img src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Header.png" alt="Outloud Logo" className="h-8 md:h-10 object-contain drop-shadow-md" />
               <div className="h-6 w-[1px] bg-white/20 hidden md:block"></div>
-              <span className="hidden md:block text-sm font-black text-[#fcd34d] uppercase tracking-widest drop-shadow-sm">{activityType} • Unit {student?.unit || 1}</span>
+              <span className="hidden md:block text-sm font-black text-[#fcd34d] uppercase tracking-widest drop-shadow-sm">{activityType} Unit {student?.unit || 1}</span>
             </div>
 
             <div className="flex items-center gap-6">
@@ -481,17 +483,17 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
                           <RecordCompareActivity
                             targetText={el.data?.transcriptText || el.data?.text || ""}
                             audioUrl={el.data?.audioUrl || el.data?.audio || ""}
-                            lessonId={student?.lessonId || "standalone-lesson"}
+                            lessonId={el.data?.lessonId || lessonId || student?.lessonId || "standalone-lesson"}
                             nodeId={el.id}
                             cefrLevel={student?.level ? student.level.split(':')[0] : 'A1'}
                             onComplete={({ overallScore, pointsAwarded, passed }) => {
+                              setNavButtonState('idle');
                               setStudentAnswers(prev => ({
                                 ...prev,
                                 [`${el.id}_recorded`]: passed,
                                 [`${el.id}_score`]: overallScore,
                                 [`${el.id}_points`]: pointsAwarded
                               }));
-                              proceedToNext();
                             }}
                           />
                         )}

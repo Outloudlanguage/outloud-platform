@@ -434,3 +434,25 @@ entrypoint = "./functions/grade-placement/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/grade-placement/*.html" ]
+
+[functions.ingest-sample]
+enabled = true
+verify_jwt = false
+import_map = "./functions/ingest-sample/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/ingest-sample/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/ingest-sample/*.html" ]
+
+[functions.evaluate-speech]
+enabled = true
+verify_jwt = false
+import_map = "./functions/evaluate-speech/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/evaluate-speech/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/evaluate-speech/*.html" ]

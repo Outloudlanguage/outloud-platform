@@ -1867,6 +1867,8 @@ useEffect(() => {
       updated_at: new Date().toISOString() 
     };
 
+    let elementsToScanForAudio = [];
+
     if (contentType === 'Manuals' || contentType === 'Cue Cards') {
        payload.blueprint_data = { pdfUrl: pdfUrl };
        payload.screens = [Date.now()]; // Dummy array to satisfy DB constraints
@@ -1879,14 +1881,55 @@ useEffect(() => {
          return el;
        });
        setCanvasElements(syncedElements);
+       elementsToScanForAudio = syncedElements;
        payload.screens = contentType === 'Lesson' ? lessonScreens : workbookScreens;
        payload.blueprint_data = { elements: syncedElements };
     }
     
     try {
-      await supabase.from('content_blueprints').upsert(payload, { onConflict: 'level,unit,content_type' });
+      // 1. Save blueprint to database
+      const { data: blueprintData, error: blueprintError } = await supabase
+        .from('content_blueprints')
+        .upsert(payload, { onConflict: 'level,unit,content_type' })
+        .select('id')
+        .single();
+        
+      if (blueprintError) throw blueprintError;
+
+      // 2. TRIGGER GOOGLE CLOUD: Send new audio URLs to Edge Function
+      const recordNodes = elementsToScanForAudio.filter(
+        el => el.type === 'record_compare' && el.data?.audioUrl
+      );
+
+      if (recordNodes.length > 0 && blueprintData?.id) {
+        // Run ingestion tasks in the background without blocking the UI
+        Promise.allSettled(
+          recordNodes.map(node => 
+            supabase.functions.invoke('ingest-sample', {
+              body: {
+                lesson_id: blueprintData.id,
+                node_id: node.id,
+                reference_audio_url: node.data.audioUrl,
+                target_text: node.data.transcriptText || node.data.text || ""
+              }
+            })
+          )
+        ).then(results => {
+          const failures = results.filter(r => r.status === 'rejected' || r.value?.error);
+          if (failures.length > 0) {
+            console.error("Warning: Some audio files failed acoustic ingestion.", failures);
+          }
+        });
+      }
+
       alert("Changes saved and pushed live successfully!");
-    } catch (err) { console.error(err); } finally { setIsSaving(false); setIsSaveModalOpen(false); }
+    } catch (err) { 
+      console.error(err); 
+      alert("Error saving: " + err.message);
+    } finally { 
+      setIsSaving(false); 
+      setIsSaveModalOpen(false); 
+    }
   };
 
   const renderFormattedText = (el, isPreview) => { /* Original Logic Preserved */ };
