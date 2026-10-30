@@ -10,233 +10,275 @@ export default function RecordCompareActivity({
   targetText,
   referenceAudioUrl,
   audioUrl,
+  cefrLevel = 'A1',
   node = {},
   onComplete,
 }) {
-  // Normalize props regardless of how parent components pass them
-  const activeLessonId = lessonId || lesson_id || node.lesson_id || 'default-lesson';
+  const activeLessonId = lessonId || lesson_id || node.lesson_id || 'standalone-lesson';
   const activeNodeId = nodeId || node_id || node.id || 'default-node';
   const activeText = displayText || targetText || node.display_text || node.text || '';
   const activeRefAudio = referenceAudioUrl || audioUrl || node.audio_url || node.reference_audio_url || '';
 
-  // Audio & Recording State
-  const [isRecording, setIsRecording] = useState(false);
+  // THE STATE MACHINE
+  // 'LISTEN' -> 'PLAYING_REF' -> 'RECORD' -> 'RECORDING' -> 
+  // 'COMPARING_REF' -> 'COMPARING_STUDENT' -> 'EVALUATING' (if needed) -> 'RETRY' | 'PASSED'
+  const [phase, setPhase] = useState('LISTEN');
   const [recordingTime, setRecordingTime] = useState(0);
-  const [studentAudioUrl, setStudentAudioUrl] = useState(null);
-  const [audioBase64, setAudioBase64] = useState(null);
-  const [isPlayingRef, setIsPlayingRef] = useState(false);
-  const [isPlayingStudent, setIsPlayingStudent] = useState(false);
-
-  // Evaluation State
-  const [isEvaluating, setIsEvaluating] = useState(false);
   const [attemptCount, setAttemptCount] = useState(1);
-  const [evaluationResult, setEvaluationResult] = useState(null);
+  const [apiResult, setApiResult] = useState(null);
+  const [playbackDone, setPlaybackDone] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
   const [selectedTokenIndex, setSelectedTokenIndex] = useState(null);
 
-  // Refs
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const timerRef = useRef(null);
   const refAudioPlayer = useRef(null);
   const studentAudioPlayer = useRef(null);
+  const studentAudioUrlRef = useRef(null); 
 
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
-      if (studentAudioUrl) URL.revokeObjectURL(studentAudioUrl);
+      if (studentAudioUrlRef.current) URL.revokeObjectURL(studentAudioUrlRef.current);
     };
-  }, [studentAudioUrl]);
+  }, []);
 
-  // Convert recorded Blob to pure Base64 string (stripping the data URL prefix)
+  // Sync Evaluation Resolution
+  // Triggers only when BOTH the back-to-back playback is done AND the API has returned data.
+  useEffect(() => {
+    if (playbackDone && apiResult) {
+      if (apiResult.is_ghost_attempt || apiResult.error) {
+        setPhase('RETRY');
+        return;
+      }
+
+      const tokens = apiResult.token_grades || [];
+      const greenOrYellow = tokens.filter((t) => {
+        const s = (t.visual_state || t.status || t.color || '').toLowerCase();
+        return s === 'green' || s === 'correct' || s === 'pass' || s === 'yellow' || s === 'warning';
+      }).length;
+
+      const computedScore =
+        apiResult.overall_score ??
+        apiResult.overallScore ??
+        (tokens.length > 0 ? Math.round((greenOrYellow / tokens.length) * 100) : 0);
+
+      const passed =
+        apiResult.passed !== undefined
+          ? Boolean(apiResult.passed)
+          : computedScore >= 75;
+
+      if (passed) {
+        setPhase('PASSED');
+        if (onComplete) {
+          onComplete({
+            overallScore: computedScore,
+            pointsAwarded: 10,
+            passed: true,
+          });
+        }
+      } else {
+        setPhase('RETRY');
+      }
+    }
+  }, [playbackDone, apiResult, onComplete]);
+
   const blobToBase64 = (blob) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        const dataUrl = reader.result;
-        const base64String = dataUrl.split(',')[1];
-        resolve(base64String);
-      };
+      reader.onloadend = () => resolve(reader.result.split(',')[1]);
       reader.onerror = reject;
       reader.readAsDataURL(blob);
     });
   };
 
-  // Start Microphone Recording
-  const startRecording = async () => {
-    setErrorMsg(null);
-    setEvaluationResult(null);
-    setSelectedTokenIndex(null);
-
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: false,
-        },
-      });
-
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      };
-
-      mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        const localUrl = URL.createObjectURL(audioBlob);
-        setStudentAudioUrl(localUrl);
-
-        try {
-          const base64 = await blobToBase64(audioBlob);
-          setAudioBase64(base64);
-        } catch (err) {
-          setErrorMsg('Failed to process recorded audio.');
-        }
-
-        // Release microphone hardware lock
-        stream.getTracks().forEach((track) => track.stop());
-      };
-
-      mediaRecorder.start();
-      setIsRecording(true);
-      setRecordingTime(0);
-
-      timerRef.current = setInterval(() => {
-        setRecordingTime((prev) => prev + 1);
-      }, 1000);
-    } catch (err) {
-      setErrorMsg('Microphone access denied. Please enable microphone permissions in your browser.');
-    }
-  };
-
-  // Stop Microphone Recording
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-      if (timerRef.current) clearInterval(timerRef.current);
-    }
-  };
-
-  // Submit Audio to Supabase Edge Function -> Google Cloud Run Worker
-  const handleEvaluate = async () => {
-    if (!audioBase64) {
-      setErrorMsg('Please record your voice before submitting.');
-      return;
-    }
-
-    setIsEvaluating(true);
-    setErrorMsg(null);
-
+  const triggerApiEvaluation = async (base64) => {
     try {
       const { data, error } = await supabase.functions.invoke('evaluate-speech', {
         body: {
           lesson_id: activeLessonId,
           node_id: activeNodeId,
-          audio_base64: audioBase64,
+          cefr_level: cefrLevel,
+          target_text: activeText,
+          audio_base64: base64,
           attempt_number: attemptCount,
         },
       });
 
       if (error) throw error;
-
-      setEvaluationResult(data);
-
-      // Only increment the attempt counter if it was a real speech attempt
+      
       if (!data?.is_ghost_attempt) {
-        setAttemptCount((prev) => prev + 1);
+        setAttemptCount(prev => prev + 1);
       }
-
-      if (data?.passed && onComplete) {
-        onComplete(data);
-      }
+      
+      setApiResult(data);
     } catch (err) {
       console.error('Speech evaluation error:', err);
-      setErrorMsg(err.message || 'Could not reach the acoustic evaluation server. Please try again.');
-    } finally {
-      setIsEvaluating(false);
+      setErrorMsg('Could not reach grading server. Try again.');
+      setApiResult({ error: true }); 
     }
   };
 
-  // Map token status/color from the Edge Function to Tailwind styles
+  const handleDynamicAction = async () => {
+    setErrorMsg(null);
+
+    // 1. LISTEN TO MASTER
+    if (phase === 'LISTEN' || phase === 'RETRY') {
+      if (!refAudioPlayer.current) return;
+      setApiResult(null);
+      setPlaybackDone(false);
+      setSelectedTokenIndex(null);
+      setPhase('PLAYING_REF');
+      refAudioPlayer.current.currentTime = 0;
+      refAudioPlayer.current.play();
+    }
+
+    // 2. START RECORDING
+    else if (phase === 'RECORD') {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: false },
+        });
+
+        const mediaRecorder = new MediaRecorder(stream);
+        mediaRecorderRef.current = mediaRecorder;
+        audioChunksRef.current = [];
+
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data.size > 0) audioChunksRef.current.push(e.data);
+        };
+
+        // 3. AUTO-SUBMIT ON STOP
+        mediaRecorder.onstop = async () => {
+          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+          const localUrl = URL.createObjectURL(audioBlob);
+          studentAudioUrlRef.current = localUrl;
+          if (studentAudioPlayer.current) studentAudioPlayer.current.src = localUrl;
+
+          stream.getTracks().forEach((track) => track.stop());
+
+          try {
+            const base64 = await blobToBase64(audioBlob);
+            triggerApiEvaluation(base64);
+
+            // Lock UI and force back-to-back playback immediately
+            setPhase('COMPARING_REF');
+            if (refAudioPlayer.current) {
+              refAudioPlayer.current.currentTime = 0;
+              refAudioPlayer.current.play();
+            }
+          } catch (err) {
+            setErrorMsg('Failed to process recorded audio.');
+            setPhase('RETRY');
+          }
+        };
+
+        mediaRecorder.start();
+        setPhase('RECORDING');
+        setRecordingTime(0);
+        timerRef.current = setInterval(() => setRecordingTime((prev) => prev + 1), 1000);
+      } catch (err) {
+        setErrorMsg('Microphone access denied. Please enable permissions.');
+      }
+    }
+
+    // 3. STOP RECORDING
+    else if (phase === 'RECORDING') {
+      if (mediaRecorderRef.current) {
+        mediaRecorderRef.current.stop();
+        if (timerRef.current) clearInterval(timerRef.current);
+      }
+    }
+  };
+
+  const handleRefAudioEnded = () => {
+    if (phase === 'PLAYING_REF') {
+      setPhase('RECORD'); 
+    } else if (phase === 'COMPARING_REF') {
+      setPhase('COMPARING_STUDENT');
+      if (studentAudioPlayer.current) {
+        studentAudioPlayer.current.currentTime = 0;
+        studentAudioPlayer.current.play();
+      }
+    }
+  };
+
+  const handleStudentAudioEnded = () => {
+    if (phase === 'COMPARING_STUDENT') {
+      setPlaybackDone(true);
+      if (!apiResult) {
+        setPhase('EVALUATING');
+      }
+    }
+  };
+
   const getTokenStyle = (token) => {
     const state = (token.visual_state || token.status || token.color || '').toLowerCase();
-
-    if (state === 'green' || state === 'correct' || state === 'pass') {
-      return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
-    }
-    if (state === 'yellow' || state === 'warning' || state === 'near') {
-      return 'bg-amber-500/20 text-amber-300 border-amber-500/40';
-    }
-    if (state === 'red' || state === 'error' || state === 'fail') {
-      return 'bg-rose-500/20 text-rose-300 border-rose-500/40';
-    }
-    if (state === 'grey_strikethrough' || state === 'omitted' || state === 'missing') {
-      return 'bg-slate-700/40 text-slate-400 line-through border-slate-600';
-    }
-    return 'bg-slate-800 text-slate-200 border-slate-700';
+    if (state === 'green' || state === 'correct' || state === 'pass') return 'text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]';
+    if (state === 'yellow' || state === 'warning' || state === 'near') return 'text-[#fcd34d] drop-shadow-[0_0_8px_rgba(252,211,77,0.5)]';
+    if (state === 'red' || state === 'error' || state === 'fail') return 'text-red-400 drop-shadow-[0_0_8px_rgba(248,113,113,0.5)]';
+    if (state === 'grey_strikethrough' || state === 'omitted' || state === 'missing') return 'text-white/30 line-through';
+    return 'text-white';
   };
 
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  const getButtonProps = () => {
+    switch (phase) {
+      case 'LISTEN':
+        return { text: '🔊 Listen', style: 'bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_20px_rgba(37,99,235,0.4)]', disabled: false };
+      case 'PLAYING_REF':
+        return { text: 'Listening...', style: 'bg-blue-600/50 text-white/70 cursor-not-allowed', disabled: true };
+      case 'RECORD':
+        return { text: '🎙️ Record', style: 'bg-rose-600 hover:bg-rose-500 text-white shadow-[0_0_20px_rgba(225,29,72,0.4)]', disabled: false };
+      case 'RECORDING':
+        return { text: `🛑 Stop (${recordingTime}s)`, style: 'bg-rose-500 text-white animate-pulse shadow-[0_0_30px_rgba(244,63,94,0.6)]', disabled: false };
+      case 'COMPARING_REF':
+        return { text: '⚖️ Comparing (Reference)...', style: 'bg-[#fcd34d]/50 text-[#08203e]/70 cursor-not-allowed', disabled: true };
+      case 'COMPARING_STUDENT':
+        return { text: '⚖️ Comparing (Your Attempt)...', style: 'bg-[#fcd34d] text-[#08203e] shadow-[0_0_20px_rgba(252,211,77,0.4)] cursor-not-allowed', disabled: true };
+      case 'EVALUATING':
+        return { text: '⚙️ Grading...', style: 'bg-indigo-600 text-white animate-pulse cursor-not-allowed', disabled: true };
+      case 'RETRY':
+        return { text: '🔄 Retry', style: 'bg-orange-500 hover:bg-orange-400 text-white shadow-[0_0_20px_rgba(249,115,22,0.4)]', disabled: false };
+      case 'PASSED':
+        return { text: '✅ Evaluated', style: 'bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.4)] cursor-not-allowed', disabled: true };
+      default:
+        return { text: 'Listen', style: 'bg-blue-600 text-white', disabled: false };
+    }
   };
+
+  const btnProps = getButtonProps();
 
   return (
-    <div className="w-full max-w-3xl mx-auto bg-slate-900 border border-slate-800 rounded-2xl p-6 text-slate-100 shadow-xl space-y-6">
-      {/* Header & Attempt Counter */}
-      <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-        <div>
-          <span className="text-xs font-semibold uppercase tracking-wider text-indigo-400">
-            Acoustic Practice
-          </span>
-          <h2 className="text-xl font-bold text-white mt-0.5">Record & Compare</h2>
-        </div>
-        <div className="text-xs font-medium bg-slate-800 text-slate-300 px-3 py-1.5 rounded-full border border-slate-700">
-          Attempt #{attemptCount}
-        </div>
-      </div>
+    <div className="w-full flex flex-col gap-6 text-white font-montserrat p-4 md:p-6 bg-black/20 rounded-[2rem] border border-white/10 shadow-inner">
+      
+      {activeRefAudio && <audio ref={refAudioPlayer} src={activeRefAudio} onEnded={handleRefAudioEnded} className="hidden" crossOrigin="anonymous" />}
+      <audio ref={studentAudioPlayer} onEnded={handleStudentAudioEnded} className="hidden" />
 
-      {/* Target Phrase / Graded Tokens Display */}
-      <div className="bg-slate-950/70 border border-slate-800/80 rounded-xl p-6 text-center">
-        {!evaluationResult || !evaluationResult.token_grades ? (
-          <p className="text-2xl font-medium text-slate-100 leading-relaxed tracking-wide">
+      {/* Target Phrase Display */}
+      <div className="text-center min-h-[120px] flex flex-col items-center justify-center">
+        {(!playbackDone || !apiResult?.token_grades) ? (
+          <p className="text-2xl md:text-3xl font-black text-white leading-relaxed tracking-wide drop-shadow-md">
             {activeText || 'Listen to the reference audio and repeat the phrase clearly.'}
           </p>
         ) : (
           <div className="space-y-4">
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              {evaluationResult.token_grades.map((token, idx) => {
+            <div className="flex flex-wrap items-center justify-center gap-2.5">
+              {apiResult.token_grades.map((token, idx) => {
                 const wordText = token.word || token.token || token.text || '';
-                const interEvent = evaluationResult.inter_word_events?.find(
-                  (e) => e.after_index === idx || e.word_index === idx
-                );
+                const interEvent = apiResult.inter_word_events?.find((e) => e.after_index === idx || e.word_index === idx);
 
                 return (
                   <React.Fragment key={idx}>
                     <button
                       type="button"
                       onClick={() => setSelectedTokenIndex(selectedTokenIndex === idx ? null : idx)}
-                      className={`px-3 py-1.5 rounded-lg border text-lg font-medium transition-all hover:scale-105 ${getTokenStyle(
-                        token
-                      )}`}
+                      className={`text-2xl md:text-3xl font-black transition-all hover:scale-110 cursor-pointer ${getTokenStyle(token)}`}
                     >
                       {wordText}
                     </button>
-
-                    {/* Optional Inter-word Event Indicator (Pauses / Linking) */}
                     {interEvent && (
-                      <span
-                        title={interEvent.message || interEvent.type}
-                        className="text-xs px-1.5 py-0.5 rounded bg-indigo-950 text-indigo-300 border border-indigo-800/60"
-                      >
+                      <span title={interEvent.message || interEvent.type} className="text-sm font-black text-[#fcd34d]/70">
                         {interEvent.symbol || '‿'}
                       </span>
                     )}
@@ -244,206 +286,68 @@ export default function RecordCompareActivity({
                 );
               })}
             </div>
-
-            <p className="text-xs text-slate-400">
-              Click any highlighted word above to inspect its acoustic breakdown.
+            <p className="text-[10px] font-bold uppercase tracking-widest text-white/40">
+              Tap any colored word for diagnostic feedback
             </p>
           </div>
         )}
       </div>
 
       {/* Selected Word Diagnostic Drawer */}
-      {selectedTokenIndex !== null && evaluationResult?.token_grades?.[selectedTokenIndex] && (
-        <div className="bg-slate-800/60 border border-slate-700 rounded-xl p-4 text-sm space-y-1.5">
-          <div className="flex items-center justify-between">
-            <span className="font-bold text-white text-base">
-              Word: &ldquo;{evaluationResult.token_grades[selectedTokenIndex].word ||
-                evaluationResult.token_grades[selectedTokenIndex].token ||
-                evaluationResult.token_grades[selectedTokenIndex].text}&rdquo;
+      {selectedTokenIndex !== null && apiResult?.token_grades?.[selectedTokenIndex] && (
+        <div className="bg-black/50 border border-white/20 rounded-2xl p-5 text-sm space-y-2 animate-slide-up">
+          <div className="flex items-center justify-between border-b border-white/10 pb-2">
+            <span className="font-black text-[#fcd34d] uppercase tracking-wider">
+              Word: &ldquo;{apiResult.token_grades[selectedTokenIndex].word || apiResult.token_grades[selectedTokenIndex].token}&rdquo;
             </span>
-            <button
-              type="button"
-              onClick={() => setSelectedTokenIndex(null)}
-              className="text-xs text-slate-400 hover:text-white"
-            >
-              Close
-            </button>
+            <button onClick={() => setSelectedTokenIndex(null)} className="text-xs font-bold uppercase text-white/50 hover:text-white">✕ Close</button>
           </div>
-          <p className="text-slate-300">
-            {evaluationResult.token_grades[selectedTokenIndex].feedback ||
-              evaluationResult.token_grades[selectedTokenIndex].diagnostic ||
-              'Pronunciation analyzed against the reference model.'}
+          <p className="text-white/90 font-medium">
+            {apiResult.token_grades[selectedTokenIndex].feedback || apiResult.token_grades[selectedTokenIndex].diagnostic || 'Pronunciation analyzed.'}
           </p>
         </div>
       )}
 
-      {/* Audio Controls: Reference vs Student */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Reference Audio Card */}
-        <div className="bg-slate-800/40 border border-slate-800 rounded-xl p-4 flex items-center justify-between">
-          <div>
-            <p className="text-sm font-semibold text-white">Reference Model</p>
-            <p className="text-xs text-slate-400">Listen to target cadence & pronunciation</p>
-          </div>
-          {activeRefAudio ? (
-            <>
-              <audio
-                ref={refAudioPlayer}
-                src={activeRefAudio}
-                onEnded={() => setIsPlayingRef(false)}
-                className="hidden"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  if (!refAudioPlayer.current) return;
-                  if (isPlayingRef) {
-                    refAudioPlayer.current.pause();
-                    setIsPlayingRef(false);
-                  } else {
-                    refAudioPlayer.current.play();
-                    setIsPlayingRef(true);
-                  }
-                }}
-                className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition"
-              >
-                {isPlayingRef ? 'Pause' : 'Listen'}
-              </button>
-            </>
-          ) : (
-            <span className="text-xs text-slate-500 italic">No reference audio</span>
-          )}
-        </div>
-
-        {/* Student Recording Controls */}
-        <div className="bg-slate-800/40 border border-slate-800 rounded-xl p-4 flex items-center justify-between">
-          <div>
-            <p className="text-sm font-semibold text-white">Your Recording</p>
-            <p className="text-xs text-slate-400">
-              {isRecording
-                ? `Recording... ${formatTime(recordingTime)}`
-                : studentAudioUrl
-                ? 'Ready to review or evaluate'
-                : 'Press Record to start'}
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {studentAudioUrl && !isRecording && (
-              <>
-                <audio
-                  ref={studentAudioPlayer}
-                  src={studentAudioUrl}
-                  onEnded={() => setIsPlayingStudent(false)}
-                  className="hidden"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!studentAudioPlayer.current) return;
-                    if (isPlayingStudent) {
-                      studentAudioPlayer.current.pause();
-                      setIsPlayingStudent(false);
-                    } else {
-                      studentAudioPlayer.current.play();
-                      setIsPlayingStudent(true);
-                    }
-                  }}
-                  className="px-3 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm font-medium transition"
-                >
-                  {isPlayingStudent ? 'Stop' : 'Replay'}
-                </button>
-              </>
-            )}
-
-            {!isRecording ? (
-              <button
-                type="button"
-                disabled={isEvaluating}
-                onClick={startRecording}
-                className="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white text-sm font-medium transition"
-              >
-                {studentAudioUrl ? 'Re-record' : 'Record'}
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={stopRecording}
-                className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-bold animate-pulse transition"
-              >
-                Stop
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Submit for AI Evaluation Button */}
-      <div className="flex justify-end">
-        <button
-          type="button"
-          disabled={!audioBase64 || isRecording || isEvaluating}
-          onClick={handleEvaluate}
-          className="w-full md:w-auto px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-semibold text-sm transition flex items-center justify-center gap-2"
-        >
-          {isEvaluating ? (
-            <>
-              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              Analyzing Acoustics...
-            </>
-          ) : (
-            'Evaluate Pronunciation'
-          )}
-        </button>
-      </div>
-
-      {/* Error Banner */}
-      {errorMsg && (
-        <div className="bg-rose-950/60 border border-rose-800 text-rose-200 px-4 py-3 rounded-xl text-sm">
-          {errorMsg}
+      {/* Ghost Attempt / Error Banner */}
+      {(errorMsg || apiResult?.is_ghost_attempt) && (
+        <div className="bg-red-500/20 border border-red-500 text-red-300 px-5 py-3 rounded-2xl text-sm font-bold text-center animate-fade-in">
+          {errorMsg || "We couldn't hear you clearly. Please check your microphone and try again."}
         </div>
       )}
 
-      {/* Ghost Attempt Warning */}
-      {evaluationResult?.is_ghost_attempt && (
-        <div className="bg-amber-950/60 border border-amber-800 text-amber-200 px-4 py-3 rounded-xl text-sm">
-          We couldn&apos;t detect clear speech in that recording. Check your microphone and try again—this attempt was not counted against you.
-        </div>
-      )}
-
-      {/* Prosody & Transcript Feedback Panel */}
-      {evaluationResult && !evaluationResult.is_ghost_attempt && (
-        <div className="bg-slate-800/30 border border-slate-800 rounded-xl p-5 space-y-4">
-          {evaluationResult.recognized_transcript && (
+      {/* Prosody Diagnostics Panel */}
+      {playbackDone && apiResult && !apiResult.is_ghost_attempt && !apiResult.error && (
+        <div className="bg-black/40 border border-white/15 rounded-3xl p-5 space-y-4 animate-fade-in mt-2">
+          {apiResult.recognized_transcript && (
             <div>
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+              <span className="text-[10px] font-black uppercase tracking-widest text-[#fcd34d]">
                 What the AI Heard
               </span>
-              <p className="text-sm text-slate-200 italic mt-1">
-                &ldquo;{evaluationResult.recognized_transcript}&rdquo;
+              <p className="text-sm text-white/90 font-medium italic mt-1">
+                &ldquo;{apiResult.recognized_transcript}&rdquo;
               </p>
             </div>
           )}
 
-          {evaluationResult.prosody_diagnostics && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-800/80">
-              <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-800">
-                <span className="text-xs text-indigo-400 font-semibold block">
+          {apiResult.prosody_diagnostics && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-white/10">
+              <div className="bg-white/5 p-3 rounded-xl border border-white/10">
+                <span className="text-[10px] text-[#fcd34d] font-black uppercase tracking-widest block">
                   Rhythm & Pacing
                 </span>
-                <p className="text-xs text-slate-300 mt-1">
-                  {evaluationResult.prosody_diagnostics.pacing_feedback ||
-                    evaluationResult.prosody_diagnostics.speech_rate ||
+                <p className="text-xs text-white/80 font-medium mt-1.5">
+                  {apiResult.prosody_diagnostics.pacing_feedback ||
+                    apiResult.prosody_diagnostics.speech_rate ||
                     'Cadence aligned with reference profile.'}
                 </p>
               </div>
-              <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-800">
-                <span className="text-xs text-indigo-400 font-semibold block">
+              <div className="bg-white/5 p-3 rounded-xl border border-white/10">
+                <span className="text-[10px] text-[#fcd34d] font-black uppercase tracking-widest block">
                   Intonation & Stress
                 </span>
-                <p className="text-xs text-slate-300 mt-1">
-                  {evaluationResult.prosody_diagnostics.intonation_feedback ||
-                    evaluationResult.prosody_diagnostics.pitch_contour ||
+                <p className="text-xs text-white/80 font-medium mt-1.5">
+                  {apiResult.prosody_diagnostics.intonation_feedback ||
+                    apiResult.prosody_diagnostics.pitch_contour ||
                     'Pitch contour evaluated.'}
                 </p>
               </div>
@@ -451,6 +355,19 @@ export default function RecordCompareActivity({
           )}
         </div>
       )}
+
+      {/* THE DYNAMIC ACTION BUTTON */}
+      <div className="flex justify-center mt-2">
+        <button
+          type="button"
+          disabled={btnProps.disabled}
+          onClick={handleDynamicAction}
+          className={`w-full max-w-sm px-8 py-5 rounded-full font-black text-sm md:text-base uppercase tracking-widest transition-all ${btnProps.style} ${!btnProps.disabled ? 'hover:scale-105 active:scale-95 cursor-pointer' : ''}`}
+        >
+          {btnProps.text}
+        </button>
+      </div>
+
     </div>
   );
 }

@@ -7,7 +7,10 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  // 1. Intercept browser preflight checks explicitly
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
 
   try {
     const supabaseClient = createClient(
@@ -106,7 +109,7 @@ serve(async (req) => {
       dialect: sample.dialect,
       attempt_number,
       passed,
-      overall_score,
+      overall_score: overallScore, // Corregido: era overallScore, no overall_score
       phoneme_likeness_score: phonemeAccuracy,
       completeness_score: completeness,
       cadence_fluency_score: cadenceScore,
@@ -120,19 +123,27 @@ serve(async (req) => {
       is_ghost_attempt: analysis.is_ghost_attempt
     });
 
-    // 5. Return sanitized payload to frontend (no exact overall score to avoid distraction)
+    // 5. Return complete payload to frontend with exact variables UI expects
     return new Response(JSON.stringify({ 
       success: true, 
       passed,
+      overall_score: overallScore,
+      is_ghost_attempt: analysis.is_ghost_attempt,
+      recognized_transcript: analysis.recognized_transcript,
+      prosody_diagnostics: analysis.prosody_comparison,
       token_grades: gradedTokens,
       inter_word_events: analysis.inter_word_events,
       feedback: {
         cadence: cadenceScore < 70 ? "Pacing needs adjustment" : "Good pacing",
         pronunciation: phonemeAccuracy < 70 ? "Needs pronunciation polish" : "Clear pronunciation"
       }
-    }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 });
 
   } catch (error: any) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: corsHeaders });
+    // Return structured JSON even on error so mobile devices can parse it cleanly
+    return new Response(JSON.stringify({ error: error.message }), { 
+      headers: { ...corsHeaders, "Content-Type": "application/json" }, 
+      status: 400 
+    });
   }
 });
