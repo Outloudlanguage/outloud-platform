@@ -1902,8 +1902,10 @@ useEffect(() => {
       );
 
       if (recordNodes.length > 0 && blueprintData?.id) {
-        // Run ingestion tasks in the background without blocking the UI
-        Promise.allSettled(
+        alert(`Found ${recordNodes.length} audio node(s). Sending to Google Cloud for ingestion...`);
+        
+        // Force the app to wait for the Edge Function so it can alert any errors directly to the screen
+        const results = await Promise.all(
           recordNodes.map(node => 
             supabase.functions.invoke('ingest-sample', {
               body: {
@@ -1914,15 +1916,17 @@ useEffect(() => {
               }
             })
           )
-        ).then(results => {
-          const failures = results.filter(r => r.status === 'rejected' || r.value?.error);
-          if (failures.length > 0) {
-            console.error("Warning: Some audio files failed acoustic ingestion.", failures);
-          }
-        });
+        );
+        
+        const failures = results.filter(r => r.error);
+        if (failures.length > 0) {
+          alert(`CRITICAL ERROR: Supabase rejected the ingestion. Error: ${failures[0].error.message}`);
+        } else {
+          alert("Success! Changes saved and Master Acoustic Profiles built in Google Cloud.");
+        }
+      } else {
+        alert(`Changes saved, but NO audio nodes were found to process (Found: ${recordNodes.length}).`);
       }
-
-      alert("Changes saved and pushed live successfully!");
     } catch (err) { 
       console.error(err); 
       alert("Error saving: " + err.message);
