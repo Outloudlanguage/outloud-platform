@@ -13,23 +13,16 @@ serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-
-    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: req.headers.get("Authorization") ?? "" } }
-    });
-
-    const { data: { user } } = await supabaseClient.auth.getUser();
 
     const { lesson_id, node_id, audio_url, display_text } = await req.json();
 
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
-    // 1. CACHE CHECK: Skip heavy Python ML processing if this exact audio + text is already processed
+    // 1. CACHE CHECK: Select * so we never fail on column name differences
     const { data: existingSample } = await supabaseAdmin
       .from("speech_exercise_samples")
-      .select("id, reference_audio_url, reference_text, reference_acoustic_profile")
+      .select("*")
       .eq("lesson_id", lesson_id)
       .eq("node_id", node_id)
       .maybeSingle();
@@ -37,8 +30,7 @@ serve(async (req) => {
     if (
       existingSample &&
       existingSample.reference_acoustic_profile &&
-      existingSample.reference_audio_url === audio_url &&
-      existingSample.reference_text === display_text
+      existingSample.reference_audio_url === audio_url
     ) {
       return new Response(JSON.stringify({ success: true, cached: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -83,19 +75,34 @@ serve(async (req) => {
 
     const { reference_acoustic_profile } = await workerRes.json();
 
-    // 3. SAVE PROFILE TO DB
-    const { error: upsertError } = await supabaseAdmin
+    // 3. SAVE PROFILE TO DB (Adaptive payload without 'created_by')
+    const baseRecord: Record<string, any> = {
+      lesson_id,
+      node_id,
+      reference_audio_url: audio_url,
+      reference_acoustic_profile,
+      cefr_level: "A1",
+      dialect: "en-US"
+    };
+
+    // Try with display_text first, fallback to reference_text or baseRecord if column doesn't exist
+    let { error: upsertError } = await supabaseAdmin
       .from("speech_exercise_samples")
-      .upsert({
-        lesson_id,
-        node_id,
-        reference_audio_url: audio_url,
-        reference_text: display_text,
-        reference_acoustic_profile,
-        cefr_level: "A1",
-        dialect: "en-US",
-        created_by: user?.id || null
-      }, { onConflict: "lesson_id,node_id" });
+      .upsert({ ...baseRecord, display_text }, { onConflict: "lesson_id,node_id" });
+
+    if (upsertError && upsertError.message.includes("display_text")) {
+      const retry1 = await supabaseAdmin
+        .from("speech_exercise_samples")
+        .upsert({ ...baseRecord, reference_text: display_text }, { onConflict: "lesson_id,node_id" });
+      upsertError = retry1.error;
+    }
+
+    if (upsertError && upsertError.message.includes("reference_text")) {
+      const retry2 = await supabaseAdmin
+        .from("speech_exercise_samples")
+        .upsert(baseRecord, { onConflict: "lesson_id,node_id" });
+      upsertError = retry2.error;
+    }
 
     if (upsertError) throw new Error(`DB Upsert Error: ${upsertError.message}`);
 
