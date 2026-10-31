@@ -32,9 +32,13 @@ serve(async (req) => {
     const workerUrl = Deno.env.get("ACOUSTIC_WORKER_URL");
     const workerSecret = Deno.env.get("ACOUSTIC_WORKER_SECRET");
 
+    if (!workerSecret || !workerUrl) {
+      throw new Error("Secretos faltantes: ACOUSTIC_WORKER_URL o ACOUSTIC_WORKER_SECRET no están configurados en Supabase.");
+    }
+
     const workerRes = await fetch(`${workerUrl}/ingest-sample`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "x-worker-secret": workerSecret! },
+      headers: { "Content-Type": "application/json", "x-worker-secret": workerSecret },
       body: JSON.stringify({ 
         audio_url: reference_audio_url, 
         display_text: target_text 
