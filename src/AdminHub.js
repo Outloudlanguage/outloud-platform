@@ -1911,8 +1911,8 @@ useEffect(() => {
               body: {
                 lesson_id: blueprintData.id,
                 node_id: node.id,
-                reference_audio_url: node.data.audioUrl,
-                target_text: node.data.transcriptText || node.data.text || ""
+                audio_url: node.data.audioUrl,
+                display_text: node.data.transcriptText || node.data.text || ""
               }
             })
           )

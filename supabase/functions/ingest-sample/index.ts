@@ -21,7 +21,7 @@ serve(async (req) => {
     // DYNAMIC AUTH: Attempt to get user, but do not throw error if null (Allow admin calls)
     const { data: { user } } = await supabaseClient.auth.getUser();
 
-    const { lesson_id, node_id, reference_audio_url, target_text } = await req.json();
+    const { lesson_id, node_id, audio_url, display_text } = await req.json();
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -40,8 +40,8 @@ serve(async (req) => {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-worker-secret": workerSecret },
       body: JSON.stringify({ 
-        audio_url: reference_audio_url, 
-        display_text: target_text 
+        audio_url, 
+        display_text 
       })
     });
 
