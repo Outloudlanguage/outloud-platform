@@ -12,20 +12,20 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      { global: { headers: { Authorization: req.headers.get("Authorization")! } } }
-    );
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    
+    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, { 
+      global: { headers: { Authorization: req.headers.get("Authorization")! } } 
+    });
 
     const { data: { user } } = await supabaseClient.auth.getUser();
 
-    const { lesson_id, node_id, audio_url, display_text } = await req.json();
+    const payload = await req.json();
+    const { lesson_id, node_id, audio_url, display_text } = payload;
 
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     const workerUrl = Deno.env.get("ACOUSTIC_WORKER_URL");
     const workerSecret = Deno.env.get("ACOUSTIC_WORKER_SECRET");
@@ -38,8 +38,8 @@ serve(async (req) => {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-worker-secret": workerSecret },
       body: JSON.stringify({ 
-        audio_url, 
-        display_text 
+        audio_url: audio_url, 
+        display_text: display_text 
       })
     });
 
