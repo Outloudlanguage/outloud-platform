@@ -1902,27 +1902,32 @@ useEffect(() => {
       );
 
       if (recordNodes.length > 0 && blueprintData?.id) {
-        alert(`Found ${recordNodes.length} audio node(s). Sending to Google Cloud for ingestion...`);
-        
-        // Force the app to wait for the Edge Function so it can alert any errors directly to the screen
-        const results = await Promise.all(
-          recordNodes.map(node => 
-            supabase.functions.invoke('ingest-sample', {
-              body: {
-                lesson_id: blueprintData.id,
-                node_id: node.id,
-                audio_url: node.data.audioUrl,
-                display_text: node.data.transcriptText || node.data.text || ""
-              }
-            })
-          )
-        );
-        
-        const failures = results.filter(r => r.error);
+        const failures = [];
+
+        // Process nodes ONE BY ONE sequentially so we never overload the Python Acoustic Worker
+        for (const node of recordNodes) {
+          const res = await supabase.functions.invoke('ingest-sample', {
+            body: {
+              lesson_id: blueprintData.id,
+              node_id: node.id,
+              audio_url: node.data.audioUrl,
+              display_text: node.data.transcriptText || node.data.text || ""
+            }
+          });
+
+          if (res.error) {
+            let errText = res.error.message;
+            if (res.error.context) {
+              try { errText = await res.error.context.text(); } catch (e) {}
+            }
+            failures.push({ nodeId: node.id, error: errText });
+          }
+        }
+
         if (failures.length > 0) {
-          alert(`CRITICAL ERROR: Supabase rejected the ingestion. Error: ${failures[0].error.message}`);
+          alert(`CRITICAL ERROR: ${failures.length}/${recordNodes.length} node(s) failed. First error: ${failures[0].error}`);
         } else {
-          alert("Success! Changes saved and Master Acoustic Profiles built in Google Cloud.");
+          alert(`Success! All ${recordNodes.length} Master Acoustic Profiles are verified and live.`);
         }
       } else {
         alert(`Changes saved, but NO audio nodes were found to process (Found: ${recordNodes.length}).`);
