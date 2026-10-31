@@ -18,7 +18,6 @@ serve(async (req) => {
       { global: { headers: { Authorization: req.headers.get("Authorization")! } } }
     );
 
-    // DYNAMIC AUTH: Attempt to get user, but do not throw error if null (Allow admin calls)
     const { data: { user } } = await supabaseClient.auth.getUser();
 
     const { lesson_id, node_id, audio_url, display_text } = await req.json();
@@ -28,12 +27,11 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Call Python Acoustic Worker to build profile
     const workerUrl = Deno.env.get("ACOUSTIC_WORKER_URL");
     const workerSecret = Deno.env.get("ACOUSTIC_WORKER_SECRET");
 
     if (!workerSecret || !workerUrl) {
-      throw new Error("Secretos faltantes: ACOUSTIC_WORKER_URL o ACOUSTIC_WORKER_SECRET no están configurados en Supabase.");
+      throw new Error("Missing Secrets: ACOUSTIC_WORKER_URL or ACOUSTIC_WORKER_SECRET not set.");
     }
 
     const workerRes = await fetch(`${workerUrl}/ingest-sample`, {
@@ -46,18 +44,18 @@ serve(async (req) => {
     });
 
     if (!workerRes.ok) throw new Error(`Worker Error: ${await workerRes.text()}`);
+    
     const { reference_acoustic_profile } = await workerRes.json();
 
-    // Securely Save Profile to DB using Service Role
     await supabaseAdmin.from("speech_exercise_samples").upsert({
       lesson_id,
       node_id,
-      reference_audio_url,
-      reference_text: target_text,
+      reference_audio_url: audio_url,
+      reference_text: display_text,
       reference_acoustic_profile,
-      cefr_level: "A1", // Default, update as needed
+      cefr_level: "A1",
       dialect: "en-US",
-      created_by: user?.id || null // Save admin ID if available, otherwise null
+      created_by: user?.id || null
     }, { onConflict: 'lesson_id,node_id' });
 
     return new Response(JSON.stringify({ success: true }), { 
