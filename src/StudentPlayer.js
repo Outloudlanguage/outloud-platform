@@ -494,6 +494,8 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
                                 [`${el.id}_score`]: overallScore,
                                 [`${el.id}_points`]: pointsAwarded
                               }));
+                              // Trigger the page turn immediately when the green button is clicked
+                              proceedToNext();
                             }}
                           />
                         )}
@@ -830,6 +832,10 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
             <div className="w-full mt-auto pt-20 flex flex-col sm:flex-row justify-center items-center gap-4 px-4 relative z-50">
               {dockElements.map(el => {
                 if (el.type === 'nav_button') {
+                  // Hide the redundant bottom button if the screen contains a self-grading vocal exercise
+                  const hasVocalActivity = contentElements.some(c => c.type === 'record_compare');
+                  if (hasVocalActivity) return null;
+
                   let btnClass = "bg-[#fcd34d] text-[#08203e] shadow-[0_0_40px_rgba(252,211,77,0.4)] hover:shadow-[0_0_50px_rgba(252,211,77,0.6)]";
                   let btnText = "CONFIRM";
 
