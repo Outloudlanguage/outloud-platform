@@ -32,7 +32,8 @@ export default function ForumBoard({ currentUser, onClose }) {
   const [selectedEmojiCategory, setSelectedEmojiCategory] = useState('Expressions');
   const replyInputRef = useRef(null);
   
-  // Admin Forms
+  // Mobile Navigation & Admin Forms
+  const [showMobileChannels, setShowMobileChannels] = useState(false);
   const [showChannelForm, setShowChannelForm] = useState(false);
   const [newChannelTitle, setNewChannelTitle] = useState('');
   const [newChannelDesc, setNewChannelDesc] = useState('');
@@ -238,8 +239,24 @@ export default function ForumBoard({ currentUser, onClose }) {
     fetchReplies(activePost.id);
   };
 
+  const handleTogglePin = async (post) => {
+    if (!isAdmin) return;
+    await supabase.from('forum_posts').update({ is_pinned: !post.is_pinned }).eq('id', post.id);
+    fetchPosts(activeChannel.id);
+  };
+
+  const handleDeleteChannel = async (channelId) => {
+    if (!isAdmin) return;
+    if (!window.confirm("Delete this channel and all of its posts permanently?")) return;
+    await supabase.from('forum_channels').delete().eq('id', channelId);
+    setActiveChannel(null);
+    setActivePost(null);
+    fetchChannels();
+  };
+
   const handleDelete = async (itemId, type) => {
-    if (!window.confirm("Are you sure you want to delete this?")) return;
+    if (!isAdmin) return;
+    if (!window.confirm("Are you sure you want to permanently delete this?")) return;
     const table = type === 'post' ? 'forum_posts' : 'forum_replies';
     await supabase.from(table).delete().eq('id', itemId);
     
@@ -338,13 +355,12 @@ export default function ForumBoard({ currentUser, onClose }) {
       </div>
 
       {/* ----------------------------------------------------------------- */}
-      {/* LEFT PANE: CHANNEL DIRECTORY */}
+      {/* LEFT PANE: CHANNEL DIRECTORY (Desktop Sidebar & Mobile Drawer) */}
       {/* ----------------------------------------------------------------- */}
-      <div className={`${activePost ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-64 lg:w-72 border-r border-white/10 bg-black/10 backdrop-blur-lg shrink-0 h-full relative z-10`}>
+      <div className={`${showMobileChannels ? 'flex fixed inset-0 z-50 bg-[#070b19]/95 backdrop-blur-2xl' : 'hidden'} md:flex md:relative flex-col w-full md:w-64 lg:w-72 border-r border-white/10 bg-black/20 backdrop-blur-lg shrink-0 h-full z-10`}>
         <div className="h-16 md:h-20 border-b border-white/10 flex items-center justify-between px-6 shrink-0 bg-white/5">
           <h2 className="text-sm font-black uppercase tracking-widest text-[#fcd34d]">Discussion Boards</h2>
-          {/* Mobile exit button when seeing channels */}
-          <button onClick={onClose} className="md:hidden w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white">✕</button>
+          <button onClick={() => setShowMobileChannels(false)} className="md:hidden w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white font-black">✕</button>
         </div>
 
         <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-6">
@@ -357,16 +373,22 @@ export default function ForumBoard({ currentUser, onClose }) {
             </h3>
             <div className="space-y-1">
               {channels.filter(c => c.channel_type === 'qa').map(c => (
-                <button 
-                  key={c.id} onClick={() => { setActiveChannel(c); setActivePost(null); setFormError(''); }}
-                  className={`w-full text-left p-3 rounded-xl transition-all group flex flex-col gap-1 ${activeChannel?.id === c.id ? 'bg-white/10 shadow-inner border border-white/10' : 'hover:bg-white/5 border border-transparent'}`}
+                <div
+                  key={c.id}
+                  onClick={() => { setActiveChannel(c); setActivePost(null); setFormError(''); setShowMobileChannels(false); }}
+                  className={`w-full text-left p-3 rounded-xl transition-all group flex flex-col gap-1 cursor-pointer ${activeChannel?.id === c.id ? 'bg-white/10 shadow-inner border border-white/15' : 'hover:bg-white/5 border border-transparent'}`}
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-2">
                     <span className={`text-xs font-black uppercase tracking-wider truncate ${activeChannel?.id === c.id ? 'text-[#fcd34d]' : 'text-white/80 group-hover:text-white'}`}># {c.title}</span>
-                    {c.target_level !== 'ALL' && <span className="text-[8px] bg-white/10 px-1.5 py-0.5 rounded font-bold text-white/60">{c.target_level}</span>}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {c.target_level !== 'ALL' && <span className="text-[8px] bg-white/10 px-1.5 py-0.5 rounded font-bold text-white/60">{c.target_level}</span>}
+                      {isAdmin && (
+                        <button onClick={(e) => { e.stopPropagation(); handleDeleteChannel(c.id); }} className="text-[10px] text-red-400/50 hover:text-red-400 font-black px-1" title="Delete Channel">✕</button>
+                      )}
+                    </div>
                   </div>
                   {c.description && <span className="text-[9px] text-white/40 font-medium truncate">{c.description}</span>}
-                </button>
+                </div>
               ))}
             </div>
           </div>
@@ -379,15 +401,22 @@ export default function ForumBoard({ currentUser, onClose }) {
             </h3>
             <div className="space-y-1">
               {channels.filter(c => c.channel_type === 'debate').map(c => (
-                <button 
-                  key={c.id} onClick={() => { setActiveChannel(c); setActivePost(null); setFormError(''); }}
-                  className={`w-full text-left p-3 rounded-xl transition-all group flex flex-col gap-1 ${activeChannel?.id === c.id ? 'bg-white/10 shadow-inner border border-white/10' : 'hover:bg-white/5 border border-transparent'}`}
+                <div
+                  key={c.id}
+                  onClick={() => { setActiveChannel(c); setActivePost(null); setFormError(''); setShowMobileChannels(false); }}
+                  className={`w-full text-left p-3 rounded-xl transition-all group flex flex-col gap-1 cursor-pointer ${activeChannel?.id === c.id ? 'bg-white/10 shadow-inner border border-white/15' : 'hover:bg-white/5 border border-transparent'}`}
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-2">
                     <span className={`text-xs font-black uppercase tracking-wider truncate ${activeChannel?.id === c.id ? 'text-red-400' : 'text-white/80 group-hover:text-white'}`}># {c.title}</span>
-                    {c.target_level !== 'ALL' && <span className="text-[8px] bg-white/10 px-1.5 py-0.5 rounded font-bold text-white/60">{c.target_level}</span>}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {c.target_level !== 'ALL' && <span className="text-[8px] bg-white/10 px-1.5 py-0.5 rounded font-bold text-white/60">{c.target_level}</span>}
+                      {isAdmin && (
+                        <button onClick={(e) => { e.stopPropagation(); handleDeleteChannel(c.id); }} className="text-[10px] text-red-400/50 hover:text-red-400 font-black px-1" title="Delete Channel">✕</button>
+                      )}
+                    </div>
                   </div>
-                </button>
+                  {c.description && <span className="text-[9px] text-white/40 font-medium truncate">{c.description}</span>}
+                </div>
               ))}
             </div>
           </div>
@@ -434,34 +463,43 @@ export default function ForumBoard({ currentUser, onClose }) {
       {/* ----------------------------------------------------------------- */}
       {/* RIGHT PANE: FEED / THREAD */}
       {/* ----------------------------------------------------------------- */}
-      <div className={`flex-1 flex flex-col h-full relative z-10 overflow-hidden ${!activePost ? 'hidden md:flex' : 'flex'}`}>
+      <div className="flex-1 flex flex-col h-full relative z-10 overflow-hidden">
         
-        {/* BACKGROUND WATERMARK (Centered strictly to the feed canvas) */}
+        {/* BACKGROUND WATERMARK */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
           <img src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Monogram.png" alt="Watermark" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] md:w-[700px] object-contain opacity-[0.04] invert brightness-0" />
         </div>
 
         {/* Top Navbar */}
         <div className="h-16 md:h-20 border-b border-white/10 bg-black/20 backdrop-blur-xl px-4 md:px-8 flex items-center justify-between shrink-0 relative z-20">
-          <div className="flex items-center gap-3">
-            {/* Back Button (Mobile feed -> channels, OR Thread -> Feed) */}
-            <button 
-              onClick={() => activePost ? setActivePost(null) : onClose()} 
-              className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white transition-colors shrink-0"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-            </button>
-            <div className="flex flex-col">
-              <h1 className="text-sm md:text-base font-black uppercase tracking-wider text-white flex items-center gap-2">
-                {activeChannel?.title || 'Forum'}
+          <div className="flex items-center gap-3 min-w-0">
+            {activePost ? (
+              <button 
+                onClick={() => setActivePost(null)} 
+                className="w-10 h-10 rounded-xl bg-white/10 hover:bg-[#fcd34d] hover:text-[#08203e] border border-white/15 flex items-center justify-center text-white transition-all shrink-0 cursor-pointer"
+                title="Back to Channel Feed"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+              </button>
+            ) : (
+              <button 
+                onClick={() => setShowMobileChannels(true)} 
+                className="md:hidden px-3 h-10 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 flex items-center justify-center gap-1.5 text-xs font-black uppercase tracking-widest text-[#fcd34d] shrink-0"
+              >
+                ☰ Channels
+              </button>
+            )}
+            <div className="flex flex-col min-w-0">
+              <h1 className="text-sm md:text-base font-black uppercase tracking-wider text-white flex items-center gap-2 truncate">
+                # {activeChannel?.title || 'Forum'}
                 {activeChannel?.channel_type === 'debate' && <span className="text-[8px] bg-red-500/20 text-red-400 border border-red-500/30 px-1.5 py-0.5 rounded uppercase tracking-widest hidden sm:inline">English Only</span>}
               </h1>
-              <p className="text-[9px] text-white/50 font-bold tracking-widest uppercase">
-                {activePost ? 'Viewing Thread' : activeChannel?.description || 'Community Board'}
+              <p className="text-[9px] text-white/50 font-bold tracking-widest uppercase truncate">
+                {activePost ? 'Viewing Discussion Thread' : activeChannel?.description || 'Community Discussion Board'}
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="hidden md:flex w-10 h-10 items-center justify-center bg-white/10 hover:bg-red-500 border border-white/20 rounded-xl text-white transition-colors">
+          <button onClick={onClose} className="w-10 h-10 flex items-center justify-center bg-white/10 hover:bg-red-500 border border-white/20 rounded-xl text-white transition-colors shrink-0 cursor-pointer">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
@@ -538,12 +576,20 @@ export default function ForumBoard({ currentUser, onClose }) {
                         <p className="text-xs text-white/60 font-medium line-clamp-2 leading-relaxed">{post.content}</p>
                         
                         <div className="flex items-center gap-4 mt-4">
-                          <span className="text-[10px] font-bold text-white/40 flex items-center gap-1.5 hover:text-white transition-colors">
+                          <span className="text-[10px] font-bold text-white/40 flex items-center gap-1.5 group-hover:text-[#fcd34d] transition-colors">
                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
                             View Thread
                           </span>
-                          {(post.author_id === currentUser.id || isModerator) && (
-                            <button onClick={(e) => { e.stopPropagation(); handleDelete(post.id, 'post'); }} className="text-[10px] font-bold text-red-400/50 hover:text-red-400 uppercase tracking-widest transition-colors">Delete</button>
+                          {post.is_pinned && (
+                            <span className="text-[9px] font-black uppercase tracking-widest text-[#fcd34d] bg-[#fcd34d]/10 border border-[#fcd34d]/30 px-2 py-0.5 rounded">📌 Pinned</span>
+                          )}
+                          {isAdmin && (
+                            <div className="flex items-center gap-3 ml-auto">
+                              <button onClick={(e) => { e.stopPropagation(); handleTogglePin(post); }} className="text-[10px] font-bold text-[#fcd34d]/70 hover:text-[#fcd34d] uppercase tracking-widest transition-colors">
+                                {post.is_pinned ? 'Unpin' : 'Pin'}
+                              </button>
+                              <button onClick={(e) => { e.stopPropagation(); handleDelete(post.id, 'post'); }} className="text-[10px] font-bold text-red-400/60 hover:text-red-400 uppercase tracking-widest transition-colors">Delete</button>
+                            </div>
                           )}
                         </div>
                       </div>
@@ -604,22 +650,23 @@ export default function ForumBoard({ currentUser, onClose }) {
                         
                         <div className="flex items-center gap-4 mt-4 pt-3 border-t border-white/5">
                           <button onClick={() => {
-                            setNewReplyContent(prev => `> Replying to @${author.first_name}:\n\n` + prev);
+                            const targetName = reply.author?.first_name || 'Member';
+                            setNewReplyContent(prev => `> Replying to @${targetName}:\n\n` + prev);
                             replyInputRef.current?.focus();
-                          }} className="text-[10px] font-black uppercase tracking-widest text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1">
+                          }} className="text-[10px] font-black uppercase tracking-widest text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1 cursor-pointer">
                             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
                             Reply
                           </button>
                           
                           {isModerator && (
-                            <button onClick={() => handleGoldenApple(reply.id, reply.is_teacher_approved)} className={`text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border shadow-sm ${reply.is_teacher_approved ? 'bg-white/5 border-white/10 text-white/50 hover:text-white hover:bg-white/10' : 'bg-[#fcd34d]/10 border-[#fcd34d]/30 text-[#fcd34d] hover:bg-[#fcd34d]/20 hover:border-[#fcd34d]/50 shadow-[0_0_15px_rgba(252,211,77,0.15)]'}`}>
+                            <button onClick={() => handleGoldenApple(reply.id, reply.is_teacher_approved)} className={`text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border shadow-sm cursor-pointer ${reply.is_teacher_approved ? 'bg-white/5 border-white/10 text-white/50 hover:text-white hover:bg-white/10' : 'bg-[#fcd34d]/10 border-[#fcd34d]/30 text-[#fcd34d] hover:bg-[#fcd34d]/20 hover:border-[#fcd34d]/50 shadow-[0_0_15px_rgba(252,211,77,0.15)]'}`}>
                               <svg className={`w-3.5 h-3.5 transition-all ${reply.is_teacher_approved ? 'text-white/40' : 'text-[#fcd34d] drop-shadow-[0_0_8px_rgba(252,211,77,0.8)]'}`} fill="currentColor" viewBox="0 0 24 24"><path d="M15.2,5.1c0.6-0.8,1.1-1.9,0.9-2.9c-0.9,0-2,0.4-2.7,1.1c-0.6,0.7-1.1,1.8-1,2.8C13.4,6.2,14.5,5.8,15.2,5.1z M16.7,6.8c-1.4-0.1-2.6,0.8-3.4,1.4c-0.6-0.5-1.7-1.4-3.2-1.4c-2.1,0-4.1,1.7-4.1,4.3c0,3,2.1,6.5,4.6,9.8c1.2,1.5,2.1,2.9,3.2,2.9c1,0,1.6-0.7,3.1-0.7c1.4,0,2,0.7,3.2,0.7c1.1,0,2.2-1.5,3.3-2.9c1.1-1.5,2.1-3.6,2.1-3.6s-1.8-0.7-1.8-2.8c0-1.8,1.4-2.7,1.4-2.7C20.1,8.3,18.5,6.9,16.7,6.8z"/></svg>
                               {reply.is_teacher_approved ? 'Revoke Apple' : 'Award Apple'}
                             </button>
                           )}
                           
-                          {(reply.author_id === currentUser.id || isModerator) && (
-                            <button onClick={() => handleDelete(reply.id, 'reply')} className="text-[10px] font-black text-red-400/50 hover:text-red-400 uppercase tracking-widest transition-colors ml-auto">Delete</button>
+                          {isAdmin && (
+                            <button onClick={() => handleDelete(reply.id, 'reply')} className="text-[10px] font-black text-red-400/60 hover:text-red-400 uppercase tracking-widest transition-colors ml-auto cursor-pointer">Delete</button>
                           )}
                         </div>
                       </div>

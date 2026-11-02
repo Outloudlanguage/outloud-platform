@@ -8,12 +8,13 @@ import { validateContent } from './utils/ContentFilter';
 const EMOJI_CATEGORIES = {
   Expressions: ['😀','😃','😄','😁','😆','😅','😂','🤣','☺️','😊','😇','🙂','🙃','😉','😌','😍','🥰','😘','😗','😙','😚','😋','😛','😝','😜','🤪','🤨','🧐','🤓','😎','🤩','🥳','😏','😒','😞','😔','😟','😕','🙁','☹️','😣','😖','😫','😩','🥺','😢','😭','😤','😠','😡','🤬','🤯','😳','😱','😨','😰','😥','😓','🤗','🤔','🤭','🤫','🤥','😶','😐','😑','😬','🙄','😯','😦','😧','😮','😲','🥱','😴','🤤','😪','😵','🤐','🤢','🤮','🤧','😷','🤒','🤕','🤑','🤠','😈','👿','👹','👺','🤡','💩','👻','💀','☠️','👽','👾','🤖','🎃','😺','😸','😹','😻','😼','😽','🙀','😿','😾'],
   People: ['👋','🤚','🖐','✋','🖖','👌','✌️','🤞','🤟','🤘','🤙','👈','👉','👆','🖕','👇','☝️','👍','👎','✊','👊','🤛','🤜','👏','🙌','👐','🤲','🤝','🙏','✍️','💅','🤳','💪','🦵','🦶','👂','👃','🧠','👀','👁','👅','👄','👶','🧒','👦','👧','🧑','👱','👨','🧔','👩','🧓','👴','👵','🙍','🙎','🙅','🙆','💁','🙋','🙇','🤦','🤷','👮','🕵','💂','👷','🤴','👸','👳','👲','🧕','🤵','👰','🤰','🤱','👼','🎅','🤶','🦸','🦹','🧙','🧚','🧛','🧜','🧝','🧞','🧟','💆','💇','🚶','🏃','💃','🕺','👯','🧖','🧗','🤺','🏇','⛷','🏂','🏌','🏄','🚣','🏊','⛹','🏋','🚴','🚵','🤸','🤼','🤽','🤾','🤹','🧘'],
-  Animals: ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐽','🐸','🐵','🙈','🙉','🙊','🐒','🐔','🐧','🐦','🐤','🐣','🐥','🦆','🦅','🦉','🦇','🐺','🐗','🐴','🦄','🐝','🐛','🦋','🐌','🐞','🐜','蚊','🦗','🕸','🦂','🐢','🐍','🦎','🦖','🦕','🐙','🦑','🦐','🦞','🦀','🐡','🐠','🐟','🐬','🐳','🐋','🦈','鳄','🐅','豹','🦓','🦍','🐘','犀','🐫','🐪','🦒','🐃','🐂','🐄','🐎','🐖','🐏','🐑','山羊','鹿','狗','贵宾','猫','公鸡','火鸡','孔雀','天鹅','鸽','兔','浣熊','臭鼬','獾','鼠','老鼠','松鼠','刺猬','🐾','龙','🐲','🌵','🎄','🌲','🌳','🌴','🌱','🌿','☘️','🍀','🎍','🎋','🍃','🍂','🍁','🍄','🐚','🌾','💐','🌷','🌹','🥀','🌺','🌸','🌼','🌻','🌞','🌝','🌛','🌜','🌚','🌕','🌖','🌗','🌘','🌑','🌒','🌓','🌔','🌙','🌎','🌍','🌏','🪐','💫','⭐️','🌟','✨','⚡️','☄️','💥','🔥','🌪','🌈','☀️','🌤','⛅️','🌥','☁️','🌦','🌧','⛈','🌩','🌨','❄️','☃️','⛄️','🌬','💨','💧','💦','☔️','☂️','🌊','🌫'],
+  Animals: ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐽','🐸','🐵','🙈','🙉','🙊','🐒','🐔','🐧','🐦','🐤','🐣','🐥','🦆','🦅','🦉','🦇','🐺','🐗','🐴','🦄','🐝','🐛','🦋','🐌','🐞','🐜','🦟','🦗','🕸','🦂','🐢','🐍','🦎','🦖','🦕','🐙','🦑','🦐','🦞','🦀','🐡','🐠','🐟','🐬','🐳','🐋','🦈','🐅','豹','🦓','🦍','🐘','🐫','🐪','🦒','🐃','🐂','🐄','🐎','🐖','🐏','🐑','鹿','狗','猫','公鸡','火鸡','孔雀','天鹅','鸽','兔','浣熊','臭鼬','獾','鼠','老鼠','松鼠','刺猬','🐾','龙','🌵','🎄','🌲','🌳','🌴','🌱','🌿','☘️','🍀','🎍','🎋','🍃','🍂','🍁','🍄','🐚','🌾','💐','🌷','🌹','🥀','🌺','🌸','🌼','🌻','🌞','🌝','🌛','🌜','🌚','🌕','🌖','🌗','🌘','🌑','🌒','🌓','🌔','🌙','🌎','🌍','🌏','🪐','💫','⭐️','🌟','✨','⚡️','☄️','💥','🔥','🌪','🌈','☀️','🌤','⛅️','🌥','☁️','🌦','🌧','⛈','🌩','🌨','❄️','☃️','⛄️','🌬','💨','💧','💦','☔️','☂️','🌊','🌫'],
   Food: ['🍏','🍎','🍐','🍊','🍋','🍌','🍉','🍇','🍓','🍈','🍒','🍑','🍍','🥥','🥝','🍅','🍆','🥑','🥦','🥒','🌶','🌽','🥕','🥔','🍠','🥐','🍞','🥖','🥨','🧀','🥚','🍳','🥞','🥓','🥩','🍗','🍖','🌭','🍔','🍟','🍕','🥪','🥙','🌮','🌯','🥗','🥘','🥫','🍝','🍜','🍲','🍛','🍣','🍱','🥟','🍤','🍙','🍚','🍘','🍥','🥠','🍢','🍡','🍧','🍨','🍦','🥧','🍰','🎂','🍮','🍭','🍬','🍫','🍿','🍩','🍪','🌰','🥜','🍯','🥛','🍼','☕️','🍵','🥤','🍶','🍺','🍻','🥂','🍷','🥃','🍸','🍹','🍾','🥄','🍴','🍽','🥣','🥡','🥢','🧂'],
   Places: ['🚗','🚕','🚙','🚌','🚎','🏎','🚓','🚑','🚒','🚐','🚚','🚛','🚜','🛴','🚲','🛵','🏍','🚨','🚔','🚍','🚘','🚖','🚡','🚠','🚟','🚃','🚋','🚞','🚝','🚄','🚅','🚈','🚂','🚆','🚇','🚊','🚉','✈️','🛫','🛬','🛩','💺','🛰','🚀','🛸','🚁','🛶','⛵️','🛥','🛳','⛴','🚢','⚓️','⛽️','🚧','🚦','🚥','🚏','🗺','🗿','🗽','🗼','城堡','🏯','🏟','🎡','🎢','🎠','⛲️','⛱','🏖','🏝','🏜','🌋','⛰','🏔','🗻','🏕','⛺️','🏠','🏡','🏘','🏚','🏗','🏭','🏢','🏬','🏣','🏤','🏥','🏦','🏨','🏪','🏫','🏩','💒','🏛','⛪️','🕌','🕍','🕋'],
-  Objects: ['⌚️','📱','📲','💻','⌨️','🖥','🖨','🖱','🖲','🕹','💽','💾','💿','📀','📼','📷','📸','📹','🎥','📽','🎞','📞','☎️','📟','📠','📺','📻','🎙','🎚','🎛','🧭','⏱','⏲','⏰','🕰','⌛️','⏳','📡','🔌','💡','🔦','🕯','💸','💵','💴','💶','💷','💰','💳','💎','⚖️','🔧','🔨','⚒','🛠','⛏','🔩','⚙️','砖块','链条','磁铁','🔫','💣','🧨','🔪','🗡','⚔️','盾牌','🚬','⚰️','⚱️','🔮','📿','💈','⚗️','望远镜','显微镜','🕳','💊','💉','🧬','🦠','🧫','🧪','🌡','扫帚','厕纸','🚽','🚰','🚿','🛁','🛀','皂','海绵','门','钥匙','床','🧸','画框','镜子','窗户','🛍','🛒','🎁','🎈','🎏','🎀','🎊','🎉','🎎','🏮','🎐','🧧','✉️','📩','📨','📧','💌','📥','📤','📦','🏷','📪','📫','📬','📭','📮','📯','📜','📃','📄','📑','🧾','📊','📈','📉','🗒','🗓','📆','📅','🗑','📇','🗃','🗳','🗄','📋','📁','📂','🗂','🗞','📰','📓','📔','📒','📕','📗','📘','📙','📚','📖','🔖','🔗','📎','🖇','📐','📏','🧮','📌','📍','✂️','🖊','🖋','✒️','🖌','🖍','📝','✏️','🔍','🔎','🔏','🔐','🔒','🔓'],
+  Objects: ['⌚️','📱','📲','💻','⌨️','🖥','🖨','🖱','🖲','🕹','💽','💾','💿','📀','📼','📷','📸','📹','🎥','📽','🎞','📞','☎️','📟','📠','📺','📻','🎙','🎚','🎛','🧭','⏱','⏲','⏰','🕰','⌛️','⏳','📡','🔌','💡','🔦','🕯','💸','💵','💴','💶','💷','💰','💳','💎','⚖️','🔧','🔨','⚒','🛠','⛏','🔩','⚙️','🔫','💣','🧨','🔪','🗡','⚔️','盾牌','🔮','📿','⚗️','望远镜','显微镜','🕳','💊','💉','🧬','🦠','🧫','🧪','🌡','扫帚','厕纸','🚽','🚰','🚿','🛁','🛀','皂','海绵','门','钥匙','床','🧸','画框','镜子','窗户','🛍','🛒','🎁','🎈','🎏','🎀','🎊','🎉','🎎','🏮','🎐','🧧','✉️','📩','📨','📧','💌','📥','📤','📦','🏷','📪','📫','📬','📭','📮','📯','📜','📃','📄','📑','🧾','📊','📈','📉','🗒','🗓','📆','📅','🗑','📇','🗃','🗳','🗄','📋','📁','📂','🗂','🗞','📰','📓','📔','📒','📕','📗','📘','📙','📚','📖','🔖','🔗','📎','🖇','📐','📏','🧮','📌','📍','✂️','🖊','🖋','✒️','🖌','🖍','📝','✏️','🔍','🔎','🔏','🔐','🔒','🔓'],
   Symbols: ['❤️','🧡','💛','💚','💙','💜','🖤','💔','❣️','💕','💞','💓','💗','💖','💘','💝','💟','☮️','✝️','☪️','🕉','☸','✡️','🔯','🕎','☯️','☦️','🛐','⛎','♈️','♉️','♊️','♋️','♌','♍️','♎️','♏️','♐️','♑️','♒️','♓️','🆔','⚛️','🉑','☢️','☣️','📴','📳','🈶','🈚️','🈸','🈺','🈷️','✴️','🆚','💮','🉐','㊙️','㊗️','🈴','🈵','🈹','🈲','🅰️','🅱️','🆎','🆑','🅾️','🆘','❌','⭕️','🛑','⛔️','📛','🚫','💯','💢','♨️','🚷','🚯','🚳','🚱','🔞','📵','🚭','❗️','❕','❓','❔','‼️','⁉️','🔅','🔆','〽️','⚠️','🚸','🔱','⚜️','🔰','♻️','✅','🈯️','💹','❇','✳️','❎','🌐','💠','Ⓜ️','🌀','💤','🏧','🚾','♿️','🅿️','🈳','🈂️','🛂','🛃','🛄','🛅','🚹','🚺','🚼','⚧','🚻','🚮','🎦','📶','🈁','🔣','ℹ️','🔤','🔡','🔠','🆖','🆗','🆙','🆒','🆕','🆓','0️⃣','1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟','🔢','#️⃣','*️⃣','⏏️','▶️','⏸','⏯','⏹','⏺','⏭','⏮','⏩','⏪','⏫','⏬','◀️','🔼','🔽','➡️','⬅️','⬆️','⬇️','↗️','↘️','↙️','↖️','↕️','↔️','↪️','↩️','⤴️','⤵️','🔀','🔁','🔂','🔄','🔃','🎵','🎶','➕','➖','➗','✖️','💲','💱','™️','©️','®️','〰️','➰','➿','🔚','🔙','🔛','🔝','🔜','✔️','☑️','🔘','🔴','🟠','🟡','🟢','🔵','🟣','⚫️','⚪️','🔺','🔻','🔸','🔹','🔶','🔷','🔳','🔲','▪️','▫️','◾️','◽️','◼','◻️','⬛️','⬜️','🔈','🔇','🔉','🔊','🔔','🔕','📣','📢','👁‍🗨','💬','💭','🗯','♠','♣️','♥️','♦️','🃏','🎴','🀄️']
 };
+
 export default function SeminarRoom({ currentUser, userRole = 'student', onClose, roomScope = 'all' }) {
   const [internalScope, setInternalScope] = useState(roomScope === 'dual' ? 'students' : roomScope);
   const [activeRoom, setActiveRoom] = useState(null);
@@ -30,24 +31,22 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
   const [newRoomLevel, setNewRoomLevel] = useState(roomScope === 'staff' ? 'STAFF' : 'ALL');
   const [openMenuId, setOpenMenuId] = useState(null);
   const [chatError, setChatError] = useState('');
+  const [showMobileRoster, setShowMobileRoster] = useState(false);
   
   const messagesEndRef = useRef(null);
-
-  const handleModerateUser = (userId, userName, action) => {
-    if (action === 'kick') alert(`Kicked ${userName} from the room. (Backend integration pending)`);
-    if (action === 'mute') alert(`Muted ${userName}. They can no longer send messages. (Backend integration pending)`);
-    if (action === 'ban') alert(`Banned ${userName} from this session. (Backend integration pending)`);
-    setOpenMenuId(null);
-  };
   const inputRef = useRef(null);
 
   const normalizedLevel = currentUser?.level ? currentUser.level.split(':')[0].trim() : 'ALL';
   const isModerator = userRole === 'admin' || userRole === 'teacher';
   const isAdmin = userRole === 'admin';
 
+  const handleModerateUser = (userId, userName, action) => {
+    if (action === 'kick') alert(`Kicked ${userName} from the room.`);
+    if (action === 'mute') alert(`Muted ${userName}.`);
+    if (action === 'ban') alert(`Banned ${userName} from this session.`);
+    setOpenMenuId(null);
+  };
 
-
-  // 2. Fetch Active Rooms matching role and level
   const fetchActiveRooms = async () => {
     setIsLoading(true);
     try {
@@ -66,7 +65,6 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
 
       setRoomsList(data || []);
       if (data && data.length > 0) {
-        // Automatically join the current or first active room
         setActiveRoom(prev => prev ? (data.find(r => r.id === prev.id) || data[0]) : data[0]);
       } else {
         setActiveRoom(null);
@@ -94,7 +92,6 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
     };
   }, [internalScope, userRole, normalizedLevel]);
 
-  // 3. Message Stream & Presence for the Active Room
   useEffect(() => {
     if (!activeRoom) {
       setMessages([]);
@@ -103,7 +100,6 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
 
     fetchMessages(activeRoom.id);
 
-    // Realtime channel for messages and instant live presence
     const channel = supabase.channel(`room_${activeRoom.id}`, {
       config: { presence: { key: currentUser?.id || 'anon' } }
     });
@@ -162,15 +158,12 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
     }
   };
 
-  // 4. Send Message Handler
   const handleSendMessage = async (e) => {
     e?.preventDefault();
     setChatError('');
     if (!inputText.trim() || !activeRoom || isSending) return;
 
     const content = inputText.trim();
-    
-    // Run through the automated bouncer (passing false so it doesn't enforce English-only here)
     const { isValid, error: validationError } = validateContent(content, false);
     if (!isValid) {
       setChatError(validationError);
@@ -202,7 +195,6 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
     }
   };
 
-  // 5. Moderation: Delete individual message
   const handleDeleteMessage = async (messageId) => {
     if (!isModerator) return;
     try {
@@ -212,13 +204,11 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
     }
   };
 
-  // 6. Moderation: Admin/Teacher Global Room Closure (The Clean Slate)
   const handleCloseRoom = async (roomId) => {
     if (!isModerator) return;
     if (!window.confirm('Close and wipe this live session for all participants?')) return;
 
     try {
-      // Deleting the room cascades in PostgreSQL, erasing all messages automatically
       await supabase.from('chat_rooms').delete().eq('id', roomId);
       setActiveRoom(null);
       fetchActiveRooms();
@@ -227,7 +217,6 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
     }
   };
 
-  // 7. Admin/Teacher: Create New Live Room
   const handleCreateRoom = async (e) => {
     e.preventDefault();
     if (!isModerator || !newRoomTitle.trim()) return;
@@ -254,31 +243,27 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
   };
 
   const getRoleBadge = (role, level) => {
-    if (role === 'admin') return <span className="text-[9px] font-black uppercase tracking-wider bg-red-500/20 text-red-300 border border-red-500/40 px-1.5 py-0.5 rounded">MOD</span>;
-    if (role === 'teacher') return <span className="text-[9px] font-black uppercase tracking-wider bg-[#fcd34d]/20 text-[#fcd34d] border border-[#fcd34d]/40 px-1.5 py-0.5 rounded">TEACHER</span>;
-    return <span className="text-[9px] font-black uppercase tracking-wider bg-blue-500/20 text-blue-300 border border-blue-500/40 px-1.5 py-0.5 rounded">{level || 'A1'}</span>;
+    if (role === 'admin') return <span className="text-[9px] font-black uppercase tracking-wider bg-red-500/20 text-red-300 border border-red-500/40 px-1.5 py-0.5 rounded shadow-sm">MOD</span>;
+    if (role === 'teacher') return <span className="text-[9px] font-black uppercase tracking-wider bg-[#fcd34d]/20 text-[#fcd34d] border border-[#fcd34d]/40 px-1.5 py-0.5 rounded shadow-sm">TEACHER</span>;
+    return <span className="text-[9px] font-black uppercase tracking-wider bg-blue-500/20 text-blue-300 border border-blue-500/40 px-1.5 py-0.5 rounded shadow-sm">{level || 'A1'}</span>;
   };
 
-  // =========================================================================
-  // CONDITIONAL VIEW: NO ACTIVE SEMINAR AVAILABLE
-  // =========================================================================
   if (isLoading) {
     return <div className="absolute inset-0 rounded-[2.5rem] z-[700] bg-[#070b19]/10 backdrop-blur-3xl flex items-center justify-center border border-white/10"><div className="w-10 h-10 border-4 border-[#fcd34d] border-t-transparent rounded-full animate-spin"></div></div>;
   }
 
   if (!activeRoom) {
     return (
-      <div className="absolute inset-0 rounded-[2.5rem] z-[700] bg-[#070b19]/10 backdrop-blur-3xl flex flex-col items-center justify-center p-4 md:p-6 font-montserrat text-white animate-fade-in shadow-2xl border border-white/10">
+      <div className="absolute inset-0 rounded-[2.5rem] z-[700] bg-[#070b19]/20 backdrop-blur-3xl flex flex-col items-center justify-center p-4 md:p-6 font-montserrat text-white animate-fade-in shadow-2xl border border-white/10">
         
-        {/* DUAL SCOPE TOGGLE (Empty State) */}
         {roomScope === 'dual' && (
-          <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-black/20 backdrop-blur-md border border-white/5 rounded-full p-0.5 flex shadow-lg z-50">
-            <button onClick={() => { setActiveRoom(null); setInternalScope('students'); }} className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest transition-all ${internalScope === 'students' ? 'bg-[#fcd34d] text-[#08203e] shadow-md' : 'text-white/50 hover:text-white hover:bg-white/5'}`}>Student Hub</button>
-            <button onClick={() => { setActiveRoom(null); setInternalScope('staff'); }} className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest transition-all ${internalScope === 'staff' ? 'bg-[#fcd34d] text-[#08203e] shadow-md' : 'text-white/50 hover:text-white hover:bg-white/5'}`}>Staff Hub</button>
+          <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-black/40 backdrop-blur-md border border-white/10 rounded-full p-1 flex shadow-lg z-50">
+            <button onClick={() => { setActiveRoom(null); setInternalScope('students'); }} className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer ${internalScope === 'students' ? 'bg-[#fcd34d] text-[#08203e] shadow-md' : 'text-white/50 hover:text-white hover:bg-white/5'}`}>Student Hub</button>
+            <button onClick={() => { setActiveRoom(null); setInternalScope('staff'); }} className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer ${internalScope === 'staff' ? 'bg-[#fcd34d] text-[#08203e] shadow-md' : 'text-white/50 hover:text-white hover:bg-white/5'}`}>Staff Hub</button>
           </div>
         )}
 
-        <div className="bg-white/10 border border-white/20 rounded-[3rem] p-10 max-w-md w-full shadow-[0_0_50px_rgba(0,0,0,0.4)] flex flex-col items-center justify-center text-center relative overflow-hidden backdrop-blur-2xl mt-8">
+        <div className="bg-white/10 border border-white/20 rounded-[3rem] p-10 max-w-md w-full shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col items-center justify-center text-center relative overflow-hidden backdrop-blur-2xl mt-8">
           <div className="w-20 h-20 rounded-full bg-[#fcd34d]/10 border border-[#fcd34d]/30 flex items-center justify-center mb-6 text-[#fcd34d] shadow-[0_0_30px_rgba(252,211,77,0.3)]">
             <svg className="w-10 h-10 translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -308,7 +293,7 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
                 <select 
                   value={newRoomLevel} 
                   onChange={(e) => setNewRoomLevel(e.target.value)}
-                  className="w-full h-12 bg-[#070b19] border border-white/20 rounded-xl px-4 text-sm font-bold text-white outline-none focus:border-[#fcd34d]"
+                  className="w-full h-12 bg-[#070b19] border border-white/20 rounded-xl px-4 text-sm font-bold text-white outline-none focus:border-[#fcd34d] cursor-pointer"
                 >
                   <option value="ALL">Cohort: Everyone (ALL)</option>
                   <option value="A1">Cohort: Level A1</option>
@@ -321,7 +306,7 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
               )}
               <button 
                 type="submit" 
-                className="w-full py-3.5 bg-[#fcd34d] hover:bg-white text-[#08203e] font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-[0_0_15px_rgba(252,211,77,0.4)]"
+                className="w-full py-3.5 bg-[#fcd34d] hover:bg-white text-[#08203e] font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-[0_0_15px_rgba(252,211,77,0.4)] cursor-pointer"
               >
                 Launch Room
               </button>
@@ -330,7 +315,7 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
 
           <button 
             onClick={onClose} 
-            className="w-full py-3.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all"
+            className="w-full py-3.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all cursor-pointer"
           >
             Back To Dashboard
           </button>
@@ -339,20 +324,17 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
     );
   }
 
-  // =========================================================================
-  // MAIN LIVE SEMINAR CANVAS (Adaptive Desktop & Mobile)
-  // =========================================================================
   return (
     <div className="absolute inset-0 rounded-[2.5rem] z-[700] bg-[#070b19]/30 backdrop-blur-md font-montserrat flex flex-col md:flex-row overflow-hidden text-white select-none shadow-2xl border border-white/10">
       
-      {/* --- DESKTOP ROSTER PANE (Hidden on Mobile) --- */}
-      <div className="hidden md:flex flex-col w-72 lg:w-80 border-r border-white/10 bg-black/20 backdrop-blur-2xl z-10 shrink-0">
+      {/* --- ROSTER PANE (Desktop & Mobile Drawer) --- */}
+      <div className={`${showMobileRoster ? 'flex' : 'hidden'} md:flex flex-col w-full md:w-72 lg:w-80 border-r border-white/10 bg-black/40 backdrop-blur-2xl z-30 shrink-0 absolute md:relative inset-y-0 left-0 h-full`}>
         <div className="p-6 border-b border-white/10 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#34d399]"></div>
             <h3 className="text-xs font-black uppercase tracking-widest text-white/80">Active Roster</h3>
           </div>
-          <span className="text-[10px] font-bold text-white/40 bg-white/5 px-2.5 py-1 rounded-full">{activeMembers.length} Online</span>
+          <button onClick={() => setShowMobileRoster(false)} className="md:hidden text-white/50 hover:text-white font-bold text-xs uppercase cursor-pointer">✕ Close</button>
         </div>
 
         <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-2">
@@ -372,15 +354,15 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
               </div>
               {isModerator && member.id !== currentUser.id && (
                 <div className="relative">
-                  <button onClick={() => setOpenMenuId(openMenuId === member.id ? null : member.id)} className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-white/10 text-white/40 hover:text-white transition-colors">
+                  <button onClick={() => setOpenMenuId(openMenuId === member.id ? null : member.id)} className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-white/10 text-white/40 hover:text-white transition-colors cursor-pointer">
                     ⋮
                   </button>
                   {openMenuId === member.id && (
                     <div className="absolute right-0 top-8 w-36 bg-[#0e2a47] border border-white/20 rounded-xl shadow-2xl overflow-hidden z-[100] py-1">
-                      <button onClick={() => handleModerateUser(member.id, member.name, 'mute')} className="w-full text-left px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-white/80 hover:text-white hover:bg-white/10">Mute User</button>
-                      <button onClick={() => handleModerateUser(member.id, member.name, 'kick')} className="w-full text-left px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-white/80 hover:text-white hover:bg-white/10">Kick from Room</button>
+                      <button onClick={() => handleModerateUser(member.id, member.name, 'mute')} className="w-full text-left px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-white/80 hover:text-white hover:bg-white/10 cursor-pointer">Mute User</button>
+                      <button onClick={() => handleModerateUser(member.id, member.name, 'kick')} className="w-full text-left px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-white/80 hover:text-white hover:bg-white/10 cursor-pointer">Kick from Room</button>
                       <div className="border-t border-white/10 my-1"></div>
-                      <button onClick={() => handleModerateUser(member.id, member.name, 'ban')} className="w-full text-left px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-red-400 hover:text-red-300 hover:bg-red-500/10">Ban User</button>
+                      <button onClick={() => handleModerateUser(member.id, member.name, 'ban')} className="w-full text-left px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-red-400 hover:text-red-300 hover:bg-red-500/10 cursor-pointer">Ban User</button>
                     </div>
                   )}
                 </div>
@@ -389,20 +371,58 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
           ))}
         </div>
 
-        {isAdmin && roomsList.length > 1 && (
-          <div className="p-4 border-t border-white/10 bg-black/30">
-            <span className="text-[9px] font-black uppercase tracking-widest text-white/40 block mb-2">Switch Active Room</span>
-            <div className="space-y-1">
-              {roomsList.map(r => (
-                <button 
-                  key={r.id} 
-                  onClick={() => setActiveRoom(r)} 
-                  className={`w-full text-left text-xs p-2 rounded-lg font-bold truncate transition-colors ${activeRoom.id === r.id ? 'bg-[#fcd34d] text-[#08203e]' : 'text-white/70 hover:bg-white/5'}`}
-                >
-                  {r.room_name} ({r.level_target})
-                </button>
-              ))}
-            </div>
+        {(roomsList.length > 1 || isAdmin) && (
+          <div className="p-4 border-t border-white/10 bg-black/30 space-y-3">
+            {roomsList.length > 1 && (
+              <div>
+                <span className="text-[9px] font-black uppercase tracking-widest text-white/40 block mb-2">Available Seminar Rooms</span>
+                <div className="space-y-1 max-h-36 overflow-y-auto custom-scrollbar">
+                  {roomsList.map(r => (
+                    <button 
+                      key={r.id} 
+                      onClick={() => { setActiveRoom(r); setShowMobileRoster(false); }} 
+                      className={`w-full text-left text-xs p-2.5 rounded-xl font-bold truncate transition-colors cursor-pointer flex items-center justify-between ${activeRoom.id === r.id ? 'bg-[#fcd34d] text-[#08203e] shadow-md' : 'text-white/70 hover:bg-white/5'}`}
+                    >
+                      <span className="truncate">{r.room_name}</span>
+                      <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase ${activeRoom.id === r.id ? 'bg-[#08203e]/20 text-[#08203e]' : 'bg-white/10 text-white/60'}`}>{r.level_target}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {isAdmin && (
+              <form onSubmit={handleCreateRoom} className="pt-2 border-t border-white/10 flex flex-col gap-2">
+                <span className="text-[9px] font-black uppercase tracking-widest text-[#fcd34d]">+ Launch Another Room</span>
+                <input 
+                  type="text" 
+                  value={newRoomTitle} 
+                  onChange={(e) => setNewRoomTitle(e.target.value)} 
+                  placeholder="Room Title..." 
+                  className="w-full bg-white/5 border border-white/15 rounded-lg px-3 py-1.5 text-xs font-bold text-white outline-none focus:border-[#fcd34d]"
+                  required
+                />
+                <div className="flex gap-2">
+                  <select 
+                    value={newRoomLevel} 
+                    onChange={(e) => setNewRoomLevel(e.target.value)}
+                    className="flex-1 bg-[#070b19] border border-white/15 rounded-lg px-2 py-1.5 text-[10px] font-bold text-white outline-none focus:border-[#fcd34d]"
+                  >
+                    <option value="ALL">ALL Levels</option>
+                    <option value="STAFF">STAFF Only</option>
+                    <option value="A1">Level A1</option>
+                    <option value="A2">Level A2</option>
+                    <option value="B1">Level B1</option>
+                    <option value="B2">Level B2</option>
+                    <option value="C1">Level C1</option>
+                    <option value="C2">Level C2</option>
+                  </select>
+                  <button type="submit" className="px-3 py-1.5 bg-[#fcd34d] hover:bg-white text-[#08203e] font-black text-[10px] uppercase tracking-widest rounded-lg transition-colors cursor-pointer">
+                    Launch
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         )}
       </div>
@@ -410,20 +430,21 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
       {/* --- MAIN CHAT CONTAINER --- */}
       <div className="flex-1 flex flex-col h-full relative z-10 overflow-hidden">
 
-        {/* BACKGROUND WATERMARK (Centered strictly to the chat canvas) */}
+        {/* WATERMARK */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
           <img src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Monogram.png" alt="Watermark" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] md:w-[700px] object-contain opacity-[0.04] invert brightness-0" />
         </div>
 
         {/* TOP NAVBAR */}
-        <div className="h-16 md:h-20 border-b border-white/10 bg-black/20 backdrop-blur-xl px-4 md:px-8 flex items-center justify-between shrink-0 relative">
+        <div className="h-16 md:h-20 border-b border-white/10 bg-black/20 backdrop-blur-xl px-4 md:px-8 flex items-center justify-between shrink-0 relative z-20">
           
           <div className="flex items-center gap-3 md:gap-4 overflow-hidden">
             <button 
-              onClick={onClose} 
-              className="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white transition-colors cursor-pointer shrink-0"
+              onClick={() => setShowMobileRoster(prev => !prev)} 
+              className="md:hidden w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white transition-colors cursor-pointer shrink-0"
+              title="Toggle Roster"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
+              👥
             </button>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
@@ -431,17 +452,16 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
                 <span className="text-[9px] font-bold text-[#fcd34d] bg-[#fcd34d]/10 border border-[#fcd34d]/30 px-2 py-0.5 rounded-full shrink-0">{activeRoom.level_target}</span>
               </div>
               <p className="text-[9px] text-emerald-400 font-bold tracking-widest uppercase flex items-center gap-1.5 mt-0.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Seminar Session Live
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Seminar Session Live ({activeMembers.length} active)
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-3 md:gap-5 shrink-0">
-            {/* DUAL SCOPE TOGGLE (Active State - INLINE) */}
             {roomScope === 'dual' && (
               <div className="hidden lg:flex bg-black/20 border border-white/5 rounded-full p-0.5 gap-0.5 shadow-inner">
-                <button onClick={() => { setActiveRoom(null); setInternalScope('students'); }} className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest transition-all ${internalScope === 'students' ? 'bg-[#fcd34d] text-[#08203e] shadow-md' : 'text-white/50 hover:text-white hover:bg-white/5'}`}>Student Hub</button>
-                <button onClick={() => { setActiveRoom(null); setInternalScope('staff'); }} className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest transition-all ${internalScope === 'staff' ? 'bg-[#fcd34d] text-[#08203e] shadow-md' : 'text-white/50 hover:text-white hover:bg-white/5'}`}>Staff Hub</button>
+                <button onClick={() => { setActiveRoom(null); setInternalScope('students'); }} className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest transition-all cursor-pointer ${internalScope === 'students' ? 'bg-[#fcd34d] text-[#08203e] shadow-md' : 'text-white/50 hover:text-white hover:bg-white/5'}`}>Student Hub</button>
+                <button onClick={() => { setActiveRoom(null); setInternalScope('staff'); }} className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest transition-all cursor-pointer ${internalScope === 'staff' ? 'bg-[#fcd34d] text-[#08203e] shadow-md' : 'text-white/50 hover:text-white hover:bg-white/5'}`}>Staff Hub</button>
               </div>
             )}
             
@@ -460,13 +480,13 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
                 title="Exit"
                 className="w-10 h-10 flex items-center justify-center bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-white transition-colors cursor-pointer shrink-0"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7v1a3 3 0 01-3 3H4a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
               </button>
             </div>
           </div>
         </div>
 
-        {/* PINNED ANNOUNCEMENT STRIP (If enabled by teacher/admin) */}
+        {/* PINNED ANNOUNCEMENT STRIP */}
         {pinnedMessage && (
           <div className="bg-[#fcd34d]/10 border-b border-[#fcd34d]/30 px-6 py-2.5 flex items-center justify-between text-xs text-[#fcd34d] font-bold">
             <div className="flex items-center gap-2 truncate">
@@ -474,12 +494,12 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
               <span className="truncate">{pinnedMessage}</span>
             </div>
             {isModerator && (
-              <button onClick={() => setPinnedMessage(null)} className="text-[10px] uppercase font-black tracking-widest text-[#fcd34d]/70 hover:text-white ml-4">Unpin</button>
+              <button onClick={() => setPinnedMessage(null)} className="text-[10px] uppercase font-black tracking-widest text-[#fcd34d]/70 hover:text-white ml-4 cursor-pointer">Unpin</button>
             )}
           </div>
         )}
 
-        {/* MESSAGE STREAM (WhatsApp-Inspired Bubbles) */}
+        {/* MESSAGE STREAM */}
         <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 space-y-4 relative z-10">
           {messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center p-6 text-white/30">
@@ -497,7 +517,6 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
                   key={msg.id || i} 
                   className={`flex items-end gap-2.5 group ${isMine ? 'justify-end' : 'justify-start'}`}
                 >
-                  {/* Incoming Avatar (Left-aligned) */}
                   {!isMine && (
                     <div className="w-8 h-8 rounded-full overflow-hidden bg-white/10 border border-white/20 shrink-0 mb-1">
                       {msg.user_avatar ? (
@@ -508,45 +527,40 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
                     </div>
                   )}
 
-                  {/* Bubble Container */}
                   <div className={`relative max-w-[85%] md:max-w-md lg:max-w-lg shadow-lg transition-all ${
                     isMine 
                       ? 'bg-[#0e2a47] border border-[#fcd34d]/30 text-white rounded-2xl rounded-tr-none px-4 py-2.5' 
                       : 'bg-white/10 backdrop-blur-md border border-white/15 text-white rounded-2xl rounded-tl-none px-4 py-2.5'
                   }`}>
                     
-                    {/* Header: Name & Role Badge (For peer messages) */}
                     {!isMine && (
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-bold text-white/90 truncate">{msg.user_name}</span>
+                        <span className="text-xs font-bold text-white/95 truncate">{msg.user_name}</span>
                         {getRoleBadge(msg.user_role, msg.user_level)}
                       </div>
                     )}
 
-                    {/* Message Body */}
                     <p className="text-sm leading-relaxed break-words font-medium pr-10">
                       {msg.content}
                     </p>
 
-                    {/* Timestamp inside bubble */}
                     <span className="absolute bottom-1.5 right-2.5 text-[9px] font-semibold text-white/40 select-none">
                       {formattedTime}
                     </span>
 
-                    {/* Moderator Quick Actions (Hover state on desktop, touchable on mobile) */}
                     {isModerator && (
-                      <div className="absolute -top-3 right-0 hidden group-hover:flex items-center gap-1 bg-[#070b19] border border-white/20 rounded-lg p-1 shadow-xl">
+                      <div className="absolute -top-3 right-0 flex items-center gap-1 bg-[#070b19] border border-white/20 rounded-xl p-1 shadow-xl opacity-90 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                         <button 
                           onClick={() => setPinnedMessage(msg.content)} 
                           title="Pin message" 
-                          className="w-5 h-5 flex items-center justify-center text-[10px] text-white/70 hover:text-[#fcd34d]"
+                          className="w-5 h-5 flex items-center justify-center text-[10px] text-white/70 hover:text-[#fcd34d] cursor-pointer"
                         >
                           📌
                         </button>
                         <button 
                           onClick={() => handleDeleteMessage(msg.id)} 
                           title="Delete message" 
-                          className="w-5 h-5 flex items-center justify-center text-white/70 hover:text-red-400"
+                          className="w-5 h-5 flex items-center justify-center text-white/70 hover:text-red-400 cursor-pointer"
                         >
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                         </button>
@@ -560,16 +574,16 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
           <div ref={messagesEndRef} />
         </div>
 
-        {/* --- EMOJI PALETTE (Visual Dictionary Drawer) --- */}
+        {/* EMOJI DRAWER */}
         {showEmojiPicker && (
-          <div className="border-t border-white/10 bg-[#070b19]/95 backdrop-blur-2xl p-4 shrink-0 shadow-2xl animate-slide-up">
+          <div className="border-t border-white/10 bg-[#070b19]/95 backdrop-blur-2xl p-4 shrink-0 shadow-2xl animate-slide-up relative z-50">
             <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-3 mb-2 border-b border-white/10">
               {Object.keys(EMOJI_CATEGORIES).map(cat => (
                 <button 
                   key={cat} 
                   type="button" 
                   onClick={() => setSelectedEmojiCategory(cat)} 
-                  className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors shrink-0 ${selectedEmojiCategory === cat ? 'bg-[#fcd34d] text-[#08203e]' : 'bg-white/5 text-white/60 hover:text-white'}`}
+                  className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors shrink-0 cursor-pointer ${selectedEmojiCategory === cat ? 'bg-[#fcd34d] text-[#08203e]' : 'bg-white/5 text-white/60 hover:text-white'}`}
                 >
                   {cat}
                 </button>
@@ -581,7 +595,7 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
                   key={idx} 
                   type="button" 
                   onClick={() => handleEmojiClick(emoji)} 
-                  className="text-2xl hover:scale-125 transition-transform p-1 rounded hover:bg-white/5"
+                  className="text-2xl hover:scale-125 transition-transform p-1 rounded hover:bg-white/5 cursor-pointer"
                 >
                   {emoji}
                 </button>
@@ -590,26 +604,23 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
           </div>
         )}
 
-        {/* --- BOTTOM INPUT BAR --- */}
-        <div className="p-3 md:p-5 border-t border-white/10 bg-black/40 backdrop-blur-2xl shrink-0 relative">
+        {/* BOTTOM INPUT BAR */}
+        <div className="p-3 md:p-5 border-t border-white/10 bg-black/40 backdrop-blur-2xl shrink-0 relative z-[60]">
           {chatError && (
             <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-red-500/95 text-white text-[10px] md:text-xs font-bold px-6 py-2 rounded-full shadow-[0_0_20px_rgba(239,68,68,0.5)] flex items-center gap-2 animate-slide-up z-50 whitespace-nowrap border border-white/20">
               ⚠️ {chatError}
             </div>
           )}
           <form onSubmit={handleSendMessage} className="flex items-center gap-2 md:gap-3 max-w-4xl mx-auto">
-            
-            {/* Visual Dictionary / Emoji Trigger */}
             <button 
               type="button" 
               onClick={() => setShowEmojiPicker(prev => !prev)} 
-              className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all shrink-0 border ${showEmojiPicker ? 'bg-[#fcd34d] border-[#fcd34d] text-[#08203e]' : 'bg-white/5 hover:bg-white/10 border-white/10 text-white/70'}`}
+              className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all shrink-0 border cursor-pointer ${showEmojiPicker ? 'bg-[#fcd34d] border-[#fcd34d] text-[#08203e]' : 'bg-white/5 hover:bg-white/10 border-white/10 text-white/70'}`}
               title="Semantic Symbol Palette"
             >
               <span className="text-xl">😊</span>
             </button>
 
-            {/* Clean Input Field */}
             <input 
               ref={inputRef}
               type="text" 
@@ -620,7 +631,6 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
               disabled={isSending}
             />
 
-            {/* Send Button */}
             <button 
               type="submit" 
               disabled={!inputText.trim() || isSending}

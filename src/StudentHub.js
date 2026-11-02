@@ -326,7 +326,7 @@ const DesktopView = ({ student, classCredits, onReturnHome, onStartActivity, isF
         <div className="w-12 h-px bg-white/10 my-2"></div>
         <NavIconBtn iconSvg={navIcons.calendar} onClick={() => onStartActivity('Calendar')} />
         <NavIconBtn iconSvg={navIcons.monitor} onClick={() => onStartActivity('LiveClass')} hasNotification={!!activeLiveSession?.meeting_link} />
-        <NavIconBtn iconSvg={navIcons.bell} hasNotification />
+        <NavIconBtn iconSvg={navIcons.bell} onClick={() => onStartActivity('InfoBoard')} hasNotification={announcements.length > 0} />
         <NavIconBtn iconSvg={navIcons.chat} onClick={() => onStartActivity('Community_CHAT')} />
         <NavIconBtn iconSvg={navIcons.forum} onClick={() => onStartActivity('Community_BOARD')} />
         <NavIconBtn iconSvg={navIcons.trophy} onClick={() => onStartActivity('Trophies')} />
@@ -401,35 +401,69 @@ const DesktopView = ({ student, classCredits, onReturnHome, onStartActivity, isF
             </div>
           </div>
 
-          {/* RIGHT COLUMN: Info Board & Feed */}
-          <div className="col-span-5 flex flex-col gap-6 h-full bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] p-6 shadow-2xl overflow-hidden">
-            <div className="grid grid-cols-3 gap-4 shrink-0">
-              {INFO_CATEGORIES.map(cat => (
-                <PillButton 
-                  key={cat} 
-                  title={cat} 
-                  isActive={activeCategory === cat} 
-                  onClick={() => setActiveCategory(activeCategory === cat ? null : cat)} 
-                />
-              ))}
+          {/* RIGHT COLUMN: Info Board & Feed (AdminHub Styled, Read-Only) */}
+          <div className="col-span-5 flex flex-col gap-5 h-full bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2.5rem] p-6 shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <span className="w-2 h-2 rounded-full bg-[#fcd34d] shadow-[0_0_8px_#fcd34d]"></span>
+                <h3 className="text-xs font-black uppercase tracking-widest text-white">Official Info Board</h3>
+              </div>
+              {activeCategory ? (
+                <button onClick={() => setActiveCategory(null)} className="text-[10px] font-black uppercase tracking-widest text-[#fcd34d] hover:text-white transition-colors cursor-pointer">
+                  ✕ Clear Filter
+                </button>
+              ) : (
+                <button onClick={() => onStartActivity('InfoBoard')} className="text-[10px] font-black uppercase tracking-widest text-white/50 hover:text-[#fcd34d] transition-colors cursor-pointer">
+                  Expand ⤢
+                </button>
+              )}
             </div>
 
-            <div className="flex-1 flex flex-col gap-4 mt-4 overflow-y-auto custom-scrollbar pr-2 pb-4">
+            <div className="grid grid-cols-3 gap-3 shrink-0">
+              {INFO_CATEGORIES.map(cat => {
+                const hasPosts = announcements.some(a => a.category === cat);
+                return (
+                  <PillButton 
+                    key={cat} 
+                    title={cat} 
+                    hasNotification={hasPosts && activeCategory !== cat}
+                    isActive={activeCategory === cat} 
+                    onClick={() => setActiveCategory(activeCategory === cat ? null : cat)} 
+                  />
+                );
+              })}
+            </div>
+
+            <div className="flex-1 flex flex-col gap-4 mt-1 overflow-y-auto custom-scrollbar pr-2 pb-4">
               {filteredAnnouncements.length === 0 ? (
-                <div className="text-center text-white/50 font-bold tracking-widest text-xs py-10 uppercase">
-                  No announcements to display.
+                <div className="h-full flex flex-col items-center justify-center text-center text-white/40 font-bold tracking-widest text-xs py-10 uppercase">
+                  No announcements in this category.
                 </div>
               ) : (
                 filteredAnnouncements.map(ann => (
-                  <div key={ann.id} className="bg-white/10 border border-white/20 rounded-2xl p-4 md:p-5 flex flex-col sm:flex-row items-center gap-4 hover:bg-white/20 transition-colors shadow-md">
+                  <div 
+                    key={ann.id} 
+                    onClick={() => onStartActivity('InfoBoard')}
+                    className="bg-white/10 border border-white/20 rounded-2xl p-4 lg:p-5 flex flex-col sm:flex-row items-center gap-4 lg:gap-5 hover:bg-white/20 hover:border-white/30 transition-all shadow-md cursor-pointer group"
+                  >
                     {ann.image_url && (
-                      <div className="w-full sm:w-24 h-32 sm:h-24 rounded-xl overflow-hidden shrink-0 border border-white/30 shadow-sm">
-                        <img src={ann.image_url} alt="Cover" className="w-full h-full object-cover" />
+                      <div className="w-full sm:w-28 h-36 sm:h-28 rounded-xl overflow-hidden shrink-0 border border-white/30 shadow-md">
+                        <img src={ann.image_url} alt="Cover" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                       </div>
                     )}
-                    <div className="flex flex-col text-center sm:text-left w-full">
-                      <h4 className="text-sm font-black uppercase tracking-widest mb-1 text-white drop-shadow-sm">{ann.title}</h4>
-                      <p className="text-[10px] md:text-xs text-white/80 leading-relaxed font-medium whitespace-pre-wrap">{ann.content}</p>
+                    <div className="flex flex-col text-center sm:text-left w-full min-w-0">
+                      <div className="flex items-center justify-center sm:justify-between gap-2 mb-1">
+                        <span className="text-[9px] font-black uppercase tracking-widest text-[#fcd34d] bg-[#fcd34d]/10 border border-[#fcd34d]/30 px-2 py-0.5 rounded-md truncate">
+                          {ann.category || ann.title}
+                        </span>
+                        {ann.created_at && (
+                          <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest shrink-0 hidden sm:inline">
+                            {new Date(ann.created_at).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
+                      <h4 className="text-sm lg:text-base font-black uppercase tracking-widest mb-1.5 text-white drop-shadow-sm truncate">{ann.title}</h4>
+                      <p className="text-[11px] lg:text-xs text-white/80 leading-relaxed font-medium whitespace-pre-wrap line-clamp-3">{ann.content}</p>
                     </div>
                   </div>
                 ))
@@ -495,36 +529,52 @@ const MobileView = ({ student, onReturnHome, onStartActivity, isFetching, active
           </div>
         </div>
 
-        {/* RIGHT COLUMN DATA (Now below) */}
+        {/* MOBILE INFO BOARD */}
         <div className="flex flex-col gap-4 bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] p-4 shadow-2xl mt-2 sm:mt-4">
-          {/* PILLS */}
-          <div className="grid grid-cols-2 gap-2 sm:gap-3">
-            {INFO_CATEGORIES.map(cat => (
-              <PillButton 
-                key={cat} 
-                title={cat} 
-                isActive={activeCategory === cat} 
-                onClick={() => setActiveCategory(activeCategory === cat ? null : cat)} 
-              />
-            ))}
+          <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#fcd34d] shadow-[0_0_8px_#fcd34d]"></span>
+              <h3 className="text-xs font-black uppercase tracking-widest text-white">Official Info Board</h3>
+            </div>
+            {activeCategory ? (
+              <button onClick={() => setActiveCategory(null)} className="text-[10px] font-black uppercase tracking-widest text-[#fcd34d]">✕ Clear</button>
+            ) : (
+              <button onClick={() => onStartActivity('InfoBoard')} className="text-[10px] font-black uppercase tracking-widest text-white/60">Full View ⤢</button>
+            )}
           </div>
 
-          <div className="flex flex-col gap-4 mt-2">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3">
+            {INFO_CATEGORIES.map(cat => {
+              const hasPosts = announcements.some(a => a.category === cat);
+              return (
+                <PillButton 
+                  key={cat} 
+                  title={cat} 
+                  hasNotification={hasPosts && activeCategory !== cat}
+                  isActive={activeCategory === cat} 
+                  onClick={() => setActiveCategory(activeCategory === cat ? null : cat)} 
+                />
+              );
+            })}
+          </div>
+
+          <div className="flex flex-col gap-3 mt-1 max-h-[420px] overflow-y-auto custom-scrollbar pr-1">
             {filteredAnnouncements.length === 0 ? (
-              <div className="text-center text-white/50 font-bold tracking-widest text-xs py-6 uppercase">
-                No announcements to display.
+              <div className="text-center text-white/40 font-bold tracking-widest text-xs py-6 uppercase">
+                No announcements in this category.
               </div>
             ) : (
               filteredAnnouncements.map(ann => (
-                <div key={ann.id} className="bg-white/10 border border-white/20 rounded-2xl p-4 flex flex-col sm:flex-row items-center gap-4 mt-2 hover:bg-white/20 transition-colors">
+                <div key={ann.id} onClick={() => onStartActivity('InfoBoard')} className="bg-white/10 border border-white/20 rounded-2xl p-4 flex flex-col sm:flex-row items-center gap-4 hover:bg-white/20 transition-colors shadow-md cursor-pointer">
                   {ann.image_url && (
-                    <div className="w-full sm:w-24 h-32 sm:h-24 rounded-xl overflow-hidden shrink-0 border border-white/30">
+                    <div className="w-full sm:w-28 h-36 sm:h-28 rounded-xl overflow-hidden shrink-0 border border-white/30">
                       <img src={ann.image_url} alt="Cover" className="w-full h-full object-cover" />
                     </div>
                   )}
-                  <div className="flex flex-col text-center sm:text-left">
+                  <div className="flex flex-col text-center sm:text-left w-full">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-[#fcd34d] mb-1">{ann.category || 'Announcement'}</span>
                     <h4 className="text-sm font-black uppercase tracking-widest mb-1 text-white">{ann.title}</h4>
-                    <p className="text-[10px] text-white/80 leading-relaxed font-medium whitespace-pre-wrap">{ann.content}</p>
+                    <p className="text-[11px] text-white/80 leading-relaxed font-medium whitespace-pre-wrap line-clamp-3">{ann.content}</p>
                   </div>
                 </div>
               ))
@@ -553,7 +603,7 @@ const MobileView = ({ student, onReturnHome, onStartActivity, isFetching, active
         <NavIconBtn isProfile avatarUrl={student?.avatar_url} onClick={onReturnHome} />
         <NavIconBtn iconSvg={navIcons.calendar} onClick={() => onStartActivity('Calendar')} />
         <NavIconBtn iconSvg={navIcons.monitor} onClick={() => onStartActivity('LiveClass')} hasNotification={!!activeLiveSession?.meeting_link} />
-        <NavIconBtn iconSvg={navIcons.bell} hasNotification />
+        <NavIconBtn iconSvg={navIcons.bell} onClick={() => onStartActivity('InfoBoard')} hasNotification={announcements.length > 0} />
         <NavIconBtn iconSvg={navIcons.chat} onClick={() => onStartActivity('Community_CHAT')} />
         <NavIconBtn iconSvg={navIcons.forum} onClick={() => onStartActivity('Community_BOARD')} />
         <NavIconBtn iconSvg={navIcons.trophy} onClick={() => onStartActivity('Trophies')} />
@@ -1294,7 +1344,8 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
   const [showActivationModal, setShowActivationModal] = useState(false);
   const [showCapstoneMomentum, setShowCapstoneMomentum] = useState(false);
 
-  // Community Panel & Chat States
+  // Community Panel, Info Board & Chat States
+  const [showInfoBoardModal, setShowInfoBoardModal] = useState(false);
   const [showCommunity, setShowCommunity] = useState(false);
   const [communityTab, setCommunityTab] = useState('BOARD');
   const [showSeminarRoom, setShowSeminarRoom] = useState(false);
@@ -1420,7 +1471,11 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
       return;
     }
 
-    // Community Routing
+    // Socials & Info Board Routing
+    if (type === 'InfoBoard') {
+      setShowInfoBoardModal(true);
+      return;
+    }
     if (type === 'Community_CHAT') {
       setShowSeminarRoom(true);
       return;
@@ -1666,9 +1721,78 @@ const isLockedOut = billingDate && today >= billingDate;
         supabase={supabase}
       />
 
-      {showCommunity && (
+      {showInfoBoardModal && (
         <div className="fixed inset-0 z-[650] bg-black/60 backdrop-blur-2xl flex items-center justify-center p-2 sm:p-6 md:p-10 animate-fade-in font-montserrat">
-          <div className="w-full h-full max-w-7xl relative">
+          <div className="w-full h-full max-w-6xl bg-[#070b19]/80 backdrop-blur-2xl border border-white/20 rounded-[2.5rem] shadow-[0_0_50px_rgba(0,0,0,0.6)] flex flex-col overflow-hidden relative">
+            <div className="h-16 md:h-20 border-b border-white/10 bg-black/20 px-6 md:px-8 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-2.5 h-2.5 rounded-full bg-[#fcd34d] shadow-[0_0_10px_#fcd34d]"></div>
+                <div>
+                  <h2 className="text-sm md:text-lg font-black uppercase tracking-widest text-white">Academy Info Board</h2>
+                  <p className="text-[9px] text-white/50 font-bold uppercase tracking-widest">Official Updates & Announcements</p>
+                </div>
+              </div>
+              <button onClick={() => setShowInfoBoardModal(false)} className="w-10 h-10 rounded-xl bg-white/10 hover:bg-red-500 border border-white/20 flex items-center justify-center text-white font-black transition-colors cursor-pointer">✕</button>
+            </div>
+
+            <div className="p-4 md:px-8 md:pt-6 border-b border-white/10 bg-white/5 shrink-0">
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setActiveCategory(null)}
+                  className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border cursor-pointer ${!activeCategory ? 'bg-[#fcd34d] border-[#fcd34d] text-[#08203e] shadow-md' : 'bg-white/10 border-white/20 text-white/70 hover:text-white'}`}
+                >
+                  All Updates ({announcements.length})
+                </button>
+                {INFO_CATEGORIES.map(cat => (
+                  <button
+                    key={cat}
+                    onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
+                    className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border cursor-pointer ${activeCategory === cat ? 'bg-[#fcd34d] border-[#fcd34d] text-[#08203e] shadow-md' : 'bg-white/10 border-white/20 text-white/70 hover:text-white'}`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-8 space-y-4">
+              {(activeCategory ? announcements.filter(a => a.category === activeCategory) : announcements).length === 0 ? (
+                <div className="h-full flex items-center justify-center text-white/40 font-bold uppercase tracking-widest text-xs py-16">
+                  No active announcements for this filter.
+                </div>
+              ) : (
+                (activeCategory ? announcements.filter(a => a.category === activeCategory) : announcements).map(ann => (
+                  <div key={ann.id} className="bg-white/10 border border-white/20 rounded-2xl p-5 lg:p-6 flex flex-col sm:flex-row items-center sm:items-start gap-5 hover:bg-white/15 transition-colors shadow-md">
+                    {ann.image_url && (
+                      <div className="w-full sm:w-40 h-48 sm:h-40 rounded-xl overflow-hidden shrink-0 border border-white/30 shadow-md bg-black/30">
+                        <img src={ann.image_url} alt="Cover" className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                    <div className="flex flex-col w-full text-center sm:text-left">
+                      <div className="flex items-center justify-center sm:justify-between gap-2 mb-2">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-[#fcd34d] bg-[#fcd34d]/10 border border-[#fcd34d]/30 px-2.5 py-1 rounded-lg">
+                          {ann.category || ann.title}
+                        </span>
+                        {ann.created_at && (
+                          <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
+                            {new Date(ann.created_at).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
+                      <h4 className="text-base lg:text-lg font-black uppercase tracking-widest mb-2 text-white drop-shadow-sm">{ann.title}</h4>
+                      <p className="text-xs lg:text-sm text-white/85 leading-relaxed font-medium whitespace-pre-wrap">{ann.content}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showCommunity && (
+        <div className="fixed inset-0 z-[650] bg-black/40 backdrop-blur-md flex items-center justify-center p-2 sm:p-6 md:p-10 animate-fade-in font-montserrat">
+          <div className="w-full h-full max-w-7xl relative shadow-[0_0_50px_rgba(0,0,0,0.5)] rounded-[2.5rem]">
             <ForumBoard 
               currentUser={{ 
                 id: studentData.id, 
@@ -1685,11 +1809,15 @@ const isLockedOut = billingDate && today >= billingDate;
       )}
 
       {showSeminarRoom && (
-        <SeminarRoom 
-          currentUser={{ id: studentData.id, full_name: `${studentData.first_name} ${studentData.last_name}`, avatar_url: studentData.avatar_url, level: studentData.level }} 
-          userRole="student" 
-          onClose={() => setShowSeminarRoom(false)} 
-        />
+        <div className="fixed inset-0 z-[650] bg-black/40 backdrop-blur-md flex items-center justify-center p-2 sm:p-6 md:p-10 animate-fade-in font-montserrat">
+          <div className="w-full h-full max-w-7xl relative shadow-[0_0_50px_rgba(0,0,0,0.5)] rounded-[2.5rem]">
+            <SeminarRoom 
+              currentUser={{ id: studentData.id, full_name: `${studentData.first_name} ${studentData.last_name}`, avatar_url: studentData.avatar_url, level: studentData.level }} 
+              userRole="student" 
+              onClose={() => setShowSeminarRoom(false)} 
+            />
+          </div>
+        </div>
       )}
 
       {showTrophyRoom && (
