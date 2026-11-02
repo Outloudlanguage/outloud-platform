@@ -1896,42 +1896,7 @@ useEffect(() => {
         
       if (blueprintError) throw blueprintError;
 
-      // 2. TRIGGER GOOGLE CLOUD: Send new audio URLs to Edge Function
-      const recordNodes = elementsToScanForAudio.filter(
-        el => el.type === 'record_compare' && el.data?.audioUrl
-      );
-
-      if (recordNodes.length > 0 && blueprintData?.id) {
-        const failures = [];
-
-        // Process nodes ONE BY ONE sequentially so we never overload the Python Acoustic Worker
-        for (const node of recordNodes) {
-          const res = await supabase.functions.invoke('ingest-sample', {
-            body: {
-              lesson_id: blueprintData.id,
-              node_id: node.id,
-              audio_url: node.data.audioUrl,
-              display_text: node.data.transcriptText || node.data.text || ""
-            }
-          });
-
-          if (res.error) {
-            let errText = res.error.message;
-            if (res.error.context) {
-              try { errText = await res.error.context.text(); } catch (e) {}
-            }
-            failures.push({ nodeId: node.id, error: errText });
-          }
-        }
-
-        if (failures.length > 0) {
-          alert(`CRITICAL ERROR: ${failures.length}/${recordNodes.length} node(s) failed. First error: ${failures[0].error}`);
-        } else {
-          alert(`Success! All ${recordNodes.length} Master Acoustic Profiles are verified and live.`);
-        }
-      } else {
-        alert(`Changes saved, but NO audio nodes were found to process (Found: ${recordNodes.length}).`);
-      }
+      alert("Changes saved and pushed live successfully!");
     } catch (err) { 
       console.error(err); 
       alert("Error saving: " + err.message);
