@@ -11,6 +11,7 @@ import StudentHub from './StudentHub';
 import TeacherHub from './TeacherHub';
 import PlacementTest from './components/PlacementTest';
 import CataLanding from './Cata-Beta/CataLanding';
+import DomusApp from './DomusApp';
 
 // ==========================================
 // RBAC & LOCALIZATION WRAPPER COMPONENT
@@ -101,7 +102,7 @@ export default function App() {
     // 2. Dynamic Anti-Theft Handlers
     const handleContextMenu = (e) => e.preventDefault();
     const handleKeyDown = (e) => {
-      if (window.location.hash === '#cata-beta') return;
+      if (window.location.hash === '#cata-beta' || window.location.hash === '#domus') return;
       if ((e.ctrlKey || e.metaKey) && ['c', 'v', 'x', 's', 'p'].includes(e.key.toLowerCase())) {
         e.preventDefault();
       }
@@ -296,6 +297,10 @@ export default function App() {
       {/* NEW: CATA Beta Route (Isolated) */}
       {currentPage === 'cata-beta' && (
         <CataLanding />
+      )}
+
+      {currentPage === 'domus' && (
+        <DomusApp />
       )}
 
       {/* PROTECTED ROUTES */}
