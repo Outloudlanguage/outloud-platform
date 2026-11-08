@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import InventoryModal from './InventoryModal';
 import StaffModal from './StaffModal';
 import NursingModal from './NursingModal';
+import HospitalityModal from './HospitalityModal';
 import {
   Clock, Calendar, Bell, ClipboardCheck, Coffee, ShoppingBag,
   Wrench, CarFront, FileSignature, AlertCircle, CheckCircle2,
@@ -179,6 +180,7 @@ export default function DomusApp() {
   const [inventoryModalTab, setInventoryModalTab] = useState(null);
   const [staffModalTab, setStaffModalTab] = useState(null);
   const [nursingModalTab, setNursingModalTab] = useState(null);
+  const [hospitalityModalTab, setHospitalityModalTab] = useState(null);
   const [completedMeds, setCompletedMeds] = useState([true, false, false]);
   const [resolvedAlerts, setResolvedAlerts] = useState([false, false, false]);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -604,6 +606,8 @@ export default function DomusApp() {
                     setInventoryModalTab('STOCK');
                   } else if (item.id === 'personal') {
                     setStaffModalTab('DIRECTORIO');
+                  } else if (item.id === 'hospitalidad') {
+                    setHospitalityModalTab('DIRECTORIO');
                   } else if (item.id === 'cuidados') {
                     setNursingModalTab('SIGNOS');
                   } else {
@@ -653,10 +657,10 @@ export default function DomusApp() {
             />
             <CascadeButton
               text="AGENDA FAMILIAR"
-              subtext="Visitas de hijos y sobrinos"
+              subtext="Huéspedes VIP y visitas"
               icon={Calendar}
               accent="#5E7AC6"
-              onClick={() => setSelectedModal(departments[3])}
+              onClick={() => setHospitalityModalTab('DIRECTORIO')}
             />
             <CascadeButton
               text="FLOTA Y CHÓFERES"
@@ -932,6 +936,12 @@ export default function DomusApp() {
         isOpen={Boolean(nursingModalTab)}
         initialTab={nursingModalTab || 'SIGNOS'}
         onClose={() => setNursingModalTab(null)}
+      />
+
+      <HospitalityModal
+        isOpen={Boolean(hospitalityModalTab)}
+        initialTab={hospitalityModalTab || 'DIRECTORIO'}
+        onClose={() => setHospitalityModalTab(null)}
       />
 
       {/* ==========================================
@@ -1467,19 +1477,19 @@ export default function DomusApp() {
         }
         .domus-dept-wrapper:hover .domus-dept-bg { transform: scale(1.1); }
 
-        /* Vidrio esmerilado permanente sobre cada imagen que se despeja e ilumina al hacer hover */
+        /* Fotografía nítida al 100% con un velo ligero inferior de lectura */
         .domus-dept-gradient {
           position: absolute; inset: 0;
-          background: linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, rgba(15, 23, 42, 0.35) 45%, rgba(15, 23, 42, 0.82) 100%);
-          backdrop-filter: blur(3.5px) saturate(140%);
-          -webkit-backdrop-filter: blur(3.5px) saturate(140%);
+          background: linear-gradient(180deg, rgba(15, 23, 42, 0.05) 0%, rgba(15, 23, 42, 0.18) 55%, rgba(15, 23, 42, 0.65) 100%);
+          backdrop-filter: none;
+          -webkit-backdrop-filter: none;
           transition: all 0.4s ease;
         }
         .domus-dept-frost {
           position: absolute; inset: 0;
-          background: linear-gradient(180deg, rgba(94, 122, 198, 0.22) 0%, rgba(20, 24, 40, 0.85) 100%);
-          backdrop-filter: blur(8px) saturate(180%);
-          -webkit-backdrop-filter: blur(8px) saturate(180%);
+          background: linear-gradient(180deg, rgba(94, 122, 198, 0.12) 0%, rgba(20, 24, 40, 0.55) 100%);
+          backdrop-filter: blur(2px);
+          -webkit-backdrop-filter: blur(2px);
           opacity: 0; transition: opacity 0.3s ease;
         }
         .domus-dept-wrapper:hover .domus-dept-frost { opacity: 1; }
@@ -1522,14 +1532,14 @@ export default function DomusApp() {
         .domus-dept-bottom {
           position: relative; z-index: 2; color: #fff;
           display: flex; flex-direction: column; gap: 10px;
-          background: rgba(255, 255, 255, 0.22);
-          backdrop-filter: blur(22px) saturate(190%);
-          -webkit-backdrop-filter: blur(22px) saturate(190%);
-          border: 1.5px solid rgba(255, 255, 255, 0.52);
+          background: rgba(15, 23, 42, 0.38);
+          backdrop-filter: blur(10px) saturate(140%);
+          -webkit-backdrop-filter: blur(10px) saturate(140%);
+          border: 1px solid rgba(255, 255, 255, 0.38);
           border-radius: 22px;
           padding: 16px;
           overflow: hidden;
-          box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.55);
+          box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2);
           transition: all 0.3s ease;
         }
         .domus-dept-wrapper:hover .domus-dept-bottom {
