@@ -1,44 +1,60 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, Calendar, Bell, ClipboardCheck, Coffee, ShoppingBag, Wrench, CarFront, FileSignature, PieChart } from 'lucide-react';
+import { Clock, Calendar, Bell, ClipboardCheck, Coffee, ShoppingBag, Wrench, CarFront, FileSignature, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 // ==========================================
-// 1. COMPONENTES REUTILIZABLES 
+// 1. COMPONENTES REUTILIZABLES (Glassmorphism Premium)
 // ==========================================
 
 const AnimatedButton = ({ text, fullWidth = false, onClick, secondary = false, icon: Icon }) => {
   return (
     <button 
       onClick={onClick} 
-      className={`group relative flex items-center justify-center gap-2 px-4 py-3 md:px-5 md:py-3.5 rounded-2xl font-bold tracking-wide text-xs transition-all duration-300 active:scale-95 shadow-sm ${
+      className={`group relative flex items-center justify-center gap-2 px-4 py-3 md:px-5 md:py-3.5 rounded-2xl font-bold tracking-wide text-xs transition-all duration-500 hover:-translate-y-1 active:scale-95 shadow-sm overflow-hidden ${
         fullWidth ? 'w-full' : ''
       } ${
         secondary 
-          ? 'bg-white border border-[#E0E0E0] text-[#202020] hover:border-[#5E7AC6] hover:text-[#5E7AC6] hover:shadow-md' 
-          : 'bg-[#5E7AC6] border border-[#5E7AC6] text-white hover:bg-[#4A64A4] hover:shadow-[0_8px_20px_rgba(94,122,198,0.3)]'
+          ? 'bg-white/50 backdrop-blur-xl border border-white/60 text-[#202020] hover:bg-white/80 hover:border-white hover:shadow-[0_8px_20px_rgba(0,0,0,0.05)]' 
+          : 'bg-[#5E7AC6]/90 backdrop-blur-xl border border-[#5E7AC6]/50 text-white hover:bg-[#5E7AC6] hover:shadow-[0_8px_25px_rgba(94,122,198,0.4)]'
       }`}
     >
-      {Icon && <Icon className="w-4 h-4 transition-transform duration-300 group-hover:scale-110" />}
-      <span>{text}</span>
+      {/* Glow interno sutil */}
+      <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-[150%] skew-x-[-15deg] group-hover:animate-[shine_1.5s_ease-out]"></div>
+      
+      {Icon && <Icon className="w-4 h-4 transition-transform duration-500 group-hover:scale-110 z-10" />}
+      <span className="z-10">{text}</span>
     </button>
   );
 };
 
-const AreaCard = ({ title, subtitle, imgUrl, accentColor }) => (
-  <div className="min-w-[280px] w-full md:min-w-0 bg-white rounded-[28px] overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_15px_40px_rgb(0,0,0,0.08)] snap-center shrink-0 flex flex-col">
-    <div className="relative w-full h-40 overflow-hidden bg-gray-100">
-      <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 hover:scale-105" style={{ backgroundImage: `url('${imgUrl}')` }}></div>
-      <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-[9px] font-black tracking-widest uppercase text-[#202020] shadow-sm">
-        {subtitle}
+const AreaCard = ({ title, subtitle, imgUrl, accentColor, stats }) => (
+  <div className="relative group min-w-[280px] w-full md:min-w-0 snap-center shrink-0">
+    {/* Efecto de Retroiluminación (Backlight Glow) */}
+    <div className="absolute -inset-1 bg-gradient-to-r from-[#5E7AC6] to-[#EE6B5F] rounded-[32px] blur-lg opacity-0 group-hover:opacity-40 transition duration-700 ease-out"></div>
+    
+    {/* Tarjeta Glassmorphism */}
+    <div className="relative h-full bg-white/40 backdrop-blur-2xl rounded-[28px] overflow-hidden shadow-[0_8px_32px_rgb(0,0,0,0.04)] border border-white/60 transition-transform duration-500 group-hover:-translate-y-2 flex flex-col z-10">
+      <div className="relative w-full h-40 overflow-hidden">
+        <div className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-110" style={{ backgroundImage: `url('${imgUrl}')` }}></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+        <div className="absolute top-3 left-3 bg-white/80 backdrop-blur-md px-3 py-1 rounded-full text-[9px] font-black tracking-widest uppercase text-[#202020] shadow-sm">
+          {subtitle}
+        </div>
       </div>
-    </div>
-    <div className="p-5 flex flex-col flex-grow justify-between">
-      <div>
-        <h3 className="text-xl font-black tracking-tight text-[#202020] mb-1">{title}</h3>
-        <div className="w-8 h-1 rounded-full mb-4" style={{ backgroundColor: accentColor }}></div>
+      
+      <div className="p-5 flex flex-col flex-grow justify-between">
+        <div>
+          <h3 className="text-xl font-black tracking-tight text-[#202020] mb-1">{title}</h3>
+          <div className="w-8 h-1 rounded-full mb-3" style={{ backgroundColor: accentColor }}></div>
+          {/* Mock Stats */}
+          <div className="flex justify-between items-center bg-white/50 rounded-xl p-2 mb-4 border border-white/40">
+            <span className="text-[10px] font-bold text-[#808080] uppercase">{stats.label}</span>
+            <span className="text-xs font-black text-[#202020]">{stats.value}</span>
+          </div>
+        </div>
+        <button className="w-full py-3 rounded-xl bg-white/60 border border-white/60 text-[#202020] text-xs font-bold hover:bg-white hover:shadow-md transition-all duration-300">
+          Entrar al Módulo
+        </button>
       </div>
-      <button className="w-full py-3 rounded-xl bg-[#F0F0F2] text-[#202020] text-xs font-bold hover:bg-[#5E7AC6] hover:text-white transition-colors">
-        Gestionar Área
-      </button>
     </div>
   </div>
 );
@@ -59,16 +75,12 @@ const DomusApp = () => {
     return date.toLocaleDateString('es-ES', options).toUpperCase();
   };
 
-  const formatTime = (date) => {
-    return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-  };
-
   const areas = [
-    { title: "Cocina & Despensa", subtitle: "Operaciones", accentColor: "#EE6B5F", imgUrl: "https://images.unsplash.com/photo-1506617420156-8e4536971650?auto=format&fit=crop&q=80&w=800" },
-    { title: "Seguridad", subtitle: "Perímetro", accentColor: "#5E7AC6", imgUrl: "https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&q=80&w=800" },
-    { title: "Hospitalidad", subtitle: "Servicio", accentColor: "#808080", imgUrl: "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&q=80&w=800" },
-    { title: "Mantenimiento", subtitle: "Instalaciones", accentColor: "#EE6B5F", imgUrl: "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=800" },
-    { title: "Cuidados", subtitle: "Salud", accentColor: "#5E7AC6", imgUrl: "https://images.unsplash.com/photo-1631815589968-fdb09a223b1e?auto=format&fit=crop&q=80&w=800" }
+    { title: "Cocina & Despensa", subtitle: "Operaciones", accentColor: "#EE6B5F", imgUrl: "https://images.unsplash.com/photo-1506617420156-8e4536971650?auto=format&fit=crop&q=80&w=800", stats: { label: "Mermas Hoy", value: "1.2 kg" } },
+    { title: "Seguridad", subtitle: "Perímetro", accentColor: "#5E7AC6", imgUrl: "https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&q=80&w=800", stats: { label: "Rondas Check", value: "4 / 4" } },
+    { title: "Hospitalidad", subtitle: "Servicio", accentColor: "#808080", imgUrl: "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&q=80&w=800", stats: { label: "Habitaciones", value: "Listas" } },
+    { title: "Mantenimiento", subtitle: "Instalaciones", accentColor: "#EE6B5F", imgUrl: "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=800", stats: { label: "Tickets Abiertos", value: "2 Pendientes" } },
+    { title: "Cuidados", subtitle: "Salud", accentColor: "#5E7AC6", imgUrl: "https://images.unsplash.com/photo-1631815589968-fdb09a223b1e?auto=format&fit=crop&q=80&w=800", stats: { label: "Tratamientos", value: "Al día" } }
   ];
 
   return (
@@ -76,55 +88,45 @@ const DomusApp = () => {
       
       {/* 
         ==========================================
-        FONDO DINÁMICO (BLOBS) 100% VISIBLE
+        FONDO DINÁMICO (PURE CSS BLOBS PARA FLUIDEZ ABSOLUTA)
         ==========================================
       */}
-      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#F0F0F2]">
-        {/* Azul Primario */}
-        <div className="absolute -top-[10%] -left-[10%] w-[60vw] h-[60vw] rounded-full bg-[#5E7AC6] opacity-30 mix-blend-multiply blur-[100px] animate-[blob_15s_infinite_alternate]"></div>
-        {/* Coral Secundario */}
-        <div className="absolute top-[20%] -right-[10%] w-[50vw] h-[50vw] rounded-full bg-[#EE6B5F] opacity-25 mix-blend-multiply blur-[120px] animate-[blob_12s_infinite_alternate-reverse]"></div>
-        {/* Variación Tonal (Lavanda) */}
-        <div className="absolute -bottom-[20%] left-[20%] w-[70vw] h-[70vw] rounded-full bg-[#BE7AC6] opacity-25 mix-blend-multiply blur-[120px] animate-[blob_18s_infinite_alternate]"></div>
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+        <div className="blob blob-1"></div>
+        <div className="blob blob-2"></div>
+        <div className="blob blob-3"></div>
+        <div className="absolute inset-0 bg-white/30 backdrop-blur-[60px]"></div>
       </div>
 
       <div className="relative z-10 mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
         
         {/* ==========================================
-            TOP BANNER (HEADER IMAGE)
+            CABECERA (HEADER MINIMALISTA)
             ========================================== */}
-        <div className="w-full h-32 md:h-48 rounded-[32px] overflow-hidden shadow-lg mb-8 relative">
-          <img 
-            src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Domus/Copia%20de%20Copia%20de%20Outloud%20(1920%20x%20600%20px)%20(1920%20x%20500%20px)%20(1).png" 
-            alt="Domus Header" 
-            className="w-full h-full object-cover object-center"
-          />
-        </div>
-
-        {/* ==========================================
-            CABECERA (LOGO + SALUDO)
-            ========================================== */}
-        <header className="mb-10 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
-          <div>
+        <header className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div className="flex flex-col gap-4">
+            {/* Logo en esquina superior izquierda */}
             <img 
-              src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Domus/DOMUS.png" 
-              alt="Domus Logo" 
-              className="h-12 md:h-16 object-contain mb-4"
+              src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Domus/Copia%20de%20Copia%20de%20Outloud%20(1920%20x%20600%20px)%20(1920%20x%20500%20px)%20(1).png" 
+              alt="Domus" 
+              className="h-8 md:h-10 object-contain drop-shadow-sm"
             />
-            <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-[#202020]">
-              Buenos días, Sra. Belkys.
-            </h1>
-            <p className="mt-2 text-xs font-bold uppercase tracking-widest text-[#808080]">
-              CASA ROQUEDAL · Panel de Control
-            </p>
+            <div>
+              <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-[#202020]">
+                Buenos días, Sra. Belkys.
+              </h1>
+              <p className="mt-1 text-[10px] md:text-xs font-bold uppercase tracking-widest text-[#808080]">
+                CASA ROQUEDAL · Panel de Operaciones
+              </p>
+            </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 rounded-2xl bg-white/80 backdrop-blur-md px-5 py-3 shadow-[0_4px_20px_rgb(0,0,0,0.04)] border border-white">
+          <div className="flex items-center gap-3 self-start md:self-auto">
+            <div className="flex items-center gap-2 rounded-2xl bg-white/40 backdrop-blur-xl px-4 py-2 border border-white/60 shadow-sm">
               <Calendar className="h-4 w-4 text-[#5E7AC6]" />
               <span className="text-[10px] font-bold tracking-widest text-[#808080]">{formatDate(time)}</span>
             </div>
-            <div className="flex items-center gap-2 rounded-2xl bg-white/80 backdrop-blur-md px-5 py-3 shadow-[0_4px_20px_rgb(0,0,0,0.04)] border border-white">
+            <div className="flex items-center gap-2 rounded-2xl bg-white/40 backdrop-blur-xl px-4 py-2 border border-white/60 shadow-sm">
               <Clock className="h-4 w-4 text-[#EE6B5F]" />
               <span className="text-sm font-black tracking-tighter text-[#202020]">{formatTime(time)}</span>
             </div>
@@ -132,68 +134,101 @@ const DomusApp = () => {
         </header>
 
         {/* ==========================================
-            SECCIÓN 1: DASHBOARD GRÁFICO (Widgets)
+            SECCIÓN 1: DASHBOARD GRÁFICO (Widgets Glassmorphism)
             ========================================== */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
           
-          <div className="bg-white/90 backdrop-blur-xl rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.03)] border border-white flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-bold text-[#202020] mb-1">Inventario General</h3>
-              <p className="text-[10px] uppercase tracking-widest text-[#808080] mb-4">Estado de Alacena</p>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-xs font-semibold"><span className="w-2 h-2 rounded-full bg-[#5E7AC6]"></span> Óptimo (65%)</div>
-                <div className="flex items-center gap-2 text-xs font-semibold text-[#808080]"><span className="w-2 h-2 rounded-full bg-[#EE6B5F]"></span> Por pedir (35%)</div>
+          {/* Widget 1: Dona de Inventario Rica en Datos */}
+          <div className="bg-white/40 backdrop-blur-2xl rounded-[32px] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.04)] border border-white/60 flex items-center justify-between group hover:bg-white/60 transition-colors duration-500">
+            <div className="w-1/2">
+              <h3 className="text-sm font-bold text-[#202020] mb-1">Estado de Alacena</h3>
+              <p className="text-[9px] uppercase tracking-widest text-[#808080] mb-4">Métricas de Stock</p>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center text-[10px] font-bold"><span className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#5E7AC6]"></span> Cárnicos</span> <span>85%</span></div>
+                <div className="flex justify-between items-center text-[10px] font-bold"><span className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#BE7AC6]"></span> Lácteos</span> <span>60%</span></div>
+                <div className="flex justify-between items-center text-[10px] font-bold"><span className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#EE6B5F]"></span> Limpieza</span> <span className="text-[#EE6B5F]">20%</span></div>
               </div>
             </div>
-            <div className="relative w-24 h-24">
-              <svg viewBox="0 0 36 36" className="w-full h-full drop-shadow-md">
-                <path className="text-[#F0F0F2]" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="4" />
-                <path className="text-[#5E7AC6]" strokeDasharray="65, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" className="animate-[drawRing_1.5s_ease-out_forwards]" />
+            <div className="relative w-28 h-28 drop-shadow-xl">
+              <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
+                {/* Fondo */}
+                <path className="text-white/50" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" />
+                {/* Cárnicos */}
+                <path className="text-[#5E7AC6]" strokeDasharray="85, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" className="animate-[drawRing_1.5s_ease-out_forwards]" />
+                {/* Limpieza (Alerta) */}
+                <path className="text-[#EE6B5F]" strokeDasharray="20, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeDashoffset="-80" className="animate-[drawRing_2s_ease-out_forwards]" />
               </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <PieChart className="w-6 h-6 text-[#5E7AC6]" />
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-xs font-black text-[#202020]">55%</span>
+                <span className="text-[8px] font-bold text-[#808080] uppercase tracking-widest">Global</span>
               </div>
             </div>
           </div>
 
-          <div className="bg-white/90 backdrop-blur-xl rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.03)] border border-white flex flex-col justify-between">
+          {/* Widget 2: Actividad de Tareas Detallada */}
+          <div className="bg-white/40 backdrop-blur-2xl rounded-[32px] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.04)] border border-white/60 flex flex-col justify-between group hover:bg-white/60 transition-colors duration-500">
             <div className="flex justify-between items-start mb-4">
               <div>
-                <h3 className="text-sm font-bold text-[#202020] mb-1">Tareas Completadas</h3>
-                <p className="text-[10px] uppercase tracking-widest text-[#808080]">Esta semana</p>
+                <h3 className="text-sm font-bold text-[#202020] mb-1">Carga Operativa</h3>
+                <p className="text-[9px] uppercase tracking-widest text-[#808080]">Tareas por día</p>
               </div>
-              <div className="bg-[#EE6B5F]/10 text-[#EE6B5F] px-2 py-1 rounded-lg text-xs font-bold">+12%</div>
+              <div className="bg-white border border-white/60 text-[#5E7AC6] px-2 py-1 rounded-lg text-[10px] font-black shadow-sm">68 Tareas</div>
             </div>
-            <div className="flex items-end justify-between h-16 gap-2">
-              {['Lun', 'Mar', 'Mié', 'Jue', 'Vie'].map((day, i) => {
-                const heights = ['40%', '70%', '50%', '90%', '60%'];
-                return (
-                  <div key={day} className="flex flex-col items-center gap-2 w-full group">
-                    <div className="w-full bg-[#F0F0F2] rounded-t-md h-full relative overflow-hidden flex items-end">
-                      <div className="w-full bg-[#5E7AC6] transition-all duration-700 rounded-t-md group-hover:bg-[#EE6B5F]" style={{ height: heights[i] }}></div>
-                    </div>
-                    <span className="text-[9px] font-bold text-[#808080]">{day}</span>
+            <div className="flex items-end justify-between h-20 gap-1.5 md:gap-2">
+              {[
+                { d: 'L', h: '60%', c: '#5E7AC6' }, { d: 'M', h: '80%', c: '#5E7AC6' }, { d: 'M', h: '40%', c: '#5E7AC6' }, 
+                { d: 'J', h: '95%', c: '#EE6B5F' }, { d: 'V', h: '70%', c: '#5E7AC6' }, { d: 'S', h: '30%', c: '#808080' }, { d: 'D', h: '20%', c: '#808080' }
+              ].map((day, i) => (
+                <div key={i} className="flex flex-col items-center gap-2 w-full group/bar relative">
+                  <div className="absolute -top-6 bg-[#202020] text-white text-[8px] font-bold py-1 px-2 rounded opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap z-20">
+                    {day.h}
                   </div>
-                );
-              })}
+                  <div className="w-full bg-white/50 border border-white/60 rounded-t-md h-full relative overflow-hidden flex items-end">
+                    <div className="w-full transition-all duration-1000 ease-out rounded-t-md opacity-90 group-hover/bar:opacity-100" style={{ height: day.h, backgroundColor: day.c }}></div>
+                  </div>
+                  <span className="text-[9px] font-bold text-[#808080]">{day.d}</span>
+                </div>
+              ))}
             </div>
           </div>
 
-          <div className="bg-[#5E7AC6] rounded-[32px] p-6 shadow-[0_15px_30px_rgba(94,122,198,0.2)] text-white flex flex-col justify-between bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-blend-overlay">
-            <div>
+          {/* Widget 3: Novedades / Watermark Logo Standalone */}
+          <div className="relative bg-gradient-to-br from-[#5E7AC6] to-[#4A64A4] rounded-[32px] p-6 shadow-[0_15px_30px_rgba(94,122,198,0.3)] text-white flex flex-col justify-between overflow-hidden">
+            {/* Watermark Logo Standalone */}
+            <img 
+              src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Domus/DOMUS.png" 
+              alt="Domus Watermark" 
+              className="absolute -right-4 -bottom-4 w-40 h-40 object-contain opacity-10 grayscale brightness-200"
+            />
+            
+            <div className="relative z-10">
               <div className="flex items-center justify-between mb-4">
-                <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm"><Bell className="w-5 h-5 text-white" /></div>
-                <span className="w-3 h-3 rounded-full bg-[#EE6B5F] animate-pulse"></span>
+                <div className="flex items-center gap-2 bg-white/20 backdrop-blur-md border border-white/20 px-3 py-1.5 rounded-full">
+                  <Bell className="w-3.5 h-3.5" />
+                  <span className="text-[10px] font-bold tracking-widest uppercase">Alertas Activas</span>
+                </div>
+                <span className="w-3 h-3 rounded-full bg-[#EE6B5F] animate-pulse shadow-[0_0_10px_#EE6B5F]"></span>
               </div>
-              <h3 className="text-2xl font-black tracking-tight mb-1">3 Alertas</h3>
-              <p className="text-xs font-medium text-white/80">Requieren tu atención hoy</p>
+              
+              <div className="space-y-3 mt-4 mb-4">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-[#EE6B5F] shrink-0 mt-0.5" />
+                  <p className="text-xs font-semibold leading-tight">Mantenimiento preventivo: <br/><span className="font-normal text-white/80">Planta Eléctrica Principal</span></p>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-300 shrink-0 mt-0.5" />
+                  <p className="text-xs font-semibold leading-tight">Visita autorizada en garita: <br/><span className="font-normal text-white/80">Sr. Álvaro Jiménez</span></p>
+                </div>
+              </div>
             </div>
-            <button className="w-full py-2.5 bg-white text-[#5E7AC6] text-xs font-bold rounded-xl hover:scale-[1.02] transition-transform">Ver Detalles</button>
+            <button className="relative z-10 w-full py-3 bg-white/10 hover:bg-white text-white hover:text-[#5E7AC6] border border-white/30 hover:border-white text-xs font-bold rounded-xl transition-all duration-300">
+              Abrir Centro de Control
+            </button>
           </div>
         </div>
 
         {/* ==========================================
-            SECCIÓN 2: DEPARTAMENTOS (Carrusel)
+            SECCIÓN 2: DEPARTAMENTOS (Carrusel Táctil Retroiluminado)
             ========================================== */}
         <div className="mb-12">
           <div className="flex items-center justify-between mb-5 px-1">
@@ -201,7 +236,7 @@ const DomusApp = () => {
               Gestión por Departamentos
             </h2>
           </div>
-          <div className="flex overflow-x-auto gap-4 md:gap-6 pb-6 pt-2 snap-x snap-mandatory hide-scrollbar -mx-4 px-4 md:mx-0 md:px-0 md:grid md:grid-cols-3 lg:grid-cols-5">
+          <div className="flex overflow-x-auto gap-4 md:gap-6 pb-8 pt-2 snap-x snap-mandatory hide-scrollbar -mx-4 px-4 md:mx-0 md:px-0 md:grid md:grid-cols-3 lg:grid-cols-5">
             {areas.map((area, index) => (
               <AreaCard key={index} {...area} />
             ))}
@@ -209,7 +244,7 @@ const DomusApp = () => {
         </div>
 
         {/* ==========================================
-            SECCIÓN 3: ACCIONES RÁPIDAS
+            SECCIÓN 3: ACCIONES RÁPIDAS (Botones Glass)
             ========================================== */}
         <div>
           <h2 className="mb-5 text-sm font-bold uppercase tracking-widest text-[#808080] px-1">
@@ -220,7 +255,7 @@ const DomusApp = () => {
             <AnimatedButton text="Solicitar Insumos" icon={ShoppingBag} secondary={true} />
             <AnimatedButton text="Menú del Día" icon={Coffee} secondary={true} />
             <AnimatedButton text="Agenda Familiar" icon={Calendar} secondary={true} />
-            <AnimatedButton text="Chóferes / Autos" icon={CarFront} secondary={true} />
+            <AnimatedButton text="Logística / Autos" icon={CarFront} secondary={true} />
             <AnimatedButton text="Autorizar Visita" icon={FileSignature} secondary={true} />
           </div>
         </div>
@@ -228,21 +263,59 @@ const DomusApp = () => {
       </div>
 
       {/* ==========================================
-          ANIMACIONES CSS
+          ANIMACIONES CSS (BLOQUE AISLADO Y SEGURO)
           ========================================== */}
       <style dangerouslySetInnerHTML={{__html: `
+        /* Ocultar barra de scroll en el carrusel */
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
+        /* Animación SVG para las tortas */
         @keyframes drawRing { 
           from { stroke-dashoffset: 200; } 
         }
+
+        /* Efecto de brillo (shine) en los botones */
+        @keyframes shine {
+          100% { transform: translateX(200%) skewX(-15deg); }
+        }
         
-        @keyframes blob {
-          0% { transform: translate(0px, 0px) scale(1); }
-          33% { transform: translate(30px, -50px) scale(1.1); }
-          66% { transform: translate(-20px, 20px) scale(0.9); }
-          100% { transform: translate(0px, 0px) scale(1); }
+        /* Sistema de Blobs Dinámicos Base CSS */
+        .blob {
+          position: absolute;
+          border-radius: 50%;
+          filter: blur(100px);
+          opacity: 0.4;
+          mix-blend-mode: multiply;
+          animation: blobAnim 20s infinite alternate cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .blob-1 {
+          top: -10%; left: -10%;
+          width: 55vw; height: 55vw;
+          background-color: #5E7AC6;
+          animation-delay: 0s;
+        }
+        .blob-2 {
+          top: 20%; right: -10%;
+          width: 45vw; height: 45vw;
+          background-color: #EE6B5F;
+          animation-duration: 25s;
+          animation-direction: alternate-reverse;
+        }
+        .blob-3 {
+          bottom: -20%; left: 20%;
+          width: 65vw; height: 65vw;
+          background-color: #BE7AC6;
+          animation-duration: 30s;
+          animation-delay: -5s;
+        }
+        
+        /* Keyframes de movimiento suave */
+        @keyframes blobAnim {
+          0% { transform: translate(0, 0) scale(1); }
+          33% { transform: translate(5vw, -8vh) scale(1.05); }
+          66% { transform: translate(-5vw, 8vh) scale(0.95); }
+          100% { transform: translate(0, 0) scale(1); }
         }
       `}} />
     </div>
