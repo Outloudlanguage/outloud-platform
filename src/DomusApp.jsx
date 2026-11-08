@@ -286,7 +286,7 @@ export default function DomusApp() {
       title: "Cocina & Despensa",
       subtitle: "Gastronomía",
       accentColor: "#EE6B5F",
-      imgUrl: resolveImg("d9235e94-0c2f-42bc-cd6a-0f008875c100"),
+      imgUrl: "https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Domus/1794149874168.jpg",
       stats: { label: "Alacena & Menú", value: "78% Stock · 3 Tiempos" },
       description: "Inventario en tiempo real, pesaje en balanza, recetario familiar y control de mermas.",
       details: [
@@ -301,7 +301,7 @@ export default function DomusApp() {
       title: "Personal",
       subtitle: "Staff & Turnos",
       accentColor: "#5E7AC6",
-      imgUrl: resolveImg("09e245b8-b1f2-4998-50f5-c726dbe69400"),
+      imgUrl: "https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Domus/1794150174830.jpg",
       stats: { label: "Asistencia Hoy", value: "11 / 11 en Posición" },
       description: "Gestión de horarios, asistencia, asignación de tareas diarias, descansos y desempeño.",
       details: [
@@ -316,7 +316,7 @@ export default function DomusApp() {
       title: "Seguridad",
       subtitle: "Enlace Garita",
       accentColor: "#5E7AC6",
-      imgUrl: resolveImg("740a39d9-2832-45c5-3fdb-4044e85c7800"),
+      imgUrl: "https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Domus/1794150065473.jpg",
       stats: { label: "Garita & Accesos", value: "4 Custodios Activos" },
       description: "Aviso de llegada de proveedores, paquetería y enlace rápido con garita sin alterar su bitácora.",
       details: [
@@ -331,7 +331,7 @@ export default function DomusApp() {
       title: "Hospitalidad",
       subtitle: "Suites & Lencería",
       accentColor: "#BE7AC6",
-      imgUrl: resolveImg("adb8046b-ea89-4753-cdec-2fe8ac841000"),
+      imgUrl: "https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Domus/1794150276283.jpg",
       stats: { label: "Habitaciones", value: "5 / 5 Impecables" },
       description: "Protocolo de habitaciones principales, visitas familiares, tintorería y lencería fina.",
       details: [
@@ -346,7 +346,7 @@ export default function DomusApp() {
       title: "Mantenimiento",
       subtitle: "Instalaciones",
       accentColor: "#EE6B5F",
-      imgUrl: resolveImg("d3756f38-19d7-4eec-7d32-af285f664c00"),
+      imgUrl: "https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Domus/1794150373743.jpg",
       stats: { label: "Equipos Críticos", value: "Planta 98% Diésel" },
       description: "Bombas hidroneumáticas, planta eléctrica, climatización y cronograma de técnicos.",
       details: [
@@ -361,7 +361,7 @@ export default function DomusApp() {
       title: "Cuidados Médicos",
       subtitle: "Salud & Enfermería",
       accentColor: "#5E7AC6",
-      imgUrl: resolveImg("00d4337d-01c8-4d45-9e89-5e2eb47cfa00"),
+      imgUrl: "https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Domus/1794150443908.jpg",
       stats: { label: "Tensión Arterial", value: "120/78 mmHg" },
       description: "Signos vitales del Dr. Gustavo Jiménez, bitácora de enfermería y stock de medicamentos.",
       details: [
@@ -1100,25 +1100,22 @@ export default function DomusApp() {
           max-width: 48vw;
           object-fit: contain;
           object-position: left center;
-          margin-left: 12px;
+          margin-left: 8px;
           filter: drop-shadow(0 3px 8px rgba(94, 122, 198, 0.16));
           pointer-events: none;
         }
         @media (min-width: 768px) {
           .domus-header-logo-img {
-            height: 76px;
-            max-width: none;
-            margin-left: 18px;
+            height: 62px;
+            max-width: 320px;
+            margin-left: 6px;
           }
         }
 
+        /* Ocultamos las pestañas superiores para usar la Isla Flotante en todas las pantallas */
         .domus-nav-tabs {
-          display: none; align-items: center; gap: 6px;
-          background: rgba(255, 255, 255, 0.55);
-          padding: 5px; border-radius: 99px;
-          border: 1px solid rgba(255, 255, 255, 0.9);
+          display: none !important;
         }
-        @media (min-width: 1180px) { .domus-nav-tabs { display: flex; } }
         .domus-nav-tab {
           border: none; background: transparent; cursor: pointer;
           padding: 9px 18px; border-radius: 99px;
@@ -1211,27 +1208,47 @@ export default function DomusApp() {
         /* BARRA INFERIOR ANCLADA EN MÓVIL (BOTTOM DOCK) */
         .domus-mobile-bottom-nav {
           position: fixed;
-          bottom: 12px; left: 12px; right: 12px;
+          bottom: 14px; left: 12px; right: 12px;
           z-index: 95;
           display: flex; align-items: center; justify-content: space-around;
-          padding: 8px 6px;
-          background: rgba(255, 255, 255, 0.85);
-          backdrop-filter: blur(28px) saturate(190%);
-          -webkit-backdrop-filter: blur(28px) saturate(190%);
+          padding: 8px 8px;
+          background: rgba(255, 255, 255, 0.78);
+          backdrop-filter: blur(30px) saturate(200%);
+          -webkit-backdrop-filter: blur(30px) saturate(200%);
           border: 1.5px solid rgba(255, 255, 255, 0.95);
-          border-radius: 26px;
-          box-shadow: 0 14px 36px rgba(32, 32, 48, 0.16);
+          border-radius: 28px;
+          box-shadow: 0 18px 45px rgba(32, 32, 48, 0.18);
+          transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
         }
-        @media (min-width: 1180px) {
-          .domus-mobile-bottom-nav { display: none; }
+        @media (min-width: 768px) {
+          .domus-mobile-bottom-nav {
+            left: 50%; right: auto;
+            transform: translateX(-50%);
+            bottom: 22px;
+            width: auto; min-width: 620px;
+            padding: 8px 14px;
+            border-radius: 99px;
+            gap: 8px;
+          }
         }
         .domus-mobile-nav-item {
           flex: 1;
           border: none; background: transparent;
           display: flex; flex-direction: column; align-items: center; justify-content: center;
-          gap: 3px; padding: 6px 2px; border-radius: 18px;
-          color: #666; cursor: pointer;
+          gap: 3px; padding: 6px 6px; border-radius: 18px;
+          color: #555; cursor: pointer;
           transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        @media (min-width: 768px) {
+          .domus-mobile-nav-item {
+            flex-direction: row;
+            gap: 8px; padding: 8px 16px;
+            border-radius: 99px;
+          }
+          .domus-mobile-nav-item:hover {
+            background: rgba(94, 122, 198, 0.1);
+            color: #5E7AC6;
+          }
         }
         .domus-mobile-nav-icon {
           width: 34px; height: 28px; border-radius: 99px;
@@ -1450,16 +1467,20 @@ export default function DomusApp() {
         }
         .domus-dept-wrapper:hover .domus-dept-bg { transform: scale(1.1); }
 
+        /* Vidrio esmerilado permanente sobre cada imagen que se despeja e ilumina al hacer hover */
         .domus-dept-gradient {
           position: absolute; inset: 0;
-          background: linear-gradient(180deg, rgba(15, 23, 42, 0.2) 0%, rgba(15, 23, 42, 0.38) 45%, rgba(15, 23, 42, 0.88) 100%);
-          transition: opacity 0.3s ease;
+          background: linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, rgba(15, 23, 42, 0.35) 45%, rgba(15, 23, 42, 0.82) 100%);
+          backdrop-filter: blur(3.5px) saturate(140%);
+          -webkit-backdrop-filter: blur(3.5px) saturate(140%);
+          transition: all 0.4s ease;
         }
         .domus-dept-frost {
           position: absolute; inset: 0;
-          background: linear-gradient(180deg, rgba(94, 122, 198, 0.22) 0%, rgba(20, 24, 40, 0.88) 100%);
-          backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-          opacity: 0; transition: opacity 0.28s ease;
+          background: linear-gradient(180deg, rgba(94, 122, 198, 0.22) 0%, rgba(20, 24, 40, 0.85) 100%);
+          backdrop-filter: blur(8px) saturate(180%);
+          -webkit-backdrop-filter: blur(8px) saturate(180%);
+          opacity: 0; transition: opacity 0.3s ease;
         }
         .domus-dept-wrapper:hover .domus-dept-frost { opacity: 1; }
 

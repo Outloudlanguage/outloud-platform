@@ -7,115 +7,56 @@ import {
 
 const STANDALONE_LOGO_URL = "https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Domus/DOMUS.png";
 
+const CATEGORY_STRUCTURE = {
+  'Proteínas': ['Carnes', 'Pollo', 'Pescados', 'Huevos'],
+  'Despensa': ['Granos y Pastas', 'Aceites y Condimentos', 'Lácteos y Café'],
+  'Vegetales': ['Verduras y Hortalizas', 'Hojas y Hierbas', 'Frutas Frescas'],
+  'Misceláneos': ['Panadería y Meriendas', 'Insumos de Cocina'],
+  'Limpieza': ['Lavandería y Lencería', 'Superficies y Desinfección']
+};
+
 const INITIAL_ITEMS = [
-  {
-    id: 'inv-1',
-    name: 'Lomito de Res Madurado',
-    category: 'Proteínas',
-    location: 'Congelador Principal · Gaveta 1',
-    current: 6.5,
-    min: 4.0,
-    max: 10.0,
-    unit: 'kg',
-    updated: 'Hoy, 08:30 AM',
-    img: 'https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?auto=format&fit=crop&q=80&w=400'
-  },
-  {
-    id: 'inv-2',
-    name: 'Filete de Mero Fresco',
-    category: 'Proteínas',
-    location: 'Congelador Principal · Gaveta 2',
-    current: 1.2,
-    min: 3.0,
-    max: 6.0,
-    unit: 'kg',
-    updated: 'Hoy, 12:15 PM',
-    img: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&q=80&w=400'
-  },
-  {
-    id: 'inv-3',
-    name: 'Pechuga de Pollo Orgánico',
-    category: 'Proteínas',
-    location: 'Nevera Industrial · Nivel 2',
-    current: 5.0,
-    min: 3.0,
-    max: 8.0,
-    unit: 'kg',
-    updated: 'Ayer, 06:00 PM',
-    img: 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?auto=format&fit=crop&q=80&w=400'
-  },
-  {
-    id: 'inv-4',
-    name: 'Aceite de Oliva Extra Virgen',
-    category: 'Despensa',
-    location: 'Alacena Central · Estante A',
-    current: 1.0,
-    min: 3.0,
-    max: 8.0,
-    unit: 'L',
-    updated: 'Hoy, 09:10 AM',
-    img: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?auto=format&fit=crop&q=80&w=400'
-  },
-  {
-    id: 'inv-5',
-    name: 'Queso Parmesano Reggiano',
-    category: 'Lácteos',
-    location: 'Nevera Gourmet · Puerta Derecha',
-    current: 1.8,
-    min: 1.0,
-    max: 3.0,
-    unit: 'kg',
-    updated: 'Ayer, 04:20 PM',
-    img: 'https://images.unsplash.com/photo-1486297678162-eb2a19b0a32d?auto=format&fit=crop&q=80&w=400'
-  },
-  {
-    id: 'inv-6',
-    name: 'Leche Deslactosada Almendras',
-    category: 'Lácteos',
-    location: 'Alacena Fría · Nivel 1',
-    current: 2.0,
-    min: 4.0,
-    max: 12.0,
-    unit: 'unid',
-    updated: 'Hoy, 07:45 AM',
-    img: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&q=80&w=400'
-  },
-  {
-    id: 'inv-7',
-    name: 'Detergente Hipoalergénico Neutro',
-    category: 'Limpieza',
-    location: 'Cuarto de Lavandería · Estante 1',
-    current: 0.8,
-    min: 3.0,
-    max: 10.0,
-    unit: 'L',
-    updated: 'Hoy, 10:00 AM',
-    img: 'https://images.unsplash.com/photo-1583947215259-38e31be8751f?auto=format&fit=crop&q=80&w=400'
-  },
-  {
-    id: 'inv-8',
-    name: 'Desinfectante Clínico Superficies',
-    category: 'Limpieza',
-    location: 'Cuarto de Lavandería · Estante 2',
-    current: 1.5,
-    min: 4.0,
-    max: 12.0,
-    unit: 'L',
-    updated: 'Hoy, 11:20 AM',
-    img: 'https://images.unsplash.com/photo-1584813470613-5b1c1cad3d69?auto=format&fit=crop&q=80&w=400'
-  },
-  {
-    id: 'inv-9',
-    name: 'Café en Grano Selección Especial',
-    category: 'Despensa',
-    location: 'Alacena Central · Estante B',
-    current: 3.5,
-    min: 2.0,
-    max: 5.0,
-    unit: 'kg',
-    updated: 'Ayer, 08:00 AM',
-    img: 'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?auto=format&fit=crop&q=80&w=400'
-  }
+  // PROTEÍNAS -> CARNES
+  { id: 'inv-1', name: 'Medallones de Lomito', category: 'Proteínas', subcategory: 'Carnes', location: 'Congelador 1 · Gaveta Alta', current: 4.5, min: 3.0, max: 8.0, unit: 'kg', updated: 'Hoy, 08:30 AM', img: 'https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?auto=format&fit=crop&q=80&w=400' },
+  { id: 'inv-2', name: 'Bistec de Solomo', category: 'Proteínas', subcategory: 'Carnes', location: 'Congelador 1 · Gaveta Media', current: 3.5, min: 3.0, max: 7.0, unit: 'kg', updated: 'Ayer, 05:00 PM', img: 'https://images.unsplash.com/photo-1558030006-450675393462?auto=format&fit=crop&q=80&w=400' },
+  { id: 'inv-3', name: 'Carne para Desmechar (Falda)', category: 'Proteínas', subcategory: 'Carnes', location: 'Congelador 1 · Gaveta Baja', current: 2.5, min: 2.0, max: 6.0, unit: 'kg', updated: 'Hoy, 09:00 AM', img: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&q=80&w=400' },
+  { id: 'inv-4', name: 'Carne Molida Magra Especial', category: 'Proteínas', subcategory: 'Carnes', location: 'Congelador 1 · Gaveta Media', current: 1.5, min: 2.5, max: 6.0, unit: 'kg', updated: 'Hoy, 11:10 AM', img: 'https://images.unsplash.com/photo-1588168333986-5078d3ae3976?auto=format&fit=crop&q=80&w=400' },
+
+  // PROTEÍNAS -> POLLO
+  { id: 'inv-5', name: 'Milanesa de Pollo Fileteada', category: 'Proteínas', subcategory: 'Pollo', location: 'Nevera Industrial · Nivel 2', current: 4.0, min: 3.0, max: 7.0, unit: 'kg', updated: 'Hoy, 08:00 AM', img: 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?auto=format&fit=crop&q=80&w=400' },
+  { id: 'inv-6', name: 'Muslos Deshuesados', category: 'Proteínas', subcategory: 'Pollo', location: 'Congelador 2 · Nivel 1', current: 3.2, min: 2.5, max: 6.0, unit: 'kg', updated: 'Ayer, 06:00 PM', img: 'https://images.unsplash.com/photo-1587593810167-a84920ea0781?auto=format&fit=crop&q=80&w=400' },
+  { id: 'inv-7', name: 'Alas de Pollo Selección', category: 'Proteínas', subcategory: 'Pollo', location: 'Congelador 2 · Nivel 2', current: 2.0, min: 1.5, max: 5.0, unit: 'kg', updated: 'Ayer, 04:00 PM', img: 'https://images.unsplash.com/photo-1527477396000-e27163b481c2?auto=format&fit=crop&q=80&w=400' },
+
+  // PROTEÍNAS -> PESCADOS
+  { id: 'inv-8', name: 'Filete de Mero Fresco', category: 'Proteínas', subcategory: 'Pescados', location: 'Congelador 2 · Gaveta Mar', current: 1.2, min: 3.0, max: 6.0, unit: 'kg', updated: 'Hoy, 12:15 PM', img: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&q=80&w=400' },
+  { id: 'inv-9', name: 'Lomos de Salmón Fresco', category: 'Proteínas', subcategory: 'Pescados', location: 'Congelador 2 · Gaveta Mar', current: 2.5, min: 2.0, max: 5.0, unit: 'kg', updated: 'Hoy, 09:30 AM', img: 'https://images.unsplash.com/photo-1599084993091-1cb5c0721cc6?auto=format&fit=crop&q=80&w=400' },
+  { id: 'inv-10', name: 'Postas de Róbalo Blanco', category: 'Proteínas', subcategory: 'Pescados', location: 'Congelador 2 · Gaveta Mar', current: 2.2, min: 2.0, max: 5.0, unit: 'kg', updated: 'Ayer, 05:30 PM', img: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?auto=format&fit=crop&q=80&w=400' },
+
+  // PROTEÍNAS -> HUEVOS
+  { id: 'inv-11', name: 'Huevos Frescos de Campo', category: 'Proteínas', subcategory: 'Huevos', location: 'Alacena Fresca · Bandeja 1', current: 45, min: 24, max: 90, unit: 'unid', updated: 'Hoy, 07:30 AM', img: 'https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?auto=format&fit=crop&q=80&w=400' },
+  { id: 'inv-12', name: 'Claras Pasteurizadas', category: 'Proteínas', subcategory: 'Huevos', location: 'Nevera Gourmet · Nivel 1', current: 3, min: 2, max: 6, unit: 'L', updated: 'Hoy, 08:10 AM', img: 'https://images.unsplash.com/photo-1506976785307-8732e854ad03?auto=format&fit=crop&q=80&w=400' },
+
+  // DESPENSA
+  { id: 'inv-13', name: 'Arroz Blanco Grano Entero', category: 'Despensa', subcategory: 'Granos y Pastas', location: 'Alacena Central · Estante A', current: 6.0, min: 3.0, max: 10.0, unit: 'kg', updated: 'Ayer, 03:00 PM', img: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&q=80&w=400' },
+  { id: 'inv-14', name: 'Avena Integral en Hojuelas', category: 'Despensa', subcategory: 'Granos y Pastas', location: 'Alacena Central · Estante A', current: 2.5, min: 2.0, max: 5.0, unit: 'kg', updated: 'Hoy, 08:00 AM', img: 'https://images.unsplash.com/photo-1614961233913-a5113a4a34ed?auto=format&fit=crop&q=80&w=400' },
+  { id: 'inv-15', name: 'Aceite de Oliva Extra Virgen', category: 'Despensa', subcategory: 'Aceites y Condimentos', location: 'Alacena Central · Estante B', current: 1.0, min: 3.0, max: 8.0, unit: 'L', updated: 'Hoy, 09:10 AM', img: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?auto=format&fit=crop&q=80&w=400' },
+  { id: 'inv-16', name: 'Queso Parmesano Reggiano', category: 'Despensa', subcategory: 'Lácteos y Café', location: 'Nevera Gourmet · Puerta', current: 1.8, min: 1.0, max: 3.0, unit: 'kg', updated: 'Ayer, 04:20 PM', img: 'https://images.unsplash.com/photo-1486297678162-eb2a19b0a32d?auto=format&fit=crop&q=80&w=400' },
+  { id: 'inv-17', name: 'Leche de Almendras Sin Azúcar', category: 'Despensa', subcategory: 'Lácteos y Café', location: 'Alacena Fría · Nivel 1', current: 2, min: 4, max: 12, unit: 'unid', updated: 'Hoy, 07:45 AM', img: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&q=80&w=400' },
+  { id: 'inv-18', name: 'Café en Grano Especial', category: 'Despensa', subcategory: 'Lácteos y Café', location: 'Alacena Central · Estante C', current: 3.5, min: 2.0, max: 5.0, unit: 'kg', updated: 'Ayer, 08:00 AM', img: 'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?auto=format&fit=crop&q=80&w=400' },
+
+  // VEGETALES
+  { id: 'inv-19', name: 'Auyama Selección Dulce', category: 'Vegetales', subcategory: 'Verduras y Hortalizas', location: 'Cava Vegetales · Cesta 1', current: 4.0, min: 2.0, max: 6.0, unit: 'kg', updated: 'Hoy, 10:00 AM', img: 'https://images.unsplash.com/photo-1570586437263-ab629fccc818?auto=format&fit=crop&q=80&w=400' },
+  { id: 'inv-20', name: 'Calabacín y Tomate Perita', category: 'Vegetales', subcategory: 'Verduras y Hortalizas', location: 'Cava Vegetales · Cesta 2', current: 3.5, min: 2.0, max: 6.0, unit: 'kg', updated: 'Hoy, 10:00 AM', img: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&q=80&w=400' },
+  { id: 'inv-21', name: 'Espinaca, Albahaca y Cilantro', category: 'Vegetales', subcategory: 'Hojas y Hierbas', location: 'Nevera Gourmet · Gaveta Verde', current: 1.5, min: 1.0, max: 3.0, unit: 'kg', updated: 'Hoy, 08:20 AM', img: 'https://images.unsplash.com/photo-1576045057995-568f588f82fb?auto=format&fit=crop&q=80&w=400' },
+  { id: 'inv-22', name: 'Lechosa, Aguacate y Cambur', category: 'Vegetales', subcategory: 'Frutas Frescas', location: 'Frutero Climatizado', current: 5.0, min: 3.0, max: 8.0, unit: 'kg', updated: 'Hoy, 07:50 AM', img: 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&q=80&w=400' },
+
+  // MISCELÁNEOS
+  { id: 'inv-23', name: 'Galletas de Avena y Manzanilla', category: 'Misceláneos', subcategory: 'Panadería y Meriendas', location: 'Alacena de Té · Nivel 1', current: 6, min: 3, max: 10, unit: 'unid', updated: 'Ayer, 05:00 PM', img: 'https://images.unsplash.com/photo-1558961363-fa8fdf82db35?auto=format&fit=crop&q=80&w=400' },
+  { id: 'inv-24', name: 'Papel Film, Aluminio y Bolsas', category: 'Misceláneos', subcategory: 'Insumos de Cocina', location: 'Gaveta Utensilios 3', current: 5, min: 2, max: 8, unit: 'unid', updated: 'Ayer, 02:00 PM', img: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&q=80&w=400' },
+
+  // LIMPIEZA
+  { id: 'inv-25', name: 'Detergente Hipoalergénico Neutro', category: 'Limpieza', subcategory: 'Lavandería y Lencería', location: 'Cuarto Lavandería · Estante 1', current: 0.8, min: 3.0, max: 10.0, unit: 'L', updated: 'Hoy, 10:00 AM', img: 'https://images.unsplash.com/photo-1583947215259-38e31be8751f?auto=format&fit=crop&q=80&w=400' },
+  { id: 'inv-26', name: 'Desinfectante Clínico Superficies', category: 'Limpieza', subcategory: 'Superficies y Desinfección', location: 'Cuarto Lavandería · Estante 2', current: 1.5, min: 4.0, max: 12.0, unit: 'L', updated: 'Hoy, 11:20 AM', img: 'https://images.unsplash.com/photo-1584813470613-5b1c1cad3d69?auto=format&fit=crop&q=80&w=400' }
 ];
 
 const INITIAL_LOGS = [
@@ -126,13 +67,23 @@ const INITIAL_LOGS = [
 
 export default function InventoryModal({ isOpen, onClose, initialTab = 'STOCK' }) {
   const [activeTab, setActiveTab] = useState(initialTab);
-  const [selectedCategory, setSelectedCategory] = useState('Todos');
+  const [selectedCategory, setSelectedCategory] = useState('Proteínas');
   const [onlyLowStock, setOnlyLowStock] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [items, setItems] = useState(INITIAL_ITEMS);
   const [logs, setLogs] = useState(INITIAL_LOGS);
   const [orderSent, setOrderSent] = useState(false);
   const [customNote, setCustomNote] = useState('Favor priorizar el pescado fresco y el detergente hipoalergénico para antes del miércoles.');
+
+  // Estado para añadir un nuevo insumo / corte dentro de cualquier subcategoría
+  const [addingToSubcat, setAddingToSubcat] = useState(null);
+  const [newItemName, setNewItemName] = useState('');
+  const [newItemSubcat, setNewItemSubcat] = useState('');
+  const [newItemLocation, setNewItemLocation] = useState('Congelador Principal');
+  const [newItemCurrent, setNewItemCurrent] = useState(3.0);
+  const [newItemMin, setNewItemMin] = useState(2.0);
+  const [newItemMax, setNewItemMax] = useState(6.0);
+  const [newItemUnit, setNewItemUnit] = useState('kg');
 
   // Estado para simulador de balanza / movimiento rápido
   const [movType, setMovType] = useState('SALIDA');
@@ -141,7 +92,35 @@ export default function InventoryModal({ isOpen, onClose, initialTab = 'STOCK' }
   const [movReason, setMovReason] = useState('Preparación Almuerzo Principal');
   const [movSuccess, setMovSuccess] = useState(false);
 
-  const categories = ['Todos', 'Proteínas', 'Lácteos', 'Despensa', 'Limpieza'];
+  const categories = ['Proteínas', 'Despensa', 'Vegetales', 'Misceláneos', 'Limpieza'];
+
+  const openAddItemForm = (subcatName) => {
+    setAddingToSubcat(subcatName);
+    setNewItemSubcat(subcatName === 'NUEVA' ? '' : subcatName);
+    setNewItemName('');
+  };
+
+  const handleAddNewItem = (e) => {
+    e.preventDefault();
+    if (!newItemName.trim()) return;
+    const targetSubcat = newItemSubcat.trim() || (CATEGORY_STRUCTURE[selectedCategory]?.[0] || 'General');
+    const created = {
+      id: `inv-${Date.now()}`,
+      name: newItemName.trim(),
+      category: selectedCategory,
+      subcategory: targetSubcat,
+      location: newItemLocation.trim() || 'Alacena Principal',
+      current: Number(newItemCurrent),
+      min: Number(newItemMin),
+      max: Number(newItemMax),
+      unit: newItemUnit,
+      updated: 'Recién añadido',
+      img: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=400'
+    };
+    setItems((prev) => [...prev, created]);
+    setAddingToSubcat(null);
+    setNewItemName('');
+  };
 
   const adjustQuantity = (id, delta) => {
     setItems((prev) =>
@@ -166,14 +145,28 @@ export default function InventoryModal({ isOpen, onClose, initialTab = 'STOCK' }
 
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
-      const matchesCat = selectedCategory === 'Todos' || item.category === selectedCategory;
+      const matchesCat = item.category === selectedCategory;
       const matchesLow = !onlyLowStock || item.current < item.min;
       const matchesSearch =
         item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (item.subcategory && item.subcategory.toLowerCase().includes(searchQuery.toLowerCase())) ||
         item.location.toLowerCase().includes(searchQuery.toLowerCase());
       return matchesCat && matchesLow && matchesSearch;
     });
   }, [items, selectedCategory, onlyLowStock, searchQuery]);
+
+  const groupedSubcategories = useMemo(() => {
+    const baseSubcats = CATEGORY_STRUCTURE[selectedCategory] || [];
+    const dynamicSubcats = Array.from(new Set(filteredItems.map((i) => i.subcategory || 'General')));
+    const allSubcats = Array.from(new Set([...baseSubcats, ...dynamicSubcats]));
+
+    return allSubcats
+      .map((subName) => ({
+        name: subName,
+        items: filteredItems.filter((i) => (i.subcategory || 'General') === subName)
+      }))
+      .filter((group) => group.items.length > 0 || (!searchQuery && !onlyLowStock));
+  }, [selectedCategory, filteredItems, searchQuery, onlyLowStock]);
 
   const handleRegisterMovement = (e) => {
     e.preventDefault();
@@ -302,90 +295,409 @@ export default function InventoryModal({ isOpen, onClose, initialTab = 'STOCK' }
             ========================================== */}
         <div className="domus-inv-body">
 
-          {/* VISTA 1: EXISTENCIAS EN VIVO */}
+          {/* VISTA 1: CATEGORÍAS Y CARRUSELES HORIZONTALES POR SUBDIVISIÓN */}
           {activeTab === 'STOCK' && (
             <>
-              <div className="domus-inv-cats">
-                {categories.map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => setSelectedCategory(cat)}
-                    className={`domus-inv-cat-pill ${selectedCategory === cat ? 'active' : ''}`}
-                  >
-                    {cat}
-                  </button>
-                ))}
+              {/* Selector Principal de las 5 Categorías */}
+              <div className="domus-inv-cats-bar">
+                <div className="domus-inv-cats">
+                  {categories.map((cat) => {
+                    const catCount = items.filter((i) => i.category === cat).length;
+                    const catLow = items.filter((i) => i.category === cat && i.current < i.min).length;
+                    return (
+                      <button
+                        key={cat}
+                        onClick={() => {
+                          setSelectedCategory(cat);
+                          setAddingToSubcat(null);
+                        }}
+                        className={`domus-inv-cat-card ${selectedCategory === cat ? 'active' : ''}`}
+                      >
+                        <div className="domus-inv-cat-top">
+                          <strong>{cat}</strong>
+                          {catLow > 0 && <span className="domus-cat-alert-dot">{catLow}</span>}
+                        </div>
+                        <small>{catCount} rubros registrados</small>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <button
+                  type="button"
+                  className="domus-add-global-btn"
+                  onClick={() => openAddItemForm('NUEVA')}
+                >
+                  <Plus size={15} />
+                  <span>Nuevo Rubro en {selectedCategory}</span>
+                </button>
               </div>
 
-              <div className="domus-inv-grid">
-                {filteredItems.map((item) => {
-                  const isLow = item.current < item.min;
-                  const pct = Math.min(100, Math.round((item.current / item.max) * 100));
-                  return (
-                    <div key={item.id} className={`domus-item-card ${isLow ? 'low-stock' : ''}`}>
-                      <div className="domus-item-top">
-                        <img src={item.img} alt={item.name} className="domus-item-img" />
-                        <div className="domus-item-meta">
-                          <div className="domus-item-tags">
-                            <span className="domus-item-cat">{item.category}</span>
-                            <span className={`domus-item-status ${isLow ? 'low' : 'ok'}`}>
-                              {isLow ? 'Por Pedir' : 'Óptimo'}
-                            </span>
-                          </div>
-                          <h4>{item.name}</h4>
-                          <p>{item.location}</p>
-                        </div>
-                      </div>
-
-                      <div className="domus-item-meter">
-                        <div className="domus-item-meter-labels">
-                          <span>Mínimo requerido: {item.min} {item.unit}</span>
-                          <strong>{pct}%</strong>
-                        </div>
-                        <div className="domus-item-track">
-                          <div
-                            className="domus-item-fill"
-                            style={{
-                              width: `${pct}%`,
-                              background: isLow ? '#EE6B5F' : '#5E7AC6'
-                            }}
-                          ></div>
-                        </div>
-                      </div>
-
-                      <div className="domus-item-controls">
-                        <div className="domus-item-updated">
-                          <Clock size={12} />
-                          <span>{item.updated}</span>
-                        </div>
-
-                        <div className="domus-qty-stepper">
-                          <button
-                            onClick={() => adjustQuantity(item.id, -1)}
-                            className="domus-step-btn"
-                            title="Descontar uso"
-                          >
-                            <Minus size={15} />
-                          </button>
-                          <div className="domus-qty-display">
-                            <strong>{item.current}</strong>
-                            <small>{item.unit}</small>
-                          </div>
-                          <button
-                            onClick={() => adjustQuantity(item.id, 1)}
-                            className="domus-step-btn domus-step-plus"
-                            title="Sumar entrada"
-                          >
-                            <Plus size={15} />
-                          </button>
-                        </div>
-                      </div>
+              {/* Formulario Desplegable para Añadir Corte o Insumo */}
+              {addingToSubcat && (
+                <form className="domus-add-item-drawer" onSubmit={handleAddNewItem}>
+                  <div className="domus-add-drawer-head">
+                    <div>
+                      <span>AÑADIR A {selectedCategory.toUpperCase()}</span>
+                      <h4>
+                        {addingToSubcat === 'NUEVA'
+                          ? 'Registrar Nuevo Insumo o Subcategoría'
+                          : `Nuevo Corte / Rubro en ${addingToSubcat}`}
+                      </h4>
                     </div>
-                  );
-                })}
+                    <button type="button" onClick={() => setAddingToSubcat(null)} className="domus-drawer-close">
+                      <X size={16} />
+                    </button>
+                  </div>
+
+                  <div className="domus-add-drawer-grid">
+                    <div>
+                      <label>Nombre del Corte / Insumo</label>
+                      <input
+                        type="text"
+                        placeholder="Ej. Churrasco, Milanesa, Tomate..."
+                        value={newItemName}
+                        onChange={(e) => setNewItemName(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label>Subcategoría</label>
+                      <input
+                        type="text"
+                        placeholder="Ej. Carnes, Pollo, Pescados..."
+                        value={newItemSubcat}
+                        onChange={(e) => setNewItemSubcat(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label>Ubicación en Casa</label>
+                      <input
+                        type="text"
+                        value={newItemLocation}
+                        onChange={(e) => setNewItemLocation(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label>Stock Actual</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={newItemCurrent}
+                        onChange={(e) => setNewItemCurrent(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label>Mínimo Alerta</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={newItemMin}
+                        onChange={(e) => setNewItemMin(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label>Unidad</label>
+                      <select value={newItemUnit} onChange={(e) => setNewItemUnit(e.target.value)}>
+                        <option value="kg">Kilogramos (kg)</option>
+                        <option value="unid">Unidades (unid)</option>
+                        <option value="L">Litros (L)</option>
+                        <option value="paq">Paquetes (paq)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="domus-add-drawer-actions">
+                    <button type="button" className="cancel" onClick={() => setAddingToSubcat(null)}>
+                      Cancelar
+                    </button>
+                    <button type="submit" className="save">
+                      <Check size={15} />
+                      <span>Guardar en {newItemSubcat || selectedCategory}</span>
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* Secciones Subdivididas con Carrusel Horizontal cada una */}
+              <div className="domus-subcats-stack">
+                {groupedSubcategories.map((group) => (
+                  <div key={group.name} className="domus-subcat-section">
+                    <div className="domus-subcat-header">
+                      <div className="domus-subcat-title">
+                        <span className="domus-subcat-dot"></span>
+                        <h3>{group.name}</h3>
+                        <span className="domus-subcat-count">{group.items.length} opciones</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="domus-subcat-add-btn"
+                        onClick={() => openAddItemForm(group.name)}
+                      >
+                        <Plus size={14} />
+                        <span>Añadir a {group.name}</span>
+                      </button>
+                    </div>
+
+                    {/* Carrusel Horizontal Deslizable */}
+                    <div className="domus-subcat-carousel">
+                      {group.items.map((item) => {
+                        const isLow = item.current < item.min;
+                        const pct = Math.min(100, Math.round((item.current / item.max) * 100));
+                        return (
+                          <div key={item.id} className={`domus-item-card domus-carousel-card ${isLow ? 'low-stock' : ''}`}>
+                            <div className="domus-item-top">
+                              <img src={item.img} alt={item.name} className="domus-item-img" />
+                              <div className="domus-item-meta">
+                                <div className="domus-item-tags">
+                                  <span className="domus-item-cat">{item.subcategory}</span>
+                                  <span className={`domus-item-status ${isLow ? 'low' : 'ok'}`}>
+                                    {isLow ? 'Por Pedir' : 'Óptimo'}
+                                  </span>
+                                </div>
+                                <h4>{item.name}</h4>
+                                <p>{item.location}</p>
+                              </div>
+                            </div>
+
+                            <div className="domus-item-meter">
+                              <div className="domus-item-meter-labels">
+                                <span>Mínimo: {item.min} {item.unit}</span>
+                                <strong>{pct}%</strong>
+                              </div>
+                              <div className="domus-item-track">
+                                <div
+                                  className="domus-item-fill"
+                                  style={{
+                                    width: `${pct}%`,
+                                    background: isLow ? '#EE6B5F' : '#5E7AC6'
+                                  }}
+                                ></div>
+                              </div>
+                            </div>
+
+                            <div className="domus-item-controls">
+                              <div className="domus-item-updated">
+                                <Clock size={12} />
+                                <span>{item.updated}</span>
+                              </div>
+
+                              <div className="domus-qty-stepper">
+                                <button
+                                  onClick={() => adjustQuantity(item.id, -1)}
+                                  className="domus-step-btn"
+                                  title="Descontar uso"
+                                >
+                                  <Minus size={15} />
+                                </button>
+                                <div className="domus-qty-display">
+                                  <strong>{item.current}</strong>
+                                  <small>{item.unit}</small>
+                                </div>
+                                <button
+                                  onClick={() => adjustQuantity(item.id, 1)}
+                                  className="domus-step-btn domus-step-plus"
+                                  title="Sumar entrada"
+                                >
+                                  <Plus size={15} />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      {/* Tarjeta Final del Carrusel para Añadir Rápido */}
+                      <button
+                        type="button"
+                        className="domus-carousel-add-card"
+                        onClick={() => openAddItemForm(group.name)}
+                      >
+                        <div className="domus-carousel-add-icon">
+                          <Plus size={22} />
+                        </div>
+                        <strong>Añadir a {group.name}</strong>
+                        <span>Nuevo corte o presentación</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </>
           )}
+
+          <style dangerouslySetInnerHTML={{ __html: `
+            .domus-inv-cats-bar {
+              display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+              gap: 12px; margin-bottom: 22px;
+            }
+            .domus-inv-cats {
+              display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 0 !important;
+              flex: 1;
+            }
+            .domus-inv-cat-card {
+              min-width: 148px; padding: 12px 16px; border-radius: 18px;
+              border: 1.5px solid rgba(255, 255, 255, 0.95);
+              background: rgba(255, 255, 255, 0.72);
+              text-align: left; cursor: pointer;
+              transition: all 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+              display: flex; flex-direction: column; gap: 3px;
+              box-shadow: 0 4px 14px rgba(0, 0, 0, 0.03);
+            }
+            .domus-inv-cat-card:hover {
+              transform: translateY(-2px); background: #fff;
+            }
+            .domus-inv-cat-card.active {
+              background: #5E7AC6; color: #fff; border-color: #5E7AC6;
+              box-shadow: 0 10px 24px rgba(94, 122, 198, 0.35);
+            }
+            .domus-inv-cat-top {
+              display: flex; align-items: center; justify-content: space-between; gap: 8px;
+            }
+            .domus-inv-cat-card strong { font-size: 13.5px; font-weight: 900; }
+            .domus-inv-cat-card small { font-size: 10.5px; font-weight: 700; opacity: 0.75; }
+            .domus-cat-alert-dot {
+              background: #EE6B5F; color: #fff; font-size: 9.5px; font-weight: 900;
+              padding: 2px 7px; border-radius: 99px;
+            }
+
+            .domus-add-global-btn {
+              display: inline-flex; align-items: center; gap: 7px;
+              padding: 11px 16px; border-radius: 16px; border: none;
+              background: #202020; color: #fff;
+              font-size: 11.5px; font-weight: 900; cursor: pointer;
+              white-space: nowrap; transition: all 0.2s ease;
+            }
+            .domus-add-global-btn:hover { background: #5E7AC6; transform: translateY(-2px); }
+
+            /* FORMULARIO AÑADIR INSUMO */
+            .domus-add-item-drawer {
+              background: #fff; border: 1.5px solid rgba(94, 122, 198, 0.35);
+              border-radius: 24px; padding: 20px; margin-bottom: 24px;
+              box-shadow: 0 16px 40px rgba(94, 122, 198, 0.14);
+            }
+            .domus-add-drawer-head {
+              display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px;
+            }
+            .domus-add-drawer-head span {
+              font-size: 9.5px; font-weight: 900; letter-spacing: 0.1em; color: #5E7AC6;
+            }
+            .domus-add-drawer-head h4 { margin: 2px 0 0; font-size: 17px; font-weight: 900; color: #202020; }
+            .domus-drawer-close {
+              width: 32px; height: 32px; border-radius: 50%; border: none;
+              background: #F4F6FA; cursor: pointer; display: flex; align-items: center; justify-content: center;
+            }
+            .domus-add-drawer-grid {
+              display: grid; grid-template-columns: 1fr; gap: 12px;
+            }
+            @media (min-width: 640px) {
+              .domus-add-drawer-grid { grid-template-columns: repeat(3, 1fr); }
+            }
+            @media (min-width: 1024px) {
+              .domus-add-drawer-grid { grid-template-columns: 1.6fr 1.2fr 1.3fr 0.8fr 0.8fr 1fr; }
+            }
+            .domus-add-drawer-grid label {
+              display: block; font-size: 9.5px; font-weight: 900; text-transform: uppercase;
+              color: #666; margin-bottom: 5px;
+            }
+            .domus-add-drawer-grid input, .domus-add-drawer-grid select {
+              width: 100%; box-sizing: border-box;
+              padding: 9px 12px; border-radius: 12px;
+              border: 1px solid rgba(0,0,0,0.12); background: #F7F9FC;
+              font-size: 12px; font-weight: 700; color: #202020; outline: none;
+            }
+            .domus-add-drawer-actions {
+              display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px;
+            }
+            .domus-add-drawer-actions button.cancel {
+              padding: 9px 16px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.1);
+              background: #fff; font-size: 11.5px; font-weight: 800; cursor: pointer;
+            }
+            .domus-add-drawer-actions button.save {
+              display: inline-flex; align-items: center; gap: 6px;
+              padding: 9px 18px; border-radius: 12px; border: none;
+              background: #5E7AC6; color: #fff; font-size: 11.5px; font-weight: 900; cursor: pointer;
+            }
+
+            /* CARRUSELES HORIZONTALES POR SUBDIVISIÓN */
+            .domus-subcats-stack {
+              display: flex; flex-direction: column; gap: 26px;
+            }
+            .domus-subcat-section {
+              background: rgba(255, 255, 255, 0.45);
+              border: 1px solid rgba(255, 255, 255, 0.9);
+              border-radius: 28px; padding: 18px 20px;
+            }
+            .domus-subcat-header {
+              display: flex; align-items: center; justify-content: space-between;
+              gap: 10px; margin-bottom: 14px;
+            }
+            .domus-subcat-title {
+              display: flex; align-items: center; gap: 10px;
+            }
+            .domus-subcat-dot {
+              width: 10px; height: 10px; border-radius: 50%;
+              background: #5E7AC6; box-shadow: 0 0 10px rgba(94, 122, 198, 0.5);
+            }
+            .domus-subcat-title h3 {
+              margin: 0; font-size: 17px; font-weight: 900; letter-spacing: -0.02em; color: #202020;
+            }
+            .domus-subcat-count {
+              font-size: 10.5px; font-weight: 800; color: #5E7AC6;
+              background: rgba(94, 122, 198, 0.12); padding: 3px 10px; border-radius: 99px;
+            }
+            .domus-subcat-add-btn {
+              display: inline-flex; align-items: center; gap: 5px;
+              padding: 7px 13px; border-radius: 99px;
+              border: 1px solid rgba(94, 122, 198, 0.3);
+              background: rgba(255, 255, 255, 0.85); color: #5E7AC6;
+              font-size: 11px; font-weight: 800; cursor: pointer;
+              transition: all 0.2s ease;
+            }
+            .domus-subcat-add-btn:hover { background: #5E7AC6; color: #fff; }
+
+            .domus-subcat-carousel {
+              display: flex; align-items: stretch; gap: 16px;
+              overflow-x: auto; padding: 4px 2px 12px;
+              scroll-snap-type: x mandatory;
+              scrollbar-width: thin;
+              scrollbar-color: rgba(94, 122, 198, 0.35) transparent;
+            }
+            .domus-subcat-carousel::-webkit-scrollbar { height: 6px; }
+            .domus-subcat-carousel::-webkit-scrollbar-thumb {
+              background: rgba(94, 122, 198, 0.3); border-radius: 99px;
+            }
+            .domus-carousel-card {
+              min-width: 290px; max-width: 310px; flex-shrink: 0;
+              scroll-snap-align: start;
+            }
+            @media (min-width: 768px) {
+              .domus-carousel-card { min-width: 320px; max-width: 340px; }
+            }
+
+            .domus-carousel-add-card {
+              min-width: 210px; flex-shrink: 0; scroll-snap-align: start;
+              border-radius: 24px;
+              border: 2px dashed rgba(94, 122, 198, 0.35);
+              background: rgba(255, 255, 255, 0.55);
+              display: flex; flex-direction: column; align-items: center; justify-content: center;
+              gap: 6px; padding: 20px; cursor: pointer;
+              color: #5E7AC6; transition: all 0.22s ease;
+            }
+            .domus-carousel-add-card:hover {
+              background: #fff; border-color: #5E7AC6; transform: translateY(-4px);
+              box-shadow: 0 12px 24px rgba(94, 122, 198, 0.14);
+            }
+            .domus-carousel-add-icon {
+              width: 44px; height: 44px; border-radius: 50%;
+              background: rgba(94, 122, 198, 0.12);
+              display: flex; align-items: center; justify-content: center;
+              margin-bottom: 4px;
+            }
+            .domus-carousel-add-card strong { font-size: 13px; font-weight: 900; color: #202020; }
+            .domus-carousel-add-card span { font-size: 11px; font-weight: 600; color: #777; }
+          `}} />
 
           {/* VISTA 2: ORDEN DE COMPRA AUTOMÁTICA PARA ADMINISTRACIÓN */}
           {activeTab === 'ORDEN' && (
