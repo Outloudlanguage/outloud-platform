@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, Calendar, Bell, ClipboardCheck, Coffee, ShoppingBag, Wrench, CarFront, FileSignature, HeartPulse, ShieldCheck, PieChart, Activity } from 'lucide-react';
+import { Clock, Calendar, Bell, ClipboardCheck, Coffee, ShoppingBag, Wrench, CarFront, FileSignature, PieChart } from 'lucide-react';
 
 // ==========================================
-// 1. COMPONENTES REUTILIZABLES (Estilo Dribbble / Light UI)
+// 1. COMPONENTES REUTILIZABLES 
 // ==========================================
 
 const AnimatedButton = ({ text, fullWidth = false, onClick, secondary = false, icon: Icon }) => {
@@ -25,15 +25,12 @@ const AnimatedButton = ({ text, fullWidth = false, onClick, secondary = false, i
 
 const AreaCard = ({ title, subtitle, imgUrl, accentColor }) => (
   <div className="min-w-[280px] w-full md:min-w-0 bg-white rounded-[28px] overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_15px_40px_rgb(0,0,0,0.08)] snap-center shrink-0 flex flex-col">
-    {/* Imagen Top (Estilo Property Card) */}
     <div className="relative w-full h-40 overflow-hidden bg-gray-100">
       <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 hover:scale-105" style={{ backgroundImage: `url('${imgUrl}')` }}></div>
       <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-[9px] font-black tracking-widest uppercase text-[#202020] shadow-sm">
         {subtitle}
       </div>
     </div>
-    
-    {/* Contenido Inferior */}
     <div className="p-5 flex flex-col flex-grow justify-between">
       <div>
         <h3 className="text-xl font-black tracking-tight text-[#202020] mb-1">{title}</h3>
@@ -66,7 +63,6 @@ const DomusApp = () => {
     return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
   };
 
-  // Datos de los departamentos con imágenes equivalentes de alta calidad
   const areas = [
     { title: "Cocina & Despensa", subtitle: "Operaciones", accentColor: "#EE6B5F", imgUrl: "https://images.unsplash.com/photo-1506617420156-8e4536971650?auto=format&fit=crop&q=80&w=800" },
     { title: "Seguridad", subtitle: "Perímetro", accentColor: "#5E7AC6", imgUrl: "https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&q=80&w=800" },
@@ -80,25 +76,41 @@ const DomusApp = () => {
       
       {/* 
         ==========================================
-        FONDO: MESH GRADIENT (Estilo Dribbble)
+        FONDO DINÁMICO (BLOBS) 100% VISIBLE
         ==========================================
       */}
-      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-        {/* Luz Azul (Arriba Izquierda) */}
-        <div className="absolute -top-[15%] -left-[10%] w-[60vw] h-[60vw] rounded-full bg-[#5E7AC6] opacity-[0.12] blur-[100px] animate-[pulse_8s_ease-in-out_infinite_alternate]"></div>
-        {/* Luz Coral (Arriba Derecha) */}
-        <div className="absolute top-[5%] -right-[15%] w-[50vw] h-[50vw] rounded-full bg-[#EE6B5F] opacity-[0.10] blur-[120px] animate-[pulse_10s_ease-in-out_infinite_alternate-reverse]"></div>
-        {/* Luz Azul Suave (Abajo Centro) */}
-        <div className="absolute -bottom-[20%] left-[20%] w-[70vw] h-[70vw] rounded-full bg-[#5E7AC6] opacity-[0.08] blur-[120px]"></div>
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#F0F0F2]">
+        {/* Azul Primario */}
+        <div className="absolute -top-[10%] -left-[10%] w-[60vw] h-[60vw] rounded-full bg-[#5E7AC6] opacity-30 mix-blend-multiply blur-[100px] animate-[blob_15s_infinite_alternate]"></div>
+        {/* Coral Secundario */}
+        <div className="absolute top-[20%] -right-[10%] w-[50vw] h-[50vw] rounded-full bg-[#EE6B5F] opacity-25 mix-blend-multiply blur-[120px] animate-[blob_12s_infinite_alternate-reverse]"></div>
+        {/* Variación Tonal (Lavanda) */}
+        <div className="absolute -bottom-[20%] left-[20%] w-[70vw] h-[70vw] rounded-full bg-[#BE7AC6] opacity-25 mix-blend-multiply blur-[120px] animate-[blob_18s_infinite_alternate]"></div>
       </div>
 
-      <div className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
+      <div className="relative z-10 mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
         
         {/* ==========================================
-            CABECERA (HEADER)
+            TOP BANNER (HEADER IMAGE)
             ========================================== */}
-        <header className="mb-10 flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
+        <div className="w-full h-32 md:h-48 rounded-[32px] overflow-hidden shadow-lg mb-8 relative">
+          <img 
+            src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Domus/Copia%20de%20Copia%20de%20Outloud%20(1920%20x%20600%20px)%20(1920%20x%20500%20px)%20(1).png" 
+            alt="Domus Header" 
+            className="w-full h-full object-cover object-center"
+          />
+        </div>
+
+        {/* ==========================================
+            CABECERA (LOGO + SALUDO)
+            ========================================== */}
+        <header className="mb-10 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
           <div>
+            <img 
+              src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Domus/DOMUS.png" 
+              alt="Domus Logo" 
+              className="h-12 md:h-16 object-contain mb-4"
+            />
             <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-[#202020]">
               Buenos días, Sra. Belkys.
             </h1>
@@ -108,11 +120,11 @@ const DomusApp = () => {
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 rounded-2xl bg-white px-5 py-3 shadow-[0_4px_20px_rgb(0,0,0,0.03)]">
+            <div className="flex items-center gap-2 rounded-2xl bg-white/80 backdrop-blur-md px-5 py-3 shadow-[0_4px_20px_rgb(0,0,0,0.04)] border border-white">
               <Calendar className="h-4 w-4 text-[#5E7AC6]" />
               <span className="text-[10px] font-bold tracking-widest text-[#808080]">{formatDate(time)}</span>
             </div>
-            <div className="flex items-center gap-2 rounded-2xl bg-white px-5 py-3 shadow-[0_4px_20px_rgb(0,0,0,0.03)]">
+            <div className="flex items-center gap-2 rounded-2xl bg-white/80 backdrop-blur-md px-5 py-3 shadow-[0_4px_20px_rgb(0,0,0,0.04)] border border-white">
               <Clock className="h-4 w-4 text-[#EE6B5F]" />
               <span className="text-sm font-black tracking-tighter text-[#202020]">{formatTime(time)}</span>
             </div>
@@ -124,8 +136,7 @@ const DomusApp = () => {
             ========================================== */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
           
-          {/* Widget 1: Dona de Inventario */}
-          <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.03)] border border-white flex items-center justify-between">
+          <div className="bg-white/90 backdrop-blur-xl rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.03)] border border-white flex items-center justify-between">
             <div>
               <h3 className="text-sm font-bold text-[#202020] mb-1">Inventario General</h3>
               <p className="text-[10px] uppercase tracking-widest text-[#808080] mb-4">Estado de Alacena</p>
@@ -134,7 +145,6 @@ const DomusApp = () => {
                 <div className="flex items-center gap-2 text-xs font-semibold text-[#808080]"><span className="w-2 h-2 rounded-full bg-[#EE6B5F]"></span> Por pedir (35%)</div>
               </div>
             </div>
-            {/* Gráfico SVG Torta */}
             <div className="relative w-24 h-24">
               <svg viewBox="0 0 36 36" className="w-full h-full drop-shadow-md">
                 <path className="text-[#F0F0F2]" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="4" />
@@ -146,8 +156,7 @@ const DomusApp = () => {
             </div>
           </div>
 
-          {/* Widget 2: Actividad de Tareas */}
-          <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.03)] border border-white flex flex-col justify-between">
+          <div className="bg-white/90 backdrop-blur-xl rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.03)] border border-white flex flex-col justify-between">
             <div className="flex justify-between items-start mb-4">
               <div>
                 <h3 className="text-sm font-bold text-[#202020] mb-1">Tareas Completadas</h3>
@@ -155,7 +164,6 @@ const DomusApp = () => {
               </div>
               <div className="bg-[#EE6B5F]/10 text-[#EE6B5F] px-2 py-1 rounded-lg text-xs font-bold">+12%</div>
             </div>
-            {/* Gráfico de Barras Simple CSS */}
             <div className="flex items-end justify-between h-16 gap-2">
               {['Lun', 'Mar', 'Mié', 'Jue', 'Vie'].map((day, i) => {
                 const heights = ['40%', '70%', '50%', '90%', '60%'];
@@ -171,7 +179,6 @@ const DomusApp = () => {
             </div>
           </div>
 
-          {/* Widget 3: Novedades / Notificaciones */}
           <div className="bg-[#5E7AC6] rounded-[32px] p-6 shadow-[0_15px_30px_rgba(94,122,198,0.2)] text-white flex flex-col justify-between bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-blend-overlay">
             <div>
               <div className="flex items-center justify-between mb-4">
@@ -186,7 +193,7 @@ const DomusApp = () => {
         </div>
 
         {/* ==========================================
-            SECCIÓN 2: DEPARTAMENTOS (Botones Grandes Carrusel)
+            SECCIÓN 2: DEPARTAMENTOS (Carrusel)
             ========================================== */}
         <div className="mb-12">
           <div className="flex items-center justify-between mb-5 px-1">
@@ -194,8 +201,6 @@ const DomusApp = () => {
               Gestión por Departamentos
             </h2>
           </div>
-          
-          {/* Contenedor con Scroll Horizontal en Móvil (App-like) */}
           <div className="flex overflow-x-auto gap-4 md:gap-6 pb-6 pt-2 snap-x snap-mandatory hide-scrollbar -mx-4 px-4 md:mx-0 md:px-0 md:grid md:grid-cols-3 lg:grid-cols-5">
             {areas.map((area, index) => (
               <AreaCard key={index} {...area} />
@@ -204,13 +209,12 @@ const DomusApp = () => {
         </div>
 
         {/* ==========================================
-            SECCIÓN 3: ACCIONES RÁPIDAS (Botones Pequeños)
+            SECCIÓN 3: ACCIONES RÁPIDAS
             ========================================== */}
         <div>
           <h2 className="mb-5 text-sm font-bold uppercase tracking-widest text-[#808080] px-1">
             Accesos Directos
           </h2>
-          {/* Grid responsivo para las acciones rápidas */}
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
             <AnimatedButton text="Reportar Novedad" icon={ClipboardCheck} />
             <AnimatedButton text="Solicitar Insumos" icon={ShoppingBag} secondary={true} />
@@ -223,11 +227,23 @@ const DomusApp = () => {
 
       </div>
 
-      {/* Clases Utilitarias Extra */}
+      {/* ==========================================
+          ANIMACIONES CSS
+          ========================================== */}
       <style dangerouslySetInnerHTML={{__html: `
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        @keyframes drawRing { from { stroke-dashoffset: 200; } }
+        
+        @keyframes drawRing { 
+          from { stroke-dashoffset: 200; } 
+        }
+        
+        @keyframes blob {
+          0% { transform: translate(0px, 0px) scale(1); }
+          33% { transform: translate(30px, -50px) scale(1.1); }
+          66% { transform: translate(-20px, 20px) scale(0.9); }
+          100% { transform: translate(0px, 0px) scale(1); }
+        }
       `}} />
     </div>
   );
