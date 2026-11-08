@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import InventoryModal from './InventoryModal';
+import StaffModal from './StaffModal';
+import NursingModal from './NursingModal';
 import {
   Clock, Calendar, Bell, ClipboardCheck, Coffee, ShoppingBag,
   Wrench, CarFront, FileSignature, AlertCircle, CheckCircle2,
@@ -53,8 +55,65 @@ const CascadeButton = ({ text, subtext, icon: Icon, accent = "#5E7AC6", onClick 
 };
 
 // ==========================================
-// 2. TARJETA DE DEPARTAMENTO (HERO CARD LIMPIA)
+// 2. ÍCONOS SVG A MEDIDA + TARJETA CON VIDRIO ESMERILADO
 // ==========================================
+const DepartmentSvgIcon = ({ id, className = "domus-dept-svg-icon" }) => {
+  switch (id) {
+    case 'cocina':
+      // Ingrediente culinario (Hoja aromática + bulbo/vegetal)
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+          <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" />
+          <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12" />
+        </svg>
+      );
+    case 'personal':
+      // Grupo de 3 personas
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg>
+      );
+    case 'seguridad':
+      // Escudo de seguridad patrimonial
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+          <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
+          <path d="m9 12 2 2 4-4" />
+        </svg>
+      );
+    case 'hospitalidad':
+      // Suite / Cama de hospitalidad
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+          <path d="M2 4v16" />
+          <path d="M2 8h18a2 2 0 0 1 2 2v10" />
+          <path d="M2 17h20" />
+          <path d="M6 8v9" />
+        </svg>
+      );
+    case 'mantenimiento':
+      // Herramienta (Llave mecánica)
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+        </svg>
+      );
+    case 'cuidados':
+    default:
+      // Salud (Corazón con pulso médico)
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+          <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+          <path d="M3.22 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27" />
+        </svg>
+      );
+  }
+};
+
 const DepartmentCard = ({ area, onSelect }) => {
   return (
     <div
@@ -77,11 +136,20 @@ const DepartmentCard = ({ area, onSelect }) => {
             <i style={{ backgroundColor: area.accentColor }}></i>
             {area.subtitle}
           </span>
-          <span className="domus-dept-code">{area.abbr}</span>
+          <div className="domus-dept-svg-badge">
+            <DepartmentSvgIcon id={area.id} />
+          </div>
         </div>
 
+        {/* Panel inferior en Vidrio Esmerilado (Frosted Glass) */}
         <div className="domus-dept-bottom">
-          <h3 className="domus-dept-title">{area.title}</h3>
+          <div className="domus-dept-glass-watermark">
+            <DepartmentSvgIcon id={area.id} />
+          </div>
+
+          <div className="domus-dept-title-row">
+            <h3 className="domus-dept-title">{area.title}</h3>
+          </div>
           <p className="domus-dept-desc">{area.description}</p>
 
           <div className="domus-dept-stat-pill">
@@ -109,6 +177,8 @@ export default function DomusApp() {
   const [hoveredStock, setHoveredStock] = useState(null);
   const [selectedModal, setSelectedModal] = useState(null);
   const [inventoryModalTab, setInventoryModalTab] = useState(null);
+  const [staffModalTab, setStaffModalTab] = useState(null);
+  const [nursingModalTab, setNursingModalTab] = useState(null);
   const [completedMeds, setCompletedMeds] = useState([true, false, false]);
   const [resolvedAlerts, setResolvedAlerts] = useState([false, false, false]);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -186,6 +256,14 @@ export default function DomusApp() {
 
   const handleNavClick = (item) => {
     setActiveNav(item.id);
+    if (item.id === 'ALACENA') {
+      setInventoryModalTab('STOCK');
+      return;
+    }
+    if (item.id === 'SALUD & CUIDADOS') {
+      setNursingModalTab('SIGNOS');
+      return;
+    }
     const el = document.getElementById(item.target);
     if (el) {
       el.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -193,6 +271,14 @@ export default function DomusApp() {
   };
 
   // 6 Departamentos Principales (Incluyendo PERSONAL)
+  // Si tus IDs pertenecen a Cloudflare Images, pega tu Account Hash aquí (ej. "abc123xyz")
+  const CF_IMAGES_HASH = "";
+  const resolveImg = (idOrUrl) => {
+    if (idOrUrl.startsWith('http')) return idOrUrl;
+    if (CF_IMAGES_HASH) return `https://imagedelivery.net/${CF_IMAGES_HASH}/${idOrUrl}/public`;
+    return idOrUrl;
+  };
+
   const departments = [
     {
       id: 'cocina',
@@ -200,7 +286,7 @@ export default function DomusApp() {
       title: "Cocina & Despensa",
       subtitle: "Gastronomía",
       accentColor: "#EE6B5F",
-      imgUrl: "https://images.unsplash.com/photo-1506617420156-8e4536971650?auto=format&fit=crop&q=80&w=900",
+      imgUrl: resolveImg("d9235e94-0c2f-42bc-cd6a-0f008875c100"),
       stats: { label: "Alacena & Menú", value: "78% Stock · 3 Tiempos" },
       description: "Inventario en tiempo real, pesaje en balanza, recetario familiar y control de mermas.",
       details: [
@@ -215,7 +301,7 @@ export default function DomusApp() {
       title: "Personal",
       subtitle: "Staff & Turnos",
       accentColor: "#5E7AC6",
-      imgUrl: "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&q=80&w=900",
+      imgUrl: resolveImg("09e245b8-b1f2-4998-50f5-c726dbe69400"),
       stats: { label: "Asistencia Hoy", value: "11 / 11 en Posición" },
       description: "Gestión de horarios, asistencia, asignación de tareas diarias, descansos y desempeño.",
       details: [
@@ -230,7 +316,7 @@ export default function DomusApp() {
       title: "Seguridad",
       subtitle: "Enlace Garita",
       accentColor: "#5E7AC6",
-      imgUrl: "https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&q=80&w=900",
+      imgUrl: resolveImg("740a39d9-2832-45c5-3fdb-4044e85c7800"),
       stats: { label: "Garita & Accesos", value: "4 Custodios Activos" },
       description: "Aviso de llegada de proveedores, paquetería y enlace rápido con garita sin alterar su bitácora.",
       details: [
@@ -245,7 +331,7 @@ export default function DomusApp() {
       title: "Hospitalidad",
       subtitle: "Suites & Lencería",
       accentColor: "#BE7AC6",
-      imgUrl: "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&q=80&w=900",
+      imgUrl: resolveImg("adb8046b-ea89-4753-cdec-2fe8ac841000"),
       stats: { label: "Habitaciones", value: "5 / 5 Impecables" },
       description: "Protocolo de habitaciones principales, visitas familiares, tintorería y lencería fina.",
       details: [
@@ -260,7 +346,7 @@ export default function DomusApp() {
       title: "Mantenimiento",
       subtitle: "Instalaciones",
       accentColor: "#EE6B5F",
-      imgUrl: "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=900",
+      imgUrl: resolveImg("d3756f38-19d7-4eec-7d32-af285f664c00"),
       stats: { label: "Equipos Críticos", value: "Planta 98% Diésel" },
       description: "Bombas hidroneumáticas, planta eléctrica, climatización y cronograma de técnicos.",
       details: [
@@ -275,7 +361,7 @@ export default function DomusApp() {
       title: "Cuidados Médicos",
       subtitle: "Salud & Enfermería",
       accentColor: "#5E7AC6",
-      imgUrl: "https://images.unsplash.com/photo-1631815589968-fdb09a223b1e?auto=format&fit=crop&q=80&w=900",
+      imgUrl: resolveImg("00d4337d-01c8-4d45-9e89-5e2eb47cfa00"),
       stats: { label: "Tensión Arterial", value: "120/78 mmHg" },
       description: "Signos vitales del Dr. Gustavo Jiménez, bitácora de enfermería y stock de medicamentos.",
       details: [
@@ -449,7 +535,7 @@ export default function DomusApp() {
 
           {/* 4 Píldoras en Cuadrícula 2x2 de idéntico ancho y alto */}
           <div className="domus-hero-pills-grid">
-            <div className="domus-stat-chip" onClick={() => setSelectedModal(departments[5])}>
+            <div className="domus-stat-chip" onClick={() => setNursingModalTab('SIGNOS')}>
               <div className="domus-chip-icon" style={{ background: 'rgba(238,107,95,0.14)' }}>
                 <HeartPulse size={18} color="#EE6B5F" />
               </div>
@@ -459,7 +545,7 @@ export default function DomusApp() {
               </div>
             </div>
 
-            <div className="domus-stat-chip" onClick={() => setSelectedModal(departments[1])}>
+            <div className="domus-stat-chip" onClick={() => setStaffModalTab('DIRECTORIO')}>
               <div className="domus-chip-icon" style={{ background: 'rgba(94,122,198,0.14)' }}>
                 <Users size={18} color="#5E7AC6" />
               </div>
@@ -516,6 +602,10 @@ export default function DomusApp() {
                 onSelect={(item) => {
                   if (item.id === 'cocina') {
                     setInventoryModalTab('STOCK');
+                  } else if (item.id === 'personal') {
+                    setStaffModalTab('DIRECTORIO');
+                  } else if (item.id === 'cuidados') {
+                    setNursingModalTab('SIGNOS');
                   } else {
                     setSelectedModal(item);
                   }
@@ -832,6 +922,18 @@ export default function DomusApp() {
         onClose={() => setInventoryModalTab(null)}
       />
 
+      <StaffModal
+        isOpen={Boolean(staffModalTab)}
+        initialTab={staffModalTab || 'DIRECTORIO'}
+        onClose={() => setStaffModalTab(null)}
+      />
+
+      <NursingModal
+        isOpen={Boolean(nursingModalTab)}
+        initialTab={nursingModalTab || 'SIGNOS'}
+        onClose={() => setNursingModalTab(null)}
+      />
+
       {/* ==========================================
           MODAL INTERACTIVO AL TOCAR CUALQUIER TARJETA
           ========================================== */}
@@ -998,7 +1100,7 @@ export default function DomusApp() {
           max-width: 48vw;
           object-fit: contain;
           object-position: left center;
-          margin-left: -8px;
+          margin-left: 12px;
           filter: drop-shadow(0 3px 8px rgba(94, 122, 198, 0.16));
           pointer-events: none;
         }
@@ -1006,7 +1108,7 @@ export default function DomusApp() {
           .domus-header-logo-img {
             height: 76px;
             max-width: none;
-            margin-left: -14px;
+            margin-left: 18px;
           }
         }
 
@@ -1374,14 +1476,52 @@ export default function DomusApp() {
         }
         .domus-dept-tag i { width: 8px; height: 8px; border-radius: 50%; }
 
-        .domus-dept-code {
-          font-size: 28px; font-weight: 900; color: rgba(255, 255, 255, 0.32);
-          letter-spacing: -0.04em; line-height: 1;
+        .domus-dept-svg-badge {
+          width: 44px; height: 44px; border-radius: 15px;
+          background: rgba(255, 255, 255, 0.28);
+          backdrop-filter: blur(18px) saturate(190%);
+          -webkit-backdrop-filter: blur(18px) saturate(190%);
+          border: 1.5px solid rgba(255, 255, 255, 0.65);
+          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18), inset 0 1px 1px rgba(255, 255, 255, 0.6);
+          display: flex; align-items: center; justify-content: center;
+          color: #fff;
+          transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .domus-dept-wrapper:hover .domus-dept-svg-badge {
+          background: var(--dept-accent);
+          border-color: #fff;
+          transform: scale(1.1) rotate(-6deg);
+          box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3);
+        }
+        .domus-dept-svg-icon {
+          width: 22px; height: 22px;
+          filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
         }
 
         .domus-dept-bottom {
           position: relative; z-index: 2; color: #fff;
           display: flex; flex-direction: column; gap: 10px;
+          background: rgba(255, 255, 255, 0.22);
+          backdrop-filter: blur(22px) saturate(190%);
+          -webkit-backdrop-filter: blur(22px) saturate(190%);
+          border: 1.5px solid rgba(255, 255, 255, 0.52);
+          border-radius: 22px;
+          padding: 16px;
+          overflow: hidden;
+          box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.55);
+          transition: all 0.3s ease;
+        }
+        .domus-dept-wrapper:hover .domus-dept-bottom {
+          background: rgba(255, 255, 255, 0.28);
+          border-color: rgba(255, 255, 255, 0.85);
+        }
+        .domus-dept-glass-watermark {
+          position: absolute; right: -12px; top: -12px;
+          opacity: 0.12; pointer-events: none;
+          transform: rotate(12deg);
+        }
+        .domus-dept-glass-watermark .domus-dept-svg-icon {
+          width: 84px; height: 84px;
         }
         .domus-dept-title {
           font-size: 24px; font-weight: 900; letter-spacing: -0.03em;
