@@ -1,92 +1,87 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, Calendar, ChefHat, Users, Box, Wrench, ChevronRight } from 'lucide-react';
+import { Clock, Calendar, Bell, ClipboardCheck, Coffee, ShoppingBag, Wrench, CarFront, FileSignature } from 'lucide-react';
 
-// --- Componente: Botón Animado con Texto en Cascada ---
-const AnimatedButton = ({ text, onClick, icon: Icon, colorClass = "text-white hover:text-blue-200" }) => {
-  const characters = text.split('');
-
+// ==========================================
+// 1. REUSABLE UI COMPONENTS (Cata Style - Light Theme)
+// ==========================================
+const AnimatedButton = ({ text, fullWidth = false, onClick, secondary = false, icon: Icon }) => {
+  const chars = text.split('');
   return (
-    <button
-      onClick={onClick}
-      className={`group relative overflow-hidden rounded-full border border-white/10 bg-black/40 px-8 py-4 backdrop-blur-xl transition-all duration-500 hover:-translate-y-1 hover:scale-105 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] ${colorClass}`}
+    <button 
+      onClick={onClick} 
+      className={`group/btn relative px-4 py-3 md:px-6 md:py-3 rounded-full backdrop-blur-lg border font-bold tracking-widest text-[9px] md:text-[11px] transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] hover:scale-105 hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2 shadow-sm ${
+        fullWidth ? 'w-full' : ''
+      } ${
+        secondary 
+          ? 'bg-white/40 border-gray-300 text-slate-700 hover:bg-white/80 hover:border-gray-400 hover:shadow-md' 
+          : 'bg-white/80 border-blue-200 text-blue-900 hover:bg-white hover:border-blue-400 hover:shadow-[0_10px_25px_rgba(59,130,246,0.15)]'
+      }`}
     >
-      <div className="relative flex items-center justify-center overflow-hidden">
-        {Icon && <Icon className="mr-3 h-5 w-5 transition-transform duration-500 group-hover:scale-110" />}
-        
-        {/* Fila visible original */}
-        <div className="flex font-black tracking-tighter">
-          {characters.map((char, index) => (
-            <span
-              key={`visible-${index}`}
-              className="inline-block transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] group-hover:-translate-y-[150%] group-hover:-rotate-[8deg]"
-              style={{ transitionDelay: `${index * 0.02}s` }}
+      {Icon && <Icon className="w-4 h-4 z-10 transition-transform duration-500 group-hover/btn:scale-110" />}
+      <div className="relative overflow-hidden flex items-center justify-center">
+        <div className="flex">
+          {chars.map((char, i) => (
+            <span 
+              key={`vis-${i}`} 
+              className="block transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] group-hover/btn:-translate-y-[150%] group-hover/btn:rotate-[-8deg]" 
+              style={{ transitionDelay: `${i * 0.02}s` }}
             >
               {char === ' ' ? '\u00A0' : char}
             </span>
           ))}
         </div>
-
-        {/* Fila oculta inferior */}
-        <div className="absolute left-0 top-0 flex flex-1 items-center justify-center font-black tracking-tighter">
-            {Icon && <div className="mr-3 h-5 w-5 opacity-0"></div>} {/* Espaciador invisible para alinear */}
-          {characters.map((char, index) => (
-            <span
-              key={`hidden-${index}`}
-              className="inline-block translate-y-[150%] rotate-[8deg] transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] group-hover:translate-y-0 group-hover:rotate-0"
-              style={{ transitionDelay: `${index * 0.02}s` }}
-            >
-              {char === ' ' ? '\u00A0' : char}
-            </span>
-          ))}
+        <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
+          <div className="flex">
+            {chars.map((char, i) => (
+              <span 
+                key={`hid-${i}`} 
+                className="block transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] translate-y-[150%] rotate-[8deg] group-hover/btn:translate-y-0 group-hover/btn:rotate-0" 
+                style={{ transitionDelay: `${i * 0.02}s` }}
+              >
+                {char === ' ' ? '\u00A0' : char}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
     </button>
   );
 };
 
-// --- Componente: Tarjeta de Acción Rápida (Hero Card) ---
-const ActionCard = ({ title, subtitle, bgImage, icon: Icon, delay }) => {
-  return (
-    <div 
-        className="group relative h-64 w-full cursor-pointer overflow-hidden rounded-3xl border border-white/10"
-        style={{ animationDelay: delay }}
-    >
-      {/* Fondo de Imagen con Filtro y Zoom en Hover */}
-      <div
-        className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-110"
-        style={{
-          backgroundImage: `url(${bgImage})`,
-          backgroundColor: '#1a1a1a', // Fallback
-        }}
-      />
-      {/* Overlay oscuro para Glassmorphism */}
-      <div className="absolute inset-0 bg-black/60 transition-colors duration-500 group-hover:bg-black/40" />
+const AreaCard = ({ title, subtitle, description, bgImage }) => (
+  <div className="group/card relative w-full h-[220px] md:h-[320px] rounded-[24px] md:rounded-[32px] overflow-hidden shadow-sm cursor-default flex flex-col border border-white/60 transition-all duration-500 hover:shadow-2xl hover:border-white">
+    {/* Fondo de Imagen */}
+    <div className="absolute inset-0 w-full h-full bg-cover bg-center transition-transform duration-1000 group-hover/card:scale-110" style={{ backgroundImage: `url('${bgImage}')` }}></div>
+    
+    {/* Overlays */}
+    <div className="absolute inset-0 bg-white/20 backdrop-blur-[2px] transition-opacity duration-500 group-hover/card:opacity-0"></div>
+    <div className="absolute inset-0 bg-white/80 backdrop-blur-xl opacity-0 transition-opacity duration-500 group-hover/card:opacity-100"></div>
 
-      {/* Contenido (Glassmorphism) */}
-      <div className="absolute inset-0 flex flex-col justify-between p-6">
-        <div className="flex justify-between items-start">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md transition-transform duration-500 group-hover:scale-110 group-hover:bg-blue-900/40">
-            <Icon className="h-6 w-6 text-gray-300 transition-colors duration-500 group-hover:text-blue-300" />
-            </div>
-            <div className="rounded-full border border-white/10 bg-black/30 p-2 backdrop-blur-sm opacity-0 transition-opacity duration-500 group-hover:opacity-100">
-                <ChevronRight className="h-5 w-5 text-white" />
-            </div>
-        </div>
+    {/* Estado Inicial (Fondo oscuro degradado para leer texto blanco) */}
+    <div className="absolute inset-0 p-6 flex flex-col justify-end transition-opacity duration-500 group-hover/card:opacity-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent z-10">
+      <h3 className="text-xl md:text-2xl font-black text-white tracking-tight leading-none drop-shadow-md">{title}</h3>
+      <p className="text-[10px] md:text-xs font-bold text-white/90 tracking-widest uppercase mt-2 drop-shadow-md">{subtitle}</p>
+    </div>
 
-        <div className="transform transition-all duration-500 group-hover:-translate-y-2">
-          <p className="mb-2 text-xs font-bold uppercase tracking-widest text-gray-400 transition-colors duration-500 group-hover:text-blue-200">
-            {subtitle}
-          </p>
-          <h3 className="text-2xl font-black tracking-tighter text-white transition-all duration-500 group-hover:tracking-wide group-hover:text-blue-50 group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]">
-            {title}
-          </h3>
-        </div>
+    {/* Estado Hover (Glassmorphism claro, texto oscuro) */}
+    <div className="absolute inset-0 p-6 md:p-8 flex flex-col justify-between opacity-0 translate-y-8 transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] group-hover/card:opacity-100 group-hover/card:translate-y-0 text-slate-800 z-20">
+      <div>
+        <h3 className="text-xl md:text-2xl font-black tracking-tight leading-none text-slate-900">{title}</h3>
+        <p className="text-[10px] md:text-xs font-bold text-blue-600 tracking-widest uppercase mt-2">{subtitle}</p>
+      </div>
+      <p className="text-xs md:text-sm font-medium leading-relaxed mb-4 text-slate-700">
+        {description}
+      </p>
+      <div className="w-full">
+        <AnimatedButton text="ENTRAR AL MÓDULO" fullWidth={true} />
       </div>
     </div>
-  );
-};
+  </div>
+);
 
-// --- Componente Principal: Dashboard Domus ---
+// ==========================================
+// 2. MAIN APP COMPONENT
+// ==========================================
 const DomusApp = () => {
   const [time, setTime] = useState(new Date());
 
@@ -104,94 +99,131 @@ const DomusApp = () => {
     return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
   };
 
+  const areas = [
+    {
+      title: "Cocina y Despensa",
+      subtitle: "Operaciones Culinarias",
+      description: "Recetario de la familia, control de mermas, inventario en tiempo real y planeación del menú diario.",
+      bgImage: "https://images.unsplash.com/photo-1556910103-1c02745a872e?auto=format&fit=crop&q=80&w=800"
+    },
+    {
+      title: "Garita y Seguridad",
+      subtitle: "Control Patrimonial",
+      description: "Bitácora de rondas escaneadas, registro de proveedores y control de acceso a la residencia.",
+      bgImage: "https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&q=80&w=800"
+    },
+    {
+      title: "Hospitalidad",
+      subtitle: "Preferencias Familiares",
+      description: "Preparación de habitaciones para invitados, control de tintorería y exigencias de los residentes.",
+      bgImage: "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&q=80&w=800"
+    },
+    {
+      title: "Mantenimiento",
+      subtitle: "Instalaciones",
+      description: "Historial de reparaciones, directorio técnico y alertas preventivas para equipos costosos.",
+      bgImage: "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=800"
+    }
+  ];
+
   return (
-    <div className="min-h-screen w-full bg-[#0a0a0a] text-white selection:bg-blue-500/30">
-      {/* Fondo Ambient Glow */}
-      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-        <div className="absolute -left-1/4 -top-1/4 h-1/2 w-1/2 rounded-full bg-blue-900/20 blur-[120px]" />
-        <div className="absolute -bottom-1/4 -right-1/4 h-1/2 w-1/2 rounded-full bg-amber-900/10 blur-[120px]" />
+    <div className="relative min-h-screen font-sans text-slate-800 overflow-x-hidden selection:bg-blue-200">
+      
+      {/* 
+        ==========================================
+        BACKGROUND: PASTEL WAVES ANIMATION
+        ==========================================
+      */}
+      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none bg-[#f8fafc]">
+        {/* Blob 1 - Soft Blue */}
+        <div className="absolute -top-[20%] -left-[10%] w-[70vw] h-[70vw] rounded-full mix-blend-multiply filter blur-[100px] opacity-70 animate-[blob_15s_infinite_alternate] bg-blue-100"></div>
+        {/* Blob 2 - Soft Peach */}
+        <div className="absolute top-[10%] -right-[10%] w-[60vw] h-[60vw] rounded-full mix-blend-multiply filter blur-[100px] opacity-70 animate-[blob_18s_infinite_alternate-reverse] bg-orange-50"></div>
+        {/* Blob 3 - Soft Lavender */}
+        <div className="absolute -bottom-[20%] left-[20%] w-[80vw] h-[80vw] rounded-full mix-blend-multiply filter blur-[120px] opacity-60 animate-[blob_20s_infinite_alternate] bg-purple-100"></div>
       </div>
 
-      <div className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
+      {/* 
+        ==========================================
+        MAIN CONTENT
+        ==========================================
+      */}
+      <div className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
         
-        {/* Header Section */}
-        <header className="mb-12 flex flex-col items-start justify-between gap-6 rounded-3xl border border-white/5 bg-white/[0.02] p-8 backdrop-blur-2xl md:flex-row md:items-center">
+        {/* HEADER SECTION */}
+        <header className="mb-10 flex flex-col items-start justify-between gap-6 rounded-[32px] border border-white/60 bg-white/40 p-8 backdrop-blur-2xl shadow-sm md:flex-row md:items-center">
           <div>
-            <h1 className="text-4xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-500 sm:text-5xl">
+            <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-slate-900 drop-shadow-sm">
               Buenos días, Sra. Belkys.
             </h1>
-            <p className="mt-2 text-sm font-bold uppercase tracking-widest text-gray-400">
-              Operaciones · Residencia Principal
+            <p className="mt-2 text-[10px] md:text-xs font-bold uppercase tracking-widest text-slate-500">
+              Panel Principal · Residencia Dr. Jiménez
             </p>
           </div>
 
-          <div className="flex flex-col items-start gap-4 md:items-end">
-            <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 rounded-full border border-white/10 bg-black/40 px-4 py-2 backdrop-blur-md">
-                <Calendar className="h-4 w-4 text-blue-400" />
-                <span className="text-xs font-bold tracking-widest text-gray-300">{formatDate(time)}</span>
-                </div>
-                <div className="flex items-center gap-2 rounded-full border border-white/10 bg-black/40 px-4 py-2 backdrop-blur-md">
-                <Clock className="h-4 w-4 text-blue-400" />
-                <span className="text-sm font-black tracking-tighter text-white">{formatTime(time)}</span>
-                </div>
+          <div className="flex flex-col items-start gap-3 md:items-end">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 rounded-full border border-white/50 bg-white/60 px-4 py-2 backdrop-blur-md shadow-sm">
+                <Calendar className="h-4 w-4 text-blue-500" />
+                <span className="text-[10px] font-bold tracking-widest text-slate-600">{formatDate(time)}</span>
+              </div>
+              <div className="flex items-center gap-2 rounded-full border border-white/50 bg-white/60 px-4 py-2 backdrop-blur-md shadow-sm">
+                <Clock className="h-4 w-4 text-blue-500" />
+                <span className="text-sm font-black tracking-tighter text-slate-800">{formatTime(time)}</span>
+              </div>
             </div>
-            {/* Ejemplo del botón animado */}
-            <AnimatedButton text="NUEVA TAREA" colorClass="text-blue-300" />
+            {/* Botón de Emergencia/Notificación */}
+            <AnimatedButton text="NOTIFICACIONES (0)" icon={Bell} secondary={true} />
           </div>
         </header>
 
-        {/* Grid de Acciones Rápidas */}
-        <div className="mb-8">
-            <h2 className="mb-6 text-sm font-bold uppercase tracking-widest text-gray-500">Paneles de Control</h2>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            
-            <ActionCard
-                title="Producción"
-                subtitle="Cocina & Despensa"
-                bgImage="https://images.unsplash.com/photo-1556910103-1c02745a872e?auto=format&fit=crop&q=80&w=800"
-                icon={ChefHat}
-                delay="0ms"
-            />
-            
-            <ActionCard
-                title="Suministros"
-                subtitle="Inventario General"
-                bgImage="https://images.unsplash.com/photo-1585252875152-4dc56788db3d?auto=format&fit=crop&q=80&w=800"
-                icon={Box}
-                delay="100ms"
-            />
-            
-            <ActionCard
-                title="Supervisión"
-                subtitle="Staff & Turnos"
-                bgImage="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&q=80&w=800"
-                icon={Users}
-                delay="200ms"
-            />
-            
-            <ActionCard
-                title="Instalaciones"
-                subtitle="Mantenimiento"
-                bgImage="https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=800"
-                icon={Wrench}
-                delay="300ms"
-            />
-            
-            </div>
+        {/* 
+          ==========================================
+          REALISTIC HOUSEKEEPER TASKS (Botones de Sra. Belkys)
+          ==========================================
+        */}
+        <div className="mb-10 rounded-[32px] border border-white/50 bg-white/30 p-6 md:p-8 backdrop-blur-xl shadow-sm">
+          <h2 className="mb-5 text-[10px] md:text-xs font-bold uppercase tracking-widest text-slate-500">
+            Acciones Rápidas (Diarias)
+          </h2>
+          <div className="flex flex-wrap gap-3 md:gap-4">
+            <AnimatedButton text="REPORTAR NOVEDAD" icon={ClipboardCheck} />
+            <AnimatedButton text="SOLICITAR INSUMOS" icon={ShoppingBag} secondary={true} />
+            <AnimatedButton text="MENÚ DEL DÍA" icon={Coffee} secondary={true} />
+            <AnimatedButton text="AGENDA FAMILIAR" icon={Calendar} secondary={true} />
+            <AnimatedButton text="MANTENIMIENTO" icon={Wrench} secondary={true} />
+            <AnimatedButton text="CHÓFERES / LOGÍSTICA" icon={CarFront} secondary={true} />
+            <AnimatedButton text="AUTORIZAR INGRESO" icon={FileSignature} secondary={true} />
+          </div>
         </div>
 
-        {/* Sección inferior de ejemplo */}
-        <div className="rounded-3xl border border-white/5 bg-white/[0.02] p-8 backdrop-blur-xl">
-             <h2 className="mb-6 text-sm font-bold uppercase tracking-widest text-gray-500">Acceso Rápido</h2>
-             <div className="flex flex-wrap gap-4">
-                <AnimatedButton text="REPORTAR NOVEDAD" />
-                <AnimatedButton text="VER PREFERENCIAS" />
-                <AnimatedButton text="MENÚ DEL DÍA" />
-             </div>
+        {/* 
+          ==========================================
+          AREAS DE LA CASA (Hero Cards de Cata adaptadas)
+          ==========================================
+        */}
+        <div>
+          <h2 className="mb-5 text-[10px] md:text-xs font-bold uppercase tracking-widest text-slate-500 pl-2">
+            Gestión por Departamentos
+          </h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {areas.map((area, index) => (
+              <AreaCard key={index} {...area} />
+            ))}
+          </div>
         </div>
 
       </div>
+
+      {/* Animación personalizada para el fondo */}
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes blob {
+          0% { transform: translate(0px, 0px) scale(1); }
+          33% { transform: translate(30px, -50px) scale(1.1); }
+          66% { transform: translate(-20px, 20px) scale(0.9); }
+          100% { transform: translate(0px, 0px) scale(1); }
+        }
+      `}} />
     </div>
   );
 };
