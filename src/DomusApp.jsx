@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import InventoryModal from './InventoryModal';
 import {
   Clock, Calendar, Bell, ClipboardCheck, Coffee, ShoppingBag,
   Wrench, CarFront, FileSignature, AlertCircle, CheckCircle2,
