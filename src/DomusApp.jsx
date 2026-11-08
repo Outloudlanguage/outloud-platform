@@ -1,86 +1,53 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, Calendar, Bell, ClipboardCheck, Coffee, ShoppingBag, Wrench, CarFront, FileSignature } from 'lucide-react';
+import { Clock, Calendar, Bell, ClipboardCheck, Coffee, ShoppingBag, Wrench, CarFront, FileSignature, HeartPulse, ShieldCheck, PieChart, Activity } from 'lucide-react';
 
 // ==========================================
-// 1. REUSABLE UI COMPONENTS (Cata Style - Light Theme)
+// 1. COMPONENTES REUTILIZABLES (Estilo Dribbble / Light UI)
 // ==========================================
+
 const AnimatedButton = ({ text, fullWidth = false, onClick, secondary = false, icon: Icon }) => {
-  const chars = text.split('');
   return (
     <button 
       onClick={onClick} 
-      className={`group/btn relative px-4 py-3 md:px-6 md:py-3 rounded-full backdrop-blur-lg border font-bold tracking-widest text-[9px] md:text-[11px] transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] hover:scale-105 hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2 shadow-sm ${
+      className={`group relative flex items-center justify-center gap-2 px-4 py-3 md:px-5 md:py-3.5 rounded-2xl font-bold tracking-wide text-xs transition-all duration-300 active:scale-95 shadow-sm ${
         fullWidth ? 'w-full' : ''
       } ${
         secondary 
-          ? 'bg-white/40 border-gray-300 text-slate-700 hover:bg-white/80 hover:border-gray-400 hover:shadow-md' 
-          : 'bg-white/80 border-blue-200 text-blue-900 hover:bg-white hover:border-blue-400 hover:shadow-[0_10px_25px_rgba(59,130,246,0.15)]'
+          ? 'bg-white border border-[#E0E0E0] text-[#202020] hover:border-[#5E7AC6] hover:text-[#5E7AC6] hover:shadow-md' 
+          : 'bg-[#5E7AC6] border border-[#5E7AC6] text-white hover:bg-[#4A64A4] hover:shadow-[0_8px_20px_rgba(94,122,198,0.3)]'
       }`}
     >
-      {Icon && <Icon className="w-4 h-4 z-10 transition-transform duration-500 group-hover/btn:scale-110" />}
-      <div className="relative overflow-hidden flex items-center justify-center">
-        <div className="flex">
-          {chars.map((char, i) => (
-            <span 
-              key={`vis-${i}`} 
-              className="block transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] group-hover/btn:-translate-y-[150%] group-hover/btn:rotate-[-8deg]" 
-              style={{ transitionDelay: `${i * 0.02}s` }}
-            >
-              {char === ' ' ? '\u00A0' : char}
-            </span>
-          ))}
-        </div>
-        <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
-          <div className="flex">
-            {chars.map((char, i) => (
-              <span 
-                key={`hid-${i}`} 
-                className="block transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] translate-y-[150%] rotate-[8deg] group-hover/btn:translate-y-0 group-hover/btn:rotate-0" 
-                style={{ transitionDelay: `${i * 0.02}s` }}
-              >
-                {char === ' ' ? '\u00A0' : char}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
+      {Icon && <Icon className="w-4 h-4 transition-transform duration-300 group-hover:scale-110" />}
+      <span>{text}</span>
     </button>
   );
 };
 
-const AreaCard = ({ title, subtitle, description, bgImage }) => (
-  <div className="group/card relative w-full h-[220px] md:h-[320px] rounded-[24px] md:rounded-[32px] overflow-hidden shadow-sm cursor-default flex flex-col border border-white/60 transition-all duration-500 hover:shadow-2xl hover:border-white">
-    {/* Fondo de Imagen */}
-    <div className="absolute inset-0 w-full h-full bg-cover bg-center transition-transform duration-1000 group-hover/card:scale-110" style={{ backgroundImage: `url('${bgImage}')` }}></div>
-    
-    {/* Overlays */}
-    <div className="absolute inset-0 bg-white/20 backdrop-blur-[2px] transition-opacity duration-500 group-hover/card:opacity-0"></div>
-    <div className="absolute inset-0 bg-white/80 backdrop-blur-xl opacity-0 transition-opacity duration-500 group-hover/card:opacity-100"></div>
-
-    {/* Estado Inicial (Fondo oscuro degradado para leer texto blanco) */}
-    <div className="absolute inset-0 p-6 flex flex-col justify-end transition-opacity duration-500 group-hover/card:opacity-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent z-10">
-      <h3 className="text-xl md:text-2xl font-black text-white tracking-tight leading-none drop-shadow-md">{title}</h3>
-      <p className="text-[10px] md:text-xs font-bold text-white/90 tracking-widest uppercase mt-2 drop-shadow-md">{subtitle}</p>
+const AreaCard = ({ title, subtitle, imgUrl, accentColor }) => (
+  <div className="min-w-[280px] w-full md:min-w-0 bg-white rounded-[28px] overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_15px_40px_rgb(0,0,0,0.08)] snap-center shrink-0 flex flex-col">
+    {/* Imagen Top (Estilo Property Card) */}
+    <div className="relative w-full h-40 overflow-hidden bg-gray-100">
+      <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 hover:scale-105" style={{ backgroundImage: `url('${imgUrl}')` }}></div>
+      <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-[9px] font-black tracking-widest uppercase text-[#202020] shadow-sm">
+        {subtitle}
+      </div>
     </div>
-
-    {/* Estado Hover (Glassmorphism claro, texto oscuro) */}
-    <div className="absolute inset-0 p-6 md:p-8 flex flex-col justify-between opacity-0 translate-y-8 transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] group-hover/card:opacity-100 group-hover/card:translate-y-0 text-slate-800 z-20">
+    
+    {/* Contenido Inferior */}
+    <div className="p-5 flex flex-col flex-grow justify-between">
       <div>
-        <h3 className="text-xl md:text-2xl font-black tracking-tight leading-none text-slate-900">{title}</h3>
-        <p className="text-[10px] md:text-xs font-bold text-blue-600 tracking-widest uppercase mt-2">{subtitle}</p>
+        <h3 className="text-xl font-black tracking-tight text-[#202020] mb-1">{title}</h3>
+        <div className="w-8 h-1 rounded-full mb-4" style={{ backgroundColor: accentColor }}></div>
       </div>
-      <p className="text-xs md:text-sm font-medium leading-relaxed mb-4 text-slate-700">
-        {description}
-      </p>
-      <div className="w-full">
-        <AnimatedButton text="ENTRAR AL MÓDULO" fullWidth={true} />
-      </div>
+      <button className="w-full py-3 rounded-xl bg-[#F0F0F2] text-[#202020] text-xs font-bold hover:bg-[#5E7AC6] hover:text-white transition-colors">
+        Gestionar Área
+      </button>
     </div>
   </div>
 );
 
 // ==========================================
-// 2. MAIN APP COMPONENT
+// 2. DASHBOARD PRINCIPAL (CASA ROQUEDAL)
 // ==========================================
 const DomusApp = () => {
   const [time, setTime] = useState(new Date());
@@ -99,130 +66,168 @@ const DomusApp = () => {
     return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
   };
 
+  // Datos de los departamentos con imágenes equivalentes de alta calidad
   const areas = [
-    {
-      title: "Cocina y Despensa",
-      subtitle: "Operaciones Culinarias",
-      description: "Recetario de la familia, control de mermas, inventario en tiempo real y planeación del menú diario.",
-      bgImage: "https://images.unsplash.com/photo-1556910103-1c02745a872e?auto=format&fit=crop&q=80&w=800"
-    },
-    {
-      title: "Garita y Seguridad",
-      subtitle: "Control Patrimonial",
-      description: "Bitácora de rondas escaneadas, registro de proveedores y control de acceso a la residencia.",
-      bgImage: "https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&q=80&w=800"
-    },
-    {
-      title: "Hospitalidad",
-      subtitle: "Preferencias Familiares",
-      description: "Preparación de habitaciones para invitados, control de tintorería y exigencias de los residentes.",
-      bgImage: "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&q=80&w=800"
-    },
-    {
-      title: "Mantenimiento",
-      subtitle: "Instalaciones",
-      description: "Historial de reparaciones, directorio técnico y alertas preventivas para equipos costosos.",
-      bgImage: "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=800"
-    }
+    { title: "Cocina & Despensa", subtitle: "Operaciones", accentColor: "#EE6B5F", imgUrl: "https://images.unsplash.com/photo-1506617420156-8e4536971650?auto=format&fit=crop&q=80&w=800" },
+    { title: "Seguridad", subtitle: "Perímetro", accentColor: "#5E7AC6", imgUrl: "https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&q=80&w=800" },
+    { title: "Hospitalidad", subtitle: "Servicio", accentColor: "#808080", imgUrl: "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&q=80&w=800" },
+    { title: "Mantenimiento", subtitle: "Instalaciones", accentColor: "#EE6B5F", imgUrl: "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=800" },
+    { title: "Cuidados", subtitle: "Salud", accentColor: "#5E7AC6", imgUrl: "https://images.unsplash.com/photo-1631815589968-fdb09a223b1e?auto=format&fit=crop&q=80&w=800" }
   ];
 
   return (
-    <div className="relative min-h-screen font-sans text-slate-800 overflow-x-hidden selection:bg-blue-200">
+    <div className="relative min-h-screen font-sans text-[#202020] overflow-x-hidden selection:bg-[#5E7AC6]/20 bg-[#F0F0F2]">
       
       {/* 
         ==========================================
-        BACKGROUND: PASTEL WAVES ANIMATION
+        FONDO: MESH GRADIENT (Estilo Dribbble)
         ==========================================
       */}
-      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none bg-[#f8fafc]">
-        {/* Blob 1 - Soft Blue */}
-        <div className="absolute -top-[20%] -left-[10%] w-[70vw] h-[70vw] rounded-full mix-blend-multiply filter blur-[100px] opacity-70 animate-[blob_15s_infinite_alternate] bg-blue-100"></div>
-        {/* Blob 2 - Soft Peach */}
-        <div className="absolute top-[10%] -right-[10%] w-[60vw] h-[60vw] rounded-full mix-blend-multiply filter blur-[100px] opacity-70 animate-[blob_18s_infinite_alternate-reverse] bg-orange-50"></div>
-        {/* Blob 3 - Soft Lavender */}
-        <div className="absolute -bottom-[20%] left-[20%] w-[80vw] h-[80vw] rounded-full mix-blend-multiply filter blur-[120px] opacity-60 animate-[blob_20s_infinite_alternate] bg-purple-100"></div>
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+        {/* Luz Azul (Arriba Izquierda) */}
+        <div className="absolute -top-[15%] -left-[10%] w-[60vw] h-[60vw] rounded-full bg-[#5E7AC6] opacity-[0.12] blur-[100px] animate-[pulse_8s_ease-in-out_infinite_alternate]"></div>
+        {/* Luz Coral (Arriba Derecha) */}
+        <div className="absolute top-[5%] -right-[15%] w-[50vw] h-[50vw] rounded-full bg-[#EE6B5F] opacity-[0.10] blur-[120px] animate-[pulse_10s_ease-in-out_infinite_alternate-reverse]"></div>
+        {/* Luz Azul Suave (Abajo Centro) */}
+        <div className="absolute -bottom-[20%] left-[20%] w-[70vw] h-[70vw] rounded-full bg-[#5E7AC6] opacity-[0.08] blur-[120px]"></div>
       </div>
 
-      {/* 
-        ==========================================
-        MAIN CONTENT
-        ==========================================
-      */}
-      <div className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+      <div className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
         
-        {/* HEADER SECTION */}
-        <header className="mb-10 flex flex-col items-start justify-between gap-6 rounded-[32px] border border-white/60 bg-white/40 p-8 backdrop-blur-2xl shadow-sm md:flex-row md:items-center">
+        {/* ==========================================
+            CABECERA (HEADER)
+            ========================================== */}
+        <header className="mb-10 flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
           <div>
-            <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-slate-900 drop-shadow-sm">
+            <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-[#202020]">
               Buenos días, Sra. Belkys.
             </h1>
-            <p className="mt-2 text-[10px] md:text-xs font-bold uppercase tracking-widest text-slate-500">
-              Panel Principal · Residencia Dr. Jiménez
+            <p className="mt-2 text-xs font-bold uppercase tracking-widest text-[#808080]">
+              CASA ROQUEDAL · Panel de Control
             </p>
           </div>
 
-          <div className="flex flex-col items-start gap-3 md:items-end">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 rounded-full border border-white/50 bg-white/60 px-4 py-2 backdrop-blur-md shadow-sm">
-                <Calendar className="h-4 w-4 text-blue-500" />
-                <span className="text-[10px] font-bold tracking-widest text-slate-600">{formatDate(time)}</span>
-              </div>
-              <div className="flex items-center gap-2 rounded-full border border-white/50 bg-white/60 px-4 py-2 backdrop-blur-md shadow-sm">
-                <Clock className="h-4 w-4 text-blue-500" />
-                <span className="text-sm font-black tracking-tighter text-slate-800">{formatTime(time)}</span>
-              </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 rounded-2xl bg-white px-5 py-3 shadow-[0_4px_20px_rgb(0,0,0,0.03)]">
+              <Calendar className="h-4 w-4 text-[#5E7AC6]" />
+              <span className="text-[10px] font-bold tracking-widest text-[#808080]">{formatDate(time)}</span>
             </div>
-            {/* Botón de Emergencia/Notificación */}
-            <AnimatedButton text="NOTIFICACIONES (0)" icon={Bell} secondary={true} />
+            <div className="flex items-center gap-2 rounded-2xl bg-white px-5 py-3 shadow-[0_4px_20px_rgb(0,0,0,0.03)]">
+              <Clock className="h-4 w-4 text-[#EE6B5F]" />
+              <span className="text-sm font-black tracking-tighter text-[#202020]">{formatTime(time)}</span>
+            </div>
           </div>
         </header>
 
-        {/* 
-          ==========================================
-          REALISTIC HOUSEKEEPER TASKS (Botones de Sra. Belkys)
-          ==========================================
-        */}
-        <div className="mb-10 rounded-[32px] border border-white/50 bg-white/30 p-6 md:p-8 backdrop-blur-xl shadow-sm">
-          <h2 className="mb-5 text-[10px] md:text-xs font-bold uppercase tracking-widest text-slate-500">
-            Acciones Rápidas (Diarias)
-          </h2>
-          <div className="flex flex-wrap gap-3 md:gap-4">
-            <AnimatedButton text="REPORTAR NOVEDAD" icon={ClipboardCheck} />
-            <AnimatedButton text="SOLICITAR INSUMOS" icon={ShoppingBag} secondary={true} />
-            <AnimatedButton text="MENÚ DEL DÍA" icon={Coffee} secondary={true} />
-            <AnimatedButton text="AGENDA FAMILIAR" icon={Calendar} secondary={true} />
-            <AnimatedButton text="MANTENIMIENTO" icon={Wrench} secondary={true} />
-            <AnimatedButton text="CHÓFERES / LOGÍSTICA" icon={CarFront} secondary={true} />
-            <AnimatedButton text="AUTORIZAR INGRESO" icon={FileSignature} secondary={true} />
+        {/* ==========================================
+            SECCIÓN 1: DASHBOARD GRÁFICO (Widgets)
+            ========================================== */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+          
+          {/* Widget 1: Dona de Inventario */}
+          <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.03)] border border-white flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-bold text-[#202020] mb-1">Inventario General</h3>
+              <p className="text-[10px] uppercase tracking-widest text-[#808080] mb-4">Estado de Alacena</p>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-xs font-semibold"><span className="w-2 h-2 rounded-full bg-[#5E7AC6]"></span> Óptimo (65%)</div>
+                <div className="flex items-center gap-2 text-xs font-semibold text-[#808080]"><span className="w-2 h-2 rounded-full bg-[#EE6B5F]"></span> Por pedir (35%)</div>
+              </div>
+            </div>
+            {/* Gráfico SVG Torta */}
+            <div className="relative w-24 h-24">
+              <svg viewBox="0 0 36 36" className="w-full h-full drop-shadow-md">
+                <path className="text-[#F0F0F2]" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="4" />
+                <path className="text-[#5E7AC6]" strokeDasharray="65, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" className="animate-[drawRing_1.5s_ease-out_forwards]" />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <PieChart className="w-6 h-6 text-[#5E7AC6]" />
+              </div>
+            </div>
+          </div>
+
+          {/* Widget 2: Actividad de Tareas */}
+          <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.03)] border border-white flex flex-col justify-between">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h3 className="text-sm font-bold text-[#202020] mb-1">Tareas Completadas</h3>
+                <p className="text-[10px] uppercase tracking-widest text-[#808080]">Esta semana</p>
+              </div>
+              <div className="bg-[#EE6B5F]/10 text-[#EE6B5F] px-2 py-1 rounded-lg text-xs font-bold">+12%</div>
+            </div>
+            {/* Gráfico de Barras Simple CSS */}
+            <div className="flex items-end justify-between h-16 gap-2">
+              {['Lun', 'Mar', 'Mié', 'Jue', 'Vie'].map((day, i) => {
+                const heights = ['40%', '70%', '50%', '90%', '60%'];
+                return (
+                  <div key={day} className="flex flex-col items-center gap-2 w-full group">
+                    <div className="w-full bg-[#F0F0F2] rounded-t-md h-full relative overflow-hidden flex items-end">
+                      <div className="w-full bg-[#5E7AC6] transition-all duration-700 rounded-t-md group-hover:bg-[#EE6B5F]" style={{ height: heights[i] }}></div>
+                    </div>
+                    <span className="text-[9px] font-bold text-[#808080]">{day}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Widget 3: Novedades / Notificaciones */}
+          <div className="bg-[#5E7AC6] rounded-[32px] p-6 shadow-[0_15px_30px_rgba(94,122,198,0.2)] text-white flex flex-col justify-between bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-blend-overlay">
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm"><Bell className="w-5 h-5 text-white" /></div>
+                <span className="w-3 h-3 rounded-full bg-[#EE6B5F] animate-pulse"></span>
+              </div>
+              <h3 className="text-2xl font-black tracking-tight mb-1">3 Alertas</h3>
+              <p className="text-xs font-medium text-white/80">Requieren tu atención hoy</p>
+            </div>
+            <button className="w-full py-2.5 bg-white text-[#5E7AC6] text-xs font-bold rounded-xl hover:scale-[1.02] transition-transform">Ver Detalles</button>
           </div>
         </div>
 
-        {/* 
-          ==========================================
-          AREAS DE LA CASA (Hero Cards de Cata adaptadas)
-          ==========================================
-        */}
-        <div>
-          <h2 className="mb-5 text-[10px] md:text-xs font-bold uppercase tracking-widest text-slate-500 pl-2">
-            Gestión por Departamentos
-          </h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {/* ==========================================
+            SECCIÓN 2: DEPARTAMENTOS (Botones Grandes Carrusel)
+            ========================================== */}
+        <div className="mb-12">
+          <div className="flex items-center justify-between mb-5 px-1">
+            <h2 className="text-sm font-bold uppercase tracking-widest text-[#808080]">
+              Gestión por Departamentos
+            </h2>
+          </div>
+          
+          {/* Contenedor con Scroll Horizontal en Móvil (App-like) */}
+          <div className="flex overflow-x-auto gap-4 md:gap-6 pb-6 pt-2 snap-x snap-mandatory hide-scrollbar -mx-4 px-4 md:mx-0 md:px-0 md:grid md:grid-cols-3 lg:grid-cols-5">
             {areas.map((area, index) => (
               <AreaCard key={index} {...area} />
             ))}
           </div>
         </div>
 
+        {/* ==========================================
+            SECCIÓN 3: ACCIONES RÁPIDAS (Botones Pequeños)
+            ========================================== */}
+        <div>
+          <h2 className="mb-5 text-sm font-bold uppercase tracking-widest text-[#808080] px-1">
+            Accesos Directos
+          </h2>
+          {/* Grid responsivo para las acciones rápidas */}
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
+            <AnimatedButton text="Reportar Novedad" icon={ClipboardCheck} />
+            <AnimatedButton text="Solicitar Insumos" icon={ShoppingBag} secondary={true} />
+            <AnimatedButton text="Menú del Día" icon={Coffee} secondary={true} />
+            <AnimatedButton text="Agenda Familiar" icon={Calendar} secondary={true} />
+            <AnimatedButton text="Chóferes / Autos" icon={CarFront} secondary={true} />
+            <AnimatedButton text="Autorizar Visita" icon={FileSignature} secondary={true} />
+          </div>
+        </div>
+
       </div>
 
-      {/* Animación personalizada para el fondo */}
+      {/* Clases Utilitarias Extra */}
       <style dangerouslySetInnerHTML={{__html: `
-        @keyframes blob {
-          0% { transform: translate(0px, 0px) scale(1); }
-          33% { transform: translate(30px, -50px) scale(1.1); }
-          66% { transform: translate(-20px, 20px) scale(0.9); }
-          100% { transform: translate(0px, 0px) scale(1); }
-        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        @keyframes drawRing { from { stroke-dashoffset: 200; } }
       `}} />
     </div>
   );
