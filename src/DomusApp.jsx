@@ -45,13 +45,16 @@ const CascadeButton = ({ text, subtext, icon: Icon, accent = "#5E7AC6", onClick 
         </div>
         {subtext && <span className="domus-cascade-sub">{subtext}</span>}
       </div>
-      <ArrowUpRight size={18} className="domus-cascade-arrow" />
+      <div className="domus-cascade-end">
+        <img src={STANDALONE_LOGO_URL} alt="" className="domus-cascade-mini-logo" />
+        <ArrowUpRight size={18} className="domus-cascade-arrow" />
+      </div>
     </button>
   );
 };
 
 // ==========================================
-// 2. TARJETA DE DEPARTAMENTO (ESTILO CATA + BACKLIGHT)
+// 2. TARJETA DE DEPARTAMENTO (CON SELLO DOMUS STANDALONE)
 // ==========================================
 const DepartmentCard = ({ area, onSelect }) => {
   return (
@@ -75,7 +78,11 @@ const DepartmentCard = ({ area, onSelect }) => {
             <i style={{ backgroundColor: area.accentColor }}></i>
             {area.subtitle}
           </span>
-          <span className="domus-dept-abbr">{area.abbr}</span>
+          {/* Sello de cristal con el logo standalone */}
+          <div className="domus-dept-seal" title={`Módulo ${area.title}`}>
+            <img src={STANDALONE_LOGO_URL} alt="Domus" />
+            <span>{area.abbr}</span>
+          </div>
         </div>
 
         <div className="domus-dept-bottom">
@@ -111,7 +118,8 @@ export default function DomusApp() {
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
-    const splashTimer = setTimeout(() => setSplashDone(true), 850);
+    // Animación inicial más pausada y elegante (2.4 segundos)
+    const splashTimer = setTimeout(() => setSplashDone(true), 2400);
     return () => {
       clearInterval(timer);
       clearTimeout(splashTimer);
@@ -261,12 +269,15 @@ export default function DomusApp() {
   return (
     <div className="domus-root">
       {/* ==========================================
-          SPLASH SCREEN INICIAL CON LOGO STANDALONE
+          SPLASH SCREEN PAUSADO Y ELEGANTE (2.4s)
           ========================================== */}
       <div className={`domus-splash ${splashDone ? 'domus-splash-hide' : ''}`}>
         <div className="domus-splash-box">
-          <img src={STANDALONE_LOGO_URL} alt="Domus" className="domus-splash-logo" />
-          <span>CASA ROQUEDAL</span>
+          <div className="domus-splash-ring">
+            <img src={STANDALONE_LOGO_URL} alt="Domus" className="domus-splash-logo" />
+          </div>
+          <strong>DOMUS</strong>
+          <span>CASA ROQUEDAL · GESTIÓN DOMÉSTICA</span>
         </div>
       </div>
 
@@ -281,11 +292,11 @@ export default function DomusApp() {
       </div>
 
       {/* ==========================================
-          BARRA DE NAVEGACIÓN SUPERIOR (LOGO COMPLETO Y AJUSTE MÓVIL)
+          BARRA DE NAVEGACIÓN SUPERIOR (LOGO BIEN DIMENSIONADO)
           ========================================== */}
       <nav className="domus-navbar">
         <div className="domus-navbar-inner">
-          {/* Logo completo sin recortes alineado a la izquierda */}
+          {/* Logo con margen positivo y tamaño grande sin recortes */}
           <div className="domus-brand-left" onClick={() => handleNavClick(navItems[0])}>
             <img
               src={HEADER_LOGO_URL}
@@ -307,7 +318,7 @@ export default function DomusApp() {
             ))}
           </div>
 
-          {/* Reloj y Perfil (Compactos en móvil para que nunca desborden) */}
+          {/* Reloj y Perfil */}
           <div className="domus-nav-right">
             <div className="domus-clock-pill">
               <Clock size={14} color="#EE6B5F" />
@@ -351,34 +362,61 @@ export default function DomusApp() {
           ========================================== */}
       <main className="domus-main">
 
-        {/* CABECERA DE BIENVENIDA + RESUMEN EJECUTIVO */}
+        {/* CABECERA DE BIENVENIDA + 4 PÍLDORAS DE TAMAÑO IDÉNTICO */}
         <section id="sec-hero" className="domus-hero-bar">
+          {/* Marca de agua arquitectónica con el isotipo standalone */}
+          <img src={STANDALONE_LOGO_URL} alt="" className="domus-hero-watermark" />
+
           <div className="domus-hero-greeting">
-            <div className="domus-eyebrow">
-              <Sparkles size={14} color="#EE6B5F" />
-              <span>CASA ROQUEDAL · SISTEMA INTEGRAL DE GESTIÓN</span>
+            <div className="domus-hero-crest-row">
+              <div className="domus-crest-medallion">
+                <img src={STANDALONE_LOGO_URL} alt="Domus" />
+              </div>
+              <div className="domus-eyebrow">
+                <span>CASA ROQUEDAL · SISTEMA INTEGRAL DE GESTIÓN</span>
+                <small>RESIDENCIA DR. GUSTAVO JIMÉNEZ</small>
+              </div>
             </div>
             <h1 className="domus-main-title">Buenos días, Sra. Belkys.</h1>
           </div>
 
-          <div className="domus-hero-pills">
+          {/* 4 Píldoras en Cuadrícula 2x2 de idéntico ancho y alto */}
+          <div className="domus-hero-pills-grid">
             <div className="domus-stat-chip" onClick={() => setSelectedModal(departments[4])}>
-              <HeartPulse size={18} color="#EE6B5F" />
-              <div>
+              <div className="domus-chip-icon" style={{ background: 'rgba(238,107,95,0.14)' }}>
+                <HeartPulse size={18} color="#EE6B5F" />
+              </div>
+              <div className="domus-chip-text">
                 <small>DR. GUSTAVO JIMÉNEZ</small>
                 <strong>Estable · 120/78 mmHg</strong>
               </div>
             </div>
+
             <div className="domus-stat-chip" onClick={() => setSelectedModal(departments[1])}>
-              <Users size={18} color="#5E7AC6" />
-              <div>
+              <div className="domus-chip-icon" style={{ background: 'rgba(94,122,198,0.14)' }}>
+                <Users size={18} color="#5E7AC6" />
+              </div>
+              <div className="domus-chip-text">
                 <small>PERSONAL EN TURNO</small>
                 <strong>11 / 11 Activos Hoy</strong>
               </div>
             </div>
+
+            <div className="domus-stat-chip" onClick={() => setSelectedModal(departments[3])}>
+              <div className="domus-chip-icon" style={{ background: 'rgba(16,185,129,0.14)' }}>
+                <ShieldCheck size={18} color="#10B981" />
+              </div>
+              <div className="domus-chip-text">
+                <small>RESERVAS & PLANTA</small>
+                <strong>Agua 100% · Diésel 98%</strong>
+              </div>
+            </div>
+
             <div className="domus-stat-chip">
-              <Calendar size={18} color="#5E7AC6" />
-              <div>
+              <div className="domus-chip-icon" style={{ background: 'rgba(190,122,198,0.16)' }}>
+                <Calendar size={18} color="#BE7AC6" />
+              </div>
+              <div className="domus-chip-text">
                 <small>FECHA OPERATIVA</small>
                 <strong>{formatDate(time)}</strong>
               </div>
@@ -391,12 +429,14 @@ export default function DomusApp() {
             ========================================== */}
         <section id="sec-depts" className="domus-block">
           <div className="domus-block-header">
-            <div>
-              <h2 className="domus-block-title">
-                <span className="domus-dot-indicator" style={{ background: '#5E7AC6' }}></span>
-                Gestión por Departamentos
-              </h2>
-              <p className="domus-block-sub">Toque cualquier área para inspeccionar el estado en tiempo real</p>
+            <div className="domus-section-head-left">
+              <div className="domus-section-logo-badge">
+                <img src={STANDALONE_LOGO_URL} alt="Domus" />
+              </div>
+              <div>
+                <h2 className="domus-block-title">Gestión por Departamentos</h2>
+                <p className="domus-block-sub">Toque cualquier área para inspeccionar el estado en tiempo real</p>
+              </div>
             </div>
             <span className="domus-live-badge">
               <i></i> 5 MÓDULOS SINCRONIZADOS
@@ -419,12 +459,14 @@ export default function DomusApp() {
             ========================================== */}
         <section id="sec-bitacora" className="domus-block">
           <div className="domus-block-header">
-            <div>
-              <h2 className="domus-block-title">
-                <span className="domus-dot-indicator" style={{ background: '#EE6B5F' }}></span>
-                Acciones Rápidas del Ama de Llaves
-              </h2>
-              <p className="domus-block-sub">Registros directos para administración, cocina, garita y mantenimiento</p>
+            <div className="domus-section-head-left">
+              <div className="domus-section-logo-badge">
+                <img src={STANDALONE_LOGO_URL} alt="Domus" />
+              </div>
+              <div>
+                <h2 className="domus-block-title">Acciones Rápidas del Ama de Llaves</h2>
+                <p className="domus-block-sub">Registros directos para administración, cocina, garita y mantenimiento</p>
+              </div>
             </div>
           </div>
 
@@ -479,18 +521,20 @@ export default function DomusApp() {
             ========================================== */}
         <section className="domus-block">
           <div className="domus-block-header">
-            <div>
-              <h2 className="domus-block-title">
-                <span className="domus-dot-indicator" style={{ background: '#5E7AC6' }}></span>
-                Métricas y Monitoreo en Tiempo Real
-              </h2>
-              <p className="domus-block-sub">Auditoría de alacena, signos vitales del Dr. Jiménez, personal y alertas</p>
+            <div className="domus-section-head-left">
+              <div className="domus-section-logo-badge">
+                <img src={STANDALONE_LOGO_URL} alt="Domus" />
+              </div>
+              <div>
+                <h2 className="domus-block-title">Métricas y Monitoreo en Tiempo Real</h2>
+                <p className="domus-block-sub">Auditoría de alacena, signos vitales del Dr. Jiménez, personal y alertas</p>
+              </div>
             </div>
           </div>
 
           <div className="domus-analytics-grid">
 
-            {/* WIDGET 1: DONA INTERACTIVA DE ALACENA */}
+            {/* WIDGET 1: DONA INTERACTIVA DE ALACENA CON NÚCLEO DOMUS */}
             <div id="sec-alacena" className="domus-glass-panel">
               <div className="domus-panel-head">
                 <div>
@@ -530,6 +574,7 @@ export default function DomusApp() {
                     })}
                   </svg>
                   <div className="domus-donut-center">
+                    <img src={STANDALONE_LOGO_URL} alt="Domus" className="domus-donut-logo" />
                     <strong>
                       {hoveredStock !== null ? `${stockSegments[hoveredStock].val}%` : '78%'}
                     </strong>
@@ -637,19 +682,26 @@ export default function DomusApp() {
               </div>
             </div>
 
-            {/* WIDGET 3: CARGA OPERATIVA + CENTRO DE ALERTAS */}
+            {/* WIDGET 3: CARGA OPERATIVA + CENTRO DE ALERTAS CON INSIGNIA DOMUS */}
             <div className="domus-glass-panel domus-panel-accent">
-              <div className="domus-panel-head">
-                <div>
-                  <h3 style={{ color: '#fff' }}>Centro de Control y Alertas</h3>
-                  <p style={{ color: 'rgba(255,255,255,0.75)' }}>TOQUE UNA ALERTA PARA MARCARLA RESUELTA</p>
+              <img src={STANDALONE_LOGO_URL} alt="" className="domus-accent-panel-watermark" />
+
+              <div className="domus-panel-head" style={{ position: 'relative', zIndex: 2 }}>
+                <div className="domus-accent-head-title">
+                  <div className="domus-accent-mini-crest">
+                    <img src={STANDALONE_LOGO_URL} alt="Domus" />
+                  </div>
+                  <div>
+                    <h3 style={{ color: '#fff' }}>Centro de Control</h3>
+                    <p style={{ color: 'rgba(255,255,255,0.75)' }}>TOQUE PARA MARCAR RESUELTA</p>
+                  </div>
                 </div>
                 <span className="domus-alert-count">
                   {resolvedAlerts.filter(Boolean).length}/3 Resueltas
                 </span>
               </div>
 
-              <div className="domus-alerts-stack">
+              <div className="domus-alerts-stack" style={{ position: 'relative', zIndex: 2 }}>
                 {[
                   { title: "Reposición Alacena Limpieza", desc: "Stock de detergente neutro al 22% · Incluir en pedido semanal", tag: "Administración" },
                   { title: "Mantenimiento Preventivo", desc: "Prueba semanal de Planta Eléctrica Principal completada al 100%", tag: "Instalaciones" },
@@ -678,7 +730,7 @@ export default function DomusApp() {
                 ))}
               </div>
 
-              <div className="domus-staff-bar">
+              <div className="domus-staff-bar" style={{ position: 'relative', zIndex: 2 }}>
                 <div className="domus-staff-head">
                   <span>CUMPLIMIENTO SEMANAL DEL STAFF (11 EMPLEADOS)</span>
                   <strong>96% Completado</strong>
@@ -760,32 +812,43 @@ export default function DomusApp() {
           overflow-x: hidden;
         }
 
-        /* SPLASH SCREEN */
+        /* SPLASH SCREEN PAUSADO (2.4s) */
         .domus-splash {
           position: fixed; inset: 0; z-index: 200;
-          background: rgba(240, 240, 242, 0.92);
-          backdrop-filter: blur(30px);
+          background: radial-gradient(circle at center, #FFFFFF 0%, #E8ECF7 100%);
           display: flex; align-items: center; justify-content: center;
-          transition: opacity 0.5s ease, visibility 0.5s ease;
+          transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1), visibility 0.8s ease;
         }
         .domus-splash-hide {
           opacity: 0; visibility: hidden; pointer-events: none;
         }
         .domus-splash-box {
-          display: flex; flex-direction: column; align-items: center; gap: 12px;
-          animation: domusSplashPulse 0.85s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+          display: flex; flex-direction: column; align-items: center; gap: 14px;
+          animation: domusSplashCeremony 2.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        .domus-splash-ring {
+          width: 124px; height: 124px; border-radius: 36px;
+          background: rgba(255, 255, 255, 0.85);
+          border: 2px solid rgba(94, 122, 198, 0.25);
+          box-shadow: 0 24px 60px rgba(94, 122, 198, 0.28);
+          display: flex; align-items: center; justify-content: center;
+          margin-bottom: 4px;
         }
         .domus-splash-logo {
-          width: 84px; height: 84px; object-fit: contain;
-          filter: drop-shadow(0 12px 24px rgba(94, 122, 198, 0.35));
+          width: 78px; height: 78px; object-fit: contain;
+          filter: drop-shadow(0 8px 18px rgba(94, 122, 198, 0.3));
+        }
+        .domus-splash-box strong {
+          font-size: 24px; font-weight: 900; letter-spacing: 0.22em; color: #202020;
         }
         .domus-splash-box span {
-          font-size: 11px; font-weight: 900; letter-spacing: 0.25em; color: #5E7AC6;
+          font-size: 11px; font-weight: 800; letter-spacing: 0.2em; color: #5E7AC6;
         }
-        @keyframes domusSplashPulse {
-          0% { transform: scale(0.85); opacity: 0; }
-          50% { transform: scale(1.04); opacity: 1; }
-          100% { transform: scale(1.15); opacity: 0; }
+        @keyframes domusSplashCeremony {
+          0% { transform: scale(0.82) translateY(12px); opacity: 0; }
+          25% { transform: scale(1) translateY(0); opacity: 1; }
+          78% { transform: scale(1.03) translateY(0); opacity: 1; }
+          100% { transform: scale(1.12) translateY(-6px); opacity: 0; }
         }
 
         /* FONDO PASTEL EN MOVIMIENTO VISIBLE */
@@ -832,94 +895,94 @@ export default function DomusApp() {
           100% { transform: translate(12vw, -14vh) scale(1.2); }
         }
 
-        /* NAVBAR SUPERIOR CON LOGO COMPLETO Y RESPONSIVO */
+        /* NAVBAR SUPERIOR CON LOGO GRANDE Y ALINEADO */
         .domus-navbar {
           position: sticky; top: 0; z-index: 50;
-          background: rgba(255, 255, 255, 0.62);
+          background: rgba(255, 255, 255, 0.65);
           backdrop-filter: blur(24px) saturate(180%);
           -webkit-backdrop-filter: blur(24px) saturate(180%);
-          border-bottom: 1px solid rgba(255, 255, 255, 0.88);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.9);
           box-shadow: 0 8px 32px rgba(32, 32, 32, 0.04);
         }
         .domus-navbar-inner {
           max-width: 1540px; margin: 0 auto;
-          padding: 8px 14px;
+          padding: 10px 16px;
           display: flex; align-items: center; justify-content: space-between;
-          gap: 8px;
+          gap: 10px;
         }
         @media (min-width: 768px) {
-          .domus-navbar-inner { padding: 10px 24px; gap: 16px; }
+          .domus-navbar-inner { padding: 12px 28px; gap: 20px; }
         }
 
         .domus-brand-left {
           display: flex; align-items: center; cursor: pointer; flex-shrink: 0;
+          padding-left: 4px;
           transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
         }
         .domus-brand-left:hover { transform: scale(1.04); }
 
-        /* Compensa el margen transparente interno del PNG 1920x500 sin recortar nada */
+        /* Tamaño amplio y sin margen negativo izquierdo para no cortar jamás el isotipo */
         .domus-header-logo-img {
-          height: 44px;
+          height: 52px;
           width: auto;
           object-fit: contain;
-          margin-left: -26px;
-          margin-right: -26px;
-          filter: drop-shadow(0 2px 6px rgba(94, 122, 198, 0.14));
+          object-position: left center;
+          margin-left: 0;
+          filter: drop-shadow(0 3px 8px rgba(94, 122, 198, 0.16));
           pointer-events: none;
         }
         @media (min-width: 768px) {
           .domus-header-logo-img {
-            height: 60px;
-            margin-left: -36px;
-            margin-right: -32px;
+            height: 74px;
+            margin-left: 2px;
           }
         }
 
         .domus-nav-tabs {
           display: none; align-items: center; gap: 6px;
-          background: rgba(255, 255, 255, 0.5);
+          background: rgba(255, 255, 255, 0.55);
           padding: 5px; border-radius: 99px;
-          border: 1px solid rgba(255, 255, 255, 0.85);
+          border: 1px solid rgba(255, 255, 255, 0.9);
         }
-        @media (min-width: 1100px) { .domus-nav-tabs { display: flex; } }
+        @media (min-width: 1150px) { .domus-nav-tabs { display: flex; } }
         .domus-nav-tab {
           border: none; background: transparent; cursor: pointer;
           padding: 9px 18px; border-radius: 99px;
           font-size: 11px; font-weight: 800; letter-spacing: 0.08em; color: #555;
           transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
         }
-        .domus-nav-tab:hover { color: #5E7AC6; background: rgba(255, 255, 255, 0.75); }
+        .domus-nav-tab:hover { color: #5E7AC6; background: rgba(255, 255, 255, 0.8); }
         .domus-nav-tab.active {
           background: #5E7AC6; color: #fff;
           box-shadow: 0 6px 18px rgba(94, 122, 198, 0.4);
         }
 
         .domus-nav-right {
-          display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+          display: flex; align-items: center; gap: 8px; flex-shrink: 0;
         }
         @media (min-width: 768px) {
           .domus-nav-right { gap: 12px; }
         }
         .domus-clock-pill {
-          display: flex; align-items: center; gap: 5px;
-          background: rgba(255, 255, 255, 0.8);
+          display: flex; align-items: center; gap: 6px;
+          background: rgba(255, 255, 255, 0.82);
           border: 1px solid rgba(255, 255, 255, 0.95);
-          padding: 6px 10px; border-radius: 99px;
-          font-size: 11.5px; font-weight: 900; color: #202020;
+          padding: 7px 11px; border-radius: 99px;
+          font-size: 12px; font-weight: 900; color: #202020;
           box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
         }
         @media (min-width: 768px) {
-          .domus-clock-pill { padding: 8px 14px; font-size: 13px; gap: 8px; }
+          .domus-clock-pill { padding: 8px 15px; font-size: 13px; gap: 8px; }
         }
         .domus-profile-pill {
-          display: flex; align-items: center; gap: 7px;
-          background: rgba(255, 255, 255, 0.8);
+          display: flex; align-items: center; gap: 8px;
+          background: rgba(255, 255, 255, 0.82);
           border: 1px solid rgba(255, 255, 255, 0.95);
-          padding: 4px 10px 4px 4px; border-radius: 99px;
+          padding: 4px 11px 4px 4px; border-radius: 99px;
           cursor: pointer; transition: all 0.25s ease;
         }
         @media (min-width: 768px) {
-          .domus-profile-pill { padding: 5px 14px 5px 6px; gap: 10px; }
+          .domus-profile-pill { padding: 5px 15px 5px 6px; gap: 10px; }
         }
         .domus-profile-pill:hover {
           transform: translateY(-2px);
@@ -930,7 +993,7 @@ export default function DomusApp() {
           background: rgba(94, 122, 198, 0.12); padding: 3px; flex-shrink: 0;
         }
         @media (min-width: 768px) {
-          .domus-profile-pill img { width: 32px; height: 32px; padding: 4px; }
+          .domus-profile-pill img { width: 34px; height: 34px; padding: 4px; }
         }
         .domus-profile-text { display: flex; flex-direction: column; line-height: 1.05; }
         .domus-profile-text strong { font-size: 11px; font-weight: 800; color: #202020; white-space: nowrap; }
@@ -947,14 +1010,14 @@ export default function DomusApp() {
           z-index: 95;
           display: flex; align-items: center; justify-content: space-around;
           padding: 8px 6px;
-          background: rgba(255, 255, 255, 0.78);
+          background: rgba(255, 255, 255, 0.82);
           backdrop-filter: blur(28px) saturate(190%);
           -webkit-backdrop-filter: blur(28px) saturate(190%);
           border: 1.5px solid rgba(255, 255, 255, 0.95);
           border-radius: 26px;
           box-shadow: 0 14px 36px rgba(32, 32, 48, 0.16);
         }
-        @media (min-width: 1100px) {
+        @media (min-width: 1150px) {
           .domus-mobile-bottom-nav { display: none; }
         }
         .domus-mobile-nav-item {
@@ -990,39 +1053,78 @@ export default function DomusApp() {
           padding: 20px 16px 110px;
         }
         @media (min-width: 768px) {
-          .domus-main { padding: 28px 24px 60px; }
+          .domus-main { padding: 28px 28px 60px; }
         }
 
-        /* HERO GREETING BAR */
+        /* HERO GREETING BAR + 4 PÍLDORAS DE TAMAÑO IDÉNTICO */
         .domus-hero-bar {
-          display: flex; flex-direction: column; justify-content: space-between; gap: 20px;
-          margin-bottom: 36px; padding: 22px 20px;
+          position: relative; overflow: hidden;
+          display: flex; flex-direction: column; justify-content: space-between; gap: 24px;
+          margin-bottom: 38px; padding: 24px 20px;
           border-radius: 32px;
-          background: rgba(255, 255, 255, 0.48);
+          background: rgba(255, 255, 255, 0.52);
           backdrop-filter: blur(28px) saturate(180%);
           -webkit-backdrop-filter: blur(28px) saturate(180%);
-          border: 1px solid rgba(255, 255, 255, 0.88);
+          border: 1.5px solid rgba(255, 255, 255, 0.9);
           box-shadow: 0 16px 40px rgba(32, 32, 32, 0.05);
           transition: all 0.3s ease;
           scroll-margin-top: 90px;
         }
         @media (min-width: 768px) {
-          .domus-hero-bar { padding: 26px 32px; }
+          .domus-hero-bar { padding: 30px 34px; }
         }
-        @media (min-width: 1024px) {
+        @media (min-width: 1100px) {
           .domus-hero-bar { flex-direction: row; align-items: center; }
         }
         .domus-hero-bar:hover {
-          background: rgba(255, 255, 255, 0.62);
+          background: rgba(255, 255, 255, 0.65);
           box-shadow: 0 20px 50px rgba(94, 122, 198, 0.15);
         }
+        /* Marca de agua sutil con el isotipo standalone en la tarjeta Hero */
+        .domus-hero-watermark {
+          position: absolute; right: 32%; bottom: -45px;
+          width: 220px; height: 220px; object-fit: contain;
+          opacity: 0.055; pointer-events: none;
+          transform: rotate(-10deg);
+          transition: transform 0.6s ease, opacity 0.6s ease;
+        }
+        .domus-hero-bar:hover .domus-hero-watermark {
+          transform: rotate(0deg) scale(1.06); opacity: 0.09;
+        }
+
+        .domus-hero-greeting {
+          position: relative; z-index: 2;
+          display: flex; flex-direction: column; gap: 12px;
+        }
+        .domus-hero-crest-row {
+          display: flex; align-items: center; gap: 12px;
+        }
+        .domus-crest-medallion {
+          width: 44px; height: 44px; border-radius: 14px;
+          background: rgba(255, 255, 255, 0.9);
+          border: 1px solid rgba(94, 122, 198, 0.25);
+          box-shadow: 0 6px 18px rgba(94, 122, 198, 0.18);
+          display: flex; align-items: center; justify-content: center;
+          flex-shrink: 0;
+          transition: transform 0.3s ease;
+        }
+        .domus-hero-bar:hover .domus-crest-medallion {
+          transform: rotate(-6deg) scale(1.06);
+        }
+        .domus-crest-medallion img {
+          width: 28px; height: 28px; object-fit: contain;
+        }
         .domus-eyebrow {
-          display: inline-flex; align-items: center; gap: 8px;
-          font-size: 10.5px; font-weight: 900; letter-spacing: 0.12em; color: #5E7AC6;
-          margin-bottom: 6px;
+          display: flex; flex-direction: column; gap: 2px;
+        }
+        .domus-eyebrow span {
+          font-size: 10.5px; font-weight: 900; letter-spacing: 0.13em; color: #5E7AC6;
+        }
+        .domus-eyebrow small {
+          font-size: 9.5px; font-weight: 800; letter-spacing: 0.1em; color: #808080;
         }
         .domus-main-title {
-          font-size: clamp(28px, 4vw, 46px); font-weight: 900; letter-spacing: -0.04em;
+          font-size: clamp(28px, 3.8vw, 46px); font-weight: 900; letter-spacing: -0.04em;
           margin: 0; color: #202020; line-height: 1.05;
           transition: color 0.25s ease, transform 0.25s ease;
           cursor: default;
@@ -1031,53 +1133,92 @@ export default function DomusApp() {
           color: #5E7AC6; transform: translateX(4px);
         }
 
-        .domus-hero-pills {
-          display: flex; flex-wrap: wrap; gap: 12px;
+        /* CUADRÍCULA 2x2 DE 4 PÍLDORAS DE IDÉNTICO TAMAÑO */
+        .domus-hero-pills-grid {
+          position: relative; z-index: 2;
+          display: grid;
+          grid-template-columns: 1fr;
+          grid-auto-rows: 1fr;
+          gap: 12px;
+          width: 100%;
+        }
+        @media (min-width: 600px) {
+          .domus-hero-pills-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+        @media (min-width: 1100px) {
+          .domus-hero-pills-grid {
+            width: 560px;
+            flex-shrink: 0;
+            grid-template-columns: repeat(2, 1fr);
+          }
         }
         .domus-stat-chip {
           display: flex; align-items: center; gap: 12px;
-          background: rgba(255, 255, 255, 0.72);
-          border: 1px solid rgba(255, 255, 255, 0.95);
-          padding: 12px 18px; border-radius: 20px;
-          cursor: pointer; width: 100%;
+          height: 68px; width: 100%; box-sizing: border-box;
+          background: rgba(255, 255, 255, 0.78);
+          border: 1px solid rgba(255, 255, 255, 0.96);
+          padding: 12px 16px; border-radius: 20px;
+          cursor: pointer;
           transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
           box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
-        }
-        @media (min-width: 640px) {
-          .domus-stat-chip { width: auto; }
         }
         .domus-stat-chip:hover {
           transform: translateY(-4px) scale(1.02);
           background: #fff;
           box-shadow: 0 14px 28px rgba(94, 122, 198, 0.22);
         }
-        .domus-stat-chip:active { transform: scale(0.96); }
-        .domus-stat-chip div { display: flex; flex-direction: column; }
-        .domus-stat-chip small { font-size: 9px; font-weight: 800; letter-spacing: 0.1em; color: #808080; }
-        .domus-stat-chip strong { font-size: 13px; font-weight: 900; color: #202020; }
+        .domus-stat-chip:active { transform: scale(0.97); }
+        .domus-chip-icon {
+          width: 38px; height: 38px; border-radius: 12px;
+          display: flex; align-items: center; justify-content: center;
+          flex-shrink: 0;
+        }
+        .domus-chip-text {
+          display: flex; flex-direction: column; min-width: 0;
+        }
+        .domus-chip-text small {
+          font-size: 9px; font-weight: 800; letter-spacing: 0.09em; color: #808080;
+          white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .domus-chip-text strong {
+          font-size: 12.5px; font-weight: 900; color: #202020;
+          white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
 
-        /* BLOQUES DE SECCIÓN */
+        /* BLOQUES DE SECCIÓN CON MEDALLÓN DOMUS */
         .domus-block { margin-bottom: 44px; scroll-margin-top: 90px; }
         .domus-block-header {
-          display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between;
+          display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
           gap: 12px; margin-bottom: 20px; padding: 0 4px;
+        }
+        .domus-section-head-left {
+          display: flex; align-items: center; gap: 12px;
+        }
+        .domus-section-logo-badge {
+          width: 36px; height: 36px; border-radius: 12px;
+          background: rgba(255, 255, 255, 0.85);
+          border: 1px solid #fff;
+          box-shadow: 0 4px 14px rgba(94, 122, 198, 0.16);
+          display: flex; align-items: center; justify-content: center;
+          flex-shrink: 0;
+        }
+        .domus-section-logo-badge img {
+          width: 22px; height: 22px; object-fit: contain;
         }
         .domus-block-title {
           font-size: 15px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.12em;
-          color: #202020; margin: 0; display: flex; align-items: center; gap: 10px;
+          color: #202020; margin: 0;
           cursor: pointer; transition: transform 0.25s ease, color 0.25s ease;
         }
-        .domus-block-title:hover { transform: translateX(6px); color: #5E7AC6; }
-        .domus-dot-indicator {
-          width: 10px; height: 10px; border-radius: 50%;
-          box-shadow: 0 0 12px currentColor; flex-shrink: 0;
-        }
+        .domus-block-title:hover { transform: translateX(4px); color: #5E7AC6; }
         .domus-block-sub {
-          font-size: 12px; font-weight: 600; color: #666; margin: 4px 0 0 20px;
+          font-size: 12px; font-weight: 600; color: #666; margin: 2px 0 0 0;
         }
         .domus-live-badge {
           display: inline-flex; align-items: center; gap: 8px;
-          background: rgba(255, 255, 255, 0.7); border: 1px solid #fff;
+          background: rgba(255, 255, 255, 0.75); border: 1px solid #fff;
           padding: 6px 14px; border-radius: 99px;
           font-size: 10px; font-weight: 900; letter-spacing: 0.1em; color: #5E7AC6;
         }
@@ -1124,7 +1265,7 @@ export default function DomusApp() {
           border: 1.5px solid rgba(255, 255, 255, 0.85);
           box-shadow: 0 14px 34px rgba(20, 20, 30, 0.12);
           display: flex; flex-direction: column; justify-content: space-between;
-          padding: 20px;
+          padding: 20px; box-sizing: border-box;
         }
         .domus-dept-bg {
           position: absolute; inset: 0; background-size: cover; background-position: center;
@@ -1157,9 +1298,28 @@ export default function DomusApp() {
           color: #202020; box-shadow: 0 4px 12px rgba(0,0,0,0.12);
         }
         .domus-dept-tag i { width: 8px; height: 8px; border-radius: 50%; }
-        .domus-dept-abbr {
-          font-size: 32px; font-weight: 900; color: rgba(255, 255, 255, 0.28);
-          letter-spacing: -0.05em; line-height: 1;
+
+        /* Sello oficial en esquina superior derecha de cada tarjeta */
+        .domus-dept-seal {
+          display: flex; align-items: center; gap: 5px;
+          background: rgba(255, 255, 255, 0.22);
+          backdrop-filter: blur(12px);
+          border: 1px solid rgba(255, 255, 255, 0.45);
+          padding: 4px 9px 4px 5px; border-radius: 99px;
+          transition: all 0.3s ease;
+        }
+        .domus-dept-wrapper:hover .domus-dept-seal {
+          background: rgba(255, 255, 255, 0.92);
+          transform: scale(1.08);
+        }
+        .domus-dept-seal img {
+          width: 18px; height: 18px; object-fit: contain;
+        }
+        .domus-dept-seal span {
+          font-size: 10px; font-weight: 900; color: #fff;
+        }
+        .domus-dept-wrapper:hover .domus-dept-seal span {
+          color: #202020;
         }
 
         .domus-dept-bottom {
@@ -1276,6 +1436,16 @@ export default function DomusApp() {
         }
         .domus-cascade-btn:hover .domus-cascade-sub { color: rgba(255, 255, 255, 0.88); }
 
+        .domus-cascade-end {
+          display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+        }
+        .domus-cascade-mini-logo {
+          width: 18px; height: 18px; object-fit: contain; opacity: 0.35;
+          transition: all 0.25s ease;
+        }
+        .domus-cascade-btn:hover .domus-cascade-mini-logo {
+          opacity: 1; filter: brightness(2.5); transform: rotate(12deg);
+        }
         .domus-cascade-arrow {
           color: #808080; flex-shrink: 0;
           transition: transform 0.25s ease, color 0.25s ease;
@@ -1293,6 +1463,7 @@ export default function DomusApp() {
         }
 
         .domus-glass-panel {
+          position: relative; overflow: hidden;
           background: rgba(255, 255, 255, 0.52);
           backdrop-filter: blur(28px) saturate(180%);
           -webkit-backdrop-filter: blur(28px) saturate(180%);
@@ -1316,6 +1487,27 @@ export default function DomusApp() {
           background: linear-gradient(145deg, #5E7AC6 0%, #445CA0 100%);
           box-shadow: 0 26px 55px rgba(94, 122, 198, 0.45);
         }
+        .domus-accent-panel-watermark {
+          position: absolute; right: -25px; bottom: -25px;
+          width: 190px; height: 190px; object-fit: contain;
+          opacity: 0.12; filter: brightness(2.2); pointer-events: none;
+          transition: transform 0.6s ease;
+        }
+        .domus-panel-accent:hover .domus-accent-panel-watermark {
+          transform: scale(1.1) rotate(8deg);
+        }
+        .domus-accent-head-title {
+          display: flex; align-items: center; gap: 10px;
+        }
+        .domus-accent-mini-crest {
+          width: 38px; height: 38px; border-radius: 12px;
+          background: rgba(255, 255, 255, 0.92);
+          display: flex; align-items: center; justify-content: center;
+          flex-shrink: 0;
+        }
+        .domus-accent-mini-crest img {
+          width: 24px; height: 24px; object-fit: contain;
+        }
 
         .domus-panel-head {
           display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
@@ -1336,12 +1528,12 @@ export default function DomusApp() {
           background: rgba(238, 107, 95, 0.15); color: #EE6B5F;
         }
 
-        /* DONA SVG CON ESPACIO SEPARADO */
+        /* DONA SVG CON NÚCLEO DOMUS */
         .domus-donut-layout {
           display: flex; flex-direction: column; align-items: center; gap: 20px;
         }
         .domus-svg-donut-wrap {
-          position: relative; width: 170px; height: 170px; flex-shrink: 0;
+          position: relative; width: 176px; height: 176px; flex-shrink: 0;
         }
         .domus-svg-donut {
           width: 100%; height: 100%; transform: rotate(-90deg); overflow: visible;
@@ -1354,12 +1546,15 @@ export default function DomusApp() {
           display: flex; flex-direction: column; align-items: center; justify-content: center;
           pointer-events: none;
         }
+        .domus-donut-logo {
+          width: 22px; height: 22px; object-fit: contain; margin-bottom: 2px;
+        }
         .domus-donut-center strong {
-          font-size: 28px; font-weight: 900; color: #202020; line-height: 1;
+          font-size: 26px; font-weight: 900; color: #202020; line-height: 1;
         }
         .domus-donut-center span {
-          font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em;
-          color: #5E7AC6; margin-top: 4px;
+          font-size: 9.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em;
+          color: #5E7AC6; margin-top: 3px;
         }
 
         .domus-stock-legend {
@@ -1507,8 +1702,8 @@ export default function DomusApp() {
           backdrop-filter: blur(20px);
           padding: 20px 24px 96px;
         }
-        @media (min-width: 1100px) {
-          .domus-footer { padding: 20px 24px; }
+        @media (min-width: 1150px) {
+          .domus-footer { padding: 20px 28px; }
         }
         .domus-footer-inner {
           max-width: 1540px; margin: 0 auto;
