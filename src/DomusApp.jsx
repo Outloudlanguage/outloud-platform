@@ -3,6 +3,7 @@ import InventoryModal from './InventoryModal';
 import StaffModal from './StaffModal';
 import NursingModal from './NursingModal';
 import HospitalityModal from './HospitalityModal';
+import SecurityModal from './SecurityModal';
 import {
   Clock, Calendar, Bell, ClipboardCheck, Coffee, ShoppingBag,
   Wrench, CarFront, FileSignature, AlertCircle, CheckCircle2,
@@ -181,6 +182,7 @@ export default function DomusApp() {
   const [staffModalTab, setStaffModalTab] = useState(null);
   const [nursingModalTab, setNursingModalTab] = useState(null);
   const [hospitalityModalTab, setHospitalityModalTab] = useState(null);
+  const [securityModalCategory, setSecurityModalCategory] = useState(null);
   const [completedMeds, setCompletedMeds] = useState([true, false, false]);
   const [resolvedAlerts, setResolvedAlerts] = useState([false, false, false]);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -606,6 +608,8 @@ export default function DomusApp() {
                     setInventoryModalTab('STOCK');
                   } else if (item.id === 'personal') {
                     setStaffModalTab('DIRECTORIO');
+                  } else if (item.id === 'seguridad') {
+                    setSecurityModalCategory('Accesos');
                   } else if (item.id === 'hospitalidad') {
                     setHospitalityModalTab('DIRECTORIO');
                   } else if (item.id === 'cuidados') {
@@ -667,14 +671,14 @@ export default function DomusApp() {
               subtext="Combustible y mantenimiento"
               icon={CarFront}
               accent="#EE6B5F"
-              onClick={() => setSelectedModal({ title: "Estado de Vehículos (Sin Rutas)", subtitle: "Mantenimiento de Flota", description: "Control exclusivo de kilometraje para cambio de aceite, batería, cauchos y combustible, respetando los protocolos de seguridad.", details: ["Toyota Land Cruiser: Tanque lleno (100%) · Próximo servicio en 1,800 km", "Camioneta de Apoyo: Presión de neumáticos verificada hoy", "Sin solicitudes de repuestos pendientes"] })}
+              onClick={() => setSecurityModalCategory('Flota')}
             />
             <CascadeButton
               text="AVISAR A GARITA"
               subtext="Autorizar técnicos o visitas"
               icon={FileSignature}
               accent="#5E7AC6"
-              onClick={() => setSelectedModal(departments[2])}
+              onClick={() => setSecurityModalCategory('Accesos')}
             />
           </div>
         </section>
@@ -942,6 +946,12 @@ export default function DomusApp() {
         isOpen={Boolean(hospitalityModalTab)}
         initialTab={hospitalityModalTab || 'DIRECTORIO'}
         onClose={() => setHospitalityModalTab(null)}
+      />
+
+      <SecurityModal
+        isOpen={Boolean(securityModalCategory)}
+        initialCategory={securityModalCategory || 'Accesos'}
+        onClose={() => setSecurityModalCategory(null)}
       />
 
       {/* ==========================================
