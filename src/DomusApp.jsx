@@ -4,6 +4,7 @@ import StaffModal from './StaffModal';
 import NursingModal from './NursingModal';
 import HospitalityModal from './HospitalityModal';
 import SecurityModal from './SecurityModal';
+import MaintenanceModal from './MaintenanceModal';
 import {
   Clock, Calendar, Bell, ClipboardCheck, Coffee, ShoppingBag,
   Wrench, CarFront, FileSignature, AlertCircle, CheckCircle2,
@@ -183,6 +184,7 @@ export default function DomusApp() {
   const [nursingModalTab, setNursingModalTab] = useState(null);
   const [hospitalityModalTab, setHospitalityModalTab] = useState(null);
   const [securityModalCategory, setSecurityModalCategory] = useState(null);
+  const [maintenanceModalCategory, setMaintenanceModalCategory] = useState(null);
   const [completedMeds, setCompletedMeds] = useState([true, false, false]);
   const [resolvedAlerts, setResolvedAlerts] = useState([false, false, false]);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -559,7 +561,7 @@ export default function DomusApp() {
               </div>
             </div>
 
-            <div className="domus-stat-chip" onClick={() => setSelectedModal(departments[4])}>
+            <div className="domus-stat-chip" onClick={() => setMaintenanceModalCategory('Energía')}>
               <div className="domus-chip-icon" style={{ background: 'rgba(16,185,129,0.14)' }}>
                 <ShieldCheck size={18} color="#10B981" />
               </div>
@@ -612,6 +614,8 @@ export default function DomusApp() {
                     setSecurityModalCategory('Accesos');
                   } else if (item.id === 'hospitalidad') {
                     setHospitalityModalTab('DIRECTORIO');
+                  } else if (item.id === 'mantenimiento') {
+                    setMaintenanceModalCategory('Energía');
                   } else if (item.id === 'cuidados') {
                     setNursingModalTab('SIGNOS');
                   } else {
@@ -952,6 +956,12 @@ export default function DomusApp() {
         isOpen={Boolean(securityModalCategory)}
         initialCategory={securityModalCategory || 'Accesos'}
         onClose={() => setSecurityModalCategory(null)}
+      />
+
+      <MaintenanceModal
+        isOpen={Boolean(maintenanceModalCategory)}
+        initialCategory={maintenanceModalCategory || 'Energía'}
+        onClose={() => setMaintenanceModalCategory(null)}
       />
 
       {/* ==========================================
