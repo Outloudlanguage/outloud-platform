@@ -2,28 +2,100 @@ import React, { useState, useMemo } from 'react';
 import {
   X, Sparkles, Users, Coffee, ShieldCheck, Bed, Calendar,
   CheckCircle2, Plus, Search, CarFront, Thermometer, Heart,
-  Clock, Check, Bell, Utensils, Wine, Key, Sun
+  Clock, Check, Bell, Utensils, RotateCw, Send, Layers, Minus
 } from 'lucide-react';
 
 const STANDALONE_LOGO_URL = "https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Domus/DOMUS.png";
 
+// ==========================================
+// 1. CATEGORÍAS EN CASCADA (NIVEL 1 Y NIVEL 2)
+// ==========================================
+const HOSPITALITY_CATEGORIES = [
+  {
+    id: 'Familia',
+    title: 'Familia Directa',
+    subtitle: 'Hijos, Nietos y Residencia',
+    accent: '#5E7AC6',
+    type: 'GUESTS',
+    img: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&q=80&w=700',
+    subfilters: [
+      { id: 'TODOS', name: 'Toda la Familia', icon: '👨‍👩‍👧‍👦' },
+      { id: 'EN_CASA', name: 'En Casa Hoy (VIP Activo)', icon: '🟢' },
+      { id: 'PROXIMA', name: 'Próximas Llegadas', icon: '📅' },
+      { id: 'ALERGIAS', name: 'Cuidado Dietético', icon: '🥗' }
+    ]
+  },
+  {
+    id: 'Invitado VIP',
+    title: 'Invitados & Médicos VIP',
+    subtitle: 'Visitas de Honor y Especialistas',
+    accent: '#BE7AC6',
+    type: 'GUESTS',
+    img: 'https://images.unsplash.com/photo-1577495508048-b635879837f1?auto=format&fit=crop&q=80&w=700',
+    subfilters: [
+      { id: 'TODOS', name: 'Todos los Invitados', icon: '🎩' },
+      { id: 'MEDICOS', name: 'Médicos Tratantes', icon: '🩺' },
+      { id: 'SOCIAL', name: 'Amigos de la Casa', icon: '🥂' },
+      { id: 'EN_CASA', name: 'Protocolo Activo', icon: '✨' }
+    ]
+  },
+  {
+    id: 'Suites',
+    title: 'Suites & Lencería',
+    subtitle: 'Habitaciones, Clima y Áreas',
+    accent: '#10B981',
+    type: 'SUITES',
+    img: 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&q=80&w=700',
+    subfilters: [
+      { id: 'TODAS', name: 'Todas las Suites (5)', icon: '🛏️' },
+      { id: 'LISTA', name: 'Impecables / Listas', icon: '✅' },
+      { id: 'OCUPADA_VIP', name: 'En Uso / Ocupadas', icon: '🔑' },
+      { id: 'SOCIALES', name: 'Salones y Terrazas', icon: '🌿' }
+    ]
+  }
+];
+
+const AMENITY_OPTIONS = [
+  'Flores Frescas',
+  'Agua con Gas',
+  'Prensa del Día',
+  'Aroma Lavanda',
+  'Cobertura 7PM',
+  'Toallas Térmicas'
+];
+
+const SUITE_CHECK_OPTIONS = [
+  'Clima Activo',
+  'Egipcia 600H',
+  'Flores Tocador',
+  'Agua en Noche',
+  'Baño Sanitizado',
+  'Cobertura 7PM'
+];
+
+// ==========================================
+// 2. BIBLIOTECA DE HUÉSPEDES VIP (CON FOTOS Y PREFERENCIAS EDITABLES)
+// ==========================================
 const INITIAL_VIP_GUESTS = [
   {
     id: 'vip-1',
     name: 'Sr. Álvaro Jiménez',
     relation: 'Hijo · Familia Directa',
     category: 'Familia',
+    subGroup: 'EN_CASA',
+    hasAllergy: true,
     avatar: 'AJ',
     color: '#5E7AC6',
+    photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=600',
     status: 'EN_CASA',
-    lastVisit: 'Hoy · Almuerzo y Tarde',
+    lastVisit: 'Hoy · En Residencia',
     suite: 'Suite Terraza Norte',
-    temp: '21°C',
-    pillow: 'Firme Ortopédica + Lencería Egipcia Blanca',
-    dietary: 'Sin lácteos enteros · Prefiere carnes término medio y pescado a la plancha',
-    beverage: 'Espresso doble sin azúcar al llegar · Agua mineral con gas bien fría',
-    vehicle: 'Toyota 4Runner Plata · Placa AA892KL (Pase Permanente Garita)',
-    specialNotes: 'Dejar prensa del día y cargador USB-C en mesa de noche derecha.',
+    temp: 21,
+    pillow: 'Firme Ortopédica · Algodón Egipcio',
+    dietary: 'Sin lácteos enteros · Carnes término medio y mero a la plancha',
+    beverage: 'Espresso doble sin azúcar al llegar · Agua con gas fría',
+    vehicle: 'Toyota 4Runner Plata · Placa AA892KL',
+    amenities: ['Agua con Gas', 'Prensa del Día', 'Cobertura 7PM'],
     protocolActive: true
   },
   {
@@ -31,53 +103,62 @@ const INITIAL_VIP_GUESTS = [
     name: 'Sra. Carolina Jiménez',
     relation: 'Hija · Familia Directa',
     category: 'Familia',
+    subGroup: 'PROXIMA',
+    hasAllergy: true,
     avatar: 'CJ',
     color: '#BE7AC6',
+    photo: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=600',
     status: 'PROXIMA_VISITA',
     lastVisit: 'Mañana · 12:30 PM',
     suite: 'Suite Huéspedes Jardín',
-    temp: '23°C',
-    pillow: 'Pluma de Ganso Suave · Edredón hipoalergénico ligero',
-    dietary: 'Vegetariana flexible (Consume pescado blanco) · Alergia estricta a mariscos',
-    beverage: 'Infusión de flor de jamaica o té verde tibio con rodaja de jengibre',
-    vehicle: 'Mercedes-Benz GLC Blanco · Placa AB104MM (Pase Permanente)',
-    specialNotes: 'Colocar orquídeas frescas en el tocador y jabón neutro artesanal.',
+    temp: 23,
+    pillow: 'Pluma de Ganso Suave · Edredón Ligero',
+    dietary: 'ALERTA: Alergia estricta a mariscos · Dieta pescetariana suave',
+    beverage: 'Infusión de flor de jamaica o té verde tibio con jengibre',
+    vehicle: 'Mercedes-Benz GLC Blanco · Placa AB104MM',
+    amenities: ['Flores Frescas', 'Aroma Lavanda', 'Toallas Térmicas'],
     protocolActive: false
   },
   {
     id: 'vip-3',
     name: 'Andrés y Sofía Jiménez',
-    relation: 'Nietos · Visita Fin de Semana',
+    relation: 'Nietos · Fin de Semana',
     category: 'Familia',
+    subGroup: 'PROXIMA',
+    hasAllergy: false,
     avatar: 'AS',
     color: '#EE6B5F',
+    photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=600',
     status: 'REGISTRADO',
-    lastVisit: 'Sábado Pasado',
+    lastVisit: 'Viernes · 04:00 PM',
     suite: 'Suite Doble Estudio',
-    temp: '22°C',
-    pillow: 'Estándar Suave · Mantas adicionales de algodón',
-    dietary: 'Menú joven: Pastas artesanales, milanesa de pollo orgánica, frutas picadas',
-    beverage: 'Jugo natural de parchita o fresa sin azúcar refinada · Merienda 4:00 PM',
-    vehicle: 'Autorizados con Chófer de la Familia o ingreso directo por garita',
-    specialNotes: 'Tener lista el área de piscina climatizada y toallas extras en terraza.',
+    temp: 22,
+    pillow: 'Estándar Hipoalergénica · Mantas Extra',
+    dietary: 'Menú joven: Pastas artesanales, milanesa de pollo orgánica y frutas',
+    beverage: 'Jugo natural de parchita o fresa sin azúcar · Merienda 4:30 PM',
+    vehicle: 'Ingreso con Chófer Familiar (Pase Directo)',
+    amenities: ['Toallas Térmicas', 'Agua con Gas'],
     protocolActive: false
   },
   {
     id: 'vip-4',
     name: 'Dr. Alejandro Vegas',
-    relation: 'Médico de Cabecera & Amigo de la Casa',
+    relation: 'Cardiólogo de Cabecera & Amigo',
     category: 'Invitado VIP',
+    subGroup: 'MEDICOS',
+    hasAllergy: false,
     avatar: 'AV',
     color: '#10B981',
+    photo: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=600',
     status: 'REGISTRADO',
-    lastVisit: 'Jueves Pasado',
-    suite: 'Salón Biblioteca & Estudio Principal',
-    temp: '22°C',
-    pillow: 'Uso Diurno · Recepción Ejecutiva',
-    dietary: 'Bajo en sodio · Acompaña al Dr. Gustavo en almuerzos ligeros de pescado',
-    beverage: 'Café negro recién molido en taza de porcelana al pasar a biblioteca',
-    vehicle: 'Ford Explorer Negra · Placa AD441OP (Acceso Prioritario Médicos)',
-    specialNotes: 'Tener listo el reporte impreso de signos vitales del Dr. Jiménez al recibirlo.',
+    lastVisit: 'Jueves · Visita Médica',
+    suite: 'Salón Biblioteca & Estudio',
+    temp: 22,
+    pillow: 'Recepción Ejecutiva en Estudio',
+    dietary: 'Bajo en sodio · Acompaña al Dr. Gustavo en almuerzos de pescado blanco',
+    beverage: 'Café negro recién molido en porcelana al pasar a biblioteca',
+    vehicle: 'Ford Explorer Negra · Placa AD441OP (Prioridad Médica)',
+    amenities: ['Prensa del Día', 'Agua con Gas'],
     protocolActive: false
   },
   {
@@ -85,209 +166,360 @@ const INITIAL_VIP_GUESTS = [
     name: 'Sr. Henrique Mendoza & Sra.',
     relation: 'Amigos Íntimos de la Familia',
     category: 'Invitado VIP',
+    subGroup: 'SOCIAL',
+    hasAllergy: true,
     avatar: 'HM',
     color: '#5E7AC6',
+    photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=600',
     status: 'REGISTRADO',
-    lastVisit: 'Hace 2 semanas',
-    suite: 'Comedor Principal & Terraza Sur',
-    temp: '22°C',
-    pillow: 'Recepción Social',
-    dietary: 'Intolerancia al gluten (Sra. Mendoza) · Preferencia por lomito y ensaladas verdes',
-    beverage: 'Vino tinto Reserva a 16°C y agua mineral en cristal',
-    vehicle: 'Conducido por escolta / chófer (Notificar a Sup. Marcos en Garita)',
-    specialNotes: 'Habilitar música instrumental suave en terraza y mesa con mantelería de lino.',
+    lastVisit: 'Domingo · Almuerzo Terraza',
+    suite: 'Salón Comedor & Terraza VIP',
+    temp: 22,
+    pillow: 'Recepción Social en Terraza',
+    dietary: 'Sra. Mendoza: Intolerancia al gluten (Celíaca) · Lomito y ensaladas',
+    beverage: 'Vino Tinto Reserva a 16°C y agua mineral en copa de cristal',
+    vehicle: 'Escoltas y Chófer (Avisar a Sup. Marcos en Garita)',
+    amenities: ['Flores Frescas', 'Agua con Gas', 'Aroma Lavanda'],
+    protocolActive: false
+  },
+  {
+    id: 'vip-6',
+    name: 'Dra. Beatriz Urdaneta',
+    relation: 'Fisioterapeuta y Rehabilitación',
+    category: 'Invitado VIP',
+    subGroup: 'MEDICOS',
+    hasAllergy: false,
+    avatar: 'BU',
+    color: '#10B981',
+    photo: 'https://images.unsplash.com/photo-1594824476967-48c8b964273f?auto=format&fit=crop&q=80&w=600',
+    status: 'REGISTRADO',
+    lastVisit: 'Lun / Mié / Vie · 10:00 AM',
+    suite: 'Terraza & Gimnasio Suave',
+    temp: 23,
+    pillow: 'Toallas de Terapia y Camilla Lista',
+    dietary: 'No almuerza en casa · Merienda ligera de frutas',
+    beverage: 'Té verde frío o agua mineral natural al finalizar sesión',
+    vehicle: 'Toyota Corolla Gris · Placa AE901BC',
+    amenities: ['Toallas Térmicas', 'Agua con Gas'],
     protocolActive: false
   }
 ];
 
+// ==========================================
+// 3. SUITES Y HABITACIONES (TARJETAS 3D INTERACTIVAS)
+// ==========================================
 const INITIAL_SUITES = [
   {
     id: 'su-1',
-    name: 'Suite Huéspedes Jardín',
-    zone: 'Ala Este · Planta Baja',
-    temp: '23°C',
-    status: 'LISTA',
-    assignedTo: 'Reservada: Sra. Carolina Jiménez',
-    linen: 'Algodón Egipcio 600 Hilos · Lavanda Suave',
+    name: 'Suite Terraza Norte',
+    zone: 'Planta Alta · Vista Ávila',
+    subType: 'OCUPADA_VIP',
+    temp: 21,
+    status: 'OCUPADA_VIP',
+    assignedTo: 'Sr. Álvaro Jiménez',
+    linen: 'Algodón Egipcio 600 Hilos · Almohada Firme',
     housekeeper: 'Elena Castillo',
-    checklist: ['Climatización a 23°C', 'Flores frescas en consola', 'Agua mineral en mesa de noche', 'Toallas térmicas listas']
+    scent: 'Cedro Blanco y Bergamota',
+    img: 'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&q=80&w=600',
+    checks: ['Clima Activo', 'Egipcia 600H', 'Agua en Noche', 'Baño Sanitizado', 'Cobertura 7PM']
   },
   {
     id: 'su-2',
-    name: 'Suite Terraza Norte',
-    zone: 'Planta Alta · Vista Ávila',
-    temp: '21°C',
-    status: 'OCUPADA_VIP',
-    assignedTo: 'En uso: Sr. Álvaro Jiménez',
-    linen: 'Lino Fresco Hipoalergénico · Almohada Firme',
+    name: 'Suite Huéspedes Jardín',
+    zone: 'Ala Este · Planta Baja',
+    subType: 'LISTA',
+    temp: 23,
+    status: 'LISTA',
+    assignedTo: 'Reservada: Sra. Carolina Jiménez',
+    linen: 'Lino Hipolergénico · Pluma Suave',
     housekeeper: 'Elena Castillo',
-    checklist: ['Climatización activa 21°C', 'Café espresso servido', 'Prensa y cargador listos', 'Cobertura nocturna 7:00 PM']
+    scent: 'Lavanda Francesa Suave',
+    img: 'https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&q=80&w=600',
+    checks: ['Clima Activo', 'Egipcia 600H', 'Flores Tocador', 'Agua en Noche', 'Baño Sanitizado']
   },
   {
     id: 'su-3',
     name: 'Suite Doble Estudio',
-    zone: 'Ala Oeste · Jardín',
-    temp: '22°C',
+    zone: 'Ala Oeste · Jardín Sur',
+    subType: 'LISTA',
+    temp: 22,
     status: 'LISTA',
-    assignedTo: 'Disponible · Nietos / Familia',
-    linen: 'Percal Blanco Suave · Doble Cama Queen',
+    assignedTo: 'Disponible: Nietos / Familia',
+    linen: 'Percal Blanco Suave · Doble Queen',
     housekeeper: 'Rosaura Díaz',
-    checklist: ['Ventilación natural', 'Toallas de piscina listas', 'Mini-bar con jugos naturales', 'Lencería impecable']
+    scent: 'Verbena y Limón Fresco',
+    img: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&q=80&w=600',
+    checks: ['Egipcia 600H', 'Agua en Noche', 'Baño Sanitizado']
   },
   {
     id: 'su-4',
     name: 'Salón Comedor & Terraza VIP',
     zone: 'Área Social Principal',
-    temp: '22°C',
+    subType: 'SOCIALES',
+    temp: 22,
     status: 'LISTA',
-    assignedTo: 'Listo para Almuerzo Familiar (4 puestos)',
+    assignedTo: 'Montaje Imperial (Hasta 10 puestos)',
     linen: 'Mantelería Lino Crudo · Vajilla Principal',
     housekeeper: 'María Fernanda Rojas',
-    checklist: ['Mesa montada para 4 comensales', 'Cristalería pulida', 'Climatización central encendida', 'Menú coordinado con Chef']
+    scent: 'Brisa Natural de Jardín',
+    img: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=600',
+    checks: ['Clima Activo', 'Flores Tocador', 'Agua en Noche']
+  },
+  {
+    id: 'su-5',
+    name: 'Salón Biblioteca & Estudio',
+    zone: 'Ala Norte · Privado',
+    subType: 'SOCIALES',
+    temp: 22,
+    status: 'LISTA',
+    assignedTo: 'Reuniones Médicas y Lectura',
+    linen: 'Poltronas de Cuero Hidratadas · Servicio Café',
+    housekeeper: 'Rosaura Díaz',
+    scent: 'Sándalo y Madera Suave',
+    img: 'https://images.unsplash.com/photo-1507842229356-51c61504d3ab?auto=format&fit=crop&q=80&w=600',
+    checks: ['Clima Activo', 'Agua en Noche', 'Baño Sanitizado']
   }
 ];
 
-const INITIAL_VISITS = [
+const INITIAL_DISPATCH_LOGS = [
   {
-    id: 'vis-1',
-    guestName: 'Sr. Álvaro Jiménez',
-    date: 'HOY · EN CURSO',
-    type: 'Almuerzo y Tarde de Trabajo',
+    id: 'dl-1',
+    guest: 'Sr. Álvaro Jiménez',
+    eta: 'En Casa Ahora',
     pax: '1 Persona',
-    areasNotified: ['Cocina: Espresso y Lomito', 'Garita: Ingreso Directo', 'Suite Norte: 21°C'],
-    confirmed: true
+    orders: 'Cocina: Espresso doble sin azúcar · Suite Norte: 21°C · Garita: Pase activo',
+    time: '11:30 AM',
+    color: '#10B981'
   },
   {
-    id: 'vis-2',
-    guestName: 'Sra. Carolina Jiménez',
-    date: 'MAÑANA · 12:30 PM',
-    type: 'Almuerzo con el Dr. Gustavo y Pernocta',
+    id: 'dl-2',
+    guest: 'Sra. Carolina Jiménez',
+    eta: 'Mañana 12:30 PM',
     pax: '1 Persona',
-    areasNotified: ['Cocina: Menú sin mariscos', 'Hospitalidad: Suite Jardín 23°C', 'Garita: Placa AB104MM'],
-    confirmed: true
-  },
-  {
-    id: 'vis-3',
-    guestName: 'Almuerzo Familiar Dominical (Hijos y Nietos)',
-    date: 'PRÓXIMO DOMINGO · 01:00 PM',
-    type: 'Recepción Familiar en Terraza',
-    pax: '6 Personas',
-    areasNotified: ['Cocina: Menú 3 Tiempos + Infantil', 'Hospitalidad: Mesa Imperial', 'Seguridad: 3 Vehículos'],
-    confirmed: false
+    orders: 'Cocina: Menú libre de mariscos · Suite Jardín: Orquídeas y 23°C',
+    time: '09:15 AM',
+    color: '#5E7AC6'
   }
 ];
 
-export default function HospitalityModal({ isOpen, onClose, initialTab = 'DIRECTORIO' }) {
-  const [activeTab, setActiveTab] = useState(initialTab);
+export default function HospitalityModal({ isOpen, onClose, initialTab = 'EXPLORADOR' }) {
+  const [activeTab, setActiveTab] = useState('EXPLORADOR');
   const [guests, setGuests] = useState(INITIAL_VIP_GUESTS);
   const [suites, setSuites] = useState(INITIAL_SUITES);
-  const [visits, setVisits] = useState(INITIAL_VISITS);
-  const [filterCategory, setFilterCategory] = useState('Todos');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedGuest, setSelectedGuest] = useState(INITIAL_VIP_GUESTS[0]);
-  const [dispatchToast, setDispatchToast] = useState(null);
+  const [dispatchLogs, setDispatchLogs] = useState(INITIAL_DISPATCH_LOGS);
 
-  // Formulario de Nuevo Huésped / Invitado VIP
+  // Estado Progressive Disclosure (Nivel 1 -> Nivel 2 -> Nivel 3)
+  const [selectedCategory, setSelectedCategory] = useState('Familia');
+  const [selectedSubfilter, setSelectedSubfilter] = useState('TODOS');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Estado Giro 3D (Flip Card)
+  const [flippedCardId, setFlippedCardId] = useState(null);
+  const [savedCardToast, setSavedCardToast] = useState(null);
+
+  // Estado del Modal Flotante Despachador VIP (Concierge Dispatch Modal)
+  const [dispatchTarget, setDispatchTarget] = useState(null);
+  const [dispatchEta, setDispatchEta] = useState('En 15 minutos');
+  const [dispatchPax, setDispatchPax] = useState(1);
+  const [notifyKitchen, setNotifyKitchen] = useState(true);
+  const [notifyHousekeeping, setNotifyHousekeeping] = useState(true);
+  const [notifyGate, setNotifyGate] = useState(true);
+
+  // Gaveta para Añadir Nuevo Huésped VIP
+  const [showAddDrawer, setShowAddDrawer] = useState(false);
   const [newName, setNewName] = useState('');
   const [newRelation, setNewRelation] = useState('');
-  const [newCategory, setNewCategory] = useState('Familia');
+  const [newCat, setNewCat] = useState('Familia');
   const [newSuite, setNewSuite] = useState('Suite Huéspedes Jardín');
-  const [newTemp, setNewTemp] = useState('22°C');
-  const [newPillow, setNewPillow] = useState('Almohada Suave + Algodón Egipcio');
   const [newDietary, setNewDietary] = useState('');
   const [newBeverage, setNewBeverage] = useState('');
   const [newVehicle, setNewVehicle] = useState('');
-  const [newNotes, setNewNotes] = useState('');
-  const [savedToast, setSavedToast] = useState(false);
 
-  const filteredGuests = useMemo(() => {
-    return guests.filter((g) => {
-      const matchCat = filterCategory === 'Todos' || g.category === filterCategory;
-      const matchSearch =
-        g.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        g.relation.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        g.dietary.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchCat && matchSearch;
-    });
-  }, [guests, filterCategory, searchQuery]);
+  const activeCategoryObj = useMemo(
+    () => HOSPITALITY_CATEGORIES.find((c) => c.id === selectedCategory) || HOSPITALITY_CATEGORIES[0],
+    [selectedCategory]
+  );
 
-  // Activa el protocolo VIP y notifica automáticamente a Cocina, Garita, Camareras y Mantenimiento
-  const triggerVipProtocol = (guest) => {
-    setGuests((prev) =>
-      prev.map((g) =>
-        g.id === guest.id
-          ? { ...g, protocolActive: !g.protocolActive, status: !g.protocolActive ? 'EN_CASA' : 'REGISTRADO' }
-          : g
-      )
-    );
-    if (selectedGuest?.id === guest.id) {
-      setSelectedGuest((prev) => ({
-        ...prev,
-        protocolActive: !prev.protocolActive,
-        status: !prev.protocolActive ? 'EN_CASA' : 'REGISTRADO'
-      }));
+  const activeGuestsInHouse = useMemo(
+    () => guests.filter((g) => g.protocolActive).length,
+    [guests]
+  );
+
+  const readySuitesCount = useMemo(
+    () => suites.filter((s) => s.status === 'LISTA' || s.status === 'OCUPADA_VIP').length,
+    [suites]
+  );
+
+  // Cambio de Categoría (Nivel 1)
+  const handleSelectCategory = (catId) => {
+    setSelectedCategory(catId);
+    const catObj = HOSPITALITY_CATEGORIES.find((c) => c.id === catId);
+    if (catObj && catObj.subfilters.length > 0) {
+      setSelectedSubfilter(catObj.subfilters[0].id);
     }
-    setDispatchToast(
-      `Protocolo VIP sincronizado para ${guest.name}: Cocina (${guest.beverage.split('·')[0]}), Clima (${guest.temp} en ${guest.suite}) y Garita autorizada.`
-    );
-    setTimeout(() => setDispatchToast(null), 4000);
+    setFlippedCardId(null);
   };
 
-  const cycleSuiteStatus = (suiteId) => {
-    const order = ['LISTA', 'OCUPADA_VIP', 'EN_PREPARACION'];
-    setSuites((prev) =>
-      prev.map((s) => {
-        if (s.id !== suiteId) return s;
-        const next = order[(order.indexOf(s.status) + 1) % order.length];
-        return { ...s, status: next };
+  // Filtrado de Huéspedes (Nivel 3 cuando es Familia o Invitado VIP)
+  const filteredGuests = useMemo(() => {
+    return guests.filter((g) => {
+      if (searchQuery.trim() !== '') {
+        const q = searchQuery.toLowerCase();
+        return (
+          g.name.toLowerCase().includes(q) ||
+          g.relation.toLowerCase().includes(q) ||
+          g.dietary.toLowerCase().includes(q) ||
+          g.suite.toLowerCase().includes(q)
+        );
+      }
+      const matchCat = g.category === selectedCategory;
+      let matchSub = true;
+      if (selectedSubfilter === 'EN_CASA') matchSub = g.protocolActive;
+      else if (selectedSubfilter === 'PROXIMA') matchSub = g.subGroup === 'PROXIMA';
+      else if (selectedSubfilter === 'ALERGIAS') matchSub = g.hasAllergy;
+      else if (selectedSubfilter === 'MEDICOS') matchSub = g.subGroup === 'MEDICOS';
+      else if (selectedSubfilter === 'SOCIAL') matchSub = g.subGroup === 'SOCIAL';
+      return matchCat && matchSub;
+    });
+  }, [guests, selectedCategory, selectedSubfilter, searchQuery]);
+
+  // Filtrado de Suites (Nivel 3 cuando es Suites)
+  const filteredSuites = useMemo(() => {
+    return suites.filter((s) => {
+      if (searchQuery.trim() !== '') {
+        const q = searchQuery.toLowerCase();
+        return (
+          s.name.toLowerCase().includes(q) ||
+          s.assignedTo.toLowerCase().includes(q) ||
+          s.housekeeper.toLowerCase().includes(q)
+        );
+      }
+      if (selectedSubfilter === 'TODAS') return true;
+      if (selectedSubfilter === 'SOCIALES') return s.subType === 'SOCIALES';
+      return s.status === selectedSubfilter;
+    });
+  }, [suites, selectedSubfilter, searchQuery]);
+
+  // Edición en vivo de campos de Huésped VIP en el reverso 3D
+  const updateGuestField = (guestId, field, value) => {
+    setGuests((prev) =>
+      prev.map((g) => (g.id === guestId ? { ...g, [field]: value } : g))
+    );
+  };
+
+  const toggleGuestAmenity = (e, guestId, amenity) => {
+    e.stopPropagation();
+    setGuests((prev) =>
+      prev.map((g) => {
+        if (g.id !== guestId) return g;
+        const exists = g.amenities.includes(amenity);
+        const next = exists
+          ? g.amenities.filter((a) => a !== amenity)
+          : [...g.amenities, amenity];
+        return { ...g, amenities: next };
       })
     );
   };
 
-  const toggleVisitConfirmed = (visitId) => {
-    setVisits((prev) =>
-      prev.map((v) => (v.id === visitId ? { ...v, confirmed: !v.confirmed } : v))
+  // Edición en vivo de campos de Suite en el reverso 3D
+  const updateSuiteField = (suiteId, field, value) => {
+    setSuites((prev) =>
+      prev.map((s) => (s.id === suiteId ? { ...s, [field]: value } : s))
     );
+  };
+
+  const toggleSuiteCheck = (e, suiteId, checkName) => {
+    e.stopPropagation();
+    setSuites((prev) =>
+      prev.map((s) => {
+        if (s.id !== suiteId) return s;
+        const exists = s.checks.includes(checkName);
+        const next = exists
+          ? s.checks.filter((c) => c !== checkName)
+          : [...s.checks, checkName];
+        return { ...s, checks: next };
+      })
+    );
+  };
+
+  const handleSaveCard = (e, id) => {
+    e.stopPropagation();
+    setSavedCardToast(id);
+    setTimeout(() => {
+      setSavedCardToast(null);
+      setFlippedCardId(null);
+    }, 850);
+  };
+
+  // Confirmar Despacho Multidepartamento desde el Modal Flotante
+  const handleConfirmDispatch = () => {
+    if (!dispatchTarget) return;
+    setGuests((prev) =>
+      prev.map((g) =>
+        g.id === dispatchTarget.id
+          ? { ...g, protocolActive: true, status: 'EN_CASA', lastVisit: `Activo · ${dispatchEta}` }
+          : g
+      )
+    );
+
+    const activeAreas = [];
+    if (notifyKitchen) activeAreas.push(`Cocina: ${dispatchTarget.beverage.split('·')[0]}`);
+    if (notifyHousekeeping) activeAreas.push(`${dispatchTarget.suite}: ${dispatchTarget.temp}°C`);
+    if (notifyGate) activeAreas.push(`Garita: ${dispatchTarget.vehicle.split('·')[0]}`);
+
+    const newLog = {
+      id: `dl-${Date.now()}`,
+      guest: dispatchTarget.name,
+      eta: dispatchEta,
+      pax: `${dispatchPax} ${dispatchPax === 1 ? 'Persona' : 'Personas'}`,
+      orders: activeAreas.join(' · '),
+      time: 'Justo ahora',
+      color: '#10B981'
+    };
+
+    setDispatchLogs([newLog, ...dispatchLogs]);
+    setDispatchTarget(null);
+    setFlippedCardId(null);
   };
 
   const handleCreateGuest = (e) => {
     e.preventDefault();
     if (!newName.trim()) return;
     const parts = newName.trim().split(' ');
-    const initials = parts.length > 1 ? `${parts[0][0]}${parts[1][0]}`.toUpperCase() : parts[0].slice(0, 2).toUpperCase();
+    const initials = parts.length > 1
+      ? `${parts[0][0]}${parts[1][0]}`.toUpperCase()
+      : parts[0].slice(0, 2).toUpperCase();
 
     const created = {
       id: `vip-${Date.now()}`,
       name: newName.trim(),
-      relation: newRelation.trim() || 'Invitado Especial de la Familia',
-      category: newCategory,
+      relation: newRelation.trim() || 'Invitado Especial',
+      category: newCat,
+      subGroup: 'PROXIMA',
+      hasAllergy: newDietary.toLowerCase().includes('alerg') || newDietary.toLowerCase().includes('sin'),
       avatar: initials,
-      color: newCategory === 'Familia' ? '#5E7AC6' : '#BE7AC6',
-      status: 'REGISTRADO',
+      color: newCat === 'Familia' ? '#5E7AC6' : '#BE7AC6',
+      photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=600',
+      status: 'PROXIMA_VISITA',
       lastVisit: 'Ficha Recién Creada',
       suite: newSuite,
-      temp: newTemp,
-      pillow: newPillow,
-      dietary: newDietary.trim() || 'Menú estándar de la casa · Sin alergias reportadas',
-      beverage: newBeverage.trim() || 'Agua mineral y café recién hecho',
-      vehicle: newVehicle.trim() || 'Notificar llegada en Garita Principal',
-      specialNotes: newNotes.trim() || 'Atención preferencial Casa Roquedal.',
+      temp: 22,
+      pillow: 'Algodón Egipcio 600 Hilos · Almohada Suave',
+      dietary: newDietary.trim() || 'Menú estándar de la casa sin restricciones',
+      beverage: newBeverage.trim() || 'Café recién molido y agua mineral fría',
+      vehicle: newVehicle.trim() || 'Autorizado por Administración en Garita',
+      amenities: ['Flores Frescas', 'Agua con Gas'],
       protocolActive: false
     };
 
     setGuests([created, ...guests]);
-    setSelectedGuest(created);
+    setSelectedCategory(newCat);
     setNewName('');
     setNewRelation('');
     setNewDietary('');
     setNewBeverage('');
     setNewVehicle('');
-    setNewNotes('');
-    setSavedToast(true);
-    setTimeout(() => {
-      setSavedToast(false);
-      setActiveTab('DIRECTORIO');
-    }, 1800);
+    setShowAddDrawer(false);
   };
 
   if (!isOpen) return null;
@@ -298,25 +530,29 @@ export default function HospitalityModal({ isOpen, onClose, initialTab = 'DIRECT
         <img src={STANDALONE_LOGO_URL} alt="" className="domus-hsp-watermark" />
 
         {/* ==========================================
-            CABECERA DEL MODAL DE HUÉSPEDES E INVITADOS VIP
+            CABECERA EJECUTIVA DE HOSPITALIDAD VIP
             ========================================== */}
         <header className="domus-hsp-header">
           <div className="domus-hsp-title-wrap">
             <div className="domus-hsp-eyebrow">
               <Sparkles size={13} color="#BE7AC6" />
-              <span>CASA ROQUEDAL · HOSPITALIDAD, SUITES Y PREFERENCIAS VIP</span>
+              <span>CASA ROQUEDAL · CONSERJERÍA VIP 3D, SUITES Y ENLACE MULTIDEPARTAMENTO</span>
             </div>
-            <h2>Biblioteca de Huéspedes, Familia e Invitados</h2>
+            <h2>Hospitalidad, Familia, Invitados y Suites</h2>
           </div>
 
           <div className="domus-hsp-kpis">
             <div className="domus-hsp-kpi">
-              <small>PERFILES VIP</small>
-              <strong style={{ color: '#5E7AC6' }}>{guests.length} Registrados</strong>
+              <small>PROTOCOLOS ACTIVOS</small>
+              <strong style={{ color: '#10B981' }}>{activeGuestsInHouse} VIP en Casa</strong>
             </div>
-            <div className="domus-hsp-kpi" onClick={() => setActiveTab('SUITES')} style={{ cursor: 'pointer' }}>
+            <div
+              className="domus-hsp-kpi"
+              style={{ cursor: 'pointer' }}
+              onClick={() => handleSelectCategory('Suites')}
+            >
               <small>ESTADO SUITES</small>
-              <strong style={{ color: '#10B981' }}>5 / 5 Impecables</strong>
+              <strong style={{ color: '#5E7AC6' }}>{readySuitesCount} / {suites.length} Impecables</strong>
             </div>
             <button className="domus-hsp-close" onClick={onClose} title="Cerrar">
               <X size={20} />
@@ -324,106 +560,175 @@ export default function HospitalityModal({ isOpen, onClose, initialTab = 'DIRECT
           </div>
         </header>
 
-        {/* NOTIFICACIÓN EN VIVO MULTIDEPARTAMENTO */}
-        {dispatchToast && (
-          <div className="domus-hsp-dispatch-banner">
-            <CheckCircle2 size={18} />
-            <span>{dispatchToast}</span>
-          </div>
-        )}
-
         {/* ==========================================
-            BARRA DE PESTAÑAS INTERNAS
+            BARRA DE VISTAS Y BUSCADOR
             ========================================== */}
         <div className="domus-hsp-tabs-bar">
           <div className="domus-hsp-tabs">
             <button
-              className={`domus-hsp-tab ${activeTab === 'DIRECTORIO' ? 'active' : ''}`}
-              onClick={() => setActiveTab('DIRECTORIO')}
+              className={`domus-hsp-tab ${activeTab === 'EXPLORADOR' ? 'active' : ''}`}
+              onClick={() => setActiveTab('EXPLORADOR')}
             >
-              <Users size={16} />
-              <span>Biblioteca VIP y Preferencias ({guests.length})</span>
+              <Layers size={16} />
+              <span>Explorador VIP en Cascada ({guests.length + suites.length})</span>
             </button>
             <button
-              className={`domus-hsp-tab ${activeTab === 'SUITES' ? 'active' : ''}`}
-              onClick={() => setActiveTab('SUITES')}
+              className={`domus-hsp-tab ${activeTab === 'BITACORA' ? 'active' : ''}`}
+              onClick={() => setActiveTab('BITACORA')}
             >
-              <Bed size={16} />
-              <span>Suites, Clima y Lencería</span>
-            </button>
-            <button
-              className={`domus-hsp-tab ${activeTab === 'AGENDA' ? 'active' : ''}`}
-              onClick={() => setActiveTab('AGENDA')}
-            >
-              <Calendar size={16} />
-              <span>Agenda de Visitas ({visits.length})</span>
-            </button>
-            <button
-              className={`domus-hsp-tab ${activeTab === 'NUEVO' ? 'active' : ''}`}
-              onClick={() => setActiveTab('NUEVO')}
-            >
-              <Plus size={16} />
-              <span>Añadir Huésped / Invitado</span>
+              <Bell size={16} />
+              <span>Órdenes Enviadas a Departamentos ({dispatchLogs.length})</span>
             </button>
           </div>
 
-          {activeTab === 'DIRECTORIO' && (
-            <div className="domus-hsp-search">
-              <Search size={15} color="#808080" />
-              <input
-                type="text"
-                placeholder="Buscar familiar, plato, alergia..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+          {activeTab === 'EXPLORADOR' && (
+            <div className="domus-hsp-search-row">
+              <div className="domus-hsp-search">
+                <Search size={15} color="#808080" />
+                <input
+                  type="text"
+                  placeholder="Buscar familiar, suite, plato o alergia..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <button
+                type="button"
+                className="domus-hsp-new-btn"
+                onClick={() => setShowAddDrawer(!showAddDrawer)}
+              >
+                <Plus size={15} />
+                <span>Nuevo Perfil VIP</span>
+              </button>
             </div>
           )}
         </div>
 
         {/* ==========================================
-            CUERPO DEL MODAL
+            CUERPO PRINCIPAL CON PROGRESSIVE DISCLOSURE
             ========================================== */}
         <div className="domus-hsp-body">
 
-          {/* VISTA 1: BIBLIOTECA DE HUÉSPEDES + FICHA CONCIERGE 360° */}
-          {activeTab === 'DIRECTORIO' && (
-            <div className="domus-hsp-library-layout">
-              {/* Columna Izquierda: Lista de Perfiles */}
-              <div className="domus-hsp-guest-list-col">
-                <div className="domus-hsp-filter-row">
-                  {['Todos', 'Familia', 'Invitado VIP'].map((cat) => (
-                    <button
-                      key={cat}
-                      onClick={() => setFilterCategory(cat)}
-                      className={`domus-hsp-filter-pill ${filterCategory === cat ? 'active' : ''}`}
-                    >
-                      {cat}
+          {activeTab === 'EXPLORADOR' && (
+            <>
+              {/* GAVETA RÁPIDA PARA CREAR NUEVO PERFIL VIP */}
+              {showAddDrawer && (
+                <form className="domus-hsp-add-drawer" onSubmit={handleCreateGuest}>
+                  <div className="domus-hsp-drawer-head">
+                    <div>
+                      <span>NUEVO PASAPORTE DE PREFERENCIAS 3D</span>
+                      <h4>Registrar Familiar o Invitado VIP en la Biblioteca</h4>
+                    </div>
+                    <button type="button" onClick={() => setShowAddDrawer(false)}>
+                      <X size={16} />
                     </button>
-                  ))}
+                  </div>
+                  <div className="domus-hsp-drawer-grid">
+                    <div>
+                      <label>Nombre Completo</label>
+                      <input
+                        type="text"
+                        placeholder="Ej. Dra. Elena Jiménez"
+                        value={newName}
+                        onChange={(e) => setNewName(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label>Parentesco o Vínculo</label>
+                      <input
+                        type="text"
+                        placeholder="Ej. Sobrina / Invitado de Honor"
+                        value={newRelation}
+                        onChange={(e) => setNewRelation(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label>Categoría</label>
+                      <select value={newCat} onChange={(e) => setNewCat(e.target.value)}>
+                        <option value="Familia">Familia Directa</option>
+                        <option value="Invitado VIP">Invitado VIP / Médico</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label>Suite Asignada</label>
+                      <select value={newSuite} onChange={(e) => setNewSuite(e.target.value)}>
+                        {suites.map((s) => (
+                          <option key={s.id} value={s.name}>{s.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label>Dieta / Alergias (Para Cocina)</label>
+                      <input
+                        type="text"
+                        placeholder="Ej. Sin lactosa, prefiere pescado..."
+                        value={newDietary}
+                        onChange={(e) => setNewDietary(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label>Bebida de Bienvenida</label>
+                      <input
+                        type="text"
+                        placeholder="Ej. Espresso doble / Agua con gas"
+                        value={newBeverage}
+                        onChange={(e) => setNewBeverage(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="domus-hsp-drawer-foot">
+                    <button type="submit" className="domus-hsp-save-new">
+                      <Check size={15} /> Crear Pasaporte 3D
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* ==========================================
+                  NIVEL 1: CARRUSEL DE CATEGORÍAS DE HOSPITALIDAD
+                  ========================================== */}
+              <div className="domus-hsp-level">
+                <div className="domus-hsp-lvl-head">
+                  <span className="domus-hsp-step-badge">NIVEL 1</span>
+                  <h3>Dimensiones de Hospitalidad y Conserjería</h3>
                 </div>
 
-                <div className="domus-hsp-guest-cards">
-                  {filteredGuests.map((guest) => {
-                    const isSelected = selectedGuest?.id === guest.id;
+                <div className="domus-hsp-lvl1-carousel">
+                  {HOSPITALITY_CATEGORIES.map((cat) => {
+                    const isSelected = selectedCategory === cat.id && !searchQuery;
+                    const count =
+                      cat.type === 'SUITES'
+                        ? suites.length
+                        : guests.filter((g) => g.category === cat.id).length;
+
                     return (
                       <div
-                        key={guest.id}
-                        className={`domus-hsp-guest-item ${isSelected ? 'selected' : ''}`}
-                        onClick={() => setSelectedGuest(guest)}
+                        key={cat.id}
+                        className={`domus-hsp-lvl1-card ${isSelected ? 'active' : ''}`}
+                        style={{ '--cat-accent': cat.accent }}
+                        onClick={() => {
+                          setSearchQuery('');
+                          handleSelectCategory(cat.id);
+                        }}
                       >
-                        <div className="domus-hsp-avatar" style={{ background: guest.color }}>
-                          <span>{guest.avatar}</span>
-                          {guest.protocolActive && <i className="domus-hsp-live-dot" title="Protocolo Activo"></i>}
-                        </div>
-                        <div className="domus-hsp-guest-meta">
-                          <div className="domus-hsp-guest-top">
-                            <strong>{guest.name}</strong>
-                            <span className={`domus-hsp-badge ${guest.protocolActive ? 'active' : ''}`}>
-                              {guest.protocolActive ? 'En Casa · VIP Activo' : guest.lastVisit}
-                            </span>
+                        <div className="domus-hsp-lvl1-backlight"></div>
+                        <div className="domus-hsp-lvl1-inner">
+                          <div
+                            className="domus-hsp-lvl1-bg"
+                            style={{ backgroundImage: `url('${cat.img}')` }}
+                          ></div>
+                          <div className="domus-hsp-lvl1-overlay"></div>
+
+                          <div className="domus-hsp-lvl1-top">
+                            <span className="domus-hsp-lvl1-sub">{cat.subtitle}</span>
+                            <span className="domus-hsp-lvl1-ok">{count} Fichas 3D</span>
                           </div>
-                          <small>{guest.relation}</small>
-                          <p>{guest.beverage.split('·')[0]}</p>
+
+                          <div className="domus-hsp-lvl1-bottom">
+                            <h4>{cat.title}</h4>
+                            <span>Toque para desplegar subcategorías</span>
+                          </div>
                         </div>
                       </div>
                     );
@@ -431,316 +736,641 @@ export default function HospitalityModal({ isOpen, onClose, initialTab = 'DIRECT
                 </div>
               </div>
 
-              {/* Columna Derecha: Pasaporte VIP de Preferencias por Departamento */}
-              {selectedGuest && (
-                <div className="domus-hsp-passport-card">
-                  <div className="domus-hsp-passport-header">
-                    <div className="domus-hsp-passport-person">
-                      <div className="domus-hsp-avatar-lg" style={{ background: selectedGuest.color }}>
-                        {selectedGuest.avatar}
-                      </div>
-                      <div>
-                        <span className="domus-hsp-passport-cat">{selectedGuest.category} · {selectedGuest.relation}</span>
-                        <h3>{selectedGuest.name}</h3>
-                        <small>Suite asignada: <strong>{selectedGuest.suite}</strong> ({selectedGuest.temp})</small>
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => triggerVipProtocol(selectedGuest)}
-                      className={`domus-hsp-vip-trigger ${selectedGuest.protocolActive ? 'active' : ''}`}
-                    >
-                      <Bell size={16} />
-                      <span>
-                        {selectedGuest.protocolActive
-                          ? 'PROTOCOLO VIP ACTIVO EN CASA'
-                          : 'ACTIVAR LLEGADA / PROTOCOLO VIP'}
-                      </span>
-                    </button>
+              {/* ==========================================
+                  NIVEL 2: CARRUSEL DE SUB-FILTROS DINÁMICOS
+                  ========================================== */}
+              {!searchQuery && (
+                <div className="domus-hsp-level domus-hsp-lvl2-anim" key={selectedCategory}>
+                  <div className="domus-hsp-lvl-head">
+                    <span className="domus-hsp-step-badge" style={{ background: activeCategoryObj.accent }}>
+                      NIVEL 2
+                    </span>
+                    <h3>Filtro Operativo de {activeCategoryObj.title}</h3>
                   </div>
 
-                  <p className="domus-hsp-passport-intro">
-                    Al activar el protocolo de este huésped, Domus envía automáticamente sus preferencias a las tabletas de <strong>Cocina</strong>, <strong>Lencería</strong>, <strong>Climatización</strong> y <strong>Garita</strong>:
-                  </p>
-
-                  {/* Cuadrícula de Preferencias en las 4 Áreas de Servicio */}
-                  <div className="domus-hsp-prefs-grid">
-                    <div className="domus-hsp-pref-box">
-                      <div className="domus-hsp-pref-head">
-                        <div className="domus-hsp-pref-icon" style={{ background: 'rgba(238,107,95,0.14)', color: '#EE6B5F' }}>
-                          <Utensils size={17} />
-                        </div>
-                        <div>
-                          <small>ENLACE COCINA & DESPENSA</small>
-                          <h4>Dieta, Alergias y Platos Favoritos</h4>
-                        </div>
-                      </div>
-                      <p>{selectedGuest.dietary}</p>
-                    </div>
-
-                    <div className="domus-hsp-pref-box">
-                      <div className="domus-hsp-pref-head">
-                        <div className="domus-hsp-pref-icon" style={{ background: 'rgba(190,122,198,0.16)', color: '#BE7AC6' }}>
-                          <Coffee size={17} />
-                        </div>
-                        <div>
-                          <small>PROTOCOLO DE BIENVENIDA</small>
-                          <h4>Bebida de Recibimiento y Mesa</h4>
-                        </div>
-                      </div>
-                      <p>{selectedGuest.beverage}</p>
-                    </div>
-
-                    <div className="domus-hsp-pref-box">
-                      <div className="domus-hsp-pref-head">
-                        <div className="domus-hsp-pref-icon" style={{ background: 'rgba(94,122,198,0.14)', color: '#5E7AC6' }}>
-                          <Bed size={17} />
-                        </div>
-                        <div>
-                          <small>HOSPITALIDAD, LENCERÍA & CLIMA</small>
-                          <h4>{selectedGuest.suite} · Clima {selectedGuest.temp}</h4>
-                        </div>
-                      </div>
-                      <p>{selectedGuest.pillow}</p>
-                    </div>
-
-                    <div className="domus-hsp-pref-box">
-                      <div className="domus-hsp-pref-head">
-                        <div className="domus-hsp-pref-icon" style={{ background: 'rgba(16,185,129,0.14)', color: '#10B981' }}>
-                          <CarFront size={17} />
-                        </div>
-                        <div>
-                          <small>AUTORIZACIÓN EN GARITA</small>
-                          <h4>Vehículo y Acceso</h4>
-                        </div>
-                      </div>
-                      <p>{selectedGuest.vehicle}</p>
-                    </div>
-                  </div>
-
-                  <div className="domus-hsp-special-note">
-                    <Heart size={16} color="#EE6B5F" />
-                    <div>
-                      <small>DETALLE DE HOSPITALIDAD (AMA DE LLAVES)</small>
-                      <strong>{selectedGuest.specialNotes}</strong>
-                    </div>
+                  <div className="domus-hsp-lvl2-carousel">
+                    {activeCategoryObj.subfilters.map((sub) => {
+                      const isSubActive = selectedSubfilter === sub.id;
+                      return (
+                        <button
+                          key={sub.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedSubfilter(sub.id);
+                            setFlippedCardId(null);
+                          }}
+                          className={`domus-hsp-lvl2-pill ${isSubActive ? 'active' : ''}`}
+                          style={{ '--sub-accent': activeCategoryObj.accent }}
+                        >
+                          <div className="domus-hsp-lvl2-icon">{sub.icon}</div>
+                          <div className="domus-hsp-lvl2-info">
+                            <strong>{sub.name}</strong>
+                            <span>Ver tarjetas</span>
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
-            </div>
+
+              {/* ==========================================
+                  NIVEL 3: GRILLA DE TARJETAS 3D FLIP (HUÉSPEDES O SUITES)
+                  ========================================== */}
+              <div className="domus-hsp-level">
+                <div className="domus-hsp-lvl-head">
+                  <span className="domus-hsp-step-badge" style={{ background: '#10B981' }}>
+                    NIVEL 3
+                  </span>
+                  <h3>
+                    {activeCategoryObj.type === 'SUITES'
+                      ? `Control de Suites y Áreas (${filteredSuites.length}) · Toque una tarjeta para ajustar clima, lencería y protocolo`
+                      : `Pasaportes VIP (${filteredGuests.length}) · Toque cualquier tarjeta para editar preferencias o activar su llegada`}
+                  </h3>
+                </div>
+
+                {/* MODO A: TARJETAS 3D DE HUÉSPEDES E INVITADOS VIP */}
+                {activeCategoryObj.type === 'GUESTS' ? (
+                  <div className="domus-hsp-flip-grid">
+                    {filteredGuests.map((guest) => {
+                      const isFlipped = flippedCardId === guest.id;
+                      const glowCol = guest.protocolActive
+                        ? '#10B981'
+                        : guest.hasAllergy
+                        ? '#EE6B5F'
+                        : guest.color;
+
+                      return (
+                        <div
+                          key={guest.id}
+                          className={`domus-hsp-flip-scene ${isFlipped ? 'is-flipped' : ''}`}
+                          style={{ '--card-glow': glowCol }}
+                          onClick={() => setFlippedCardId(isFlipped ? null : guest.id)}
+                        >
+                          <div className="domus-hsp-flip-backlight"></div>
+
+                          <div className="domus-hsp-flip-inner">
+                            {/* CARA FRONTAL: RETRATO VIP + RESUMEN DE PREFERENCIAS */}
+                            <div className="domus-hsp-face domus-hsp-front">
+                              <div
+                                className="domus-hsp-front-bg"
+                                style={{ backgroundImage: `url('${guest.photo}')` }}
+                              ></div>
+                              <div className="domus-hsp-front-shade"></div>
+
+                              <div className="domus-hsp-front-top">
+                                <span
+                                  className="domus-hsp-status-pill"
+                                  style={{
+                                    background: guest.protocolActive
+                                      ? '#10B981'
+                                      : guest.status === 'PROXIMA_VISITA'
+                                      ? '#5E7AC6'
+                                      : 'rgba(24, 28, 38, 0.78)'
+                                  }}
+                                >
+                                  {guest.protocolActive
+                                    ? '● PROTOCOLO VIP ACTIVO'
+                                    : guest.lastVisit.toUpperCase()}
+                                </span>
+
+                                <span className="domus-hsp-flip-hint">
+                                  <RotateCw size={13} /> Pasaporte 3D
+                                </span>
+                              </div>
+
+                              <div className="domus-hsp-front-glass">
+                                <div className="domus-hsp-front-title-row">
+                                  <div>
+                                    <small>{guest.relation}</small>
+                                    <h4>{guest.name}</h4>
+                                  </div>
+                                  <div className="domus-hsp-temp-chip">
+                                    <strong>{guest.temp}°C</strong>
+                                    <span>Clima</span>
+                                  </div>
+                                </div>
+
+                                <div className="domus-hsp-front-Suite">
+                                  <Bed size={13} color="#5E7AC6" />
+                                  <span>{guest.suite}</span>
+                                </div>
+
+                                <div className="domus-hsp-front-bev">
+                                  <Coffee size={13} color="#BE7AC6" />
+                                  <span>{guest.beverage}</span>
+                                </div>
+
+                                {guest.hasAllergy && (
+                                  <div className="domus-hsp-allergy-strip">
+                                    <span>⚠️ {guest.dietary}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* CARA REVERSO: PASAPORTE VIP 100% EDITABLE EN VIVO */}
+                            <div
+                              className="domus-hsp-face domus-hsp-back"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div className="domus-hsp-back-head">
+                                <div className="domus-hsp-back-person">
+                                  <img src={guest.photo} alt={guest.name} />
+                                  <div>
+                                    <h4>{guest.name}</h4>
+                                    <span>Preferencias Multidepartamento</span>
+                                  </div>
+                                </div>
+                                <button
+                                  type="button"
+                                  className="domus-hsp-unflip-btn"
+                                  onClick={() => setFlippedCardId(null)}
+                                >
+                                  <RotateCw size={13} /> Frente
+                                </button>
+                              </div>
+
+                              <div className="domus-hsp-edit-form">
+                                {/* Suite y Clima */}
+                                <div className="domus-hsp-row-climate">
+                                  <div className="suite-col">
+                                    <label><Bed size={10} /> Suite / Espacio Asignado</label>
+                                    <select
+                                      value={guest.suite}
+                                      onChange={(e) => updateGuestField(guest.id, 'suite', e.target.value)}
+                                    >
+                                      {suites.map((s) => (
+                                        <option key={s.id} value={s.name}>{s.name}</option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                  <div className="temp-col">
+                                    <label><Thermometer size={10} /> Clima</label>
+                                    <div className="domus-hsp-mini-stepper">
+                                      <button
+                                        type="button"
+                                        onClick={() => updateGuestField(guest.id, 'temp', guest.temp - 1)}
+                                      >
+                                        <Minus size={11} />
+                                      </button>
+                                      <strong>{guest.temp}°C</strong>
+                                      <button
+                                        type="button"
+                                        onClick={() => updateGuestField(guest.id, 'temp', guest.temp + 1)}
+                                      >
+                                        <Plus size={11} />
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Gastronomía y Dieta */}
+                                <div>
+                                  <label><Utensils size={10} /> Dieta, Platos y Alergias (Sincronizado con Cocina)</label>
+                                  <input
+                                    type="text"
+                                    value={guest.dietary}
+                                    onChange={(e) => updateGuestField(guest.id, 'dietary', e.target.value)}
+                                  />
+                                </div>
+
+                                {/* Bebida de Bienvenida */}
+                                <div>
+                                  <label><Coffee size={10} /> Protocolo de Bebida al Llegar</label>
+                                  <input
+                                    type="text"
+                                    value={guest.beverage}
+                                    onChange={(e) => updateGuestField(guest.id, 'beverage', e.target.value)}
+                                  />
+                                </div>
+
+                                {/* Almohada & Vehículo */}
+                                <div className="domus-hsp-row-2">
+                                  <div>
+                                    <label>Almohada y Lencería</label>
+                                    <input
+                                      type="text"
+                                      value={guest.pillow}
+                                      onChange={(e) => updateGuestField(guest.id, 'pillow', e.target.value)}
+                                    />
+                                  </div>
+                                  <div>
+                                    <label><CarFront size={10} /> Vehículo / Garita</label>
+                                    <input
+                                      type="text"
+                                      value={guest.vehicle}
+                                      onChange={(e) => updateGuestField(guest.id, 'vehicle', e.target.value)}
+                                    />
+                                  </div>
+                                </div>
+
+                                {/* Amenidades Táctiles */}
+                                <div>
+                                  <label><Heart size={10} /> Atenciones Especiales en Suite</label>
+                                  <div className="domus-hsp-chips-wrap">
+                                    {AMENITY_OPTIONS.map((am) => {
+                                      const active = guest.amenities.includes(am);
+                                      return (
+                                        <button
+                                          key={am}
+                                          type="button"
+                                          className={`domus-hsp-chip-btn ${active ? 'active' : ''}`}
+                                          onClick={(e) => toggleGuestAmenity(e, guest.id, am)}
+                                        >
+                                          {active && <Check size={10} />}
+                                          <span>{am}</span>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {savedCardToast === guest.id ? (
+                                <div className="domus-hsp-saved-pill">
+                                  <CheckCircle2 size={15} /> ¡Pasaporte VIP Guardado!
+                                </div>
+                              ) : (
+                                <div className="domus-hsp-back-actions">
+                                  <button
+                                    type="button"
+                                    className="domus-hsp-btn-save"
+                                    onClick={(e) => handleSaveCard(e, guest.id)}
+                                  >
+                                    <Check size={14} />
+                                    <span>[ GUARDAR ]</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="domus-hsp-btn-dispatch"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setDispatchTarget(guest);
+                                    }}
+                                  >
+                                    <Bell size={14} />
+                                    <span>[ ACTIVAR LLEGADA ]</span>
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  /* MODO B: TARJETAS 3D DE SUITES Y SALONES */
+                  <div className="domus-hsp-flip-grid">
+                    {filteredSuites.map((suite) => {
+                      const isFlipped = flippedCardId === suite.id;
+                      const suiteColor =
+                        suite.status === 'LISTA'
+                          ? '#10B981'
+                          : suite.status === 'OCUPADA_VIP'
+                          ? '#5E7AC6'
+                          : '#EE6B5F';
+
+                      return (
+                        <div
+                          key={suite.id}
+                          className={`domus-hsp-flip-scene ${isFlipped ? 'is-flipped' : ''}`}
+                          style={{ '--card-glow': suiteColor }}
+                          onClick={() => setFlippedCardId(isFlipped ? null : suite.id)}
+                        >
+                          <div className="domus-hsp-flip-backlight"></div>
+
+                          <div className="domus-hsp-flip-inner">
+                            {/* FRENTE DE LA SUITE */}
+                            <div className="domus-hsp-face domus-hsp-front">
+                              <div
+                                className="domus-hsp-front-bg"
+                                style={{ backgroundImage: `url('${suite.img}')` }}
+                              ></div>
+                              <div className="domus-hsp-front-shade"></div>
+
+                              <div className="domus-hsp-front-top">
+                                <span
+                                  className="domus-hsp-status-pill"
+                                  style={{ background: suiteColor }}
+                                >
+                                  {suite.status === 'LISTA'
+                                    ? '● SUITE IMPECABLE · LISTA'
+                                    : '● OCUPADA · PROTOCOLO VIP'}
+                                </span>
+                                <span className="domus-hsp-flip-hint">
+                                  <RotateCw size={13} /> Control 3D
+                                </span>
+                              </div>
+
+                              <div className="domus-hsp-front-glass">
+                                <div className="domus-hsp-front-title-row">
+                                  <div>
+                                    <small>{suite.zone}</small>
+                                    <h4>{suite.name}</h4>
+                                  </div>
+                                  <div className="domus-hsp-temp-chip">
+                                    <strong>{suite.temp}°C</strong>
+                                    <span>A/C</span>
+                                  </div>
+                                </div>
+
+                                <div className="domus-hsp-front-Suite">
+                                  <Users size={13} color="#5E7AC6" />
+                                  <span>{suite.assignedTo}</span>
+                                </div>
+
+                                <div className="domus-hsp-front-bev">
+                                  <Sparkles size={13} color="#BE7AC6" />
+                                  <span>{suite.linen}</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* REVERSO EDITABLE DE LA SUITE */}
+                            <div
+                              className="domus-hsp-face domus-hsp-back"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div className="domus-hsp-back-head">
+                                <div className="domus-hsp-back-person">
+                                  <img src={suite.img} alt={suite.name} />
+                                  <div>
+                                    <h4>{suite.name}</h4>
+                                    <span>Domótica, Lencería y Camarera</span>
+                                  </div>
+                                </div>
+                                <button
+                                  type="button"
+                                  className="domus-hsp-unflip-btn"
+                                  onClick={() => setFlippedCardId(null)}
+                                >
+                                  <RotateCw size={13} /> Frente
+                                </button>
+                              </div>
+
+                              <div className="domus-hsp-edit-form">
+                                <div className="domus-hsp-row-climate">
+                                  <div className="suite-col">
+                                    <label>Asignación / Huésped Actual</label>
+                                    <input
+                                      type="text"
+                                      value={suite.assignedTo}
+                                      onChange={(e) => updateSuiteField(suite.id, 'assignedTo', e.target.value)}
+                                    />
+                                  </div>
+                                  <div className="temp-col">
+                                    <label>Termostato</label>
+                                    <div className="domus-hsp-mini-stepper">
+                                      <button
+                                        type="button"
+                                        onClick={() => updateSuiteField(suite.id, 'temp', suite.temp - 1)}
+                                      >
+                                        <Minus size={11} />
+                                      </button>
+                                      <strong>{suite.temp}°C</strong>
+                                      <button
+                                        type="button"
+                                        onClick={() => updateSuiteField(suite.id, 'temp', suite.temp + 1)}
+                                      >
+                                        <Plus size={11} />
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div>
+                                  <label>Protocolo de Lencería y Almohadas</label>
+                                  <input
+                                    type="text"
+                                    value={suite.linen}
+                                    onChange={(e) => updateSuiteField(suite.id, 'linen', e.target.value)}
+                                  />
+                                </div>
+
+                                <div className="domus-hsp-row-2">
+                                  <div>
+                                    <label>Camarera Responsable</label>
+                                    <input
+                                      type="text"
+                                      value={suite.housekeeper}
+                                      onChange={(e) => updateSuiteField(suite.id, 'housekeeper', e.target.value)}
+                                    />
+                                  </div>
+                                  <div>
+                                    <label>Aroma Ambiental</label>
+                                    <input
+                                      type="text"
+                                      value={suite.scent}
+                                      onChange={(e) => updateSuiteField(suite.id, 'scent', e.target.value)}
+                                    />
+                                  </div>
+                                </div>
+
+                                <div>
+                                  <label>Checklist de Auditoría de Suite ({suite.checks.length}/6)</label>
+                                  <div className="domus-hsp-chips-wrap">
+                                    {SUITE_CHECK_OPTIONS.map((chk) => {
+                                      const active = suite.checks.includes(chk);
+                                      return (
+                                        <button
+                                          key={chk}
+                                          type="button"
+                                          className={`domus-hsp-chip-btn ${active ? 'active' : ''}`}
+                                          onClick={(e) => toggleSuiteCheck(e, suite.id, chk)}
+                                        >
+                                          {active && <Check size={10} />}
+                                          <span>{chk}</span>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="domus-hsp-back-actions">
+                                <button
+                                  type="button"
+                                  className="domus-hsp-btn-save"
+                                  onClick={(e) => handleSaveCard(e, suite.id)}
+                                >
+                                  <Check size={14} />
+                                  <span>[ GUARDAR SUITE ]</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  className="domus-hsp-btn-dispatch"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    updateSuiteField(
+                                      suite.id,
+                                      'status',
+                                      suite.status === 'LISTA' ? 'OCUPADA_VIP' : 'LISTA'
+                                    );
+                                    setFlippedCardId(null);
+                                  }}
+                                >
+                                  <Sparkles size={14} />
+                                  <span>[ CAMBIAR ESTATUS ]</span>
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </>
           )}
 
-          {/* VISTA 2: SUITES, CLIMATIZACIÓN Y LENCERÍA */}
-          {activeTab === 'SUITES' && (
-            <div className="domus-hsp-suites-grid">
-              {suites.map((suite) => (
-                <div key={suite.id} className="domus-hsp-suite-card">
-                  <div className="domus-hsp-suite-top">
-                    <div>
-                      <span className="domus-hsp-suite-zone">{suite.zone}</span>
-                      <h3>{suite.name}</h3>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => cycleSuiteStatus(suite.id)}
-                      className={`domus-hsp-suite-status ${suite.status.toLowerCase()}`}
-                    >
-                      {suite.status === 'LISTA'
-                        ? 'Impecable · Lista'
-                        : suite.status === 'OCUPADA_VIP'
-                        ? 'Ocupada VIP'
-                        : 'En Preparación'}
-                    </button>
-                  </div>
-
-                  <div className="domus-hsp-suite-meta">
-                    <div>
-                      <Thermometer size={14} color="#5E7AC6" />
-                      <span>Clima: <strong>{suite.temp}</strong></span>
-                    </div>
-                    <div>
-                      <Users size={14} color="#BE7AC6" />
-                      <span>Camarera: <strong>{suite.housekeeper}</strong></span>
-                    </div>
-                  </div>
-
-                  <div className="domus-hsp-suite-assign">
-                    <small>ASIGNACIÓN ACTUAL</small>
-                    <strong>{suite.assignedTo}</strong>
-                    <span>{suite.linen}</span>
-                  </div>
-
-                  <div className="domus-hsp-suite-checks">
-                    {suite.checklist.map((item, i) => (
-                      <div key={i} className="domus-hsp-check-pill">
-                        <Check size={12} color="#10B981" />
-                        <span>{item}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* VISTA 3: AGENDA DE VISITAS Y EVENTOS FAMILIARES */}
-          {activeTab === 'AGENDA' && (
-            <div className="domus-hsp-agenda-stack">
-              {visits.map((v) => (
-                <div key={v.id} className="domus-hsp-visit-row" onClick={() => toggleVisitConfirmed(v.id)}>
-                  <div className="domus-hsp-visit-left">
-                    <span className="domus-hsp-visit-date">{v.date}</span>
-                    <h4>{v.guestName}</h4>
-                    <p>{v.type} · <strong>{v.pax}</strong></p>
-                  </div>
-
-                  <div className="domus-hsp-visit-tags">
-                    {v.areasNotified.map((area, idx) => (
-                      <span key={idx} className="domus-hsp-area-pill">
-                        <Check size={12} /> {area}
-                      </span>
-                    ))}
-                  </div>
-
-                  <div className={`domus-hsp-visit-status ${v.confirmed ? 'ok' : 'pending'}`}>
-                    {v.confirmed ? 'Protocolo Listo' : 'Por Confirmar'}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* VISTA 4: CREAR NUEVO PERFIL VIP EN LA BIBLIOTECA */}
-          {activeTab === 'NUEVO' && (
-            <form className="domus-hsp-form-card" onSubmit={handleCreateGuest}>
-              <h3>Registrar Nuevo Familiar o Invitado VIP</h3>
-              <p>
-                Guarde las preferencias una sola vez en la biblioteca de Casa Roquedal para que cada visita futura se prepare con un solo toque.
-              </p>
-
-              <div className="domus-hsp-form-grid">
+          {/* VISTA 2: BITÁCORA DE ÓRDENES ENVIADAS A COCINA, GARITA Y CAMARERAS */}
+          {activeTab === 'BITACORA' && (
+            <div className="domus-hsp-logs-card">
+              <div className="domus-hsp-logs-head">
                 <div>
-                  <label>Nombre del Huésped o Familia</label>
-                  <input
-                    type="text"
-                    placeholder="Ej. Dra. Elena Jiménez"
-                    value={newName}
-                    onChange={(e) => setNewName(e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <label>Parentesco o Vínculo</label>
-                  <input
-                    type="text"
-                    placeholder="Ej. Sobrina / Invitado de Honor"
-                    value={newRelation}
-                    onChange={(e) => setNewRelation(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label>Categoría</label>
-                  <select value={newCategory} onChange={(e) => setNewCategory(e.target.value)}>
-                    <option value="Familia">Familia Directa</option>
-                    <option value="Invitado VIP">Invitado VIP / Amigo</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label>Suite o Espacio Preferido</label>
-                  <select value={newSuite} onChange={(e) => setNewSuite(e.target.value)}>
-                    <option value="Suite Huéspedes Jardín">Suite Huéspedes Jardín</option>
-                    <option value="Suite Terraza Norte">Suite Terraza Norte</option>
-                    <option value="Suite Doble Estudio">Suite Doble Estudio</option>
-                    <option value="Salón Comedor & Terraza VIP">Visita Social (Comedor / Terraza)</option>
-                  </select>
-                </div>
-                <div>
-                  <label>Climatización Preferida</label>
-                  <input
-                    type="text"
-                    value={newTemp}
-                    onChange={(e) => setNewTemp(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label>Preferencia de Almohada y Lencería</label>
-                  <input
-                    type="text"
-                    value={newPillow}
-                    onChange={(e) => setNewPillow(e.target.value)}
-                  />
-                </div>
-
-                <div className="full-span">
-                  <label>Preferencias Gastronómicas, Dieta y Alergias (Para Cocina)</label>
-                  <input
-                    type="text"
-                    placeholder="Ej. Intolerante a la lactosa, prefiere pescado blanco al vapor y ensaladas..."
-                    value={newDietary}
-                    onChange={(e) => setNewDietary(e.target.value)}
-                  />
-                </div>
-
-                <div className="full-span">
-                  <label>Bebida de Bienvenida / Café / Té</label>
-                  <input
-                    type="text"
-                    placeholder="Ej. Café guayoyo suave en taza grande o agua de coco fría..."
-                    value={newBeverage}
-                    onChange={(e) => setNewBeverage(e.target.value)}
-                  />
-                </div>
-
-                <div>
-                  <label>Vehículo / Placa (Para Garita)</label>
-                  <input
-                    type="text"
-                    placeholder="Ej. camioneta BMW Gris · Placa AA112BB"
-                    value={newVehicle}
-                    onChange={(e) => setNewVehicle(e.target.value)}
-                  />
-                </div>
-                <div className="two-span">
-                  <label>Atenciones Especiales de Hospitalidad</label>
-                  <input
-                    type="text"
-                    placeholder="Ej. Flores frescas, agua al clima en mesa de noche..."
-                    value={newNotes}
-                    onChange={(e) => setNewNotes(e.target.value)}
-                  />
+                  <h3>Historial de Despachos de Conserjería VIP</h3>
+                  <p>Registro en tiempo real de las alertas enviadas a Cocina, Camareras, Mantenimiento y Garita</p>
                 </div>
               </div>
 
-              {savedToast ? (
-                <div className="domus-hsp-dispatch-banner" style={{ marginTop: 16 }}>
-                  <CheckCircle2 size={18} />
-                  <span>¡Ficha VIP guardada exitosamente en la biblioteca de Casa Roquedal!</span>
-                </div>
-              ) : (
-                <button type="submit" className="domus-hsp-submit-btn">
-                  <Check size={17} />
-                  <span>GUARDAR FICHA VIP EN BIBLIOTECA</span>
-                </button>
-              )}
-            </form>
+              <div className="domus-hsp-logs-stack">
+                {dispatchLogs.map((log) => (
+                  <div key={log.id} className="domus-hsp-log-row">
+                    <div className="domus-hsp-log-dot" style={{ background: log.color }}></div>
+                    <div className="domus-hsp-log-info">
+                      <strong>{log.guest} · <span style={{ color: '#5E7AC6' }}>{log.eta} ({log.pax})</span></strong>
+                      <span>{log.orders}</span>
+                    </div>
+                    <small className="domus-hsp-log-time">{log.time}</small>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
 
         </div>
 
         {/* ==========================================
+            4. MODAL FLOTANTE DESPACHADOR CONCIERGE (CONCIERGE DISPATCH MODAL)
+            ========================================== */}
+        {dispatchTarget && (
+          <div className="domus-hsp-dispatch-backdrop" onClick={() => setDispatchTarget(null)}>
+            <div className="domus-hsp-dispatch-window" onClick={(e) => e.stopPropagation()}>
+              <div className="domus-hsp-dispatch-top">
+                <div className="domus-hsp-back-person">
+                  <img src={dispatchTarget.photo} alt={dispatchTarget.name} />
+                  <div>
+                    <span className="domus-hsp-mode-tag">ACTIVACIÓN MULTIDEPARTAMENTO</span>
+                    <h3>{dispatchTarget.name}</h3>
+                    <small>{dispatchTarget.suite} · Clima preferido: {dispatchTarget.temp}°C</small>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="domus-hsp-close-sm"
+                  onClick={() => setDispatchTarget(null)}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Tiempo estimado de llegada (Píldoras táctiles) */}
+              <div className="domus-hsp-eta-section">
+                <label>Tiempo Estimado de Llegada / Estado</label>
+                <div className="domus-hsp-eta-pills">
+                  {['Ya en Garita', 'En 15 minutos', 'En 1 hora', 'Mañana 12:30 PM'].map((eta) => (
+                    <button
+                      key={eta}
+                      type="button"
+                      className={`domus-hsp-eta-btn ${dispatchEta === eta ? 'active' : ''}`}
+                      onClick={() => setDispatchEta(eta)}
+                    >
+                      {eta}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Selector numérico táctil de comensales / acompañantes */}
+              <div className="domus-hsp-pax-screen">
+                <div>
+                  <small>COMENSALES / PERSONAS A RECIBIR</small>
+                  <strong>{dispatchPax} {dispatchPax === 1 ? 'Persona' : 'Personas'}</strong>
+                </div>
+                <div className="domus-hsp-pax-controls">
+                  <button type="button" onClick={() => setDispatchPax(Math.max(1, dispatchPax - 1))}>
+                    <Minus size={18} />
+                  </button>
+                  <button type="button" onClick={() => setDispatchPax(dispatchPax + 1)}>
+                    <Plus size={18} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Departamentos que recibirán la orden automática */}
+              <div className="domus-hsp-depts-check">
+                <label>Órdenes Simultáneas a Enviar a las Tabletas</label>
+                <div
+                  className={`domus-hsp-dept-toggle ${notifyKitchen ? 'on' : ''}`}
+                  onClick={() => setNotifyKitchen(!notifyKitchen)}
+                >
+                  <div className="check-box">{notifyKitchen && <Check size={13} />}</div>
+                  <div>
+                    <strong>Cocina & Barismo</strong>
+                    <span>Preparar: {dispatchTarget.beverage} · Dieta: {dispatchTarget.dietary}</span>
+                  </div>
+                </div>
+
+                <div
+                  className={`domus-hsp-dept-toggle ${notifyHousekeeping ? 'on' : ''}`}
+                  onClick={() => setNotifyHousekeeping(!notifyHousekeeping)}
+                >
+                  <div className="check-box">{notifyHousekeeping && <Check size={13} />}</div>
+                  <div>
+                    <strong>Camareras & Climatización</strong>
+                    <span>Habilitar {dispatchTarget.suite} a {dispatchTarget.temp}°C ({dispatchTarget.amenities.join(', ')})</span>
+                  </div>
+                </div>
+
+                <div
+                  className={`domus-hsp-dept-toggle ${notifyGate ? 'on' : ''}`}
+                  onClick={() => setNotifyGate(!notifyGate)}
+                >
+                  <div className="check-box">{notifyGate && <Check size={13} />}</div>
+                  <div>
+                    <strong>Seguridad & Garita Principal</strong>
+                    <span>Autorizar ingreso directo: {dispatchTarget.vehicle}</span>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="domus-hsp-confirm-dispatch"
+                onClick={handleConfirmDispatch}
+              >
+                <Send size={17} />
+                <span>[ SINCRONIZAR LLEGADA VIP AHORA ]</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ==========================================
             PIE DEL MODAL
             ========================================== */}
         <footer className="domus-hsp-footer">
-          <span>Conectado en tiempo real con Cocina, Lencería, Mantenimiento y Garita Principal</span>
+          <span>Progressive Disclosure & 3D Concierge Cards · Conectado con Cocina, Lencería, Clima y Garita</span>
           <button className="domus-hsp-close-btn" onClick={onClose}>
             VOLVER AL PANEL PRINCIPAL
           </button>
         </footer>
 
         {/* ==========================================
-            ESTILOS AISLADOS DEL MODAL DE HOSPITALIDAD
+            HOJA DE ESTILOS AISLADA (3D FLIP HOSPITALITY + CONCIERGE)
             ========================================== */}
         <style dangerouslySetInnerHTML={{ __html: `
           .domus-hsp-overlay {
@@ -753,7 +1383,7 @@ export default function HospitalityModal({ isOpen, onClose, initialTab = 'DIRECT
             animation: domusHspFade 0.25s cubic-bezier(0.22, 1, 0.36, 1);
           }
           @media (min-width: 768px) {
-            .domus-hsp-overlay { padding: 24px; }
+            .domus-hsp-overlay { padding: 20px; }
           }
           @keyframes domusHspFade {
             from { opacity: 0; transform: scale(0.97); }
@@ -762,19 +1392,19 @@ export default function HospitalityModal({ isOpen, onClose, initialTab = 'DIRECT
 
           .domus-hsp-modal {
             position: relative; overflow: hidden;
-            width: 100%; max-width: 1320px;
+            width: 100%; max-width: 1380px;
             height: 100dvh;
-            background: rgba(244, 246, 251, 0.95);
+            background: rgba(242, 244, 249, 0.94);
             backdrop-filter: blur(36px) saturate(190%);
             -webkit-backdrop-filter: blur(36px) saturate(190%);
             border: 1.5px solid rgba(255, 255, 255, 0.95);
-            box-shadow: 0 32px 80px rgba(15, 23, 42, 0.35);
+            box-shadow: 0 32px 80px rgba(15, 23, 42, 0.38);
             display: flex; flex-direction: column;
             box-sizing: border-box;
           }
           @media (min-width: 768px) {
             .domus-hsp-modal {
-              height: 90vh;
+              height: 92vh;
               border-radius: 36px;
             }
           }
@@ -785,24 +1415,25 @@ export default function HospitalityModal({ isOpen, onClose, initialTab = 'DIRECT
             opacity: 0.04; pointer-events: none; z-index: 0;
           }
 
+          /* HEADER */
           .domus-hsp-header {
             position: relative; z-index: 2;
-            padding: 18px 18px 14px;
+            padding: 16px 18px 14px;
             background: rgba(255, 255, 255, 0.72);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.9);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.92);
             display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
             gap: 14px;
           }
           @media (min-width: 768px) {
-            .domus-hsp-header { padding: 22px 32px 18px; }
+            .domus-hsp-header { padding: 20px 32px 16px; }
           }
           .domus-hsp-eyebrow {
             display: inline-flex; align-items: center; gap: 6px;
             font-size: 10px; font-weight: 900; letter-spacing: 0.12em; color: #5E7AC6;
-            margin-bottom: 4px;
+            margin-bottom: 3px;
           }
           .domus-hsp-title-wrap h2 {
-            font-size: clamp(20px, 2.5vw, 28px); font-weight: 900;
+            font-size: clamp(20px, 2.5vw, 27px); font-weight: 900;
             letter-spacing: -0.03em; margin: 0; color: #202020;
           }
 
@@ -811,7 +1442,7 @@ export default function HospitalityModal({ isOpen, onClose, initialTab = 'DIRECT
             display: none; flex-direction: column;
             background: rgba(255, 255, 255, 0.9);
             border: 1px solid #fff;
-            padding: 8px 14px; border-radius: 16px;
+            padding: 7px 14px; border-radius: 15px;
           }
           @media (min-width: 640px) { .domus-hsp-kpi { display: flex; } }
           .domus-hsp-kpi small { font-size: 8.5px; font-weight: 800; letter-spacing: 0.1em; color: #808080; }
@@ -828,29 +1459,20 @@ export default function HospitalityModal({ isOpen, onClose, initialTab = 'DIRECT
             background: #EE6B5F; color: #fff; border-color: #EE6B5F; transform: rotate(90deg);
           }
 
-          .domus-hsp-dispatch-banner {
-            position: relative; z-index: 3;
-            background: linear-gradient(90deg, #10B981 0%, #059669 100%);
-            color: #fff; padding: 12px 28px;
-            font-size: 12.5px; font-weight: 800;
-            display: flex; align-items: center; gap: 10px;
-          }
-
+          /* TABS & SEARCH */
           .domus-hsp-tabs-bar {
             position: relative; z-index: 2;
             padding: 12px 18px;
             background: rgba(255, 255, 255, 0.48);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.85);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.88);
             display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
             gap: 12px;
           }
-          @media (min-width: 768px) { .domus-hsp-tabs-bar { padding: 14px 32px; } }
-          .domus-hsp-tabs {
-            display: flex; gap: 8px; overflow-x: auto; max-width: 100%; padding-bottom: 2px;
-          }
+          @media (min-width: 768px) { .domus-hsp-tabs-bar { padding: 12px 32px; } }
+          .domus-hsp-tabs { display: flex; gap: 8px; overflow-x: auto; max-width: 100%; }
           .domus-hsp-tab {
             display: inline-flex; align-items: center; gap: 8px;
-            padding: 10px 16px; border-radius: 16px;
+            padding: 9px 16px; border-radius: 15px;
             border: 1px solid rgba(255, 255, 255, 0.9);
             background: rgba(255, 255, 255, 0.7);
             font-size: 11.5px; font-weight: 800; color: #555;
@@ -862,292 +1484,480 @@ export default function HospitalityModal({ isOpen, onClose, initialTab = 'DIRECT
             box-shadow: 0 8px 20px rgba(94, 122, 198, 0.35);
           }
 
+          .domus-hsp-search-row { display: flex; align-items: center; gap: 8px; }
           .domus-hsp-search {
             display: flex; align-items: center; gap: 8px;
-            background: rgba(255, 255, 255, 0.88);
+            background: rgba(255, 255, 255, 0.9);
             border: 1px solid #fff;
-            padding: 9px 14px; border-radius: 14px; min-width: 240px;
+            padding: 8px 14px; border-radius: 14px; min-width: 220px;
           }
           .domus-hsp-search input {
             border: none; outline: none; background: transparent;
             font-size: 12px; font-weight: 600; color: #202020; width: 100%;
           }
+          .domus-hsp-new-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 9px 14px; border-radius: 14px; border: none;
+            background: #202020; color: #fff;
+            font-size: 11px; font-weight: 900; cursor: pointer; white-space: nowrap;
+          }
+          .domus-hsp-new-btn:hover { background: #5E7AC6; }
 
+          /* BODY */
           .domus-hsp-body {
             position: relative; z-index: 2;
             flex: 1; overflow-y: auto;
             padding: 18px;
+            display: flex; flex-direction: column; gap: 22px;
           }
-          @media (min-width: 768px) { .domus-hsp-body { padding: 24px 32px; } }
+          @media (min-width: 768px) { .domus-hsp-body { padding: 22px 32px; } }
 
-          /* BIBLIOTECA MASTER-DETAIL LAYOUT */
-          .domus-hsp-library-layout {
+          /* LEVELS */
+          .domus-hsp-level { display: flex; flex-direction: column; gap: 12px; }
+          .domus-hsp-lvl-head { display: flex; align-items: center; gap: 10px; }
+          .domus-hsp-step-badge {
+            background: #5E7AC6; color: #fff;
+            font-size: 9px; font-weight: 900; letter-spacing: 0.12em;
+            padding: 4px 9px; border-radius: 99px;
+          }
+          .domus-hsp-lvl-head h3 {
+            margin: 0; font-size: 14.5px; font-weight: 900; color: #202020;
+          }
+
+          /* NIVEL 1: CARRUSEL HOSPITALIDAD */
+          .domus-hsp-lvl1-carousel {
+            display: flex; gap: 16px; overflow-x: auto;
+            padding: 6px 4px 12px; scroll-snap-type: x mandatory;
+          }
+          .domus-hsp-lvl1-card {
+            position: relative;
+            min-width: 240px; height: 124px; flex: 1;
+            scroll-snap-align: start; cursor: pointer;
+            transition: transform 0.25s ease;
+          }
+          .domus-hsp-lvl1-card:hover { transform: translateY(-4px); }
+          .domus-hsp-lvl1-backlight {
+            position: absolute; inset: -5px; border-radius: 26px;
+            background: var(--cat-accent); filter: blur(14px);
+            opacity: 0; transition: opacity 0.28s ease; z-index: 0;
+          }
+          .domus-hsp-lvl1-card.active .domus-hsp-lvl1-backlight,
+          .domus-hsp-lvl1-card:hover .domus-hsp-lvl1-backlight {
+            opacity: 0.55;
+          }
+          .domus-hsp-lvl1-inner {
+            position: relative; z-index: 1;
+            width: 100%; height: 100%; border-radius: 22px; overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.88);
+            display: flex; flex-direction: column; justify-content: space-between;
+            padding: 12px 16px; box-sizing: border-box;
+          }
+          .domus-hsp-lvl1-bg {
+            position: absolute; inset: 0; background-size: cover; background-position: center;
+            transition: transform 0.5s ease;
+          }
+          .domus-hsp-lvl1-card:hover .domus-hsp-lvl1-bg { transform: scale(1.08); }
+          .domus-hsp-lvl1-overlay {
+            position: absolute; inset: 0;
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.22) 0%, rgba(15, 23, 42, 0.82) 100%);
+          }
+          .domus-hsp-lvl1-top {
+            position: relative; z-index: 2;
+            display: flex; align-items: center; justify-content: space-between; gap: 6px;
+          }
+          .domus-hsp-lvl1-sub {
+            font-size: 9px; font-weight: 900; text-transform: uppercase;
+            color: #fff; background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(8px);
+            padding: 3px 9px; border-radius: 99px;
+          }
+          .domus-hsp-lvl1-ok {
+            font-size: 9px; font-weight: 900; background: #10B981; color: #fff;
+            padding: 3px 9px; border-radius: 99px;
+          }
+          .domus-hsp-lvl1-bottom { position: relative; z-index: 2; color: #fff; }
+          .domus-hsp-lvl1-bottom h4 { margin: 0; font-size: 18px; font-weight: 900; }
+          .domus-hsp-lvl1-bottom span { font-size: 10.5px; font-weight: 700; opacity: 0.85; }
+
+          /* NIVEL 2: SUB-FILTROS */
+          .domus-hsp-lvl2-carousel {
+            display: flex; gap: 10px; overflow-x: auto; padding: 4px 2px 8px;
+          }
+          .domus-hsp-lvl2-pill {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 16px; border-radius: 18px;
+            background: rgba(255, 255, 255, 0.78);
+            border: 1.5px solid rgba(255, 255, 255, 0.95);
+            cursor: pointer; white-space: nowrap; transition: all 0.2s ease;
+          }
+          .domus-hsp-lvl2-pill.active {
+            background: var(--sub-accent); color: #fff;
+            box-shadow: 0 10px 22px -6px var(--sub-accent);
+          }
+          .domus-hsp-lvl2-icon {
+            width: 32px; height: 32px; border-radius: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex; align-items: center; justify-content: center; font-size: 15px;
+          }
+          .domus-hsp-lvl2-info { text-align: left; display: flex; flex-direction: column; }
+          .domus-hsp-lvl2-info strong { font-size: 12.5px; font-weight: 900; color: #202020; }
+          .domus-hsp-lvl2-info span { font-size: 10px; font-weight: 700; color: #666; }
+          .domus-hsp-lvl2-pill.active .domus-hsp-lvl2-info strong,
+          .domus-hsp-lvl2-pill.active .domus-hsp-lvl2-info span {
+            color: #fff;
+          }
+
+          /* NIVEL 3: GRILLA DE TARJETAS 3D FLIP */
+          .domus-hsp-flip-grid {
             display: grid; grid-template-columns: 1fr; gap: 22px;
           }
-          @media (min-width: 1024px) {
-            .domus-hsp-library-layout { grid-template-columns: 1fr 1.55fr; }
+          @media (min-width: 680px) {
+            .domus-hsp-flip-grid { grid-template-columns: repeat(2, 1fr); }
+          }
+          @media (min-width: 1120px) {
+            .domus-hsp-flip-grid { grid-template-columns: repeat(3, 1fr); }
           }
 
-          .domus-hsp-filter-row {
-            display: flex; gap: 8px; margin-bottom: 14px;
-          }
-          .domus-hsp-filter-pill {
-            padding: 7px 14px; border-radius: 99px;
-            border: 1px solid rgba(255,255,255,0.9);
-            background: rgba(255,255,255,0.7);
-            font-size: 11px; font-weight: 800; color: #555; cursor: pointer;
-          }
-          .domus-hsp-filter-pill.active {
-            background: #202020; color: #fff; border-color: #202020;
-          }
-
-          .domus-hsp-guest-cards {
-            display: flex; flex-direction: column; gap: 10px;
-          }
-          .domus-hsp-guest-item {
-            display: flex; align-items: center; gap: 14px;
-            padding: 14px 16px; border-radius: 22px;
-            background: rgba(255, 255, 255, 0.76);
-            border: 1.5px solid rgba(255, 255, 255, 0.95);
-            cursor: pointer; transition: all 0.22s ease;
-          }
-          .domus-hsp-guest-item:hover {
-            background: #fff; transform: translateX(4px);
-          }
-          .domus-hsp-guest-item.selected {
-            background: #fff;
-            border-color: #5E7AC6;
-            box-shadow: 0 12px 28px rgba(94, 122, 198, 0.16);
-          }
-          .domus-hsp-avatar {
+          .domus-hsp-flip-scene {
             position: relative;
-            width: 48px; height: 48px; border-radius: 16px;
-            color: #fff; font-size: 15px; font-weight: 900;
-            display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0;
+            height: 430px;
+            perspective: 1400px;
+            cursor: pointer;
           }
-          .domus-hsp-live-dot {
-            position: absolute; bottom: -2px; right: -2px;
-            width: 13px; height: 13px; border-radius: 50%;
-            background: #10B981; border: 2.5px solid #fff;
+          .domus-hsp-flip-backlight {
+            position: absolute; inset: -6px; border-radius: 32px;
+            background: var(--card-glow);
+            filter: blur(18px); opacity: 0.22;
+            transition: opacity 0.3s ease; z-index: 0;
           }
-          .domus-hsp-guest-meta { flex: 1; min-width: 0; }
-          .domus-hsp-guest-top {
-            display: flex; align-items: center; justify-content: space-between; gap: 8px;
-          }
-          .domus-hsp-guest-top strong {
-            font-size: 14.5px; font-weight: 900; color: #202020;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-          }
-          .domus-hsp-badge {
-            font-size: 9px; font-weight: 800; padding: 3px 8px; border-radius: 99px;
-            background: rgba(0,0,0,0.05); color: #666; white-space: nowrap;
-          }
-          .domus-hsp-badge.active {
-            background: rgba(16, 185, 129, 0.16); color: #059669; font-weight: 900;
-          }
-          .domus-hsp-guest-meta small {
-            display: block; font-size: 11px; font-weight: 700; color: #5E7AC6; margin: 2px 0;
-          }
-          .domus-hsp-guest-meta p {
-            margin: 0; font-size: 11px; color: #666;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+          .domus-hsp-flip-scene:hover .domus-hsp-flip-backlight,
+          .domus-hsp-flip-scene.is-flipped .domus-hsp-flip-backlight {
+            opacity: 0.58;
           }
 
-          /* PASAPORTE DE PREFERENCIAS 360 */
-          .domus-hsp-passport-card {
+          .domus-hsp-flip-inner {
+            position: relative; z-index: 1;
+            width: 100%; height: 100%;
+            transition: transform 0.68s cubic-bezier(0.22, 1, 0.36, 1);
+            transform-style: preserve-3d;
+          }
+          .domus-hsp-flip-scene.is-flipped .domus-hsp-flip-inner {
+            transform: rotateY(180deg);
+          }
+
+          .domus-hsp-face {
+            position: absolute; inset: 0;
+            width: 100%; height: 100%;
+            border-radius: 28px; overflow: hidden;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            box-sizing: border-box;
+            border: 1.5px solid rgba(255, 255, 255, 0.92);
+            box-shadow: 0 14px 34px rgba(15, 23, 42, 0.12);
+          }
+
+          /* FRENTE */
+          .domus-hsp-front {
+            display: flex; flex-direction: column; justify-content: space-between;
+            padding: 16px;
+          }
+          .domus-hsp-front-bg {
+            position: absolute; inset: 0;
+            background-size: cover; background-position: center;
+            transition: transform 0.6s ease;
+          }
+          .domus-hsp-flip-scene:hover .domus-hsp-front-bg { transform: scale(1.06); }
+          .domus-hsp-front-shade {
+            position: absolute; inset: 0;
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.12) 0%, rgba(15, 23, 42, 0.3) 45%, rgba(15, 23, 42, 0.86) 100%);
+          }
+          .domus-hsp-front-top {
+            position: relative; z-index: 2;
+            display: flex; align-items: center; justify-content: space-between;
+          }
+          .domus-hsp-status-pill {
+            font-size: 9.5px; font-weight: 900; letter-spacing: 0.08em;
+            color: #fff; padding: 6px 12px; border-radius: 99px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+          }
+          .domus-hsp-flip-hint {
+            display: inline-flex; align-items: center; gap: 5px;
+            background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px);
+            color: #202020; font-size: 10px; font-weight: 900;
+            padding: 6px 11px; border-radius: 99px;
+          }
+
+          .domus-hsp-front-glass {
+            position: relative; z-index: 2;
             background: rgba(255, 255, 255, 0.88);
-            border: 1.5px solid #fff;
-            border-radius: 28px; padding: 24px;
-            box-shadow: 0 14px 36px rgba(32, 32, 32, 0.05);
-            display: flex; flex-direction: column; gap: 18px;
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.96);
+            border-radius: 22px; padding: 15px;
+            display: flex; flex-direction: column; gap: 8px;
           }
-          .domus-hsp-passport-header {
-            display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
-            gap: 14px; padding-bottom: 16px; border-bottom: 1px solid rgba(0,0,0,0.06);
+          .domus-hsp-front-title-row {
+            display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;
           }
-          .domus-hsp-passport-person {
-            display: flex; align-items: center; gap: 14px;
+          .domus-hsp-front-title-row small {
+            display: block; font-size: 9.5px; font-weight: 900;
+            text-transform: uppercase; letter-spacing: 0.07em; color: #5E7AC6;
           }
-          .domus-hsp-avatar-lg {
-            width: 60px; height: 60px; border-radius: 20px;
-            color: #fff; font-size: 20px; font-weight: 900;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 10px 22px rgba(0,0,0,0.12);
+          .domus-hsp-front-title-row h4 {
+            margin: 2px 0 0; font-size: 18px; font-weight: 900; color: #202020; line-height: 1.1;
           }
-          .domus-hsp-passport-cat {
-            font-size: 10px; font-weight: 900; text-transform: uppercase;
-            letter-spacing: 0.09em; color: #5E7AC6;
+          .domus-hsp-temp-chip {
+            background: #181C26; color: #fff;
+            padding: 5px 10px; border-radius: 12px; text-align: center; flex-shrink: 0;
           }
-          .domus-hsp-passport-person h3 {
-            margin: 2px 0 3px; font-size: 22px; font-weight: 900; color: #202020;
-          }
-          .domus-hsp-passport-person small { font-size: 12px; color: #666; }
+          .domus-hsp-temp-chip strong { font-size: 14px; font-weight: 900; color: #6EE7B7; display: block; line-height: 1; }
+          .domus-hsp-temp-chip span { font-size: 8.5px; font-weight: 800; color: rgba(255,255,255,0.7); }
 
-          .domus-hsp-vip-trigger {
-            display: inline-flex; align-items: center; gap: 8px;
-            padding: 12px 18px; border-radius: 16px; border: none;
-            background: #5E7AC6; color: #fff;
-            font-size: 11px; font-weight: 900; letter-spacing: 0.07em;
-            cursor: pointer; box-shadow: 0 10px 24px rgba(94, 122, 198, 0.35);
-            transition: all 0.22s ease;
+          .domus-hsp-front-Suite, .domus-hsp-front-bev {
+            display: flex; align-items: center; gap: 7px;
+            font-size: 11px; font-weight: 800; color: #444;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
           }
-          .domus-hsp-vip-trigger:hover { transform: translateY(-2px); background: #4763B0; }
-          .domus-hsp-vip-trigger.active {
-            background: #10B981;
-            box-shadow: 0 10px 24px rgba(16, 185, 129, 0.35);
+          .domus-hsp-allergy-strip {
+            background: rgba(238, 107, 95, 0.14);
+            border: 1px solid rgba(238, 107, 95, 0.35);
+            color: #C83E31; font-size: 10px; font-weight: 900;
+            padding: 5px 9px; border-radius: 10px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
           }
 
-          .domus-hsp-passport-intro {
-            margin: 0; font-size: 12.5px; color: #555; line-height: 1.45;
+          /* REVERSO EDITABLE */
+          .domus-hsp-back {
+            transform: rotateY(180deg);
+            background: rgba(255, 255, 255, 0.97);
+            backdrop-filter: blur(28px);
+            padding: 15px 16px;
+            display: flex; flex-direction: column; justify-content: space-between;
+            cursor: default;
+          }
+          .domus-hsp-back-head {
+            display: flex; align-items: center; justify-content: space-between;
+            padding-bottom: 8px; border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+          }
+          .domus-hsp-back-person {
+            display: flex; align-items: center; gap: 10px;
+          }
+          .domus-hsp-back-person img {
+            width: 38px; height: 38px; border-radius: 12px; object-fit: cover;
+          }
+          .domus-hsp-back-person h4 {
+            margin: 0; font-size: 14.5px; font-weight: 900; color: #202020;
+          }
+          .domus-hsp-back-person span {
+            font-size: 9.5px; font-weight: 800; color: #5E7AC6; text-transform: uppercase;
+          }
+          .domus-hsp-unflip-btn {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 6px 11px; border-radius: 99px;
+            border: 1px solid rgba(0,0,0,0.1); background: #F4F6FA;
+            font-size: 10px; font-weight: 900; color: #202020; cursor: pointer;
           }
 
-          .domus-hsp-prefs-grid {
-            display: grid; grid-template-columns: 1fr; gap: 14px;
+          .domus-hsp-edit-form {
+            display: flex; flex-direction: column; gap: 7px;
           }
-          @media (min-width: 640px) {
-            .domus-hsp-prefs-grid { grid-template-columns: repeat(2, 1fr); }
+          .domus-hsp-edit-form label {
+            display: flex; align-items: center; gap: 4px;
+            font-size: 8.5px; font-weight: 900; text-transform: uppercase;
+            letter-spacing: 0.06em; color: #666; margin-bottom: 2px;
           }
-          .domus-hsp-pref-box {
-            background: #F7F9FC; border: 1px solid rgba(0,0,0,0.05);
-            border-radius: 20px; padding: 16px;
+          .domus-hsp-edit-form input, .domus-hsp-edit-form select {
+            width: 100%; box-sizing: border-box;
+            padding: 6px 9px; border-radius: 9px;
+            border: 1px solid rgba(0, 0, 0, 0.12); background: #F7F9FC;
+            font-size: 11px; font-weight: 800; color: #202020; outline: none;
           }
-          .domus-hsp-pref-head {
-            display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+          .domus-hsp-row-climate {
+            display: grid; grid-template-columns: 1.45fr 0.9fr; gap: 8px;
           }
-          .domus-hsp-pref-icon {
-            width: 36px; height: 36px; border-radius: 11px;
-            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+          .domus-hsp-row-2 {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
           }
-          .domus-hsp-pref-head small {
-            display: block; font-size: 9px; font-weight: 900; letter-spacing: 0.08em; color: #888;
+          .domus-hsp-mini-stepper {
+            display: flex; align-items: center; justify-content: space-between;
+            background: #181C26; color: #fff;
+            padding: 4px 6px; border-radius: 9px;
           }
-          .domus-hsp-pref-head h4 {
-            margin: 0; font-size: 13.5px; font-weight: 900; color: #202020;
+          .domus-hsp-mini-stepper button {
+            width: 22px; height: 22px; border-radius: 6px; border: none;
+            background: rgba(255,255,255,0.16); color: #fff;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
           }
-          .domus-hsp-pref-box p {
-            margin: 0; font-size: 12.5px; font-weight: 600; color: #444; line-height: 1.45;
+          .domus-hsp-mini-stepper strong { font-size: 11.5px; font-weight: 900; color: #6EE7B7; }
+
+          .domus-hsp-chips-wrap {
+            display: flex; flex-wrap: wrap; gap: 4px;
+          }
+          .domus-hsp-chip-btn {
+            display: inline-flex; align-items: center; gap: 3px;
+            padding: 4px 8px; border-radius: 7px;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            background: #F4F6FA; color: #666;
+            font-size: 9.5px; font-weight: 800; cursor: pointer;
+          }
+          .domus-hsp-chip-btn.active {
+            background: #5E7AC6; color: #fff; border-color: #5E7AC6;
           }
 
-          .domus-hsp-special-note {
-            display: flex; align-items: center; gap: 12px;
-            background: rgba(238, 107, 95, 0.1);
-            border: 1px solid rgba(238, 107, 95, 0.25);
-            padding: 14px 16px; border-radius: 18px;
+          .domus-hsp-back-actions {
+            display: grid; grid-template-columns: 0.9fr 1.25fr; gap: 8px;
+            padding-top: 4px;
           }
-          .domus-hsp-special-note small {
-            display: block; font-size: 9px; font-weight: 900; letter-spacing: 0.08em; color: #EE6B5F;
+          .domus-hsp-btn-save {
+            display: flex; align-items: center; justify-content: center; gap: 5px;
+            padding: 9px 8px; border-radius: 12px; border: none;
+            background: #10B981; color: #fff;
+            font-size: 10px; font-weight: 900; cursor: pointer;
           }
-          .domus-hsp-special-note strong { font-size: 12.5px; font-weight: 800; color: #202020; }
+          .domus-hsp-btn-dispatch {
+            display: flex; align-items: center; justify-content: center; gap: 5px;
+            padding: 9px 8px; border-radius: 12px; border: none;
+            background: #EE6B5F; color: #fff;
+            font-size: 10px; font-weight: 900; cursor: pointer;
+            box-shadow: 0 6px 14px rgba(238, 107, 95, 0.3);
+          }
+          .domus-hsp-saved-pill {
+            padding: 9px; border-radius: 12px;
+            background: rgba(16, 185, 129, 0.16); color: #065F46;
+            font-size: 11px; font-weight: 900;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+          }
 
-          /* SUITES GRID */
-          .domus-hsp-suites-grid {
-            display: grid; grid-template-columns: 1fr; gap: 18px;
+          /* 4. MODAL FLOTANTE CONCIERGE DISPATCH */
+          .domus-hsp-dispatch-backdrop {
+            position: fixed; inset: 0; z-index: 230;
+            background: rgba(15, 23, 42, 0.58); backdrop-filter: blur(12px);
+            display: flex; align-items: center; justify-content: center; padding: 16px;
           }
-          @media (min-width: 768px) {
-            .domus-hsp-suites-grid { grid-template-columns: repeat(2, 1fr); }
-          }
-          .domus-hsp-suite-card {
-            background: rgba(255,255,255,0.85); border: 1.5px solid #fff;
-            border-radius: 26px; padding: 22px;
-            box-shadow: 0 10px 28px rgba(0,0,0,0.04);
+          .domus-hsp-dispatch-window {
+            width: 100%; max-width: 460px;
+            background: rgba(255, 255, 255, 0.97);
+            border-radius: 32px; padding: 22px;
+            box-shadow: 0 28px 70px rgba(15, 23, 42, 0.4);
             display: flex; flex-direction: column; gap: 14px;
           }
-          .domus-hsp-suite-top {
-            display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;
+          .domus-hsp-dispatch-top {
+            display: flex; align-items: flex-start; justify-content: space-between;
           }
-          .domus-hsp-suite-zone {
-            font-size: 10px; font-weight: 900; text-transform: uppercase;
-            letter-spacing: 0.08em; color: #5E7AC6;
+          .domus-hsp-mode-tag {
+            display: inline-block; font-size: 8.5px; font-weight: 900;
+            letter-spacing: 0.1em; color: #EE6B5F;
+            background: rgba(238, 107, 95, 0.14); padding: 3px 8px; border-radius: 99px;
           }
-          .domus-hsp-suite-top h3 { margin: 2px 0 0; font-size: 19px; font-weight: 900; color: #202020; }
-          .domus-hsp-suite-status {
-            border: none; cursor: pointer; padding: 6px 12px; border-radius: 99px;
-            font-size: 10px; font-weight: 900; text-transform: uppercase;
-          }
-          .domus-hsp-suite-status.lista { background: rgba(16,185,129,0.16); color: #059669; }
-          .domus-hsp-suite-status.ocupada_vip { background: rgba(94,122,198,0.16); color: #5E7AC6; }
-          .domus-hsp-suite-status.en_preparacion { background: rgba(238,107,95,0.16); color: #EE6B5F; }
-
-          .domus-hsp-suite-meta {
-            display: flex; gap: 16px; font-size: 12px; color: #555;
-          }
-          .domus-hsp-suite-meta div { display: flex; align-items: center; gap: 6px; }
-          .domus-hsp-suite-assign {
-            background: #F7F9FC; padding: 12px 14px; border-radius: 16px;
-            display: flex; flex-direction: column; gap: 2px;
-          }
-          .domus-hsp-suite-assign small { font-size: 9px; font-weight: 900; color: #888; }
-          .domus-hsp-suite-assign strong { font-size: 13.5px; font-weight: 900; color: #202020; }
-          .domus-hsp-suite-assign span { font-size: 11.5px; color: #666; font-weight: 600; }
-
-          .domus-hsp-suite-checks {
-            display: flex; flex-wrap: wrap; gap: 8px;
-          }
-          .domus-hsp-check-pill {
-            display: inline-flex; align-items: center; gap: 5px;
-            background: rgba(16,185,129,0.1); color: #065F46;
-            padding: 5px 10px; border-radius: 10px; font-size: 11px; font-weight: 700;
+          .domus-hsp-dispatch-top h3 { margin: 2px 0; font-size: 19px; font-weight: 900; }
+          .domus-hsp-dispatch-top small { font-size: 11.5px; color: #666; }
+          .domus-hsp-close-sm {
+            width: 34px; height: 34px; border-radius: 50%; border: none;
+            background: #F4F6FA; cursor: pointer; display: flex; align-items: center; justify-content: center;
           }
 
-          /* AGENDA */
-          .domus-hsp-agenda-stack { display: flex; flex-direction: column; gap: 14px; }
-          .domus-hsp-visit-row {
-            background: rgba(255,255,255,0.85); border: 1.5px solid #fff;
-            border-radius: 22px; padding: 18px 22px;
-            display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
-            gap: 14px; cursor: pointer; transition: all 0.2s ease;
-          }
-          .domus-hsp-visit-row:hover { background: #fff; transform: translateY(-2px); }
-          .domus-hsp-visit-date {
-            font-size: 10px; font-weight: 900; color: #EE6B5F; letter-spacing: 0.08em;
-          }
-          .domus-hsp-visit-left h4 { margin: 3px 0; font-size: 17px; font-weight: 900; color: #202020; }
-          .domus-hsp-visit-left p { margin: 0; font-size: 12px; color: #666; }
-          .domus-hsp-visit-tags { display: flex; flex-wrap: wrap; gap: 8px; }
-          .domus-hsp-area-pill {
-            display: inline-flex; align-items: center; gap: 5px;
-            background: #F4F6FA; padding: 6px 11px; border-radius: 10px;
-            font-size: 11px; font-weight: 800; color: #444;
-          }
-          .domus-hsp-visit-status {
-            padding: 7px 14px; border-radius: 99px; font-size: 11px; font-weight: 900;
-          }
-          .domus-hsp-visit-status.ok { background: rgba(16,185,129,0.16); color: #059669; }
-          .domus-hsp-visit-status.pending { background: rgba(245,158,11,0.18); color: #B45309; }
-
-          /* FORMULARIO NUEVO VIP */
-          .domus-hsp-form-card {
-            background: rgba(255,255,255,0.88); border: 1.5px solid #fff;
-            border-radius: 28px; padding: 26px; max-width: 920px; margin: 0 auto;
-          }
-          .domus-hsp-form-card h3 { margin: 0 0 4px; font-size: 20px; font-weight: 900; }
-          .domus-hsp-form-card p { margin: 0 0 18px; font-size: 12.5px; color: #666; }
-          .domus-hsp-form-grid {
-            display: grid; grid-template-columns: 1fr; gap: 14px;
-          }
-          @media (min-width: 768px) {
-            .domus-hsp-form-grid { grid-template-columns: repeat(3, 1fr); }
-            .domus-hsp-form-grid .full-span { grid-column: span 3; }
-            .domus-hsp-form-grid .two-span { grid-column: span 2; }
-          }
-          .domus-hsp-form-grid label {
-            display: block; font-size: 10px; font-weight: 900;
+          .domus-hsp-eta-section label, .domus-hsp-depts-check label {
+            display: block; font-size: 9.5px; font-weight: 900;
             text-transform: uppercase; letter-spacing: 0.08em; color: #5E7AC6;
             margin-bottom: 6px;
           }
-          .domus-hsp-form-grid input, .domus-hsp-form-grid select {
-            width: 100%; box-sizing: border-box;
-            padding: 11px 14px; border-radius: 13px;
-            border: 1px solid rgba(0,0,0,0.1); background: #F7F9FC;
-            font-size: 12.5px; font-weight: 600; color: #202020; outline: none;
+          .domus-hsp-eta-pills {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;
           }
-          .domus-hsp-submit-btn {
+          .domus-hsp-eta-btn {
+            padding: 10px; border-radius: 12px;
+            border: 1px solid rgba(0,0,0,0.08); background: #F7F9FC;
+            font-size: 11.5px; font-weight: 800; color: #444; cursor: pointer;
+          }
+          .domus-hsp-eta-btn.active {
+            background: #5E7AC6; color: #fff; border-color: #5E7AC6;
+          }
+
+          .domus-hsp-pax-screen {
+            display: flex; align-items: center; justify-content: space-between;
+            background: #181C26; color: #fff;
+            padding: 12px 18px; border-radius: 18px;
+          }
+          .domus-hsp-pax-screen small {
+            display: block; font-size: 8.5px; font-weight: 800; color: rgba(255,255,255,0.65);
+          }
+          .domus-hsp-pax-screen strong { font-size: 22px; font-weight: 900; color: #6EE7B7; }
+          .domus-hsp-pax-controls { display: flex; gap: 8px; }
+          .domus-hsp-pax-controls button {
+            width: 38px; height: 38px; border-radius: 12px; border: none;
+            background: rgba(255,255,255,0.16); color: #fff;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+          }
+
+          .domus-hsp-depts-check { display: flex; flex-direction: column; gap: 8px; }
+          .domus-hsp-dept-toggle {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 12px; border-radius: 14px;
+            background: #F7F9FC; border: 1px solid rgba(0,0,0,0.06);
+            cursor: pointer; opacity: 0.6;
+          }
+          .domus-hsp-dept-toggle.on {
+            opacity: 1; background: rgba(16, 185, 129, 0.08);
+            border-color: rgba(16, 185, 129, 0.35);
+          }
+          .domus-hsp-dept-toggle .check-box {
+            width: 22px; height: 22px; border-radius: 7px;
+            background: #10B981; color: #fff;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+          }
+          .domus-hsp-dept-toggle strong { display: block; font-size: 12px; font-weight: 900; color: #202020; }
+          .domus-hsp-dept-toggle span { font-size: 10.5px; color: #666; font-weight: 600; }
+
+          .domus-hsp-confirm-dispatch {
             width: 100%; padding: 15px; border: none; border-radius: 16px;
-            background: #5E7AC6; color: #fff; font-size: 12px; font-weight: 900;
-            letter-spacing: 0.08em; margin-top: 18px; cursor: pointer;
+            background: #10B981; color: #fff;
+            font-size: 12.5px; font-weight: 900; letter-spacing: 0.08em;
             display: flex; align-items: center; justify-content: center; gap: 8px;
+            cursor: pointer; box-shadow: 0 10px 24px rgba(16, 185, 129, 0.35);
           }
+
+          /* ADD DRAWER & LOGS */
+          .domus-hsp-add-drawer {
+            background: #fff; border: 1.5px solid rgba(94, 122, 198, 0.35);
+            border-radius: 24px; padding: 18px;
+          }
+          .domus-hsp-drawer-head {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;
+          }
+          .domus-hsp-drawer-head span { font-size: 9.5px; font-weight: 900; color: #5E7AC6; }
+          .domus-hsp-drawer-head h4 { margin: 2px 0 0; font-size: 16px; font-weight: 900; }
+          .domus-hsp-drawer-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px;
+          }
+          .domus-hsp-drawer-grid label {
+            display: block; font-size: 9.5px; font-weight: 900; color: #666; margin-bottom: 4px;
+          }
+          .domus-hsp-drawer-grid input, .domus-hsp-drawer-grid select {
+            width: 100%; box-sizing: border-box; padding: 9px 11px; border-radius: 11px;
+            border: 1px solid rgba(0,0,0,0.12); background: #F7F9FC; font-size: 12px; font-weight: 700;
+          }
+          .domus-hsp-drawer-foot { display: flex; justify-content: flex-end; margin-top: 12px; }
+          .domus-hsp-save-new {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 10px 18px; border-radius: 12px; border: none;
+            background: #10B981; color: #fff; font-size: 11.5px; font-weight: 900; cursor: pointer;
+          }
+
+          .domus-hsp-logs-card {
+            background: rgba(255,255,255,0.85); border: 1.5px solid #fff;
+            border-radius: 26px; padding: 22px;
+          }
+          .domus-hsp-logs-head h3 { margin: 0 0 4px; font-size: 18px; font-weight: 900; }
+          .domus-hsp-logs-head p { margin: 0 0 16px; font-size: 12px; color: #666; }
+          .domus-hsp-logs-stack { display: flex; flex-direction: column; gap: 10px; }
+          .domus-hsp-log-row {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px 16px; border-radius: 16px; background: #F7F9FC;
+          }
+          .domus-hsp-log-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+          .domus-hsp-log-info { flex: 1; display: flex; flex-direction: column; }
+          .domus-hsp-log-info strong { font-size: 13.5px; font-weight: 900; color: #202020; }
+          .domus-hsp-log-info span { font-size: 11.5px; color: #555; font-weight: 600; }
+          .domus-hsp-log-time { font-size: 11px; font-weight: 800; color: #888; }
 
           /* FOOTER */
           .domus-hsp-footer {
