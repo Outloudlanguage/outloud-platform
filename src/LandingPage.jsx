@@ -279,17 +279,17 @@ export default function LandingPage({
           }}
         />
 
-        {/* Crisp Architectural Dot-Matrix + Acoustic Wave Rings */}
+        {/* Subtle Architectural Dot-Matrix + Acoustic Wave Rings */}
         <div
-          className="absolute inset-0 opacity-75"
+          className="absolute inset-0 opacity-50"
           style={{
-            backgroundImage: 'radial-gradient(rgba(72, 80, 134, 0.22) 1.35px, transparent 1.35px)',
+            backgroundImage: 'radial-gradient(rgba(72, 80, 134, 0.16) 1.25px, transparent 1.25px)',
             backgroundSize: '26px 26px',
           }}
         />
 
         <svg
-          className="absolute top-[46%] left-0 w-full h-56 opacity-[0.14]"
+          className="absolute top-[52%] left-0 w-full h-56 opacity-[0.09]"
           viewBox="0 0 1440 240"
           preserveAspectRatio="none"
           fill="none"
@@ -453,15 +453,16 @@ export default function LandingPage({
                 </span>
               </h1>
 
-              <div className="bg-white/55 backdrop-blur-xl border border-white/85 rounded-2xl px-5 py-4 sm:px-6 sm:py-4.5 shadow-[0_12px_28px_-12px_rgba(55,63,118,0.2)] max-w-xl mb-8">
-                <p className="text-sm sm:text-base lg:text-lg text-[#1e2246] font-semibold leading-relaxed">
-                  Aprende inglés hablando desde el primer día. Lecciones interactivas 24/7, práctica vocal instantánea y clases{' '}
-                  <strong className="font-black text-[#454d82] underline decoration-[#ffc749] decoration-[3px] underline-offset-2">
-                    100% en vivo
-                  </strong>{' '}
-                  diseñadas para que dejes de traducir en tu cabeza.
-                </p>
-              </div>
+              <p
+                className="text-base sm:text-lg text-[#1e2246]/90 font-semibold leading-relaxed max-w-lg mb-8"
+                style={{ textShadow: '0 2px 14px rgba(255, 255, 255, 0.9)' }}
+              >
+                Aprende inglés hablando desde el primer día. Lecciones interactivas 24/7, práctica vocal instantánea y clases{' '}
+                <strong className="font-black text-[#1e2246] underline decoration-[#ffc749] decoration-[3px] underline-offset-4">
+                  100% en vivo
+                </strong>{' '}
+                diseñadas para que dejes de traducir en tu cabeza.
+              </p>
 
               {/* Primary Tactile CTAs */}
               <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
