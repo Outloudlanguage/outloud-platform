@@ -7,6 +7,53 @@ const MODEL_AUDIO_URL = ''; // Ej: 'https://pub-4ca81ef087364b84a5b486b76cc2b72e
 const MODEL_SUBTITLE_EN = 'Hi! I am ready to speak English OutLoud.';
 
 // ==========================================================
+// SUBTLE SYNTHESIZED UI AUDIO ("Juice" — Zero External Files)
+// ==========================================================
+function playUiCue(type = 'pop') {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const now = ctx.currentTime;
+
+    const makeTone = (freqStart, freqEnd, duration, delay = 0, vol = 0.045, wave = 'sine') => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = wave;
+      osc.frequency.setValueAtTime(freqStart, now + delay);
+      osc.frequency.exponentialRampToValueAtTime(freqEnd, now + delay + duration);
+      gain.gain.setValueAtTime(0.0001, now + delay);
+      gain.gain.linearRampToValueAtTime(vol, now + delay + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + delay + duration);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now + delay);
+      osc.stop(now + delay + duration + 0.02);
+    };
+
+    if (type === 'pop') {
+      makeTone(460, 680, 0.085, 0, 0.04, 'triangle');
+    } else if (type === 'record') {
+      makeTone(520, 620, 0.09, 0, 0.045, 'sine');
+      makeTone(620, 780, 0.09, 0.075, 0.04, 'sine');
+    } else if (type === 'stop') {
+      makeTone(640, 440, 0.09, 0, 0.04, 'triangle');
+    } else if (type === 'celebrate') {
+      // Bright uplifting 3-note triad (C5 -> E5 -> G5)
+      makeTone(523.25, 523.25, 0.14, 0, 0.045, 'triangle');
+      makeTone(659.25, 659.25, 0.14, 0.08, 0.045, 'triangle');
+      makeTone(783.99, 1046.5, 0.24, 0.16, 0.05, 'sine');
+    }
+
+    setTimeout(() => {
+      ctx.close().catch(() => {});
+    }, 650);
+  } catch {
+    // Fails silently if browser blocks audio context
+  }
+}
+
+// ==========================================================
 // CUSTOM VECTOR SVGs (Cero emojis genéricos)
 // ==========================================================
 const RecordMicSvg = ({ className = 'w-12 h-12' }) => (
@@ -32,38 +79,52 @@ const RepeatSvg = ({ className = 'w-11 h-11' }) => (
   </svg>
 );
 
-const CheckSvg = ({ className = 'w-12 h-12' }) => (
-  <svg className={className} fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+const CheckBadgeSvg = ({ className = 'w-4 h-4' }) => (
+  <svg className={className} fill="none" stroke="currentColor" strokeWidth="3.2" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
   </svg>
 );
 
 // ==========================================================
-// LIVING 2.5D OUTLOUD MASCOT (Exact Brand Paths, Layered)
+// LIVING 2.5D OUTLOUD MASCOT (Disney Squash/Stretch + Equity)
+// Modes: 'idle' | 'talking' | 'celebrate'
 // ==========================================================
 function AnimatedOutLoudMascot({ mode = 'idle' }) {
-  const isTalking = mode === 'talking';
+  const bodyClass =
+    mode === 'talking'
+      ? 'ola-mascot-body-talk'
+      : mode === 'celebrate'
+      ? 'ola-mascot-body-celebrate'
+      : 'ola-mascot-body-idle';
+
+  const faceClass =
+    mode === 'talking'
+      ? 'ola-face-talk'
+      : mode === 'celebrate'
+      ? 'ola-face-celebrate'
+      : 'ola-face-idle';
+
+  const phonesClass =
+    mode === 'talking'
+      ? 'ola-phones-talk'
+      : mode === 'celebrate'
+      ? 'ola-phones-celebrate'
+      : 'ola-phones-idle';
 
   return (
     <div
       className="relative w-32 h-32 sm:w-36 sm:h-36 flex items-center justify-center"
-      style={{ perspective: '650px' }}
+      style={{ perspective: '680px' }}
     >
-      <div
-        className={`w-full h-full ${
-          isTalking ? 'ola-mascot-body-talk' : 'ola-mascot-body-idle'
-        }`}
-        style={{ transformStyle: 'preserve-3d' }}
-      >
+      <div className={`w-full h-full ${bodyClass}`} style={{ transformStyle: 'preserve-3d' }}>
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 904.72 904.72"
           className="w-full h-full overflow-visible drop-shadow-[0_16px_26px_rgba(72,80,136,0.3)]"
           aria-label="OutLoud Mascot"
         >
-          {/* LAYER 1: Yellow Rounded Tile */}
+          {/* LAYER 1: Exact Yellow Rounded Brand Tile */}
           <rect
-            className={isTalking ? 'ola-tile-talk' : 'ola-tile-idle'}
             x="76.01"
             y="117.44"
             width="751.97"
@@ -76,23 +137,23 @@ function AnimatedOutLoudMascot({ mode = 'idle' }) {
             strokeWidth="2"
           />
 
-          {/* LAYER 2: Expressive Face / Smile Group (Looks around, smiles, talks) */}
-          <g className={isTalking ? 'ola-face-talk' : 'ola-face-idle'}>
+          {/* LAYER 2: Expressive Face / Smile Group (Curious turns, chatter, joyful squash-stretch) */}
+          <g className={faceClass}>
             <path
-              className={isTalking ? '' : 'ola-cheek-left-idle'}
+              className={mode === 'idle' ? 'ola-cheek-left-idle' : mode === 'celebrate' ? 'ola-cheek-left-win' : ''}
               fill="#626a9f"
               d="M433.61,831.95c.46-50.58.32-57.11.46-109.97-99.49.15-172.57-44.98-172.07-147.86h172.79c-1.14-48.9,1.55-96.79.04-145.57-2.7-194.75-282.01-186.14-289.21,4.69-7.14,189.25-1.79,393.2,230.02,398.57"
             />
             <path
-              className={isTalking ? '' : 'ola-cheek-right-idle'}
+              className={mode === 'idle' ? 'ola-cheek-right-idle' : mode === 'celebrate' ? 'ola-cheek-right-win' : ''}
               fill="#626a9f"
               d="M470.91,831.95c-.46-50.58-.32-57.11-.46-109.97,99.49.15,172.57-44.98,172.07-147.86h-172.79c1.14-48.9-1.55-96.79-.04-145.57,2.7-194.75,282.01-186.14,289.21,4.69,7.14,189.25,1.79,393.2-230.02,398.57"
             />
           </g>
 
-          {/* LAYER 3: Headphones Arch & Earcups (Parallax head-turn & beat bounce) */}
+          {/* LAYER 3: Exact Headphones Arch & Earcups (Parallax Follow-Through) */}
           <path
-            className={isTalking ? 'ola-phones-talk' : 'ola-phones-idle'}
+            className={phonesClass}
             fill="#626a9f"
             d="M789.62,562.95c-.55-21.4-.23-43.36.09-64.61.35-23.41.71-47.59-.09-71.3-2.56-75.99-45.3-136.01-117.26-164.67-2.47-.98-4.62-1.66-6.71-2.32-4.67-1.47-7.01-2.21-9.55-5.11-2.57-2.93-5.02-6.24-7.61-9.74-2.83-3.82-5.75-7.76-9.04-11.51-47.63-54.12-115.92-85.15-187.36-85.15s-140.5,31.43-188.07,86.23c-3.09,3.57-5.87,7.46-8.55,11.24-2.74,3.85-5.32,7.48-7.91,10.3-1.49,1.62-5.3,2.79-8.99,3.92-2.08.64-4.22,1.29-6.36,2.13-68.92,27.09-113.68,86.62-116.79,155.36-1.14,25.25-.63,51.21-.13,76.31.45,22.42.91,45.6.17,67.95-.03.33-.06.6-.1.83h-.24c-1.81,0-4.25-.37-6.83-.76l-.41-.06c-26.87-4.08-47.39-16.68-60.99-37.46-25.44-38.86-22.34-98.3-10.96-140.98,11-41.25,30.42-63.78,62.95-73.07,5.1-1.46,10.29-2.15,15.79-2.9,2.47-.33,4.95-.67,7.49-1.08l5.93-.95,1.95-5.68c14.93-43.6,37.68-82.76,67.61-116.39,33.36-37.5,73.09-66.57,118.07-86.41,43.23-19.07,89.18-28.74,136.57-28.74s94.7,9.94,138.52,29.56c45.56,20.39,85.62,50.2,119.09,88.59,27.68,31.76,49.54,70.08,64.98,113.9l2.26,6.41,6.79.26c11.97.46,22.87,2.92,33.32,7.51,34.39,15.11,46.78,44.03,54.8,82.79,4.92,23.77,6.43,47.67,4.36,69.11-2.33,24.24-9.01,44.45-19.86,60.09-13.52,19.49-33.51,31.42-59.42,35.44-.49.08-1,.16-1.51.24l-.21.03c-2.05.32-4.14.67-5.79.69Z"
           />
@@ -102,7 +163,36 @@ function AnimatedOutLoudMascot({ mode = 'idle' }) {
   );
 }
 
-export default function HeroVoicePractice() {
+// ==========================================================
+// CELEBRATION PARTICLE BURST (Game "Boss-Stop" Juice)
+// ==========================================================
+const SPARK_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315];
+
+function CelebrationSparks() {
+  return (
+    <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-30">
+      {SPARK_ANGLES.map((deg, idx) => (
+        <span
+          key={deg}
+          className="ola-spark-ray absolute"
+          style={{ transform: `rotate(${deg}deg)` }}
+        >
+          <span
+            className="ola-spark-dot block rounded-full"
+            style={{
+              width: idx % 2 === 0 ? '9px' : '6px',
+              height: idx % 2 === 0 ? '9px' : '6px',
+              backgroundColor: idx % 3 === 0 ? '#ffc749' : idx % 3 === 1 ? '#16a37f' : '#626a9f',
+              animationDelay: `${idx * 0.025}s`,
+            }}
+          />
+        </span>
+      ))}
+    </div>
+  );
+}
+
+export default function HeroVoicePractice({ onFreeLessonClick }) {
   // Fases: 'idle' | 'playing_model' | 'ready_to_record' | 'recording' | 'comparing_model' | 'comparing_user' | 'congrats'
   const [phase, setPhase] = useState('idle');
   const [micError, setMicError] = useState('');
@@ -118,7 +208,37 @@ export default function HeroVoicePractice() {
   const resetTimerRef = useRef(null);
   const speechFallbackTimerRef = useRef(null);
 
+  // Live 60fps Mic Analyser Refs (Zero React Re-Renders)
+  const audioCtxRef = useRef(null);
+  const rafRef = useRef(null);
+  const leftBarRefs = useRef([]);
+  const rightBarRefs = useRef([]);
+
+  const stopMicAnalyser = () => {
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    if (audioCtxRef.current) {
+      audioCtxRef.current.close().catch(() => {});
+      audioCtxRef.current = null;
+    }
+  };
+
+  // Clear direct DOM heights whenever leaving recording phase
+  useEffect(() => {
+    if (phase !== 'recording') {
+      leftBarRefs.current.forEach((el) => {
+        if (el) el.style.height = '';
+      });
+      rightBarRefs.current.forEach((el) => {
+        if (el) el.style.height = '';
+      });
+    }
+  }, [phase]);
+
   const cleanupResources = () => {
+    stopMicAnalyser();
     if (recordTimerRef.current) clearInterval(recordTimerRef.current);
     if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
     if (speechFallbackTimerRef.current) clearTimeout(speechFallbackTimerRef.current);
@@ -164,6 +284,39 @@ export default function HeroVoicePractice() {
     setMicError('');
   };
 
+  // Start Live Audio Analyser for Real-Time Voice-Reactive Bars
+  const startMicAnalyser = (stream) => {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      audioCtxRef.current = ctx;
+      const source = ctx.createMediaStreamSource(stream);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 64;
+      analyser.smoothingTimeConstant = 0.72;
+      source.connect(analyser);
+
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+      const barWeights = [0.65, 0.9, 1.0, 1.0, 0.85, 0.6];
+
+      const tick = () => {
+        analyser.getByteFrequencyData(dataArray);
+        for (let i = 0; i < 6; i++) {
+          const bin = dataArray[i + 2] || 0;
+          const level = Math.min(1, (bin / 185) * barWeights[i]);
+          const px = Math.round(10 + level * 46);
+          if (leftBarRefs.current[i]) leftBarRefs.current[i].style.height = `${px}px`;
+          if (rightBarRefs.current[5 - i]) rightBarRefs.current[5 - i].style.height = `${px}px`;
+        }
+        rafRef.current = requestAnimationFrame(tick);
+      };
+      rafRef.current = requestAnimationFrame(tick);
+    } catch {
+      // Gracefully falls back to CSS wave if Web Audio is unavailable
+    }
+  };
+
   // Reproduce la URL alojada o usa SpeechSynthesis en inglés como respaldo temporal
   const playModelAudio = (onDone) => {
     if (MODEL_AUDIO_URL && MODEL_AUDIO_URL.trim() !== '') {
@@ -206,8 +359,9 @@ export default function HeroVoicePractice() {
     }
   };
 
-  // PASO 1: Tocar el logo -> suena el audio modelo + subtítulo en inglés
+  // PASO 1: Tocar el logo -> chime + suena el audio modelo + subtítulo en inglés
   const handleStartPractice = () => {
+    playUiCue('pop');
     setMicError('');
     setPhase('playing_model');
     playModelAudio(() => {
@@ -215,7 +369,7 @@ export default function HeroVoicePractice() {
     });
   };
 
-  // PASO 2: Tocar el símbolo rojo coral -> graba en memoria interna + subtítulo en inglés
+  // PASO 2: Tocar el símbolo rojo coral -> graba en memoria interna con barras reactivas reales
   const handleStartRecording = async () => {
     setMicError('');
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -225,6 +379,7 @@ export default function HeroVoicePractice() {
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      playUiCue('record');
       mediaStreamRef.current = stream;
       chunksRef.current = [];
 
@@ -246,6 +401,7 @@ export default function HeroVoicePractice() {
       };
 
       recorder.onstop = () => {
+        stopMicAnalyser();
         if (mediaStreamRef.current) {
           mediaStreamRef.current.getTracks().forEach((t) => t.stop());
           mediaStreamRef.current = null;
@@ -263,6 +419,7 @@ export default function HeroVoicePractice() {
       recorder.start();
       setRecordSeconds(0);
       setPhase('recording');
+      startMicAnalyser(stream);
 
       recordTimerRef.current = setInterval(() => {
         setRecordSeconds((prev) => {
@@ -281,13 +438,15 @@ export default function HeroVoicePractice() {
 
   // PASO 3: Tocar el símbolo de pausa -> detiene la grabación
   const handleStopRecording = () => {
+    playUiCue('stop');
+    stopMicAnalyser();
     if (recordTimerRef.current) clearInterval(recordTimerRef.current);
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
     }
   };
 
-  // PASO 4: Comparación automática (Modelo -> Tu Voz) -> Felicitación -> Reinicio automático
+  // PASO 4: Comparación automática (Modelo -> Tu Voz) -> Boss-Stop Congrats -> Auto-Reset
   const runBackToBackComparison = (blobUrl) => {
     setPhase('comparing_model');
 
@@ -298,10 +457,12 @@ export default function HeroVoicePractice() {
 
       const finishCycle = () => {
         userAudioRef.current = null;
+        playUiCue('celebrate');
         setPhase('congrats');
+        // Gives user a brief window to tap the Peak-Momentum CTA before cleanly resetting
         resetTimerRef.current = setTimeout(() => {
           resetAll();
-        }, 2300);
+        }, 4600);
       };
 
       userAudio.onended = finishCycle;
@@ -318,13 +479,13 @@ export default function HeroVoicePractice() {
     } else if (phase === 'recording') {
       handleStopRecording();
     } else if (phase === 'congrats') {
+      playUiCue('pop');
       resetAll();
     }
   };
 
-  const isWaveActive =
+  const isCssWaveActive =
     phase === 'playing_model' ||
-    phase === 'recording' ||
     phase === 'comparing_model' ||
     phase === 'comparing_user';
 
@@ -355,119 +516,197 @@ export default function HeroVoicePractice() {
             inset 0 -1px 1px rgba(98, 106, 159, 0.14);
         }
 
-        /* ==========================================
-           LIVING 2.5D MASCOT ANIMATIONS (IDLE)
-           Looks left -> Looks up-right -> Chats -> Beams
-           ========================================== */
+        /* =========================================================
+           VIVID DISNEY-PRINCIPLE 2.5D MASCOT (IDLE)
+           Anticipation -> Curious Left -> Curious Up-Right ->
+           Playful Lean-In Chat -> Squash & Stretch Smile Hop ->
+           EXACT Canonical Brand Form Rest (94% - 100%)
+           ========================================================= */
         @keyframes olaMascotBodyIdle {
-          0%, 100% { transform: rotateY(0deg) rotateZ(0deg) translateY(0px) scale(1); }
-          12% { transform: rotateY(-20deg) rotateZ(-4.5deg) translateY(-4px) scale(1.02); }
-          23% { transform: rotateY(-17deg) rotateZ(-2.5deg) translateY(-2px) scale(1.02); }
-          36% { transform: rotateY(20deg) rotateZ(4.5deg) translateY(-5px) scale(1.03); }
-          47% { transform: rotateY(15deg) rotateZ(2.5deg) translateY(-2px) scale(1.02); }
-          56% { transform: rotateY(0deg) rotateZ(-2deg) translateY(0px) scale(1.03); }
-          61% { transform: rotateY(0deg) rotateZ(2.5deg) translateY(-4px) scale(1.05); }
-          65% { transform: rotateY(0deg) rotateZ(-2deg) translateY(0px) scale(1.03); }
-          69% { transform: rotateY(0deg) rotateZ(2deg) translateY(-3px) scale(1.05); }
-          74% { transform: rotateY(0deg) rotateZ(0deg) translateY(0px) scale(1.02); }
-          84% { transform: rotateY(0deg) rotateZ(0deg) translateY(-7px) scale(1.07); }
-          93% { transform: rotateY(0deg) rotateZ(0deg) translateY(1px) scale(0.99); }
+          0%, 4% { transform: rotateY(0deg) rotateZ(0deg) translateY(0px) scale(1, 1); }
+          /* Micro-anticipation squash before turning left */
+          8% { transform: rotateY(4deg) rotateZ(2deg) translateY(3px) scale(1.04, 0.95); }
+          /* Curious glance left + playful head cock */
+          15% { transform: rotateY(-25deg) rotateZ(-6.5deg) translateY(-6px) scale(0.98, 1.03); }
+          23% { transform: rotateY(-21deg) rotateZ(-4deg) translateY(-3px) scale(1, 1.01); }
+          /* Snappy transition through center */
+          29% { transform: rotateY(0deg) rotateZ(0deg) translateY(2px) scale(1.03, 0.97); }
+          /* Curious glance up-right */
+          37% { transform: rotateY(25deg) rotateZ(6.5deg) translateY(-7px) scale(0.98, 1.03); }
+          46% { transform: rotateY(19deg) rotateZ(3.5deg) translateY(-3px) scale(1, 1.01); }
+          /* Turns back to visitor & chats excitedly (3 beats) */
+          53% { transform: rotateY(0deg) rotateZ(-3deg) translateY(1px) scale(1.05, 0.95); }
+          57% { transform: rotateY(0deg) rotateZ(3deg) translateY(-6px) scale(0.97, 1.05); }
+          61% { transform: rotateY(0deg) rotateZ(-2.5deg) translateY(1px) scale(1.04, 0.96); }
+          65% { transform: rotateY(0deg) rotateZ(2.5deg) translateY(-5px) scale(0.98, 1.04); }
+          69% { transform: rotateY(0deg) rotateZ(0deg) translateY(0px) scale(1.02, 0.98); }
+          /* Anticipation dip -> Joyful squash-and-stretch hop -> Elastic settle */
+          75% { transform: rotateY(0deg) rotateZ(0deg) translateY(5px) scale(1.07, 0.91); }
+          82% { transform: rotateY(0deg) rotateZ(0deg) translateY(-14px) scale(0.94, 1.08); }
+          88% { transform: rotateY(0deg) rotateZ(0deg) translateY(3px) scale(1.04, 0.96); }
+          /* Clean return to exact canonical brand geometry */
+          94%, 100% { transform: rotateY(0deg) rotateZ(0deg) translateY(0px) scale(1, 1); }
         }
 
         @keyframes olaFaceIdle {
-          0%, 100% { transform: translate(0px, 0px) scale(1, 1); }
-          /* Glances left */
-          12%, 23% { transform: translate(-34px, -10px) scale(0.96, 1.02); }
-          /* Glances up-right */
-          36%, 47% { transform: translate(34px, -16px) scale(0.96, 1.02); }
-          /* Turns back & chats playfully (3 rhythmic syllables) */
-          56% { transform: translate(0px, 0px) scale(1.03, 0.96); }
-          60% { transform: translate(0px, 14px) scale(0.94, 1.1); }
-          63% { transform: translate(0px, -4px) scale(1.05, 0.93); }
-          67% { transform: translate(0px, 16px) scale(0.93, 1.11); }
-          70% { transform: translate(0px, -3px) scale(1.04, 0.94); }
-          73% { transform: translate(0px, 10px) scale(0.96, 1.07); }
-          /* Big happy beam / smile stretch */
-          84% { transform: translate(0px, -12px) scale(1.09, 0.9); }
-          93% { transform: translate(0px, 2px) scale(0.99, 1.01); }
+          0%, 4% { transform: translate(0px, 0px) scale(1, 1); }
+          8% { transform: translate(6px, 6px) scale(1.03, 0.96); }
+          /* Looks curiously left */
+          15%, 23% { transform: translate(-42px, -12px) scale(0.94, 1.03); }
+          29% { transform: translate(0px, 4px) scale(1.02, 0.98); }
+          /* Looks curiously up-right */
+          37%, 46% { transform: translate(42px, -20px) scale(0.94, 1.03); }
+          /* Playful 3-syllable chatter facing forward */
+          53% { transform: translate(0px, -4px) scale(1.05, 0.93); }
+          56% { transform: translate(0px, 18px) scale(0.92, 1.13); }
+          60% { transform: translate(0px, -5px) scale(1.06, 0.92); }
+          64% { transform: translate(0px, 18px) scale(0.92, 1.13); }
+          68% { transform: translate(0px, -3px) scale(1.04, 0.95); }
+          /* Joyful beaming smile during hop */
+          75% { transform: translate(0px, 10px) scale(1.08, 0.91); }
+          82% { transform: translate(0px, -16px) scale(1.11, 0.89); }
+          88% { transform: translate(0px, 4px) scale(1.02, 0.98); }
+          /* Exact canonical return */
+          94%, 100% { transform: translate(0px, 0px) scale(1, 1); }
         }
 
         @keyframes olaCheekLeftIdle {
-          0%, 76%, 94%, 100% { transform: translateX(0px) rotate(0deg); }
-          84% { transform: translateX(-10px) rotate(-3.5deg); }
+          0%, 73%, 92%, 100% { transform: translateX(0px) rotate(0deg); }
+          82% { transform: translateX(-14px) rotate(-4.5deg); }
         }
 
         @keyframes olaCheekRightIdle {
-          0%, 76%, 94%, 100% { transform: translateX(0px) rotate(0deg); }
-          84% { transform: translateX(10px) rotate(3.5deg); }
+          0%, 73%, 92%, 100% { transform: translateX(0px) rotate(0deg); }
+          82% { transform: translateX(14px) rotate(4.5deg); }
         }
 
         @keyframes olaPhonesIdle {
-          0%, 100% { transform: translate(0px, 0px) rotate(0deg); }
-          12%, 23% { transform: translate(-14px, -4px) rotate(-2deg); }
-          36%, 47% { transform: translate(14px, -6px) rotate(2deg); }
-          60%, 67% { transform: translate(0px, -10px) rotate(0deg); }
-          63%, 70% { transform: translate(0px, 4px) rotate(0deg); }
-          84% { transform: translate(0px, -14px) scale(1.03); }
+          0%, 4% { transform: translate(0px, 0px) rotate(0deg) scale(1); }
+          15%, 23% { transform: translate(-18px, -6px) rotate(-3deg) scale(1); }
+          37%, 46% { transform: translate(18px, -8px) rotate(3deg) scale(1); }
+          56%, 64% { transform: translate(0px, -14px) rotate(0deg) scale(1.02); }
+          60%, 68% { transform: translate(0px, 5px) rotate(0deg) scale(0.99); }
+          75% { transform: translate(0px, 8px) rotate(0deg) scale(1.02); }
+          82% { transform: translate(0px, -22px) rotate(0deg) scale(1.04); }
+          88% { transform: translate(0px, 4px) rotate(0deg) scale(1); }
+          94%, 100% { transform: translate(0px, 0px) rotate(0deg) scale(1); }
         }
 
-        /* ==========================================
-           ACTIVE TALKING ANIMATION (PLAYING MODEL)
-           ========================================== */
+        /* ACTIVE TALKING (PLAYING MODEL) */
         @keyframes olaMascotBodyTalk {
-          0%, 100% { transform: rotateZ(-3deg) translateY(0px) scale(1.04); }
-          50% { transform: rotateZ(3deg) translateY(-6px) scale(1.07); }
+          0%, 100% { transform: rotateZ(-3.5deg) translateY(0px) scale(1.04, 0.97); }
+          50% { transform: rotateZ(3.5deg) translateY(-7px) scale(0.98, 1.06); }
         }
-
         @keyframes olaFaceTalk {
-          0%, 100% { transform: translateY(-4px) scale(1.06, 0.92); }
-          45% { transform: translateY(18px) scale(0.92, 1.13); }
-          70% { transform: translateY(4px) scale(1.03, 0.97); }
+          0%, 100% { transform: translateY(-5px) scale(1.07, 0.91); }
+          45% { transform: translateY(20px) scale(0.91, 1.15); }
+          72% { transform: translateY(4px) scale(1.03, 0.97); }
+        }
+        @keyframes olaPhonesTalk {
+          0%, 100% { transform: translateY(2px) scale(1); }
+          50% { transform: translateY(-16px) scale(1.04); }
         }
 
-        @keyframes olaPhonesTalk {
-          0%, 100% { transform: translateY(0px) scale(1); }
-          50% { transform: translateY(-14px) scale(1.03); }
+        /* CELEBRATORY VICTORY HOP (CONGRATS — ALWAYS RESOLVES TO CANONICAL FORM) */
+        @keyframes olaMascotCelebrate {
+          0% { transform: translateY(6px) scale(1.1, 0.88); }
+          32% { transform: translateY(-18px) rotate(-5deg) scale(0.94, 1.1); }
+          55% { transform: translateY(3px) rotate(3deg) scale(1.05, 0.95); }
+          75% { transform: translateY(-8px) rotate(-2deg) scale(0.98, 1.03); }
+          100% { transform: translateY(0px) rotate(0deg) scale(1, 1); }
+        }
+        @keyframes olaFaceCelebrate {
+          0% { transform: translateY(8px) scale(1.08, 0.92); }
+          35% { transform: translateY(-18px) scale(1.12, 0.88); }
+          100% { transform: translateY(0px) scale(1, 1); }
+        }
+        @keyframes olaPhonesCelebrate {
+          0% { transform: translateY(8px); }
+          35% { transform: translateY(-28px) scale(1.05); }
+          65% { transform: translateY(4px); }
+          100% { transform: translateY(0px) scale(1); }
+        }
+        @keyframes olaCheekWinL {
+          0%, 100% { transform: translateX(0px); }
+          38% { transform: translateX(-16px) rotate(-5deg); }
+        }
+        @keyframes olaCheekWinR {
+          0%, 100% { transform: translateX(0px); }
+          38% { transform: translateX(16px) rotate(5deg); }
+        }
+
+        /* RADIAL SPARK PARTICLES (BOSS-STOP JUICE) */
+        @keyframes olaSparkFly {
+          0% { transform: translateY(0px) scale(0.3); opacity: 1; }
+          65% { opacity: 1; }
+          100% { transform: translateY(-76px) scale(1.1); opacity: 0; }
+        }
+        .ola-spark-dot {
+          animation: olaSparkFly 0.72s cubic-bezier(0.22, 1, 0.36, 1) forwards;
         }
 
         .ola-mascot-body-idle {
-          animation: olaMascotBodyIdle 7.8s cubic-bezier(0.42, 0, 0.25, 1) infinite;
+          animation: olaMascotBodyIdle 8.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
           will-change: transform;
         }
         .ola-face-idle {
           transform-box: fill-box;
           transform-origin: center;
-          animation: olaFaceIdle 7.8s cubic-bezier(0.42, 0, 0.25, 1) infinite;
+          animation: olaFaceIdle 8.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
         }
         .ola-cheek-left-idle {
           transform-box: fill-box;
           transform-origin: center;
-          animation: olaCheekLeftIdle 7.8s ease-in-out infinite;
+          animation: olaCheekLeftIdle 8.6s ease-in-out infinite;
         }
         .ola-cheek-right-idle {
           transform-box: fill-box;
           transform-origin: center;
-          animation: olaCheekRightIdle 7.8s ease-in-out infinite;
+          animation: olaCheekRightIdle 8.6s ease-in-out infinite;
         }
         .ola-phones-idle {
           transform-box: fill-box;
           transform-origin: center;
-          animation: olaPhonesIdle 7.8s cubic-bezier(0.42, 0, 0.25, 1) infinite;
+          animation: olaPhonesIdle 8.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
         }
 
         .ola-mascot-body-talk {
-          animation: olaMascotBodyTalk 0.92s ease-in-out infinite;
+          animation: olaMascotBodyTalk 0.88s ease-in-out infinite;
           will-change: transform;
         }
         .ola-face-talk {
           transform-box: fill-box;
           transform-origin: center;
-          animation: olaFaceTalk 0.44s ease-in-out infinite;
+          animation: olaFaceTalk 0.42s ease-in-out infinite;
         }
         .ola-phones-talk {
           transform-box: fill-box;
           transform-origin: center;
-          animation: olaPhonesTalk 0.44s ease-in-out infinite;
+          animation: olaPhonesTalk 0.42s ease-in-out infinite;
+        }
+
+        .ola-mascot-body-celebrate {
+          animation: olaMascotCelebrate 0.95s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        .ola-face-celebrate {
+          transform-box: fill-box;
+          transform-origin: center;
+          animation: olaFaceCelebrate 0.95s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        .ola-phones-celebrate {
+          transform-box: fill-box;
+          transform-origin: center;
+          animation: olaPhonesCelebrate 0.95s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        .ola-cheek-left-win {
+          transform-box: fill-box;
+          transform-origin: center;
+          animation: olaCheekWinL 0.95s ease-out forwards;
+        }
+        .ola-cheek-right-win {
+          transform-box: fill-box;
+          transform-origin: center;
+          animation: olaCheekWinR 0.95s ease-out forwards;
         }
 
         /* Pulso intenso en rojo coral para invitar a grabar */
@@ -498,18 +737,19 @@ export default function HeroVoicePractice() {
         }
 
         @keyframes olaMorphIn {
-          0% { opacity: 0; transform: scale(0.72) rotate(-8deg); }
-          70% { opacity: 1; transform: scale(1.06) rotate(2deg); }
+          0% { opacity: 0; transform: scale(0.76) rotate(-6deg); }
+          70% { opacity: 1; transform: scale(1.05) rotate(1.5deg); }
           100% { opacity: 1; transform: scale(1) rotate(0deg); }
         }
         .ola-morph-in {
-          animation: olaMorphIn 0.34s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+          animation: olaMorphIn 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
         }
 
         @media (prefers-reduced-motion: reduce) {
           .ola-mascot-body-idle, .ola-face-idle, .ola-cheek-left-idle,
           .ola-cheek-right-idle, .ola-phones-idle, .ola-mascot-body-talk,
-          .ola-face-talk, .ola-phones-talk {
+          .ola-face-talk, .ola-phones-talk, .ola-mascot-body-celebrate,
+          .ola-face-celebrate, .ola-phones-celebrate {
             animation: none !important;
           }
         }
@@ -518,8 +758,6 @@ export default function HeroVoicePractice() {
       {/* ================================================== */}
       {/* PATRONES DE MARCA ALREDEDOR DE LA TARJETA          */}
       {/* ================================================== */}
-
-      {/* TOP-LEFT: Audio Wave Pill */}
       <div className="ola-float-slow absolute -top-2 left-0 sm:-top-1 sm:-left-4 z-30 bg-[#fff3d1]/95 backdrop-blur-xl border-2 border-[#ffc749] rounded-full px-3.5 py-1.5 shadow-[0_10px_24px_-6px_rgba(255,199,73,0.6)] flex items-center gap-2 pointer-events-none">
         <span className="w-5 h-5 rounded-full bg-[#626a9f] flex items-center justify-center">
           <span className="w-2 h-2 rounded-full bg-[#ffc749]" />
@@ -535,7 +773,6 @@ export default function HeroVoicePractice() {
         </div>
       </div>
 
-      {/* TOP-RIGHT: Layered Speech Bubbles */}
       <div className="ola-float-alt absolute -top-3 right-0 sm:-top-2 sm:-right-4 z-30 pointer-events-none drop-shadow-md">
         <svg width="88" height="58" viewBox="0 0 86 58" fill="none">
           <rect x="6" y="4" width="58" height="34" rx="10" fill="#a8b0de" />
@@ -549,7 +786,6 @@ export default function HeroVoicePractice() {
         </svg>
       </div>
 
-      {/* BOTTOM-LEFT: Dot Matrix */}
       <div className="absolute -bottom-3 -left-1 sm:-bottom-4 sm:-left-6 z-0 pointer-events-none">
         <svg width="74" height="54" viewBox="0 0 64 48" fill="none">
           {[0, 1, 2, 3].map((row) =>
@@ -566,7 +802,6 @@ export default function HeroVoicePractice() {
         </svg>
       </div>
 
-      {/* BOTTOM-RIGHT: Geometric Shapes */}
       <div className="ola-float-alt absolute -bottom-4 -right-1 sm:-bottom-5 sm:-right-5 z-30 pointer-events-none drop-shadow-md">
         <svg width="74" height="66" viewBox="0 0 68 62" fill="none">
           <path d="M12 24A16 16 0 0 1 28 8V24H12Z" fill="#ffc749" />
@@ -580,7 +815,6 @@ export default function HeroVoicePractice() {
       {/* CAJA LAVANDA-ÍNDIGO LIGHT GLASSMORPHISM            */}
       {/* ================================================== */}
       <div className="relative w-full z-20">
-        {/* Backlight suave detrás de la tarjeta */}
         <div
           className="absolute -inset-4 rounded-[3rem] blur-3xl opacity-80 -z-10 pointer-events-none"
           style={{
@@ -590,7 +824,6 @@ export default function HeroVoicePractice() {
         />
 
         <div className="ola-glass-lavender rounded-[2.5rem] px-6 py-8 sm:px-8 sm:py-10 relative overflow-hidden">
-          {/* Textura sutil de puntos luminosos */}
           <div
             className="absolute inset-0 opacity-35 pointer-events-none"
             style={{
@@ -600,17 +833,22 @@ export default function HeroVoicePractice() {
           />
 
           {/* ================================================== */}
-          {/* EMBLEMA INTERACTIVO CENTRAL + ONDAS DE AUDIO       */}
+          {/* EMBLEMA INTERACTIVO CENTRAL + ONDAS REACTIVAS      */}
           {/* ================================================== */}
           <div className="relative z-10 flex items-center justify-center gap-4 sm:gap-6 mb-7">
-            {/* Ecualizador Izquierdo */}
+            {/* Ecualizador Izquierdo (Real-Time Mic Volume in 'recording') */}
             <div className="flex items-center gap-1 sm:gap-1.5 h-16">
               {[14, 28, 18, 44, 24, 34].map((h, i) => (
                 <span
                   key={`sl-${i}`}
-                  className={`w-1.5 rounded-full transition-all duration-300 ${isWaveActive ? 'ola-hero-eq' : ''}`}
+                  ref={(el) => {
+                    leftBarRefs.current[i] = el;
+                  }}
+                  className={`w-1.5 rounded-full transition-[height,background-color] duration-75 ${
+                    isCssWaveActive ? 'ola-hero-eq' : ''
+                  }`}
                   style={{
-                    height: isWaveActive ? `${h}px` : `${Math.round(h * 0.4)}px`,
+                    height: isCssWaveActive ? `${h}px` : `${Math.round(h * 0.4)}px`,
                     backgroundColor:
                       phase === 'recording' || phase === 'ready_to_record'
                         ? '#ee665b'
@@ -625,7 +863,7 @@ export default function HeroVoicePractice() {
               ))}
             </div>
 
-            {/* BOTÓN CENTRAL TRANSFORMABLE (Mascota Viva -> Grabar Coral -> Pausa -> Comparar -> Check) */}
+            {/* BOTÓN CENTRAL TRANSFORMABLE (Mascota -> Grabar -> Pausa -> Comparar -> Mascota Celebrando) */}
             <button
               type="button"
               onClick={handleCenterClick}
@@ -639,21 +877,35 @@ export default function HeroVoicePractice() {
                   ? 'Detener grabación'
                   : 'Práctica de voz OutLoud'
               }
-              className={`relative w-32 h-32 sm:w-36 sm:h-36 flex items-center justify-center rounded-[2rem] focus:outline-none transition-transform duration-200 ${
-                isCenterClickable ? 'cursor-pointer hover:scale-105 active:scale-95' : 'cursor-default'
+              className={`relative w-32 h-32 sm:w-36 sm:h-36 flex items-center justify-center rounded-[2rem] focus:outline-none transition-transform duration-150 ease-out ${
+                isCenterClickable ? 'cursor-pointer hover:scale-[1.06] active:scale-[0.94]' : 'cursor-default'
               }`}
             >
-              {/* FASE IDLE / PLAYING MODEL: MASCOTA INTERACTIVA */}
-              {(phase === 'idle' || phase === 'playing_model') && (
-                <div key="logo-state" className="ola-morph-in relative flex items-center justify-center">
+              {/* FASE IDLE / PLAYING MODEL / CONGRATS: MASCOTA VIVA */}
+              {(phase === 'idle' || phase === 'playing_model' || phase === 'congrats') && (
+                <div key={`mascot-${phase}`} className="ola-morph-in relative flex items-center justify-center">
                   {phase === 'playing_model' && (
                     <span className="absolute -inset-2 rounded-[2.2rem] border-2 border-[#ffc749] animate-ping opacity-45 pointer-events-none" />
                   )}
-                  <AnimatedOutLoudMascot mode={phase === 'playing_model' ? 'talking' : 'idle'} />
+                  {phase === 'congrats' && <CelebrationSparks />}
+                  <AnimatedOutLoudMascot
+                    mode={
+                      phase === 'playing_model'
+                        ? 'talking'
+                        : phase === 'congrats'
+                        ? 'celebrate'
+                        : 'idle'
+                    }
+                  />
+                  {phase === 'congrats' && (
+                    <span className="absolute -bottom-1 -right-1 w-9 h-9 rounded-full bg-[#16a37f] border-[3px] border-white text-white flex items-center justify-center shadow-lg z-30">
+                      <CheckBadgeSvg className="w-5 h-5" />
+                    </span>
+                  )}
                 </div>
               )}
 
-              {/* FASE READY TO RECORD: SÍMBOLO DE GRABAR PULSANDO FUERTE EN ROJO CORAL */}
+              {/* FASE READY TO RECORD: SÍMBOLO DE GRABAR PULSANDO EN ROJO CORAL */}
               {phase === 'ready_to_record' && (
                 <div
                   key="record-state"
@@ -679,40 +931,35 @@ export default function HeroVoicePractice() {
                 </div>
               )}
 
-              {/* FASE COMPARING: SÍMBOLO DE COMPARAR / REPETIR */}
+              {/* FASE COMPARING: SÍMBOLO DE COMPARAR */}
               {(phase === 'comparing_model' || phase === 'comparing_user') && (
                 <div
                   key="compare-state"
-                  className={`ola-morph-in w-28 h-28 sm:w-32 sm:h-32 rounded-full border-[3px] border-white text-white flex flex-col items-center justify-center shadow-xl ${
+                  className={`ola-morph-in w-28 h-28 sm:w-32 sm:h-32 rounded-full border-[3px] border-white text-white flex flex-col items-center justify-center shadow-xl transition-colors duration-300 ${
                     phase === 'comparing_user' ? 'bg-[#16a37f]' : 'bg-[#626a9f]'
                   }`}
                 >
                   <RepeatSvg
                     className="w-11 h-11 animate-spin"
-                    style={{ animationDuration: '2.4s' }}
+                    style={{ animationDuration: '2.2s' }}
                   />
-                </div>
-              )}
-
-              {/* FASE CONGRATS: CHECK DE ÉXITO */}
-              {phase === 'congrats' && (
-                <div
-                  key="congrats-state"
-                  className="ola-morph-in w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-[#16a37f] border-[3px] border-white text-white flex items-center justify-center shadow-[0_14px_34px_rgba(22,163,127,0.55)]"
-                >
-                  <CheckSvg className="w-14 h-14" />
                 </div>
               )}
             </button>
 
-            {/* Ecualizador Derecho */}
+            {/* Ecualizador Derecho (Real-Time Mic Volume in 'recording') */}
             <div className="flex items-center gap-1 sm:gap-1.5 h-16">
               {[34, 24, 44, 18, 28, 14].map((h, i) => (
                 <span
                   key={`sr-${i}`}
-                  className={`w-1.5 rounded-full transition-all duration-300 ${isWaveActive ? 'ola-hero-eq' : ''}`}
+                  ref={(el) => {
+                    rightBarRefs.current[i] = el;
+                  }}
+                  className={`w-1.5 rounded-full transition-[height,background-color] duration-75 ${
+                    isCssWaveActive ? 'ola-hero-eq' : ''
+                  }`}
                   style={{
-                    height: isWaveActive ? `${h}px` : `${Math.round(h * 0.4)}px`,
+                    height: isCssWaveActive ? `${h}px` : `${Math.round(h * 0.4)}px`,
                     backgroundColor:
                       phase === 'recording' || phase === 'ready_to_record'
                         ? '#ee665b'
@@ -731,7 +978,7 @@ export default function HeroVoicePractice() {
           {/* ================================================== */}
           {/* CAJA DE INSTRUCCIONES / SUBTÍTULOS (SOLO INGLÉS)   */}
           {/* ================================================== */}
-          <div className="relative z-10 min-h-[104px] bg-white/80 backdrop-blur-xl border border-white rounded-3xl px-5 py-4 sm:px-6 sm:py-5 flex flex-col items-center justify-center text-center shadow-[0_10px_28px_-12px_rgba(69,77,130,0.22)]">
+          <div className="relative z-10 min-h-[104px] bg-white/82 backdrop-blur-xl border border-white rounded-3xl px-5 py-4 sm:px-6 sm:py-5 flex flex-col items-center justify-center text-center shadow-[0_10px_28px_-12px_rgba(69,77,130,0.22)]">
             {phase === 'idle' && (
               <p className="text-sm sm:text-base font-bold text-[#1e2246] leading-snug max-w-sm animate-fade-in">
                 Ejercicio de pronunciación, toca el logo para una práctica rápida.
@@ -768,19 +1015,35 @@ export default function HeroVoicePractice() {
               </div>
             )}
 
+            {/* BOSS-STOP CELEBRATION + PEAK-MOMENTUM CTA */}
             {phase === 'congrats' && (
-              <div className="animate-fade-in">
+              <div className="animate-fade-in flex flex-col items-center gap-2.5">
                 <p className="text-base font-black text-[#128063] leading-snug">
                   ¡Excelente pronunciación!
                 </p>
-                <p className="text-xs font-semibold text-[#50567d] mt-1">
-                  Así se practica en OutLoud.
-                </p>
+                {onFreeLessonClick ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
+                      onFreeLessonClick();
+                    }}
+                    className="inline-flex items-center gap-1.5 bg-[#ffc749] hover:bg-[#ffd66b] text-[#1e2246] border-2 border-[#1e2246] shadow-[0_3px_0_#1e2246] active:translate-y-0.5 active:shadow-none px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer"
+                  >
+                    <span>Probar Unidad 1 Gratis</span>
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                  </button>
+                ) : (
+                  <p className="text-xs font-semibold text-[#50567d]">
+                    Así se practica en OutLoud.
+                  </p>
+                )}
               </div>
             )}
           </div>
 
-          {/* Alerta si el usuario bloqueó el micrófono */}
           {micError && (
             <div className="relative z-10 mt-3 bg-[#ee665b]/15 border border-[#ee665b] text-[#9b2c23] text-xs font-bold rounded-2xl px-4 py-2.5 text-center">
               {micError}

@@ -153,22 +153,33 @@ export default function LandingPage({
             inset 0 1.5px 1px rgba(255, 255, 255, 0.5);
         }
 
-        /* TACTILE BACKLIT YELLOW CTA */
+        /* TACTILE BACKLIT YELLOW CTA (True Physical Button Press & Crisp Ease-Out) */
         .ola-btn-yellow {
           background: linear-gradient(180deg, #ffd66b 0%, #ffc749 100%);
           color: #1e2246;
           border: 2px solid #1e2246;
           box-shadow: 0 5px 0 #1e2246, 0 14px 30px -4px rgba(255, 199, 73, 0.65);
-          transition: transform 0.16s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.16s ease, filter 0.16s ease;
+          transition: transform 0.14s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.14s cubic-bezier(0.22, 1, 0.36, 1), filter 0.14s ease-out;
         }
         .ola-btn-yellow:hover {
           filter: brightness(1.04);
-          transform: translateY(-3px) scale(1.02);
-          box-shadow: 0 8px 0 #1e2246, 0 18px 38px -4px rgba(255, 199, 73, 0.85);
+          transform: translateY(-2.5px);
+          box-shadow: 0 7.5px 0 #1e2246, 0 18px 36px -4px rgba(255, 199, 73, 0.85);
         }
         .ola-btn-yellow:active {
-          transform: translateY(2px) scale(0.98);
-          box-shadow: 0 2px 0 #1e2246, 0 6px 14px -4px rgba(255, 199, 73, 0.45);
+          transform: translateY(4px) scale(0.99);
+          box-shadow: 0 1px 0 #1e2246, 0 4px 10px -4px rgba(255, 199, 73, 0.4);
+          transition-duration: 0.06s;
+        }
+
+        /* Spatial Mobile Drawer Unfolding from Top-Right Menu Trigger */
+        @keyframes olaDrawerSpring {
+          0% { opacity: 0; transform: translateY(-10px) scale(0.92); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .ola-drawer-spring {
+          transform-origin: top right;
+          animation: olaDrawerSpring 0.22s cubic-bezier(0.22, 1, 0.36, 1) forwards;
         }
 
         @keyframes olaFreePulse {
@@ -381,9 +392,9 @@ export default function LandingPage({
           </div>
         </div>
 
-        {/* Mobile Slide-Down Glass Drawer */}
+        {/* Mobile Slide-Down Glass Drawer (Originates from Top-Right Hamburger) */}
         {isMobileMenuOpen && (
-          <div className="lg:hidden mt-3 mx-4 ola-glass rounded-3xl p-4 flex flex-col gap-1.5 animate-fade-in">
+          <div className="lg:hidden mt-3 mx-4 ola-glass ola-drawer-spring rounded-3xl p-4 flex flex-col gap-1.5">
             {NAV_LINKS.map((link) => (
               <button
                 key={link.href}
@@ -460,7 +471,7 @@ export default function LandingPage({
 
             {/* RIGHT COLUMN (IMMEDIATELY VISIBLE ON MOBILE): INTERACTIVE VOICE PRACTICE STUDIO */}
             <div className="lg:col-span-6 w-full">
-              <HeroVoicePractice />
+              <HeroVoicePractice onFreeLessonClick={onFreeLessonClick} />
 
               {/* Mobile Actions Below the Studio */}
               <div className="flex lg:hidden items-center justify-center gap-3 mt-6">

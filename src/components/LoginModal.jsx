@@ -11,6 +11,7 @@ export default function LoginModal({ isOpen, onClose, onLogin, onEnrollClick }) 
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [shakeTick, setShakeTick] = useState(0);
 
   const closeTimerRef = useRef(null);
 
@@ -24,13 +25,14 @@ export default function LoginModal({ isOpen, onClose, onLogin, onEnrollClick }) 
       closeTimerRef.current = setTimeout(() => {
         setShouldRender(false);
         setIsClosing(false);
-      }, 240);
+      }, 190);
     }
     return () => {
       if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
     };
   }, [isOpen, shouldRender]);
 
+  // Immediately interruptible close even mid-enter animation
   const triggerClose = useCallback(
     (afterClose) => {
       if (isClosing) return;
@@ -41,7 +43,7 @@ export default function LoginModal({ isOpen, onClose, onLogin, onEnrollClick }) 
         setIsClosing(false);
         onClose?.();
         afterClose?.();
-      }, 240);
+      }, 190);
     },
     [isClosing, onClose]
   );
@@ -71,7 +73,6 @@ export default function LoginModal({ isOpen, onClose, onLogin, onEnrollClick }) 
 
       if (error) throw error;
 
-      // Best-effort activity stamp for Admin Hub stats
       if (data?.user?.id) {
         supabase
           .from('profiles')
@@ -86,6 +87,7 @@ export default function LoginModal({ isOpen, onClose, onLogin, onEnrollClick }) 
     } catch (err) {
       console.error('Login error:', err);
       setErrorMsg('Correo o contraseña incorrectos. Verifica tus datos e intenta de nuevo.');
+      setShakeTick((n) => n + 1);
     } finally {
       setIsLoading(false);
     }
@@ -101,101 +103,102 @@ export default function LoginModal({ isOpen, onClose, onLogin, onEnrollClick }) 
       style={{ perspective: '1200px' }}
     >
       <style>{`
-        /* Backdrop Enter & Exit */
         @keyframes olaBackdropIn {
-          from { opacity: 0; backdrop-filter: blur(0px); }
-          to { opacity: 1; backdrop-filter: blur(20px); }
+          from { opacity: 0; }
+          to { opacity: 1; }
         }
         @keyframes olaBackdropOut {
           from { opacity: 1; }
           to { opacity: 0; }
         }
 
-        /* 3D Spring Entrance for Modal Card */
+        /* Spatial Consistency: Expands from Top-Right Log In Button & Retracts Back */
         @keyframes olaCardEnter {
           0% {
             opacity: 0;
-            transform: translateY(42px) scale(0.88) rotateX(9deg);
+            transform: translate3d(28px, -36px, 0) scale(0.84);
           }
-          62% {
+          70% {
             opacity: 1;
-            transform: translateY(-5px) scale(1.018) rotateX(-1.2deg);
-          }
-          82% {
-            transform: translateY(2px) scale(0.995) rotateX(0.4deg);
+            transform: translate3d(-2px, 2px, 0) scale(1.012);
           }
           100% {
             opacity: 1;
-            transform: translateY(0) scale(1) rotateX(0deg);
+            transform: translate3d(0, 0, 0) scale(1);
           }
         }
-
-        /* Crisp Exit */
         @keyframes olaCardExit {
           0% {
             opacity: 1;
-            transform: translateY(0) scale(1);
+            transform: translate3d(0, 0, 0) scale(1);
           }
           100% {
             opacity: 0;
-            transform: translateY(26px) scale(0.92);
+            transform: translate3d(24px, -28px, 0) scale(0.88);
           }
         }
 
-        /* Ambient Backlight Halo Bloom */
+        /* Crisp Micro-Shake on Invalid Credentials */
+        @keyframes olaErrorShake {
+          0%, 100% { transform: translateX(0); }
+          18% { transform: translateX(-8px); }
+          36% { transform: translateX(7px); }
+          54% { transform: translateX(-5px); }
+          72% { transform: translateX(4px); }
+          88% { transform: translateX(-2px); }
+        }
+
         @keyframes olaHaloBloom {
-          0% { opacity: 0; transform: scale(0.65); }
-          65% { opacity: 0.9; transform: scale(1.06); }
+          0% { opacity: 0; transform: scale(0.75); }
           100% { opacity: 0.82; transform: scale(1); }
         }
 
-        /* Diagonal Glass Specular Sheen Sweep on Open */
         @keyframes olaGlassSweep {
           0% { left: -140%; opacity: 0; }
           20% { opacity: 1; }
           100% { left: 165%; opacity: 0; }
         }
 
-        /* Brand Icon Elastic Bounce */
         @keyframes olaIconPop {
-          0% { opacity: 0; transform: scale(0.45) rotate(-14deg) translateY(14px); }
-          65% { opacity: 1; transform: scale(1.1) rotate(4deg) translateY(-3px); }
-          85% { transform: scale(0.96) rotate(-1.5deg) translateY(1px); }
-          100% { opacity: 1; transform: scale(1) rotate(0deg) translateY(0); }
+          0% { opacity: 0; transform: scale(0.55) rotate(-10deg); }
+          72% { opacity: 1; transform: scale(1.08) rotate(3deg); }
+          100% { opacity: 1; transform: scale(1) rotate(0deg); }
         }
 
-        /* Staggered Field Cascade */
         @keyframes olaStaggerUp {
-          0% { opacity: 0; transform: translateY(16px); }
+          0% { opacity: 0; transform: translateY(10px); }
           100% { opacity: 1; transform: translateY(0); }
         }
 
-        /* Live Equalizer Bars */
         @keyframes olaModalEq {
           0%, 100% { transform: scaleY(0.32); }
           50% { transform: scaleY(1); }
         }
 
         .ola-backdrop-in {
-          animation: olaBackdropIn 0.28s ease-out forwards;
+          animation: olaBackdropIn 0.2s ease-out forwards;
         }
         .ola-backdrop-out {
-          animation: olaBackdropOut 0.24s ease-in forwards;
+          animation: olaBackdropOut 0.18s ease-out forwards;
           pointer-events: none;
         }
 
         .ola-card-in {
-          transform-origin: center bottom;
-          animation: olaCardEnter 0.52s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+          transform-origin: 88% 8%;
+          animation: olaCardEnter 0.34s cubic-bezier(0.22, 1, 0.36, 1) forwards;
           will-change: transform, opacity;
         }
         .ola-card-out {
-          animation: olaCardExit 0.23s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards;
+          transform-origin: 88% 8%;
+          animation: olaCardExit 0.18s cubic-bezier(0.22, 1, 0.36, 1) forwards;
           will-change: transform, opacity;
+        }
+        .ola-shake-active {
+          animation: olaErrorShake 0.38s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
         }
 
         .ola-halo-in {
-          animation: olaHaloBloom 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+          animation: olaHaloBloom 0.4s ease-out forwards;
         }
 
         .ola-sheen-sweep {
@@ -207,26 +210,26 @@ export default function LoginModal({ isOpen, onClose, onLogin, onEnrollClick }) 
           background: linear-gradient(
             115deg,
             transparent 0%,
-            rgba(255, 255, 255, 0.42) 48%,
-            rgba(255, 255, 255, 0.08) 70%,
+            rgba(255, 255, 255, 0.38) 48%,
+            rgba(255, 255, 255, 0.06) 70%,
             transparent 100%
           );
           transform: skewX(-20deg);
           pointer-events: none;
           z-index: 30;
-          animation: olaGlassSweep 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.22s forwards;
+          animation: olaGlassSweep 0.72s cubic-bezier(0.22, 1, 0.36, 1) 0.12s forwards;
         }
 
         .ola-icon-enter {
           opacity: 0;
-          animation: olaIconPop 0.56s cubic-bezier(0.34, 1.56, 0.64, 1) 0.12s forwards;
+          animation: olaIconPop 0.38s cubic-bezier(0.22, 1, 0.36, 1) 0.06s forwards;
         }
 
-        .ola-stagger-1 { opacity: 0; animation: olaStaggerUp 0.38s cubic-bezier(0.22, 1, 0.36, 1) 0.18s forwards; }
-        .ola-stagger-2 { opacity: 0; animation: olaStaggerUp 0.38s cubic-bezier(0.22, 1, 0.36, 1) 0.24s forwards; }
-        .ola-stagger-3 { opacity: 0; animation: olaStaggerUp 0.38s cubic-bezier(0.22, 1, 0.36, 1) 0.30s forwards; }
-        .ola-stagger-4 { opacity: 0; animation: olaStaggerUp 0.38s cubic-bezier(0.22, 1, 0.36, 1) 0.36s forwards; }
-        .ola-stagger-5 { opacity: 0; animation: olaStaggerUp 0.38s cubic-bezier(0.22, 1, 0.36, 1) 0.42s forwards; }
+        .ola-stagger-1 { opacity: 0; animation: olaStaggerUp 0.26s cubic-bezier(0.22, 1, 0.36, 1) 0.08s forwards; }
+        .ola-stagger-2 { opacity: 0; animation: olaStaggerUp 0.26s cubic-bezier(0.22, 1, 0.36, 1) 0.12s forwards; }
+        .ola-stagger-3 { opacity: 0; animation: olaStaggerUp 0.26s cubic-bezier(0.22, 1, 0.36, 1) 0.16s forwards; }
+        .ola-stagger-4 { opacity: 0; animation: olaStaggerUp 0.26s cubic-bezier(0.22, 1, 0.36, 1) 0.20s forwards; }
+        .ola-stagger-5 { opacity: 0; animation: olaStaggerUp 0.26s cubic-bezier(0.22, 1, 0.36, 1) 0.24s forwards; }
 
         .ola-modal-eq {
           transform-origin: center;
@@ -234,7 +237,7 @@ export default function LoginModal({ isOpen, onClose, onLogin, onEnrollClick }) 
         }
 
         .ola-login-shell {
-          background: linear-gradient(155deg, rgba(255, 255, 255, 0.86) 0%, rgba(238, 241, 252, 0.8) 55%, rgba(255, 246, 222, 0.84) 100%);
+          background: linear-gradient(155deg, rgba(255, 255, 255, 0.88) 0%, rgba(238, 241, 252, 0.82) 55%, rgba(255, 246, 222, 0.86) 100%);
           backdrop-filter: blur(28px) saturate(190%);
           -webkit-backdrop-filter: blur(28px) saturate(190%);
           border: 1.5px solid rgba(255, 255, 255, 0.94);
@@ -258,10 +261,9 @@ export default function LoginModal({ isOpen, onClose, onLogin, onEnrollClick }) 
 
       {/* Backlit Container Wrapper */}
       <div className={`relative w-full max-w-[430px] ${isClosing ? 'ola-card-out' : 'ola-card-in'}`}>
-        {/* Dual-Tone Ambient Backlight Halo */}
         <div
           className={`absolute -inset-5 rounded-[3.2rem] blur-3xl pointer-events-none -z-10 ${
-            isClosing ? 'opacity-0 transition-opacity duration-200' : 'ola-halo-in'
+            isClosing ? 'opacity-0 transition-opacity duration-150' : 'ola-halo-in'
           }`}
           style={{
             background:
@@ -269,14 +271,16 @@ export default function LoginModal({ isOpen, onClose, onLogin, onEnrollClick }) 
           }}
         />
 
-        {/* Frosted Glass Modal Card */}
-        <div className="ola-login-shell relative w-full rounded-[2.25rem] overflow-hidden">
-          {/* Specular Light Sweep Across Card on Open */}
-          {!isClosing && <div className="ola-sheen-sweep" />}
+        {/* Frosted Glass Modal Card (Shakes on invalid password) */}
+        <div
+          key={`shake-${shakeTick}`}
+          className={`ola-login-shell relative w-full rounded-[2.25rem] overflow-hidden ${
+            shakeTick > 0 ? 'ola-shake-active' : ''
+          }`}
+        >
+          {!isClosing && shakeTick === 0 && <div className="ola-sheen-sweep" />}
 
-          {/* ================================================== */}
-          {/* EXPRESSIVE INDIGO GLASS HEADER STAGE               */}
-          {/* ================================================== */}
+          {/* INDIGO GLASS HEADER */}
           <div
             className="relative px-7 pt-7 pb-6 text-center overflow-hidden"
             style={{
@@ -284,7 +288,6 @@ export default function LoginModal({ isOpen, onClose, onLogin, onEnrollClick }) 
                 'linear-gradient(145deg, rgba(72, 80, 136, 0.96) 0%, rgba(35, 39, 77, 0.96) 100%)',
             }}
           >
-            {/* Subtle Dot Texture & Bottom Golden Glow */}
             <div
               className="absolute inset-0 opacity-20 pointer-events-none"
               style={{
@@ -297,19 +300,17 @@ export default function LoginModal({ isOpen, onClose, onLogin, onEnrollClick }) 
               style={{ background: '#ffc749' }}
             />
 
-            {/* Close Button */}
             <button
               type="button"
               onClick={() => triggerClose()}
               aria-label="Cerrar inicio de sesión"
-              className="absolute top-4 right-4 z-20 w-9 h-9 rounded-full bg-white/15 hover:bg-[#ffc749] border border-white/25 hover:border-[#1e2246] text-white hover:text-[#1e2246] flex items-center justify-center transition-all cursor-pointer hover:rotate-90 active:scale-95"
+              className="absolute top-4 right-4 z-20 w-9 h-9 rounded-full bg-white/15 hover:bg-[#ffc749] border border-white/25 hover:border-[#1e2246] text-white hover:text-[#1e2246] flex items-center justify-center transition-all duration-150 cursor-pointer hover:rotate-90 active:scale-90"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.8" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
 
-            {/* Live Portal Pill */}
             <div className="ola-stagger-1 relative z-10 inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-3.5 py-1 mb-4">
               <span className="w-2 h-2 rounded-full bg-[#16a37f] animate-pulse shadow-[0_0_8px_#16a37f]" />
               <span className="text-[10px] font-black uppercase tracking-widest text-[#ffc749]">
@@ -317,7 +318,6 @@ export default function LoginModal({ isOpen, onClose, onLogin, onEnrollClick }) 
               </span>
             </div>
 
-            {/* Brand Lockup Flanked by Live Equalizer Bars */}
             <div className="relative z-10 flex flex-col items-center">
               <div className="flex items-center justify-center gap-3 mb-2">
                 <div className="flex items-center gap-[3px] h-7">
@@ -362,9 +362,7 @@ export default function LoginModal({ isOpen, onClose, onLogin, onEnrollClick }) 
             </div>
           </div>
 
-          {/* ================================================== */}
-          {/* FROSTED GLASS FORM BODY (Staggered Cascade)        */}
-          {/* ================================================== */}
+          {/* FORM BODY */}
           <div className="p-6 sm:p-8 relative z-10">
             {errorMsg && (
               <div className="mb-5 bg-[#ee665b]/15 border-2 border-[#ee665b] text-[#9b2c23] rounded-2xl px-4 py-3 text-xs font-bold flex items-center gap-2.5 animate-fade-in">
@@ -376,7 +374,7 @@ export default function LoginModal({ isOpen, onClose, onLogin, onEnrollClick }) 
             )}
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              {/* Email Input (No autoFocus — keyboard opens only on user tap) */}
+              {/* Email Input (No autoFocus — keyboard opens only on tap) */}
               <div className="ola-stagger-2">
                 <label className="block text-[11px] font-black uppercase tracking-widest text-[#1e2246] mb-1.5">
                   Correo Electrónico
@@ -427,7 +425,7 @@ export default function LoginModal({ isOpen, onClose, onLogin, onEnrollClick }) 
                     type="button"
                     onClick={() => setShowPassword((prev) => !prev)}
                     aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-xl flex items-center justify-center text-[#626a9f] hover:text-[#1e2246] hover:bg-[#e8eaf7] transition-colors cursor-pointer"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-xl flex items-center justify-center text-[#626a9f] hover:text-[#1e2246] hover:bg-[#e8eaf7] active:scale-90 transition-all cursor-pointer"
                   >
                     {showPassword ? (
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
@@ -443,7 +441,6 @@ export default function LoginModal({ isOpen, onClose, onLogin, onEnrollClick }) 
                 </div>
               </div>
 
-              {/* Submit Button */}
               <div className="ola-stagger-4">
                 <button
                   type="submit"
@@ -461,7 +458,7 @@ export default function LoginModal({ isOpen, onClose, onLogin, onEnrollClick }) 
                   ) : (
                     <>
                       <span>Entrar a Mi Hub</span>
-                      <svg className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" fill="none" stroke="currentColor" strokeWidth="2.8" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 transition-transform duration-150 ease-out group-hover:translate-x-1" fill="none" stroke="currentColor" strokeWidth="2.8" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                       </svg>
                     </>
@@ -470,7 +467,6 @@ export default function LoginModal({ isOpen, onClose, onLogin, onEnrollClick }) 
               </div>
             </form>
 
-            {/* Footer Enrollment Helper */}
             <div className="ola-stagger-5 mt-6 pt-5 border-t border-[#626a9f]/20 flex flex-col sm:flex-row items-center justify-between gap-2.5 text-xs font-bold text-[#50567d]">
               <span>¿Aún no tienes cuenta?</span>
               <button
@@ -479,7 +475,7 @@ export default function LoginModal({ isOpen, onClose, onLogin, onEnrollClick }) 
                 className="ola-reactive-text text-[#454d82] font-black uppercase tracking-wider text-[11px] cursor-pointer group"
               >
                 <span>Solicitar Inscripción</span>
-                <svg className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-1" fill="none" stroke="currentColor" strokeWidth="2.8" viewBox="0 0 24 24">
+                <svg className="w-3.5 h-3.5 transition-transform duration-150 ease-out group-hover:translate-x-1" fill="none" stroke="currentColor" strokeWidth="2.8" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>
               </button>

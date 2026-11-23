@@ -96,6 +96,7 @@ const SOCIAL_LINKS = [
 // =========================================
 const LightDropdown = ({ options, value, onChange, titleEng, titleSpan, hasError }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [confirmingIdx, setConfirmingIdx] = useState(null);
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -104,21 +105,47 @@ const LightDropdown = ({ options, value, onChange, titleEng, titleSpan, hasError
         setIsOpen(false);
       }
     };
+    const handleEsc = (event) => {
+      if (event.key === 'Escape') setIsOpen(false);
+    };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEsc);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEsc);
+    };
   }, []);
 
+  const handleSelect = (option, idx) => {
+    // Crisp confirmation flash before menu closes (mirrors macOS/Flask micro-feedback)
+    setConfirmingIdx(idx);
+    onChange(option);
+    setTimeout(() => {
+      setConfirmingIdx(null);
+      setIsOpen(false);
+    }, 115);
+  };
+
   return (
-    <div className="relative w-full mb-5" ref={dropdownRef}>
-      <div className="relative z-20">
+    <div className={`relative w-full mb-5 ${isOpen ? 'z-[60]' : 'z-10'}`} ref={dropdownRef}>
+      {/* Subtle Focused Screen Dim Overlay (Flask Pattern) */}
+      {isOpen && (
+        <div
+          onClick={() => setIsOpen(false)}
+          className="fixed inset-0 bg-[#1e2246]/15 backdrop-blur-[1px] z-40 transition-opacity duration-150"
+          aria-hidden="true"
+        />
+      )}
+
+      <div className="relative z-50">
         <button
           type="button"
           onClick={() => setIsOpen((prev) => !prev)}
-          className={`w-full cursor-pointer flex justify-between items-center rounded-2xl px-4 py-3 text-left text-xs font-montserrat transition-all border-2 ${
+          className={`w-full cursor-pointer flex justify-between items-center rounded-2xl px-4 py-3 text-left text-xs font-montserrat transition-all duration-150 ease-out active:scale-[0.985] border-2 ${
             hasError
               ? 'border-[#ee665b] bg-[#ee665b]/10 text-[#b9382d]'
               : isOpen
-              ? 'border-[#454d82] bg-white text-[#1e2246] shadow-md'
+              ? 'border-[#454d82] bg-white text-[#1e2246] shadow-lg'
               : 'border-white/90 bg-white/65 text-[#1e2246] hover:border-[#626a9f] hover:bg-white/90'
           }`}
         >
@@ -126,7 +153,7 @@ const LightDropdown = ({ options, value, onChange, titleEng, titleSpan, hasError
             {value || titleSpan}
           </span>
           <svg
-            className={`w-4 h-4 shrink-0 text-[#454d82] transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+            className={`w-4 h-4 shrink-0 text-[#454d82] transition-transform duration-200 ease-out ${isOpen ? 'rotate-180' : ''}`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -142,8 +169,12 @@ const LightDropdown = ({ options, value, onChange, titleEng, titleSpan, hasError
         )}
       </div>
 
+      {/* Spatially Anchored Spring Dropdown Menu (Originates Directly From Trigger) */}
       {isOpen && (
-        <div className="absolute left-0 right-0 mt-2 z-50 bg-white/95 backdrop-blur-2xl border-2 border-[#1e2246] rounded-2xl shadow-[0_12px_28px_-8px_rgba(30,34,70,0.35)] overflow-hidden animate-fade-in">
+        <div
+          className="ola-dropdown-spring absolute left-0 right-0 mt-2 z-50 bg-white/96 backdrop-blur-2xl border-2 border-[#1e2246] rounded-2xl shadow-[0_18px_38px_-10px_rgba(30,34,70,0.4)] overflow-hidden"
+          style={{ transformOrigin: 'top center' }}
+        >
           <div className="px-4 py-3 bg-[#fff3d1] border-b border-[#1e2246]/15">
             <p className="text-[11px] font-black text-[#1e2246] leading-tight">{titleEng}</p>
             <p className="text-[10px] font-semibold text-[#50567d] leading-tight mt-0.5">{titleSpan}</p>
@@ -151,21 +182,22 @@ const LightDropdown = ({ options, value, onChange, titleEng, titleSpan, hasError
           <div className="max-h-48 overflow-y-auto">
             {options.map((option, idx) => {
               const selected = value === option;
+              const isFlashing = confirmingIdx === idx;
               return (
                 <button
                   key={idx}
                   type="button"
-                  onClick={() => {
-                    onChange(option);
-                    setIsOpen(false);
-                  }}
-                  className={`w-full text-left px-4 py-2.5 text-xs font-semibold transition-colors border-b border-[#e8eaf7] last:border-none cursor-pointer ${
-                    selected
+                  onClick={() => handleSelect(option, idx)}
+                  className={`w-full text-left px-4 py-2.5 text-xs font-semibold transition-colors duration-100 border-b border-[#e8eaf7] last:border-none cursor-pointer flex items-center justify-between ${
+                    isFlashing
+                      ? 'bg-[#ffc749] text-[#1e2246] font-black'
+                      : selected
                       ? 'bg-[#454d82] text-white font-black'
                       : 'text-[#1e2246] hover:bg-[#e8eaf7]'
                   }`}
                 >
-                  {option}
+                  <span>{option}</span>
+                  {(selected || isFlashing) && <CheckSvg className="w-3.5 h-3.5 shrink-0" />}
                 </button>
               );
             })}
@@ -257,7 +289,11 @@ export function OnboardingFormCard({ onFreeTrialClick, onSuccessComplete }) {
         status: 'pending',
       };
 
-      const { error: supabaseError } = await supabase.from('registrations').insert([insertPayload]);
+      // Perceived-trust beat (~650ms minimum) so instant DB writes feel verified & solid
+      const [{ error: supabaseError }] = await Promise.all([
+        supabase.from('registrations').insert([insertPayload]),
+        new Promise((resolve) => setTimeout(resolve, 650)),
+      ]);
       if (supabaseError) throw supabaseError;
 
       sessionStorage.removeItem('olaRegistrationData');
@@ -296,6 +332,13 @@ export function OnboardingFormCard({ onFreeTrialClick, onSuccessComplete }) {
 
       <div className="ola-light-phone ola-glass rounded-[2.5rem] p-6 sm:p-8 lg:p-12 relative">
         <style>{`
+          @keyframes olaDropdownSpring {
+            0% { opacity: 0; transform: translateY(-6px) scale(0.96); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+          }
+          .ola-dropdown-spring {
+            animation: olaDropdownSpring 0.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+          }
           .ola-light-phone .PhoneInput { display: flex; align-items: center; width: 100%; }
           .ola-light-phone .PhoneInputInput {
             flex: 1;

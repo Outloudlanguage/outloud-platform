@@ -118,12 +118,18 @@ export default function LandingMethodSection({ onScrollTo }) {
           transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.28s ease, border-color 0.28s ease;
         }
         .group:hover .ola-pillar-gold {
-          transform: translateY(-8px);
+          transform: translateY(-7px);
           border-color: #ffffff;
           box-shadow:
             0 28px 56px -12px rgba(196, 138, 12, 0.32),
             0 0 46px -4px rgba(255, 199, 73, 0.65),
             inset 0 2px 2px #ffffff;
+        }
+        .group:active .ola-pillar-gold,
+        .group:active .ola-pillar-indigo,
+        .group:active .ola-pillar-frost {
+          transform: translateY(-1px) scale(0.985);
+          transition-duration: 0.07s;
         }
 
         .ola-pillar-indigo {
