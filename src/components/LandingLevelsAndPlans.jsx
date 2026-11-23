@@ -251,21 +251,10 @@ const PAYMENT_PLANS = [
 // 4. EXPLICADOR INTERACTIVO DE CRÉDITOS Y COHORTES
 // =========================================
 function CreditsAndCohortsExplainer({ onScrollTo }) {
-  const [extraCredits, setExtraCredits] = useState(0); // 0, 1 o 2
+  const [hasExtraBundle, setHasExtraBundle] = useState(false); // Bundle de +2 créditos por $12 aparte
   const [selectedCohort, setSelectedCohort] = useState(15); // 15 o 30
 
-  const totalLiveCredits = 4 + extraCredits;
-  const paceLabel =
-    extraCredits === 0
-      ? 'Ritmo estándar • 1 clase por semana'
-      : extraCredits === 1
-      ? 'Ritmo acelerado • 5 sesiones en vivo este mes'
-      : 'Ritmo intensivo • 6 sesiones en vivo este mes';
-
-  const paceBenefit =
-    extraCredits === 0
-      ? 'Ideal para completar 1 unidad semanal (12 unidades en 3 meses) sin saturar tu agenda.'
-      : 'Perfecto para adelantar unidades, preparar un viaje o entrevista, o tomar refuerzo 1-a-1 sin cambiar de plan.';
+  const totalLiveCredits = hasExtraBundle ? 6 : 4;
 
   return (
     <div className="mt-14 sm:mt-16 relative">
@@ -314,12 +303,12 @@ function CreditsAndCohortsExplainer({ onScrollTo }) {
 
         {/* BLOQUE VISUAL INTERACTIVO (2 Columnas) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8 items-stretch">
-          {/* COLUMNA IZQUIERDA: SIMULADOR VISUAL DE CRÉDITOS + EXTRA CRÉDITOS */}
+          {/* COLUMNA IZQUIERDA: SIMULADOR VISUAL DE 4 CRÉDITOS + BUNDLE EXTRA ($12) */}
           <div className="lg:col-span-7 bg-white/65 backdrop-blur-xl border border-white/95 rounded-[2rem] p-5 sm:p-6 flex flex-col justify-between shadow-inner">
             <div>
-              <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-                <div className="flex items-center gap-2">
-                  <span className="w-8 h-8 rounded-xl bg-[#ffc749] border-2 border-[#1e2246] text-[#1e2246] font-black text-xs flex items-center justify-center">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-8 h-8 rounded-xl bg-[#ffc749] border-2 border-[#1e2246] text-[#1e2246] font-black text-xs flex items-center justify-center shrink-0">
                     1:1
                   </span>
                   <div>
@@ -327,39 +316,37 @@ function CreditsAndCohortsExplainer({ onScrollTo }) {
                       1 Crédito = 1 Clase En Vivo con Profesores y Compañeros
                     </h4>
                     <p className="text-[11px] font-semibold text-[#50567d]">
-                      Se usan únicamente al agendar sesiones en vivo (4 incluidos/mes)
+                      4 créditos incluidos al mes • Opcional: Bundle de +2 por $12 aparte
                     </p>
                   </div>
                 </div>
 
-                {/* Control táctil para probar Extra Créditos */}
-                <div className="inline-flex items-center gap-2 bg-[#f3f5fc] border border-[#dfe2f2] rounded-full p-1">
-                  <button
-                    type="button"
-                    onClick={() => setExtraCredits((prev) => Math.max(0, prev - 1))}
-                    disabled={extraCredits === 0}
-                    aria-label="Quitar extra crédito"
-                    className="w-7 h-7 rounded-full bg-white border border-[#626a9f]/30 text-[#1e2246] flex items-center justify-center cursor-pointer disabled:opacity-35 hover:bg-[#ffc749] active:scale-90 transition-all"
-                  >
-                    <MinusSvg className="w-3 h-3" />
-                  </button>
-                  <span className="px-2 text-[10px] font-black uppercase tracking-wider text-[#1e2246]">
-                    +{extraCredits} Extra
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setExtraCredits((prev) => Math.min(2, prev + 1))}
-                    disabled={extraCredits === 2}
-                    aria-label="Sumar extra crédito"
-                    className="w-7 h-7 rounded-full bg-[#16a37f] text-white flex items-center justify-center cursor-pointer disabled:opacity-35 hover:brightness-110 active:scale-90 transition-all"
-                  >
-                    <PlusSvg className="w-3 h-3" />
-                  </button>
-                </div>
+                {/* Toggle táctil para el Bundle de 2 Extra Créditos ($12 USD aparte) */}
+                <button
+                  type="button"
+                  onClick={() => setHasExtraBundle((prev) => !prev)}
+                  className={`inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[10.5px] font-black uppercase tracking-wider border-2 transition-all duration-150 active:scale-95 cursor-pointer ${
+                    hasExtraBundle
+                      ? 'bg-[#16a37f] border-[#1e2246] text-white shadow-[0_3px_0_#1e2246]'
+                      : 'bg-white border-[#16a37f] text-[#128063] hover:bg-[#16a37f]/10'
+                  }`}
+                >
+                  {hasExtraBundle ? (
+                    <>
+                      <CheckSvg className="w-3.5 h-3.5" />
+                      <span>Bundle +2 ($12) Activo</span>
+                    </>
+                  ) : (
+                    <>
+                      <PlusSvg className="w-3.5 h-3.5" />
+                      <span>Añadir Bundle +2 ($12)</span>
+                    </>
+                  )}
+                </button>
               </div>
 
-              {/* FICHA VISUAL DE CRÉDITOS DEL MES */}
-              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5 my-5">
+              {/* FICHA VISUAL: 4 INCLUIDOS + PAQUETE DE 2 EXTRA CRÉDITOS ($12 APARTE) */}
+              <div className="grid grid-cols-2 sm:grid-cols-6 gap-2.5 my-5 items-stretch">
                 {[1, 2, 3, 4].map((num) => (
                   <div
                     key={`base-${num}`}
@@ -375,39 +362,37 @@ function CreditsAndCohortsExplainer({ onScrollTo }) {
                   </div>
                 ))}
 
-                {[1, 2].map((extraIdx) => {
-                  const isActive = extraCredits >= extraIdx;
-                  return (
-                    <button
-                      key={`extra-${extraIdx}`}
-                      type="button"
-                      onClick={() =>
-                        setExtraCredits((prev) => (prev >= extraIdx ? extraIdx - 1 : extraIdx))
-                      }
-                      className={`rounded-2xl p-3 flex flex-col items-center justify-center text-center transition-all duration-200 cursor-pointer border-2 ${
-                        isActive
-                          ? 'bg-[#16a37f]/15 border-[#16a37f] shadow-md -translate-y-0.5'
-                          : 'bg-white/60 border-dashed border-[#626a9f]/35 hover:border-[#16a37f] opacity-75 hover:opacity-100'
-                      }`}
-                    >
+                {/* Paquete unificado de 2 Extra Créditos ($12 USD aparte) */}
+                <button
+                  type="button"
+                  onClick={() => setHasExtraBundle((prev) => !prev)}
+                  className={`col-span-2 rounded-2xl p-3 flex flex-col items-center justify-center text-center transition-all duration-200 cursor-pointer border-2 relative ${
+                    hasExtraBundle
+                      ? 'bg-[#16a37f]/15 border-[#16a37f] shadow-md -translate-y-0.5'
+                      : 'bg-white/70 border-dashed border-[#16a37f]/60 hover:border-[#16a37f] hover:bg-white'
+                  }`}
+                >
+                  <span className="text-[8.5px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-[#16a37f] text-white mb-2">
+                    Bundle +2 • $12 Aparte
+                  </span>
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    {['+1', '+2'].map((lbl) => (
                       <span
-                        className={`w-7 h-7 rounded-full font-black text-xs flex items-center justify-center mb-1.5 transition-colors ${
-                          isActive
-                            ? 'bg-[#16a37f] text-white'
+                        key={lbl}
+                        className={`w-7 h-7 rounded-full font-black text-xs flex items-center justify-center transition-colors ${
+                          hasExtraBundle
+                            ? 'bg-[#16a37f] text-white shadow-sm'
                             : 'bg-[#e8eaf7] text-[#454d82]'
                         }`}
                       >
-                        +{extraIdx}
+                        {lbl}
                       </span>
-                      <span className="text-[9px] font-black uppercase tracking-wider text-[#1e2246]">
-                        Extra
-                      </span>
-                      <span className="text-[8px] font-bold text-[#128063] uppercase">
-                        {isActive ? 'Activo' : 'Tocar'}
-                      </span>
-                    </button>
-                  );
-                })}
+                    ))}
+                  </div>
+                  <span className="text-[9px] font-black uppercase tracking-wider text-[#128063]">
+                    {hasExtraBundle ? '2 créditos extra activos' : 'Toca para simular'}
+                  </span>
+                </button>
               </div>
             </div>
 
@@ -415,14 +400,24 @@ function CreditsAndCohortsExplainer({ onScrollTo }) {
             <div className="bg-[#1e2246] text-white rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <p className="text-xs font-black uppercase tracking-wider text-[#ffc749]">
-                  {totalLiveCredits} Clases En Vivo • {paceLabel}
+                  {hasExtraBundle
+                    ? `${totalLiveCredits} Clases En Vivo • Ritmo Acelerado (+$12 USD aparte)`
+                    : `${totalLiveCredits} Clases En Vivo • Ritmo Estándar (Incluido)`}
                 </p>
                 <p className="text-xs font-medium text-white/85 mt-1 leading-snug">
-                  {paceBenefit}
+                  {hasExtraBundle
+                    ? 'Pagando el Bundle de 2 créditos extra ($12 aparte) puedes ver hasta 6 lecciones en vivo al mes y adelantarte al ritmo promedio.'
+                    : 'Incluye 1 clase semanal (12 unidades en 3 meses). Si deseas avanzar más lecciones al mes, añade el Bundle de 2 créditos extra por $12 aparte.'}
                 </p>
               </div>
-              <span className="self-start sm:self-center shrink-0 text-[10px] font-black uppercase tracking-widest bg-white/15 border border-white/25 px-3 py-1.5 rounded-full text-white">
-                Flexibilidad Total
+              <span
+                className={`self-start sm:self-center shrink-0 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border ${
+                  hasExtraBundle
+                    ? 'bg-[#16a37f] border-white/30 text-white'
+                    : 'bg-white/15 border-white/25 text-white'
+                }`}
+              >
+                {hasExtraBundle ? '+$12 USD Aparte' : 'Incluido en tu Plan'}
               </span>
             </div>
           </div>
@@ -473,7 +468,6 @@ function CreditsAndCohortsExplainer({ onScrollTo }) {
                     className="h-full rounded-full bg-gradient-to-r from-[#626a9f] to-[#ffc749] transition-all duration-300"
                     style={{ width: selectedCohort === 15 ? '50%' : '100%' }}
                   />
-                  {/* Marcador interactivo */}
                   <div
                     className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-[#ffc749] border-2 border-[#1e2246] shadow-md flex items-center justify-center transition-all duration-300"
                     style={{ left: selectedCohort === 15 ? '50%' : '96%' }}
@@ -489,13 +483,23 @@ function CreditsAndCohortsExplainer({ onScrollTo }) {
                   <p className="text-xs font-semibold text-[#3b4170] leading-snug">
                     {selectedCohort === 15 ? (
                       <>
-                        <strong className="font-black text-[#1e2246]">Cohorte Día 15:</strong> Tu corte cae a mitad de mes. Al reportar tu pago, tus 4 créditos se renuevan de inmediato para el siguiente ciclo.
+                        <strong className="font-black text-[#1e2246]">Cohorte Día 15:</strong> Tu ciclo cierra el 15 de cada mes. Al renovar tu mensualidad, recibes 4 nuevos créditos para el periodo siguiente.
                       </>
                     ) : (
                       <>
-                        <strong className="font-black text-[#1e2246]">Cohorte Día 30:</strong> Tu corte cae a fin de mes. Ideal si prefieres sincronizar tu mensualidad con tu quincena de cierre.
+                        <strong className="font-black text-[#1e2246]">Cohorte Día 30:</strong> Tu ciclo cierra al final de cada mes. Ideal para sincronizar tu pago con tu quincena de cierre y renovar tus 4 créditos.
                       </>
                     )}
+                  </p>
+                </div>
+
+                {/* Aviso claro: Créditos NO acumulativos */}
+                <div className="mt-3.5 pt-3 border-t border-[#dfe2f2] flex items-start gap-2">
+                  <svg className="w-4 h-4 text-[#ee665b] shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth="2.4" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-[11px] font-bold text-[#9b2c23] leading-snug">
+                    <strong className="font-black">No acumulativos:</strong> Al vencer tu fecha de corte (Día {selectedCohort}), los créditos no utilizados expiran y no se trasladan al mes siguiente.
                   </p>
                 </div>
               </div>
@@ -509,24 +513,24 @@ function CreditsAndCohortsExplainer({ onScrollTo }) {
               <ul className="space-y-1.5 text-xs font-semibold text-[#282d57]">
                 <li className="flex items-start gap-2">
                   <CheckSvg className="w-3.5 h-3.5 text-[#128063] shrink-0 mt-0.5" />
-                  <span>Cero clases desperdiciadas: solo usas un crédito cuando agendas tu horario real.</span>
+                  <span>Sin horarios fijos: agendas tus clases del mes en los días y horas que mejor te funcionen.</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckSvg className="w-3.5 h-3.5 text-[#128063] shrink-0 mt-0.5" />
-                  <span>Acelera o refuerza en cualquier momento con Extra Créditos sin subir de tarifa.</span>
+                  <span>Avanza por delante del ritmo promedio añadiendo el Bundle de 2 créditos extra ($12 aparte).</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckSvg className="w-3.5 h-3.5 text-[#128063] shrink-0 mt-0.5" />
-                  <span>Sin cargos automáticos sorpresa: tú eliges tu fecha de corte y verificas tu pago.</span>
+                  <span>Ritmo constante y sin cargos automáticos: el corte mensual impulsa tu constancia y tú verificas tu pago.</span>
                 </li>
               </ul>
             </div>
           </div>
         </div>
 
-        {/* FRANJA INFERIOR: INSCRIPCIÓN POR NIVEL + COHORTES + MÉTODOS DE PAGO REALES */}
+        {/* FRANJA INFERIOR: INSCRIPCIÓN POR NIVEL + BUNDLE EXTRA ($12) + MÉTODOS DE PAGO */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-6 border-t border-white/75">
-          {/* 1. Inscripción por nivel (NO única) */}
+          {/* 1. Inscripción por nivel */}
           <div className="bg-white/60 backdrop-blur-md border border-white rounded-2xl p-4 flex items-start gap-3.5">
             <div className="w-12 h-12 rounded-2xl bg-[#ffc749] border-2 border-[#1e2246] shadow-[0_3px_0_#1e2246] flex items-center justify-center font-black text-base text-[#1e2246] shrink-0">
               $10
@@ -541,24 +545,23 @@ function CreditsAndCohortsExplainer({ onScrollTo }) {
             </div>
           </div>
 
-          {/* 2. Extra Créditos bajo demanda */}
+          {/* 2. Bundle de 2 Extra Créditos ($12 aparte) */}
           <div className="bg-white/60 backdrop-blur-md border border-white rounded-2xl p-4 flex items-start gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-[#454d82] border-2 border-[#1e2246] shadow-[0_3px_0_#1e2246] flex items-center justify-center text-[#ffc749] shrink-0">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
+            <div className="w-12 h-12 rounded-2xl bg-[#16a37f] border-2 border-[#1e2246] shadow-[0_3px_0_#1e2246] flex flex-col items-center justify-center text-white shrink-0 leading-none">
+              <span className="font-black text-sm">$12</span>
+              <span className="text-[8px] font-black uppercase tracking-wider opacity-90">+2 Cr</span>
             </div>
             <div>
               <h4 className="text-xs font-black uppercase tracking-widest text-[#1e2246]">
-                Extra Créditos Flexibles
+                Bundle 2 Extra Créditos
               </h4>
               <p className="text-xs text-[#4c5384] font-medium mt-1 leading-snug">
-                Agrega clases adicionales cuando quieras acelerar tu nivel o repasar antes de una evaluación, directo desde tu Hub.
+                Se paga aparte para cursar más lecciones en vivo al mes si deseas ir por delante del ritmo promedio. Válidos dentro de tu ciclo activo (no acumulativos).
               </p>
             </div>
           </div>
 
-          {/* 3. Métodos de pago reales (Zinli, PayPal, Binance + moneda local) */}
+          {/* 3. Métodos de pago reales */}
           <div className="bg-white/60 backdrop-blur-md border border-white rounded-2xl p-4 flex items-start gap-3.5">
             <div className="w-12 h-12 rounded-2xl bg-white border-2 border-[#1e2246] shadow-[0_3px_0_#1e2246] flex items-center justify-center text-[#454d82] shrink-0">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
