@@ -23,15 +23,76 @@ const INTEREST_OPTIONS = [
 ];
 const INVEST_OPTIONS = ['A) 3 meses o menos', 'B) 6 meses', 'C) 9 meses o más'];
 
+// =========================================
+// CUSTOM VECTOR ICONS (Zero Generic Emojis)
+// =========================================
+const CheckSvg = ({ className = 'w-3.5 h-3.5' }) => (
+  <svg className={className} fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+  </svg>
+);
+
+const ArrowRightSvg = ({ className = 'w-4 h-4' }) => (
+  <svg className={className} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+  </svg>
+);
+
+const PlaySvg = ({ className = 'w-4 h-4' }) => (
+  <svg className={className} fill="currentColor" viewBox="0 0 24 24">
+    <path d="M8 5.14v14l11-7-11-7z" />
+  </svg>
+);
+
+const WhatsAppSvg = ({ className = 'w-4 h-4' }) => (
+  <svg className={className} fill="currentColor" viewBox="0 0 24 24">
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+  </svg>
+);
+
 const SOCIAL_LINKS = [
-  { name: 'Instagram', url: 'https://www.instagram.com/outloudlanguage?igsh=MXU5dmRzeTZ3YTk1cg==' },
-  { name: 'TikTok', url: 'https://www.tiktok.com/@outloudlanguage' },
-  { name: 'Facebook', url: 'https://www.facebook.com/share/1KxawRX9vA/' },
-  { name: 'Discord', url: 'https://discord.gg/847PMD2DbV' },
+  {
+    name: 'Instagram',
+    url: 'https://www.instagram.com/outloudlanguage?igsh=MXU5dmRzeTZ3YTk1cg==',
+    icon: (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <rect x="3" y="3" width="18" height="18" rx="5" />
+        <circle cx="12" cy="12" r="4" />
+        <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+      </svg>
+    ),
+  },
+  {
+    name: 'TikTok',
+    url: 'https://www.tiktok.com/@outloudlanguage',
+    icon: (
+      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z" />
+      </svg>
+    ),
+  },
+  {
+    name: 'Facebook',
+    url: 'https://www.facebook.com/share/1KxawRX9vA/',
+    icon: (
+      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M14 13.5h2.5l1-4H14v-2c0-1.03 0-2 2-2h1.5V2.14c-.326-.043-1.557-.14-2.857-.14C11.928 2 10 3.657 10 6.7v2.8H7v4h3V22h4v-8.5z" />
+      </svg>
+    ),
+  },
+  {
+    name: 'Discord',
+    url: 'https://discord.gg/847PMD2DbV',
+    icon: (
+      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M20.317 4.37a19.79 19.79 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.865-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.028C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128c.126-.094.252-.192.372-.292a.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.1.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
+      </svg>
+    ),
+  },
 ];
 
 // =========================================
-// LIGHT-MODE BILINGUAL DROPDOWN
+// LIGHT-GLASS BILINGUAL DROPDOWN
 // =========================================
 const LightDropdown = ({ options, value, onChange, titleEng, titleSpan, hasError }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -57,15 +118,15 @@ const LightDropdown = ({ options, value, onChange, titleEng, titleSpan, hasError
             hasError
               ? 'border-[#ee665b] bg-[#ee665b]/10 text-[#b9382d]'
               : isOpen
-              ? 'border-[#626a9f] bg-white text-[#23274d] shadow-md'
-              : 'border-[#dfe2f2] bg-[#f6f7fc] text-[#23274d] hover:border-[#626a9f] hover:bg-white'
+              ? 'border-[#454d82] bg-white text-[#1e2246] shadow-md'
+              : 'border-white/90 bg-white/65 text-[#1e2246] hover:border-[#626a9f] hover:bg-white/90'
           }`}
         >
-          <span className={`truncate pr-2 ${value ? 'font-bold text-[#23274d]' : 'font-semibold text-[#60668a]'}`}>
+          <span className={`truncate pr-2 ${value ? 'font-bold text-[#1e2246]' : 'font-semibold text-[#50567d]'}`}>
             {value || titleSpan}
           </span>
           <svg
-            className={`w-4 h-4 shrink-0 text-[#626a9f] transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+            className={`w-4 h-4 shrink-0 text-[#454d82] transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -82,10 +143,10 @@ const LightDropdown = ({ options, value, onChange, titleEng, titleSpan, hasError
       </div>
 
       {isOpen && (
-        <div className="absolute left-0 right-0 mt-2 z-50 bg-white border-2 border-[#23274d] rounded-2xl shadow-[0_10px_0_#23274d] overflow-hidden animate-fade-in">
-          <div className="px-4 py-3 bg-[#fff3d1] border-b-2 border-[#23274d]/15">
-            <p className="text-[11px] font-black text-[#23274d] leading-tight">{titleEng}</p>
-            <p className="text-[10px] font-semibold text-[#60668a] leading-tight mt-0.5">{titleSpan}</p>
+        <div className="absolute left-0 right-0 mt-2 z-50 bg-white/95 backdrop-blur-2xl border-2 border-[#1e2246] rounded-2xl shadow-[0_12px_28px_-8px_rgba(30,34,70,0.35)] overflow-hidden animate-fade-in">
+          <div className="px-4 py-3 bg-[#fff3d1] border-b border-[#1e2246]/15">
+            <p className="text-[11px] font-black text-[#1e2246] leading-tight">{titleEng}</p>
+            <p className="text-[10px] font-semibold text-[#50567d] leading-tight mt-0.5">{titleSpan}</p>
           </div>
           <div className="max-h-48 overflow-y-auto">
             {options.map((option, idx) => {
@@ -100,8 +161,8 @@ const LightDropdown = ({ options, value, onChange, titleEng, titleSpan, hasError
                   }}
                   className={`w-full text-left px-4 py-2.5 text-xs font-semibold transition-colors border-b border-[#e8eaf7] last:border-none cursor-pointer ${
                     selected
-                      ? 'bg-[#626a9f] text-white font-black'
-                      : 'text-[#23274d] hover:bg-[#e8eaf7]'
+                      ? 'bg-[#454d82] text-white font-black'
+                      : 'text-[#1e2246] hover:bg-[#e8eaf7]'
                   }`}
                 >
                   {option}
@@ -116,7 +177,7 @@ const LightDropdown = ({ options, value, onChange, titleEng, titleSpan, hasError
 };
 
 // =========================================
-// REUSABLE LIGHT-MODE ONBOARDING FORM CARD
+// REUSABLE BACKLIT GLASS ONBOARDING FORM
 // =========================================
 export function OnboardingFormCard({ onFreeTrialClick, onSuccessComplete }) {
   const [formData, setFormData] = useState(() => {
@@ -224,307 +285,315 @@ export function OnboardingFormCard({ onFreeTrialClick, onSuccessComplete }) {
 
   return (
     <div className="relative">
-      <div className="absolute -inset-3 rounded-[3rem] bg-gradient-to-br from-[#ffc749]/35 via-[#a8b0de]/45 to-[#626a9f]/35 blur-3xl opacity-85 -z-10 pointer-events-none" />
-      <div className="ola-light-phone bg-white/80 backdrop-blur-2xl border-2 border-[#23274d] rounded-[2.5rem] shadow-[0_14px_0_#23274d,inset_0_1px_1px_rgba(255,255,255,0.95)] p-6 sm:p-8 lg:p-12 relative">
-      <style>{`
-        .ola-light-phone .PhoneInput { display: flex; align-items: center; width: 100%; }
-        .ola-light-phone .PhoneInputInput {
-          flex: 1;
-          background: transparent;
-          border: none;
-          outline: none;
-          font-family: 'Montserrat', sans-serif;
-          font-size: 0.75rem;
-          font-weight: 600;
-          color: #23274d;
-          min-width: 0;
-        }
-        .ola-light-phone .PhoneInputInput::placeholder { color: rgba(96, 102, 138, 0.55); }
-        .ola-light-phone .PhoneInputCountry { margin-right: 10px; flex-shrink: 0; }
-        .ola-light-phone .PhoneInputCountryIcon {
-          width: 24px;
-          height: 16px;
-          border: 1px solid #dfe2f2;
-          border-radius: 3px;
-          overflow: hidden;
-        }
-        .ola-light-phone .PhoneInputCountrySelectArrow {
-          width: 0.45em;
-          height: 0.45em;
-          margin-left: 6px;
-          border-right: 2px solid #626a9f;
-          border-bottom: 2px solid #626a9f;
-        }
-      `}</style>
+      {/* Ambient Backlight Glow */}
+      <div
+        className="absolute -inset-4 rounded-[3.2rem] blur-3xl opacity-75 -z-10 pointer-events-none"
+        style={{
+          background:
+            'linear-gradient(125deg, rgba(255,199,73,0.48) 0%, rgba(121,131,196,0.48) 55%, rgba(98,106,159,0.52) 100%)',
+        }}
+      />
 
-      {/* Header */}
-      <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-10">
-        <span className="inline-flex items-center gap-2 bg-[#fff3d1] border-2 border-[#ffc749] rounded-full px-4 py-1.5 text-[10px] font-black uppercase tracking-widest text-[#23274d] mb-3">
-          Planilla de Inscripción
-        </span>
-        <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#23274d] tracking-tight uppercase">
-          New Student Registration
-        </h3>
-        <p className="text-xs sm:text-sm text-[#60668a] font-medium mt-2">
-          Completa tus datos y metas para que un asesor de OutLoud active tu cuenta vía WhatsApp.
-        </p>
-      </div>
+      <div className="ola-light-phone ola-glass rounded-[2.5rem] p-6 sm:p-8 lg:p-12 relative">
+        <style>{`
+          .ola-light-phone .PhoneInput { display: flex; align-items: center; width: 100%; }
+          .ola-light-phone .PhoneInputInput {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #1e2246;
+            min-width: 0;
+          }
+          .ola-light-phone .PhoneInputInput::placeholder { color: rgba(80, 86, 125, 0.6); }
+          .ola-light-phone .PhoneInputCountry { margin-right: 10px; flex-shrink: 0; }
+          .ola-light-phone .PhoneInputCountryIcon {
+            width: 24px;
+            height: 16px;
+            border: 1px solid #dfe2f2;
+            border-radius: 3px;
+            overflow: hidden;
+          }
+          .ola-light-phone .PhoneInputCountrySelectArrow {
+            width: 0.45em;
+            height: 0.45em;
+            margin-left: 6px;
+            border-right: 2px solid #454d82;
+            border-bottom: 2px solid #454d82;
+          }
+        `}</style>
 
-      {submitSuccess ? (
-        <div className="bg-[#f6f7fc] border-2 border-[#16a37f] rounded-[2rem] p-8 sm:p-10 text-center max-w-xl mx-auto animate-fade-in">
-          <div className="w-16 h-16 rounded-full bg-[#16a37f] text-white flex items-center justify-center text-3xl font-black mx-auto mb-4 shadow-md">
-            ✓
-          </div>
-          <h4 className="text-2xl font-black text-[#23274d] uppercase mb-2">
-            ¡Inscripción Enviada!
-          </h4>
-          <p className="text-sm text-[#60668a] font-medium leading-relaxed mb-6">
-            Tu planilla ingresó correctamente a nuestro sistema. Un agente administrativo se pondrá en contacto contigo vía WhatsApp muy pronto.
+        {/* Header */}
+        <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-10">
+          <span className="ola-glass-yellow inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[10px] font-black uppercase tracking-widest text-[#1e2246] mb-3">
+            Planilla de Inscripción
+          </span>
+          <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#1e2246] tracking-tight uppercase">
+            New Student Registration
+          </h3>
+          <p className="text-xs sm:text-sm text-[#4c5384] font-medium mt-2">
+            Completa tus datos y metas para que un asesor de OutLoud active tu cuenta vía WhatsApp.
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            {onFreeTrialClick && (
-              <button
-                type="button"
-                onClick={onFreeTrialClick}
-                className="ola-btn-yellow w-full sm:w-auto px-7 py-3.5 rounded-full text-xs font-black uppercase tracking-widest cursor-pointer"
-              >
-                Probar Clase Gratis →
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => setSubmitSuccess(false)}
-              className="ola-btn-outline w-full sm:w-auto px-6 py-3.5 rounded-full text-xs font-black uppercase tracking-widest cursor-pointer"
-            >
-              Enviar Otra Planilla
-            </button>
-          </div>
         </div>
-      ) : (
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-10">
-          {/* COLUMN 1: PERSONAL INFO */}
-          <div className="flex flex-col">
-            <div className="flex items-center gap-2.5 mb-5">
-              <span className="w-7 h-7 rounded-lg bg-[#ffc749] border-2 border-[#23274d] text-[#23274d] text-xs font-black flex items-center justify-center shrink-0">
-                1
-              </span>
-              <h4 className="text-xs font-black text-[#626a9f] uppercase tracking-widest">
-                Section 1: Personal Info
-              </h4>
+
+        {submitSuccess ? (
+          <div className="bg-white/75 backdrop-blur-xl border-2 border-[#16a37f] rounded-[2rem] p-8 sm:p-10 text-center max-w-xl mx-auto animate-fade-in shadow-lg">
+            <div className="w-16 h-16 rounded-full bg-[#16a37f] text-white flex items-center justify-center mx-auto mb-4 shadow-md">
+              <CheckSvg className="w-8 h-8" />
             </div>
-
-            {/* Full Name */}
-            <div className="mb-5 relative">
-              <label className="block text-xs font-black text-[#23274d] mb-1.5">
-                Full name <span className="font-semibold text-[#60668a]">(Nombre completo)</span>
-              </label>
-              <input
-                type="text"
-                value={formData.fullName}
-                onChange={(e) => handleInputChange('fullName', e.target.value)}
-                placeholder="Ej. María González"
-                className={`w-full rounded-2xl px-4 py-3 text-xs font-semibold outline-none transition-colors border-2 ${
-                  errors.fullName
-                    ? 'border-[#ee665b] bg-[#ee665b]/10 text-[#b9382d]'
-                    : 'border-[#dfe2f2] bg-[#f6f7fc] text-[#23274d] focus:border-[#626a9f] focus:bg-white'
-                }`}
-              />
-              {errors.fullName && (
-                <p className="absolute -bottom-4 left-2 text-[10px] font-black text-[#ee665b]">
-                  Debe completar este campo
-                </p>
-              )}
-            </div>
-
-            {/* Email */}
-            <div className="mb-5 relative">
-              <label className="block text-xs font-black text-[#23274d] mb-1.5">
-                Email address <span className="font-semibold text-[#60668a]">(Correo electrónico)</span>
-              </label>
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) => handleInputChange('email', e.target.value)}
-                placeholder="tu@correo.com"
-                className={`w-full rounded-2xl px-4 py-3 text-xs font-semibold outline-none transition-colors border-2 ${
-                  errors.email
-                    ? 'border-[#ee665b] bg-[#ee665b]/10 text-[#b9382d]'
-                    : 'border-[#dfe2f2] bg-[#f6f7fc] text-[#23274d] focus:border-[#626a9f] focus:bg-white'
-                }`}
-              />
-              {errors.email && (
-                <p className="absolute -bottom-4 left-2 text-[10px] font-black text-[#ee665b]">
-                  Debe completar este campo
-                </p>
-              )}
-            </div>
-
-            {/* WhatsApp / Phone */}
-            <div className="mb-5 relative">
-              <label className="block text-xs font-black text-[#23274d] mb-1.5">
-                WhatsApp / Phone <span className="font-semibold text-[#60668a]">(Teléfono)</span>
-              </label>
-              <div
-                className={`w-full rounded-2xl px-4 py-2.5 transition-colors border-2 ${
-                  errors.phone
-                    ? 'border-[#ee665b] bg-[#ee665b]/10'
-                    : 'border-[#dfe2f2] bg-[#f6f7fc] focus-within:border-[#626a9f] focus-within:bg-white'
-                }`}
-              >
-                <PhoneInput
-                  defaultCountry="VE"
-                  international
-                  placeholder="+58 412 000 0000"
-                  value={formData.phone}
-                  onChange={(value) => handleInputChange('phone', value)}
-                />
-              </div>
-              {errors.phone && (
-                <p className="absolute -bottom-4 left-2 text-[10px] font-black text-[#ee665b]">
-                  Debe completar este campo
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* COLUMN 2: COURSE GOALS */}
-          <div className="flex flex-col lg:border-l-2 lg:border-r-2 lg:border-[#e8eaf7] lg:px-8">
-            <div className="flex items-center gap-2.5 mb-5">
-              <span className="w-7 h-7 rounded-lg bg-[#626a9f] border-2 border-[#23274d] text-white text-xs font-black flex items-center justify-center shrink-0">
-                2
-              </span>
-              <h4 className="text-xs font-black text-[#626a9f] uppercase tracking-widest">
-                Section 2: Course Goals
-              </h4>
-            </div>
-
-            <LightDropdown
-              titleEng="Why do you want to learn English?"
-              titleSpan="¿Por qué quieres aprender inglés?"
-              options={REASON_OPTIONS}
-              value={formData.reason}
-              onChange={(val) => handleInputChange('reason', val)}
-              hasError={errors.reason}
-            />
-            <LightDropdown
-              titleEng="You expect to be fluent in..."
-              titleSpan="¿En cuánto tiempo te gustaría hablar fluido?"
-              options={FLUENT_OPTIONS}
-              value={formData.fluentTime}
-              onChange={(val) => handleInputChange('fluentTime', val)}
-              hasError={errors.fluentTime}
-            />
-            <LightDropdown
-              titleEng="Select one interest category"
-              titleSpan="Selecciona 1 Interés"
-              options={INTEREST_OPTIONS}
-              value={formData.interest}
-              onChange={(val) => handleInputChange('interest', val)}
-              hasError={errors.interest}
-            />
-            <LightDropdown
-              titleEng="How much time can you invest?"
-              titleSpan="¿De cuánto tiempo dispones para aprender?"
-              options={INVEST_OPTIONS}
-              value={formData.investTime}
-              onChange={(val) => handleInputChange('investTime', val)}
-              hasError={errors.investTime}
-            />
-
-            {/* Optional Referral Drawer */}
-            <div className="mt-1">
-              <button
-                type="button"
-                onClick={() => setFormData((prev) => ({ ...prev, referralToggle: !prev.referralToggle }))}
-                className="w-full cursor-pointer flex justify-between items-center rounded-2xl bg-[#e8eaf7]/70 hover:bg-[#e8eaf7] border-2 border-[#dfe2f2] px-4 py-3 text-xs font-bold text-[#23274d] transition-colors"
-              >
-                <span>Quiero recomendar este curso a alguien</span>
-                <svg
-                  className={`w-4 h-4 text-[#626a9f] transition-transform duration-200 ${
-                    formData.referralToggle ? 'rotate-180' : ''
-                  }`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-
-              {formData.referralToggle && (
-                <div className="mt-3 flex flex-col gap-2.5 animate-fade-in">
-                  <input
-                    type="text"
-                    placeholder="Nombre del referido"
-                    value={formData.refName}
-                    onChange={(e) => handleInputChange('refName', e.target.value)}
-                    className="w-full rounded-2xl bg-[#f6f7fc] border-2 border-[#dfe2f2] focus:border-[#626a9f] focus:bg-white px-4 py-2.5 text-xs font-semibold text-[#23274d] outline-none"
-                  />
-                  <div className="w-full rounded-2xl bg-[#f6f7fc] border-2 border-[#dfe2f2] focus-within:border-[#626a9f] focus-within:bg-white px-4 py-2">
-                    <PhoneInput
-                      defaultCountry="VE"
-                      international
-                      placeholder="Teléfono del referido"
-                      value={formData.refPhone}
-                      onChange={(value) => handleInputChange('refPhone', value)}
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* COLUMN 3: CONFIRMATION & ACTIONS */}
-          <div className="flex flex-col justify-between">
-            <div>
-              <div className="flex items-center gap-2.5 mb-5">
-                <span className="w-7 h-7 rounded-lg bg-[#e8eaf7] border-2 border-[#23274d] text-[#23274d] text-xs font-black flex items-center justify-center shrink-0">
-                  3
-                </span>
-                <h4 className="text-xs font-black text-[#626a9f] uppercase tracking-widest">
-                  Confirmación
-                </h4>
-              </div>
-
-              <div className="bg-[#f6f7fc] border-2 border-[#dfe2f2] rounded-2xl p-5 space-y-3 mb-6">
-                <p className="text-xs text-[#60668a] font-medium leading-relaxed">
-                  Al hacer clic en <strong className="font-black text-[#23274d]">ENVIAR</strong>, tu planilla ingresará al sistema y un{' '}
-                  <strong className="font-black text-[#23274d]">agente se pondrá en contacto contigo</strong> a través de WhatsApp para explicarte los planes, confirmar tu cohorte y formalizar tu inscripción.
-                </p>
-                <p className="text-xs text-[#60668a] font-medium leading-relaxed">
-                  Asegúrate de que tu correo y número de WhatsApp sean correctos.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-3">
-              {submitError && (
-                <div className="bg-[#ee665b]/10 border-2 border-[#ee665b] text-[#b9382d] rounded-xl px-4 py-2.5 text-xs font-bold text-center">
-                  {submitError}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="ola-btn-yellow w-full py-4 rounded-full font-black tracking-widest text-xs uppercase cursor-pointer disabled:opacity-50"
-              >
-                {isSubmitting ? 'Enviando Planilla...' : 'Submit / Enviar Inscripción →'}
-              </button>
-
+            <h4 className="text-2xl font-black text-[#1e2246] uppercase mb-2">
+              ¡Inscripción Enviada!
+            </h4>
+            <p className="text-sm text-[#4c5384] font-medium leading-relaxed mb-6">
+              Tu planilla ingresó correctamente a nuestro sistema. Un agente administrativo se pondrá en contacto contigo vía WhatsApp muy pronto.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               {onFreeTrialClick && (
                 <button
                   type="button"
                   onClick={onFreeTrialClick}
-                  className="ola-btn-outline w-full py-3.5 rounded-full font-black tracking-widest text-xs uppercase cursor-pointer"
+                  className="ola-btn-yellow w-full sm:w-auto px-7 py-3.5 rounded-full text-xs font-black uppercase tracking-widest cursor-pointer flex items-center justify-center gap-2"
                 >
-                  Free Trial / Prueba Gratis
+                  <span>Probar Clase Gratis</span>
+                  <ArrowRightSvg className="w-4 h-4" />
                 </button>
               )}
+              <button
+                type="button"
+                onClick={() => setSubmitSuccess(false)}
+                className="ola-btn-outline w-full sm:w-auto px-6 py-3.5 rounded-full text-xs font-black uppercase tracking-widest cursor-pointer"
+              >
+                Enviar Otra Planilla
+              </button>
             </div>
           </div>
-        </form>
-      )}
+        ) : (
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-10">
+            {/* COLUMN 1: PERSONAL INFO */}
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2.5 mb-5">
+                <span className="w-7 h-7 rounded-lg bg-[#ffc749] border-2 border-[#1e2246] text-[#1e2246] text-xs font-black flex items-center justify-center shrink-0">
+                  1
+                </span>
+                <h4 className="text-xs font-black text-[#454d82] uppercase tracking-widest">
+                  Section 1: Personal Info
+                </h4>
+              </div>
+
+              <div className="mb-5 relative">
+                <label className="block text-xs font-black text-[#1e2246] mb-1.5">
+                  Full name <span className="font-semibold text-[#50567d]">(Nombre completo)</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.fullName}
+                  onChange={(e) => handleInputChange('fullName', e.target.value)}
+                  placeholder="Ej. María González"
+                  className={`w-full rounded-2xl px-4 py-3 text-xs font-semibold outline-none transition-colors border-2 ${
+                    errors.fullName
+                      ? 'border-[#ee665b] bg-[#ee665b]/10 text-[#b9382d]'
+                      : 'border-white/90 bg-white/65 text-[#1e2246] focus:border-[#454d82] focus:bg-white'
+                  }`}
+                />
+                {errors.fullName && (
+                  <p className="absolute -bottom-4 left-2 text-[10px] font-black text-[#ee665b]">
+                    Debe completar este campo
+                  </p>
+                )}
+              </div>
+
+              <div className="mb-5 relative">
+                <label className="block text-xs font-black text-[#1e2246] mb-1.5">
+                  Email address <span className="font-semibold text-[#50567d]">(Correo electrónico)</span>
+                </label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  placeholder="tu@correo.com"
+                  className={`w-full rounded-2xl px-4 py-3 text-xs font-semibold outline-none transition-colors border-2 ${
+                    errors.email
+                      ? 'border-[#ee665b] bg-[#ee665b]/10 text-[#b9382d]'
+                      : 'border-white/90 bg-white/65 text-[#1e2246] focus:border-[#454d82] focus:bg-white'
+                  }`}
+                />
+                {errors.email && (
+                  <p className="absolute -bottom-4 left-2 text-[10px] font-black text-[#ee665b]">
+                    Debe completar este campo
+                  </p>
+                )}
+              </div>
+
+              <div className="mb-5 relative">
+                <label className="block text-xs font-black text-[#1e2246] mb-1.5">
+                  WhatsApp / Phone <span className="font-semibold text-[#50567d]">(Teléfono)</span>
+                </label>
+                <div
+                  className={`w-full rounded-2xl px-4 py-2.5 transition-colors border-2 ${
+                    errors.phone
+                      ? 'border-[#ee665b] bg-[#ee665b]/10'
+                      : 'border-white/90 bg-white/65 focus-within:border-[#454d82] focus-within:bg-white'
+                  }`}
+                >
+                  <PhoneInput
+                    defaultCountry="VE"
+                    international
+                    placeholder="+58 412 000 0000"
+                    value={formData.phone}
+                    onChange={(value) => handleInputChange('phone', value)}
+                  />
+                </div>
+                {errors.phone && (
+                  <p className="absolute -bottom-4 left-2 text-[10px] font-black text-[#ee665b]">
+                    Debe completar este campo
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* COLUMN 2: COURSE GOALS */}
+            <div className="flex flex-col lg:border-l lg:border-r lg:border-white/70 lg:px-8">
+              <div className="flex items-center gap-2.5 mb-5">
+                <span className="w-7 h-7 rounded-lg bg-[#454d82] border-2 border-[#1e2246] text-white text-xs font-black flex items-center justify-center shrink-0">
+                  2
+                </span>
+                <h4 className="text-xs font-black text-[#454d82] uppercase tracking-widest">
+                  Section 2: Course Goals
+                </h4>
+              </div>
+
+              <LightDropdown
+                titleEng="Why do you want to learn English?"
+                titleSpan="¿Por qué quieres aprender inglés?"
+                options={REASON_OPTIONS}
+                value={formData.reason}
+                onChange={(val) => handleInputChange('reason', val)}
+                hasError={errors.reason}
+              />
+              <LightDropdown
+                titleEng="You expect to be fluent in..."
+                titleSpan="¿En cuánto tiempo te gustaría hablar fluido?"
+                options={FLUENT_OPTIONS}
+                value={formData.fluentTime}
+                onChange={(val) => handleInputChange('fluentTime', val)}
+                hasError={errors.fluentTime}
+              />
+              <LightDropdown
+                titleEng="Select one interest category"
+                titleSpan="Selecciona 1 Interés"
+                options={INTEREST_OPTIONS}
+                value={formData.interest}
+                onChange={(val) => handleInputChange('interest', val)}
+                hasError={errors.interest}
+              />
+              <LightDropdown
+                titleEng="How much time can you invest?"
+                titleSpan="¿De cuánto tiempo dispones para aprender?"
+                options={INVEST_OPTIONS}
+                value={formData.investTime}
+                onChange={(val) => handleInputChange('investTime', val)}
+                hasError={errors.investTime}
+              />
+
+              {/* Optional Referral Drawer */}
+              <div className="mt-1">
+                <button
+                  type="button"
+                  onClick={() => setFormData((prev) => ({ ...prev, referralToggle: !prev.referralToggle }))}
+                  className="w-full cursor-pointer flex justify-between items-center rounded-2xl bg-white/60 hover:bg-white/90 border-2 border-white/90 px-4 py-3 text-xs font-bold text-[#1e2246] transition-colors"
+                >
+                  <span>Quiero recomendar este curso a alguien</span>
+                  <svg
+                    className={`w-4 h-4 text-[#454d82] transition-transform duration-200 ${
+                      formData.referralToggle ? 'rotate-180' : ''
+                    }`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {formData.referralToggle && (
+                  <div className="mt-3 flex flex-col gap-2.5 animate-fade-in">
+                    <input
+                      type="text"
+                      placeholder="Nombre del referido"
+                      value={formData.refName}
+                      onChange={(e) => handleInputChange('refName', e.target.value)}
+                      className="w-full rounded-2xl bg-white/70 border-2 border-white/90 focus:border-[#454d82] focus:bg-white px-4 py-2.5 text-xs font-semibold text-[#1e2246] outline-none"
+                    />
+                    <div className="w-full rounded-2xl bg-white/70 border-2 border-white/90 focus-within:border-[#454d82] focus-within:bg-white px-4 py-2">
+                      <PhoneInput
+                        defaultCountry="VE"
+                        international
+                        placeholder="Teléfono del referido"
+                        value={formData.refPhone}
+                        onChange={(value) => handleInputChange('refPhone', value)}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* COLUMN 3: CONFIRMATION & ACTIONS */}
+            <div className="flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-2.5 mb-5">
+                  <span className="w-7 h-7 rounded-lg bg-white border-2 border-[#1e2246] text-[#1e2246] text-xs font-black flex items-center justify-center shrink-0">
+                    3
+                  </span>
+                  <h4 className="text-xs font-black text-[#454d82] uppercase tracking-widest">
+                    Confirmación
+                  </h4>
+                </div>
+
+                <div className="bg-white/60 backdrop-blur-md border border-white/90 rounded-2xl p-5 space-y-3 mb-6 shadow-inner">
+                  <p className="text-xs text-[#3e446b] font-medium leading-relaxed">
+                    Al hacer clic en <strong className="font-black text-[#1e2246]">ENVIAR</strong>, tu planilla ingresará al sistema y un{' '}
+                    <strong className="font-black text-[#1e2246]">agente se pondrá en contacto contigo</strong> a través de WhatsApp para explicarte los planes, confirmar tu cohorte y formalizar tu inscripción.
+                  </p>
+                  <p className="text-xs text-[#50567d] font-medium leading-relaxed">
+                    Asegúrate de que tu correo y número de WhatsApp sean correctos.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                {submitError && (
+                  <div className="bg-[#ee665b]/15 border-2 border-[#ee665b] text-[#9b2c23] rounded-xl px-4 py-2.5 text-xs font-bold text-center">
+                    {submitError}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="ola-btn-yellow w-full py-4 rounded-full font-black tracking-widest text-xs uppercase cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 group"
+                >
+                  <span>{isSubmitting ? 'Enviando Planilla...' : 'Enviar Inscripción'}</span>
+                  {!isSubmitting && <ArrowRightSvg className="w-4 h-4 transition-transform group-hover:translate-x-1" />}
+                </button>
+
+                {onFreeTrialClick && (
+                  <button
+                    type="button"
+                    onClick={onFreeTrialClick}
+                    className="ola-btn-outline w-full py-3.5 rounded-full font-black tracking-widest text-xs uppercase cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <PlaySvg className="w-3.5 h-3.5" />
+                    <span>Probar Clase Gratis</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );
@@ -546,88 +615,104 @@ export default function LandingTrialAndEnroll({
       {/* ================================================== */}
       <section id="free-trial" className="py-16 sm:py-24 scroll-mt-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-stretch">
-            {/* PRIMARY CARD: FREE INTERACTIVE LESSON (Backlit Glass) */}
-            <div className="lg:col-span-7 bg-[#fff3d1]/85 backdrop-blur-2xl border-2 border-[#23274d] rounded-[2.5rem] p-7 sm:p-10 shadow-[0_10px_0_#23274d,0_24px_45px_-12px_rgba(255,199,73,0.55)] hover:-translate-y-1.5 transition-all duration-200 flex flex-col justify-between relative overflow-hidden">
-              <div className="absolute -top-12 -right-12 w-44 h-44 rounded-full bg-[#ffc749]/45 pointer-events-none" />
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-7 lg:gap-8 items-stretch">
+            {/* PRIMARY CARD: FREE INTERACTIVE LESSON (Backlit Warm Yellow Glass) */}
+            <div className="lg:col-span-7 relative group flex flex-col">
+              <div
+                className="absolute -inset-3 rounded-[2.8rem] blur-2xl opacity-70 group-hover:opacity-100 transition-opacity duration-500 -z-10 pointer-events-none"
+                style={{ background: 'radial-gradient(circle at top left, rgba(255,199,73,0.75), rgba(255,224,145,0.2) 70%)' }}
+              />
 
-              <div className="relative z-10">
-                <div className="inline-flex items-center gap-2 bg-white border-2 border-[#23274d] rounded-full px-3.5 py-1 text-[10px] font-black uppercase tracking-widest text-[#23274d] mb-5">
-                  <span className="w-2 h-2 rounded-full bg-[#16a37f] animate-pulse" />
-                  <span>Experiencia Interactiva Sin Registro</span>
+              <div className="ola-glass-yellow flex-1 rounded-[2.5rem] p-7 sm:p-10 flex flex-col justify-between relative overflow-hidden">
+                <div className="relative z-10">
+                  <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-md border border-white rounded-full px-3.5 py-1.5 text-[10px] font-black uppercase tracking-widest text-[#1e2246] mb-5 shadow-sm">
+                    <span className="w-2 h-2 rounded-full bg-[#16a37f] animate-pulse" />
+                    <span>Experiencia Interactiva Sin Registro</span>
+                  </div>
+
+                  <h2 className="text-3xl sm:text-4xl font-black text-[#1e2246] tracking-tight leading-tight mb-4">
+                    Prueba una lección real <span className="text-[#454d82]">ahora mismo</span>
+                  </h2>
+
+                  <p className="text-sm sm:text-base text-[#282d57] font-medium leading-relaxed mb-7 max-w-xl">
+                    Entra como invitado a nuestra Unidad 1 de Nivel A1. Escucha audio nativo, graba tu voz con nuestro motor de comparación instantánea y comprueba cómo se siente estudiar en OutLoud.
+                  </p>
+
+                  <div className="flex flex-wrap gap-2.5 mb-8">
+                    {['Audio Nativo', 'Práctica Vocal', 'Ejercicios Interactivos', '100% Gratis'].map((pill) => (
+                      <span
+                        key={pill}
+                        className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider bg-white/75 backdrop-blur-md border border-white text-[#1e2246] px-3 py-1.5 rounded-xl shadow-sm"
+                      >
+                        <CheckSvg className="w-3.5 h-3.5 text-[#16a37f]" />
+                        <span>{pill}</span>
+                      </span>
+                    ))}
+                  </div>
                 </div>
 
-                <h2 className="text-3xl sm:text-4xl font-black text-[#23274d] tracking-tight leading-tight mb-4">
-                  Prueba una lección real <span className="text-[#626a9f]">ahora mismo</span>
-                </h2>
-
-                <p className="text-sm sm:text-base text-[#23274d]/80 font-medium leading-relaxed mb-7 max-w-xl">
-                  Entra como invitado a nuestra Unidad 1 de Nivel A1. Escucha audio nativo, graba tu voz con nuestro motor de comparación instantánea y comprueba por ti mismo cómo se siente estudiar en OutLoud.
-                </p>
-
-                <div className="flex flex-wrap gap-2.5 mb-8">
-                  {['Audio Nativo', 'Práctica Vocal', 'Ejercicios Interactivos', '100% Gratis'].map((pill) => (
-                    <span
-                      key={pill}
-                      className="text-[11px] font-black uppercase tracking-wider bg-white/85 border border-[#23274d]/20 text-[#23274d] px-3 py-1.5 rounded-xl"
-                    >
-                      ✓ {pill}
-                    </span>
-                  ))}
+                <div className="relative z-10 flex flex-wrap items-center gap-4">
+                  <button
+                    type="button"
+                    onClick={onFreeLessonClick}
+                    className="ola-btn-yellow w-full sm:w-auto px-8 py-4 rounded-full text-xs sm:text-sm font-black uppercase tracking-widest cursor-pointer flex items-center justify-center gap-2.5 group/btn"
+                  >
+                    <span>Iniciar Clase de Prueba</span>
+                    <PlaySvg className="w-4 h-4 transition-transform group-hover/btn:translate-x-0.5" />
+                  </button>
                 </div>
-              </div>
-
-              <div className="relative z-10 flex flex-wrap items-center gap-4">
-                <button
-                  type="button"
-                  onClick={onFreeLessonClick}
-                  className="ola-btn-yellow w-full sm:w-auto px-8 py-4 rounded-full text-xs sm:text-sm font-black uppercase tracking-widest cursor-pointer flex items-center justify-center gap-2"
-                >
-                  <span>Iniciar Clase de Prueba</span>
-                  <span>▶</span>
-                </button>
               </div>
             </div>
 
-            {/* SECONDARY CARD: PLACEMENT TEST (Backlit Indigo Glass) */}
-            <div className="lg:col-span-5 bg-[#626a9f]/92 backdrop-blur-2xl border-2 border-[#23274d] rounded-[2.5rem] p-7 sm:p-10 text-white shadow-[0_10px_0_#23274d,0_24px_45px_-12px_rgba(98,106,159,0.55)] hover:-translate-y-1.5 transition-all duration-200 flex flex-col justify-between relative overflow-hidden">
-              <div className="absolute -bottom-16 -right-16 w-48 h-48 rounded-full bg-white/10 pointer-events-none" />
+            {/* SECONDARY CARD: PLACEMENT TEST (Guaranteed Deep Backlit Indigo Glass) */}
+            <div className="lg:col-span-5 relative group flex flex-col">
+              <div
+                className="absolute -inset-3 rounded-[2.8rem] blur-2xl opacity-75 group-hover:opacity-100 transition-opacity duration-500 -z-10 pointer-events-none"
+                style={{ background: 'radial-gradient(circle at bottom right, rgba(69,77,130,0.85), rgba(255,199,73,0.35) 75%)' }}
+              />
 
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-6">
-                  <span className="inline-flex items-center gap-2 bg-[#23274d]/40 border border-white/20 rounded-full px-3.5 py-1 text-[10px] font-black uppercase tracking-widest text-[#ffc749]">
-                    Evaluación Diagnóstica
-                  </span>
-                  <OutLoudIcon className="w-12 h-12 shrink-0" />
+              <div className="ola-glass-indigo flex-1 rounded-[2.5rem] p-7 sm:p-10 text-white flex flex-col justify-between relative overflow-hidden">
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-6">
+                    <span className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-md border border-white/25 rounded-full px-3.5 py-1.5 text-[10px] font-black uppercase tracking-widest text-[#ffc749]">
+                      Evaluación Diagnóstica
+                    </span>
+                    <OutLoudIcon className="w-12 h-12 shrink-0 drop-shadow-md" />
+                  </div>
+
+                  <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight mb-3">
+                    ¿Ya sabes algo de inglés?
+                  </h3>
+
+                  <p className="text-sm text-white/90 font-medium leading-relaxed mb-6">
+                    Realiza nuestro <strong className="text-[#ffc749] font-black">Placement Test</strong> en línea para medir tu nivel CEFR real (A1–C2) y ubicarte en la unidad exacta donde debes comenzar.
+                  </p>
+
+                  <ul className="space-y-3 text-xs font-semibold text-white/90 mb-8">
+                    <li className="flex items-center gap-2.5">
+                      <span className="w-5 h-5 rounded-full bg-[#ffc749] text-[#1e2246] flex items-center justify-center shrink-0">
+                        <CheckSvg className="w-3 h-3" />
+                      </span>
+                      <span>Evaluación escrita rápida + entrevista oral</span>
+                    </li>
+                    <li className="flex items-center gap-2.5">
+                      <span className="w-5 h-5 rounded-full bg-[#ffc749] text-[#1e2246] flex items-center justify-center shrink-0">
+                        <CheckSvg className="w-3 h-3" />
+                      </span>
+                      <span>Resultados revisados por instructores reales</span>
+                    </li>
+                  </ul>
                 </div>
 
-                <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight mb-3">
-                  ¿Ya sabes algo de inglés?
-                </h3>
-
-                <p className="text-sm text-white/85 font-medium leading-relaxed mb-6">
-                  Realiza nuestro <strong className="text-[#ffc749] font-black">Placement Test</strong> en línea para medir tu nivel CEFR real (A1–C2) y ubicarte en la unidad exacta donde debes comenzar.
-                </p>
-
-                <ul className="space-y-2 text-xs font-semibold text-white/85 mb-8">
-                  <li className="flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-[#ffc749] text-[#23274d] font-black text-[10px] flex items-center justify-center">✓</span>
-                    Evaluación escrita rápida + entrevista oral
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-[#ffc749] text-[#23274d] font-black text-[10px] flex items-center justify-center">✓</span>
-                    Resultados revisados por instructores reales
-                  </li>
-                </ul>
+                <button
+                  type="button"
+                  onClick={onPlacementClick}
+                  className="ola-btn-yellow relative z-10 w-full py-4 px-5 rounded-full text-xs font-black uppercase tracking-widest cursor-pointer flex items-center justify-center gap-2 group/btn"
+                >
+                  <span>Tomar Placement Test</span>
+                  <ArrowRightSvg className="w-4 h-4 transition-transform group-hover/btn:translate-x-1" />
+                </button>
               </div>
-
-              <button
-                type="button"
-                onClick={onPlacementClick}
-                className="relative z-10 w-full py-4 rounded-full bg-white hover:bg-[#ffc749] text-[#23274d] border-2 border-[#23274d] shadow-[0_4px_0_#23274d] active:translate-y-0.5 text-xs font-black uppercase tracking-widest transition-all cursor-pointer"
-              >
-                Tomar Placement Test →
-              </button>
             </div>
           </div>
         </div>
@@ -643,34 +728,34 @@ export default function LandingTrialAndEnroll({
       </section>
 
       {/* ================================================== */}
-      {/* LIGHT-MODE BRAND FOOTER & SOCIALS                  */}
+      {/* FROSTED GLASS BRAND FOOTER & CUSTOM-SVG SOCIALS    */}
       {/* ================================================== */}
-      <footer className="bg-white/75 backdrop-blur-2xl border-t-2 border-white/90 pt-14 pb-10 mt-8 shadow-[0_-12px_36px_-14px_rgba(98,106,159,0.2)]">
+      <footer className="bg-white/55 backdrop-blur-2xl border-t border-white/85 pt-14 pb-10 mt-8 shadow-[0_-12px_40px_-14px_rgba(55,63,118,0.22)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-10 pb-10 border-b-2 border-[#e8eaf7]">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-10 pb-10 border-b border-[#626a9f]/20">
             {/* Brand Column */}
             <div className="md:col-span-5 flex flex-col items-start">
               <OutLoudHorizontalLogo iconClass="w-11 h-11" wordmarkClass="h-9 w-auto" />
-              <p className="text-xs sm:text-sm text-[#60668a] font-medium leading-relaxed mt-4 max-w-sm">
+              <p className="text-xs sm:text-sm text-[#4c5384] font-medium leading-relaxed mt-4 max-w-sm">
                 Plataforma académica de inmersión en inglés con lecciones interactivas 24/7, clases en vivo y comunidad estudiantil moderada.
               </p>
               <a
                 href="https://wa.me/584226885683"
                 target="_blank"
                 rel="noreferrer"
-                className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#fff3d1] hover:bg-[#ffc749] border-2 border-[#23274d] text-[#23274d] text-xs font-black uppercase tracking-wider transition-colors"
+                className="ola-btn-outline mt-5 inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full text-xs font-black uppercase tracking-wider"
               >
-                <span>💬</span>
+                <WhatsAppSvg className="w-4 h-4 text-[#16a37f]" />
                 <span>Soporte WhatsApp</span>
               </a>
             </div>
 
             {/* Quick Navigation */}
             <div className="md:col-span-3">
-              <h5 className="text-xs font-black uppercase tracking-widest text-[#23274d] mb-4">
+              <h5 className="text-xs font-black uppercase tracking-widest text-[#1e2246] mb-4">
                 Explorar
               </h5>
-              <ul className="space-y-2.5 text-xs font-bold text-[#60668a]">
+              <ul className="space-y-1.5 text-xs font-bold text-[#4c5384]">
                 {[
                   { label: 'Método & Cursos', href: '#method' },
                   { label: 'Ciclo de Estudio', href: '#cycle' },
@@ -682,19 +767,19 @@ export default function LandingTrialAndEnroll({
                     <button
                       type="button"
                       onClick={() => onScrollTo?.(item.href)}
-                      className="ola-reactive-text text-[#60668a] hover:text-[#23274d] font-bold cursor-pointer"
+                      className="ola-reactive-text text-[#4c5384] hover:text-[#1e2246] font-bold cursor-pointer -ml-3"
                     >
-                      {item.label}
+                      <span>{item.label}</span>
                     </button>
                   </li>
                 ))}
               </ul>
             </div>
 
-            {/* Socials & Campus Access */}
+            {/* Custom-SVG Socials & Campus Access */}
             <div className="md:col-span-4 flex flex-col justify-between gap-6">
               <div>
-                <h5 className="text-xs font-black uppercase tracking-widest text-[#23274d] mb-4">
+                <h5 className="text-xs font-black uppercase tracking-widest text-[#1e2246] mb-4">
                   Comunidad &amp; Redes
                 </h5>
                 <div className="flex flex-wrap gap-2.5">
@@ -704,18 +789,19 @@ export default function LandingTrialAndEnroll({
                       href={soc.url}
                       target="_blank"
                       rel="noreferrer"
-                      className="px-4 py-2 rounded-full bg-[#f6f7fc] hover:bg-[#626a9f] text-[#23274d] hover:text-white border-2 border-[#dfe2f2] hover:border-[#23274d] text-xs font-black uppercase tracking-wider transition-all"
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/70 hover:bg-[#454d82] text-[#1e2246] hover:text-white border border-white hover:border-[#1e2246] text-xs font-black uppercase tracking-wider shadow-sm hover:-translate-y-0.5 transition-all"
                     >
-                      {soc.name}
+                      {soc.icon}
+                      <span>{soc.name}</span>
                     </a>
                   ))}
                 </div>
               </div>
 
-              <div className="bg-[#f6f7fc] border-2 border-[#dfe2f2] rounded-2xl p-4 flex items-center justify-between gap-3">
+              <div className="ola-glass rounded-2xl p-4 flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs font-black text-[#23274d]">¿Ya eres estudiante?</p>
-                  <p className="text-[11px] font-medium text-[#60668a]">Accede a tu Hub ahora.</p>
+                  <p className="text-xs font-black text-[#1e2246]">¿Ya eres estudiante?</p>
+                  <p className="text-[11px] font-medium text-[#4c5384]">Accede a tu Hub ahora.</p>
                 </div>
                 <button
                   type="button"
@@ -728,9 +814,9 @@ export default function LandingTrialAndEnroll({
             </div>
           </div>
 
-          <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] font-bold text-[#60668a]">
+          <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] font-bold text-[#50567d]">
             <span>© {new Date().getFullYear()} OutLoud Language Academy. All rights reserved.</span>
-            <span className="uppercase tracking-widest text-[#626a9f]">outloudlanguage.com</span>
+            <span className="uppercase tracking-widest text-[#454d82] font-black">outloudlanguage.com</span>
           </div>
         </div>
       </footer>
