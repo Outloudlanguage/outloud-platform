@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { LEVEL_OPTIONS } from '../../../constants/adminConfigs';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { useRef } from 'react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts';
 
 const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, onSuccess, onImpersonate }) => {
@@ -15,19 +14,18 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   // ==========================================
   // TAB 1: INFO PERSONAL (Provisioning, Creds, Overrides)
   // ==========================================
-  const [isProvisioning, setIsProvisioning] = useState(false);
   const [provEmail, setProvEmail] = useState('');
   const [provPassword, setProvPassword] = useState('');
   const [provFirstName, setProvFirstName] = useState('');
   const [provLastName, setProvLastName] = useState('');
-  const [provPhone, setProvPhone] = useState(''); 
-  const [provAvatarUrl, setProvAvatarUrl] = useState(''); 
-  
+  const [provPhone, setProvPhone] = useState('');
+  const [provAvatarUrl, setProvAvatarUrl] = useState('');
+
   const [isEditingCreds, setIsEditingCreds] = useState(false);
   const [editEmail, setEditEmail] = useState('');
   const [editPassword, setEditPassword] = useState('');
-  const [editAvatarUrl, setEditAvatarUrl] = useState(''); 
-  
+  const [editAvatarUrl, setEditAvatarUrl] = useState('');
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [accountStatus, setAccountStatus] = useState('active');
 
@@ -38,15 +36,14 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   // ==========================================
   // TAB 2: FINANZAS (Students)
   // ==========================================
-  const getDefaultCohort = () => new Date().getDate() <= 15 ? 15 : 30;
+  const getDefaultCohort = () => (new Date().getDate() <= 15 ? 15 : 30);
   const [cohort, setCohort] = useState(15);
   const [credits, setCredits] = useState(0);
-  
+
   const [payType, setPayType] = useState('Mensualidad');
   const [payAmount, setPayAmount] = useState(20);
   const [payRef, setPayRef] = useState('');
-  
-  // NEW: Ledger & Audit States
+
   const [provPayRef, setProvPayRef] = useState('');
   const [paymentHistory, setPaymentHistory] = useState([]);
   const [isLoadingPayments, setIsLoadingPayments] = useState(false);
@@ -59,22 +56,38 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   const [isGenerating, setIsGenerating] = useState(false);
 
   // ==========================================
-  // TEACHER PAYROLL ENGINE STATES
+  // TEACHER PAYROLL & STATS ENGINE STATES
   // ==========================================
   const [pendingClasses, setPendingClasses] = useState([]);
   const [pendingShifts, setPendingShifts] = useState([]);
   const [payrollCadence, setPayrollCadence] = useState('Monthly');
   const [payrollRef, setPayrollRef] = useState('');
   const [isFetchingPayroll, setIsFetchingPayroll] = useState(false);
-  
+
   const [manualBonus, setManualBonus] = useState('');
   const [manualDeduction, setManualDeduction] = useState('');
   const [evaluations, setEvaluations] = useState([]);
   const [opMetrics, setOpMetrics] = useState(null);
   const [opScore, setOpScore] = useState(0);
 
-  // DYNAMIC TIERED PRICING MAPPED FROM INSTRUCTIONS
+  // Lightweight Toast Feedback
+  const [modalToast, setModalToast] = useState(null);
+  const showToast = (message, tone = 'success') => {
+    setModalToast({ message, tone });
+    setTimeout(() => {
+      setModalToast((curr) => (curr?.message === message ? null : curr));
+    }, 3400);
+  };
+
+  // DYNAMIC TIERED PRICING
   const MONTHLY_PRICES = { A1: 20, A2: 20, B1: 30, B2: 30, C1: 50, C2: 50 };
+
+  const getBaseLevel = (lvlString) => (lvlString ? lvlString.split(':')[0].trim() : 'A1');
+
+  const updatePrice = (type, levelString) => {
+    if (type === 'Extra') setPayAmount(12);
+    else setPayAmount(MONTHLY_PRICES[getBaseLevel(levelString)] || 20);
+  };
 
   // ==========================================
   // INITIALIZATION
@@ -84,20 +97,17 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
       setProvEmail(userData.email || '');
       setProvPassword('');
       setProvAvatarUrl(userData.avatar_url || '');
-      
+
       const nameParts = (userData.full_name || '').trim().split(' ');
       setProvFirstName(userData.first_name || nameParts[0] || '');
       setProvLastName(userData.last_name || (nameParts.length > 1 ? nameParts.slice(1).join(' ') : ''));
-      
-      setProvPhone(userData.whatsapp || userData.phone || ''); 
+      setProvPhone(userData.whatsapp || userData.phone || '');
 
-      setIsProvisioning(false);
-      
       setEditEmail(userData.email || '');
       setEditPassword(userData.assigned_password || '');
       setEditAvatarUrl(userData.avatar_url || '');
       setIsEditingCreds(false);
-      
+
       setAccountStatus(userData.status || 'active');
       setLevelOverride(userData.level || 'A1: Básico 1');
       setUnitOverride(userData.unit || 1);
@@ -106,8 +116,10 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
       setCredits(userData.available_credits || 0);
 
       setActiveTab('INFO_PERSONAL');
-      updatePrice(payType, userData.level || 'A1: Básico 1');
+      setPayType('Mensualidad');
+      updatePrice('Mensualidad', userData.level || 'A1: Básico 1');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userData]);
 
   useEffect(() => {
@@ -115,13 +127,14 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
       if (activeTab === 'ESTADISTICAS' && userRole === 'Student') {
         fetchAcademicHistory();
       }
-      if (activeTab === 'PAYROLL' && userRole === 'Teacher') {
+      if ((activeTab === 'PAYROLL' || activeTab === 'TEACHER_STATS') && userRole === 'Teacher') {
         fetchTeacherPayroll();
       }
       if (activeTab === 'FINANZAS' && userRole === 'Student') {
         fetchPaymentHistory();
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, isPending, userData, activeTab, userRole]);
 
   const fetchPaymentHistory = async () => {
@@ -135,99 +148,121 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
       if (error) throw error;
       setPaymentHistory(data || []);
     } catch (err) {
-      console.error("Error fetching payments:", err);
+      console.error('Error fetching payments:', err);
     } finally {
       setIsLoadingPayments(false);
     }
   };
 
   // ==========================================
-  // TEACHER PAYROLL LOGIC
+  // TEACHER PAYROLL & RADAR LOGIC
   // ==========================================
   const fetchTeacherPayroll = async () => {
     setIsFetchingPayroll(true);
     try {
-      // 1. Fetch un-paid completed classes
-      const { data: classes } = await supabase.from('live_sessions')
+      const { data: classes } = await supabase
+        .from('live_sessions')
         .select('*')
         .eq('teacher_id', userData.id)
         .eq('is_paid_out', false)
-        .eq('status', 'completed'); 
-        
-      // 2. Fetch un-paid daily retainers
-      const { data: shifts } = await supabase.from('teacher_shifts')
+        .eq('status', 'completed');
+
+      const { data: shifts } = await supabase
+        .from('teacher_shifts')
         .select('*')
         .eq('teacher_id', userData.id)
         .eq('is_paid_out', false);
-        
-      // 3. Fetch Evaluations for Pedagogical Radar
-      const { data: evals } = await supabase.from('class_evaluations')
+
+      const { data: evals } = await supabase
+        .from('class_evaluations')
         .select('*')
         .eq('teacher_id', userData.id);
-        
-      // 4. Fetch Operational Radar Metrics
-      let punctualityScore = 100, responsibilityScore = 100, socialScore = 100, teachingScore = 100, passRateScore = 100;
-      const { data: allSessions } = await supabase.from('live_sessions').select('*').eq('teacher_id', userData.id);
-      
+
+      let punctualityScore = 100;
+      let responsibilityScore = 100;
+      let socialScore = 100;
+      let teachingScore = 100;
+      let passRateScore = 100;
+
+      const { data: allSessions } = await supabase
+        .from('live_sessions')
+        .select('*')
+        .eq('teacher_id', userData.id);
+
       if (allSessions && allSessions.length > 0) {
-        const standardClasses = allSessions.filter(s => s.status === 'completed' && (!s.class_type || !s.class_type.toLowerCase().includes('social')));
+        const standardClasses = allSessions.filter(
+          (s) => s.status === 'completed' && (!s.class_type || !s.class_type.toLowerCase().includes('social'))
+        );
         if (standardClasses.length > 0) {
           let totalPunctuality = 0;
-          standardClasses.forEach(c => {
+          standardClasses.forEach((c) => {
             const sched = new Date(c.scheduled_at);
-            const prepStart = c.prep_started_at ? new Date(c.prep_started_at) : new Date(sched.getTime() - 10 * 60000);
+            const prepStart = c.prep_started_at
+              ? new Date(c.prep_started_at)
+              : new Date(sched.getTime() - 10 * 60000);
             const actualStart = c.actual_start_at ? new Date(c.actual_start_at) : sched;
             const actualEnd = c.ended_at ? new Date(c.ended_at) : new Date(sched.getTime() + 45 * 60000);
             const gradedAt = c.graded_at ? new Date(c.graded_at) : new Date(actualEnd.getTime() + 5 * 60000);
-            
+
             let classMins = 60;
             const prepDiff = (sched - prepStart) / 60000;
-            if (prepDiff < 10) classMins -= (10 - Math.max(0, prepDiff));
+            if (prepDiff < 10) classMins -= 10 - Math.max(0, prepDiff);
             const startDelay = (actualStart - sched) / 60000;
             if (startDelay > 0) classMins -= startDelay;
             const endEarly = (new Date(sched.getTime() + 45 * 60000) - actualEnd) / 60000;
             if (endEarly > 0) classMins -= endEarly;
             const gradeDelay = (gradedAt - actualEnd) / 60000;
             if (gradeDelay > 5) classMins -= Math.min(6, gradeDelay - 5);
-            
+
             totalPunctuality += Math.max(0, (classMins / 60) * 100);
           });
           punctualityScore = Math.round(totalPunctuality / standardClasses.length);
         }
-        
-        const cancelledCount = allSessions.filter(s => s.status === 'cancelled' && s.cancelled_by === userData.id).length;
-        responsibilityScore -= (cancelledCount * 15);
-        
-        const socialClasses = allSessions.filter(s => s.class_type && s.class_type.toLowerCase().includes('social'));
+
+        const cancelledCount = allSessions.filter(
+          (s) => s.status === 'cancelled' && s.cancelled_by === userData.id
+        ).length;
+        responsibilityScore -= cancelledCount * 15;
+
+        const socialClasses = allSessions.filter(
+          (s) => s.class_type && s.class_type.toLowerCase().includes('social')
+        );
         if (socialClasses.length > 0) {
-          const successfulSocials = socialClasses.filter(s => {
+          const successfulSocials = socialClasses.filter((s) => {
             if (s.status !== 'completed') return false;
             const start = new Date(s.actual_start_at || s.scheduled_at);
             const end = new Date(s.ended_at || new Date(start.getTime() + 60 * 60000));
-            return ((end - start) / 60000) >= 55;
+            return (end - start) / 60000 >= 55;
           }).length;
           socialScore = Math.round((successfulSocials / socialClasses.length) * 100);
         }
       }
-      
-      const { data: allShifts } = await supabase.from('teacher_shifts').select('status').eq('teacher_id', userData.id);
+
+      const { data: allShifts } = await supabase
+        .from('teacher_shifts')
+        .select('status')
+        .eq('teacher_id', userData.id);
       if (allShifts && allShifts.length > 0) {
-        const missedShifts = allShifts.filter(s => s.status === 'missed').length;
-        responsibilityScore -= (missedShifts * 10);
+        const missedShifts = allShifts.filter((s) => s.status === 'missed').length;
+        responsibilityScore -= missedShifts * 10;
       }
       responsibilityScore = Math.max(0, responsibilityScore);
-      
+
       if (userData.total_rating_questions > 0) {
         teachingScore = Math.round((userData.total_positive_ratings / userData.total_rating_questions) * 100);
-      } else { 
-        teachingScore = 95; 
+      } else {
+        teachingScore = 95;
       }
-      
-      const { data: supervision } = await supabase.from('engine_teacher_supervision').select('teacher_fail_rate').eq('teacher_id', userData.id).maybeSingle();
+
+      const { data: supervision } = await supabase
+        .from('engine_teacher_supervision')
+        .select('teacher_fail_rate')
+        .eq('teacher_id', userData.id)
+        .maybeSingle();
       if (supervision && supervision.teacher_fail_rate !== null) {
-        passRateScore = Math.round(100 - (supervision.teacher_fail_rate * 100));
-      } else { 
-        passRateScore = 92; 
+        passRateScore = Math.round(100 - supervision.teacher_fail_rate * 100);
+      } else {
+        passRateScore = 92;
       }
 
       setOpMetrics([
@@ -235,7 +270,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
         { subject: 'Responsabilidad', score: responsibilityScore, fullMark: 100 },
         { subject: 'Pedagogía', score: teachingScore, fullMark: 100 },
         { subject: 'Aprobación', score: passRateScore, fullMark: 100 },
-        { subject: 'Eventos Sociales', score: socialScore, fullMark: 100 }
+        { subject: 'Eventos Sociales', score: socialScore, fullMark: 100 },
       ]);
       setOpScore(Math.round((punctualityScore + responsibilityScore + teachingScore + passRateScore + socialScore) / 5));
 
@@ -244,7 +279,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
       setEvaluations(evals || []);
       setPayrollCadence(userData.payroll_cadence || 'Monthly');
     } catch (e) {
-      console.error("Error fetching payroll:", e);
+      console.error('Error fetching payroll:', e);
     } finally {
       setIsFetchingPayroll(false);
     }
@@ -254,70 +289,77 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
     setPayrollCadence(newCadence);
     try {
       await supabase.from('profiles').update({ payroll_cadence: newCadence }).eq('id', userData.id);
-    } catch (e) { console.error("Error saving cadence", e); }
+      showToast(`Frecuencia actualizada: ${newCadence}`, 'info');
+    } catch (e) {
+      console.error('Error saving cadence', e);
+    }
   };
 
-  // Payroll Calculation Variables
   let totalPayroll = 0;
   let nightClassesCount = 0;
   let dayClassesCount = 0;
   let noShowCount = 0;
 
-  pendingClasses.forEach(cls => {
+  pendingClasses.forEach((cls) => {
     if (cls.student_no_show) {
       totalPayroll += 2;
       noShowCount++;
     } else {
       const date = new Date(cls.scheduled_at);
-      const hour = date.getHours(); 
+      const hour = date.getHours();
       const durationHrs = (cls.duration_minutes || 60) / 60;
-      
+
       if (hour >= 18) {
-        totalPayroll += (4 * durationHrs);
+        totalPayroll += 4 * durationHrs;
         nightClassesCount++;
       } else {
-        totalPayroll += (3 * durationHrs);
+        totalPayroll += 3 * durationHrs;
         dayClassesCount++;
       }
     }
   });
 
   const shiftCount = pendingShifts.length;
-  totalPayroll += (shiftCount * 2);
-  
-  const finalTotalPayroll = Math.max(0, totalPayroll + (Number(manualBonus) || 0) - (Number(manualDeduction) || 0));
+  totalPayroll += shiftCount * 2;
+
+  const finalTotalPayroll = Math.max(
+    0,
+    totalPayroll + (Number(manualBonus) || 0) - (Number(manualDeduction) || 0)
+  );
 
   const handleMarkAsPaid = async (e) => {
     e.preventDefault();
-    if (!payrollRef) return alert("Por favor, ingresa un número de referencia.");
-    
+    if (!payrollRef) return showToast('Ingresa un número de referencia.', 'error');
+
     setIsProcessing(true);
     try {
       if (pendingClasses.length > 0) {
-        const classIds = pendingClasses.map(c => c.id);
+        const classIds = pendingClasses.map((c) => c.id);
         await supabase.from('live_sessions').update({ is_paid_out: true }).in('id', classIds);
       }
-      
+
       if (pendingShifts.length > 0) {
-        const shiftIds = pendingShifts.map(s => s.id);
+        const shiftIds = pendingShifts.map((s) => s.id);
         await supabase.from('teacher_shifts').update({ is_paid_out: true }).in('id', shiftIds);
       }
-      
+
       await supabase.from('financial_logs').insert({
-        student_id: userData.id, 
+        student_id: userData.id,
         type: 'payroll_payout',
-        description: `Teacher Payout - Cadence: ${payrollCadence} | Ref: ${payrollRef} | Bonus: $${manualBonus || 0} | Deduct: $${manualDeduction || 0}`,
-        amount: finalTotalPayroll
+        description: `Teacher Payout - Cadence: ${payrollCadence} | Ref: ${payrollRef} | Bonus: $${
+          manualBonus || 0
+        } | Deduct: $${manualDeduction || 0}`,
+        amount: finalTotalPayroll,
       });
-      
-      alert("¡Nómina liquidada exitosamente!");
+
+      showToast('¡Nómina liquidada exitosamente!', 'success');
       setPayrollRef('');
       setManualBonus('');
       setManualDeduction('');
-      fetchTeacherPayroll(); // Refresh to clear UI
+      fetchTeacherPayroll();
     } catch (err) {
       console.error(err);
-      alert("Hubo un error liquidando la nómina.");
+      showToast('Hubo un error liquidando la nómina.', 'error');
     } finally {
       setIsProcessing(false);
     }
@@ -326,20 +368,25 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   // Radar Calculations
   const totalEvals = evaluations.length;
   let radarData = [
-    { subject: 'Actitud', A: 100 }, { subject: 'Claridad', A: 100 }, { subject: 'Participación', A: 100 }, { subject: 'Contenido', A: 100 }, { subject: 'Tiempo', A: 100 }
+    { subject: 'Actitud', A: 100 },
+    { subject: 'Claridad', A: 100 },
+    { subject: 'Participación', A: 100 },
+    { subject: 'Contenido', A: 100 },
+    { subject: 'Tiempo', A: 100 },
   ];
-  let globalRating = 5.0;
+  let globalRating = '5.0';
 
   if (totalEvals > 0) {
-    const sum = (key) => evaluations.filter(e => e[key] === true).length;
+    const sum = (key) => evaluations.filter((e) => e[key] === true).length;
     radarData = [
       { subject: 'Actitud', A: (sum('q_demeanor') / totalEvals) * 100 },
       { subject: 'Claridad', A: (sum('q_clarity') / totalEvals) * 100 },
       { subject: 'Participación', A: (sum('q_facilitation') / totalEvals) * 100 },
       { subject: 'Contenido', A: (sum('q_content') / totalEvals) * 100 },
-      { subject: 'Tiempo', A: (sum('q_time') / totalEvals) * 100 }
+      { subject: 'Tiempo', A: (sum('q_time') / totalEvals) * 100 },
     ];
-    const totalPositives = sum('q_demeanor') + sum('q_clarity') + sum('q_facilitation') + sum('q_content') + sum('q_time');
+    const totalPositives =
+      sum('q_demeanor') + sum('q_clarity') + sum('q_facilitation') + sum('q_content') + sum('q_time');
     globalRating = ((totalPositives / (totalEvals * 5)) * 5).toFixed(1);
   } else if (userData?.total_rating_questions > 0) {
     globalRating = ((userData.total_positive_ratings / userData.total_rating_questions) * 5).toFixed(1);
@@ -360,7 +407,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
       if (error) throw error;
       setAcademicHistory(data || []);
     } catch (error) {
-      console.error("Error fetching academic history:", error);
+      console.error('Error fetching academic history:', error);
     } finally {
       setIsLoadingHistory(false);
     }
@@ -370,18 +417,25 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
     if (!reportRef.current) return;
     setIsGenerating(true);
     try {
-      const canvas = await html2canvas(reportRef.current, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+      const canvas = await html2canvas(reportRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+      });
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
-      
+
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      
+
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`Outloud_Report_${userData.first_name || 'Student'}_${new Date().toISOString().split('T')[0]}.pdf`);
+      pdf.save(
+        `OutLoud_Report_${userData.first_name || 'Student'}_${new Date().toISOString().split('T')[0]}.pdf`
+      );
+      showToast('Reporte PDF descargado.', 'success');
     } catch (error) {
-      console.error("PDF Generation Error:", error);
-      alert("Hubo un error generando el reporte PDF.");
+      console.error('PDF Generation Error:', error);
+      showToast('Error generando el reporte PDF.', 'error');
     } finally {
       setIsGenerating(false);
     }
@@ -390,14 +444,20 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   const handleSaveOverrides = async () => {
     setIsProcessing(true);
     try {
-      if (String(userData?.id).startsWith('mock')) { if(onSuccess) onSuccess(); return; }
-      const { error } = await supabase.from('profiles').update({ level: getBaseLevel(levelOverride), unit: unitOverride }).eq('id', userData.id);
+      if (String(userData?.id).startsWith('mock')) {
+        if (onSuccess) onSuccess();
+        return;
+      }
+      const { error } = await supabase
+        .from('profiles')
+        .update({ level: getBaseLevel(levelOverride), unit: unitOverride })
+        .eq('id', userData.id);
       if (error) throw error;
-      alert("Overrides Académicos Guardados Exitosamente.");
+      showToast('Overrides académicos guardados.', 'success');
       if (onSuccess) onSuccess();
     } catch (error) {
       console.error(error);
-      alert("Error guardando los overrides.");
+      showToast('Error guardando los overrides.', 'error');
     } finally {
       setIsProcessing(false);
     }
@@ -406,13 +466,6 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   // ==========================================
   // FINANCIAL LOGIC (STUDENTS)
   // ==========================================
-  const getBaseLevel = (lvlString) => lvlString ? lvlString.split(':')[0].trim() : 'A1';
-
-  const updatePrice = (type, levelString) => {
-    if (type === 'Extra') setPayAmount(12);
-    else setPayAmount(MONTHLY_PRICES[getBaseLevel(levelString)] || 20);
-  };
-
   const handlePayTypeChange = (e) => {
     const newType = e.target.value;
     setPayType(newType);
@@ -432,22 +485,28 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   const handleSaveCohort = async () => {
     setIsProcessing(true);
     try {
-      if (String(userData?.id).startsWith('mock')) { if(onSuccess) onSuccess(); return; }
+      if (String(userData?.id).startsWith('mock')) {
+        if (onSuccess) onSuccess();
+        return;
+      }
       const today = new Date();
       let nextBilling = new Date(today.getFullYear(), today.getMonth(), cohort);
       if (today.getDate() >= cohort) nextBilling.setMonth(nextBilling.getMonth() + 1);
 
-      const { error } = await supabase.from('profiles').update({ 
-        cohort: cohort, 
-        next_billing_date: nextBilling.toISOString().split('T')[0] 
-      }).eq('id', userData.id);
-      
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          cohort: cohort,
+          next_billing_date: nextBilling.toISOString().split('T')[0],
+        })
+        .eq('id', userData.id);
+
       if (error) throw error;
-      alert(`Cohorte actualizada al día ${cohort}. Se debe cobrar el prorrateo de $${proratedDue}.`);
+      showToast(`Cohorte día ${cohort} guardada. Prorrateo: $${proratedDue}`, 'success');
       if (onSuccess) onSuccess();
     } catch (e) {
       console.error(e);
-      alert("Error actualizando la cohorte.");
+      showToast('Error actualizando la cohorte.', 'error');
     } finally {
       setIsProcessing(false);
     }
@@ -463,60 +522,64 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
         student_id: userData.id,
         type: 'refund',
         description: '+1 Credit (Academy Fault)',
-        amount: 0
+        amount: 0,
       });
+      showToast('+1 crédito reembolsado correctamente.', 'success');
       if (onSuccess) onSuccess();
-    } catch(e) { console.error(e); alert("Error procesando el reembolso."); }
+    } catch (e) {
+      console.error(e);
+      showToast('Error procesando el reembolso.', 'error');
+    }
   };
 
   const calculateNextBillingDate = () => {
     const d = new Date();
     let nextMonth = new Date(d.getFullYear(), d.getMonth() + 1, cohort);
     if (cohort === 30 && nextMonth.getMonth() !== (d.getMonth() + 1) % 12) {
-        nextMonth = new Date(d.getFullYear(), d.getMonth() + 2, 0); 
+      nextMonth = new Date(d.getFullYear(), d.getMonth() + 2, 0);
     }
     return nextMonth.toISOString().split('T')[0];
   };
 
   const handleProcessRenewal = async (e) => {
     e.preventDefault();
-    if (!payRef) { alert("Debes incluir un número de referencia de pago."); return; }
+    if (!payRef) return showToast('Incluye un número de referencia de pago.', 'error');
 
     setIsProcessing(true);
     try {
       if (String(userData?.id).startsWith('mock')) {
-         alert("Simulación de renovación en datos de prueba exitosa.");
-         setIsProcessing(false);
-         return;
+        showToast('Simulación de renovación exitosa.', 'success');
+        setIsProcessing(false);
+        return;
       }
 
       const currentBase = getBaseLevel(levelOverride);
       const nextLevelInfo = {
-        'A1': { level: 'A2: Básico 2', unit: 13 },
-        'A2': { level: 'B1: Intermedio 1', unit: 25 },
-        'B1': { level: 'B2: Intermedio 2', unit: 37 },
-        'B2': { level: 'C1: Avanzado 1', unit: 49 },
-        'C1': { level: 'C2: Avanzado 2', unit: 71 },
-        'C2': { level: 'C2: Avanzado 2', unit: 92 } // Cap/Graduate
+        A1: { level: 'A2: Básico 2', unit: 13 },
+        A2: { level: 'B1: Intermedio 1', unit: 25 },
+        B1: { level: 'B2: Intermedio 2', unit: 37 },
+        B2: { level: 'C1: Avanzado 1', unit: 49 },
+        C1: { level: 'C2: Avanzado 2', unit: 71 },
+        C2: { level: 'C2: Avanzado 2', unit: 92 },
       }[currentBase] || { level: 'A2: Básico 2', unit: 13 };
 
       const { error: ledgerError } = await supabase.from('student_payments').insert({
         student_id: userData.id,
         amount: payAmount,
         reference_number: payRef,
-        status: 'verified' 
+        status: 'verified',
       });
       if (ledgerError) throw ledgerError;
 
-      const newCredits = 4; // Credits do not roll over on a new monthly cycle
-      const updates = { 
+      const newCredits = 4;
+      const updates = {
         available_credits: newCredits,
         level_completed: false,
         level: getBaseLevel(nextLevelInfo.level),
         unit: nextLevelInfo.unit,
         next_billing_date: calculateNextBillingDate(),
         payment_status: 'good_standing',
-        status: 'active'
+        status: 'active',
       };
 
       const { error: profileError } = await supabase.from('profiles').update(updates).eq('id', userData.id);
@@ -525,13 +588,14 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
       setCredits(newCredits);
       setLevelOverride(nextLevelInfo.level);
       setUnitOverride(nextLevelInfo.unit);
-      
-      alert(`¡Renovación de Nivel Exitosa!\nEl estudiante ha sido promovido a ${nextLevelInfo.level} (Unidad ${nextLevelInfo.unit}) y se agregaron 4 créditos.`);
+
+      showToast(`Promovido a ${nextLevelInfo.level} (U${nextLevelInfo.unit}) + 4 créditos.`, 'success');
       setPayRef('');
+      fetchPaymentHistory();
       if (onSuccess) onSuccess();
     } catch (error) {
-      console.error("Renewal Error:", error);
-      alert("Hubo un error procesando la renovación en la base de datos.");
+      console.error('Renewal Error:', error);
+      showToast('Error procesando la renovación en BD.', 'error');
     } finally {
       setIsProcessing(false);
     }
@@ -541,26 +605,26 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
     setIsProcessing(true);
     try {
       await supabase.from('student_payments').update({ status: 'verified' }).eq('id', payment.id);
-      
-      const newCredits = 4; // Monthly renewal grants exactly 4 credits
-      const updates = { 
+
+      const newCredits = 4;
+      const updates = {
         available_credits: newCredits,
         next_billing_date: calculateNextBillingDate(),
         payment_status: 'good_standing',
-        status: 'active'
+        status: 'active',
       };
-      
+
       await supabase.from('profiles').update(updates).eq('id', userData.id);
-      
+
       setCredits(newCredits);
       setAccountStatus('active');
-      alert("Pago verificado. Cuenta reactivada y 4 créditos asignados.");
-      
+      showToast('Pago verificado. Cuenta reactivada + 4 créditos.', 'success');
+
       fetchPaymentHistory();
       if (onSuccess) onSuccess();
     } catch (err) {
-      console.error("Verification error:", err);
-      alert("Error verificando el pago.");
+      console.error('Verification error:', err);
+      showToast('Error verificando el pago.', 'error');
     } finally {
       setIsProcessing(false);
     }
@@ -568,21 +632,21 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
 
   const handlePaymentSubmit = async (e) => {
     e.preventDefault();
-    if (!payRef) { alert("Debes incluir un número de referencia de pago."); return; }
+    if (!payRef) return showToast('Incluye un número de referencia de pago.', 'error');
 
     setIsProcessing(true);
     try {
       if (String(userData?.id).startsWith('mock')) {
-         alert("Simulación de pago en datos de prueba exitosa.");
-         setIsProcessing(false);
-         return;
+        showToast('Simulación de pago exitosa.', 'success');
+        setIsProcessing(false);
+        return;
       }
 
       const { error: ledgerError } = await supabase.from('student_payments').insert({
         student_id: userData.id,
         amount: payAmount,
         reference_number: payRef,
-        status: 'verified' 
+        status: 'verified',
       });
       if (ledgerError) throw ledgerError;
 
@@ -592,20 +656,20 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
       if (payType === 'Mensualidad') {
         updates.next_billing_date = calculateNextBillingDate();
         updates.payment_status = 'good_standing';
-        updates.status = 'active'; // Unlocks the account
+        updates.status = 'active';
       }
 
       const { error: profileError } = await supabase.from('profiles').update(updates).eq('id', userData.id);
       if (profileError) throw profileError;
 
       setCredits(newCredits);
-      alert("Pago registrado y créditos aplicados exitosamente.");
+      showToast('Pago registrado y créditos aplicados.', 'success');
       setPayRef('');
+      fetchPaymentHistory();
       if (onSuccess) onSuccess();
-
     } catch (error) {
-      console.error("Payment Error:", error);
-      alert("Hubo un error procesando el pago en la base de datos.");
+      console.error('Payment Error:', error);
+      showToast('Error procesando el pago en BD.', 'error');
     } finally {
       setIsProcessing(false);
     }
@@ -614,20 +678,18 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   // ==========================================
   // ACCOUNT CONTROL LOGIC (Auth & DB Link)
   // ==========================================
-const handleProvisionAccount = async () => {
-    if (!provEmail || !provPassword || !provFirstName || !provLastName) { 
-      alert("Nombres, apellidos, correo y contraseña son obligatorios."); 
-      return; 
+  const handleProvisionAccount = async () => {
+    if (!provEmail || !provPassword || !provFirstName || !provLastName) {
+      return showToast('Nombres, apellidos, correo y contraseña son obligatorios.', 'error');
     }
     if (userRole === 'Student' && !provPayRef) {
-      alert("Debes incluir un número de referencia de pago para procesar el alta.");
-      return;
+      return showToast('Incluye la referencia de pago de inscripción ($10).', 'error');
     }
-    
+
     setIsProcessing(true);
     try {
       if (String(userData?.id).startsWith('mock')) {
-        alert('Modo de Prueba: Cuenta simulada aprovisionada exitosamente.');
+        showToast('Cuenta simulada aprovisionada.', 'success');
         if (onSuccess) onSuccess();
         onClose();
         return;
@@ -635,35 +697,33 @@ const handleProvisionAccount = async () => {
 
       const cleanEmail = provEmail.trim().toLowerCase();
 
-      // 1. Edge Function ONLY handles the secure login creation.
       const { data, error: invokeError } = await supabase.functions.invoke('provision-user', {
-        body: { 
-          email: cleanEmail, 
-          password: provPassword, 
-          firstName: provFirstName.trim(), 
+        body: {
+          email: cleanEmail,
+          password: provPassword,
+          firstName: provFirstName.trim(),
           lastName: provLastName.trim(),
-          role: userData.role || 'Student', 
+          role: userData.role || 'Student',
           level: userRole === 'Student' ? getBaseLevel(levelOverride) : 'Staff',
-          unit: userRole === 'Student' ? unitOverride : 1
-        }
+          unit: userRole === 'Student' ? unitOverride : 1,
+        },
       });
-      
+
       if (invokeError) throw new Error(`Fallo de Conexión: ${invokeError.message}`);
       if (data?.error) throw new Error(`Error de Autenticación: ${data.error}`);
 
       const newUserId = data?.user?.id;
-      if (!newUserId) throw new Error("No se pudo obtener el ID del usuario desde la función.");
+      if (!newUserId) throw new Error('No se pudo obtener el ID del usuario desde la función.');
 
-      // 2. THE MASTER UPDATE
       const updates = {
-          email: cleanEmail,
-          first_name: provFirstName.trim(),
-          last_name: provLastName.trim(),
-          whatsapp: provPhone || null,
-          avatar_url: provAvatarUrl.trim() || null,
-          assigned_password: provPassword,
-          status: userRole === 'Student' ? 'pending_activation' : 'active',
-          role: userData.role || 'Student'
+        email: cleanEmail,
+        first_name: provFirstName.trim(),
+        last_name: provLastName.trim(),
+        whatsapp: provPhone || null,
+        avatar_url: provAvatarUrl.trim() || null,
+        assigned_password: provPassword,
+        status: userRole === 'Student' ? 'pending_activation' : 'active',
+        role: userData.role || 'Student',
       };
 
       if (userRole === 'Student') {
@@ -674,21 +734,18 @@ const handleProvisionAccount = async () => {
         updates.unit = unitOverride;
       }
 
-      const { error: profileError } = await supabase.from('profiles').update(updates).eq('id', newUserId); 
-        
+      const { error: profileError } = await supabase.from('profiles').update(updates).eq('id', newUserId);
       if (profileError) throw new Error(`Fallo actualizando perfil en BD: ${profileError.message}`);
 
-      // 3. Approve Registration (if applicable)
       await supabase.from('registrations').update({ status: 'approved' }).eq('id', userData.id);
 
-      // 4. Log Onboarding Fee Payment
       if (userRole === 'Student' && provPayRef) {
         await supabase.from('student_payments').insert({
           student_id: newUserId,
           payment_type: 'Onboarding Fee',
-          amount: 10.00,
+          amount: 10.0,
           reference_number: provPayRef,
-          status: 'verified'
+          status: 'verified',
         });
       }
 
@@ -696,7 +753,7 @@ const handleProvisionAccount = async () => {
       if (onSuccess) onSuccess();
       onClose();
     } catch (error) {
-      console.error("Provisioning Fatal Error:", error);
+      console.error('Provisioning Fatal Error:', error);
       alert(`Error Crítico:\n\n${error.message}`);
     } finally {
       setIsProcessing(false);
@@ -704,62 +761,63 @@ const handleProvisionAccount = async () => {
   };
 
   const handleDeleteLead = async () => {
-    const isConfirm = window.confirm("¿Estás seguro de que deseas eliminar permanentemente a este prospecto? Esta acción no se puede deshacer.");
+    const isConfirm = window.confirm(
+      '¿Estás seguro de que deseas eliminar permanentemente a este prospecto? Esta acción no se puede deshacer.'
+    );
     if (!isConfirm) return;
-    
+
     setIsProcessing(true);
     try {
       if (String(userData?.id).startsWith('mock')) {
-         alert("Simulación de eliminación exitosa.");
-         onClose();
-         return;
+        onClose();
+        return;
       }
-      
+
       const { error } = await supabase.from('registrations').delete().eq('id', userData.id);
       if (error) throw error;
-      
-      alert("Prospecto descartado exitosamente.");
+
       if (onSuccess) onSuccess();
       onClose();
     } catch (error) {
-      console.error("Error deleting lead:", error);
-      alert("Hubo un error al intentar eliminar el registro.");
+      console.error('Error deleting lead:', error);
+      showToast('Error al intentar eliminar el registro.', 'error');
     } finally {
       setIsProcessing(false);
     }
   };
 
   const handleUpdateCredentials = async () => {
-    if (!editEmail || !editPassword) { alert("El correo y contraseña no pueden estar vacíos."); return; }
+    if (!editEmail || !editPassword) {
+      return showToast('El correo y contraseña no pueden estar vacíos.', 'error');
+    }
 
     setIsProcessing(true);
     try {
       if (String(userData?.id).startsWith('mock')) {
-         alert("Simulación de cambio de credenciales en datos de prueba exitosa.");
-         setIsEditingCreds(false);
-         setIsProcessing(false);
-         return;
+        setIsEditingCreds(false);
+        setIsProcessing(false);
+        return;
       }
 
       const { error: authError } = await supabase.functions.invoke('manage-credentials', {
-        body: { userId: userData.id, email: editEmail, password: editPassword }
+        body: { userId: userData.id, email: editEmail, password: editPassword },
       });
       if (authError) throw authError;
 
       const updates = { email: editEmail, assigned_password: editPassword };
       if (editAvatarUrl.trim() !== '') {
-         updates.avatar_url = editAvatarUrl.trim();
+        updates.avatar_url = editAvatarUrl.trim();
       }
 
       const { error: profileError } = await supabase.from('profiles').update(updates).eq('id', userData.id);
       if (profileError) throw profileError;
 
-      alert("Credenciales actualizadas correctamente.");
+      showToast('Credenciales actualizadas correctamente.', 'success');
       setIsEditingCreds(false);
       if (onSuccess) onSuccess();
     } catch (error) {
-      console.error("Credential Update Error:", error);
-      alert(`Error al actualizar credenciales: ${error.message}`);
+      console.error('Credential Update Error:', error);
+      showToast(`Error al actualizar: ${error.message}`, 'error');
     } finally {
       setIsProcessing(false);
     }
@@ -767,25 +825,28 @@ const handleProvisionAccount = async () => {
 
   const handleKillSwitch = async (newStatus) => {
     const isConfirm = window.confirm(
-      newStatus === 'suspended' ? `¿Estás seguro de que deseas SUSPENDER el acceso de este ${userRole}?` : `¿Deseas REACTIVAR el acceso de este ${userRole}?`
+      newStatus === 'suspended'
+        ? `¿Estás seguro de que deseas SUSPENDER el acceso de este ${userRole}?`
+        : `¿Deseas REACTIVAR el acceso de este ${userRole}?`
     );
     if (!isConfirm) return;
 
     setIsProcessing(true);
     try {
       if (String(userData?.id).startsWith('mock')) {
-         setAccountStatus(newStatus);
-         setIsProcessing(false);
-         return;
+        setAccountStatus(newStatus);
+        setIsProcessing(false);
+        return;
       }
 
       const { error } = await supabase.from('profiles').update({ status: newStatus }).eq('id', userData.id);
       if (error) throw error;
       setAccountStatus(newStatus);
+      showToast(`Estado actualizado a: ${newStatus}`, 'info');
       if (onSuccess) onSuccess();
     } catch (error) {
-      console.error("Kill Switch Error:", error);
-      alert('Hubo un error al cambiar el estado del usuario.');
+      console.error('Kill Switch Error:', error);
+      showToast('Error al cambiar el estado del usuario.', 'error');
     } finally {
       setIsProcessing(false);
     }
@@ -795,23 +856,21 @@ const handleProvisionAccount = async () => {
     if (e.target.id === 'modal-overlay') onClose();
   };
 
-  // DYNAMIC TABS BASED ON ROLE
   const getTabsForRole = () => {
     if (userRole === 'Admin') {
       return [{ id: 'INFO_PERSONAL', label: 'Info Personal & Control' }];
     }
     if (userRole === 'Teacher') {
       return [
-        { id: 'INFO_PERSONAL', label: 'Info Personal & Control' },
+        { id: 'INFO_PERSONAL', label: 'Info Personal' },
         { id: 'PAYROLL', label: 'Nómina & Desglose' },
-        { id: 'TEACHER_STATS', label: 'Estadísticas del Profesor' }
+        { id: 'TEACHER_STATS', label: 'Estadísticas' },
       ];
     }
-    // Default to Student
     return [
-      { id: 'INFO_PERSONAL', label: 'Info Personal & Control' },
-      { id: 'FINANZAS', label: 'Manejo de Finanzas' },
-      { id: 'ESTADISTICAS', label: 'Estadísticas del Alumno' }
+      { id: 'INFO_PERSONAL', label: 'Info Personal' },
+      { id: 'FINANZAS', label: 'Finanzas & Créditos' },
+      { id: 'ESTADISTICAS', label: 'Estadísticas' },
     ];
   };
 
@@ -822,442 +881,848 @@ const handleProvisionAccount = async () => {
   const isPastDue = userData.next_billing_date && new Date(userData.next_billing_date) < new Date();
 
   return (
-    <div id="modal-overlay" onClick={handleOverlayClick} className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fade-in font-montserrat">
-      
+    <div
+      id="modal-overlay"
+      onClick={handleOverlayClick}
+      className="fixed inset-0 z-[300] flex items-end md:items-center justify-center p-0 md:p-4 bg-[#1e2246]/55 backdrop-blur-xl font-montserrat text-[#1e2246]"
+    >
       <style>{`
-        .PhoneInputCustom .PhoneInputInput {
-            background: transparent !important;
-            color: white !important;
-            outline: none !important;
-            border: none !important;
-            font-size: 0.875rem !important;
-            margin-left: 0.75rem !important;
+        .ola-smm-phone .PhoneInput { display: flex; align-items: center; width: 100%; }
+        .ola-smm-phone .PhoneInputInput {
+          background: transparent !important;
+          color: #1e2246 !important;
+          outline: none !important;
+          border: none !important;
+          font-size: 0.85rem !important;
+          font-weight: 600 !important;
+          margin-left: 0.65rem !important;
+          min-width: 0;
         }
-        .PhoneInputCustom .PhoneInputCountry {
-            margin-right: 0.5rem;
-        }
-        .PhoneInputCustom .PhoneInputCountrySelectArrow {
-            color: rgba(255,255,255,0.5);
-        }
-        .PhoneInputCustom .PhoneInputCountrySelect {
-            color: white;
-            background: #070b19;
-        }
+        .ola-smm-phone .PhoneInputCountry { margin-right: 0.4rem; }
+        .ola-smm-phone .PhoneInputCountrySelectArrow { color: #454d82; }
+        .ola-smm-phone .PhoneInputCountrySelect { color: #1e2246; background: #ffffff; }
       `}</style>
 
-      <div className="relative w-full max-w-4xl max-h-[90vh] bg-[#070b19]/95 border border-white/20 rounded-[2.5rem] shadow-[0_25px_50px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden animate-slide-up">
-        
-        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-900/20 blur-[100px] rounded-full mix-blend-screen pointer-events-none"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#fcd34d]/10 blur-[80px] rounded-full mix-blend-screen pointer-events-none"></div>
+      {/* TOAST */}
+      {modalToast && (
+        <div className="ola-adm-toast-in fixed bottom-6 left-1/2 z-[9500] px-5 py-3 rounded-full bg-[#1e2246] text-white border-2 border-[#ffc749] shadow-2xl flex items-center gap-2.5 text-xs font-bold max-w-[92vw]">
+          <span
+            className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+              modalToast.tone === 'error'
+                ? 'bg-[#ee665b]'
+                : modalToast.tone === 'info'
+                ? 'bg-[#ffc749]'
+                : 'bg-[#16a37f]'
+            }`}
+          />
+          <span>{modalToast.message}</span>
+        </div>
+      )}
 
-        <div className="relative z-10 flex items-start justify-between p-6 md:p-8 border-b border-white/10 bg-white/5 shrink-0">
-          <div className="flex items-center gap-5 overflow-hidden w-full pr-4">
+      <div className="ola-adm-glass ola-adm-modal-in relative w-full max-w-4xl max-h-[92vh] rounded-t-[2.25rem] md:rounded-[2.5rem] flex flex-col overflow-hidden">
+        {/* TOP IDENTITY HEADER */}
+        <div className="relative z-10 flex items-start justify-between p-5 sm:p-7 border-b border-[#626a9f]/15 bg-white/60 shrink-0">
+          <div className="flex items-center gap-4 overflow-hidden w-full pr-4">
             <div className="relative shrink-0">
-              <img 
-                src={userData.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.first_name || userData.full_name || 'U')}&background=random&color=fff`} 
-                alt="Profile Avatar" 
-                className={`w-16 h-16 md:w-20 md:h-20 rounded-full object-cover border-2 shadow-lg ${isPending ? 'border-amber-400' : accountStatus === 'suspended' ? 'border-red-500 opacity-50 grayscale' : 'border-white/20'}`}
+              <img
+                src={
+                  userData.avatar_url ||
+                  `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                    userData.first_name || userData.full_name || 'U'
+                  )}&background=626a9f&color=fff`
+                }
+                alt="Profile Avatar"
+                className={`w-14 h-14 sm:w-18 sm:h-18 rounded-2xl object-cover border-2 shadow-sm ${
+                  isPending
+                    ? 'border-[#ffc749]'
+                    : accountStatus === 'suspended'
+                    ? 'border-[#ee665b] opacity-55 grayscale'
+                    : 'border-[#1e2246]'
+                }`}
               />
-              {isPending && <div className="absolute -bottom-2 -right-2 bg-amber-400 text-[#08203e] text-[9px] font-black uppercase px-2 py-1 rounded-md shadow-md animate-pulse">PENDING</div>}
-              {accountStatus === 'suspended' && <div className="absolute -bottom-2 -right-2 bg-red-600 text-white text-[9px] font-black uppercase px-2 py-1 rounded-md shadow-md">SUSPENDED</div>}
+              {isPending && (
+                <span className="absolute -bottom-2 -right-2 bg-[#ffc749] text-[#1e2246] border border-[#1e2246] text-[8.5px] font-extrabold uppercase px-2 py-0.5 rounded-full shadow-sm">
+                  Lead
+                </span>
+              )}
+              {accountStatus === 'suspended' && (
+                <span className="absolute -bottom-2 -right-2 bg-[#ee665b] text-white text-[8.5px] font-extrabold uppercase px-2 py-0.5 rounded-full shadow-sm">
+                  Suspended
+                </span>
+              )}
             </div>
+
             <div className="flex flex-col overflow-hidden w-full">
-              <h2 className={`text-xl md:text-2xl font-black tracking-wide drop-shadow-md truncate ${accountStatus === 'suspended' ? 'text-white/50' : 'text-white'}`}>
+              <h2
+                className={`text-lg sm:text-2xl font-extrabold tracking-tight truncate ${
+                  accountStatus === 'suspended' ? 'text-[#626a9f]' : 'text-[#1e2246]'
+                }`}
+              >
                 {userData.full_name || `${userData.first_name || ''} ${userData.last_name || ''}`.trim() || 'Sin Nombre'}
               </h2>
-              <p className="text-xs md:text-sm text-white/60 font-semibold mt-1 truncate">{userData.email} {userData.whatsapp ? `• ${userData.whatsapp}` : ''}</p>
-              
-              {!isPending && userRole === 'Student' && (
-                <div className="flex flex-col gap-1 mt-1">
-                  <p className="text-[10px] text-[#fcd34d] font-bold uppercase tracking-widest">
-                    NIVEL: {levelOverride.split(':')[0]} • CRÉDITOS: <span className="text-white">{credits}</span>
-                  </p>
-                  {userData.level_completed && (
-                    <span className="bg-amber-500 text-[#08203e] text-[9px] font-black uppercase px-2 py-0.5 rounded w-fit animate-pulse shadow-md">
-                      Nivel Completado - Esperando Renovación
-                    </span>
-                  )}
-                </div>
-              )}
-              {!isPending && userRole !== 'Student' && (
-                <div className="flex gap-4 mt-1">
-                  <p className="text-[10px] text-blue-400 font-bold uppercase tracking-widest">
-                    ROLE: {userRole}
-                  </p>
-                  <p className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest">
-                    JOINED: {new Date(userData.created_at || Date.now()).toLocaleDateString('es-ES')}
-                  </p>
-                </div>
-              )}
+              <p className="text-xs text-[#4c5384] font-semibold mt-0.5 truncate">
+                {userData.email} {userData.whatsapp ? `• ${userData.whatsapp}` : ''}
+              </p>
 
-              {!isPending && onImpersonate && (
-                 <button onClick={() => onImpersonate(userData)} className="mt-3 w-fit bg-white/10 text-white hover:bg-[#fcd34d] hover:text-[#08203e] px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-md flex items-center gap-2 cursor-pointer">
-                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                   Ingresar como {userRole === 'Student' ? 'Alumno' : 'Profesor'}
-                 </button>
-              )}
+              <div className="flex flex-wrap items-center gap-2 mt-2">
+                {!isPending && userRole === 'Student' && (
+                  <>
+                    <span className="text-[10px] font-bold uppercase tracking-wider bg-[#1e2246] text-[#ffc749] px-2.5 py-0.5 rounded-full">
+                      Nivel {getBaseLevel(levelOverride)} • U{unitOverride}
+                    </span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider bg-[#fff3d1] text-[#1e2246] border border-[#ffc749] px-2.5 py-0.5 rounded-full">
+                      {credits} Créditos
+                    </span>
+                    {userData.level_completed && (
+                      <span className="text-[10px] font-bold uppercase tracking-wider bg-[#16a37f] text-white px-2.5 py-0.5 rounded-full animate-pulse">
+                        Nivel Completado • Renovar
+                      </span>
+                    )}
+                  </>
+                )}
+
+                {!isPending && userRole !== 'Student' && (
+                  <>
+                    <span className="text-[10px] font-bold uppercase tracking-wider bg-[#454d82] text-white px-2.5 py-0.5 rounded-full">
+                      {userRole}
+                    </span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider bg-[#e7faf3] text-[#128063] px-2.5 py-0.5 rounded-full">
+                      Desde {new Date(userData.created_at || Date.now()).toLocaleDateString('es-ES')}
+                    </span>
+                  </>
+                )}
+
+                {!isPending && onImpersonate && userRole === 'Student' && (
+                  <button
+                    type="button"
+                    onClick={() => onImpersonate(userData)}
+                    className="inline-flex items-center gap-1.5 bg-white hover:bg-[#ffc749] text-[#1e2246] border border-[#1e2246]/30 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer shadow-sm"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    <span>Ver como Alumno</span>
+                  </button>
+                )}
+              </div>
             </div>
           </div>
-          <button onClick={onClose} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/50 hover:bg-white/10 hover:text-white transition-all hover:rotate-90 shrink-0">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Cerrar"
+            className="w-9 h-9 rounded-full bg-white hover:bg-[#ffc749] border-2 border-[#1e2246] flex items-center justify-center text-[#1e2246] font-bold transition-all active:scale-90 shrink-0 cursor-pointer"
+          >
+            ✕
           </button>
         </div>
 
-        <div className="relative z-10 flex flex-wrap border-b border-white/10 bg-black/20 shrink-0">
-          {activeTabs.map((tab) => (
-            <button
-              key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 py-4 px-2 text-[10px] md:text-xs font-black uppercase tracking-widest transition-all border-b-2 ${
-                activeTab === tab.id ? 'border-[#fcd34d] text-[#fcd34d] bg-white/5' : 'border-transparent text-white/50 hover:text-white/80 hover:bg-white/5'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+        {/* INSTANT TAB SWITCHER */}
+        <div className="relative z-10 px-5 sm:px-7 py-3 bg-white/40 border-b border-[#626a9f]/15 shrink-0">
+          <div className="flex gap-1.5 bg-[#e8eaf7]/85 p-1 rounded-2xl border border-white">
+            {activeTabs.map((tab) => (
+              <button
+                type="button"
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex-1 py-2.5 px-3 rounded-xl text-[10.5px] sm:text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors ${
+                  activeTab === tab.id
+                    ? 'bg-[#1e2246] text-[#ffc749] shadow-sm'
+                    : 'text-[#454d82] hover:text-[#1e2246]'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="relative z-10 flex-grow overflow-y-auto custom-scrollbar p-6 md:p-8">
+        {/* BODY CONTENT */}
+        <div className="relative z-10 flex-grow overflow-y-auto custom-scrollbar p-5 sm:p-7">
           {/* ==========================================
-              TAB 1: INFO PERSONAL (Universal)
+              TAB 1: INFO PERSONAL
           ========================================== */}
           {activeTab === 'INFO_PERSONAL' && (
-            <div className="animate-fade-in space-y-6">
+            <div className="space-y-6">
               {isPending && (
-                <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-6 mb-8 transition-all shadow-inner">
-                  <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-4 border-b border-amber-500/20 pb-4">
-                    <div>
-                      <h4 className="text-amber-400 font-black tracking-widest text-sm uppercase">Aprobación de Cuenta ({userRole})</h4>
-                      <p className="text-xs text-amber-200/70 mt-1">Verifica la información y asigna las credenciales maestras para activar.</p>
-                    </div>
+                <div className="ola-adm-glass-gold rounded-3xl p-5 sm:p-6">
+                  <div className="border-b border-[#1e2246]/15 pb-3.5 mb-5">
+                    <span className="inline-block text-[9.5px] font-bold uppercase tracking-widest bg-[#1e2246] text-[#ffc749] px-2.5 py-0.5 rounded-full mb-1.5">
+                      Solicitud Pendiente
+                    </span>
+                    <h4 className="text-[#1e2246] font-extrabold text-base uppercase">
+                      Aprobación de Cuenta ({userRole})
+                    </h4>
+                    <p className="text-xs text-[#4c5384] font-medium mt-0.5">
+                      Verifica los datos del prospecto y asigna sus credenciales para activar el acceso.
+                    </p>
                   </div>
 
-                  <div className="flex flex-col md:flex-row gap-6 items-center bg-black/20 border border-amber-500/20 p-5 rounded-2xl mb-6">
-                    <div className="flex flex-col items-center gap-3 shrink-0">
-                      <div className="w-20 h-20 rounded-full border-2 border-amber-500/30 overflow-hidden bg-black/40 flex items-center justify-center">
-                        {provAvatarUrl ? (
-                          <img src={provAvatarUrl} alt="Preview" className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="text-3xl text-amber-500/30">+</span>
-                        )}
-                      </div>
-                      {provAvatarUrl && (
-                        <button type="button" onClick={() => setProvAvatarUrl('')} className="text-[9px] text-red-400 font-bold uppercase tracking-widest hover:text-red-300 transition-colors">
-                          ELIMINAR
-                        </button>
+                  <div className="flex flex-col sm:flex-row gap-4 items-center bg-white/75 border border-white p-4 rounded-2xl mb-5">
+                    <div className="w-16 h-16 rounded-2xl border-2 border-[#1e2246] overflow-hidden bg-white flex items-center justify-center shrink-0">
+                      {provAvatarUrl ? (
+                        <img src={provAvatarUrl} alt="Preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-2xl font-bold text-[#626a9f]">+</span>
                       )}
                     </div>
                     <div className="flex-1 w-full">
-                      <label className="block text-[10px] text-amber-300 font-bold uppercase mb-2">URL Foto de Perfil (Opcional)</label>
-                      <input type="text" value={provAvatarUrl} onChange={e => setProvAvatarUrl(e.target.value)} placeholder="Pega el enlace de la imagen aquí..." className="w-full bg-black/30 border border-amber-500/30 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-amber-400 transition-colors" />
+                      <div className="flex justify-between items-center mb-1">
+                        <label className="text-[10px] text-[#454d82] font-bold uppercase">
+                          URL Foto de Perfil (Opcional)
+                        </label>
+                        {provAvatarUrl && (
+                          <button
+                            type="button"
+                            onClick={() => setProvAvatarUrl('')}
+                            className="text-[9.5px] text-[#c93f34] font-bold uppercase cursor-pointer"
+                          >
+                            Eliminar
+                          </button>
+                        )}
+                      </div>
+                      <input
+                        type="text"
+                        value={provAvatarUrl}
+                        onChange={(e) => setProvAvatarUrl(e.target.value)}
+                        placeholder="https://..."
+                        className="w-full bg-white border border-[#dfe2f2] focus:border-[#454d82] rounded-xl px-3.5 py-2.5 text-[#1e2246] text-xs font-semibold outline-none"
+                      />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Nombres</label>
-                      <input type="text" value={provFirstName} onChange={e => setProvFirstName(e.target.value)} className="w-full bg-black/30 border border-amber-500/30 rounded-lg px-4 py-2.5 text-white text-sm outline-none focus:border-amber-400 transition-colors" required />
+                      <label className="block text-[10px] text-[#454d82] font-bold uppercase mb-1">Nombres</label>
+                      <input
+                        type="text"
+                        value={provFirstName}
+                        onChange={(e) => setProvFirstName(e.target.value)}
+                        className="w-full bg-white/90 focus:bg-white border-2 border-white focus:border-[#454d82] rounded-xl px-3.5 py-2.5 text-[#1e2246] text-sm font-semibold outline-none"
+                        required
+                      />
                     </div>
                     <div>
-                      <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Apellidos</label>
-                      <input type="text" value={provLastName} onChange={e => setProvLastName(e.target.value)} className="w-full bg-black/30 border border-amber-500/30 rounded-lg px-4 py-2.5 text-white text-sm outline-none focus:border-amber-400 transition-colors" required />
+                      <label className="block text-[10px] text-[#454d82] font-bold uppercase mb-1">Apellidos</label>
+                      <input
+                        type="text"
+                        value={provLastName}
+                        onChange={(e) => setProvLastName(e.target.value)}
+                        className="w-full bg-white/90 focus:bg-white border-2 border-white focus:border-[#454d82] rounded-xl px-3.5 py-2.5 text-[#1e2246] text-sm font-semibold outline-none"
+                        required
+                      />
                     </div>
                     <div>
-                      <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Email Registrado</label>
-                      <input type="email" value={provEmail} onChange={(e) => setProvEmail(e.target.value)} className="w-full bg-black/30 border border-amber-500/30 rounded-lg px-4 py-2.5 text-white text-sm outline-none focus:border-amber-400 transition-colors" />
+                      <label className="block text-[10px] text-[#454d82] font-bold uppercase mb-1">
+                        Email Registrado
+                      </label>
+                      <input
+                        type="email"
+                        value={provEmail}
+                        onChange={(e) => setProvEmail(e.target.value)}
+                        className="w-full bg-white/90 focus:bg-white border-2 border-white focus:border-[#454d82] rounded-xl px-3.5 py-2.5 text-[#1e2246] text-sm font-semibold outline-none"
+                      />
                     </div>
                     <div>
-                      <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Contraseña Asignada</label>
-                      <input type="text" placeholder="Asigna una clave" value={provPassword} onChange={(e) => setProvPassword(e.target.value)} className="w-full bg-black/30 border border-amber-500/30 rounded-lg px-4 py-2.5 text-white text-sm outline-none focus:border-amber-400 transition-colors" />
+                      <label className="block text-[10px] text-[#454d82] font-bold uppercase mb-1">
+                        Contraseña Asignada
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Ej: OlaStudent.2026"
+                        value={provPassword}
+                        onChange={(e) => setProvPassword(e.target.value)}
+                        className="w-full bg-white/90 focus:bg-white border-2 border-white focus:border-[#454d82] rounded-xl px-3.5 py-2.5 text-[#1e2246] text-sm font-semibold outline-none"
+                      />
                     </div>
-                    
-                    <div className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-5 mt-2">
-                       <div>
-                          <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Teléfono (WhatsApp)</label>
-                          <div 
-                            className="w-full rounded-lg px-4 py-2.5 text-[11px] lg:text-sm font-montserrat transition-all shadow-inner border border-amber-500/30 bg-black/30 text-white focus-within:border-amber-400 focus-within:ring-1 focus-within:ring-amber-400"
-                            style={{ colorScheme: 'dark' }}
-                          >
-                            <PhoneInput 
-                              defaultCountry="VE" 
-                              international 
-                              value={provPhone} 
-                              onChange={(value) => setProvPhone(value)} 
-                              className="PhoneInputCustom w-full bg-transparent outline-none"
-                            />
-                          </div>
-                       </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-[10px] text-[#454d82] font-bold uppercase mb-1">
+                        Teléfono (WhatsApp)
+                      </label>
+                      <div className="ola-smm-phone w-full rounded-xl px-3.5 py-2 bg-white/90 focus-within:bg-white border-2 border-white focus-within:border-[#454d82]">
+                        <PhoneInput
+                          defaultCountry="VE"
+                          international
+                          value={provPhone}
+                          onChange={(value) => setProvPhone(value)}
+                        />
+                      </div>
                     </div>
                   </div>
 
                   {userRole === 'Student' && (
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-amber-500/20">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5 pt-5 border-t border-[#1e2246]/15">
                       <div>
-                        <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Nivel Inicial</label>
-                        <select value={levelOverride} onChange={e => setLevelOverride(e.target.value)} className="w-full bg-black/40 border border-amber-500/30 rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-amber-400 cursor-pointer appearance-none">
-                          {LEVEL_OPTIONS.map(l => <option key={l} value={l}>{l.split(':')[0]}</option>)}
+                        <label className="block text-[10px] text-[#454d82] font-bold uppercase mb-1">
+                          Nivel Inicial
+                        </label>
+                        <select
+                          value={levelOverride}
+                          onChange={(e) => setLevelOverride(e.target.value)}
+                          className="w-full bg-white border-2 border-white focus:border-[#454d82] rounded-xl px-3 py-2.5 text-[#1e2246] text-xs font-bold outline-none cursor-pointer"
+                        >
+                          {LEVEL_OPTIONS.map((l) => (
+                            <option key={l} value={l}>
+                              {l.split(':')[0]}
+                            </option>
+                          ))}
                         </select>
                       </div>
                       <div>
-                        <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Unidad</label>
-                        <input type="number" min="1" max="12" value={unitOverride} onChange={e => setUnitOverride(parseInt(e.target.value))} className="w-full bg-black/40 border border-amber-500/30 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-amber-400" />
+                        <label className="block text-[10px] text-[#454d82] font-bold uppercase mb-1">Unidad</label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="92"
+                          value={unitOverride}
+                          onChange={(e) => setUnitOverride(parseInt(e.target.value, 10) || 1)}
+                          className="w-full bg-white border-2 border-white focus:border-[#454d82] rounded-xl px-3 py-2.5 text-[#1e2246] text-xs font-bold outline-none"
+                        />
                       </div>
                       <div>
-                        <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Día de Corte</label>
-                        <select value={cohort} onChange={e => setCohort(parseInt(e.target.value))} className="w-full bg-black/40 border border-amber-500/30 rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-amber-400 cursor-pointer appearance-none">
-                          <option value={15}>15 del mes</option>
-                          <option value={30}>30 del mes</option>
+                        <label className="block text-[10px] text-[#454d82] font-bold uppercase mb-1">
+                          Día de Corte
+                        </label>
+                        <select
+                          value={cohort}
+                          onChange={(e) => setCohort(parseInt(e.target.value, 10))}
+                          className="w-full bg-white border-2 border-white focus:border-[#454d82] rounded-xl px-3 py-2.5 text-[#1e2246] text-xs font-bold outline-none cursor-pointer"
+                        >
+                          <option value={15}>Día 15</option>
+                          <option value={30}>Día 30</option>
                         </select>
                       </div>
                       <div>
-                        <label className="block text-[10px] text-amber-300 font-bold uppercase mb-1">Ref. Pago de Alta ($10)</label>
-                        <input type="text" placeholder="Ej: Zelle 1234" value={provPayRef} onChange={(e) => setProvPayRef(e.target.value)} className="w-full bg-black/40 border border-amber-500/30 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-amber-400" />
+                        <label className="block text-[10px] text-[#454d82] font-bold uppercase mb-1">
+                          Ref. Inscripción ($10)
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Zinli / PayPal / Binance"
+                          value={provPayRef}
+                          onChange={(e) => setProvPayRef(e.target.value)}
+                          className="w-full bg-white border-2 border-white focus:border-[#454d82] rounded-xl px-3 py-2.5 text-[#1e2246] text-xs font-semibold outline-none"
+                        />
                       </div>
                     </div>
                   )}
 
-                  <div className="flex gap-4 mt-6">
-                    <button onClick={handleDeleteLead} disabled={isProcessing} className="w-1/3 py-4 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white font-black tracking-widest text-xs uppercase rounded-xl transition-all border border-red-500/30 disabled:opacity-50">
-                      DESCARTAR
+                  <div className="flex gap-3 mt-6">
+                    <button
+                      type="button"
+                      onClick={handleDeleteLead}
+                      disabled={isProcessing}
+                      className="ola-adm-btn-danger w-1/3 py-3.5 font-bold tracking-widest text-xs uppercase rounded-full disabled:opacity-50 cursor-pointer"
+                    >
+                      Descartar
                     </button>
-                    <button onClick={handleProvisionAccount} disabled={isProcessing} className="w-2/3 py-4 bg-amber-400 hover:bg-white text-[#08203e] font-black tracking-widest text-xs uppercase rounded-xl transition-all shadow-[0_0_20px_rgba(251,191,36,0.4)] disabled:opacity-50 hover:scale-[1.02]">
-                      {isProcessing ? 'PROCESANDO EN BD...' : 'CONFIRMAR Y ACTIVAR'}
+                    <button
+                      type="button"
+                      onClick={handleProvisionAccount}
+                      disabled={isProcessing}
+                      className="ola-adm-btn-yellow w-2/3 py-3.5 font-bold tracking-widest text-xs uppercase rounded-full disabled:opacity-50 cursor-pointer"
+                    >
+                      {isProcessing ? 'Procesando...' : 'Confirmar y Activar ✓'}
                     </button>
                   </div>
                 </div>
               )}
 
+              {/* ACADEMIC OVERRIDES (GOD MODE) */}
               {!isPending && userRole === 'Student' && (
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-6 relative overflow-hidden">
-                  <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-4">
-                    <h4 className="text-xs font-black text-[#fcd34d] uppercase tracking-widest">Academic Overrides (God Mode)</h4>
-                    <button onClick={handleSaveOverrides} disabled={isProcessing} className="text-[10px] uppercase font-black text-[#08203e] bg-[#fcd34d] hover:bg-white px-4 py-2 rounded-lg transition-all shadow-md disabled:opacity-50">
+                <div className="bg-white/75 border border-white rounded-3xl p-5 shadow-sm">
+                  <div className="flex flex-wrap justify-between items-center gap-3 mb-4 border-b border-[#626a9f]/15 pb-3">
+                    <div>
+                      <h4 className="text-xs font-extrabold text-[#454d82] uppercase tracking-widest">
+                        Academic Overrides (God Mode)
+                      </h4>
+                      <p className="text-[11px] text-[#50567d] font-medium">
+                        Ajusta manualmente el nivel CEFR o la unidad activa del estudiante.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleSaveOverrides}
+                      disabled={isProcessing}
+                      className="ola-adm-btn-yellow text-[10.5px] uppercase font-bold px-4 py-2 rounded-full disabled:opacity-50 cursor-pointer"
+                    >
                       Guardar Overrides
                     </button>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[10px] text-white/50 font-bold uppercase mb-2">Override Nivel</label>
-                      <select value={levelOverride} onChange={e => setLevelOverride(e.target.value)} className="w-full bg-[#070b19] border border-white/20 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#fcd34d] cursor-pointer appearance-none">
-                        {LEVEL_OPTIONS.map(l => <option key={l} value={l}>{l}</option>)}
+                      <label className="block text-[10px] text-[#454d82] font-bold uppercase mb-1.5">
+                        Override Nivel
+                      </label>
+                      <select
+                        value={levelOverride}
+                        onChange={(e) => setLevelOverride(e.target.value)}
+                        className="w-full bg-[#f6f7fc] border-2 border-white focus:border-[#454d82] rounded-xl px-3.5 py-2.5 text-[#1e2246] text-xs font-bold outline-none cursor-pointer"
+                      >
+                        {LEVEL_OPTIONS.map((l) => (
+                          <option key={l} value={l}>
+                            {l}
+                          </option>
+                        ))}
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[10px] text-white/50 font-bold uppercase mb-2">Override Unidad</label>
-                      <input type="number" min="1" max="12" value={unitOverride} onChange={e => setUnitOverride(parseInt(e.target.value))} className="w-full bg-[#070b19] border border-white/20 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#fcd34d]" />
+                      <label className="block text-[10px] text-[#454d82] font-bold uppercase mb-1.5">
+                        Override Unidad (1–92)
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="92"
+                        value={unitOverride}
+                        onChange={(e) => setUnitOverride(parseInt(e.target.value, 10) || 1)}
+                        className="w-full bg-[#f6f7fc] border-2 border-white focus:border-[#454d82] rounded-xl px-3.5 py-2.5 text-[#1e2246] text-xs font-bold outline-none"
+                      />
                     </div>
                   </div>
                 </div>
               )}
 
+              {/* CREDENTIALS & KILL SWITCH */}
               {!isPending && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="md:col-span-2 bg-white/5 border border-white/10 rounded-2xl p-6 relative shadow-md">
-                     <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-4">
-                        <h4 className="text-xs font-black text-[#fcd34d] uppercase tracking-widest">Credenciales & Perfil</h4>
-                        {!isEditingCreds ? (
-                          <button onClick={() => setIsEditingCreds(true)} className="text-[10px] uppercase font-bold text-white/60 hover:text-white bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-md transition-all">Editar</button>
-                        ) : (
-                          <div className="flex gap-2">
-                            <button onClick={() => setIsEditingCreds(false)} className="text-[10px] uppercase font-bold text-white/60 hover:text-white bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-md transition-all">Cancelar</button>
-                            <button onClick={handleUpdateCredentials} disabled={isProcessing} className="text-[10px] uppercase font-black text-[#08203e] bg-[#fcd34d] hover:bg-white px-3 py-1.5 rounded-md shadow-md transition-all disabled:opacity-50">{isProcessing ? '...' : 'Guardar'}</button>
-                          </div>
-                        )}
-                     </div>
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="overflow-hidden">
-                          <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Email</label>
-                          {!isEditingCreds ? <p className="text-sm text-white font-semibold py-2 truncate">{editEmail}</p> : <input type="text" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} className="w-full bg-black/40 border border-[#fcd34d]/50 rounded-lg px-3 py-2 text-white text-sm outline-none" />}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                  <div className="md:col-span-2 bg-white/75 border border-white rounded-3xl p-5 shadow-sm">
+                    <div className="flex justify-between items-center mb-4 border-b border-[#626a9f]/15 pb-3">
+                      <h4 className="text-xs font-extrabold text-[#454d82] uppercase tracking-widest">
+                        Credenciales &amp; Perfil
+                      </h4>
+                      {!isEditingCreds ? (
+                        <button
+                          type="button"
+                          onClick={() => setIsEditingCreds(true)}
+                          className="text-[10.5px] uppercase font-bold text-[#454d82] hover:text-[#1e2246] bg-[#e8eaf7] hover:bg-[#ffc749] px-3.5 py-1.5 rounded-full transition-colors cursor-pointer"
+                        >
+                          Editar
+                        </button>
+                      ) : (
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setIsEditingCreds(false)}
+                            className="text-[10.5px] uppercase font-bold text-[#50567d] bg-[#e8eaf7] px-3 py-1.5 rounded-full cursor-pointer"
+                          >
+                            Cancelar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleUpdateCredentials}
+                            disabled={isProcessing}
+                            className="ola-adm-btn-yellow text-[10.5px] uppercase font-bold px-3.5 py-1.5 rounded-full disabled:opacity-50 cursor-pointer"
+                          >
+                            {isProcessing ? '...' : 'Guardar'}
+                          </button>
                         </div>
-                        <div className="overflow-hidden">
-                          <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Contraseña</label>
-                          {!isEditingCreds ? <p className="text-sm text-white font-semibold py-2 tracking-widest truncate">{editPassword || '********'}</p> : <input type="text" value={editPassword} onChange={(e) => setEditPassword(e.target.value)} className="w-full bg-black/40 border border-[#fcd34d]/50 rounded-lg px-3 py-2 text-white text-sm outline-none" />}
-                        </div>
-                        
-                        {isEditingCreds && (
-                          <div className="overflow-hidden col-span-1 md:col-span-2 mt-2">
-                            <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">URL Avatar de Perfil</label>
-                            <input type="text" value={editAvatarUrl} onChange={(e) => setEditAvatarUrl(e.target.value)} placeholder="Enlace a la foto..." className="w-full bg-black/40 border border-[#fcd34d]/50 rounded-lg px-3 py-2 text-white text-sm outline-none" />
-                          </div>
-                        )}
-                     </div>
-                  </div>
-                  <div className="bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col justify-between items-center text-center shadow-md">
-                    <div>
-                      <h4 className="text-xs font-black text-white/50 uppercase tracking-widest mb-1">Estado de Cuenta</h4>
-                      <p className={`text-xl font-black uppercase tracking-widest ${accountStatus === 'active' ? 'text-emerald-400' : 'text-red-500'}`}>{accountStatus}</p>
+                      )}
                     </div>
-                    <button onClick={() => handleKillSwitch(accountStatus === 'active' ? 'suspended' : 'active')} disabled={isProcessing} className={`w-full mt-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50 shadow-md ${accountStatus === 'active' ? 'bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500 hover:text-white' : 'bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500 hover:text-white'}`}>
-                      {accountStatus === 'active' ? 'Suspender' : 'Reactivar'}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="overflow-hidden">
+                        <label className="block text-[10px] text-[#626a9f] font-bold uppercase mb-1">Email</label>
+                        {!isEditingCreds ? (
+                          <p className="text-sm text-[#1e2246] font-semibold py-1.5 truncate">{editEmail}</p>
+                        ) : (
+                          <input
+                            type="text"
+                            value={editEmail}
+                            onChange={(e) => setEditEmail(e.target.value)}
+                            className="w-full bg-white border-2 border-[#454d82] rounded-xl px-3 py-2 text-[#1e2246] text-xs font-semibold outline-none"
+                          />
+                        )}
+                      </div>
+                      <div className="overflow-hidden">
+                        <label className="block text-[10px] text-[#626a9f] font-bold uppercase mb-1">Contraseña</label>
+                        {!isEditingCreds ? (
+                          <p className="text-sm text-[#1e2246] font-semibold py-1.5 tracking-wider truncate">
+                            {editPassword || '••••••••'}
+                          </p>
+                        ) : (
+                          <input
+                            type="text"
+                            value={editPassword}
+                            onChange={(e) => setEditPassword(e.target.value)}
+                            className="w-full bg-white border-2 border-[#454d82] rounded-xl px-3 py-2 text-[#1e2246] text-xs font-semibold outline-none"
+                          />
+                        )}
+                      </div>
+
+                      {isEditingCreds && (
+                        <div className="sm:col-span-2">
+                          <label className="block text-[10px] text-[#626a9f] font-bold uppercase mb-1">
+                            URL Avatar de Perfil
+                          </label>
+                          <input
+                            type="text"
+                            value={editAvatarUrl}
+                            onChange={(e) => setEditAvatarUrl(e.target.value)}
+                            placeholder="https://..."
+                            className="w-full bg-white border-2 border-[#454d82] rounded-xl px-3 py-2 text-[#1e2246] text-xs font-semibold outline-none"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="bg-white/75 border border-white rounded-3xl p-5 flex flex-col justify-between items-center text-center shadow-sm">
+                    <div>
+                      <h4 className="text-[10px] font-bold text-[#626a9f] uppercase tracking-widest mb-1">
+                        Estado de Cuenta
+                      </h4>
+                      <p
+                        className={`text-xl font-extrabold uppercase tracking-tight ${
+                          accountStatus === 'active' ? 'text-[#128063]' : 'text-[#c93f34]'
+                        }`}
+                      >
+                        {accountStatus}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleKillSwitch(accountStatus === 'active' ? 'suspended' : 'active')}
+                      disabled={isProcessing}
+                      className={`w-full mt-4 py-3 rounded-full text-[10.5px] font-bold uppercase tracking-widest transition-all disabled:opacity-50 cursor-pointer ${
+                        accountStatus === 'active' ? 'ola-adm-btn-danger' : 'ola-adm-btn-yellow'
+                      }`}
+                    >
+                      {accountStatus === 'active' ? 'Suspender Acceso' : 'Reactivar Acceso'}
                     </button>
                   </div>
                 </div>
               )}
 
+              {/* REGISTRATION ANSWERS */}
               {userRole === 'Student' && (
-                <>
-                  <h3 className="text-xs font-black text-[#fcd34d] uppercase tracking-widest mb-4 border-b border-white/10 pb-2 mt-8">Respuestas de Registro</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-black/20 border border-white/10 rounded-xl p-4 shadow-inner overflow-hidden"><p className="text-[10px] text-white/50 font-bold uppercase mb-1">Motivo del Curso</p><p className="text-sm text-white font-semibold truncate">{userData.reason || 'No especificado'}</p></div>
-                    <div className="bg-black/20 border border-white/10 rounded-xl p-4 shadow-inner overflow-hidden"><p className="text-[10px] text-white/50 font-bold uppercase mb-1">Meta de Fluidez</p><p className="text-sm text-white font-semibold truncate">{userData.fluent_time || 'No especificado'}</p></div>
-                    <div className="bg-black/20 border border-white/10 rounded-xl p-4 shadow-inner overflow-hidden"><p className="text-[10px] text-white/50 font-bold uppercase mb-1">Categoría de Interés</p><p className="text-sm text-white font-semibold truncate">{userData.interest || 'No especificado'}</p></div>
-                    <div className="bg-black/20 border border-white/10 rounded-xl p-4 shadow-inner overflow-hidden"><p className="text-[10px] text-white/50 font-bold uppercase mb-1">Fecha de Registro</p><p className="text-sm text-white font-semibold truncate">{new Date(userData.created_at || Date.now()).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</p></div>
+                <div>
+                  <h3 className="text-xs font-extrabold text-[#454d82] uppercase tracking-widest mb-3 border-b border-[#626a9f]/15 pb-2">
+                    Respuestas de Registro
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div className="bg-white/70 border border-white rounded-2xl p-4">
+                      <p className="text-[10px] text-[#626a9f] font-bold uppercase mb-1">Motivo del Curso</p>
+                      <p className="text-sm text-[#1e2246] font-semibold truncate">
+                        {userData.reason || 'No especificado'}
+                      </p>
+                    </div>
+                    <div className="bg-white/70 border border-white rounded-2xl p-4">
+                      <p className="text-[10px] text-[#626a9f] font-bold uppercase mb-1">Meta de Fluidez</p>
+                      <p className="text-sm text-[#1e2246] font-semibold truncate">
+                        {userData.fluent_time || 'No especificado'}
+                      </p>
+                    </div>
+                    <div className="bg-white/70 border border-white rounded-2xl p-4">
+                      <p className="text-[10px] text-[#626a9f] font-bold uppercase mb-1">Categoría de Interés</p>
+                      <p className="text-sm text-[#1e2246] font-semibold truncate">
+                        {userData.interest || 'No especificado'}
+                      </p>
+                    </div>
+                    <div className="bg-white/70 border border-white rounded-2xl p-4">
+                      <p className="text-[10px] text-[#626a9f] font-bold uppercase mb-1">Fecha de Registro</p>
+                      <p className="text-sm text-[#1e2246] font-semibold truncate">
+                        {new Date(userData.created_at || Date.now()).toLocaleDateString('es-ES', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        })}
+                      </p>
+                    </div>
                   </div>
-                </>
+                </div>
               )}
             </div>
           )}
 
           {/* ==========================================
-              TAB 2: FINANZAS (For Students)
+              TAB 2: FINANZAS (Students)
           ========================================== */}
           {activeTab === 'FINANZAS' && userRole === 'Student' && (
-            <div className="animate-fade-in space-y-6">
+            <div className="space-y-6">
               {!isPending ? (
                 <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="bg-white/5 border border-white/10 rounded-2xl p-6 shadow-md">
-                       <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-4">
-                          <h4 className="text-xs font-black text-[#fcd34d] uppercase tracking-widest">Billing & Cohort</h4>
-                          <button onClick={handleSaveCohort} disabled={isProcessing} className="text-[10px] uppercase font-black text-white bg-white/10 border border-white/20 hover:bg-[#fcd34d] hover:text-[#08203e] hover:border-transparent px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 shrink-0">Change Cohort</button>
-                       </div>
-                       <div className="flex gap-4 items-end">
-                          <div className="flex-1">
-                            <label className="block text-[10px] text-white/50 font-bold uppercase mb-2">Billing Cohort</label>
-                            <select value={cohort} onChange={e => setCohort(parseInt(e.target.value))} className="w-full bg-[#070b19] border border-white/20 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#fcd34d] cursor-pointer appearance-none">
-                               <option value={15}>15th of the Month</option>
-                               <option value={30}>30th of the Month</option>
-                            </select>
-                          </div>
-                          <div className="flex-1 bg-black/40 border border-white/10 rounded-xl p-3 flex flex-col justify-center items-center text-center shadow-inner h-[46px]">
-                            <span className="text-[9px] text-white/50 uppercase tracking-widest font-bold mb-0.5">Prorated Due Now</span>
-                            <span className="text-lg font-black text-[#fcd34d] leading-none">${proratedDue}</span>
-                          </div>
-                       </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    {/* COHORT & PRORATION */}
+                    <div className="bg-white/75 border border-white rounded-3xl p-5 shadow-sm">
+                      <div className="flex justify-between items-center mb-4 border-b border-[#626a9f]/15 pb-3">
+                        <h4 className="text-xs font-extrabold text-[#454d82] uppercase tracking-widest">
+                          Billing &amp; Cohort
+                        </h4>
+                        <button
+                          type="button"
+                          onClick={handleSaveCohort}
+                          disabled={isProcessing}
+                          className="ola-adm-btn-outline text-[10px] uppercase font-bold px-3.5 py-1.5 rounded-full cursor-pointer disabled:opacity-50"
+                        >
+                          Guardar Corte
+                        </button>
+                      </div>
+                      <div className="flex gap-3 items-end">
+                        <div className="flex-1">
+                          <label className="block text-[10px] text-[#626a9f] font-bold uppercase mb-1.5">
+                            Cohorte Mensual
+                          </label>
+                          <select
+                            value={cohort}
+                            onChange={(e) => setCohort(parseInt(e.target.value, 10))}
+                            className="w-full bg-[#f6f7fc] border-2 border-white focus:border-[#454d82] rounded-xl px-3 py-2.5 text-[#1e2246] text-xs font-bold outline-none cursor-pointer"
+                          >
+                            <option value={15}>Día 15 del mes</option>
+                            <option value={30}>Día 30 del mes</option>
+                          </select>
+                        </div>
+                        <div className="flex-1 bg-[#fff3d1] border border-[#ffc749] rounded-xl p-2.5 flex flex-col justify-center items-center text-center">
+                          <span className="text-[9px] text-[#454d82] uppercase font-bold">Prorrateo Hoy</span>
+                          <span className="text-lg font-extrabold text-[#1e2246] leading-tight">${proratedDue}</span>
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col justify-center shadow-md">
-                       <div className="flex justify-between items-center mb-3">
-                         <h3 className="text-white font-black text-xl">Class Credits: <span className="text-[#fcd34d]">{credits}</span></h3>
-                         <button onClick={handleRefund} className="bg-white/10 hover:bg-[#fcd34d] hover:text-[#08203e] text-white border border-white/20 hover:border-transparent font-black text-[10px] uppercase tracking-widest px-4 py-2.5 rounded-xl transition-all shadow-md shrink-0">
-                            +1 Credit (Refund)
-                         </button>
-                       </div>
-                       <p className="text-[10px] text-white/50 leading-relaxed font-medium">Students automatically receive <strong className="text-white">4 credits</strong> upon monthly renewal. Use the refund button strictly for academy-fault disruptions (Logs automatically to Finances).</p>
-                    </div>
-                  </div>
-
-                  <h3 className="text-xs font-black text-[#fcd34d] uppercase tracking-widest mt-8 mb-4 border-b border-white/10 pb-2">Estado de Suscripción</h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                    <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex flex-col justify-center items-center text-center shadow-md">
-                      <p className="text-[10px] text-white/50 font-bold uppercase tracking-widest mb-1">Tarifa Mensual</p>
-                      <p className="text-2xl text-white font-black">${MONTHLY_PRICES[getBaseLevel(levelOverride)] || 20}</p>
-                      <p className="text-[9px] text-[#fcd34d] uppercase mt-1">Nivel {getBaseLevel(levelOverride)}</p>
-                    </div>
-                    <div className={`border rounded-xl p-4 flex flex-col justify-center items-center text-center shadow-md ${isPastDue ? 'bg-red-500/10 border-red-500/50' : 'bg-white/5 border-white/10'}`}>
-                      <p className="text-[10px] text-white/50 font-bold uppercase tracking-widest mb-1">Próximo Pago</p>
-                      <p className={`text-xl font-black ${isPastDue ? 'text-red-400' : 'text-white'}`}>
-                        {userData.next_billing_date ? new Date(userData.next_billing_date).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' }) : 'No asignada'}
+                    {/* CREDITS & REFUND */}
+                    <div className="bg-white/75 border border-white rounded-3xl p-5 flex flex-col justify-center shadow-sm">
+                      <div className="flex justify-between items-center gap-2 mb-2.5">
+                        <h3 className="text-[#1e2246] font-extrabold text-lg">
+                          Créditos: <span className="text-[#454d82]">{credits}</span>
+                        </h3>
+                        <button
+                          type="button"
+                          onClick={handleRefund}
+                          className="ola-adm-btn-yellow font-bold text-[10px] uppercase tracking-wider px-3.5 py-2 rounded-full cursor-pointer shrink-0"
+                        >
+                          +1 Credit (Refund)
+                        </button>
+                      </div>
+                      <p className="text-[11px] text-[#50567d] leading-relaxed font-medium">
+                        Recibe <strong className="text-[#1e2246]">4 créditos</strong> por mensualidad (no acumulativos al corte). Usa el reembolso solo por fallas de la academia.
                       </p>
-                      {isPastDue && <p className="text-[9px] text-red-500 font-bold uppercase mt-1 animate-pulse">VENCIDO - CRÉDITOS A 0</p>}
                     </div>
                   </div>
 
-                  <div className={`bg-black/30 border rounded-2xl p-6 md:p-8 shadow-inner ${userData.level_completed ? 'border-amber-500/50' : 'border-emerald-500/30'}`}>
+                  {/* SUBSCRIPTION SUMMARY */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="bg-white/75 border border-white rounded-2xl p-4 text-center shadow-sm">
+                      <p className="text-[10px] text-[#626a9f] font-bold uppercase tracking-widest mb-1">
+                        Tarifa Mensual ({getBaseLevel(levelOverride)})
+                      </p>
+                      <p className="text-3xl text-[#1e2246] font-extrabold">
+                        ${MONTHLY_PRICES[getBaseLevel(levelOverride)] || 20} <span className="text-xs text-[#626a9f]">USD</span>
+                      </p>
+                    </div>
+                    <div
+                      className={`border-2 rounded-2xl p-4 text-center shadow-sm ${
+                        isPastDue
+                          ? 'bg-[#ee665b]/12 border-[#ee665b]'
+                          : 'bg-white/75 border-white'
+                      }`}
+                    >
+                      <p className="text-[10px] text-[#626a9f] font-bold uppercase tracking-widest mb-1">
+                        Próximo Corte
+                      </p>
+                      <p className={`text-xl font-extrabold ${isPastDue ? 'text-[#c93f34]' : 'text-[#1e2246]'}`}>
+                        {userData.next_billing_date
+                          ? new Date(userData.next_billing_date).toLocaleDateString('es-ES', {
+                              day: '2-digit',
+                              month: 'long',
+                              year: 'numeric',
+                            })
+                          : 'No asignada'}
+                      </p>
+                      {isPastDue && (
+                        <p className="text-[9.5px] text-[#c93f34] font-bold uppercase mt-1 animate-pulse">
+                          Vencido • Créditos en 0
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* MANUAL PAYMENT OR LEVEL RENEWAL FORM */}
+                  <div
+                    className={`rounded-3xl p-5 sm:p-6 border-2 ${
+                      userData.level_completed
+                        ? 'ola-adm-glass-gold border-[#ffc749]'
+                        : 'ola-adm-glass-mint border-[#16a37f]/45'
+                    }`}
+                  >
                     {userData.level_completed ? (
                       <>
-                        <h3 className="text-amber-400 font-black uppercase tracking-widest mb-2">Procesar Renovación de Nivel</h3>
-                        <p className="text-xs text-white/60 mb-6 font-medium">El estudiante aprobó el nivel {getBaseLevel(levelOverride)}. Registra el pago de renovación para promoverlo al siguiente nivel, reactivar sus créditos y desbloquear su cuenta.</p>
-                        
+                        <h3 className="text-[#1e2246] font-extrabold uppercase text-sm tracking-wider mb-1">
+                          Procesar Renovación de Nivel ($10 + Mensualidad)
+                        </h3>
+                        <p className="text-xs text-[#4c5384] mb-5 font-medium">
+                          El estudiante aprobó {getBaseLevel(levelOverride)}. Registra el pago para promoverlo al siguiente nivel y recargar 4 créditos.
+                        </p>
+
                         <form onSubmit={handleProcessRenewal} className="space-y-4">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                              <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Monto de Renovación (USD)</label>
+                              <label className="block text-[10px] text-[#454d82] font-bold uppercase mb-1">
+                                Monto Total (USD)
+                              </label>
                               <div className="relative">
-                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50 font-black">$</span>
-                                <input type="number" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} className="w-full bg-[#070b19] border border-white/20 rounded-xl pl-8 pr-4 py-3 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-amber-400" required />
+                                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#626a9f] font-bold">
+                                  $
+                                </span>
+                                <input
+                                  type="number"
+                                  value={payAmount}
+                                  onChange={(e) => setPayAmount(e.target.value)}
+                                  className="w-full bg-white border-2 border-white focus:border-[#454d82] rounded-xl pl-8 pr-4 py-2.5 text-sm font-bold text-[#1e2246] outline-none"
+                                  required
+                                />
                               </div>
                             </div>
                             <div>
-                              <label className="block text-[9px] text-white/50 font-bold uppercase mb-1">Referencia (Zelle / Pago Móvil)</label>
-                              <input type="text" value={payRef} onChange={e => setPayRef(e.target.value)} placeholder="Ej: REF-923847" className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-3 text-white text-xs outline-none focus:border-amber-400" required />
+                              <label className="block text-[10px] text-[#454d82] font-bold uppercase mb-1">
+                                Referencia (Zinli / PayPal / Binance / Local)
+                              </label>
+                              <input
+                                type="text"
+                                value={payRef}
+                                onChange={(e) => setPayRef(e.target.value)}
+                                placeholder="Ej: Zinli #923847"
+                                className="w-full bg-white border-2 border-white focus:border-[#454d82] rounded-xl px-3.5 py-2.5 text-[#1e2246] text-xs font-semibold outline-none"
+                                required
+                              />
                             </div>
                           </div>
 
-                          <button type="submit" disabled={isProcessing} className="w-full py-4 mt-auto bg-amber-400 hover:bg-white text-[#08203e] font-black tracking-widest text-xs uppercase rounded-xl transition-all shadow-[0_0_20px_rgba(251,191,36,0.3)] disabled:opacity-50 hover:scale-[1.02]">
-                            {isProcessing ? 'Procesando...' : `Renovar Nivel y Cobrar $${payAmount}`}
+                          <button
+                            type="submit"
+                            disabled={isProcessing}
+                            className="ola-adm-btn-yellow w-full py-3.5 font-bold tracking-widest text-xs uppercase rounded-full disabled:opacity-50 cursor-pointer"
+                          >
+                            {isProcessing ? 'Procesando...' : `Renovar Nivel y Confirmar $${payAmount}`}
                           </button>
                         </form>
                       </>
                     ) : (
                       <>
-                        <h3 className="text-emerald-400 font-black uppercase tracking-widest mb-2">Registrar Pago Manual</h3>
-                        <p className="text-xs text-white/60 mb-6 font-medium">Sube el comprobante y el número de referencia para verificar el pago y aplicar los créditos automáticamente.</p>
-                        
+                        <h3 className="text-[#128063] font-extrabold uppercase text-sm tracking-wider mb-1">
+                          Registrar Pago Manual
+                        </h3>
+                        <p className="text-xs text-[#3b4170] mb-5 font-medium">
+                          Registra una mensualidad (+4 créditos) o un Bundle de 2 Extra Créditos ($12 aparte).
+                        </p>
+
                         <form onSubmit={handlePaymentSubmit} className="space-y-4">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                              <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Tipo de Compra</label>
-                              <select value={payType} onChange={handlePayTypeChange} className="w-full bg-[#070b19] border border-white/20 rounded-xl px-4 py-3 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-emerald-400 appearance-none cursor-pointer">
+                              <label className="block text-[10px] text-[#454d82] font-bold uppercase mb-1">
+                                Tipo de Compra
+                              </label>
+                              <select
+                                value={payType}
+                                onChange={handlePayTypeChange}
+                                className="w-full bg-white border-2 border-white focus:border-[#454d82] rounded-xl px-3.5 py-2.5 text-xs font-bold text-[#1e2246] outline-none cursor-pointer"
+                              >
                                 <option value="Mensualidad">Suscripción Mensual (+4 Créditos)</option>
-                                <option value="Extra">Créditos Extra (+2 Créditos por $12)</option>
+                                <option value="Extra">Bundle Extra (+2 Créditos por $12)</option>
                               </select>
                             </div>
                             <div>
-                              <label className="block text-[10px] text-white/50 font-bold uppercase mb-1">Monto a Verificar (USD)</label>
+                              <label className="block text-[10px] text-[#454d82] font-bold uppercase mb-1">
+                                Monto a Verificar (USD)
+                              </label>
                               <div className="relative">
-                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50 font-black">$</span>
-                                <input type="number" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} className="w-full bg-[#070b19] border border-white/20 rounded-xl pl-8 pr-4 py-3 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-emerald-400" required />
+                                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#626a9f] font-bold">
+                                  $
+                                </span>
+                                <input
+                                  type="number"
+                                  value={payAmount}
+                                  onChange={(e) => setPayAmount(e.target.value)}
+                                  className="w-full bg-white border-2 border-white focus:border-[#454d82] rounded-xl pl-8 pr-4 py-2.5 text-sm font-bold text-[#1e2246] outline-none"
+                                  required
+                                />
                               </div>
                             </div>
                           </div>
 
-                          <div className="mb-3">
-                            <label className="block text-[9px] text-white/50 font-bold uppercase mb-1">Número de Referencia (Zelle / Pago Móvil)</label>
-                            <input type="text" value={payRef} onChange={e => setPayRef(e.target.value)} placeholder="Ej: REF-923847" className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-[#fcd34d]" required />
+                          <div>
+                            <label className="block text-[10px] text-[#454d82] font-bold uppercase mb-1">
+                              Número de Referencia (Zinli / PayPal / Binance / Moneda Local)
+                            </label>
+                            <input
+                              type="text"
+                              value={payRef}
+                              onChange={(e) => setPayRef(e.target.value)}
+                              placeholder="Ej: Binance #923847"
+                              className="w-full bg-white border-2 border-white focus:border-[#454d82] rounded-xl px-3.5 py-2.5 text-[#1e2246] text-xs font-semibold outline-none"
+                              required
+                            />
                           </div>
 
-                          <button type="submit" disabled={isProcessing} className="w-full py-4 mt-auto bg-[#fcd34d] hover:bg-white text-[#08203e] font-black tracking-widest text-xs uppercase rounded-xl transition-all shadow-[0_0_20px_rgba(252,211,77,0.3)] disabled:opacity-50 hover:scale-[1.02]">
-                            {isProcessing ? 'Verificando y Aplicando...' : `Confirmar Pago de $${payAmount}`}
+                          <button
+                            type="submit"
+                            disabled={isProcessing}
+                            className="ola-adm-btn-yellow w-full py-3.5 font-bold tracking-widest text-xs uppercase rounded-full disabled:opacity-50 cursor-pointer"
+                          >
+                            {isProcessing ? 'Verificando...' : `Confirmar Pago de $${payAmount}`}
                           </button>
                         </form>
                       </>
                     )}
                   </div>
 
-                  {/* Payment History Audit Section */}
-                  <h3 className="text-xs font-black text-[#fcd34d] uppercase tracking-widest mt-8 mb-4 border-b border-white/10 pb-2">Historial de Pagos</h3>
-                  <div className="bg-black/20 border border-white/10 rounded-2xl p-6 shadow-inner">
-                    {isLoadingPayments ? (
-                      <div className="py-8 flex justify-center"><div className="w-6 h-6 border-2 border-[#fcd34d] border-t-transparent rounded-full animate-spin"></div></div>
-                    ) : paymentHistory.length === 0 ? (
-                      <p className="text-center text-white/40 font-bold text-xs uppercase tracking-widest py-4">No hay pagos registrados.</p>
-                    ) : (
-                      <div className="space-y-3 max-h-64 overflow-y-auto custom-scrollbar pr-2">
-                        {paymentHistory.map(payment => (
-                          <div key={payment.id} className="flex justify-between items-center bg-white/5 border border-white/10 p-4 rounded-xl hover:bg-white/10 transition-colors">
-                            <div>
-                              <p className="text-white font-bold text-sm tracking-wide">{payment.payment_type || 'Mensualidad'}</p>
-                              <p className="text-[10px] text-white/50 uppercase font-black tracking-widest mt-1">Ref: <span className="text-[#fcd34d]">{payment.reference_number}</span> • {new Date(payment.created_at).toLocaleDateString('es-ES')}</p>
+                  {/* PAYMENT HISTORY LEDGER */}
+                  <div>
+                    <h3 className="text-xs font-extrabold text-[#454d82] uppercase tracking-widest mb-3 border-b border-[#626a9f]/15 pb-2">
+                      Historial de Pagos
+                    </h3>
+                    <div className="bg-white/65 border border-white rounded-2xl p-4 shadow-inner">
+                      {isLoadingPayments ? (
+                        <div className="py-8 flex justify-center">
+                          <div className="w-6 h-6 border-2 border-[#626a9f] border-t-[#ffc749] rounded-full animate-spin" />
+                        </div>
+                      ) : paymentHistory.length === 0 ? (
+                        <p className="text-center text-[#626a9f] font-bold text-xs uppercase tracking-widest py-5">
+                          No hay pagos registrados.
+                        </p>
+                      ) : (
+                        <div className="space-y-2.5 max-h-60 overflow-y-auto custom-scrollbar pr-1">
+                          {paymentHistory.map((payment) => (
+                            <div
+                              key={payment.id}
+                              className="flex justify-between items-center bg-white border border-[#dfe2f2] p-3.5 rounded-2xl shadow-sm"
+                            >
+                              <div>
+                                <p className="text-[#1e2246] font-bold text-sm">
+                                  {payment.payment_type || 'Mensualidad'}
+                                </p>
+                                <p className="text-[10.5px] text-[#50567d] font-semibold mt-0.5">
+                                  Ref: <strong className="text-[#454d82]">{payment.reference_number}</strong> •{' '}
+                                  {new Date(payment.created_at).toLocaleDateString('es-ES')}
+                                </p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-[#128063] font-extrabold text-base">${payment.amount}</p>
+                                {payment.status === 'processing' ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleVerifyPendingPayment(payment)}
+                                    disabled={isProcessing}
+                                    className="ola-adm-btn-yellow mt-1 px-3 py-1 rounded-full text-[9.5px] font-bold uppercase cursor-pointer disabled:opacity-50"
+                                  >
+                                    Verificar
+                                  </button>
+                                ) : (
+                                  <span className="text-[9.5px] text-[#128063] uppercase font-bold">
+                                    {payment.status}
+                                  </span>
+                                )}
+                              </div>
                             </div>
-                            <div className="text-right">
-                              <p className="text-emerald-400 font-black text-lg">${payment.amount}</p>
-                              {payment.status === 'processing' ? (
-                                <button onClick={() => handleVerifyPendingPayment(payment)} disabled={isProcessing} className="mt-1 bg-[#fcd34d] hover:bg-white text-[#08203e] px-3 py-1 rounded text-[9px] font-black uppercase tracking-widest hover:scale-105 transition-transform disabled:opacity-50">
-                                  Verificar
-                                </button>
-                              ) : (
-                                <p className="text-[9px] text-emerald-400/50 uppercase font-black tracking-widest">{payment.status}</p>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </>
               ) : (
-                <div className="py-12 text-center text-xs font-bold text-white/40 uppercase tracking-widest bg-black/20 rounded-2xl border border-white/10 shadow-inner">
+                <div className="py-12 text-center text-xs font-bold text-[#626a9f] uppercase tracking-widest bg-white/60 rounded-2xl border border-white">
                   El estudiante debe estar activo para registrar pagos.
                 </div>
               )}
@@ -1265,44 +1730,88 @@ const handleProvisionAccount = async () => {
           )}
 
           {/* ==========================================
-              TAB 3: ESTADISTICAS (For Students)
+              TAB 3: ESTADISTICAS (Students)
           ========================================== */}
           {activeTab === 'ESTADISTICAS' && userRole === 'Student' && (
-            <div className="animate-fade-in space-y-6">
+            <div className="space-y-6">
               {!isPending ? (
                 <>
-                  <div className="flex justify-between items-end border-b border-white/10 pb-2 mb-4">
-                    <h3 className="text-xs font-black text-[#fcd34d] uppercase tracking-widest">Progreso Académico</h3>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-white/5 border border-white/10 rounded-xl p-4 shadow-md"><p className="text-[10px] text-white/50 font-bold uppercase mb-1">Última Unidad</p><p className="text-sm text-white font-semibold">{userData.unit || 'Ninguna'}</p></div>
-                    <div className="bg-white/5 border border-white/10 rounded-xl p-4 shadow-md"><p className="text-[10px] text-white/50 font-bold uppercase mb-1">Puntaje Promedio</p><p className="text-sm text-white font-semibold">{userData.lesson_score || '0'} / 100</p></div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white/80 border border-white rounded-2xl p-4 shadow-sm text-center">
+                      <p className="text-[10px] text-[#626a9f] font-bold uppercase mb-1">Unidad Actual</p>
+                      <p className="text-2xl text-[#1e2246] font-extrabold">Unit {userData.unit || 1}</p>
+                    </div>
+                    <div className="bg-[#fff3d1]/85 border border-[#ffc749] rounded-2xl p-4 shadow-sm text-center">
+                      <p className="text-[10px] text-[#454d82] font-bold uppercase mb-1">Puntaje Promedio</p>
+                      <p className="text-2xl text-[#1e2246] font-extrabold">{userData.lesson_score || '0'} / 100</p>
+                    </div>
                   </div>
 
-                  <div className="mt-10">
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                  <div>
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
                       <div>
-                        <h3 className="text-lg font-black text-white uppercase tracking-widest drop-shadow-sm">HISTORIAL ACADÉMICO</h3>
-                        <p className="text-xs text-white/50 mt-1">Auditoría permanente de clases, notas y evaluaciones.</p>
+                        <h3 className="text-base font-extrabold text-[#1e2246] uppercase tracking-tight">
+                          Historial Académico
+                        </h3>
+                        <p className="text-xs text-[#50567d] font-medium">
+                          Auditoría permanente de clases, notas y evaluaciones.
+                        </p>
                       </div>
-                      <button onClick={handleGenerateReport} disabled={isGenerating || academicHistory.length === 0} className="px-6 py-3 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-black text-[10px] uppercase tracking-widest rounded-xl transition-all flex items-center gap-2 disabled:opacity-50 shadow-md">
-                        {isGenerating ? <><div className="w-3 h-3 border-2 border-[#fcd34d] border-t-transparent rounded-full animate-spin"></div> GENERANDO...</> : <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg> EXPORTAR REPORTE</>}
+                      <button
+                        type="button"
+                        onClick={handleGenerateReport}
+                        disabled={isGenerating || academicHistory.length === 0}
+                        className="ola-adm-btn-outline px-5 py-2.5 text-[11px] font-bold uppercase tracking-wider rounded-full flex items-center gap-2 disabled:opacity-45 cursor-pointer"
+                      >
+                        <svg className="w-4 h-4 text-[#454d82]" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span>{isGenerating ? 'Generando PDF...' : 'Exportar Reporte'}</span>
                       </button>
                     </div>
 
                     {isLoadingHistory ? (
-                      <div className="py-12 flex justify-center"><div className="w-8 h-8 border-4 border-[#fcd34d] border-t-transparent rounded-full animate-spin"></div></div>
+                      <div className="py-12 flex justify-center">
+                        <div className="w-8 h-8 border-4 border-[#626a9f] border-t-[#ffc749] rounded-full animate-spin" />
+                      </div>
                     ) : academicHistory.length === 0 ? (
-                      <div className="py-12 text-center text-xs font-bold text-white/40 uppercase tracking-widest bg-black/20 rounded-2xl border border-white/10 shadow-inner">El estudiante aún no tiene registros académicos.</div>
+                      <div className="py-10 text-center text-xs font-bold text-[#626a9f] uppercase tracking-widest bg-white/60 rounded-2xl border border-white">
+                        El estudiante aún no tiene registros académicos.
+                      </div>
                     ) : (
-                      <div className="space-y-4">
+                      <div className="space-y-3">
                         {academicHistory.map((record) => (
-                          <div key={record.id} className="bg-white/5 border border-white/10 rounded-xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-white/10 transition-colors shadow-sm">
-                            <div className="flex items-center gap-4">
-                              <div className={`w-12 h-12 rounded-full flex items-center justify-center font-black text-sm shadow-inner shrink-0 ${record.score_percentage >= 75 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30'}`}>{Math.round(record.score_percentage)}%</div>
-                              <div className="flex flex-col"><span className="font-bold text-white text-sm uppercase tracking-wider">{record.activity_type}</span><span className="text-[10px] text-white/50 uppercase tracking-widest">Unidad {record.unit} • {new Date(record.created_at).toLocaleDateString('es-ES')}</span></div>
+                          <div
+                            key={record.id}
+                            className="bg-white/80 border border-white rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm"
+                          >
+                            <div className="flex items-center gap-3.5">
+                              <div
+                                className={`w-12 h-12 rounded-2xl flex items-center justify-center font-extrabold text-sm shrink-0 ${
+                                  record.score_percentage >= 75
+                                    ? 'bg-[#e7faf3] text-[#128063] border border-[#16a37f]/45'
+                                    : 'bg-[#ee665b]/15 text-[#c93f34] border border-[#ee665b]/45'
+                                }`}
+                              >
+                                {Math.round(record.score_percentage)}%
+                              </div>
+                              <div>
+                                <span className="font-bold text-[#1e2246] text-sm uppercase block">
+                                  {record.activity_type}
+                                </span>
+                                <span className="text-[11px] text-[#50567d] font-medium">
+                                  Unidad {record.unit} • {new Date(record.created_at).toLocaleDateString('es-ES')}
+                                </span>
+                              </div>
                             </div>
-                            <div className="flex flex-col md:text-right"><span className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">Evaluador / Notas</span><span className="text-xs font-semibold text-white truncate max-w-[200px]">{record.teacher ? `${record.teacher.first_name} ${record.teacher.last_name}` : 'Sistema (Auto-Grader)'}</span></div>
+                            <div className="sm:text-right">
+                              <span className="text-[9.5px] font-bold text-[#626a9f] uppercase block">Evaluador</span>
+                              <span className="text-xs font-bold text-[#1e2246]">
+                                {record.teacher
+                                  ? `${record.teacher.first_name} ${record.teacher.last_name}`
+                                  : 'Sistema (Auto-Grader)'}
+                              </span>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -1310,173 +1819,235 @@ const handleProvisionAccount = async () => {
                   </div>
                 </>
               ) : (
-                <div className="py-12 text-center text-xs font-bold text-white/40 uppercase tracking-widest bg-black/20 rounded-2xl border border-white/10 shadow-inner">Las estadísticas se generarán una vez que la cuenta esté activa.</div>
+                <div className="py-12 text-center text-xs font-bold text-[#626a9f] uppercase tracking-widest bg-white/60 rounded-2xl border border-white">
+                  Las estadísticas se generarán una vez que la cuenta esté activa.
+                </div>
               )}
             </div>
           )}
 
           {/* ==========================================
-              TAB 4: PAYROLL (For Teachers)
+              TAB 4: PAYROLL (Teachers)
           ========================================== */}
           {activeTab === 'PAYROLL' && userRole === 'Teacher' && (
-            <div className="animate-fade-in space-y-6">
-              <div className="flex justify-between items-center border-b border-white/10 pb-4">
-                 <h3 className="text-xs font-black text-[#fcd34d] uppercase tracking-widest">Nómina y Compensación</h3>
-                 <div className="flex items-center gap-2">
-                   <span className="text-[10px] text-white/50 uppercase font-bold">Frecuencia:</span>
-                   <select 
-                      value={payrollCadence} 
-                      onChange={(e) => handleSaveCadence(e.target.value)} 
-                      className="bg-white/10 border border-white/20 rounded-lg px-2 py-1 text-xs font-bold text-white outline-none focus:border-[#fcd34d] cursor-pointer appearance-none"
-                   >
-                     <option value="Weekly" className="bg-[#070b19]">Semanal</option>
-                     <option value="Bi-Weekly" className="bg-[#070b19]">Quincenal</option>
-                     <option value="Monthly" className="bg-[#070b19]">Mensual</option>
-                   </select>
-                 </div>
+            <div className="space-y-5">
+              <div className="flex flex-wrap justify-between items-center gap-3 border-b border-[#626a9f]/15 pb-3">
+                <h3 className="text-xs font-extrabold text-[#454d82] uppercase tracking-widest">
+                  Nómina y Compensación
+                </h3>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10.5px] text-[#626a9f] uppercase font-bold">Frecuencia:</span>
+                  <select
+                    value={payrollCadence}
+                    onChange={(e) => handleSaveCadence(e.target.value)}
+                    className="bg-white border border-[#dfe2f2] rounded-full px-3 py-1.5 text-xs font-bold text-[#1e2246] outline-none cursor-pointer"
+                  >
+                    <option value="Weekly">Semanal</option>
+                    <option value="Bi-Weekly">Quincenal</option>
+                    <option value="Monthly">Mensual</option>
+                  </select>
+                </div>
               </div>
-              
+
               {isFetchingPayroll ? (
-                 <div className="py-12 flex justify-center"><div className="w-8 h-8 border-4 border-[#fcd34d] border-t-transparent rounded-full animate-spin"></div></div>
+                <div className="py-12 flex justify-center">
+                  <div className="w-8 h-8 border-4 border-[#626a9f] border-t-[#ffc749] rounded-full animate-spin" />
+                </div>
               ) : (
-                 <>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                      <div className="bg-[#08203e] border border-[#fcd34d]/50 rounded-2xl p-6 shadow-[0_0_15px_rgba(252,211,77,0.2)] flex flex-col justify-center items-center text-center">
-                        <span className="text-[10px] text-white/50 uppercase font-bold tracking-widest mb-1">Monto a Pagar</span>
-                        <span className="text-4xl font-black text-[#fcd34d]">${finalTotalPayroll.toFixed(2)}</span>
-                        <span className="text-[9px] text-white/40 uppercase mt-2 font-black tracking-widest">Ciclo Pendiente</span>
-                      </div>
-                      
-                      <div className="md:col-span-2 bg-white/5 border border-white/10 rounded-2xl p-6 shadow-md flex flex-col justify-center">
-                        <h4 className="text-[10px] text-white/50 uppercase font-bold tracking-widest mb-4 border-b border-white/10 pb-2">Desglose de Horas</h4>
-                        <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-                           <div className="flex justify-between items-center"><span className="text-xs text-white/80 font-bold uppercase tracking-wider">Día ($3/hr)</span><span className="text-sm font-black text-white bg-white/10 px-3 py-1 rounded-lg">{dayClassesCount}</span></div>
-                           <div className="flex justify-between items-center"><span className="text-xs text-white/80 font-bold uppercase tracking-wider">Noche ($4/hr)</span><span className="text-sm font-black text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-lg">{nightClassesCount}</span></div>
-                           <div className="flex justify-between items-center"><span className="text-xs text-white/80 font-bold uppercase tracking-wider">No-Shows ($2/clase)</span><span className="text-sm font-black text-orange-400 bg-orange-500/10 px-3 py-1 rounded-lg">{noShowCount}</span></div>
-                           <div className="flex justify-between items-center"><span className="text-xs text-white/80 font-bold uppercase tracking-wider">Guardias ($2/día)</span><span className="text-sm font-black text-blue-400 bg-blue-500/10 px-3 py-1 rounded-lg">{shiftCount}</span></div>
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <div className="ola-adm-glass-gold rounded-3xl p-5 flex flex-col justify-center items-center text-center">
+                      <span className="text-[10px] text-[#454d82] uppercase font-bold tracking-widest mb-1">
+                        Monto a Pagar
+                      </span>
+                      <span className="text-4xl font-extrabold text-[#1e2246]">${finalTotalPayroll.toFixed(2)}</span>
+                      <span className="text-[9.5px] text-[#4c5384] uppercase mt-1.5 font-bold">Ciclo Pendiente</span>
+                    </div>
+
+                    <div className="md:col-span-2 bg-white/80 border border-white rounded-3xl p-5 shadow-sm flex flex-col justify-center">
+                      <h4 className="text-[10px] text-[#454d82] uppercase font-bold tracking-widest mb-3 border-b border-[#626a9f]/15 pb-2">
+                        Desglose de Horas &amp; Guardias
+                      </h4>
+                      <div className="grid grid-cols-2 gap-3.5">
+                        <div className="flex justify-between items-center bg-[#f6f7fc] px-3.5 py-2.5 rounded-xl">
+                          <span className="text-xs text-[#3b4170] font-bold">Día ($3/hr)</span>
+                          <span className="text-sm font-extrabold text-[#1e2246]">{dayClassesCount}</span>
+                        </div>
+                        <div className="flex justify-between items-center bg-[#e7faf3] px-3.5 py-2.5 rounded-xl">
+                          <span className="text-xs text-[#128063] font-bold">Noche ($4/hr)</span>
+                          <span className="text-sm font-extrabold text-[#128063]">{nightClassesCount}</span>
+                        </div>
+                        <div className="flex justify-between items-center bg-[#fff3d1] px-3.5 py-2.5 rounded-xl">
+                          <span className="text-xs text-[#1e2246] font-bold">No-Shows ($2)</span>
+                          <span className="text-sm font-extrabold text-[#1e2246]">{noShowCount}</span>
+                        </div>
+                        <div className="flex justify-between items-center bg-[#e8eaf7] px-3.5 py-2.5 rounded-xl">
+                          <span className="text-xs text-[#454d82] font-bold">Guardias ($2)</span>
+                          <span className="text-sm font-extrabold text-[#454d82]">{shiftCount}</span>
                         </div>
                       </div>
                     </div>
-                    
-                    <div className="bg-black/30 border border-emerald-500/30 rounded-2xl p-6 shadow-inner">
-                       <h4 className="text-emerald-400 font-black uppercase tracking-widest mb-2">Liquidar Ciclo</h4>
-                       <p className="text-xs text-white/60 mb-6 font-medium">Puedes añadir bonos o deducciones manuales. Ingresa la referencia para procesar el pago y asentar en el registro contable.</p>
-                       <form onSubmit={handleMarkAsPaid} className="flex flex-col gap-4">
-                          <div className="flex flex-col md:flex-row gap-4">
-                            <input type="number" value={manualBonus} onChange={(e)=>setManualBonus(e.target.value)} placeholder="Bono Extra ($)" className="w-full md:w-1/3 bg-black/40 border border-white/20 rounded-xl px-4 py-3 text-emerald-400 text-sm font-bold outline-none focus:border-emerald-400 shadow-inner" min="0" step="0.01" />
-                            <input type="number" value={manualDeduction} onChange={(e)=>setManualDeduction(e.target.value)} placeholder="Deducción ($)" className="w-full md:w-1/3 bg-black/40 border border-white/20 rounded-xl px-4 py-3 text-red-400 text-sm font-bold outline-none focus:border-red-400 shadow-inner" min="0" step="0.01" />
-                          </div>
-                          <div className="flex flex-col md:flex-row gap-4">
-                            <input type="text" value={payrollRef} onChange={(e)=>setPayrollRef(e.target.value)} placeholder="N° de Referencia (Ej. Zelle 9823)" className="flex-1 bg-black/40 border border-white/20 rounded-xl px-4 py-4 text-white text-sm font-bold outline-none focus:border-emerald-400 shadow-inner" required />
-                            <button type="submit" disabled={isProcessing || finalTotalPayroll === 0} className="bg-emerald-500 hover:bg-emerald-400 text-[#070b19] font-black text-xs uppercase tracking-widest px-8 py-4 rounded-xl shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all disabled:opacity-50 hover:scale-105 active:scale-95 shrink-0">Marcar como Pagado</button>
-                          </div>
-                       </form>
-                    </div>
-                 </>
+                  </div>
+
+                  <div className="ola-adm-glass-mint rounded-3xl p-5 sm:p-6">
+                    <h4 className="text-[#128063] font-extrabold uppercase text-sm tracking-wider mb-1">
+                      Liquidar Ciclo
+                    </h4>
+                    <p className="text-xs text-[#3b4170] mb-4 font-medium">
+                      Añade bonos o deducciones opcionales e ingresa la referencia para asentar el pago en el registro contable.
+                    </p>
+                    <form onSubmit={handleMarkAsPaid} className="flex flex-col gap-3.5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <input
+                          type="number"
+                          value={manualBonus}
+                          onChange={(e) => setManualBonus(e.target.value)}
+                          placeholder="Bono Extra ($)"
+                          className="bg-white border-2 border-white focus:border-[#16a37f] rounded-xl px-4 py-2.5 text-[#128063] text-sm font-bold outline-none"
+                          min="0"
+                          step="0.01"
+                        />
+                        <input
+                          type="number"
+                          value={manualDeduction}
+                          onChange={(e) => setManualDeduction(e.target.value)}
+                          placeholder="Deducción ($)"
+                          className="bg-white border-2 border-white focus:border-[#ee665b] rounded-xl px-4 py-2.5 text-[#c93f34] text-sm font-bold outline-none"
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        <input
+                          type="text"
+                          value={payrollRef}
+                          onChange={(e) => setPayrollRef(e.target.value)}
+                          placeholder="N° de Referencia (Zinli / PayPal / Binance / Local)"
+                          className="flex-1 bg-white border-2 border-white focus:border-[#454d82] rounded-xl px-4 py-3 text-[#1e2246] text-sm font-semibold outline-none"
+                          required
+                        />
+                        <button
+                          type="submit"
+                          disabled={isProcessing || finalTotalPayroll === 0}
+                          className="ola-adm-btn-yellow px-7 py-3 rounded-full font-bold text-xs uppercase tracking-widest cursor-pointer disabled:opacity-45 shrink-0"
+                        >
+                          Marcar como Pagado ✓
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </>
               )}
             </div>
           )}
 
           {/* ==========================================
-              TAB 5: TEACHER_STATS (For Teachers)
+              TAB 5: TEACHER_STATS (Teachers)
           ========================================== */}
           {activeTab === 'TEACHER_STATS' && userRole === 'Teacher' && (
-            <div className="animate-fade-in space-y-6">
-              <div className="flex justify-between items-end border-b border-white/10 pb-2 mb-4">
-                <h3 className="text-xs font-black text-[#fcd34d] uppercase tracking-widest">Rendimiento Integral del Profesor</h3>
-              </div>
-              <div className="flex flex-col md:grid md:grid-cols-2 gap-6 h-full">
-                
-                {/* Pedagogical Radar (Student Ratings) */}
-                <div className="bg-white/5 border border-white/10 rounded-3xl p-6 shadow-inner flex flex-col items-center justify-center">
-                  <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest mb-2">Calificación Pedagógica</p>
-                  <div className="flex items-baseline gap-2 mb-6">
-                    <span className="text-6xl font-black text-[#fcd34d] drop-shadow-[0_0_15px_rgba(252,211,77,0.5)]">{globalRating}</span>
-                    <span className="text-2xl font-bold text-white/40">/ 5.0</span>
+            <div className="space-y-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {/* Pedagogical Radar */}
+                <div className="bg-white/80 border border-white rounded-3xl p-5 shadow-sm flex flex-col items-center">
+                  <p className="text-[10px] font-bold text-[#626a9f] uppercase tracking-widest mb-1">
+                    Calificación Pedagógica
+                  </p>
+                  <div className="flex items-baseline gap-1.5 mb-3">
+                    <span className="text-5xl font-extrabold text-[#1e2246]">{globalRating}</span>
+                    <span className="text-xl font-bold text-[#626a9f]">/ 5.0</span>
                   </div>
-                  <div className="w-full h-[250px] md:h-[300px]">
+                  <div className="w-full h-[250px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
-                        <PolarGrid stroke="rgba(255,255,255,0.2)" />
-                        <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 10, fontWeight: 'bold' }} />
-                        <Radar name="Pedagogical" dataKey="A" stroke="#fcd34d" strokeWidth={2} fill="#fcd34d" fillOpacity={0.4} />
+                        <PolarGrid stroke="rgba(98,106,159,0.25)" />
+                        <PolarAngleAxis dataKey="subject" tick={{ fill: '#3b4170', fontSize: 10.5, fontWeight: 700 }} />
+                        <Radar name="Pedagogical" dataKey="A" stroke="#454d82" strokeWidth={2.5} fill="#ffc749" fillOpacity={0.55} />
                       </RadarChart>
                     </ResponsiveContainer>
                   </div>
                 </div>
 
-                {/* Operational Radar (Database KPI) */}
-                <div className="bg-white/5 border border-white/10 rounded-3xl p-6 shadow-inner flex flex-col items-center justify-center">
-                  <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest mb-2">Cumplimiento Operativo</p>
-                  <div className="flex items-baseline gap-2 mb-6">
-                    <span className="text-6xl font-black text-blue-400 drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]">{opScore || 0}</span>
-                    <span className="text-2xl font-bold text-white/40">/ 100</span>
+                {/* Operational Radar */}
+                <div className="bg-white/80 border border-white rounded-3xl p-5 shadow-sm flex flex-col items-center">
+                  <p className="text-[10px] font-bold text-[#626a9f] uppercase tracking-widest mb-1">
+                    Cumplimiento Operativo
+                  </p>
+                  <div className="flex items-baseline gap-1.5 mb-3">
+                    <span className="text-5xl font-extrabold text-[#454d82]">{opScore || 0}</span>
+                    <span className="text-xl font-bold text-[#626a9f]">/ 100</span>
                   </div>
-                  <div className="w-full h-[250px] md:h-[300px]">
+                  <div className="w-full h-[250px]">
                     {opMetrics ? (
                       <ResponsiveContainer width="100%" height="100%">
                         <RadarChart cx="50%" cy="50%" outerRadius="70%" data={opMetrics}>
-                          <PolarGrid stroke="rgba(255,255,255,0.2)" />
-                          <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 10, fontWeight: 'bold' }} />
-                          <Radar name="Operational" dataKey="score" stroke="#3b82f6" strokeWidth={2} fill="#3b82f6" fillOpacity={0.4} />
+                          <PolarGrid stroke="rgba(98,106,159,0.25)" />
+                          <PolarAngleAxis dataKey="subject" tick={{ fill: '#3b4170', fontSize: 10.5, fontWeight: 700 }} />
+                          <Radar name="Operational" dataKey="score" stroke="#16a37f" strokeWidth={2.5} fill="#16a37f" fillOpacity={0.35} />
                         </RadarChart>
                       </ResponsiveContainer>
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-white/50 text-xs font-bold tracking-widest uppercase">Cargando...</div>
+                      <div className="w-full h-full flex items-center justify-center text-[#626a9f] text-xs font-bold uppercase">
+                        Cargando métricas...
+                      </div>
                     )}
                   </div>
                 </div>
-
               </div>
             </div>
           )}
-
         </div>
       </div>
 
       {/* ==========================================
-          HIDDEN PDF REPORT TEMPLATE (A4 Proportions)
+          HIDDEN PDF REPORT TEMPLATE (OutLoud A4)
       ========================================== */}
       <div className="absolute -left-[9999px] top-0 pointer-events-none">
-        <div ref={reportRef} className="w-[800px] min-h-[1131px] bg-white text-[#08203e] p-12 font-montserrat flex flex-col">
-          
-          {/* Header */}
-          <div className="flex justify-between items-end border-b-4 border-[#fcd34d] pb-6 mb-8">
+        <div ref={reportRef} className="w-[800px] min-h-[1131px] bg-white text-[#1e2246] p-12 font-montserrat flex flex-col">
+          <div className="flex justify-between items-end border-b-4 border-[#ffc749] pb-6 mb-8">
             <div>
-              <h1 className="text-4xl font-black uppercase tracking-widest text-[#08203e]">Outloud</h1>
-              <p className="text-sm font-bold tracking-widest uppercase text-gray-500 mt-1">Language Academy</p>
+              <h1 className="text-4xl font-extrabold tracking-tight text-[#454d82]">OutLoud</h1>
+              <p className="text-xs font-bold tracking-widest uppercase text-[#626a9f] mt-1">Language Academy</p>
             </div>
             <div className="text-right">
-              <h2 className="text-2xl font-black uppercase text-[#08203e]">{userData.full_name || `${userData.first_name} ${userData.last_name}`}</h2>
-              <p className="text-sm font-bold text-gray-500 uppercase tracking-widest mt-1">Nivel Actual: {levelOverride.split(':')[0]} • Unidad {userData.unit || 1}</p>
+              <h2 className="text-2xl font-extrabold uppercase text-[#1e2246]">
+                {userData.full_name || `${userData.first_name} ${userData.last_name}`}
+              </h2>
+              <p className="text-xs font-bold text-[#626a9f] uppercase tracking-widest mt-1">
+                Nivel Actual: {getBaseLevel(levelOverride)} • Unidad {userData.unit || 1}
+              </p>
             </div>
           </div>
 
-          {/* Academic Summary */}
-          <h3 className="text-lg font-black uppercase tracking-widest bg-[#08203e] text-white px-4 py-2 mb-6">Resumen Académico</h3>
+          <h3 className="text-sm font-extrabold uppercase tracking-widest bg-[#454d82] text-white px-4 py-2.5 rounded-lg mb-6">
+            Resumen Académico
+          </h3>
           <div className="grid grid-cols-3 gap-6 mb-10">
-            <div className="border-l-4 border-[#fcd34d] pl-4">
-              <p className="text-[10px] font-bold uppercase text-gray-400 tracking-widest">Puntaje Promedio</p>
-              <p className="text-3xl font-black">{userData.lesson_score || 0}%</p>
+            <div className="border-l-4 border-[#ffc749] pl-4">
+              <p className="text-[10px] font-bold uppercase text-[#626a9f] tracking-widest">Puntaje Promedio</p>
+              <p className="text-3xl font-extrabold text-[#1e2246]">{userData.lesson_score || 0}%</p>
             </div>
-            <div className="border-l-4 border-emerald-400 pl-4">
-              <p className="text-[10px] font-bold uppercase text-gray-400 tracking-widest">Estado</p>
-              <p className="text-xl font-black mt-2 text-emerald-600">Activo</p>
+            <div className="border-l-4 border-[#16a37f] pl-4">
+              <p className="text-[10px] font-bold uppercase text-[#626a9f] tracking-widest">Estado</p>
+              <p className="text-xl font-extrabold mt-2 text-[#128063]">Activo</p>
             </div>
-            <div className="border-l-4 border-blue-400 pl-4">
-              <p className="text-[10px] font-bold uppercase text-gray-400 tracking-widest">Fecha de Emisión</p>
-              <p className="text-sm font-bold mt-3">{new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+            <div className="border-l-4 border-[#626a9f] pl-4">
+              <p className="text-[10px] font-bold uppercase text-[#626a9f] tracking-widest">Fecha de Emisión</p>
+              <p className="text-sm font-bold mt-2 text-[#1e2246]">
+                {new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}
+              </p>
             </div>
           </div>
 
-          {/* Teacher Evaluations Log */}
-          <h3 className="text-lg font-black uppercase tracking-widest bg-[#08203e] text-white px-4 py-2 mb-6">Registro de Evaluaciones (Clases en Vivo)</h3>
+          <h3 className="text-sm font-extrabold uppercase tracking-widest bg-[#454d82] text-white px-4 py-2.5 rounded-lg mb-6">
+            Registro de Evaluaciones (Clases en Vivo)
+          </h3>
           {academicHistory.length === 0 ? (
-            <p className="text-sm font-bold text-gray-400 italic">No hay registros de evaluaciones disponibles para este periodo.</p>
+            <p className="text-sm font-bold text-[#626a9f] italic">
+              No hay registros de evaluaciones disponibles para este periodo.
+            </p>
           ) : (
             <div className="flex flex-col gap-4">
-              {academicHistory.map(record => {
-                // Real-time Spanish translation for database-stored system notes
+              {academicHistory.map((record) => {
                 const notasTraducidas = (record.teacher_notes || 'Sin observaciones.')
                   .replace('Deductions:', 'Deducciones:')
                   .replace('None', 'Ninguna')
@@ -1487,27 +2058,50 @@ const handleProvisionAccount = async () => {
                   .replace('Incomplete Task Fulfillment', 'Tarea Incompleta')
                   .replace('Severe Lexical Range Deficit', 'Déficit Léxico Severo');
 
-                const tipoActividad = record.activity_type === 'Live Class' ? 'Clase en Vivo' : 
-                                      record.activity_type === 'Workbook' ? 'Libro de Práctica' : 
-                                      record.activity_type === 'Lesson' ? 'Lección Multimedia' : 
-                                      record.activity_type;
+                const tipoActividad =
+                  record.activity_type === 'Live Class'
+                    ? 'Clase en Vivo'
+                    : record.activity_type === 'Workbook'
+                    ? 'Libro de Práctica'
+                    : record.activity_type === 'Lesson'
+                    ? 'Lección Multimedia'
+                    : record.activity_type;
 
                 return (
-                  <div key={record.id} className="border border-gray-200 rounded-lg p-5 bg-gray-50">
-                    <div className="flex justify-between items-center border-b border-gray-200 pb-3 mb-3">
-                      <span className="font-black uppercase text-[#08203e]">Unidad {record.unit} • {tipoActividad} • {new Date(record.created_at).toLocaleDateString('es-ES')}</span>
-                      <span className={`font-black px-3 py-1 rounded text-sm ${record.score_percentage >= 75 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                  <div key={record.id} className="border border-[#dfe2f2] rounded-xl p-5 bg-[#f6f7fc]">
+                    <div className="flex justify-between items-center border-b border-[#dfe2f2] pb-3 mb-3">
+                      <span className="font-extrabold uppercase text-[#1e2246] text-xs">
+                        Unidad {record.unit} • {tipoActividad} •{' '}
+                        {new Date(record.created_at).toLocaleDateString('es-ES')}
+                      </span>
+                      <span
+                        className={`font-extrabold px-3 py-1 rounded-full text-xs ${
+                          record.score_percentage >= 75
+                            ? 'bg-[#e7faf3] text-[#128063]'
+                            : 'bg-[#ee665b]/15 text-[#c93f34]'
+                        }`}
+                      >
                         Calificación: {Math.round(record.score_percentage)} / 100
                       </span>
                     </div>
                     <div className="grid grid-cols-4 gap-4">
                       <div className="col-span-1">
-                        <span className="block text-[10px] font-bold uppercase text-gray-400 tracking-widest">Evaluador</span>
-                        <span className="text-sm font-bold text-[#08203e]">{record.teacher ? `${record.teacher.first_name} ${record.teacher.last_name}` : 'Sistema Automático'}</span>
+                        <span className="block text-[10px] font-bold uppercase text-[#626a9f] tracking-widest">
+                          Evaluador
+                        </span>
+                        <span className="text-sm font-bold text-[#1e2246]">
+                          {record.teacher
+                            ? `${record.teacher.first_name} ${record.teacher.last_name}`
+                            : 'Sistema Automático'}
+                        </span>
                       </div>
                       <div className="col-span-3">
-                        <span className="block text-[10px] font-bold uppercase text-gray-400 tracking-widest">Notas del Profesor & Deducciones</span>
-                        <span className="text-sm font-medium text-gray-700 leading-relaxed">{notasTraducidas}</span>
+                        <span className="block text-[10px] font-bold uppercase text-[#626a9f] tracking-widest">
+                          Notas del Profesor &amp; Deducciones
+                        </span>
+                        <span className="text-sm font-medium text-[#3b4170] leading-relaxed">
+                          {notasTraducidas}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -1516,14 +2110,13 @@ const handleProvisionAccount = async () => {
             </div>
           )}
 
-          {/* Footer Validation */}
-          <div className="mt-auto pt-8 border-t-2 border-gray-200 text-center">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Documento oficial generado automáticamente por Outloud Language Academy.</p>
+          <div className="mt-auto pt-8 border-t-2 border-[#dfe2f2] text-center">
+            <p className="text-[10px] font-bold text-[#626a9f] uppercase tracking-widest">
+              Documento oficial generado automáticamente por OutLoud Language Academy.
+            </p>
           </div>
-
         </div>
       </div>
-
     </div>
   );
 };

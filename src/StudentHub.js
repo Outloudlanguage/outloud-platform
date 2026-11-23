@@ -1,1892 +1,1298 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './SupabaseClient';
-import StudentPlayer from './StudentPlayer';
-import ForumBoard from './ForumBoard';
-import SeminarRoom from './SeminarRoom';
-import TrophyRoom from './components/TrophyRoom';
-import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts'; 
+import RecordCompareActivity from './RecordCompareActivity';
+import { OutLoudHorizontalLogo, OutLoudIcon } from './components/OutLoudBrand';
 
-// ==========================================
-// 0.5 AIRTIGHT BILLING LOCKOUT OVERLAY
-// ==========================================
-const PaymentLockoutView = ({ student, supabase, onReload, isDismissible, onClose }) => {
-  const [payMethod, setPayMethod] = useState('Zelle');
-  const [payRef, setPayRef] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+const extractVideoUrl = (rawInput) => {
+  if (!rawInput) return '';
+  if (rawInput.includes('<iframe') && rawInput.includes('src=')) {
+    const match = rawInput.match(/src=["'](.*?)["']/);
+    if (match && match[1]) return match[1];
+  }
+  return rawInput;
+};
 
-  const baseLevel = student.level ? student.level.split(':')[0].trim() : 'A1';
-  const amountDue = ['C1', 'C2'].includes(baseLevel) ? 50 : ['B1', 'B2'].includes(baseLevel) ? 30 : 20;
+// Strips punctuation and spaces for bulletproof string comparison
+const cleanStr = (str) => {
+  if (typeof str !== 'string') return '';
+  return str.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, '').trim().toLowerCase();
+};
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!payRef.trim()) return;
-    setIsSubmitting(true);
-    
-    try {
-      await supabase.from('student_payments').insert({
-        student_id: student.id,
-        payment_type: 'Monthly Renewal',
-        amount: amountDue,
-        reference_number: payRef,
-        status: 'processing'
-      });
-
-      await supabase.from('profiles').update({ payment_status: 'processing' }).eq('id', student.id);
-      onReload();
-    } catch (err) {
-      console.error(err);
-      alert("Hubo un error enviando tu pago.");
-      setIsSubmitting(false);
+const PlayerThemeStyles = () => (
+  <style>{`
+    .ola-player-glass {
+      background: linear-gradient(142deg, rgba(255, 255, 255, 0.82) 0%, rgba(244, 246, 255, 0.62) 100%);
+      backdrop-filter: blur(26px) saturate(185%);
+      -webkit-backdrop-filter: blur(26px) saturate(185%);
+      border: 1.5px solid rgba(255, 255, 255, 0.94);
+      box-shadow:
+        0 18px 42px -14px rgba(55, 63, 118, 0.22),
+        inset 0 1.5px 1px rgba(255, 255, 255, 0.96);
     }
-  };
+    .ola-player-glass-gold {
+      background: linear-gradient(148deg, rgba(255, 246, 218, 0.92) 0%, rgba(255, 229, 156, 0.72) 100%);
+      backdrop-filter: blur(26px) saturate(190%);
+      -webkit-backdrop-filter: blur(26px) saturate(190%);
+      border: 1.5px solid rgba(255, 255, 255, 0.95);
+      box-shadow:
+        0 20px 44px -14px rgba(196, 138, 12, 0.24),
+        inset 0 2px 2px rgba(255, 255, 255, 0.95);
+    }
+    .ola-player-btn-yellow {
+      background: linear-gradient(180deg, #ffd66b 0%, #ffc749 100%);
+      color: #1e2246;
+      border: 2px solid #1e2246;
+      box-shadow: 0 5px 0 #1e2246, 0 14px 28px -6px rgba(255, 199, 73, 0.6);
+      transition: transform 0.14s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.14s cubic-bezier(0.22, 1, 0.36, 1), filter 0.14s ease-out;
+    }
+    .ola-player-btn-yellow:hover {
+      filter: brightness(1.04);
+      transform: translateY(-2px);
+      box-shadow: 0 7px 0 #1e2246, 0 18px 34px -6px rgba(255, 199, 73, 0.75);
+    }
+    .ola-player-btn-yellow:active {
+      transform: translateY(3px) scale(0.99);
+      box-shadow: 0 1px 0 #1e2246;
+      transition-duration: 0.06s;
+    }
+    .ola-player-btn-outline {
+      background: rgba(255, 255, 255, 0.82);
+      color: #1e2246;
+      border: 2px solid rgba(30, 34, 70, 0.85);
+      box-shadow: 0 3px 0 rgba(30, 34, 70, 0.18);
+      transition: transform 0.14s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.14s ease, background 0.14s ease;
+    }
+    .ola-player-btn-outline:hover {
+      background: #ffffff;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 0 #626a9f;
+    }
+    .ola-player-btn-outline:active {
+      transform: translateY(2px) scale(0.99);
+      box-shadow: 0 1px 0 rgba(30, 34, 70, 0.2);
+    }
+    .ola-player-root .font-black { font-weight: 800; }
+    .ola-player-root .font-extrabold { font-weight: 700; }
+    .ola-player-root h2.font-black,
+    .ola-player-root h4.font-black,
+    .ola-player-root button.font-black { font-weight: 700; }
+  `}</style>
+);
 
-  return (
-    <div className={`fixed inset-0 z-[9999] min-h-screen flex items-center justify-center p-4 font-montserrat relative overflow-hidden ${isDismissible ? 'bg-black/80 backdrop-blur-md' : 'bg-[#070b19]'}`}>
-      {isDismissible && (
-        <button onClick={onClose} className="absolute top-6 right-6 w-12 h-12 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center font-black transition-colors z-50 shadow-xl">✕</button>
-      )}
-      
-      <div className="absolute inset-0 pointer-events-none z-0">
-        <div className={`absolute top-[-20%] left-[-10%] w-[50%] h-[50%] blur-[120px] rounded-full ${student.payment_status === 'pending_first_month' ? 'bg-[#fcd34d]/10' : 'bg-red-500/10'}`}></div>
-      </div>
-
-      <div className="bg-[#070b19]/90 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] p-8 md:p-12 w-full max-w-md shadow-2xl relative z-10 flex flex-col items-center">
-        {student.payment_status === 'processing' ? (
-          <div className="text-center flex flex-col items-center">
-            <div className="w-20 h-20 bg-blue-500/20 text-blue-400 rounded-full flex items-center justify-center mb-6 border border-blue-500/50 shadow-[0_0_30px_rgba(59,130,246,0.3)]">
-              <svg className="w-10 h-10 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-            </div>
-            <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-2">Pago en Revisión</h2>
-            <p className="text-sm font-medium text-white/70 mb-8 leading-relaxed">
-              Hemos recibido tu número de referencia. Nuestro equipo administrativo está verificando la transacción. Tu acceso será restaurado en breve.
-            </p>
-          </div>
-        ) : (
-          <div className="w-full">
-            {student.payment_status === 'pending_first_month' ? (
-              <div className="w-20 h-20 bg-[#fcd34d]/20 text-[#fcd34d] rounded-full flex items-center justify-center mx-auto mb-6 border border-[#fcd34d]/50 shadow-[0_0_30px_rgba(252,211,77,0.3)]">
-                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-              </div>
-            ) : (
-              <div className="w-20 h-20 bg-red-500/20 text-red-400 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-500/50 shadow-[0_0_30px_rgba(239,68,68,0.3)]">
-                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-              </div>
-            )}
-            
-            <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-2 text-center">
-              {student.payment_status === 'pending_first_month' ? 'Activa tu Cuenta' : 'Acceso Bloqueado'}
-            </h2>
-            <p className="text-sm font-medium text-white/70 mb-6 text-center leading-relaxed">
-              {student.payment_status === 'pending_first_month' 
-                ? '¡Bienvenido a Outloud! Para comenzar a tomar clases y usar las herramientas prácticas, por favor procesa tu primer pago prorrateado.' 
-                : 'Tu ciclo de facturación ha vencido. Por favor procesa tu pago mensual para reactivar tu acceso a la plataforma.'}
-            </p>
-            
-            <div className="bg-black/40 rounded-2xl p-5 mb-6 border border-white/5 text-center">
-              <span className="text-[10px] font-black uppercase tracking-widest text-[#fcd34d]">Monto a Pagar</span>
-              <div className="text-4xl font-black text-white mt-1">${amountDue}.00</div>
-            </div>
-
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full">
-              <select value={payMethod} onChange={e => setPayMethod(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white font-bold uppercase tracking-widest outline-none focus:border-[#fcd34d] appearance-none cursor-pointer">
-                <option value="Zelle" className="bg-[#0f172a]">Zelle</option>
-                <option value="PagoMovil" className="bg-[#0f172a]">Pago Móvil</option>
-                <option value="Cash" className="bg-[#0f172a]">Efectivo</option>
-              </select>
-              
-              <input type="text" value={payRef} onChange={e => setPayRef(e.target.value)} placeholder="Número de Referencia" required className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white outline-none focus:border-[#fcd34d] placeholder-white/30" />
-              
-              <button type="submit" disabled={isSubmitting} className="w-full py-4 mt-2 bg-[#fcd34d] hover:bg-white text-[#08203e] font-black tracking-widest text-xs uppercase rounded-xl transition-all shadow-[0_0_20px_rgba(252,211,77,0.3)] disabled:opacity-50 hover:scale-105">
-                {isSubmitting ? 'ENVIANDO...' : 'REPORTAR PAGO'}
-              </button>
-            </form>
-          </div>
-        )}
-
-        <a href="https://wa.me/584226885683" target="_blank" rel="noreferrer" className="mt-8 flex items-center justify-center gap-2 text-white/50 hover:text-emerald-400 transition-colors text-xs font-bold uppercase tracking-widest w-full">
-          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-          Soporte Administrativo
-        </a>
-      </div>
-    </div>
-  );
-};
-
-// ==========================================
-// 1. REUSABLE UI CARDS (For both Desktop & Mobile)
-// ==========================================
-
-const ProgressCard = ({ percentage, currentUnit, totalUnits, onClick }) => {
-  const safePercentage = isNaN(percentage) ? 0 : percentage;
-  const circleCircumference = 2 * Math.PI * 40; 
-  const strokeDashoffset = circleCircumference - (safePercentage / 100) * circleCircumference;
-
-  return (
-    <button onClick={onClick} className="w-full bg-white/10 hover:bg-white/20 backdrop-blur-xl border border-white/20 rounded-3xl p-4 sm:p-6 shadow-2xl flex flex-col items-center justify-between relative overflow-hidden h-full transition-all group hover:scale-[1.02] cursor-pointer text-left outline-none">
-      <h3 className="text-white/90 font-bold text-[10px] sm:text-xs tracking-widest uppercase text-center whitespace-nowrap w-full group-hover:text-[#fcd34d] transition-colors">
-        COURSE COMPLETION
-      </h3>
-      
-      <div className="flex-1 w-full flex items-center justify-center min-h-0 my-2">
-        <div className="relative w-28 h-28 sm:w-36 sm:h-36 flex items-center justify-center shrink-0">
-           <svg className="w-full h-full transform -rotate-90 drop-shadow-[0_0_10px_rgba(252,211,77,0.8)]" viewBox="0 0 100 100">
-             <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.2)" strokeWidth="6" fill="transparent" />
-             <circle cx="50" cy="50" r="40" stroke="#fcd34d" strokeWidth="6" fill="transparent" strokeDasharray={circleCircumference} strokeDashoffset={strokeDashoffset} strokeLinecap="round" className="transition-all duration-1000 ease-out" />
-           </svg>
-           <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-              <span className="text-3xl sm:text-4xl font-black text-white leading-none drop-shadow-md">{safePercentage}%</span>
-              <span className="text-[8px] sm:text-[9px] font-bold text-white/70 tracking-widest uppercase mt-1">COMPLETED</span>
-           </div>
-        </div>
-      </div>
-      
-      <p className="text-center text-white font-bold text-[10px] sm:text-xs tracking-widest uppercase mt-auto whitespace-nowrap">
-        LESSONS UNIT {currentUnit}/{totalUnits}
-      </p>
-    </button>
-  );
-};
-
-const ActivitiesCard = ({ activeLiveSession }) => (
-  <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-5 sm:p-6 shadow-2xl flex flex-col h-full">
-    <h3 className="text-white font-black text-xl sm:text-2xl tracking-wide mb-2 sm:mb-4 text-center sm:text-left drop-shadow-md shrink-0">Activities</h3>
-    <ul className="space-y-4 sm:space-y-5 text-xs sm:text-sm font-medium text-white/90 flex-1 flex flex-col justify-center px-1">
-      {activeLiveSession ? (
-        <li className="flex items-center gap-3">
-          <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white/70 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-          <span className="leading-tight"><span className="font-bold text-emerald-400 block sm:inline">Live Lab:</span> {activeLiveSession.session_date}</span>
-        </li>
-      ) : (
-        <li className="flex items-center gap-3">
-          <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white/70 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-          <span className="opacity-50 italic leading-tight">No live sessions booked</span>
-        </li>
-      )}
-      <li className="flex items-center gap-3">
-        <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white/70 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-        <span className="leading-tight"><strong className="font-bold block sm:inline">Next:</strong> Chat room meeting</span>
-      </li>
-      <li className="flex items-center gap-3">
-        <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white/70 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-        <span className="leading-tight"><strong className="font-bold block sm:inline">Soon:</strong> Conversation Club</span>
-      </li>
-    </ul>
+const PlayerLuminousBackdrop = () => (
+  <div
+    className="fixed inset-0 pointer-events-none z-0 overflow-hidden"
+    style={{
+      background: 'linear-gradient(155deg, #d7dcf5 0%, #eaedfb 34%, #f7eff0 66%, #fdebc0 100%)',
+    }}
+  >
+    <div
+      className="absolute -top-24 -left-24 w-[440px] h-[440px] sm:w-[660px] sm:h-[660px] rounded-full blur-[85px]"
+      style={{
+        background: 'radial-gradient(circle, rgba(255,199,73,0.6) 0%, rgba(255,214,107,0.24) 48%, transparent 74%)',
+      }}
+    />
+    <div
+      className="absolute top-[18%] -right-24 w-[440px] h-[440px] sm:w-[680px] sm:h-[680px] rounded-full blur-[90px]"
+      style={{
+        background: 'radial-gradient(circle, rgba(98,106,159,0.48) 0%, rgba(145,155,218,0.22) 50%, transparent 76%)',
+      }}
+    />
+    <div
+      className="absolute -bottom-28 left-[28%] w-[440px] h-[440px] sm:w-[640px] sm:h-[640px] rounded-full blur-[95px]"
+      style={{
+        background: 'radial-gradient(circle, rgba(255,199,73,0.42) 0%, rgba(98,106,159,0.22) 55%, transparent 78%)',
+      }}
+    />
+    <div
+      className="absolute inset-0 opacity-80"
+      style={{
+        backgroundImage: 'radial-gradient(rgba(72, 80, 134, 0.22) 1.4px, transparent 1.4px)',
+        backgroundSize: '26px 26px',
+      }}
+    />
   </div>
 );
 
-const MainActionCard = ({ title, iconType, isFetching, isActive, onClick, score }) => {
-  const iconSrc = iconType === 'headphones' 
-    ? 'https://i.postimg.cc/CLG47dtk/3(7).png' 
-    : 'https://i.postimg.cc/HLx4TzxY/4(6).png';
-
-  return (
-    <button 
-      onClick={onClick} 
-      disabled={!isActive || isFetching} 
-      className={`w-full h-full bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-4 sm:p-6 shadow-2xl flex flex-col items-center justify-center gap-4 transition-all group ${!isActive ? 'opacity-50 grayscale cursor-not-allowed' : 'hover:bg-white/20 hover:scale-[1.02]'}`}
-    >
-      {!isActive && (
-        <svg className="w-6 h-6 text-white/40 absolute top-4 right-4 sm:top-6 sm:right-6" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-        </svg>
-      )}
-      
-      <img 
-        src={iconSrc} 
-        alt={title} 
-        className="w-24 h-24 sm:w-36 sm:h-36 lg:w-44 lg:h-44 object-contain opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-transform duration-500 drop-shadow-md" 
-      />
-      
-      <div className="flex flex-col items-center mt-2">
-        <h3 className="font-black tracking-wide text-2xl sm:text-3xl lg:text-4xl drop-shadow-md">{isFetching ? 'Loading...' : title}</h3>
-        {score > 0 && <span className="text-[9px] sm:text-[10px] font-bold text-[#fcd34d] mt-1 tracking-widest uppercase">SCORE: {score}%</span>}
-      </div>
-    </button>
-  );
-};
-
-const PillButton = ({ title, hasNotification, isActive, onClick }) => (
-  <button 
-    onClick={onClick}
-    className={`relative w-full py-4 px-2 backdrop-blur-md rounded-xl text-center text-[10px] sm:text-xs transition-all shadow-md active:scale-95 border ${isActive ? 'bg-[#fcd34d] border-[#fcd34d] text-[#08203e] font-black scale-105' : 'bg-white/10 hover:bg-white/20 border-white/20 text-white'}`}
-  >
-    {hasNotification && <div className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,1)]"></div>}
-    {title}
-  </button>
-);
-
-const INFO_CATEGORIES = ['Website Functionality', 'General Information', 'Academy Rules', 'Upcoming Events', 'Promos & Discounts', 'Financial Data'];
-
-const NavIconBtn = ({ iconSvg, active, onClick, hasNotification, isProfile, avatarUrl }) => (
-  <button onClick={onClick} className={`relative w-14 h-14 md:w-16 md:h-16 flex items-center justify-center rounded-2xl transition-all ${active ? 'bg-white/20 border border-white/40 shadow-inner' : 'hover:bg-white/10 border border-transparent'}`}>
-    {hasNotification && <div className="absolute top-3 right-3 w-2.5 h-2.5 bg-red-500 rounded-full border border-[#070b19] z-10 animate-pulse"></div>}
-    {isProfile ? (
-      <div className="w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden border-2 border-white/50 bg-[#070b19] flex items-center justify-center text-white/40">
-        {avatarUrl ? (
-          <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
-        ) : (
-          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-        )}
-      </div>
-    ) : (
-      <div className={`w-8 h-8 md:w-9 md:h-9 ${active ? 'text-white' : 'text-white/70'}`}>
-        {iconSvg}
-      </div>
-    )}
-  </button>
-);
-
-const SocialButton = ({ src, url }) => (
-  <a href={url} target="_blank" rel="noreferrer" className="w-10 h-10 md:w-12 md:h-12 hover:scale-110 transition-transform shrink-0 drop-shadow-md">
-    <img src={src} alt="Social" className="w-full h-full object-contain" />
-  </a>
-);
-
-// SVGs for Nav
-const navIcons = {
-  calendar: <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /><rect x="7" y="11" width="2" height="2" fill="currentColor"/><rect x="11" y="11" width="2" height="2" fill="currentColor"/><rect x="15" y="11" width="2" height="2" fill="currentColor"/><rect x="7" y="15" width="2" height="2" fill="currentColor"/><rect x="11" y="15" width="2" height="2" fill="currentColor"/><rect x="15" y="15" width="2" height="2" fill="currentColor"/></svg>,
-  monitor: <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /><circle cx="9" cy="8" r="1.5" fill="currentColor"/><circle cx="15" cy="8" r="1.5" fill="currentColor"/><path strokeLinecap="round" d="M7 11h4M13 11h4" /></svg>,
-  bell: <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" /></svg>,
-  chat: <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>,
-  forum: <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" /></svg>,
-  trophy: <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 007.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M7.73 9.728a6.726 6.726 0 002.748 1.35m8.272-6.842V4.5c0 2.108-.966 3.99-2.48 5.228m2.48-5.492a46.32 46.32 0 012.916.52 6.003 6.003 0 01-5.395 4.972m0 0a6.726 6.726 0 01-2.749 1.35m0 0a6.772 6.772 0 01-3.044 0" /></svg>
-};
-
-// ==========================================
-// 2. CURRICULUM LOGIC & OVERLAYS
-// ==========================================
-const getProgressData = (student) => {
-  const currentUnit = Number(student?.unit) || 1;
-  const baseLevel = student?.level ? student.level.split(':')[0].trim() : 'A1';
-  const bounds = {
-    'A1': { start: 1, end: 12 }, 'A2': { start: 13, end: 24 },
-    'B1': { start: 25, end: 36 }, 'B2': { start: 37, end: 48 },
-    'C1': { start: 49, end: 70 }, 'C2': { start: 71, end: 92 }
-  }[baseLevel] || { start: 1, end: 12 };
-  
-  const levelTotalUnits = bounds.end - bounds.start + 1;
-  // Calculate percentage based on completed units within the current level bounds
-  const unitsCompletedInLevel = Math.max(0, currentUnit - bounds.start);
-  let progressPercentage = Math.round((unitsCompletedInLevel / levelTotalUnits) * 100);
-  if (isNaN(progressPercentage)) progressPercentage = 0;
-  
-  return { progressPercentage, currentUnit, levelTotalUnits };
-};
-
-const LevelCompleteOverlay = ({ student }) => {
-  if (!student?.level_completed) return null;
-  const baseLevel = student.level ? student.level.split(':')[0].trim() : 'A1';
-  
-  return (
-    <div className="fixed inset-0 z-[400] flex items-center justify-center p-4 bg-[#070b19]/95 backdrop-blur-3xl animate-fade-in font-montserrat">
-      <div className="absolute inset-0 pointer-events-none overflow-hidden flex justify-center items-center">
-         <div className="w-[800px] h-[800px] bg-[#fcd34d]/10 rounded-full blur-[120px] mix-blend-screen"></div>
-      </div>
-      <div className="bg-white/10 border border-[#fcd34d]/50 rounded-[3rem] p-10 md:p-16 max-w-2xl w-full shadow-[0_0_50px_rgba(252,211,77,0.2)] flex flex-col items-center text-center relative z-10">
-        <div className="w-24 h-24 bg-[#fcd34d] text-[#08203e] rounded-full flex items-center justify-center mb-8 shadow-[0_0_30px_rgba(252,211,77,0.6)]">
-          <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
-        </div>
-        <h1 className="text-4xl md:text-5xl font-black text-white uppercase tracking-widest mb-4 drop-shadow-md">LEVEL {baseLevel} COMPLETE!</h1>
-        <p className="text-lg text-white/80 font-medium mb-8 leading-relaxed">
-          Congratulations on mastering this level! You are now ready to advance. To unlock the next level's curriculum and resume your progress, please process your enrollment renewal.
-        </p>
-        <a href="https://wa.me/584226885683" target="_blank" rel="noreferrer" className="w-full md:w-auto px-10 py-5 bg-[#fcd34d] hover:bg-white text-[#08203e] font-black text-sm uppercase tracking-widest rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-[0_10px_30px_rgba(252,211,77,0.3)]">
-          CONTACT SUPPORT TO RENEW
-        </a>
-      </div>
-    </div>
-  );
-};
-
-// ==========================================
-// 3. DESKTOP VIEW
-// ==========================================
-const DesktopView = ({ student, classCredits, onReturnHome, onStartActivity, isFetching, activeLiveSession, announcements = [], activeCategory, setActiveCategory, onOpenMetrics }) => {
-  const filteredAnnouncements = activeCategory ? announcements.filter(a => a.category === activeCategory) : announcements;
-  const { progressPercentage, currentUnit, levelTotalUnits } = getProgressData(student);
-
-  const lessonScore = student?.lesson_score || 0;
-  const workbookScore = student?.workbook_score || 0;
-  const isWorkbookUnlocked = lessonScore >= 75;
-
-  return (
-    <div className="flex min-h-screen bg-[#070b19] relative overflow-hidden z-0 font-montserrat text-white">
-      {/* BACKGROUND */}
-      <div className="absolute inset-0 pointer-events-none z-[-1] overflow-hidden">
-        <div 
-          className="absolute inset-0 opacity-100 blur-sm scale-[1.05]" 
-          style={{ backgroundImage: `url("https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/267655.jpeg")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
-        ></div>
-        <div className="absolute inset-0 bg-[#070b19]/40"></div>
-      </div>
-
-      {/* SIDEBAR NAVIGATION */}
-      <div className="w-28 border-r border-white/10 bg-black/20 backdrop-blur-2xl flex flex-col items-center py-10 gap-6 shrink-0 z-10 shadow-2xl">
-        <NavIconBtn isProfile avatarUrl={student?.avatar_url} onClick={onReturnHome} />
-        <div className="w-12 h-px bg-white/10 my-2"></div>
-        <NavIconBtn iconSvg={navIcons.calendar} onClick={() => onStartActivity('Calendar')} />
-        <NavIconBtn iconSvg={navIcons.monitor} onClick={() => onStartActivity('LiveClass')} hasNotification={!!activeLiveSession?.meeting_link} />
-        <NavIconBtn iconSvg={navIcons.bell} onClick={() => onStartActivity('InfoBoard')} hasNotification={announcements.length > 0} />
-        <NavIconBtn iconSvg={navIcons.chat} onClick={() => onStartActivity('Community_CHAT')} />
-        <NavIconBtn iconSvg={navIcons.forum} onClick={() => onStartActivity('Community_BOARD')} />
-        <NavIconBtn iconSvg={navIcons.trophy} onClick={() => onStartActivity('Trophies')} />
-      </div>
-
-      {/* MAIN CONTENT */}
-      <div className="flex-1 flex flex-col p-8 lg:p-12 overflow-y-auto custom-scrollbar z-10">
-        
-        {/* HEADER */}
-        <div className="flex items-center gap-4 mb-10 pl-2">
-          <img src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Header.png" alt="Outloud Logo" className="h-12 lg:h-14 object-contain opacity-100" />
-          <div className="h-10 w-[2px] bg-white/40"></div>
-          <div className="flex flex-col justify-center shrink-0">
-            <span className="text-[10px] lg:text-xs font-black text-white/50 uppercase tracking-widest leading-none mb-1">
-              Live Classes
-            </span>
-            <div className="flex items-center gap-2">
-              <div className={`w-2 h-2 rounded-full ${classCredits > 0 ? 'bg-emerald-400 shadow-[0_0_8px_#34d399]' : 'bg-red-500 shadow-[0_0_8px_#ef4444] animate-pulse'}`}></div>
-              <span className="text-xl lg:text-2xl font-black text-white leading-none">
-                {classCredits} <span className="text-white/60 font-medium text-lg lg:text-xl">Credits</span>
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* 3-COLUMN GRID */}
-        <div className="grid grid-cols-12 gap-6 w-full max-w-[1400px] h-[calc(100vh-160px)]">
-          
-          {/* LEFT COLUMN: Status & Agenda */}
-          <div className="col-span-3 flex flex-col gap-6 h-full">
-            <div className="flex-[0.4]">
-              <ProgressCard percentage={progressPercentage} currentUnit={currentUnit} totalUnits={levelTotalUnits} onClick={onOpenMetrics} />
-            </div>
-            <div className="flex-[0.6]">
-              <ActivitiesCard activeLiveSession={activeLiveSession} />
-            </div>
-            <div className="flex flex-col gap-4 mt-auto">
-              <a href="https://wa.me/584226885683" target="_blank" rel="noreferrer" className="w-full py-4 bg-[#e2e8f0] text-[#0f172a] hover:bg-white font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 transition-transform hover:scale-105 shadow-xl leading-tight text-center">
-                <img src="https://i.postimg.cc/mrtXmB72/Copia-de-Diseno-sin-titulo-(2).png" alt="Help" className="w-8 h-8 object-contain shrink-0" />
-                REQUEST<br/>ASSISTANCE
-              </a>
-              <div className="flex justify-center gap-5 items-center px-2 mt-2">
-                <SocialButton src="https://i.postimg.cc/ry0TD2Hv/11(6).png" url="https://www.facebook.com/share/1KxawRX9vA/" />
-                <SocialButton src="https://i.postimg.cc/MpD2C6cs/10(5).png" url="https://www.instagram.com/outloudlanguage?igsh=MXU5dmRzeTZ3YTk1cg==" />
-                <SocialButton src="https://i.postimg.cc/pXbwyhzD/9(3).png" url="https://www.tiktok.com/@outloudlanguage" />
-                <SocialButton src="https://i.postimg.cc/0y9hdTtf/8(4).png" url="https://discord.gg/847PMD2DbV" />
-              </div>
-            </div>
-          </div>
-
-          {/* CENTER COLUMN: Action Cards */}
-          <div className="col-span-4 flex flex-col gap-6 h-full">
-            <div className="flex-1">
-              <MainActionCard 
-                title="Lesson" 
-                iconType="headphones" 
-                isActive={true} 
-                isFetching={isFetching} 
-                onClick={() => onStartActivity('Lesson')} 
-                score={lessonScore} 
-              />
-            </div>
-            <div className="flex-1">
-              <MainActionCard 
-                title="Workbook" 
-                iconType="workbook" 
-                isActive={isWorkbookUnlocked} 
-                isFetching={isFetching} 
-                onClick={() => onStartActivity('Workbook')} 
-                score={workbookScore} 
-              />
-            </div>
-          </div>
-
-          {/* RIGHT COLUMN: Info Board & Feed (AdminHub Styled, Read-Only) */}
-          <div className="col-span-5 flex flex-col gap-5 h-full bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2.5rem] p-6 shadow-2xl overflow-hidden">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3 shrink-0">
-              <div className="flex items-center gap-2.5">
-                <span className="w-2 h-2 rounded-full bg-[#fcd34d] shadow-[0_0_8px_#fcd34d]"></span>
-                <h3 className="text-xs font-black uppercase tracking-widest text-white">Official Info Board</h3>
-              </div>
-              {activeCategory ? (
-                <button onClick={() => setActiveCategory(null)} className="text-[10px] font-black uppercase tracking-widest text-[#fcd34d] hover:text-white transition-colors cursor-pointer">
-                  ✕ Clear Filter
-                </button>
-              ) : (
-                <button onClick={() => onStartActivity('InfoBoard')} className="text-[10px] font-black uppercase tracking-widest text-white/50 hover:text-[#fcd34d] transition-colors cursor-pointer">
-                  Expand ⤢
-                </button>
-              )}
-            </div>
-
-            <div className="grid grid-cols-3 gap-3 shrink-0">
-              {INFO_CATEGORIES.map(cat => {
-                const hasPosts = announcements.some(a => a.category === cat);
-                return (
-                  <PillButton 
-                    key={cat} 
-                    title={cat} 
-                    hasNotification={hasPosts && activeCategory !== cat}
-                    isActive={activeCategory === cat} 
-                    onClick={() => setActiveCategory(activeCategory === cat ? null : cat)} 
-                  />
-                );
-              })}
-            </div>
-
-            <div className="flex-1 flex flex-col gap-4 mt-1 overflow-y-auto custom-scrollbar pr-2 pb-4">
-              {filteredAnnouncements.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-center text-white/40 font-bold tracking-widest text-xs py-10 uppercase">
-                  No announcements in this category.
-                </div>
-              ) : (
-                filteredAnnouncements.map(ann => (
-                  <div 
-                    key={ann.id} 
-                    onClick={() => onStartActivity('InfoBoard')}
-                    className="bg-white/10 border border-white/20 rounded-2xl p-4 lg:p-5 flex flex-col sm:flex-row items-center gap-4 lg:gap-5 hover:bg-white/20 hover:border-white/30 transition-all shadow-md cursor-pointer group"
-                  >
-                    {ann.image_url && (
-                      <div className="w-full sm:w-28 h-36 sm:h-28 rounded-xl overflow-hidden shrink-0 border border-white/30 shadow-md">
-                        <img src={ann.image_url} alt="Cover" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                      </div>
-                    )}
-                    <div className="flex flex-col text-center sm:text-left w-full min-w-0">
-                      <div className="flex items-center justify-center sm:justify-between gap-2 mb-1">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-[#fcd34d] bg-[#fcd34d]/10 border border-[#fcd34d]/30 px-2 py-0.5 rounded-md truncate">
-                          {ann.category || ann.title}
-                        </span>
-                        {ann.created_at && (
-                          <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest shrink-0 hidden sm:inline">
-                            {new Date(ann.created_at).toLocaleDateString()}
-                          </span>
-                        )}
-                      </div>
-                      <h4 className="text-sm lg:text-base font-black uppercase tracking-widest mb-1.5 text-white drop-shadow-sm truncate">{ann.title}</h4>
-                      <p className="text-[11px] lg:text-xs text-white/80 leading-relaxed font-medium whitespace-pre-wrap line-clamp-3">{ann.content}</p>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// ==========================================
-// 4. MOBILE VIEW
-// ==========================================
-const MobileView = ({ student, onReturnHome, onStartActivity, isFetching, activeLiveSession, announcements = [], activeCategory, setActiveCategory, onOpenMetrics }) => {
-  const filteredAnnouncements = activeCategory ? announcements.filter(a => a.category === activeCategory) : announcements;
-  const { progressPercentage, currentUnit, levelTotalUnits } = getProgressData(student);
-
-  const lessonScore = student?.lesson_score || 0;
-  const workbookScore = student?.workbook_score || 0;
-  const isWorkbookUnlocked = lessonScore >= 75;
-
-  return (
-    <div className="min-h-screen flex flex-col bg-[#070b19] relative overflow-x-hidden z-0 font-montserrat text-white pb-32">
-      {/* BACKGROUND */}
-      <div className="absolute inset-0 pointer-events-none z-[-1] overflow-hidden fixed">
-        <div 
-          className="absolute inset-0 opacity-100 blur-sm scale-[1.05]" 
-          style={{ backgroundImage: `url("https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/267655.jpeg")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
-        ></div>
-        <div className="absolute inset-0 bg-[#070b19]/40"></div>
-      </div>
-
-      {/* HEADER */}
-      <div className="p-5 flex items-center gap-3 border-b border-white/10 bg-black/10 backdrop-blur-md sticky top-0 z-40">
-        <img src="https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/Header.png" alt="Outloud Logo" className="h-8 sm:h-10 object-contain opacity-100" />
-        <div className="h-6 w-[1px] bg-white/40"></div>
-        <span className="text-base sm:text-lg font-light text-white tracking-wide">Online Platform</span>
-      </div>
-
-      {/* SCROLLABLE CONTENT */}
-      <div className="flex flex-col gap-4 p-4 z-10">
-        
-        {/* ROW 1: Completion & Activities */}
-        <div className="grid grid-cols-2 gap-3 sm:gap-4">
-          <div className="h-60 sm:h-64">
-            <ProgressCard percentage={progressPercentage} currentUnit={currentUnit} totalUnits={levelTotalUnits} onClick={onOpenMetrics} />
-          </div>
-          <div className="h-60 sm:h-64">
-            <ActivitiesCard activeLiveSession={activeLiveSession} />
-          </div>
-        </div>
-
-        {/* ROW 2: Lesson & Workbook */}
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 mt-2 sm:mt-4">
-          <div className="h-60 sm:h-64">
-            <MainActionCard title="Lesson" iconType="headphones" isActive={true} isFetching={isFetching} onClick={() => onStartActivity('Lesson')} score={lessonScore} />
-          </div>
-          <div className="h-60 sm:h-64">
-            <MainActionCard title="Workbook" iconType="workbook" isActive={isWorkbookUnlocked} isFetching={isFetching} onClick={() => onStartActivity('Workbook')} score={workbookScore} />
-          </div>
-        </div>
-
-        {/* MOBILE INFO BOARD */}
-        <div className="flex flex-col gap-4 bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] p-4 shadow-2xl mt-2 sm:mt-4">
-          <div className="flex items-center justify-between border-b border-white/10 pb-3">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#fcd34d] shadow-[0_0_8px_#fcd34d]"></span>
-              <h3 className="text-xs font-black uppercase tracking-widest text-white">Official Info Board</h3>
-            </div>
-            {activeCategory ? (
-              <button onClick={() => setActiveCategory(null)} className="text-[10px] font-black uppercase tracking-widest text-[#fcd34d]">✕ Clear</button>
-            ) : (
-              <button onClick={() => onStartActivity('InfoBoard')} className="text-[10px] font-black uppercase tracking-widest text-white/60">Full View ⤢</button>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 sm:gap-3">
-            {INFO_CATEGORIES.map(cat => {
-              const hasPosts = announcements.some(a => a.category === cat);
-              return (
-                <PillButton 
-                  key={cat} 
-                  title={cat} 
-                  hasNotification={hasPosts && activeCategory !== cat}
-                  isActive={activeCategory === cat} 
-                  onClick={() => setActiveCategory(activeCategory === cat ? null : cat)} 
-                />
-              );
-            })}
-          </div>
-
-          <div className="flex flex-col gap-3 mt-1 max-h-[420px] overflow-y-auto custom-scrollbar pr-1">
-            {filteredAnnouncements.length === 0 ? (
-              <div className="text-center text-white/40 font-bold tracking-widest text-xs py-6 uppercase">
-                No announcements in this category.
-              </div>
-            ) : (
-              filteredAnnouncements.map(ann => (
-                <div key={ann.id} onClick={() => onStartActivity('InfoBoard')} className="bg-white/10 border border-white/20 rounded-2xl p-4 flex flex-col sm:flex-row items-center gap-4 hover:bg-white/20 transition-colors shadow-md cursor-pointer">
-                  {ann.image_url && (
-                    <div className="w-full sm:w-28 h-36 sm:h-28 rounded-xl overflow-hidden shrink-0 border border-white/30">
-                      <img src={ann.image_url} alt="Cover" className="w-full h-full object-cover" />
-                    </div>
-                  )}
-                  <div className="flex flex-col text-center sm:text-left w-full">
-                    <span className="text-[9px] font-black uppercase tracking-widest text-[#fcd34d] mb-1">{ann.category || 'Announcement'}</span>
-                    <h4 className="text-sm font-black uppercase tracking-widest mb-1 text-white">{ann.title}</h4>
-                    <p className="text-[11px] text-white/80 leading-relaxed font-medium whitespace-pre-wrap line-clamp-3">{ann.content}</p>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* SOCIALS & SUPPORT */}
-        <div className="flex flex-col items-center gap-5 mt-4 px-2">
-          <div className="flex justify-center gap-4 sm:gap-6 w-full">
-            <SocialButton src="https://i.postimg.cc/ry0TD2Hv/11(6).png" url="https://www.facebook.com/share/1KxawRX9vA/" />
-            <SocialButton src="https://i.postimg.cc/MpD2C6cs/10(5).png" url="https://www.instagram.com/outloudlanguage?igsh=MXU5dmRzeTZ3YTk1cg==" />
-            <SocialButton src="https://i.postimg.cc/pXbwyhzD/9(3).png" url="https://www.tiktok.com/@outloudlanguage" />
-            <SocialButton src="https://i.postimg.cc/0y9hdTtf/8(4).png" url="https://discord.gg/847PMD2DbV" />
-          </div>
-          <a href="https://wa.me/584226885683" target="_blank" rel="noreferrer" className="w-full py-4 bg-[#e2e8f0] text-[#0f172a] font-black text-sm uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 shadow-xl leading-tight">
-            <img src="https://i.postimg.cc/mrtXmB72/Copia-de-Diseno-sin-titulo-(2).png" alt="Help" className="w-8 h-8 sm:w-10 sm:h-10 object-contain shrink-0" />
-            REQUEST ASSISTANCE
-          </a>
-        </div>
-
-      </div>
-
-      {/* FIXED BOTTOM NAVIGATION */}
-      <div className="fixed bottom-0 left-0 right-0 h-20 sm:h-24 bg-white/10 backdrop-blur-2xl border-t border-white/20 flex items-center justify-between px-2 sm:px-4 z-50 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
-        <NavIconBtn isProfile avatarUrl={student?.avatar_url} onClick={onReturnHome} />
-        <NavIconBtn iconSvg={navIcons.calendar} onClick={() => onStartActivity('Calendar')} />
-        <NavIconBtn iconSvg={navIcons.monitor} onClick={() => onStartActivity('LiveClass')} hasNotification={!!activeLiveSession?.meeting_link} />
-        <NavIconBtn iconSvg={navIcons.bell} onClick={() => onStartActivity('InfoBoard')} hasNotification={announcements.length > 0} />
-        <NavIconBtn iconSvg={navIcons.chat} onClick={() => onStartActivity('Community_CHAT')} />
-        <NavIconBtn iconSvg={navIcons.forum} onClick={() => onStartActivity('Community_BOARD')} />
-        <NavIconBtn iconSvg={navIcons.trophy} onClick={() => onStartActivity('Trophies')} />
-      </div>
-
-    </div>
-  );
-};
-
-// ==========================================
-// 4.5 METRICS & PRACTICE CENTER MODAL
-// ==========================================
-const StudentMetricsModal = ({ isOpen, onClose, student, onStartPractice, supabase }) => {
-  const [activeTab, setActiveTab] = useState('PERFORMANCE');
-  const [practiceType, setPracticeType] = useState('Lesson');
-  const [expandedLevel, setExpandedLevel] = useState(null);
-  
-  const [metrics, setMetrics] = useState({ hoursLogged: 0, punctuality: 100, radar: [], notes: [] });
+const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
   const [loading, setLoading] = useState(true);
+  const [lessonId, setLessonId] = useState(null);
+  const [screensData, setScreensData] = useState([]);
+  const [, setAllElements] = useState([]);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [error, setError] = useState(null);
 
-  const LEVEL_BOUNDS = {
-    'A1': { start: 1, end: 12 }, 'A2': { start: 13, end: 24 },
-    'B1': { start: 25, end: 36 }, 'B2': { start: 37, end: 48 },
-    'C1': { start: 49, end: 70 }, 'C2': { start: 71, end: 92 }
+  const [studentAnswers, setStudentAnswers] = useState({});
+  const [dndAnswers, setDndAnswers] = useState({});
+
+  // Tracking & Penalty States
+  const [, setVideoWatched] = useState(false);
+  const [recordState, setRecordState] = useState('idle');
+
+  // Audio Refs & Feedback States
+  const mediaRecorderRef = useRef(null);
+  const userAudioRef = useRef(null);
+  const targetAudioRef = useRef(null);
+  const correctSoundRef = useRef(null);
+  const incorrectSoundRef = useRef(null);
+  const [navButtonState, setNavButtonState] = useState('idle'); // 'idle', 'correct', 'incorrect'
+  const [sessionStarted, setSessionStarted] = useState(false);
+  const [sessionStartTime, setSessionStartTime] = useState(null);
+
+  const safeParse = (data, fallback) => {
+    if (!data) return fallback;
+    if (typeof data === 'object') return data;
+    if (typeof data === 'string') {
+      try {
+        if (data.trim().startsWith('{') && data.trim().endsWith('}')) {
+          const cleaned = data.trim().replace('{', '[').replace('}', ']');
+          return JSON.parse(cleaned);
+        }
+        return JSON.parse(data);
+      } catch (e) {
+        return fallback;
+      }
+    }
+    return fallback;
   };
 
   useEffect(() => {
-    if (!isOpen || !student) return;
-    const fetchMetrics = async () => {
-      setLoading(true);
+    const fetchLesson = async () => {
       try {
-        // 1. Fetch Live Sessions for Punctuality & Time Logged
-        const { data: sessions } = await supabase.from('live_sessions')
-          .select('duration_minutes, status').eq('student_id', student.id).eq('status', 'completed');
-        
-        const totalMins = sessions ? sessions.reduce((acc, s) => acc + (s.duration_minutes || 60), 0) : 0;
-        const hoursLogged = (totalMins / 60).toFixed(1);
+        const rawLevel = student?.level || 'A1';
+        const queryLevel = rawLevel === 'Staff' ? 'A1' : rawLevel.split(':')[0].trim();
+        const rawUnit = String(student?.unit || '1').trim();
+        const queryUnit = rawUnit.toLowerCase().startsWith('unit') ? rawUnit : `Unit ${rawUnit}`;
 
-        // 2. Fetch Academic Records for Teacher Observations & Task Completion
-        const { data: records } = await supabase.from('academic_records')
-          .select('score_percentage, teacher_notes, created_at')
-          .eq('student_id', student.id).order('created_at', { ascending: false });
+        const { data, error: fetchError } = await supabase
+          .from('content_blueprints')
+          .select('*')
+          .ilike('level', `${queryLevel}%`)
+          .ilike('unit', queryUnit)
+          .ilike('content_type', activityType)
+          .maybeSingle();
 
-        const manualNotes = records ? records.filter(r => r.teacher_notes && r.teacher_notes !== 'Auto-Graded') : [];
-        const taskCompletionAvg = records && records.length > 0 
-          ? Math.round(records.reduce((acc, r) => acc + r.score_percentage, 0) / records.length) 
-          : (student.lesson_score || 0);
+        if (fetchError) throw fetchError;
+        if (!data) throw new Error('No content blueprint found for this specific unit and level.');
 
-        setMetrics({
-          hoursLogged,
-          punctuality: 95, // Jitsi derived baseline
-          radar: [
-            { subject: 'Speaking', A: student.lesson_score || 70 },
-            { subject: 'Punctuality', A: 95 },
-            { subject: 'Comprehension', A: student.workbook_score || 75 },
-            { subject: 'Task Comp.', A: taskCompletionAvg },
-          ],
-          notes: manualNotes
+        const parsedScreens = safeParse(data.screens, []);
+        const parsedBlueprint = safeParse(data.blueprint_data, { elements: [] });
+        const elementsArr = parsedBlueprint.elements || [];
+
+        const structuredScreens = parsedScreens.map((screenId) => {
+          return elementsArr.filter((e) => e.screenId === screenId);
         });
+
+        if (structuredScreens.length === 0) throw new Error('This blueprint is completely empty.');
+        setLessonId(data.id);
+        setAllElements(elementsArr);
+        setScreensData(structuredScreens);
       } catch (err) {
-        console.error(err);
+        setError(`Error loading content: ${err.message}`);
       } finally {
         setLoading(false);
       }
     };
-    fetchMetrics();
-    
-    // Auto-expand their current level
-    const baseLevel = student.level ? student.level.split(':')[0].trim() : 'A1';
-    setExpandedLevel(baseLevel);
-  }, [isOpen, student]);
+    fetchLesson();
+  }, [activityType, student]);
 
-  if (!isOpen || !student) return null;
+  // Listen for Bunny.net / Cloudflare video completion to remove penalty
+  useEffect(() => {
+    const handleMessage = (e) => {
+      try {
+        const data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
+        if (data && (data.event === 'ended' || data.type === 'ended' || data.event === 'videoEnded')) {
+          setVideoWatched(true);
+        }
+      } catch (err) {}
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
 
-  // Calculate Velocity
-  const msSinceJoin = new Date().getTime() - new Date(student.created_at || Date.now()).getTime();
-  const weeksSinceJoin = Math.max(1, msSinceJoin / (1000 * 60 * 60 * 24 * 7));
-  const actualVelocity = ((student.unit || 1) / weeksSinceJoin).toFixed(1);
-  const predictedVelocity = 1.0; // 1 unit per week standard
+  // Anti-Piracy: Blocks right-clicking anywhere in the app
+  useEffect(() => {
+    const handleContextMenu = (e) => e.preventDefault();
+    document.addEventListener('contextmenu', handleContextMenu);
+    return () => document.removeEventListener('contextmenu', handleContextMenu);
+  }, []);
+
+  const evaluateElement = (el) => {
+    let possible = 0;
+    let correct = 0;
+    let incorrect = 0;
+
+    if (el.type === 'short_answer' && el.data?.correctAnswer) {
+      possible++;
+      const ans = cleanStr(studentAnswers[el.id]);
+      const target = cleanStr(el.data.correctAnswer);
+      if (!ans) incorrect++;
+      else if (ans === target) correct++;
+      else incorrect++;
+    } else if (el.type === 'fill_in_the_blank' && el.data?.answerText) {
+      const rawGroups = el.data.answerText.split(',');
+      rawGroups.forEach((group, index) => {
+        const cleanedTarget = group.replace(/^["'\s]+|["'\s]+$/g, '');
+        if (cleanedTarget) {
+          possible++;
+          const studentAns = (studentAnswers[`${el.id}_${index}`] || '').trim();
+          const validOptions = cleanedTarget.split(/[|/]/).map((w) => w.trim());
+          if (!studentAns) incorrect++;
+          else if (validOptions.some((opt) => cleanStr(opt) === cleanStr(studentAns))) correct++;
+          else incorrect++;
+        }
+      });
+    } else if (el.type === 'multiple_selection') {
+      el.data.options?.forEach((opt) => {
+        if (opt.isCorrect) {
+          possible++;
+          if (studentAnswers[`${el.id}_${opt.id}`]) correct++;
+          else incorrect++;
+        } else if (studentAnswers[`${el.id}_${opt.id}`]) {
+          incorrect++;
+        }
+      });
+    } else if (el.type === 'drag_and_drop') {
+      el.data.items?.forEach((item, idx) => {
+        if (item.targetText && item.imageUrl) {
+          possible++;
+          const placed = cleanStr(dndAnswers[`${el.id}_${idx}`]);
+          const target = cleanStr(item.targetText);
+          if (!placed) incorrect++;
+          else if (placed === target) correct++;
+          else incorrect++;
+        }
+      });
+    } else if (el.type === 'slider_bar' && el.data?.options) {
+      const correctIdx = el.data.options.findIndex((opt) => opt.isCorrect);
+      if (correctIdx !== -1) {
+        possible++;
+        const maxIdx = Math.max(0, el.data.options.length - 1);
+        const defaultIdx = Math.floor(maxIdx / 2);
+        const ans = studentAnswers[el.id] !== undefined ? parseInt(studentAnswers[el.id], 10) : defaultIdx;
+        if (ans === correctIdx) correct++;
+        else incorrect++;
+      }
+    } else if (el.type === 'word_search') {
+      let isGraded = false;
+      if (el.data?.placedWords) {
+        el.data.placedWords.forEach((pw) => {
+          possible++;
+          isGraded = true;
+          const studentCells = studentAnswers[`${el.id}_cells`] || [];
+          const allSelected = pw.cells.every((c) => {
+            const altC = c.replace('-', '_');
+            return studentCells.includes(c) || studentCells.includes(altC);
+          });
+          if (allSelected) correct++;
+          else incorrect++;
+        });
+
+        const studentCells = studentAnswers[`${el.id}_cells`] || [];
+        const allCorrectCells = el.data.placedWords.flatMap((pw) =>
+          pw.cells.flatMap((c) => [c, c.replace('-', '_')])
+        );
+        studentCells.forEach((sc) => {
+          if (!allCorrectCells.includes(sc)) incorrect++;
+        });
+      }
+      if (!isGraded) possible++;
+    } else if (el.type === 'crossword' && el.data?.grid) {
+      let isGraded = false;
+      ['across', 'down'].forEach((dir) => {
+        (el.data[dir] || []).forEach((wordObj) => {
+          if (wordObj.answer && wordObj.row !== undefined && wordObj.col !== undefined) {
+            possible++;
+            isGraded = true;
+            let isWordCorrect = true;
+            for (let i = 0; i < wordObj.answer.length; i++) {
+              const r = dir === 'across' ? wordObj.row : wordObj.row + i;
+              const c = dir === 'across' ? wordObj.col + i : wordObj.col;
+              const studentLetter = studentAnswers[`${el.id}_${r}_${c}`] || '';
+              if (studentLetter.toUpperCase() !== wordObj.answer[i].toUpperCase()) isWordCorrect = false;
+            }
+            if (isWordCorrect) correct++;
+            else incorrect++;
+          }
+        });
+      });
+      if (!isGraded) possible++;
+    } else if (el.type === 'record_compare') {
+      possible++;
+      if (studentAnswers[`${el.id}_recorded`]) correct++;
+      else incorrect++;
+    }
+
+    return { possible, correct, incorrect };
+  };
+
+  const proceedToNext = () => {
+    setNavButtonState('idle');
+    if (currentStep < screensData.length - 1) {
+      setCurrentStep((prev) => prev + 1);
+      const container = document.getElementById('student-player-container');
+      if (container) container.scrollTo({ top: 0, behavior: 'smooth' });
+      else window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      const sessionEndTime = Date.now();
+      const timeSpentSeconds = Math.floor((sessionEndTime - sessionStartTime) / 1000);
+
+      const rawSubmissionPayload = {
+        security_flag: 'raw_payload',
+        studentId: student?.id,
+        level: student?.level,
+        unit: student?.unit,
+        activityType: activityType,
+        timeSpentSeconds: timeSpentSeconds,
+        rawAnswers: { ...studentAnswers, ...dndAnswers },
+      };
+
+      onComplete(rawSubmissionPayload);
+    }
+  };
+
+  const handleContinueClick = () => {
+    if (navButtonState !== 'idle') {
+      proceedToNext();
+      return;
+    }
+
+    if (mediaRecorderRef.current && recordState === 'recording') mediaRecorderRef.current.stop();
+    setRecordState('idle');
+    if (targetAudioRef.current) targetAudioRef.current.pause();
+    if (userAudioRef.current) userAudioRef.current.pause();
+
+    const currentElements = screensData[currentStep] || [];
+    const contentElements = currentElements.filter((el) => !['nav_button'].includes(el.type));
+
+    let screenPossible = 0;
+    let screenIncorrect = 0;
+
+    contentElements.forEach((el) => {
+      const { possible, incorrect } = evaluateElement(el);
+      screenPossible += possible;
+      screenIncorrect += incorrect;
+    });
+
+    if (screenPossible > 0) {
+      if (screenIncorrect > 0) {
+        setNavButtonState('incorrect');
+        if (incorrectSoundRef.current) {
+          incorrectSoundRef.current.currentTime = 0;
+          incorrectSoundRef.current.play().catch(() => {});
+        }
+        const container = document.getElementById('student-player-container');
+        if (container) container.scrollTo({ top: 0, behavior: 'smooth' });
+        else window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        setNavButtonState('correct');
+        if (correctSoundRef.current) {
+          correctSoundRef.current.currentTime = 0;
+          correctSoundRef.current.play().catch(() => {});
+        }
+      }
+    } else {
+      proceedToNext();
+    }
+  };
+
+  const handleDragStart = (e, word) => e.dataTransfer.setData('text/plain', word);
+  const handleDragOver = (e) => e.preventDefault();
+  const handleDrop = (e, zoneId) => {
+    e.preventDefault();
+    if (navButtonState !== 'idle') return;
+    const word = e.dataTransfer.getData('text/plain');
+    if (word) setDndAnswers((prev) => ({ ...prev, [zoneId]: word }));
+  };
+
+  const handleStartSession = () => {
+    [correctSoundRef, incorrectSoundRef].forEach((ref) => {
+      if (ref.current) {
+        ref.current
+          .play()
+          .then(() => {
+            ref.current.pause();
+            ref.current.currentTime = 0;
+          })
+          .catch(() => {});
+      }
+    });
+    setSessionStarted(true);
+    setSessionStartTime(Date.now());
+  };
+
+  if (loading) {
+    return (
+      <div className="ola-player-root fixed inset-0 z-50 flex flex-col items-center justify-center font-montserrat">
+        <PlayerThemeStyles />
+        <PlayerLuminousBackdrop />
+        <div className="relative z-10 flex flex-col items-center gap-4">
+          <OutLoudIcon className="w-16 h-16 animate-bounce" />
+          <div className="w-8 h-8 border-4 border-[#626a9f] border-t-[#ffc749] rounded-full animate-spin" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="ola-player-root fixed inset-0 z-50 flex flex-col items-center justify-center text-[#1e2246] font-montserrat px-6 text-center">
+        <PlayerThemeStyles />
+        <PlayerLuminousBackdrop />
+        <div className="ola-player-glass relative z-10 rounded-[2.25rem] p-8 sm:p-10 max-w-md w-full flex flex-col items-center">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#c93f34] mb-3 uppercase tracking-tight">
+            Content Not Found
+          </h2>
+          <p className="text-[#4c5384] font-medium text-sm mb-7 leading-relaxed">{error}</p>
+          <button
+            type="button"
+            onClick={onExit}
+            className="ola-player-btn-yellow w-full py-3.5 px-6 rounded-full font-bold text-xs uppercase tracking-widest cursor-pointer"
+          >
+            Return to Hub
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const showFeedback = navButtonState !== 'idle';
+  const currentElements = screensData[currentStep] || [];
+  const contentElements = currentElements.filter((el) => !['nav_button'].includes(el.type));
+  const dockElements = currentElements.filter((el) => ['nav_button'].includes(el.type));
+  const totalSteps = screensData.length || 1;
+  const stepProgressPct = Math.round(((currentStep + 1) / totalSteps) * 100);
 
   return (
-    <div className="fixed inset-0 z-[600] flex items-end justify-center bg-black/80 backdrop-blur-md p-0 md:p-6 animate-fade-in font-montserrat">
-      <div className="bg-[#070b19] border border-white/20 rounded-t-[2.5rem] md:rounded-[2.5rem] w-full max-w-4xl shadow-2xl flex flex-col h-[90vh] md:h-[80vh] overflow-hidden animate-slide-up relative">
-        
-        {/* HEADER & TABS */}
-        <div className="flex flex-col border-b border-white/10 shrink-0 bg-white/5 pt-6 px-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-widest">Student Hub</h2>
-            <button onClick={onClose} className="w-8 h-8 bg-white/10 hover:bg-red-500 text-white rounded-full flex items-center justify-center font-black transition-colors">✕</button>
-          </div>
-          <div className="flex gap-4 overflow-x-auto custom-scrollbar pb-4">
-            <button onClick={() => setActiveTab('PERFORMANCE')} className={`flex-1 py-3 px-6 rounded-xl font-black text-xs uppercase tracking-widest transition-all ${activeTab === 'PERFORMANCE' ? 'bg-[#fcd34d] text-[#08203e] shadow-md' : 'text-white/50 hover:text-white bg-white/5'}`}>Performance</button>
-            <button onClick={() => setActiveTab('PRACTICE')} className={`flex-1 py-3 px-6 rounded-xl font-black text-xs uppercase tracking-widest transition-all ${activeTab === 'PRACTICE' ? 'bg-[#fcd34d] text-[#08203e] shadow-md' : 'text-white/50 hover:text-white bg-white/5'}`}>Practice Center</button>
+    <>
+      <PlayerThemeStyles />
+      <audio ref={correctSoundRef} src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto" />
+      <audio ref={incorrectSoundRef} src="https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3" preload="auto" />
+
+      {!sessionStarted ? (
+        <div className="ola-player-root fixed inset-0 z-[600] flex flex-col items-center justify-center text-[#1e2246] font-montserrat px-6 text-center">
+          <PlayerLuminousBackdrop />
+          <div className="ola-player-glass relative z-10 p-8 sm:p-12 rounded-[2.5rem] flex flex-col items-center max-w-lg w-full">
+            <div className="mb-5">
+              <OutLoudIcon className="w-16 h-16" />
+            </div>
+            <span className="text-[10px] font-bold uppercase tracking-widest bg-[#fff3d1] text-[#1e2246] border border-[#ffc749] px-3.5 py-1 rounded-full mb-3">
+              OutLoud Interactive Studio
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-[#1e2246] mb-3 uppercase tracking-tight">
+              Ready?
+            </h2>
+            <p className="text-[#4c5384] font-medium mb-8 text-sm sm:text-base leading-relaxed">
+              Interactive audio and scoring systems initialize when you begin. Tap below to start your {activityType}.
+            </p>
+            <button
+              type="button"
+              onClick={handleStartSession}
+              className="ola-player-btn-yellow w-full font-bold px-8 py-4 rounded-full uppercase tracking-widest cursor-pointer text-sm sm:text-base"
+            >
+              Start {activityType} →
+            </button>
           </div>
         </div>
+      ) : (
+        <div
+          id="student-player-container"
+          onContextMenu={(e) => e.preventDefault()}
+          style={{ WebkitTouchCallout: 'none' }}
+          className="ola-player-root fixed inset-0 z-[500] flex flex-col text-[#1e2246] font-montserrat overflow-y-auto custom-scrollbar"
+        >
+          <PlayerLuminousBackdrop />
 
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
-          {loading ? (
-            <div className="h-full flex items-center justify-center"><div className="w-10 h-10 border-4 border-[#fcd34d] border-t-transparent rounded-full animate-spin"></div></div>
-          ) : activeTab === 'PERFORMANCE' ? (
-            
-            /* --- PERFORMANCE TAB --- */
-            <div className="flex flex-col md:grid md:grid-cols-2 gap-6">
-              <div className="bg-white/5 border border-white/10 rounded-3xl p-6 shadow-inner flex flex-col items-center">
-                <h3 className="text-xs font-black text-[#fcd34d] uppercase tracking-widest mb-2">Performance Radar</h3>
-                <div className="w-full h-[250px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <RadarChart cx="50%" cy="50%" outerRadius="70%" data={metrics.radar}>
-                      <PolarGrid stroke="rgba(255,255,255,0.2)" />
-                      <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 10, fontWeight: 'bold' }} />
-                      <Radar name="Student" dataKey="A" stroke="#fcd34d" strokeWidth={2} fill="#fcd34d" fillOpacity={0.4} />
-                    </RadarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-              
-              <div className="flex flex-col gap-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white/5 border border-white/10 rounded-2xl p-5 shadow-inner text-center">
-                    <p className="text-[9px] text-white/50 font-bold uppercase tracking-widest mb-1">Pace / Velocity</p>
-                    <div className="flex items-baseline justify-center gap-1">
-                      <span className="text-3xl font-black text-white">{actualVelocity}</span>
-                      <span className="text-xs font-bold text-white/40">/ {predictedVelocity}</span>
-                    </div>
-                    <p className="text-[8px] text-emerald-400 mt-1 uppercase font-bold">Units per week</p>
-                  </div>
-                  <div className="bg-white/5 border border-white/10 rounded-2xl p-5 shadow-inner text-center">
-                    <p className="text-[9px] text-white/50 font-bold uppercase tracking-widest mb-1">Time Logged</p>
-                    <span className="text-3xl font-black text-[#fcd34d] block">{metrics.hoursLogged} <span className="text-sm">hrs</span></span>
-                  </div>
-                </div>
+          {/* STICKY LIGHT-GLASS TOP HEADER */}
+          <header className="sticky top-0 h-20 w-full flex items-center justify-between px-4 sm:px-8 lg:px-12 z-50 shrink-0 border-b border-white/85 bg-white/65 backdrop-blur-2xl shadow-sm">
+            <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+              <OutLoudHorizontalLogo iconClass="w-9 h-9 sm:w-10 sm:h-10" wordmarkClass="h-7 sm:h-8 w-auto" />
+              <div className="h-6 w-px bg-[#626a9f]/25 hidden sm:block" />
+              <span className="hidden sm:inline-block text-xs font-bold text-[#454d82] uppercase tracking-widest truncate">
+                {activityType} • Unit {student?.unit || 1}
+              </span>
+            </div>
 
-                <div className="flex-1 bg-white/5 border border-white/10 rounded-3xl p-6 shadow-inner flex flex-col">
-                  <h3 className="text-xs font-black text-white/50 uppercase tracking-widest border-b border-white/10 pb-3 mb-3">Teacher Observations</h3>
-                  <div className="flex-1 overflow-y-auto pr-2 flex flex-col gap-3">
-                    {metrics.notes.length === 0 ? (
-                      <p className="text-xs text-white/30 italic text-center py-4">No manual observations recorded yet.</p>
-                    ) : (
-                      metrics.notes.map((note, i) => (
-                        <div key={i} className="bg-black/30 p-4 rounded-xl border border-white/5 text-sm text-white/80 leading-relaxed font-medium">
-                          <span className="text-[9px] text-[#fcd34d] block mb-1 uppercase tracking-widest">{new Date(note.created_at).toLocaleDateString()}</span>
-                          {note.teacher_notes}
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
+            {/* Step Progress Pill */}
+            <div className="hidden md:flex items-center gap-3 bg-white/80 border border-white rounded-full px-4 py-1.5 shadow-sm">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-[#454d82]">
+                Step {currentStep + 1} / {totalSteps}
+              </span>
+              <div className="w-24 h-2 bg-[#e8eaf7] rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-[#626a9f] to-[#ffc749] transition-all duration-300"
+                  style={{ width: `${stepProgressPct}%` }}
+                />
               </div>
             </div>
 
-          ) : (
-
-            /* --- PRACTICE CENTER TAB --- */
-            <div className="flex flex-col h-full">
-              <div className="flex bg-black/30 rounded-xl p-1 mb-6 shrink-0 border border-white/5">
-                <button onClick={() => setPracticeType('Lesson')} className={`flex-1 py-2 rounded-lg font-bold text-xs uppercase tracking-widest transition-all ${practiceType === 'Lesson' ? 'bg-white/20 text-white' : 'text-white/40 hover:text-white/80'}`}>Lessons</button>
-                <button onClick={() => setPracticeType('Workbook')} className={`flex-1 py-2 rounded-lg font-bold text-xs uppercase tracking-widest transition-all ${practiceType === 'Workbook' ? 'bg-white/20 text-white' : 'text-white/40 hover:text-white/80'}`}>Workbooks</button>
+            <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+              <div className="hidden sm:flex items-center gap-2.5 bg-white/80 border border-white rounded-full py-1 pl-3.5 pr-1 shadow-sm">
+                <div className="flex flex-col text-right leading-tight">
+                  <span className="text-xs font-bold text-[#1e2246]">
+                    {student?.first_name} {student?.last_name}
+                  </span>
+                  <span className="text-[9.5px] text-[#454d82] font-bold uppercase tracking-widest">
+                    Level {student?.level?.split(':')[0]}
+                  </span>
+                </div>
+                <div className="w-8 h-8 rounded-full overflow-hidden border border-[#626a9f]/30 bg-[#e8eaf7] flex items-center justify-center text-[#454d82] shrink-0">
+                  {student?.avatar_url ? (
+                    <img src={student.avatar_url} className="w-full h-full object-cover" alt="Avatar" />
+                  ) : (
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                    </svg>
+                  )}
+                </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-3">
-                {Object.entries(LEVEL_BOUNDS).map(([lvl, bounds]) => {
-                  const studentAbsUnit = student.unit || 1;
-                  // If the level hasn't been reached at all, hide it completely.
-                  if (studentAbsUnit < bounds.start) return null;
-                  
-                  const isExpanded = expandedLevel === lvl;
-                  const availableUnits = Math.min(bounds.end, studentAbsUnit) - bounds.start + 1;
+              <button
+                type="button"
+                onClick={onExit}
+                aria-label="Exit activity"
+                className="text-[#1e2246] hover:text-white bg-white/85 hover:bg-[#ee665b] p-2.5 rounded-full border-2 border-[#1e2246] transition-all active:scale-90 cursor-pointer shadow-sm"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.6" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </header>
 
+          {/* STAGE CANVAS */}
+          <div className="flex-1 w-full max-w-[78rem] mx-auto p-4 sm:p-8 lg:p-10 relative z-10 flex flex-col pb-28">
+            <div className="flex flex-col items-center gap-8 w-full">
+              {contentElements.map((el) => {
+                const isMedia = ['video', 'image', 'audio'].includes(el.type);
+                const isCard = [
+                  'short_answer',
+                  'multiple_selection',
+                  'slider_bar',
+                  'fill_in_the_blank',
+                  'drag_and_drop',
+                  'crossword',
+                  'word_search',
+                  'record_compare',
+                ].includes(el.type);
+
+                if (isMedia) {
                   return (
-                    <div key={lvl} className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden transition-all shadow-md">
-                      <button onClick={() => setExpandedLevel(isExpanded ? null : lvl)} className="w-full flex justify-between items-center p-5 hover:bg-white/5 transition-colors">
-                        <span className="font-black text-white text-lg tracking-widest">LEVEL {lvl}</span>
-                        <div className="flex items-center gap-4">
-                          <span className="text-[10px] font-bold text-[#fcd34d] uppercase tracking-widest bg-[#fcd34d]/10 px-3 py-1 rounded-full">{availableUnits} Unlocked</span>
-                          <svg className={`w-5 h-5 text-white/50 transition-transform ${isExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-                        </div>
-                      </button>
-                      
-                      {isExpanded && (
-                        <div className="p-5 pt-0 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 border-t border-white/5 mt-2 pt-4">
-                          {Array.from({ length: availableUnits }, (_, i) => bounds.start + i).map(u => (
-                            <button 
-                              key={u} 
-                              onClick={() => onStartPractice(practiceType, u)}
-                              className="aspect-square bg-black/40 hover:bg-[#fcd34d] hover:text-[#08203e] text-white border border-white/10 rounded-xl flex flex-col items-center justify-center gap-1 font-black transition-all group"
-                            >
-                              <span className="text-[10px] uppercase tracking-widest opacity-50 group-hover:opacity-100">Unit</span>
-                              <span className="text-xl">{u}</span>
-                            </button>
-                          ))}
+                    <div
+                      key={el.id}
+                      className={`ola-player-glass w-full ${
+                        el.type === 'video' ? 'max-w-5xl' : 'max-w-4xl'
+                      } rounded-[2.25rem] overflow-hidden relative mx-auto p-2 sm:p-4`}
+                    >
+                      {el.type === 'video' && (
+                        <iframe
+                          src={extractVideoUrl(el.url)}
+                          title="Lesson Video"
+                          className="w-full aspect-video border-none rounded-[1.75rem] bg-[#1e2246]"
+                          allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                          allowFullScreen
+                        />
+                      )}
+                      {el.type === 'image' && (
+                        <img
+                          src={el.url || el.data?.imageUrl}
+                          alt="Content"
+                          draggable="false"
+                          onContextMenu={(e) => e.preventDefault()}
+                          style={{ WebkitUserDrag: 'none' }}
+                          className="w-full h-auto max-h-[700px] object-contain rounded-[1.75rem] select-none pointer-events-none"
+                        />
+                      )}
+                      {el.type === 'audio' && (
+                        <div className="p-6 sm:p-10 w-full flex flex-col items-center">
+                          {el.data?.imageUrl && (
+                            <img
+                              src={el.data.imageUrl}
+                              alt="Audio Cover"
+                              draggable="false"
+                              onContextMenu={(e) => e.preventDefault()}
+                              style={{ WebkitUserDrag: 'none' }}
+                              className="w-full max-w-md rounded-3xl shadow-md mb-6 border border-white select-none pointer-events-none"
+                            />
+                          )}
+                          <audio
+                            src={el.url || el.data?.audioUrl}
+                            controls
+                            controlsList="nodownload"
+                            className="w-full max-w-2xl"
+                          />
                         </div>
                       )}
                     </div>
                   );
-                })}
-              </div>
-            </div>
-
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// ==========================================
-// 3.5 NEW TAB JITSI CONTROLLER (Student)
-// ==========================================
-const JitsiRoom = ({ session, student, onLeave }) => {
-  const [alertState, setAlertState] = useState('active');
-  const lastSeenPing = useRef(null);
-  const missedTicks = useRef(0);
-
-  useEffect(() => {
-    // 1. Force Browser OS Notifications Permission
-    if (Notification.permission === 'default') {
-      Notification.requestPermission();
-    }
-
-    const roomUrl = `https://meet.jit.si/OLA-Unit${session.unit}-${session.id}#config.prejoinPageEnabled=false`;
-    window.open(roomUrl, '_blank');
-
-    const monitor = setInterval(async () => {
-      const { data } = await supabase.from('live_sessions').select('last_ping_at, status').eq('id', session.id).single();
-
-      if (data) {
-        if (data.status !== 'in_progress') {
-           if (data.status === 'completed') {
-             setAlertState('completed');
-           } else {
-             setAlertState('admin_handled');
-           }
-           return;
-        }
-
-        if (data.last_ping_at) {
-          // TICK COUNTER LOGIC (Immune to clock drift)
-          if (lastSeenPing.current === data.last_ping_at) {
-            missedTicks.current += 1;
-          } else {
-            lastSeenPing.current = data.last_ping_at;
-            missedTicks.current = 0;
-            if (alertState !== 'active') setAlertState('active'); // Teacher returned
-          }
-
-          // 1 tick = 10 seconds. 4 ticks = ~45 seconds. 60 ticks = 10 minutes.
-          if (missedTicks.current >= 60 && alertState !== 'terminated') {
-            setAlertState('terminated');
-            if (Notification.permission === 'granted') new Notification("Sesión Interrumpida", { body: "La conexión no pudo ser restaurada. Un admin te contactará." });
-            new Audio('https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg').play().catch(()=>{});
-          } 
-          else if (missedTicks.current >= 4 && missedTicks.current < 60 && alertState !== 'warning') {
-            setAlertState('warning');
-            if (Notification.permission === 'granted') new Notification("Conexión Perdida", { body: "Tu profesor tiene problemas técnicos. Mantente en la sala." });
-            new Audio('https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg').play().catch(()=>{});
-          }
-        }
-      }
-    }, 10000); 
-
-    return () => clearInterval(monitor);
-  }, [session, alertState]);
-
-  return (
-    <div className="fixed inset-0 z-[500] flex items-center justify-center bg-[#070b19]/95 backdrop-blur-md p-4">
-      {alertState === 'active' && (
-        <div className="bg-white/5 border border-white/10 rounded-[2rem] p-10 max-w-md w-full text-center shadow-2xl flex flex-col items-center">
-          <div className="w-4 h-4 bg-emerald-400 rounded-full animate-pulse mb-6 shadow-[0_0_15px_#34d399]"></div>
-          <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-2">Clase en Curso</h2>
-          <p className="text-sm font-medium text-white/70 mb-8 leading-relaxed">
-            Tu sala de video se ha abierto en una nueva pestaña. Cuando termines, cierra la pestaña de video y haz clic abajo.
-          </p>
-          <button onClick={onLeave} className="w-full py-4 bg-white/10 hover:bg-white/20 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all border border-white/20 hover:scale-105">
-            Volver al Inicio
-          </button>
-        </div>
-      )}
-
-      {alertState === 'warning' && (
-        <div className="bg-[#fcd34d]/10 border border-[#fcd34d]/50 rounded-[2rem] p-10 max-w-md w-full text-center shadow-[0_0_50px_rgba(252,211,77,0.2)] flex flex-col items-center animate-fade-in">
-          <div className="w-8 h-8 bg-[#fcd34d] rounded-full animate-pulse mb-6 shadow-[0_0_25px_#fcd34d]"></div>
-          <h2 className="text-2xl font-black text-[#fcd34d] uppercase tracking-widest mb-2 drop-shadow-md">Conexión Perdida</h2>
-          <p className="text-sm font-medium text-white/90 mb-8 leading-relaxed">
-            Tu profesor está experimentando dificultades técnicas. Por favor, mantente en la sala. Nuestros administradores han sido notificados.
-          </p>
-        </div>
-      )}
-
-      {alertState === 'terminated' && (
-        <div className="bg-red-500/10 border border-red-500/50 rounded-[2rem] p-10 max-w-md w-full text-center shadow-[0_0_50px_rgba(239,68,68,0.2)] flex flex-col items-center animate-fade-in">
-          <div className="w-8 h-8 bg-red-500 rounded-full mb-6 shadow-[0_0_25px_#ef4444]"></div>
-          <h2 className="text-2xl font-black text-red-400 uppercase tracking-widest mb-2 drop-shadow-md">Sesión Interrumpida</h2>
-          <p className="text-sm font-medium text-white/90 mb-8 leading-relaxed">
-            No se pudo restaurar la conexión. Por favor cierra tu pestaña de video. Un administrador te contactará para reprogramar tu clase.
-          </p>
-          <button onClick={onLeave} className="w-full py-4 bg-red-500 hover:bg-red-400 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-[0_0_20px_rgba(239,68,68,0.4)] hover:scale-105">
-            Entendido
-          </button>
-        </div>
-      )}
-
-{alertState === 'completed' && (
-        <div className="bg-emerald-500/10 border border-emerald-500/50 rounded-[2rem] p-10 max-w-md w-full text-center shadow-[0_0_50px_rgba(16,185,129,0.2)] flex flex-col items-center animate-fade-in">
-          <div className="w-8 h-8 bg-emerald-500 rounded-full mb-6 shadow-[0_0_25px_#10b981]"></div>
-          <h2 className="text-2xl font-black text-emerald-400 uppercase tracking-widest mb-2 drop-shadow-md">Clase Finalizada</h2>
-          <p className="text-sm font-medium text-white/90 mb-8 leading-relaxed">
-            Tu profesor ha cerrado la sesión. Por favor, evalúa tu experiencia para ayudarnos a mantener la excelencia.
-          </p>
-          <button onClick={() => onLeave(true)} className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-[#08203e] font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-[0_0_20px_rgba(16,185,129,0.4)] hover:scale-105 cursor-pointer">
-            Evaluar Clase
-          </button>
-        </div>
-      )}
-      {alertState === 'admin_handled' && (
-        <div className="bg-blue-500/10 border border-blue-500/50 rounded-[2rem] p-10 max-w-md w-full text-center shadow-[0_0_50px_rgba(59,130,246,0.2)] flex flex-col items-center animate-fade-in">
-          <div className="w-8 h-8 bg-blue-500 rounded-full mb-6 shadow-[0_0_25px_#3b82f6]"></div>
-          <h2 className="text-2xl font-black text-blue-400 uppercase tracking-widest mb-2 drop-shadow-md">Sesión Actualizada</h2>
-          <p className="text-sm font-medium text-white/90 mb-8 leading-relaxed">
-            Esta sesión ha sido modificada por un administrador. Por favor regresa a tu panel principal.
-          </p>
-          <button onClick={onLeave} className="w-full py-4 bg-blue-500 hover:bg-blue-400 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-[0_0_20px_rgba(59,130,246,0.4)] hover:scale-105">
-            Volver al Inicio
-          </button>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// ==========================================
-// 5. THE GATEKEEPER (Evaluation Modal)
-// ==========================================
-const EvaluationCrossroad = ({ data, onProceed, onRetry, onScheduleLive, onScheduleComplementary, onScheduleTutoring }) => {
-  const { type, scores, fails, unit, level, average, passed } = data;
-  const skillEntries = Object.entries(scores);
-
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#050814]/95 px-4 md:px-10 font-montserrat overflow-hidden">
-      <div className="absolute inset-0 pointer-events-none opacity-40 mix-blend-screen" 
-           style={{ 
-             backgroundImage: `url("data:image/svg+xml,%3Csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M-100,50 Q250,150 600,50 T1300,50' fill='none' stroke='%23fcd34d' stroke-width='1.5' opacity='0.3'/%3E%3Cpath d='M-100,70 Q250,-10 600,70 T1300,70' fill='none' stroke='%23ffffff' stroke-width='1' opacity='0.1'/%3E%3Cpath d='M-100,90 Q250,190 600,90 T1300,90' fill='none' stroke='%23fcd34d' stroke-width='0.5' opacity='0.2'/%3E%3C/svg%3E")`, 
-             backgroundSize: 'cover', backgroundPosition: 'center' 
-           }}>
-      </div>
-
-      <div className="bg-white/10 border border-white/20 backdrop-blur-2xl rounded-[2rem] md:rounded-[3rem] p-8 md:p-16 w-full max-w-sm md:max-w-5xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col md:flex-row items-center md:items-center gap-8 md:gap-16 relative z-10">
-        <div className="flex-1 flex flex-col items-center md:items-start justify-center text-center md:text-left w-full">
-          <h2 className="text-3xl md:text-5xl font-black text-white mb-2 md:mb-4 tracking-wide uppercase drop-shadow-md">{level}: UNIT {unit}</h2>
-          <h3 className="text-3xl md:text-5xl font-black text-white mb-2 md:mb-6 tracking-wide uppercase drop-shadow-md">{type} 1</h3>
-          <h1 className={`text-5xl md:text-7xl font-black uppercase tracking-wider ${passed ? 'text-white drop-shadow-[0_0_25px_rgba(255,255,255,0.9)]' : 'text-red-100 drop-shadow-[0_0_25px_rgba(248,113,113,0.9)]'}`}>
-            {passed ? 'COMPLETED' : 'RESULTS'}
-          </h1>
-        </div>
-
-        <div className="flex-[0.8] flex flex-col items-center justify-center w-full max-w-sm">
-          <div className="w-full space-y-3 md:space-y-4 mb-6 md:mb-8">
-            {skillEntries.map(([skill, score]) => (
-              <div key={skill} className="flex items-center justify-between gap-3 md:gap-4">
-                <span className="w-24 md:w-32 text-left text-xs md:text-sm font-medium text-white tracking-wide">{skill}:</span>
-                <div className="flex-1 bg-white rounded-full h-3 md:h-3.5 overflow-hidden shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]">
-                  <div className={`h-full rounded-full transition-all duration-1000 ${score >= 75 ? 'bg-[#fcd34d] shadow-[0_0_10px_rgba(252,211,77,0.8)]' : 'bg-red-400'}`} style={{ width: `${score}%` }}></div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className={`text-7xl md:text-[7rem] leading-none font-black mb-6 md:mb-8 ${passed ? 'text-[#fcd34d] drop-shadow-[0_0_30px_rgba(252,211,77,0.6)]' : 'text-red-400 drop-shadow-[0_0_30px_rgba(248,113,113,0.6)]'}`}>
-            {average}%
-          </div>
-
-          <div className="w-full max-w-[240px]">
-            {passed ? (
-              <button onClick={onProceed} className="w-full py-3.5 md:py-4 bg-gradient-to-b from-[#e8e8e8] to-[#999999] border border-white/50 text-[#1a1a1a] hover:from-white hover:to-[#b3b3b3] font-black tracking-widest text-xs md:text-sm uppercase rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-[0_10px_20px_rgba(0,0,0,0.4)] whitespace-pre-line leading-tight">
-                {type === 'Lesson' ? 'PROCEED TO\nWORKBOOK' : 'RESERVAR\nCLASE EN VIVO'}
-              </button>
-            ) : fails === 0 ? (
-              <button onClick={onRetry} className="w-full py-3.5 md:py-4 bg-white/10 border border-white/20 text-white hover:bg-white/20 font-black tracking-widest text-xs md:text-sm uppercase rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-lg whitespace-pre-line leading-tight">
-                INTENTAR\nDE NUEVO
-              </button>
-            ) : fails === 1 ? (
-              <button onClick={onScheduleComplementary} className="w-full py-3.5 md:py-4 bg-orange-400 text-white font-black tracking-widest text-xs md:text-sm uppercase rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-[0_0_15px_rgba(251,146,60,0.5)] whitespace-pre-line leading-tight">
-                RESERVAR CLASE\nCOMPLEMENTARIA
-              </button>
-            ) : (
-              <button onClick={onScheduleTutoring} className="w-full py-3.5 md:py-4 bg-red-500 text-white font-black tracking-widest text-xs md:text-sm uppercase rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-[0_0_15px_rgba(239,68,68,0.5)] whitespace-pre-line leading-tight">
-                RESERVAR TUTORIA\n1-ON-1
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// ==========================================
-// 5.5 TEACHER EVALUATION MODAL (Post-Class)
-// ==========================================
-const TeacherEvaluationModal = ({ isOpen, session, onClose, supabase }) => {
-  const [answers, setAnswers] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  if (!isOpen || !session) return null;
-
-  const questions = [
-    { id: 'q_demeanor', text: "¿Mantuvo el profesor una actitud positiva, paciente y motivadora durante la clase?" },
-    { id: 'q_clarity', text: "¿Explicó el profesor los temas de hoy de forma clara y efectiva?" },
-    { id: 'q_facilitation', text: "¿Manejó el profesor activamente la clase y animó a todos a participar?" },
-    { id: 'q_content', text: "¿Presentó el profesor el material de una manera estructurada y fácil de seguir?" },
-    { id: 'q_time', text: "¿Comenzó el profesor exactamente a tiempo y mantuvo un buen ritmo de clase?" }
-  ];
-
-  const isComplete = Object.keys(answers).length === questions.length;
-
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
-    try {
-      await supabase.from('class_evaluations').insert({
-        session_id: session.id,
-        teacher_id: session.teacher_id,
-        student_id: session.student_id,
-        q_demeanor: answers.q_demeanor,
-        q_clarity: answers.q_clarity,
-        q_facilitation: answers.q_facilitation,
-        q_content: answers.q_content,
-        q_time: answers.q_time
-      });
-      onClose();
-    } catch (err) {
-      console.error("Error submitting evaluation:", err);
-      onClose(); 
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-[800] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in font-montserrat">
-      <div className="bg-[#070b19] border border-white/20 rounded-[2rem] p-6 md:p-10 max-w-lg w-full shadow-2xl flex flex-col relative overflow-hidden">
-        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-emerald-500/10 blur-[80px] rounded-full pointer-events-none"></div>
-
-        <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-2 drop-shadow-md text-center">Califica tu Clase</h2>
-        <p className="text-sm font-medium text-white/70 mb-8 text-center leading-relaxed">
-          Ayúdanos a mantener la excelencia. ¿Cómo fue el desempeño de tu profesor hoy?
-        </p>
-
-        <div className="flex flex-col gap-4 mb-8">
-          {questions.map((q, idx) => (
-            <div key={q.id} className="bg-white/5 border border-white/10 rounded-xl p-4 flex flex-col gap-3 shadow-inner">
-              <span className="text-sm font-bold text-white/90 leading-tight">{idx + 1}. {q.text}</span>
-              <div className="flex gap-3">
-                <button onClick={() => setAnswers(prev => ({...prev, [q.id]: false}))} className={`flex-1 py-2 rounded-lg font-black text-xs uppercase tracking-widest transition-all border cursor-pointer ${answers[q.id] === false ? 'bg-red-500 text-white border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.4)] scale-105' : 'bg-black/40 text-white/50 border-white/10 hover:border-red-500/50'}`}>No</button>
-                <button onClick={() => setAnswers(prev => ({...prev, [q.id]: true}))} className={`flex-1 py-2 rounded-lg font-black text-xs uppercase tracking-widest transition-all border cursor-pointer ${answers[q.id] === true ? 'bg-emerald-500 text-white border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.4)] scale-105' : 'bg-black/40 text-white/50 border-white/10 hover:border-emerald-500/50'}`}>Sí</button>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <button disabled={!isComplete || isSubmitting} onClick={handleSubmit} className={`w-full py-4 font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-lg cursor-pointer ${isComplete ? 'bg-[#fcd34d] text-[#08203e] hover:scale-105 shadow-[0_0_20px_rgba(252,211,77,0.4)]' : 'bg-white/10 text-white/30 cursor-not-allowed'}`}>
-          {isSubmitting ? 'Enviando...' : 'Enviar Calificación'}
-        </button>
-      </div>
-    </div>
-  );
-};
-// ==========================================
-// 5.1 CAPSTONE MOMENTUM MODAL (Pre-Renewal Teaser)
-// ==========================================
-const CapstoneMomentumModal = ({ isOpen, student, onProceed }) => {
-  if (!isOpen || !student) return null;
-
-  const currentLevel = student.level ? student.level.split(':')[0].trim() : 'A1';
-  const nextLevel = currentLevel === 'A1' ? 'A2' : currentLevel === 'A2' ? 'B1' : currentLevel === 'B1' ? 'B2' : currentLevel === 'B2' ? 'C1' : 'C2';
-  
-  const msSinceJoin = new Date().getTime() - new Date(student.created_at || Date.now()).getTime();
-  const weeks = Math.max(1, Math.floor(msSinceJoin / (1000 * 60 * 60 * 24 * 7)));
-  
-  // Estimate ~3 hours of engagement per unit completed
-  const estimatedHours = (student.unit || 1) * 3;
-
-  return (
-    <div className="fixed inset-0 z-[8500] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-fade-in font-montserrat overflow-y-auto custom-scrollbar">
-      <div className="relative w-full max-w-2xl bg-[#070b19] border border-[#fcd34d]/50 rounded-[3rem] shadow-[0_0_60px_rgba(252,211,77,0.2)] flex flex-col p-8 md:p-12 text-center overflow-hidden">
-        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-[#fcd34d]/10 blur-[80px] rounded-full pointer-events-none"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/10 blur-[80px] rounded-full pointer-events-none"></div>
-        
-        <div className="w-20 h-20 bg-[#fcd34d] text-[#08203e] rounded-full flex items-center justify-center mx-auto mb-6 shadow-[0_0_30px_rgba(252,211,77,0.4)] relative z-10">
-          <svg className="w-10 h-10" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-        </div>
-
-        <h2 className="text-3xl md:text-5xl font-black text-white uppercase tracking-widest mb-4 relative z-10 drop-shadow-md">
-          ¡Hito Alcanzado!
-        </h2>
-        
-        <p className="text-sm md:text-base text-white/80 font-medium leading-relaxed mb-8 relative z-10">
-          Acabas de finalizar el último Workbook de tu nivel. Mira todo lo que has logrado con tu esfuerzo:
-        </p>
-
-        <div className="grid grid-cols-3 gap-4 mb-8 relative z-10">
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 shadow-inner">
-            <div className="text-2xl md:text-4xl font-black text-[#fcd34d]">{student.unit}</div>
-            <div className="text-[9px] md:text-[10px] uppercase font-bold tracking-widest text-white/50 mt-1">Unidades</div>
-          </div>
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 shadow-inner">
-            <div className="text-2xl md:text-4xl font-black text-[#fcd34d]">~{estimatedHours}</div>
-            <div className="text-[9px] md:text-[10px] uppercase font-bold tracking-widest text-white/50 mt-1">Horas Activas</div>
-          </div>
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 shadow-inner">
-            <div className="text-2xl md:text-4xl font-black text-[#fcd34d]">{weeks}</div>
-            <div className="text-[9px] md:text-[10px] uppercase font-bold tracking-widest text-white/50 mt-1">Semanas</div>
-          </div>
-        </div>
-
-        <div className="bg-[#fcd34d]/10 border border-[#fcd34d]/30 rounded-2xl p-6 mb-8 relative z-10 text-left">
-          <h3 className="text-[#fcd34d] font-black uppercase tracking-widest text-sm mb-2">¿Qué sigue ahora?</h3>
-          <p className="text-xs md:text-sm text-white/90 font-medium leading-relaxed mb-4">
-            Te espera tu <strong>Live Lab de cierre</strong>. Será una sesión especial donde evaluarás todo lo aprendido con tu profesor y verás un adelanto del Nivel {nextLevel}.
-          </p>
-          <div className="bg-black/30 p-3 rounded-lg border border-[#fcd34d]/20 text-xs font-bold text-white/80">
-            ⚠️ IMPORTANTE: Al finalizar tu Live Lab, deberás contactar a soporte para procesar la renovación de tu nivel. ¡Avisa a tus padres si eres menor de edad para que no pierdas tu progreso!
-          </div>
-        </div>
-
-        <button onClick={onProceed} className="w-full py-4 md:py-5 bg-[#fcd34d] hover:bg-white text-[#08203e] font-black tracking-widest text-xs md:text-sm uppercase rounded-xl transition-all shadow-[0_0_20px_rgba(252,211,77,0.4)] hover:scale-105 relative z-10 cursor-pointer">
-          Agendar mi Live Lab Final
-        </button>
-      </div>
-    </div>
-  );
-};
-
-// ==========================================
-// 6. THE LIVE CALENDAR BRIDGE
-// ==========================================
-const StudentCalendar = ({ student, filterType, onConfirm, onCancel }) => {
-  const [currentWeekOffset, setCurrentWeekOffset] = useState(0);
-  const [showConfirmation, setShowConfirmation] = useState(false);
-  const [availableSlots, setAvailableSlots] = useState([]);
-  const [selectedSlot, setSelectedSlot] = useState(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-
-  useEffect(() => {
-    const fetchAvailability = async () => {
-      if (!student || !filterType) return;
-
-      // Extracts "A1" from "A1: Básico 1" to match standard calendar formats
-      const baseLevel = student.level ? student.level.split(':')[0].trim() : 'A1';
-
-      const { data, error } = await supabase
-        .from('live_sessions')
-        .select('*')
-        .eq('status', 'available')
-        .eq('class_type', filterType) // Only shows the specific class they clicked (e.g., Live Lab, Tutoring)
-        .eq('level', baseLevel)       // Strictly matches their current CEFR level
-        .eq('unit', student.unit || 1); // Strictly matches their current unit
-        
-      if (!error && data) {
-        // Map the database timestamp into the visual strings the calendar grid expects
-        const mappedData = data.map(slot => {
-          if (slot.scheduled_at && !slot.session_date) {
-            const d = new Date(slot.scheduled_at);
-            return {
-              ...slot,
-              session_date: d.toISOString().split('T')[0],
-              // Formats as "9:00 AM" to snap perfectly into your UI grid
-              time_slot: d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).replace(/^0/, '')
-            };
-          }
-          return slot;
-        });
-        setAvailableSlots(mappedData);
-      }
-    };
-    
-    fetchAvailability();
-  }, [student, filterType]);
-
-  const getWeekDates = (offsetWeeks) => {
-    const today = new Date();
-    const currentDay = today.getDay();
-    const distanceToMonday = currentDay === 0 ? -6 : 1 - currentDay;
-    const monday = new Date(today);
-    monday.setDate(today.getDate() + distanceToMonday + (offsetWeeks * 7));
-    const dates = [];
-    for (let i = 0; i < 6; i++) {
-      const d = new Date(monday);
-      d.setDate(monday.getDate() + i);
-      dates.push(d);
-    }
-    return dates; 
-  };
-
-  const weekDates = getWeekDates(currentWeekOffset);
-  const dayNames = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-  const times = ['9:00 AM', '11:00 AM', '1:00 PM', '3:00 PM', '6:00 PM', '9:00 PM'];
-
-  const getSlotData = (date, timeStr) => {
-    const dateStr = date.toISOString().split('T')[0];
-    return availableSlots.find(s => s.session_date === dateStr && s.time_slot === timeStr);
-  };
-
-  const handleSlotClick = (slot) => {
-    setSelectedSlot(slot);
-    setShowConfirmation(true);
-  };
-
-  const handleConfirmBooking = async () => {
-    if (!selectedSlot || !student) return;
-    setIsProcessing(true);
-    
-    try {
-      const { error } = await supabase
-        .from('live_sessions')
-        .update({
-          status: 'booked',
-          student_id: student.id,
-          unit: student.unit || 1
-        })
-        .eq('id', selectedSlot.id);
-        
-      if (error) throw error;
-      
-      setShowConfirmation(false);
-      onConfirm(); 
-    } catch (error) {
-      console.error("Booking Error:", error);
-      alert("Lo sentimos, este horario ya no está disponible.");
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#070b19]/90 backdrop-blur-md p-4 font-montserrat">
-      
-      {showConfirmation && (
-        <div className="absolute inset-0 z-[200] flex items-center justify-center bg-[#070b19]/80 backdrop-blur-md p-4 animate-fade-in">
-           <div className="bg-white/10 border border-white/20 backdrop-blur-xl rounded-[30px] p-8 md:p-12 max-w-md w-full shadow-2xl flex flex-col items-center text-center">
-              <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-4 drop-shadow-md leading-relaxed">
-                CONFIRM YOUR {filterType}
-              </h2>
-              <p className="text-white/70 text-sm mb-8">
-                {selectedSlot?.session_date} at {selectedSlot?.time_slot}
-              </p>
-              
-              <div className="flex w-full gap-4">
-                <button onClick={() => setShowConfirmation(false)} className="flex-1 py-4 bg-white/5 hover:bg-white/10 text-white font-bold text-xs uppercase rounded-xl transition-colors">CANCEL</button>
-                <button 
-                  onClick={handleConfirmBooking} 
-                  disabled={isProcessing}
-                  className="flex-1 py-4 bg-[#fcd34d] text-[#08203e] font-black tracking-widest text-xs uppercase rounded-xl hover:scale-105 transition-all shadow-[0_0_15px_rgba(252,211,77,0.4)] disabled:opacity-50"
-                >
-                  {isProcessing ? 'SAVING...' : 'CONFIRM'}
-                </button>
-              </div>
-           </div>
-        </div>
-      )}
-
-      <div className="w-full max-w-5xl bg-white/5 backdrop-blur-xl border border-white/20 rounded-[30px] shadow-2xl p-6 md:p-10 flex flex-col lg:flex-row gap-10 animate-fade-in relative">
-        <button onClick={onCancel} className="absolute top-6 right-6 w-10 h-10 bg-white/10 hover:bg-white/20 border border-white/20 rounded-full flex items-center justify-center text-white transition-colors">✕</button>
-
-        <div className="flex-1 flex flex-col gap-6">
-           <h2 className="text-3xl font-black text-white uppercase tracking-widest drop-shadow-md">SCHEDULE A LESSON</h2>
-           <p className="text-white/80 font-medium text-sm leading-relaxed mb-4">
-             CHOOSE AN AVAILABLE DATE FOR YOUR NEXT {filterType}.<br/><br/>
-             Only the <span className="font-black text-[#fcd34d]">YELLOW</span> blocks are currently available for <strong className="text-white">UNIT {student?.unit || 1}</strong>.
-           </p>
-           
-           <div className="flex flex-col gap-4">
-              <select className="w-full p-4 bg-black/40 border border-white/20 rounded-xl text-xs font-bold text-white uppercase tracking-widest focus:outline-none appearance-none"><option>{filterType}</option></select>
-              <select className="w-full p-4 bg-black/40 border border-white/20 rounded-xl text-xs font-bold text-white uppercase tracking-widest focus:outline-none appearance-none"><option>DAY OF THE WEEK ▾</option></select>
-              <select className="w-full p-4 bg-black/40 border border-white/20 rounded-xl text-xs font-bold text-white uppercase tracking-widest focus:outline-none appearance-none"><option>HOUR ▾</option></select>
-           </div>
-        </div>
-
-        <div className="flex-[1.5] flex flex-col bg-black/20 rounded-3xl border border-white/10 p-4 md:p-6 relative shadow-inner">
-           <h3 className="text-center font-black text-white text-lg uppercase tracking-widest mb-6 drop-shadow-md">{filterType} CALENDAR</h3>
-           
-           <button disabled={currentWeekOffset === 0} onClick={() => setCurrentWeekOffset(prev => prev - 1)} className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-white/50 hover:text-white disabled:opacity-20 z-10 transition-colors">
-             <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
-           </button>
-           <button disabled={currentWeekOffset === 2} onClick={() => setCurrentWeekOffset(prev => prev + 1)} className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-white/50 hover:text-white disabled:opacity-20 z-10 transition-colors">
-             <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-           </button>
-
-           <div className="grid grid-cols-6 gap-1 md:gap-2 mb-4">
-             {dayNames.map((day, idx) => (
-               <div key={day} className="flex flex-col items-center bg-[#08203e] py-2 rounded-t-xl border border-white/10 shadow-sm">
-                 <span className="text-[10px] font-black text-white tracking-widest">{day}</span>
-                 <span className="text-[8px] font-bold text-white/50">{weekDates[idx].getDate()}/{weekDates[idx].getMonth()+1}</span>
-               </div>
-             ))}
-             
-             {times.map((time, tIdx) => (
-               <React.Fragment key={time}>
-                 {dayNames.map((_, dIdx) => {
-                   const slotData = getSlotData(weekDates[dIdx], time);
-                   const isAvailable = !!slotData;
-                   
-                   return (
-                     <div 
-                       key={`${dIdx}-${tIdx}`} 
-                       onClick={() => isAvailable && handleSlotClick(slotData)}
-                       className={`h-10 md:h-12 flex items-center justify-center text-[8px] md:text-[9px] font-bold tracking-widest border border-white/5 rounded-sm transition-all ${isAvailable ? 'bg-[#fcd34d] text-[#08203e] cursor-pointer hover:scale-105 shadow-[0_0_10px_rgba(252,211,77,0.3)] z-10 relative' : 'bg-white/5 text-white/30 cursor-not-allowed'}`}
-                     >
-                       {time}
-                     </div>
-                   );
-                 })}
-               </React.Fragment>
-             ))}
-           </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// ==========================================
-// 7. MAIN ROUTER COMPONENT (Traffic Cop)
-// ==========================================
-const StudentHub = ({ onReturnHome, preloadedStudent }) => {
-  const [studentData, setStudentData] = useState(null);
-  const [classCredits, setClassCredits] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [reminderConfig, setReminderConfig] = useState(null);
-  const [activeActivity, setActiveActivity] = useState(null);
-  const [isFetching, setIsFetching] = useState(false);
-  const [activeLiveSession, setActiveLiveSession] = useState(null);
-  const [activeJitsiSession, setActiveJitsiSession] = useState(null);
-  const [evalSessionTarget, setEvalSessionTarget] = useState(null);
-  
-  const [showGatekeeper, setShowGatekeeper] = useState(false);
-  const [gatekeeperData, setGatekeeperData] = useState(null);
-  
-  const [showCalendar, setShowCalendar] = useState(false);
-  const [calendarFilter, setCalendarFilter] = useState('LAB SESSION');
-  
-  const [showActivationModal, setShowActivationModal] = useState(false);
-  const [showCapstoneMomentum, setShowCapstoneMomentum] = useState(false);
-
-  // Community Panel, Info Board & Chat States
-  const [showInfoBoardModal, setShowInfoBoardModal] = useState(false);
-  const [showCommunity, setShowCommunity] = useState(false);
-  const [communityTab, setCommunityTab] = useState('BOARD');
-  const [showSeminarRoom, setShowSeminarRoom] = useState(false);
-  const [showTrophyRoom, setShowTrophyRoom] = useState(false);
-  
-  // Metrics & Practice State
-  const [isMetricsModalOpen, setIsMetricsModalOpen] = useState(false);
-  const [practiceContext, setPracticeContext] = useState(null);
-  const [completedActivityType, setCompletedActivityType] = useState(null);
-
-  const [announcements, setAnnouncements] = useState([]);
-  const [activeCategory, setActiveCategory] = useState(null);
-
-  const fetchAnnouncements = async (levelFullStr) => {
-    if (!levelFullStr) return;
-    const levelCode = levelFullStr.split(':')[0].trim();
-    try {
-      const { data, error } = await supabase
-        .from('announcements')
-        .select('*')
-        .or(`audience.eq.EVERYONE_WITH_STAFF,audience.eq.LEVEL_${levelCode}`)
-        .order('created_at', { ascending: false });
-      if (!error && data) setAnnouncements(data);
-    } catch (err) {
-      console.error("Error fetching announcements:", err);
-    }
-  };
-
-  const processBillingReminders = (profile) => {
-    if (profile.next_billing_date && profile.payment_status === 'good_standing') {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const billDate = new Date(profile.next_billing_date);
-      billDate.setHours(0, 0, 0, 0);
-      
-      const daysLeft = Math.round((billDate - today) / (1000 * 60 * 60 * 24));
-      const reminderKey = `acknowledged_billing_${profile.next_billing_date}_day_${daysLeft}`;
-      
-      if ((daysLeft === 5 || daysLeft === 1) && !localStorage.getItem(reminderKey)) {
-        setReminderConfig({ days: daysLeft, key: reminderKey });
-      }
-    }
-  };
-
-  useEffect(() => {
-    if (preloadedStudent) {
-      setStudentData(preloadedStudent);
-      setLoading(false);
-      fetchUpcomingSession(preloadedStudent.id);
-      fetchAnnouncements(preloadedStudent.level);
-      processBillingReminders(preloadedStudent);
-    } else {
-      fetchStudentProfile();
-    }
-  }, [preloadedStudent]);
-
-  const fetchStudentProfile = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-      const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
-      setStudentData(profile);
-      setClassCredits(profile.available_credits || 0);
-      fetchUpcomingSession(profile.id);
-      fetchAnnouncements(profile.level);
-      processBillingReminders(profile);
-    } catch (err) {
-      console.error("Error loading student profile:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchUpcomingSession = async (studentId) => {
-    if (!studentId) return;
-    // Look back 24 hours to catch running classes regardless of timezone differences
-    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    
-    const { data } = await supabase
-      .from('live_sessions')
-      .select('*')
-      .eq('student_id', studentId)
-      .in('status', ['booked', 'in_progress'])
-      .gte('scheduled_at', yesterday)
-      .order('scheduled_at', { ascending: true })
-      .limit(1)
-      .maybeSingle();
-
-    if (data) {
-      // Format the date for the UI card
-      const d = new Date(data.scheduled_at);
-      data.session_date = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-      setActiveLiveSession(data);
-    }
-  };
-
-  const handleStartPractice = (type, unit) => {
-    setPracticeContext({ type, unit });
-    setIsMetricsModalOpen(false);
-    setIsFetching(true);
-    setTimeout(() => {
-       setActiveActivity(type);
-       setIsFetching(false);
-    }, 1000);
-  };
-
-  const handleStartActivity = async (type) => {
-    if (!studentData) return;
-
-    // PREVIEW INTERCEPTOR
-    if (studentData.payment_status === 'pending_first_month') {
-      setShowActivationModal(true);
-      return;
-    }
-    
-    // PREVENT RE-TAKING COMPLETED ACTIVITIES
-    if (type === 'Lesson' && (studentData.lesson_score >= 75)) {
-      setCompletedActivityType('Lesson');
-      return;
-    }
-    if (type === 'Workbook' && (studentData.workbook_score >= 75)) {
-      setCompletedActivityType('Workbook');
-      return;
-    }
-
-    // Socials & Info Board Routing
-    if (type === 'InfoBoard') {
-      setShowInfoBoardModal(true);
-      return;
-    }
-    if (type === 'Community_CHAT') {
-      setShowSeminarRoom(true);
-      return;
-    }
-    if (type === 'Community_BOARD') {
-      setCommunityTab('BOARD');
-      setShowCommunity(true);
-      return;
-    }
-
-    if (type === 'Trophies') {
-      setShowTrophyRoom(true);
-      return;
-    }
-
-    if (type === 'Calendar') {
-      setCalendarFilter('LAB SESSION');
-      setShowCalendar(true);
-      return;
-    }
-    if (type === 'LiveClass') {
-      if (activeLiveSession) {
-        setIsFetching(true);
-        const { data, error } = await supabase.from('live_sessions').select('status').eq('id', activeLiveSession.id).single();
-        setIsFetching(false);
-        
-        if (error) {
-          alert("Error de conexión al verificar la sala: " + error.message);
-          return;
-        }
-
-        if (data && data.status !== 'in_progress') {
-          alert("El profesor está abriendo la sala. Por favor, intenta de nuevo en unos segundos.");
-          return;
-        }
-        
-        setActiveJitsiSession(activeLiveSession);
-      } else {
-        alert("No tienes ninguna clase activa programada en este momento.");
-      }
-      return;
-    }
-    setIsFetching(true);
-    setTimeout(() => {
-       setActiveActivity(type);
-       setIsFetching(false);
-    }, 1000);
-  };
-
-  const handleActivityComplete = async (type, submissionData) => {
-    setActiveActivity(null);
-    
-    // PRACTICE MODE INTERCEPTOR: Do not write to database or trigger Gatekeeper logic.
-    if (practiceContext) {
-      setPracticeContext(null);
-      alert("Practice Session Completed! Your official grades remain unchanged.");
-      return;
-    }
-
-    // ANTI-CHEATING LOCKDOWN: Server-Side Grading via Edge Function
-    if (submissionData?.security_flag === 'raw_payload') {
-      
-      // 1. Velocity Check (5-minute hard minimum)
-      if (submissionData.timeSpentSeconds < 300) {
-        alert(`Infracción de Seguridad: Actividad completada en tiempo irreal (${submissionData.timeSpentSeconds} segundos). El tiempo mínimo requerido es de 5 minutos. Calificación anulada.`);
-        return; // Abort completely, do not show gatekeeper, do not write to DB
-      }
-
-      setIsFetching(true); // Show loading state while server processes the heavy grading
-      try {
-        // 2. Send raw answers to the secure backend Edge Function
-        const { data: gradedResult, error } = await supabase.functions.invoke('secure-grader', {
-          body: { payload: submissionData }
-        });
-
-        if (error) throw error;
-
-        // 3. The Backend returns the verified scores (and has already written them securely to the DB)
-        setGatekeeperData({
-          type, 
-          level: studentData?.level || 'A1', 
-          unit: studentData?.unit || 1, 
-          scores: gradedResult.scores, 
-          average: gradedResult.average, 
-          passed: gradedResult.passed, 
-          fails: studentData?.unit_fail_count || 0
-        });
-        setShowGatekeeper(true);
-        
-      } catch (e) {
-        console.error("Failed to process secure grading:", e);
-        alert("Hubo un error procesando tu calificación de forma segura. Por favor, contacta a soporte administrativo.");
-      } finally {
-        setIsFetching(false);
-      }
-      
-    } else {
-      // Fallback Block: If a tech-savvy student tries to bypass the player and inject the old format
-      alert("Infracción de Seguridad: Formato de envío de calificaciones inválido.");
-    }
-  };
-
-  const handleGatekeeperProceed = async () => {
-    try {
-      const isLesson = gatekeeperData.type === 'Lesson';
-      const updatePayload = isLesson ? { lesson_score: gatekeeperData.average } : { workbook_score: gatekeeperData.average };
-
-      await supabase.from('profiles').update(updatePayload).eq('id', studentData.id);
-      setStudentData(prev => ({ ...prev, ...updatePayload }));
-      setShowGatekeeper(false);
-
-      if (!isLesson) {
-        // Intercept Capstone Workbooks to show the Momentum Modal
-        const CAPSTONE_UNITS = [12, 24, 36, 48, 70, 92];
-        if (CAPSTONE_UNITS.includes(Number(studentData.unit || 1))) {
-          setShowCapstoneMomentum(true);
-        } else {
-          setCalendarFilter('LIVE LAB SESSION');
-          setShowCalendar(true);
-        }
-      }
-    } catch (err) {
-      console.error("Error saving progress:", err);
-    }
-  };
-
-  const handleRetry = async () => {
-    try {
-      const newFails = (studentData.unit_fail_count || 0) + 1;
-      await supabase.from('profiles').update({ unit_fail_count: newFails }).eq('id', studentData.id);
-      setStudentData({ ...studentData, unit_fail_count: newFails });
-      setShowGatekeeper(false);
-    } catch (err) {}
-  };
-
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#070b19]"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#fcd34d]"></div></div>;
-
-  // --- INSTANTANEOUS BILLING LOCKOUT INTERCEPTOR ---
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const billingDate = studentData?.next_billing_date ? new Date(studentData.next_billing_date) : null;
-  if (billingDate) billingDate.setHours(0, 0, 0, 0);
-
-const isLockedOut = billingDate && today >= billingDate;
-
-  if (isLockedOut || studentData?.payment_status === 'processing') {
-    return <PaymentLockoutView student={studentData} supabase={supabase} onReload={() => window.location.reload()} />;
-  }
-
-  if (activeActivity) {
-    // If practicing, spoof the student's unit to trick the player into loading older content safely
-    const playerStudentData = practiceContext ? { ...studentData, unit: practiceContext.unit } : studentData;
-    return <StudentPlayer activityType={activeActivity} student={playerStudentData} onExit={() => { setActiveActivity(null); setPracticeContext(null); }} onComplete={(scores) => handleActivityComplete(activeActivity, scores)} />;
-  }
-
-  return (
-    <>
-      {/* BILLING REMINDER MODAL (Strictly Informative) */}
-      {reminderConfig !== null && (
-        <div className="fixed inset-0 z-[8000] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in font-montserrat">
-          <div className="bg-[#070b19] border border-[#fcd34d]/50 rounded-[2rem] w-full max-w-md p-8 shadow-[0_0_50px_rgba(252,211,77,0.15)] flex flex-col items-center text-center relative overflow-hidden">
-            <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-[#fcd34d]/10 blur-[80px] rounded-full pointer-events-none"></div>
-            
-            <div className="w-20 h-20 bg-[#fcd34d]/20 text-[#fcd34d] rounded-full flex items-center justify-center mx-auto mb-6 border border-[#fcd34d]/50 shadow-[0_0_30px_rgba(252,211,77,0.3)] relative z-10">
-              <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-            </div>
-            
-            <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-2 relative z-10">Aviso de Facturación</h2>
-            
-            <div className="bg-white/5 border border-white/10 rounded-xl p-5 mb-6 relative z-10 w-full">
-              <p className="text-sm font-medium text-white/80 leading-relaxed mb-4">
-                Tu próximo corte de facturación es en <strong className="text-[#fcd34d] text-lg">{reminderConfig.days} {reminderConfig.days === 1 ? 'día' : 'días'}</strong>. 
-              </p>
-              <p className="text-[10px] font-black text-red-400 uppercase tracking-widest bg-red-500/10 py-2 px-3 rounded-lg border border-red-500/20 shadow-inner">
-                ⚠️ No aceptamos pagos por adelantado.
-              </p>
-              <p className="text-xs text-white/50 mt-3 font-medium leading-relaxed">
-                Este mensaje es solo un recordatorio para que te organices. Podrás procesar tu pago únicamente a partir de la fecha exacta de tu corte.
-              </p>
-            </div>
-
-            <button 
-              onClick={() => {
-                localStorage.setItem(reminderConfig.key, 'true');
-                setReminderConfig(null);
-              }} 
-              className="w-full py-4 bg-[#fcd34d] hover:bg-white text-[#08203e] font-black tracking-widest text-xs uppercase rounded-xl transition-all shadow-[0_0_20px_rgba(252,211,77,0.3)] hover:scale-105 relative z-10 cursor-pointer"
-            >
-              Entendido
-            </button>
-          </div>
-        </div>
-      )}
-
-      {completedActivityType && (
-        <div className="fixed inset-0 z-[700] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in font-montserrat">
-          <div className="bg-[#070b19] border border-white/20 backdrop-blur-xl rounded-[2.5rem] p-8 md:p-10 max-w-md w-full shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col items-center text-center relative overflow-hidden">
-            <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-[#fcd34d]/10 blur-[80px] rounded-full pointer-events-none"></div>
-            
-            <div className="w-16 h-16 bg-[#fcd34d]/20 text-[#fcd34d] rounded-full flex items-center justify-center mb-6 border border-[#fcd34d]/50 shadow-[0_0_20px_rgba(252,211,77,0.3)] shrink-0 z-10">
-              <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-            </div>
-            
-            <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-widest mb-4 drop-shadow-md z-10">Activity Completed</h2>
-            
-            <p className="text-white/70 font-medium text-sm leading-relaxed mb-8 z-10">
-              You have already successfully completed the <strong className="text-white">{completedActivityType}</strong> for this unit. Please wait for your live class evaluation to unlock the next unit, or visit the <strong className="text-[#fcd34d]">Practice Center</strong> to review previous material without affecting your official grade.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row w-full gap-3 z-10">
-              <button onClick={() => setCompletedActivityType(null)} className="flex-1 py-4 bg-white/5 hover:bg-white/10 text-white font-bold text-xs uppercase tracking-widest rounded-xl transition-colors border border-white/10">Understood</button>
-              <button onClick={() => { setCompletedActivityType(null); setIsMetricsModalOpen(true); }} className="flex-1 py-4 bg-[#fcd34d] text-[#08203e] font-black tracking-widest text-xs uppercase rounded-xl hover:scale-105 transition-transform shadow-[0_0_15px_rgba(252,211,77,0.4)]">Practice Center</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <StudentMetricsModal 
-        isOpen={isMetricsModalOpen} 
-        onClose={() => setIsMetricsModalOpen(false)} 
-        student={studentData} 
-        onStartPractice={handleStartPractice}
-        supabase={supabase}
-      />
-      <LevelCompleteOverlay student={studentData} />
-
-      {activeJitsiSession && (
-        <JitsiRoom 
-          session={activeJitsiSession} 
-          student={studentData} 
-          onLeave={(needsEval) => { 
-            const sessionData = activeJitsiSession;
-            setActiveJitsiSession(null); 
-            if (needsEval === true) setEvalSessionTarget(sessionData);
-          }} 
-        />
-      )}
-
-      <TeacherEvaluationModal 
-        isOpen={!!evalSessionTarget}
-        session={evalSessionTarget}
-        onClose={() => setEvalSessionTarget(null)}
-        supabase={supabase}
-      />
-
-      {showInfoBoardModal && (
-        <div className="fixed inset-0 z-[650] bg-black/60 backdrop-blur-2xl flex items-center justify-center p-2 sm:p-6 md:p-10 animate-fade-in font-montserrat">
-          <div className="w-full h-full max-w-6xl bg-[#070b19]/80 backdrop-blur-2xl border border-white/20 rounded-[2.5rem] shadow-[0_0_50px_rgba(0,0,0,0.6)] flex flex-col overflow-hidden relative">
-            <div className="h-16 md:h-20 border-b border-white/10 bg-black/20 px-6 md:px-8 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="w-2.5 h-2.5 rounded-full bg-[#fcd34d] shadow-[0_0_10px_#fcd34d]"></div>
-                <div>
-                  <h2 className="text-sm md:text-lg font-black uppercase tracking-widest text-white">Academy Info Board</h2>
-                  <p className="text-[9px] text-white/50 font-bold uppercase tracking-widest">Official Updates & Announcements</p>
-                </div>
-              </div>
-              <button onClick={() => setShowInfoBoardModal(false)} className="w-10 h-10 rounded-xl bg-white/10 hover:bg-red-500 border border-white/20 flex items-center justify-center text-white font-black transition-colors cursor-pointer">✕</button>
-            </div>
-
-            <div className="p-4 md:px-8 md:pt-6 border-b border-white/10 bg-white/5 shrink-0">
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => setActiveCategory(null)}
-                  className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border cursor-pointer ${!activeCategory ? 'bg-[#fcd34d] border-[#fcd34d] text-[#08203e] shadow-md' : 'bg-white/10 border-white/20 text-white/70 hover:text-white'}`}
-                >
-                  All Updates ({announcements.length})
-                </button>
-                {INFO_CATEGORIES.map(cat => (
-                  <button
-                    key={cat}
-                    onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
-                    className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border cursor-pointer ${activeCategory === cat ? 'bg-[#fcd34d] border-[#fcd34d] text-[#08203e] shadow-md' : 'bg-white/10 border-white/20 text-white/70 hover:text-white'}`}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-8 space-y-4">
-              {(activeCategory ? announcements.filter(a => a.category === activeCategory) : announcements).length === 0 ? (
-                <div className="h-full flex items-center justify-center text-white/40 font-bold uppercase tracking-widest text-xs py-16">
-                  No active announcements for this filter.
-                </div>
-              ) : (
-                (activeCategory ? announcements.filter(a => a.category === activeCategory) : announcements).map(ann => (
-                  <div key={ann.id} className="bg-white/10 border border-white/20 rounded-2xl p-5 lg:p-6 flex flex-col sm:flex-row items-center sm:items-start gap-5 hover:bg-white/15 transition-colors shadow-md">
-                    {ann.image_url && (
-                      <div className="w-full sm:w-40 h-48 sm:h-40 rounded-xl overflow-hidden shrink-0 border border-white/30 shadow-md bg-black/30">
-                        <img src={ann.image_url} alt="Cover" className="w-full h-full object-cover" />
+                }
+
+                return (
+                  <div key={el.id} className="relative flex flex-col w-full max-w-4xl mx-auto items-center">
+                    {el.type === 'text' && (
+                      <div className="ola-player-glass w-full rounded-[2.25rem] p-7 sm:p-12 text-center z-20">
+                        <div
+                          dangerouslySetInnerHTML={{ __html: el.htmlContent }}
+                          className="rich-text-content pointer-events-none text-[#1e2246] text-sm sm:text-base [&_span]:!text-lg sm:[&_span]:!text-2xl [&_span]:!leading-tight [&_span]:!whitespace-normal"
+                        />
                       </div>
                     )}
-                    <div className="flex flex-col w-full text-center sm:text-left">
-                      <div className="flex items-center justify-center sm:justify-between gap-2 mb-2">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-[#fcd34d] bg-[#fcd34d]/10 border border-[#fcd34d]/30 px-2.5 py-1 rounded-lg">
-                          {ann.category || ann.title}
-                        </span>
-                        {ann.created_at && (
-                          <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
-                            {new Date(ann.created_at).toLocaleDateString()}
-                          </span>
+
+                    {isCard && (
+                      <div className="ola-player-glass w-full rounded-[2.25rem] p-6 sm:p-10 flex flex-col gap-6 h-full justify-between">
+                        {el.data?.imageUrl && (
+                          <img
+                            src={el.data.imageUrl}
+                            alt="Visual Prompt"
+                            draggable="false"
+                            onContextMenu={(e) => e.preventDefault()}
+                            style={{ WebkitUserDrag: 'none' }}
+                            className="w-full h-72 sm:h-80 object-cover rounded-3xl border border-white mb-2 select-none pointer-events-none shadow-sm"
+                          />
+                        )}
+
+                        {el.type === 'record_compare' && (
+                          <RecordCompareActivity
+                            targetText={el.data?.transcriptText || el.data?.text || ''}
+                            audioUrl={el.data?.audioUrl || el.data?.audio || ''}
+                            lessonId={el.data?.lessonId || lessonId || student?.lessonId || 'standalone-lesson'}
+                            nodeId={el.id}
+                            cefrLevel={student?.level ? student.level.split(':')[0] : 'A1'}
+                            onComplete={({ overallScore, pointsAwarded, passed }) => {
+                              setNavButtonState('idle');
+                              setStudentAnswers((prev) => ({
+                                ...prev,
+                                [`${el.id}_recorded`]: passed,
+                                [`${el.id}_score`]: overallScore,
+                                [`${el.id}_points`]: pointsAwarded,
+                              }));
+                              proceedToNext();
+                            }}
+                          />
+                        )}
+
+                        {el.type === 'fill_in_the_blank' &&
+                          el.data &&
+                          (() => {
+                            const rawText = el.data.templateText || '';
+                            if (!rawText) return null;
+                            const parts = rawText.split(/(_+)/);
+                            let blankIndex = 0;
+                            const rawGroups = (el.data.answerText || '').split(',');
+
+                            return (
+                              <div className="w-full h-full flex flex-col justify-center items-center mt-4">
+                                <div
+                                  className="text-center w-full break-words leading-[3.8rem] text-[#1e2246]"
+                                  style={{
+                                    fontSize: el.data.t_fontSize ? `${el.data.t_fontSize}px` : '21px',
+                                    fontFamily: el.data.t_fontFamily || 'Montserrat',
+                                    fontWeight: el.data.t_isBold ? 'bold' : 'normal',
+                                  }}
+                                >
+                                  {parts.map((part, i) => {
+                                    if (part.includes('_')) {
+                                      const currentBlankIndex = blankIndex++;
+                                      const blankWidth = Math.max(84, Math.min(part.length * 20, 300));
+
+                                      const targetGroup = rawGroups[currentBlankIndex] || '';
+                                      const cleanedTarget = targetGroup.replace(/^["'\s]+|["'\s]+$/g, '');
+                                      const validOptions = cleanedTarget.split(/[|/]/).map((w) => w.trim());
+                                      const studentAns = (studentAnswers[`${el.id}_${currentBlankIndex}`] || '').trim();
+                                      const isCorrect = validOptions.some((opt) => cleanStr(opt) === cleanStr(studentAns));
+
+                                      return (
+                                        <span key={i} className="relative inline-block mx-2.5">
+                                          {showFeedback && !isCorrect && (
+                                            <span className="absolute -top-9 left-1/2 -translate-x-1/2 text-[#128063] font-extrabold text-xs sm:text-sm whitespace-nowrap bg-[#e7faf3] px-3 py-1 rounded-xl border border-[#16a37f] shadow-md z-50">
+                                              {validOptions[0]}
+                                            </span>
+                                          )}
+                                          <input
+                                            type="text"
+                                            autoCapitalize="none"
+                                            autoCorrect="off"
+                                            spellCheck="false"
+                                            disabled={showFeedback}
+                                            value={studentAnswers[`${el.id}_${currentBlankIndex}`] || ''}
+                                            onChange={(e) =>
+                                              setStudentAnswers((prev) => ({
+                                                ...prev,
+                                                [`${el.id}_${currentBlankIndex}`]: e.target.value,
+                                              }))
+                                            }
+                                            className={`px-3.5 py-1.5 border-b-4 border-t-0 border-x-0 outline-none transition-colors rounded-t-xl font-bold text-center shadow-inner ${
+                                              showFeedback
+                                                ? isCorrect
+                                                  ? 'bg-[#16a37f]/15 border-[#16a37f] text-[#128063]'
+                                                  : 'bg-[#ee665b]/15 border-[#ee665b] text-[#c93f34]'
+                                                : 'bg-white/90 border-[#626a9f]/50 text-[#1e2246] focus:border-[#454d82]'
+                                            }`}
+                                            style={{ width: `${blankWidth}px` }}
+                                          />
+                                        </span>
+                                      );
+                                    }
+                                    return <span key={i} dangerouslySetInnerHTML={{ __html: part }} />;
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          })()}
+
+                        {el.type === 'short_answer' &&
+                          el.data &&
+                          (() => {
+                            const ans = cleanStr(studentAnswers[el.id]);
+                            const target = cleanStr(el.data.correctAnswer);
+                            const isCorrect = ans === target;
+
+                            return (
+                              <div className="flex flex-col w-full h-full justify-center">
+                                <div
+                                  dangerouslySetInnerHTML={{ __html: el.data.questionHtml }}
+                                  className="w-full break-words text-[#1e2246] mt-1 text-lg sm:text-xl font-semibold mb-6"
+                                />
+                                <div className="relative w-full">
+                                  {showFeedback && !isCorrect && (
+                                    <div className="mb-2 text-[#128063] font-bold text-xs sm:text-sm bg-[#e7faf3] border border-[#16a37f]/40 rounded-xl px-4 py-2">
+                                      Correct answer: {el.data.correctAnswer}
+                                    </div>
+                                  )}
+                                  <input
+                                    type="text"
+                                    placeholder="Type your answer here..."
+                                    disabled={showFeedback}
+                                    value={studentAnswers[el.id] || ''}
+                                    onChange={(e) =>
+                                      setStudentAnswers((prev) => ({ ...prev, [el.id]: e.target.value }))
+                                    }
+                                    className={`w-full p-4 sm:p-5 border-2 rounded-2xl font-bold transition-all placeholder-[#50567d]/50 text-base sm:text-lg outline-none shadow-sm ${
+                                      showFeedback
+                                        ? isCorrect
+                                          ? 'bg-[#16a37f]/12 border-[#16a37f] text-[#128063]'
+                                          : 'bg-[#ee665b]/12 border-[#ee665b] text-[#c93f34]'
+                                        : 'bg-white/90 border-white focus:border-[#454d82] text-[#1e2246]'
+                                    }`}
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })()}
+
+                        {el.type === 'multiple_selection' && el.data && (
+                          <div className="flex flex-col w-full">
+                            {el.data.promptHtml && (
+                              <div
+                                dangerouslySetInnerHTML={{ __html: el.data.promptHtml }}
+                                className="mb-6 text-lg sm:text-xl font-semibold text-[#1e2246]"
+                              />
+                            )}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 w-full">
+                              {el.data.options?.map((opt) => {
+                                const isSelected = studentAnswers[`${el.id}_${opt.id}`] === true;
+                                const isCorrectOpt = opt.isCorrect;
+
+                                let cardClasses =
+                                  'bg-white/80 border-white text-[#1e2246] hover:bg-white hover:border-[#626a9f]/50';
+                                let dotClasses = 'border-[#626a9f]/40 bg-transparent';
+
+                                if (isSelected && !showFeedback) {
+                                  cardClasses =
+                                    'bg-[#ffc749] border-[#1e2246] text-[#1e2246] shadow-[0_3px_0_#1e2246]';
+                                  dotClasses = 'border-[#1e2246] bg-[#1e2246]';
+                                }
+
+                                if (showFeedback) {
+                                  if (isSelected && isCorrectOpt) {
+                                    cardClasses =
+                                      'bg-[#16a37f]/15 border-[#16a37f] text-[#128063]';
+                                    dotClasses = 'border-[#16a37f] bg-[#16a37f]';
+                                  } else if (isSelected && !isCorrectOpt) {
+                                    cardClasses =
+                                      'bg-[#ee665b]/15 border-[#ee665b] text-[#c93f34]';
+                                    dotClasses = 'border-[#ee665b] bg-[#ee665b]';
+                                  } else if (!isSelected && isCorrectOpt) {
+                                    cardClasses =
+                                      'bg-[#16a37f]/10 border-[#16a37f] text-[#128063]';
+                                    dotClasses = 'border-[#16a37f] bg-transparent';
+                                  } else {
+                                    cardClasses =
+                                      'bg-white/55 border-white/80 text-[#50567d] opacity-75';
+                                    dotClasses = 'border-[#626a9f]/25 bg-transparent';
+                                  }
+                                }
+
+                                return (
+                                  <button
+                                    type="button"
+                                    key={opt.id}
+                                    disabled={showFeedback}
+                                    onClick={() =>
+                                      setStudentAnswers((prev) => ({
+                                        ...prev,
+                                        [`${el.id}_${opt.id}`]: !prev[`${el.id}_${opt.id}`],
+                                      }))
+                                    }
+                                    className={`w-full p-4 sm:p-5 border-2 rounded-2xl text-left transition-all duration-150 active:scale-[0.98] flex items-center shadow-sm cursor-pointer ${cardClasses}`}
+                                  >
+                                    <div
+                                      className={`w-5 h-5 rounded-full border-2 mr-4 flex items-center justify-center shrink-0 transition-colors ${dotClasses}`}
+                                    >
+                                      {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
+                                    </div>
+                                    <div
+                                      dangerouslySetInnerHTML={{ __html: opt.html }}
+                                      className="pointer-events-none text-base sm:text-lg font-bold"
+                                    />
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                        {el.type === 'drag_and_drop' && el.data && (
+                          <div className="flex flex-col gap-8 w-full mt-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full">
+                              {el.data.items.map((item, idx) => {
+                                if (!item.imageUrl) return null;
+                                const placed = dndAnswers[`${el.id}_${idx}`];
+                                const target = item.targetText;
+                                const isCorrect = cleanStr(placed) === cleanStr(target);
+
+                                let dropClass = 'bg-white/60 border-[#626a9f]/35';
+                                let pillClass = 'bg-[#ffc749] text-[#1e2246] border-2 border-[#1e2246]';
+
+                                if (showFeedback && placed) {
+                                  if (isCorrect) {
+                                    dropClass = 'bg-[#16a37f]/15 border-[#16a37f]';
+                                    pillClass = 'bg-[#16a37f] text-white border-2 border-[#1e2246]';
+                                  } else {
+                                    dropClass = 'bg-[#ee665b]/15 border-[#ee665b]';
+                                    pillClass = 'bg-[#ee665b] text-white border-2 border-[#1e2246]';
+                                  }
+                                }
+
+                                return (
+                                  <div key={idx} className="flex flex-col items-center gap-4">
+                                    <img
+                                      src={item.imageUrl}
+                                      draggable="false"
+                                      onContextMenu={(e) => e.preventDefault()}
+                                      style={{ WebkitUserDrag: 'none' }}
+                                      className="w-full aspect-[4/5] rounded-3xl shadow-sm object-cover border border-white select-none pointer-events-none"
+                                      alt="DnD Target"
+                                    />
+                                    <div
+                                      onDragOver={handleDragOver}
+                                      onDrop={(e) => handleDrop(e, `${el.id}_${idx}`)}
+                                      className={`w-full min-h-[76px] border-2 border-dashed rounded-2xl flex items-center justify-center transition-all p-2 ${dropClass}`}
+                                    >
+                                      {placed ? (
+                                        <div
+                                          onClick={(e) => {
+                                            if (!showFeedback) {
+                                              e.stopPropagation();
+                                              setDndAnswers((prev) => {
+                                                const copy = { ...prev };
+                                                delete copy[`${el.id}_${idx}`];
+                                                return copy;
+                                              });
+                                            }
+                                          }}
+                                          className={`px-4 py-2.5 rounded-xl font-bold text-sm sm:text-base shadow-sm w-[92%] text-center transition-transform ${
+                                            showFeedback ? '' : 'hover:scale-[1.02] active:scale-95 cursor-pointer'
+                                          } ${pillClass}`}
+                                        >
+                                          {placed}
+                                        </div>
+                                      ) : (
+                                        <span className="text-[11px] uppercase font-bold tracking-widest text-[#626a9f]/60">
+                                          Drop here
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+
+                            <div className="w-full bg-white/75 p-6 sm:p-8 rounded-[2rem] border border-white shadow-inner flex flex-col items-center">
+                              <div className="text-center font-bold text-[#454d82] text-xs uppercase tracking-widest mb-5">
+                                Word Bank • Drag to match
+                              </div>
+                              <div className="flex flex-wrap justify-center gap-3 w-full">
+                                {el.data.items.map((item, idx) => {
+                                  if (!item.studentViewText) return null;
+                                  const isUsed = Object.values(dndAnswers).includes(item.studentViewText);
+                                  if (isUsed) return null;
+                                  return (
+                                    <div
+                                      key={`bank-${idx}`}
+                                      draggable={!showFeedback}
+                                      onDragStart={(e) => handleDragStart(e, item.studentViewText)}
+                                      className="px-5 py-3 border-2 rounded-xl font-bold text-xs sm:text-sm shadow-sm cursor-grab active:cursor-grabbing transition-transform hover:-translate-y-0.5 bg-white hover:bg-[#fff3d1] text-[#1e2246] border-[#626a9f]/30"
+                                    >
+                                      {item.studentViewText}
+                                    </div>
+                                  );
+                                })}
+                                {Object.keys(dndAnswers).length ===
+                                  el.data.items.filter((i) => i.imageUrl).length && (
+                                  <span className="text-[#128063] font-bold text-sm tracking-wider uppercase py-2 w-full text-center block">
+                                    All items placed!
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {el.type === 'slider_bar' &&
+                          el.data &&
+                          (() => {
+                            const isVert = el.data.orientation === 'vertical';
+                            const opts = el.data.options || [];
+                            const maxIdx = Math.max(0, opts.length - 1);
+                            const currentIdx =
+                              studentAnswers[el.id] !== undefined
+                                ? parseInt(studentAnswers[el.id], 10)
+                                : Math.floor(maxIdx / 2);
+                            const activeOpt = opts[currentIdx] || {};
+                            const pct = maxIdx === 0 ? 50 : (currentIdx / maxIdx) * 100;
+
+                            const correctIdx = opts.findIndex((opt) => opt.isCorrect);
+                            const isCorrect = currentIdx === correctIdx;
+                            const barBg = showFeedback
+                              ? isCorrect
+                                ? 'rgba(22, 163, 127, 0.45)'
+                                : 'rgba(238, 102, 91, 0.45)'
+                              : el.data.barColor || 'rgba(98, 106, 159, 0.25)';
+                            const thumbColor = showFeedback
+                              ? isCorrect
+                                ? '#16a37f'
+                                : '#ee665b'
+                              : el.data.handleColor || '#ffc749';
+
+                            return (
+                              <div className="w-full flex flex-col h-full min-h-[190px] justify-end relative pb-8 mt-4">
+                                <div className="absolute w-full h-full flex flex-col items-center justify-center">
+                                  <div
+                                    className="absolute flex items-center justify-center rounded-full overflow-hidden transition-colors"
+                                    style={{
+                                      backgroundColor: barBg,
+                                      width: isVert ? `${el.data.barThickness}px` : '100%',
+                                      height: isVert ? '100%' : `${el.data.barThickness}px`,
+                                    }}
+                                  />
+                                  <input
+                                    type="range"
+                                    min="0"
+                                    max={maxIdx}
+                                    step="1"
+                                    disabled={showFeedback}
+                                    value={currentIdx}
+                                    onChange={(e) =>
+                                      setStudentAnswers((prev) => ({ ...prev, [el.id]: e.target.value }))
+                                    }
+                                    className="absolute custom-slider w-full h-full z-10 cursor-pointer"
+                                    style={{
+                                      '--thumb-color': thumbColor,
+                                      transform: isVert ? 'rotate(-90deg)' : 'none',
+                                      WebkitAppearance: 'none',
+                                      background: 'transparent',
+                                    }}
+                                  />
+                                  {!isVert && (
+                                    <div
+                                      className="absolute flex flex-col items-center transition-all duration-200 pointer-events-none z-0"
+                                      style={{
+                                        left: `${pct}%`,
+                                        bottom: 'calc(50% + 24px)',
+                                        transform: 'translateX(-50%)',
+                                      }}
+                                    >
+                                      <div className="bg-[#1e2246] text-[#ffc749] px-5 py-2.5 rounded-xl shadow-lg font-bold text-sm sm:text-base whitespace-nowrap">
+                                        {activeOpt.text}
+                                      </div>
+                                      <div
+                                        className="w-0 h-0 border-solid"
+                                        style={{
+                                          borderWidth: '9px 7px 0 7px',
+                                          borderColor: '#1e2246 transparent transparent transparent',
+                                        }}
+                                      />
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })()}
+
+                        {(el.type === 'crossword' || el.type === 'word_search') && el.data && (
+                          <div className="w-full flex flex-col lg:flex-row gap-6 mt-4">
+                            <div className="w-full lg:w-1/3 flex flex-col gap-5">
+                              {el.type === 'crossword' && (
+                                <>
+                                  <div className="bg-white/80 p-5 rounded-2xl border border-white shadow-sm">
+                                    <h4 className="text-xs font-bold text-[#454d82] uppercase tracking-widest border-b border-[#626a9f]/15 pb-2 mb-3">
+                                      Across
+                                    </h4>
+                                    <div className="flex flex-col gap-2.5">
+                                      {el.data.across?.map((a) => (
+                                        <div key={`a-${a.num}`} className="text-xs sm:text-sm text-[#1e2246] flex gap-2.5">
+                                          <span className="font-extrabold text-[#454d82]">{a.num}.</span>
+                                          <span className="font-medium leading-snug">{a.prompt}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                  <div className="bg-white/80 p-5 rounded-2xl border border-white shadow-sm">
+                                    <h4 className="text-xs font-bold text-[#454d82] uppercase tracking-widest border-b border-[#626a9f]/15 pb-2 mb-3">
+                                      Down
+                                    </h4>
+                                    <div className="flex flex-col gap-2.5">
+                                      {el.data.down?.map((d) => (
+                                        <div key={`d-${d.num}`} className="text-xs sm:text-sm text-[#1e2246] flex gap-2.5">
+                                          <span className="font-extrabold text-[#454d82]">{d.num}.</span>
+                                          <span className="font-medium leading-snug">{d.prompt}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </>
+                              )}
+                              {el.type === 'word_search' && (
+                                <div className="bg-white/80 p-5 rounded-2xl border border-white shadow-sm flex flex-col gap-4">
+                                  <div
+                                    dangerouslySetInnerHTML={{ __html: el.data.promptHtml }}
+                                    className="w-full whitespace-pre-wrap break-words border-b border-[#626a9f]/15 pb-3 text-base sm:text-lg font-semibold text-[#1e2246]"
+                                  />
+                                  <div className="flex flex-wrap gap-2">
+                                    {el.data.targetWords?.map((w, i) => (
+                                      <div
+                                        key={i}
+                                        className="bg-[#f6f7fc] px-3 py-1.5 rounded-lg border border-[#dfe2f2] text-xs sm:text-sm font-bold text-[#1e2246] tracking-wider flex items-center gap-2"
+                                      >
+                                        <span className="w-2 h-2 rounded-full bg-[#ffc749] border border-[#1e2246]" />
+                                        {w}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="w-full lg:w-2/3 bg-white/75 rounded-[2rem] border border-white p-3 sm:p-6 flex flex-col items-center shadow-inner relative">
+                              <div className="lg:hidden w-full text-center py-2 mb-3 bg-[#fff3d1] border border-[#ffc749] rounded-xl">
+                                <span className="text-[10px] font-bold text-[#1e2246] uppercase tracking-widest">
+                                  Pinch &amp; Drag to Navigate Board
+                                </span>
+                              </div>
+
+                              <div
+                                className="w-full max-h-[60vh] lg:max-h-none overflow-auto custom-scrollbar touch-pan-x touch-pan-y rounded-2xl flex justify-center items-start"
+                                style={{ touchAction: 'pan-x pan-y pinch-zoom' }}
+                              >
+                                <div className="w-fit p-2 min-w-full flex justify-center items-center">
+                                  {el.type === 'crossword' && (
+                                    <div
+                                      style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: `repeat(${el.data.grid[0]?.length || 1}, minmax(40px, 1fr))`,
+                                        gap: '4px',
+                                        width: 'fit-content',
+                                      }}
+                                      className="mx-auto"
+                                    >
+                                      {el.data.grid.map((row, rIdx) =>
+                                        row.map((cell, cIdx) => {
+                                          if (!cell)
+                                            return <div key={`${rIdx}-${cIdx}`} className="relative aspect-square w-10 md:w-12 bg-transparent" />;
+
+                                          const studentLetter = studentAnswers[`${el.id}_${rIdx}_${cIdx}`] || '';
+                                          const targetLetter = cell.char || '';
+                                          const isCellFeedback = showFeedback && studentLetter;
+                                          const isCorrect = studentLetter.toUpperCase() === targetLetter.toUpperCase();
+
+                                          return (
+                                            <div key={`${rIdx}-${cIdx}`} className="relative aspect-square w-10 md:w-12">
+                                              <div className="w-full h-full relative">
+                                                {cell.num && (
+                                                  <span className="absolute top-1 left-1.5 text-[9px] font-extrabold text-[#454d82] z-10 pointer-events-none">
+                                                    {cell.num}
+                                                  </span>
+                                                )}
+                                                <input
+                                                  type="text"
+                                                  maxLength={1}
+                                                  disabled={showFeedback}
+                                                  value={studentLetter}
+                                                  onChange={(e) =>
+                                                    setStudentAnswers((prev) => ({
+                                                      ...prev,
+                                                      [`${el.id}_${rIdx}_${cIdx}`]: e.target.value
+                                                        .toUpperCase()
+                                                        .replace(/[^A-Z]/g, ''),
+                                                    }))
+                                                  }
+                                                  style={{
+                                                    fontSize: el.data.fontSize ? `${el.data.fontSize}px` : undefined,
+                                                    fontFamily: el.data.fontFamily,
+                                                    fontWeight: el.data.isBold ? 'bold' : 'normal',
+                                                  }}
+                                                  className={`w-full h-full text-center uppercase focus:outline-none transition rounded-xl font-bold shadow-sm ${
+                                                    isCellFeedback
+                                                      ? isCorrect
+                                                        ? 'bg-[#16a37f]/20 border-2 border-[#16a37f] text-[#128063]'
+                                                        : 'bg-[#ee665b]/20 border-2 border-[#ee665b] text-[#c93f34]'
+                                                      : 'bg-white border-2 border-[#626a9f]/30 text-[#1e2246] focus:border-[#454d82]'
+                                                  }`}
+                                                />
+                                              </div>
+                                            </div>
+                                          );
+                                        })
+                                      )}
+                                    </div>
+                                  )}
+
+                                  {el.type === 'word_search' && (
+                                    <div
+                                      style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: `repeat(${el.data.size || 10}, 1fr)`,
+                                        borderWidth: '3px',
+                                        borderStyle: 'solid',
+                                        borderColor: el.data.lineColor || '#454d82',
+                                        backgroundColor: el.data.cellColor || '#ffffff',
+                                      }}
+                                      className="shadow-md w-full max-w-[480px] aspect-square rounded-2xl overflow-hidden relative mx-auto"
+                                    >
+                                      {el.data.grid?.map((row, rIdx) =>
+                                        row.map((char, cIdx) => {
+                                          const cellId = `${rIdx}_${cIdx}`;
+                                          const studentCells = studentAnswers[`${el.id}_cells`] || [];
+                                          const isSelected = studentCells.includes(cellId);
+
+                                          let isTargetCell = false;
+                                          if (el.data.placedWords) {
+                                            isTargetCell = el.data.placedWords.some(
+                                              (pw) => pw.cells.includes(cellId) || pw.cells.includes(`${rIdx}-${cIdx}`)
+                                            );
+                                          }
+
+                                          let cellBg = isSelected ? 'rgba(255, 199, 73, 0.65)' : 'transparent';
+                                          const cellClass =
+                                            'flex items-center justify-center transition-colors select-none font-bold text-[#1e2246]';
+
+                                          if (showFeedback) {
+                                            if (isSelected && isTargetCell) {
+                                              cellBg = 'rgba(22, 163, 127, 0.35)';
+                                            } else if (isSelected && !isTargetCell) {
+                                              cellBg = 'rgba(238, 102, 91, 0.35)';
+                                            } else if (!isSelected && isTargetCell) {
+                                              cellBg = 'rgba(22, 163, 127, 0.16)';
+                                            }
+                                          }
+
+                                          return (
+                                            <div
+                                              key={cellId}
+                                              onClick={() =>
+                                                !showFeedback &&
+                                                setStudentAnswers((prev) => {
+                                                  const current = prev[`${el.id}_cells`] || [];
+                                                  return {
+                                                    ...prev,
+                                                    [`${el.id}_cells`]: current.includes(cellId)
+                                                      ? current.filter((c) => c !== cellId)
+                                                      : [...current, cellId],
+                                                  };
+                                                })
+                                              }
+                                              style={{
+                                                fontSize: el.data.fontSize ? `${el.data.fontSize}px` : undefined,
+                                                fontFamily: el.data.fontFamily,
+                                                fontWeight: el.data.isBold ? 'bold' : 'normal',
+                                                borderRight:
+                                                  cIdx < (el.data.size || 10) - 1
+                                                    ? `1px solid ${el.data.lineColor || 'rgba(98,106,159,0.25)'}`
+                                                    : 'none',
+                                                borderBottom:
+                                                  rIdx < (el.data.size || 10) - 1
+                                                    ? `1px solid ${el.data.lineColor || 'rgba(98,106,159,0.25)'}`
+                                                    : 'none',
+                                                backgroundColor: cellBg,
+                                                cursor: showFeedback ? 'default' : 'pointer',
+                                              }}
+                                              className={cellClass}
+                                            >
+                                              {char}
+                                            </div>
+                                          );
+                                        })
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
                         )}
                       </div>
-                      <h4 className="text-base lg:text-lg font-black uppercase tracking-widest mb-2 text-white drop-shadow-sm">{ann.title}</h4>
-                      <p className="text-xs lg:text-sm text-white/85 leading-relaxed font-medium whitespace-pre-wrap">{ann.content}</p>
-                    </div>
+                    )}
                   </div>
-                ))
-              )}
+                );
+              })}
+            </div>
+
+            {/* BOTTOM ACTION DOCK */}
+            <div className="w-full mt-auto pt-12 flex flex-col sm:flex-row justify-center items-center gap-4 px-4 relative z-50">
+              {dockElements.map((el) => {
+                if (el.type === 'nav_button') {
+                  const hasVocalActivity = contentElements.some((c) => c.type === 'record_compare');
+                  if (hasVocalActivity) return null;
+
+                  let btnClass = 'ola-player-btn-yellow';
+                  let btnText = 'Confirm';
+
+                  if (navButtonState === 'correct') {
+                    btnClass =
+                      'bg-[#16a37f] text-white border-2 border-[#1e2246] shadow-[0_4px_0_#1e2246]';
+                    btnText =
+                      el.data?.buttonStyle === 'finish_pill'
+                        ? 'Finish & See Grades ✓'
+                        : 'Continue →';
+                  } else if (navButtonState === 'incorrect') {
+                    btnClass =
+                      'bg-[#ee665b] text-white border-2 border-[#1e2246] shadow-[0_4px_0_#1e2246]';
+                    btnText =
+                      el.data?.buttonStyle === 'finish_pill'
+                        ? 'Finish & See Grades →'
+                        : 'Continue →';
+                  }
+
+                  return (
+                    <button
+                      type="button"
+                      key={el.id}
+                      onClick={handleContinueClick}
+                      className={`w-full sm:w-auto font-bold px-8 py-3.5 md:px-12 md:py-4 rounded-full uppercase tracking-widest active:scale-[0.98] transition-all text-xs sm:text-sm md:text-base text-center cursor-pointer ${btnClass}`}
+                    >
+                      {btnText}
+                    </button>
+                  );
+                }
+                return null;
+              })}
             </div>
           </div>
         </div>
       )}
-
-      {showCommunity && (
-        <div className="fixed inset-0 z-[650] bg-black/40 backdrop-blur-md flex items-center justify-center p-2 sm:p-6 md:p-10 animate-fade-in font-montserrat">
-          <div className="w-full h-full max-w-7xl relative shadow-[0_0_50px_rgba(0,0,0,0.5)] rounded-[2.5rem]">
-            <ForumBoard 
-              currentUser={{ 
-                id: studentData.id, 
-                role: 'student', 
-                level: studentData.level || 'A1', 
-                first_name: studentData.first_name,
-                last_name: studentData.last_name,
-                avatar_url: studentData.avatar_url
-              }} 
-              onClose={() => setShowCommunity(false)} 
-            />
-          </div>
-        </div>
-      )}
-
-      {showSeminarRoom && (
-        <div className="fixed inset-0 z-[650] bg-black/40 backdrop-blur-md flex items-center justify-center p-2 sm:p-6 md:p-10 animate-fade-in font-montserrat">
-          <div className="w-full h-full max-w-7xl relative shadow-[0_0_50px_rgba(0,0,0,0.5)] rounded-[2.5rem]">
-            <SeminarRoom 
-              currentUser={{ id: studentData.id, full_name: `${studentData.first_name} ${studentData.last_name}`, avatar_url: studentData.avatar_url, level: studentData.level }} 
-              userRole="student" 
-              onClose={() => setShowSeminarRoom(false)} 
-            />
-          </div>
-        </div>
-      )}
-
-      {showTrophyRoom && (
-        <TrophyRoom 
-          targetUser={studentData} 
-          currentUserRole="student" 
-          onClose={() => setShowTrophyRoom(false)} 
-        />
-      )}
-
-      {showGatekeeper && (
-        <EvaluationCrossroad 
-          data={gatekeeperData} onProceed={handleGatekeeperProceed} onRetry={handleRetry}
-          onScheduleLive={() => { setShowGatekeeper(false); setCalendarFilter('LIVE LAB SESSION'); setShowCalendar(true); }}
-          onScheduleComplementary={() => { setShowGatekeeper(false); setCalendarFilter('COMPLEMENTARY CLASS'); setShowCalendar(true); }}
-          onScheduleTutoring={() => { setShowGatekeeper(false); setCalendarFilter('1-ON-1 TUTORING'); setShowCalendar(true); }}
-        />
-      )}
-
-      {showCapstoneMomentum && (
-        <CapstoneMomentumModal 
-          isOpen={showCapstoneMomentum} 
-          student={studentData} 
-          onProceed={() => {
-            setShowCapstoneMomentum(false);
-            setCalendarFilter('LIVE LAB SESSION');
-            setShowCalendar(true);
-          }}
-        />
-      )}
-
-      {showCalendar && (
-        <StudentCalendar 
-          student={studentData} filterType={calendarFilter} onCancel={() => setShowCalendar(false)} 
-          onConfirm={() => { 
-            setShowCalendar(false); 
-            fetchUpcomingSession(studentData.id);
-            alert("¡Reserva confirmada exitosamente!"); 
-          }} 
-        />
-      )}
-      
-      {/* SOFT LOCKOUT (PREVIEW MODE ACTIVATION) */}
-      {showActivationModal && (
-        <PaymentLockoutView 
-          student={studentData} 
-          supabase={supabase} 
-          onReload={() => window.location.reload()} 
-          isDismissible={true}
-          onClose={() => setShowActivationModal(false)}
-        />
-      )}
-
-      <div className="hidden md:block">
-        <DesktopView 
-          student={studentData} classCredits={classCredits} onReturnHome={onReturnHome} onStartActivity={handleStartActivity} isFetching={isFetching} activeLiveSession={activeLiveSession} 
-          announcements={announcements} activeCategory={activeCategory} setActiveCategory={setActiveCategory} 
-          onOpenMetrics={() => studentData?.payment_status === 'pending_first_month' ? setShowActivationModal(true) : setIsMetricsModalOpen(true)}
-        />
-      </div>
-      <div className="block md:hidden">
-        <MobileView 
-          student={studentData} classCredits={classCredits} onReturnHome={onReturnHome} onStartActivity={handleStartActivity} isFetching={isFetching} activeLiveSession={activeLiveSession} 
-          announcements={announcements} activeCategory={activeCategory} setActiveCategory={setActiveCategory} 
-          onOpenMetrics={() => studentData?.payment_status === 'pending_first_month' ? setShowActivationModal(true) : setIsMetricsModalOpen(true)}
-        />
-      </div>
     </>
   );
 };
 
-export default StudentHub;
+export default StudentPlayer;
