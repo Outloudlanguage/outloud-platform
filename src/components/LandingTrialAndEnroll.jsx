@@ -24,7 +24,29 @@ const INTEREST_OPTIONS = [
 const INVEST_OPTIONS = ['A) 3 meses o menos', 'B) 6 meses', 'C) 9 meses o más'];
 
 // =========================================
-// CUSTOM VECTOR ICONS (Zero Generic Emojis)
+// MINI-ESCENARIO INTERACTIVO (CARD PRUEBA GRATIS)
+// =========================================
+const MINI_TRIAL_PROMPT = "Hi! What can I get for you today?";
+const MINI_TRIAL_OPTIONS = [
+  { id: 'a', text: "I'll have a latte, please.", isCorrect: true },
+  { id: 'b', text: 'I want coffee give me.', isCorrect: false },
+  { id: 'c', text: 'Yes, good morning table.', isCorrect: false },
+];
+
+// =========================================
+// EXPLORADOR RÁPIDO CEFR (CARD PRUEBA DE NIVELACIÓN)
+// =========================================
+const DIAGNOSTIC_BANDS = [
+  { id: 'A1', pct: 18, ielts: '0.0 – 2.0', canDo: 'Te presentas y manejas saludos o pedidos simples.' },
+  { id: 'A2', pct: 36, ielts: '2.5 – 4.0', canDo: 'Resuelves compras, viajes y hablas de tu rutina.' },
+  { id: 'B1', pct: 56, ielts: '4.5 – 5.0', canDo: 'Opinas y cuentas experiencias sin traducir mentalmente.' },
+  { id: 'B2', pct: 74, ielts: '5.5 – 6.5', canDo: 'Conversas con fluidez en reuniones y charlas abiertas.' },
+  { id: 'C1', pct: 88, ielts: '7.0 – 8.0', canDo: 'Argumentas temas complejos con precisión ejecutiva.' },
+  { id: 'C2', pct: 100, ielts: '8.5 – 9.0', canDo: 'Dominas modismos, humor y sutilezas como nativo.' },
+];
+
+// =========================================
+// CUSTOM VECTOR ICONS (Cero emojis genéricos)
 // =========================================
 const CheckSvg = ({ className = 'w-3.5 h-3.5' }) => (
   <svg className={className} fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
@@ -41,6 +63,12 @@ const ArrowRightSvg = ({ className = 'w-4 h-4' }) => (
 const PlaySvg = ({ className = 'w-4 h-4' }) => (
   <svg className={className} fill="currentColor" viewBox="0 0 24 24">
     <path d="M8 5.14v14l11-7-11-7z" />
+  </svg>
+);
+
+const VolumeSvg = ({ className = 'w-4 h-4' }) => (
+  <svg className={className} fill="none" stroke="currentColor" strokeWidth="2.3" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
   </svg>
 );
 
@@ -92,9 +120,9 @@ const SOCIAL_LINKS = [
 ];
 
 // =========================================
-// LIGHT-GLASS BILINGUAL DROPDOWN
+// DESPLEGABLE ESPACIAL EN ESPAÑOL (FLASK PATTERN)
 // =========================================
-const LightDropdown = ({ options, value, onChange, titleEng, titleSpan, hasError }) => {
+const LightDropdown = ({ options, value, onChange, titleSpan, hasError }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [confirmingIdx, setConfirmingIdx] = useState(null);
   const dropdownRef = useRef(null);
@@ -117,7 +145,6 @@ const LightDropdown = ({ options, value, onChange, titleEng, titleSpan, hasError
   }, []);
 
   const handleSelect = (option, idx) => {
-    // Crisp confirmation flash before menu closes (mirrors macOS/Flask micro-feedback)
     setConfirmingIdx(idx);
     onChange(option);
     setTimeout(() => {
@@ -128,7 +155,6 @@ const LightDropdown = ({ options, value, onChange, titleEng, titleSpan, hasError
 
   return (
     <div className={`relative w-full mb-5 ${isOpen ? 'z-[60]' : 'z-10'}`} ref={dropdownRef}>
-      {/* Subtle Focused Screen Dim Overlay (Flask Pattern) */}
       {isOpen && (
         <div
           onClick={() => setIsOpen(false)}
@@ -169,15 +195,13 @@ const LightDropdown = ({ options, value, onChange, titleEng, titleSpan, hasError
         )}
       </div>
 
-      {/* Spatially Anchored Spring Dropdown Menu (Originates Directly From Trigger) */}
       {isOpen && (
         <div
           className="ola-dropdown-spring absolute left-0 right-0 mt-2 z-50 bg-white/96 backdrop-blur-2xl border-2 border-[#1e2246] rounded-2xl shadow-[0_18px_38px_-10px_rgba(30,34,70,0.4)] overflow-hidden"
           style={{ transformOrigin: 'top center' }}
         >
           <div className="px-4 py-3 bg-[#fff3d1] border-b border-[#1e2246]/15">
-            <p className="text-[11px] font-black text-[#1e2246] leading-tight">{titleEng}</p>
-            <p className="text-[10px] font-semibold text-[#50567d] leading-tight mt-0.5">{titleSpan}</p>
+            <p className="text-[11px] font-black text-[#1e2246] leading-tight">{titleSpan}</p>
           </div>
           <div className="max-h-48 overflow-y-auto">
             {options.map((option, idx) => {
@@ -209,7 +233,7 @@ const LightDropdown = ({ options, value, onChange, titleEng, titleSpan, hasError
 };
 
 // =========================================
-// REUSABLE BACKLIT GLASS ONBOARDING FORM
+// PLANILLA DE INSCRIPCIÓN (100% EN ESPAÑOL)
 // =========================================
 export function OnboardingFormCard({ onFreeTrialClick, onSuccessComplete }) {
   const [formData, setFormData] = useState(() => {
@@ -289,7 +313,6 @@ export function OnboardingFormCard({ onFreeTrialClick, onSuccessComplete }) {
         status: 'pending',
       };
 
-      // Perceived-trust beat (~650ms minimum) so instant DB writes feel verified & solid
       const [{ error: supabaseError }] = await Promise.all([
         supabase.from('registrations').insert([insertPayload]),
         new Promise((resolve) => setTimeout(resolve, 650)),
@@ -321,7 +344,6 @@ export function OnboardingFormCard({ onFreeTrialClick, onSuccessComplete }) {
 
   return (
     <div className="relative">
-      {/* Ambient Backlight Glow */}
       <div
         className="absolute -inset-4 rounded-[3.2rem] blur-3xl opacity-75 -z-10 pointer-events-none"
         style={{
@@ -369,16 +391,16 @@ export function OnboardingFormCard({ onFreeTrialClick, onSuccessComplete }) {
           }
         `}</style>
 
-        {/* Header */}
+        {/* Encabezado 100% en español */}
         <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-10">
           <span className="ola-glass-yellow inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[10px] font-black uppercase tracking-widest text-[#1e2246] mb-3">
             Planilla de Inscripción
           </span>
           <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#1e2246] tracking-tight uppercase">
-            New Student Registration
+            Inscripción de Nuevo Estudiante
           </h3>
           <p className="text-xs sm:text-sm text-[#4c5384] font-medium mt-2">
-            Completa tus datos y metas para que un asesor de OutLoud active tu cuenta vía WhatsApp.
+            Completa tus datos y metas para que un asesor de OutLoud te contacte vía WhatsApp, aclare tus dudas y active tu cuenta.
           </p>
         </div>
 
@@ -391,7 +413,7 @@ export function OnboardingFormCard({ onFreeTrialClick, onSuccessComplete }) {
               ¡Inscripción Enviada!
             </h4>
             <p className="text-sm text-[#4c5384] font-medium leading-relaxed mb-6">
-              Tu planilla ingresó correctamente a nuestro sistema. Un agente administrativo se pondrá en contacto contigo vía WhatsApp muy pronto.
+              Tu planilla ingresó correctamente a nuestro sistema. Un asesor de OutLoud se pondrá en contacto contigo vía WhatsApp muy pronto.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               {onFreeTrialClick && (
@@ -415,20 +437,20 @@ export function OnboardingFormCard({ onFreeTrialClick, onSuccessComplete }) {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-10">
-            {/* COLUMN 1: PERSONAL INFO */}
+            {/* COLUMNA 1: DATOS PERSONALES */}
             <div className="flex flex-col">
               <div className="flex items-center gap-2.5 mb-5">
                 <span className="w-7 h-7 rounded-lg bg-[#ffc749] border-2 border-[#1e2246] text-[#1e2246] text-xs font-black flex items-center justify-center shrink-0">
                   1
                 </span>
                 <h4 className="text-xs font-black text-[#454d82] uppercase tracking-widest">
-                  Section 1: Personal Info
+                  Sección 1: Datos Personales
                 </h4>
               </div>
 
               <div className="mb-5 relative">
                 <label className="block text-xs font-black text-[#1e2246] mb-1.5">
-                  Full name <span className="font-semibold text-[#50567d]">(Nombre completo)</span>
+                  Nombre completo
                 </label>
                 <input
                   type="text"
@@ -450,7 +472,7 @@ export function OnboardingFormCard({ onFreeTrialClick, onSuccessComplete }) {
 
               <div className="mb-5 relative">
                 <label className="block text-xs font-black text-[#1e2246] mb-1.5">
-                  Email address <span className="font-semibold text-[#50567d]">(Correo electrónico)</span>
+                  Correo electrónico
                 </label>
                 <input
                   type="email"
@@ -472,7 +494,7 @@ export function OnboardingFormCard({ onFreeTrialClick, onSuccessComplete }) {
 
               <div className="mb-5 relative">
                 <label className="block text-xs font-black text-[#1e2246] mb-1.5">
-                  WhatsApp / Phone <span className="font-semibold text-[#50567d]">(Teléfono)</span>
+                  WhatsApp / Teléfono
                 </label>
                 <div
                   className={`w-full rounded-2xl px-4 py-2.5 transition-colors border-2 ${
@@ -497,19 +519,18 @@ export function OnboardingFormCard({ onFreeTrialClick, onSuccessComplete }) {
               </div>
             </div>
 
-            {/* COLUMN 2: COURSE GOALS */}
+            {/* COLUMNA 2: METAS DEL CURSO */}
             <div className="flex flex-col lg:border-l lg:border-r lg:border-white/70 lg:px-8">
               <div className="flex items-center gap-2.5 mb-5">
                 <span className="w-7 h-7 rounded-lg bg-[#454d82] border-2 border-[#1e2246] text-white text-xs font-black flex items-center justify-center shrink-0">
                   2
                 </span>
                 <h4 className="text-xs font-black text-[#454d82] uppercase tracking-widest">
-                  Section 2: Course Goals
+                  Sección 2: Metas del Curso
                 </h4>
               </div>
 
               <LightDropdown
-                titleEng="Why do you want to learn English?"
                 titleSpan="¿Por qué quieres aprender inglés?"
                 options={REASON_OPTIONS}
                 value={formData.reason}
@@ -517,7 +538,6 @@ export function OnboardingFormCard({ onFreeTrialClick, onSuccessComplete }) {
                 hasError={errors.reason}
               />
               <LightDropdown
-                titleEng="You expect to be fluent in..."
                 titleSpan="¿En cuánto tiempo te gustaría hablar fluido?"
                 options={FLUENT_OPTIONS}
                 value={formData.fluentTime}
@@ -525,15 +545,13 @@ export function OnboardingFormCard({ onFreeTrialClick, onSuccessComplete }) {
                 hasError={errors.fluentTime}
               />
               <LightDropdown
-                titleEng="Select one interest category"
-                titleSpan="Selecciona 1 Interés"
+                titleSpan="Selecciona 1 tema de interés"
                 options={INTEREST_OPTIONS}
                 value={formData.interest}
                 onChange={(val) => handleInputChange('interest', val)}
                 hasError={errors.interest}
               />
               <LightDropdown
-                titleEng="How much time can you invest?"
                 titleSpan="¿De cuánto tiempo dispones para aprender?"
                 options={INVEST_OPTIONS}
                 value={formData.investTime}
@@ -541,7 +559,6 @@ export function OnboardingFormCard({ onFreeTrialClick, onSuccessComplete }) {
                 hasError={errors.investTime}
               />
 
-              {/* Optional Referral Drawer */}
               <div className="mt-1">
                 <button
                   type="button"
@@ -584,7 +601,7 @@ export function OnboardingFormCard({ onFreeTrialClick, onSuccessComplete }) {
               </div>
             </div>
 
-            {/* COLUMN 3: CONFIRMATION & ACTIONS */}
+            {/* COLUMNA 3: CONFIRMACIÓN */}
             <div className="flex flex-col justify-between">
               <div>
                 <div className="flex items-center gap-2.5 mb-5">
@@ -592,17 +609,16 @@ export function OnboardingFormCard({ onFreeTrialClick, onSuccessComplete }) {
                     3
                   </span>
                   <h4 className="text-xs font-black text-[#454d82] uppercase tracking-widest">
-                    Confirmación
+                    Sección 3: Confirmación
                   </h4>
                 </div>
 
                 <div className="bg-white/60 backdrop-blur-md border border-white/90 rounded-2xl p-5 space-y-3 mb-6 shadow-inner">
                   <p className="text-xs text-[#3e446b] font-medium leading-relaxed">
-                    Al hacer clic en <strong className="font-black text-[#1e2246]">ENVIAR</strong>, tu planilla ingresará al sistema y un{' '}
-                    <strong className="font-black text-[#1e2246]">agente se pondrá en contacto contigo</strong> a través de WhatsApp para explicarte los planes, confirmar tu cohorte y formalizar tu inscripción.
+                    Al hacer clic en <strong className="font-black text-[#1e2246]">ENVIAR INSCRIPCIÓN</strong>, un asesor se comunicará contigo por WhatsApp para confirmar tu plan (Individual, Autónomo o B2B), tu fecha de cohorte y el método de pago (Zinli, PayPal, Binance o moneda local).
                   </p>
                   <p className="text-xs text-[#50567d] font-medium leading-relaxed">
-                    Asegúrate de que tu correo y número de WhatsApp sean correctos.
+                    Verifica que tu correo y número de WhatsApp estén bien escritos.
                   </p>
                 </div>
               </div>
@@ -619,7 +635,7 @@ export function OnboardingFormCard({ onFreeTrialClick, onSuccessComplete }) {
                   disabled={isSubmitting}
                   className="ola-btn-yellow w-full py-4 rounded-full font-black tracking-widest text-xs uppercase cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 group"
                 >
-                  <span>{isSubmitting ? 'Enviando Planilla...' : 'Enviar Inscripción'}</span>
+                  <span>{isSubmitting ? 'Verificando y Enviando...' : 'Enviar Inscripción'}</span>
                   {!isSubmitting && <ArrowRightSvg className="w-4 h-4 transition-transform group-hover:translate-x-1" />}
                 </button>
 
@@ -643,7 +659,7 @@ export function OnboardingFormCard({ onFreeTrialClick, onSuccessComplete }) {
 }
 
 // =========================================
-// MAIN EXPORT: STAGE 4 + STAGE 5 + FOOTER
+// MAIN EXPORT: STAGE 4 INTERACTIVO + STAGE 5 + FOOTER
 // =========================================
 export default function LandingTrialAndEnroll({
   onFreeLessonClick,
@@ -651,87 +667,274 @@ export default function LandingTrialAndEnroll({
   onScrollTo,
   onOpenLogin,
 }) {
+  // Estado interactivo de la tarjeta Prueba Gratis (Mini-desafío real sin traducción)
+  const [selectedOption, setSelectedOption] = useState(null);
+  const [wrongShakeTick, setWrongShakeTick] = useState(0);
+  const [isSpeakingPrompt, setIsSpeakingPrompt] = useState(false);
+
+  // Estado interactivo de la tarjeta Prueba de Nivelación (Explorador de bandas CEFR)
+  const [activeDiagIdx, setActiveDiagIdx] = useState(2); // Inicia en B1
+
+  const activeDiag = DIAGNOSTIC_BANDS[activeDiagIdx];
+
+  const handlePlayMiniPrompt = () => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    try {
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(MINI_TRIAL_PROMPT);
+      utter.lang = 'en-US';
+      utter.rate = 0.95;
+      utter.onstart = () => setIsSpeakingPrompt(true);
+      utter.onend = () => setIsSpeakingPrompt(false);
+      utter.onerror = () => setIsSpeakingPrompt(false);
+      setIsSpeakingPrompt(true);
+      window.speechSynthesis.speak(utter);
+    } catch {
+      setIsSpeakingPrompt(false);
+    }
+  };
+
+  const handleMiniOptionClick = (opt) => {
+    setSelectedOption(opt);
+    if (!opt.isCorrect) {
+      setWrongShakeTick((t) => t + 1);
+    }
+  };
+
   return (
     <>
+      <style>{`
+        @keyframes olaMiniShake {
+          0%, 100% { transform: translateX(0); }
+          20% { transform: translateX(-6px); }
+          45% { transform: translateX(6px); }
+          70% { transform: translateX(-4px); }
+          90% { transform: translateX(3px); }
+        }
+        .ola-mini-shake {
+          animation: olaMiniShake 0.34s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+        }
+        .ola-gateway-indigo {
+          background: linear-gradient(150deg, rgba(104, 113, 172, 0.93) 0%, rgba(69, 77, 130, 0.92) 100%);
+          backdrop-filter: blur(28px) saturate(185%);
+          -webkit-backdrop-filter: blur(28px) saturate(185%);
+          border: 1.5px solid rgba(255, 255, 255, 0.42);
+          box-shadow:
+            0 24px 52px -12px rgba(45, 51, 96, 0.42),
+            0 0 40px -8px rgba(98, 106, 159, 0.52),
+            inset 0 1.5px 1px rgba(255, 255, 255, 0.42);
+        }
+      `}</style>
+
       {/* ================================================== */}
-      {/* STAGE 4: FREE LESSON & PLACEMENT TEST GATEWAY      */}
+      {/* STAGE 4: TARJETAS INTERACTIVAS DE PRUEBA Y NIVEL   */}
       {/* ================================================== */}
       <section id="free-trial" className="py-16 sm:py-24 scroll-mt-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-7 lg:gap-8 items-stretch">
-            {/* PRIMARY CARD: FREE INTERACTIVE LESSON (Backlit Warm Yellow Glass) */}
+            {/* TARJETA 1: PRUEBA GRATIS + MINI-DESAFÍO CONVERSACIONAL INTERACTIVO */}
             <div className="lg:col-span-7 relative group flex flex-col">
               <div
                 className="absolute -inset-3 rounded-[2.8rem] blur-2xl opacity-70 group-hover:opacity-100 transition-opacity duration-500 -z-10 pointer-events-none"
                 style={{ background: 'radial-gradient(circle at top left, rgba(255,199,73,0.75), rgba(255,224,145,0.2) 70%)' }}
               />
 
-              <div className="ola-glass-yellow flex-1 rounded-[2.5rem] p-7 sm:p-10 flex flex-col justify-between relative overflow-hidden">
+              <div className="ola-glass-yellow flex-1 rounded-[2.5rem] p-7 sm:p-9 flex flex-col justify-between relative overflow-hidden">
+                {/* Marca de agua sutil OutLoud */}
+                <div className="pointer-events-none select-none absolute -bottom-10 -right-10 opacity-[0.07]">
+                  <OutLoudIcon withTile={false} className="w-44 h-44" />
+                </div>
+
                 <div className="relative z-10">
-                  <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-md border border-white rounded-full px-3.5 py-1.5 text-[10px] font-black uppercase tracking-widest text-[#1e2246] mb-5 shadow-sm">
+                  <div className="inline-flex items-center gap-2 bg-white/85 backdrop-blur-md border border-white rounded-full px-3.5 py-1.5 text-[10px] font-black uppercase tracking-widest text-[#1e2246] mb-4 shadow-sm">
                     <span className="w-2 h-2 rounded-full bg-[#16a37f] animate-pulse" />
                     <span>Experiencia Interactiva Sin Registro</span>
                   </div>
 
-                  <h2 className="text-3xl sm:text-4xl font-black text-[#1e2246] tracking-tight leading-tight mb-4">
+                  <h2 className="text-3xl sm:text-4xl font-black text-[#1e2246] tracking-tight leading-tight mb-3">
                     Prueba una lección real <span className="text-[#454d82]">ahora mismo</span>
                   </h2>
 
-                  <p className="text-sm sm:text-base text-[#282d57] font-medium leading-relaxed mb-7 max-w-xl">
-                    Entra como invitado a nuestra Unidad 1 de Nivel A1. Escucha audio nativo, graba tu voz con nuestro motor de comparación instantánea y comprueba cómo se siente estudiar en OutLoud.
+                  <p className="text-sm text-[#282d57] font-semibold leading-relaxed mb-5 max-w-xl">
+                    Responde este mini-reto de 5 segundos y descubre cómo aprendes en situaciones reales sin traducir:
                   </p>
 
-                  <div className="flex flex-wrap gap-2.5 mb-8">
-                    {['Audio Nativo', 'Práctica Vocal', 'Ejercicios Interactivos', '100% Gratis'].map((pill) => (
-                      <span
-                        key={pill}
-                        className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider bg-white/75 backdrop-blur-md border border-white text-[#1e2246] px-3 py-1.5 rounded-xl shadow-sm"
+                  {/* MINI-RETO INTERACTIVO EMBEBIDO */}
+                  <div
+                    key={`trial-box-${wrongShakeTick}`}
+                    className={`bg-white/85 backdrop-blur-xl border-2 border-white rounded-3xl p-4 sm:p-5 mb-6 shadow-[0_12px_28px_-12px_rgba(69,77,130,0.22)] ${
+                      selectedOption && !selectedOption.isCorrect ? 'ola-mini-shake border-[#ee665b]/70' : ''
+                    }`}
+                  >
+                    {/* Línea de audio del escenario */}
+                    <div className="flex items-center justify-between gap-3 mb-3.5">
+                      <button
+                        type="button"
+                        onClick={handlePlayMiniPrompt}
+                        className="inline-flex items-center gap-2.5 text-left cursor-pointer group/play focus:outline-none"
                       >
-                        <CheckSvg className="w-3.5 h-3.5 text-[#16a37f]" />
-                        <span>{pill}</span>
-                      </span>
-                    ))}
+                        <span
+                          className={`w-10 h-10 rounded-full border-2 border-[#1e2246] flex items-center justify-center shrink-0 transition-transform duration-150 group-hover/play:scale-105 active:scale-95 ${
+                            isSpeakingPrompt ? 'bg-[#16a37f] text-white' : 'bg-[#ffc749] text-[#1e2246]'
+                          }`}
+                        >
+                          <VolumeSvg className="w-4 h-4" />
+                        </span>
+                        <div>
+                          <span className="text-[9.5px] font-black uppercase tracking-widest text-[#626a9f] block">
+                            Escucha en un café • Toca para oír
+                          </span>
+                          <span className="text-sm sm:text-base font-black text-[#1e2246] leading-tight">
+                            &ldquo;{MINI_TRIAL_PROMPT}&rdquo;
+                          </span>
+                        </div>
+                      </button>
+                    </div>
+
+                    {/* 3 opciones interactivas */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      {MINI_TRIAL_OPTIONS.map((opt) => {
+                        const isPicked = selectedOption?.id === opt.id;
+                        const isSuccess = isPicked && opt.isCorrect;
+                        const isWrong = isPicked && !opt.isCorrect;
+
+                        return (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            onClick={() => handleMiniOptionClick(opt)}
+                            className={`text-left px-3.5 py-2.5 rounded-2xl text-xs font-extrabold border-2 transition-all duration-150 active:scale-[0.97] cursor-pointer flex items-center justify-between gap-2 ${
+                              isSuccess
+                                ? 'bg-[#16a37f] border-[#1e2246] text-white shadow-[0_3px_0_#1e2246]'
+                                : isWrong
+                                ? 'bg-[#ee665b]/15 border-[#ee665b] text-[#9b2c23]'
+                                : 'bg-[#f6f7fc] border-[#dfe2f2] text-[#1e2246] hover:border-[#454d82] hover:bg-white'
+                            }`}
+                          >
+                            <span className="leading-snug">{opt.text}</span>
+                            {isSuccess && <CheckSvg className="w-4 h-4 shrink-0" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Feedback inmediato */}
+                    {selectedOption && (
+                      <div
+                        className={`mt-3 text-xs font-black flex items-center gap-2 animate-fade-in ${
+                          selectedOption.isCorrect ? 'text-[#128063]' : 'text-[#c93f34]'
+                        }`}
+                      >
+                        {selectedOption.isCorrect ? (
+                          <>
+                            <span className="w-5 h-5 rounded-full bg-[#16a37f] text-white flex items-center justify-center shrink-0">
+                              <CheckSvg className="w-3 h-3" />
+                            </span>
+                            <span>¡Exacto! Así de natural se siente estudiar la Unidad 1 completa.</span>
+                          </>
+                        ) : (
+                          <span>Casi — escucha la frase y elige la respuesta más natural.</span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                <div className="relative z-10 flex flex-wrap items-center gap-4">
+                <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
                   <button
                     type="button"
                     onClick={onFreeLessonClick}
-                    className="ola-btn-yellow w-full sm:w-auto px-8 py-4 rounded-full text-xs sm:text-sm font-black uppercase tracking-widest cursor-pointer flex items-center justify-center gap-2.5 group/btn"
+                    className={`ola-btn-yellow w-full sm:w-auto px-8 py-4 rounded-full text-xs sm:text-sm font-black uppercase tracking-widest cursor-pointer flex items-center justify-center gap-2.5 group/btn ${
+                      selectedOption?.isCorrect ? 'ring-4 ring-[#16a37f]/45' : ''
+                    }`}
                   >
-                    <span>Iniciar Clase de Prueba</span>
+                    <span>
+                      {selectedOption?.isCorrect ? 'Continuar Unidad 1 Gratis' : 'Iniciar Clase de Prueba'}
+                    </span>
                     <PlaySvg className="w-4 h-4 transition-transform group-hover/btn:translate-x-0.5" />
                   </button>
+
+                  <span className="text-[11px] font-extrabold text-[#3b4170] uppercase tracking-wider">
+                    Audio nativo • Práctica vocal • 100% Gratis
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* SECONDARY CARD: PLACEMENT TEST (Guaranteed Deep Backlit Indigo Glass) */}
+            {/* TARJETA 2: PRUEBA DE NIVELACIÓN + EXPLORADOR INTERACTIVO DE BANDA CEFR */}
             <div className="lg:col-span-5 relative group flex flex-col">
               <div
                 className="absolute -inset-3 rounded-[2.8rem] blur-2xl opacity-75 group-hover:opacity-100 transition-opacity duration-500 -z-10 pointer-events-none"
-                style={{ background: 'radial-gradient(circle at bottom right, rgba(69,77,130,0.85), rgba(255,199,73,0.35) 75%)' }}
+                style={{ background: 'radial-gradient(circle at bottom right, rgba(98,106,159,0.82), rgba(255,199,73,0.38) 75%)' }}
               />
 
-              <div className="ola-glass-indigo flex-1 rounded-[2.5rem] p-7 sm:p-10 text-white flex flex-col justify-between relative overflow-hidden">
+              <div className="ola-gateway-indigo flex-1 rounded-[2.5rem] p-7 sm:p-9 text-white flex flex-col justify-between relative overflow-hidden">
+                <div className="pointer-events-none select-none absolute -bottom-10 -right-10 opacity-[0.1] brightness-0 invert">
+                  <OutLoudIcon withTile={false} className="w-44 h-44" />
+                </div>
+
                 <div className="relative z-10">
-                  <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center justify-between mb-5">
                     <span className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-md border border-white/25 rounded-full px-3.5 py-1.5 text-[10px] font-black uppercase tracking-widest text-[#ffc749]">
                       Evaluación Diagnóstica
                     </span>
-                    <OutLoudIcon className="w-12 h-12 shrink-0 drop-shadow-md" />
+                    <OutLoudIcon className="w-11 h-11 shrink-0 drop-shadow-md" />
                   </div>
 
-                  <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight mb-3">
+                  <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight mb-2.5">
                     ¿Ya sabes algo de inglés?
                   </h3>
 
-                  <p className="text-sm text-white/90 font-medium leading-relaxed mb-6">
-                    Realiza nuestro <strong className="text-[#ffc749] font-black">Placement Test</strong> en línea para medir tu nivel CEFR real (A1–C2) y ubicarte en la unidad exacta donde debes comenzar.
+                  <p className="text-sm text-white/90 font-medium leading-relaxed mb-5">
+                    ¿Dónde crees que estás hoy? Toca un nivel para explorar y luego confirma tu ubicación exacta con nuestra <strong className="text-[#ffc749] font-black">Prueba de Nivelación</strong>:
                   </p>
 
-                  <ul className="space-y-3 text-xs font-semibold text-white/90 mb-8">
+                  {/* EXPLORADOR INTERACTIVO CEFR EMBEBIDO */}
+                  <div className="bg-[#1e2246]/45 backdrop-blur-xl border border-white/25 rounded-3xl p-4 sm:p-5 mb-6">
+                    {/* 6 Selector Pills */}
+                    <div className="grid grid-cols-6 gap-1.5 mb-4">
+                      {DIAGNOSTIC_BANDS.map((band, idx) => {
+                        const isPicked = idx === activeDiagIdx;
+                        return (
+                          <button
+                            key={band.id}
+                            type="button"
+                            onClick={() => setActiveDiagIdx(idx)}
+                            className={`py-2 rounded-xl text-xs font-black transition-all duration-150 cursor-pointer ${
+                              isPicked
+                                ? 'bg-[#ffc749] text-[#1e2246] scale-105 shadow-md'
+                                : 'bg-white/10 text-white/85 hover:bg-white/20'
+                            }`}
+                          >
+                            {band.id}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Medidor animado de dominio */}
+                    <div className="mb-3">
+                      <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest mb-1.5">
+                        <span className="text-[#ffc749]">Nivel {activeDiag.id}</span>
+                        <span className="text-white/80">IELTS {activeDiag.ielts}</span>
+                      </div>
+                      <div className="w-full h-2.5 bg-white/15 rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-[#ffc749] to-[#16a37f] transition-all duration-300 ease-out"
+                          style={{ width: `${activeDiag.pct}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    <p
+                      key={activeDiag.id}
+                      className="text-xs font-semibold text-white/95 leading-snug min-h-[34px] animate-fade-in"
+                    >
+                      {activeDiag.canDo}
+                    </p>
+                  </div>
+
+                  <ul className="space-y-2 text-xs font-semibold text-white/90 mb-7">
                     <li className="flex items-center gap-2.5">
                       <span className="w-5 h-5 rounded-full bg-[#ffc749] text-[#1e2246] flex items-center justify-center shrink-0">
                         <CheckSvg className="w-3 h-3" />
@@ -752,7 +955,7 @@ export default function LandingTrialAndEnroll({
                   onClick={onPlacementClick}
                   className="ola-btn-yellow relative z-10 w-full py-4 px-5 rounded-full text-xs font-black uppercase tracking-widest cursor-pointer flex items-center justify-center gap-2 group/btn"
                 >
-                  <span>Tomar Placement Test</span>
+                  <span>Tomar Prueba de Nivelación</span>
                   <ArrowRightSvg className="w-4 h-4 transition-transform group-hover/btn:translate-x-1" />
                 </button>
               </div>
@@ -762,7 +965,7 @@ export default function LandingTrialAndEnroll({
       </section>
 
       {/* ================================================== */}
-      {/* STAGE 5: EMBEDDED ONBOARDING FORM (#enroll)        */}
+      {/* STAGE 5: PLANILLA DE INSCRIPCIÓN (#enroll)         */}
       {/* ================================================== */}
       <section id="enroll" className="py-16 sm:py-24 scroll-mt-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-8">
@@ -771,12 +974,11 @@ export default function LandingTrialAndEnroll({
       </section>
 
       {/* ================================================== */}
-      {/* FROSTED GLASS BRAND FOOTER & CUSTOM-SVG SOCIALS    */}
+      {/* FOOTER CON SVGs PERSONALIZADOS                     */}
       {/* ================================================== */}
       <footer className="bg-white/55 backdrop-blur-2xl border-t border-white/85 pt-14 pb-10 mt-8 shadow-[0_-12px_40px_-14px_rgba(55,63,118,0.22)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-8">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-10 pb-10 border-b border-[#626a9f]/20">
-            {/* Brand Column */}
             <div className="md:col-span-5 flex flex-col items-start">
               <OutLoudHorizontalLogo iconClass="w-11 h-11" wordmarkClass="h-9 w-auto" />
               <p className="text-xs sm:text-sm text-[#4c5384] font-medium leading-relaxed mt-4 max-w-sm">
@@ -789,11 +991,10 @@ export default function LandingTrialAndEnroll({
                 className="ola-btn-outline mt-5 inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full text-xs font-black uppercase tracking-wider"
               >
                 <WhatsAppSvg className="w-4 h-4 text-[#16a37f]" />
-                <span>Soporte WhatsApp</span>
+                <span>Soporte &amp; Pagos Locales</span>
               </a>
             </div>
 
-            {/* Quick Navigation */}
             <div className="md:col-span-3">
               <h5 className="text-xs font-black uppercase tracking-widest text-[#1e2246] mb-4">
                 Explorar
@@ -803,7 +1004,7 @@ export default function LandingTrialAndEnroll({
                   { label: 'Método & Cursos', href: '#method' },
                   { label: 'Ciclo de Estudio', href: '#cycle' },
                   { label: 'Niveles CEFR', href: '#levels' },
-                  { label: 'Planes & Costos', href: '#plans' },
+                  { label: 'Planes & Créditos', href: '#plans' },
                   { label: 'Inscripción', href: '#enroll' },
                 ].map((item) => (
                   <li key={item.href}>
@@ -819,7 +1020,6 @@ export default function LandingTrialAndEnroll({
               </ul>
             </div>
 
-            {/* Custom-SVG Socials & Campus Access */}
             <div className="md:col-span-4 flex flex-col justify-between gap-6">
               <div>
                 <h5 className="text-xs font-black uppercase tracking-widest text-[#1e2246] mb-4">
@@ -858,7 +1058,7 @@ export default function LandingTrialAndEnroll({
           </div>
 
           <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] font-bold text-[#50567d]">
-            <span>© {new Date().getFullYear()} OutLoud Language Academy. All rights reserved.</span>
+            <span>© {new Date().getFullYear()} OutLoud Language Academy. Todos los derechos reservados.</span>
             <span className="uppercase tracking-widest text-[#454d82] font-black">outloudlanguage.com</span>
           </div>
         </div>
