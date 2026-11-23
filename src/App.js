@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from './SupabaseClient'; 
-import LoginPage from './LoginPage';
+import LandingPage from './LandingPage';
 import CourseInfoPage from './CourseInfoPage';
 import RegistrationPage from './RegistrationPage';
 import CyclePage from './CyclePage';
@@ -252,10 +252,12 @@ export default function App() {
       {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
 
       {currentPage === 'login' && (
-        <LoginPage
+        <LandingPage
           onLogin={handleLoginSuccess}
           onInfoClick={() => navigate('info')}
           onPlacementClick={() => navigate('placement-test')}
+          onFreeLessonClick={handleStartFreeLesson}
+          onRegisterClick={() => navigate('register')}
         />
       )}
 
