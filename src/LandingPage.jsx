@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { OutLoudIcon, OutLoudHorizontalLogo } from './components/OutLoudBrand';
 import LoginModal from './components/LoginModal';
 import LandingMethodSection from './components/LandingMethodSection';
+import LandingLevelsAndPlans from './components/LandingLevelsAndPlans';
 
 const NAV_LINKS = [
   { label: 'Method', href: '#method' },
@@ -342,20 +343,17 @@ export default function LandingPage({
       <LandingMethodSection onScrollTo={scrollToSection} />
 
       {/* ================================================== */}
-      {/* STAGE 3-5 ANCHOR SLOTS (Live Bridges Until Migrated) */}
+      {/* STAGE 3: CEFR LEVELS + 3D COVERFLOW PAYMENT PLANS  */}
+      {/* ================================================== */}
+      <LandingLevelsAndPlans
+        onScrollTo={scrollToSection}
+        onPlacementClick={onPlacementClick}
+      />
+
+      {/* ================================================== */}
+      {/* STAGE 4-5 ANCHOR SLOTS (Live Bridges Until Migrated) */}
       {/* ================================================== */}
       <div className="max-w-7xl mx-auto px-4 sm:px-8 pb-24 space-y-8">
-
-        <section id="levels" className="ola-card rounded-[2rem] p-8 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div>
-            <span className="text-[11px] font-black uppercase tracking-widest text-[#626a9f]">Stage 3 Incoming</span>
-            <h3 className="text-2xl font-black text-[#23274d] mt-1">CEFR Levels (A1–C2) &amp; Coverflow Payment Plans</h3>
-            <p className="text-sm text-[#60668a] mt-1">Interactive CEFR cards &amp; 3D Coverflow pricing carousel will live right here.</p>
-          </div>
-          <button type="button" id="plans" onClick={onInfoClick} className="ola-btn-outline px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest shrink-0 cursor-pointer">
-            View Levels &amp; Plans →
-          </button>
-        </section>
 
         <section id="free-trial" className="bg-[#fff3d1] border-2 border-[#ffc749] rounded-[2rem] p-8 flex flex-col md:flex-row items-center justify-between gap-6">
           <div>
