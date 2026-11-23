@@ -433,57 +433,450 @@ function CreditsAndCohortsExplainer({ onScrollTo }) {
         </div>
 
         {/* ================================================== */}
-        {/* 3 ACORDEONES COLAPSABLES (Colapsados por defecto)  */}
+        {/* 3 TARJETAS BENTO INTERACTIVAS CON ILUSTRACIONES    */}
         {/* ================================================== */}
-        <div className="flex flex-col gap-3">
-          {/* ACORDEÓN 1: COHORTES Y FECHAS DE CORTE */}
-          <div className="bg-white/70 backdrop-blur-xl border border-white/95 rounded-2xl shadow-[0_6px_18px_-8px_rgba(69,77,130,0.18)] overflow-hidden transition-colors hover:bg-white/85">
+        <style>{`
+          @keyframes olaBentoFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+          }
+          @keyframes olaBentoFloatAlt {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(4px) rotate(4deg); }
+          }
+          @keyframes olaBentoSpinSlow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+          @keyframes olaBentoPanelIn {
+            0% { opacity: 0; transform: translateY(-8px) scale(0.985); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+          }
+          .ola-bento-float { animation: olaBentoFloat 3.6s ease-in-out infinite; }
+          .ola-bento-float-alt { animation: olaBentoFloatAlt 4.4s ease-in-out infinite; }
+          .ola-bento-spin {
+            transform-box: fill-box;
+            transform-origin: center;
+            animation: olaBentoSpinSlow 18s linear infinite;
+          }
+          .ola-bento-panel-in {
+            animation: olaBentoPanelIn 0.26s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+          }
+          .ola-bento-card {
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.22s ease, border-color 0.22s ease;
+          }
+          .ola-bento-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -135%;
+            width: 70%;
+            height: 100%;
+            background: linear-gradient(115deg, transparent 0%, rgba(255, 255, 255, 0.48) 48%, transparent 100%);
+            transform: skewX(-20deg);
+            transition: left 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+            pointer-events: none;
+            z-index: 20;
+          }
+          .ola-bento-card:hover::before {
+            left: 165%;
+          }
+        `}</style>
+
+        {/* BENTO GRID DE 3 TARJETAS */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
+          {/* BENTO 1: COHORTES Y FECHAS DE CORTE */}
+          <div className="flex flex-col">
             <button
               type="button"
               onClick={() => toggleAccordion('cohorts')}
               aria-expanded={openAccordion === 'cohorts'}
-              className="w-full px-5 py-4 flex items-center justify-between gap-3 text-left cursor-pointer focus:outline-none"
+              className={`ola-bento-card group w-full flex-1 text-left rounded-[1.85rem] p-5 flex flex-col justify-between cursor-pointer active:scale-[0.985] focus:outline-none border-2 ${
+                openAccordion === 'cohorts'
+                  ? 'bg-gradient-to-br from-[#eceffa] to-[#dce1f9] border-[#1e2246] shadow-[0_6px_0_#1e2246,0_18px_36px_-10px_rgba(69,77,130,0.34)] -translate-y-1'
+                  : 'bg-gradient-to-br from-white/85 to-[#e6e9fa]/75 border-white/95 shadow-[0_12px_28px_-12px_rgba(69,77,130,0.22)] hover:-translate-y-1 hover:border-[#626a9f]/60 hover:shadow-[0_18px_36px_-10px_rgba(98,106,159,0.32)]'
+              }`}
             >
-              <div className="flex items-center gap-3 min-w-0">
-                <span className="w-9 h-9 rounded-xl bg-[#454d82] text-[#ffc749] border border-[#1e2246]/20 flex items-center justify-center shrink-0 font-black text-xs">
-                  15/30
-                </span>
-                <div className="min-w-0">
-                  <h4 className="text-xs sm:text-sm font-black text-[#1e2246] uppercase tracking-wide leading-tight">
-                    Cohortes y fechas de corte
-                  </h4>
-                  <p className="text-[11px] font-medium text-[#50567d] truncate">
-                    Elige Día 15 o Día 30 • Política de créditos no acumulativos
-                  </p>
-                </div>
+              {/* Escena SVG Ilustrada: Calendario Orbital Día 15 / Día 30 */}
+              <div className="relative h-28 w-full rounded-2xl bg-white/75 border border-white/95 mb-4 flex items-center justify-center overflow-hidden shadow-inner">
+                <div
+                  className="absolute inset-0 opacity-60 pointer-events-none"
+                  style={{
+                    background: 'radial-gradient(circle at 50% 45%, rgba(98,106,159,0.22), transparent 70%)',
+                  }}
+                />
+                <svg
+                  viewBox="0 0 180 96"
+                  fill="none"
+                  className="w-40 h-24 overflow-visible transition-transform duration-300 ease-out group-hover:scale-105 group-hover:-translate-y-0.5"
+                  aria-hidden="true"
+                >
+                  {/* Órbita punteada */}
+                  <circle cx="90" cy="48" r="38" stroke="#626a9f" strokeOpacity="0.32" strokeWidth="1.8" strokeDasharray="5 5" className="ola-bento-spin" />
+                  {/* Tarjeta Calendario Central */}
+                  <g className="ola-bento-float">
+                    <rect x="54" y="16" width="72" height="64" rx="14" fill="#ffffff" stroke="#1e2246" strokeWidth="2.4" />
+                    <path d="M54 30C54 22.268 60.268 16 68 16H112C119.732 16 126 22.268 126 30V35H54V30Z" fill="#454d82" />
+                    {/* Anillos superiores */}
+                    <rect x="70" y="10" width="6" height="12" rx="3" fill="#ffc749" stroke="#1e2246" strokeWidth="1.8" />
+                    <rect x="104" y="10" width="6" height="12" rx="3" fill="#ffc749" stroke="#1e2246" strokeWidth="1.8" />
+                    {/* Píldoras Día 15 y Día 30 */}
+                    <rect x="62" y="43" width="25" height="24" rx="7" fill="#fff3d1" stroke="#ffc749" strokeWidth="1.8" />
+                    <text x="74.5" y="59" textAnchor="middle" fill="#1e2246" fontSize="11" fontWeight="800" fontFamily="Montserrat, sans-serif">
+                      15
+                    </text>
+                    <rect x="93" y="43" width="25" height="24" rx="7" fill="#454d82" />
+                    <text x="105.5" y="59" textAnchor="middle" fill="#ffc749" fontSize="11" fontWeight="800" fontFamily="Montserrat, sans-serif">
+                      30
+                    </text>
+                  </g>
+                  {/* Chispa flotante izquierda y punto coral de corte derecha */}
+                  <circle cx="34" cy="30" r="5" fill="#ffc749" className="ola-bento-float-alt" />
+                  <circle cx="146" cy="64" r="6" fill="#ee665b" fillOpacity="0.85" className="ola-bento-float" />
+                  <path d="M146 61V64L148 65.5" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" className="ola-bento-float" />
+                </svg>
               </div>
-              <span
-                className={`w-8 h-8 rounded-full bg-[#e8eaf7] text-[#454d82] flex items-center justify-center shrink-0 transition-transform duration-300 ease-out ${
-                  openAccordion === 'cohorts' ? 'rotate-180 bg-[#ffc749] text-[#1e2246]' : ''
-                }`}
-              >
-                <ChevronDownSvg className="w-4 h-4" />
-              </span>
+
+              <div>
+                <span className="inline-block text-[9.5px] font-bold uppercase tracking-widest text-[#454d82] bg-white/85 px-2.5 py-0.5 rounded-full mb-2">
+                  Ciclo Mensual
+                </span>
+                <h4 className="text-sm font-black text-[#1e2246] uppercase tracking-wide leading-snug">
+                  Cohortes y fechas de corte
+                </h4>
+                <p className="text-xs text-[#4c5384] font-medium mt-1 leading-relaxed">
+                  Elige Día 15 o Día 30 y conoce cómo renuevan tus créditos.
+                </p>
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-[#626a9f]/15 flex items-center justify-between gap-2">
+                <span className="text-[10.5px] font-bold uppercase tracking-widest text-[#454d82] group-hover:text-[#1e2246]">
+                  {openAccordion === 'cohorts' ? 'Ocultar detalle' : 'Explorar cortes'}
+                </span>
+                <span
+                  className={`w-7 h-7 rounded-full flex items-center justify-center transition-all duration-300 ease-out ${
+                    openAccordion === 'cohorts'
+                      ? 'rotate-180 bg-[#1e2246] text-[#ffc749]'
+                      : 'bg-white text-[#454d82] group-hover:bg-[#ffc749] group-hover:text-[#1e2246]'
+                  }`}
+                >
+                  <ChevronDownSvg className="w-3.5 h-3.5" />
+                </span>
+              </div>
             </button>
 
+            {/* Panel inline solo para MÓVIL */}
             <div
-              className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${
-                openAccordion === 'cohorts' ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+              className={`md:hidden grid transition-[grid-template-rows,opacity] duration-300 ease-out ${
+                openAccordion === 'cohorts' ? 'grid-rows-[1fr] opacity-100 mt-2.5' : 'grid-rows-[0fr] opacity-0'
               }`}
             >
               <div className="overflow-hidden">
-                <div className="px-5 pb-5 pt-2 border-t border-[#626a9f]/15">
+                <div className="bg-white/90 backdrop-blur-xl border-2 border-[#1e2246] rounded-2xl p-4 shadow-md">
+                  <div className="flex items-center justify-between gap-2 mb-3">
+                    <span className="text-[11px] font-bold text-[#4c5384]">Tu fecha de corte:</span>
+                    <div className="inline-flex bg-[#e8eaf7] rounded-full p-1">
+                      {[15, 30].map((day) => (
+                        <button
+                          key={`m-coh-${day}`}
+                          type="button"
+                          onClick={() => setSelectedCohort(day)}
+                          className={`px-3 py-1 rounded-full text-[10.5px] font-black uppercase cursor-pointer transition-all ${
+                            selectedCohort === day ? 'bg-[#454d82] text-[#ffc749]' : 'text-[#454d82]'
+                          }`}
+                        >
+                          Día {day}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="relative h-2.5 bg-[#e8eaf7] rounded-full mb-3">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-[#626a9f] to-[#ffc749] transition-all duration-300"
+                      style={{ width: selectedCohort === 15 ? '50%' : '100%' }}
+                    />
+                  </div>
+                  <p className="text-xs text-[#3b4170] font-medium leading-relaxed mb-3">
+                    {selectedCohort === 15
+                      ? 'Cohorte Día 15: Tu ciclo cierra el 15 de cada mes y renuevas tus 4 créditos para el periodo siguiente.'
+                      : 'Cohorte Día 30: Tu ciclo cierra al final de cada mes, ideal para sincronizar tu pago con tu quincena de cierre.'}
+                  </p>
+                  <p className="text-[11px] font-bold text-[#9b2c23] bg-[#ee665b]/10 border border-[#ee665b]/30 rounded-xl p-2.5 leading-snug">
+                    No acumulativos: Al vencer tu fecha de corte (Día {selectedCohort}), los créditos no utilizados expiran y no se trasladan al mes siguiente.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* BENTO 2: ¿POR QUÉ TE BENEFICIA ESTE SISTEMA? */}
+          <div className="flex flex-col">
+            <button
+              type="button"
+              onClick={() => toggleAccordion('benefits')}
+              aria-expanded={openAccordion === 'benefits'}
+              className={`ola-bento-card group w-full flex-1 text-left rounded-[1.85rem] p-5 flex flex-col justify-between cursor-pointer active:scale-[0.985] focus:outline-none border-2 ${
+                openAccordion === 'benefits'
+                  ? 'bg-gradient-to-br from-[#fff7dd] to-[#ffe6a8] border-[#1e2246] shadow-[0_6px_0_#1e2246,0_18px_36px_-10px_rgba(196,138,12,0.34)] -translate-y-1'
+                  : 'bg-gradient-to-br from-[#fffaf0]/90 to-[#fff0c7]/75 border-white/95 shadow-[0_12px_28px_-12px_rgba(196,138,12,0.2)] hover:-translate-y-1 hover:border-[#ffc749] hover:shadow-[0_18px_36px_-10px_rgba(255,199,73,0.45)]'
+              }`}
+            >
+              {/* Escena SVG Ilustrada: Escudo de Ventajas + Estrellas Flotantes */}
+              <div className="relative h-28 w-full rounded-2xl bg-white/75 border border-white/95 mb-4 flex items-center justify-center overflow-hidden shadow-inner">
+                <div
+                  className="absolute inset-0 opacity-65 pointer-events-none"
+                  style={{
+                    background: 'radial-gradient(circle at 50% 45%, rgba(255,199,73,0.35), transparent 70%)',
+                  }}
+                />
+                <svg
+                  viewBox="0 0 180 96"
+                  fill="none"
+                  className="w-40 h-24 overflow-visible transition-transform duration-300 ease-out group-hover:scale-105 group-hover:-translate-y-0.5"
+                  aria-hidden="true"
+                >
+                  {/* Halo luminoso */}
+                  <circle cx="90" cy="48" r="34" fill="#ffc749" fillOpacity="0.22" />
+                  {/* Escudo central animado */}
+                  <g className="ola-bento-float">
+                    <path
+                      d="M90 14L120 25V47C120 65.5 107.2 79.2 90 85C72.8 79.2 60 65.5 60 47V25L90 14Z"
+                      fill="#ffc749"
+                      stroke="#1e2246"
+                      strokeWidth="2.4"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M90 22L112 30.2V46.8C112 60.8 102.5 71.2 90 76C77.5 71.2 68 60.8 68 46.8V30.2L90 22Z"
+                      fill="#ffffff"
+                      fillOpacity="0.45"
+                    />
+                    <circle cx="90" cy="48" r="14" fill="#1e2246" />
+                    <path d="M84 48.2L88.2 52.4L96.5 43.8" stroke="#ffc749" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                  </g>
+                  {/* Chispas flotantes */}
+                  <path
+                    d="M42 26L44.2 31.8L50 34L44.2 36.2L42 42L39.8 36.2L34 34L39.8 31.8L42 26Z"
+                    fill="#454d82"
+                    className="ola-bento-float-alt"
+                  />
+                  <path
+                    d="M140 22L141.6 26.4L146 28L141.6 29.6L140 34L138.4 29.6L134 28L138.4 26.4L140 22Z"
+                    fill="#16a37f"
+                    className="ola-bento-float"
+                  />
+                  <circle cx="136" cy="68" r="4.5" fill="#626a9f" fillOpacity="0.65" className="ola-bento-float-alt" />
+                </svg>
+              </div>
+
+              <div>
+                <span className="inline-block text-[9.5px] font-bold uppercase tracking-widest text-[#1e2246] bg-[#ffc749]/65 px-2.5 py-0.5 rounded-full mb-2">
+                  Ventajas Clave
+                </span>
+                <h4 className="text-sm font-black text-[#1e2246] uppercase tracking-wide leading-snug">
+                  ¿Por qué te beneficia?
+                </h4>
+                <p className="text-xs text-[#4c5384] font-medium mt-1 leading-relaxed">
+                  Sin horarios rígidos, práctica 24/7 libre y cero cargos automáticos.
+                </p>
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-[#1e2246]/12 flex items-center justify-between gap-2">
+                <span className="text-[10.5px] font-bold uppercase tracking-widest text-[#1e2246]">
+                  {openAccordion === 'benefits' ? 'Ocultar ventajas' : 'Ver ventajas'}
+                </span>
+                <span
+                  className={`w-7 h-7 rounded-full flex items-center justify-center transition-all duration-300 ease-out ${
+                    openAccordion === 'benefits'
+                      ? 'rotate-180 bg-[#1e2246] text-[#ffc749]'
+                      : 'bg-white text-[#1e2246] group-hover:bg-[#1e2246] group-hover:text-[#ffc749]'
+                  }`}
+                >
+                  <ChevronDownSvg className="w-3.5 h-3.5" />
+                </span>
+              </div>
+            </button>
+
+            {/* Panel inline solo para MÓVIL */}
+            <div
+              className={`md:hidden grid transition-[grid-template-rows,opacity] duration-300 ease-out ${
+                openAccordion === 'benefits' ? 'grid-rows-[1fr] opacity-100 mt-2.5' : 'grid-rows-[0fr] opacity-0'
+              }`}
+            >
+              <div className="overflow-hidden">
+                <div className="bg-[#fff8e6] border-2 border-[#1e2246] rounded-2xl p-4 shadow-md">
+                  <ul className="space-y-2.5 text-xs font-medium text-[#282d57]">
+                    <li className="flex items-start gap-2">
+                      <CheckSvg className="w-4 h-4 text-[#128063] shrink-0 mt-0.5" />
+                      <span>Sin horarios fijos: agendas tus clases del mes en los días y horas que mejor se adaptan a tu rutina.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckSvg className="w-4 h-4 text-[#128063] shrink-0 mt-0.5" />
+                      <span>Avanza por delante del ritmo promedio añadiendo el Bundle de 2 créditos extra ($12 aparte).</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckSvg className="w-4 h-4 text-[#128063] shrink-0 mt-0.5" />
+                      <span>Estudio 24/7 sin límites: tus prácticas en la web no gastan créditos, solo las clases en vivo.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckSvg className="w-4 h-4 text-[#128063] shrink-0 mt-0.5" />
+                      <span>Sin cargos automáticos sorpresa: tú eliges tu corte y verificas cada pago.</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* BENTO 3: INSCRIPCIÓN ($10) Y EXTRA CRÉDITOS ($12) */}
+          <div className="flex flex-col">
+            <button
+              type="button"
+              onClick={() => toggleAccordion('fees')}
+              aria-expanded={openAccordion === 'fees'}
+              className={`ola-bento-card group w-full flex-1 text-left rounded-[1.85rem] p-5 flex flex-col justify-between cursor-pointer active:scale-[0.985] focus:outline-none border-2 ${
+                openAccordion === 'fees'
+                  ? 'bg-gradient-to-br from-[#e7faf3] to-[#d0f2e6] border-[#1e2246] shadow-[0_6px_0_#1e2246,0_18px_36px_-10px_rgba(18,128,99,0.3)] -translate-y-1'
+                  : 'bg-gradient-to-br from-white/88 to-[#e3f7f0]/75 border-white/95 shadow-[0_12px_28px_-12px_rgba(18,128,99,0.18)] hover:-translate-y-1 hover:border-[#16a37f]/65 hover:shadow-[0_18px_36px_-10px_rgba(22,163,127,0.3)]'
+              }`}
+            >
+              {/* Escena SVG Ilustrada: Pase de Nivel ($10) + Moneda Bundle (+2 / $12) */}
+              <div className="relative h-28 w-full rounded-2xl bg-white/75 border border-white/95 mb-4 flex items-center justify-center overflow-hidden shadow-inner">
+                <div
+                  className="absolute inset-0 opacity-60 pointer-events-none"
+                  style={{
+                    background: 'radial-gradient(circle at 50% 45%, rgba(22,163,127,0.22), transparent 70%)',
+                  }}
+                />
+                <svg
+                  viewBox="0 0 180 96"
+                  fill="none"
+                  className="w-40 h-24 overflow-visible transition-transform duration-300 ease-out group-hover:scale-105 group-hover:-translate-y-0.5"
+                  aria-hidden="true"
+                >
+                  {/* Pase de Inscripción por Nivel ($10) */}
+                  <g className="ola-bento-float-alt">
+                    <rect x="34" y="22" width="76" height="52" rx="13" fill="#ffc749" stroke="#1e2246" strokeWidth="2.4" transform="rotate(-6 72 48)" />
+                    <rect x="44" y="34" width="24" height="6" rx="3" fill="#1e2246" fillOpacity="0.2" transform="rotate(-6 72 48)" />
+                    <text x="68" y="59" textAnchor="middle" fill="#1e2246" fontSize="17" fontWeight="800" fontFamily="Montserrat, sans-serif" transform="rotate(-6 72 48)">
+                      $10
+                    </text>
+                  </g>
+                  {/* Moneda / Token Bundle +2 Extra Créditos ($12) */}
+                  <g className="ola-bento-float">
+                    <circle cx="122" cy="50" r="28" fill="#16a37f" stroke="#1e2246" strokeWidth="2.4" />
+                    <circle cx="122" cy="50" r="21" stroke="#ffffff" strokeOpacity="0.55" strokeWidth="1.6" strokeDasharray="4 3" />
+                    <text x="122" y="48" textAnchor="middle" fill="#ffffff" fontSize="14" fontWeight="800" fontFamily="Montserrat, sans-serif">
+                      $12
+                    </text>
+                    <text x="122" y="61" textAnchor="middle" fill="#fff3d1" fontSize="8.5" fontWeight="800" fontFamily="Montserrat, sans-serif">
+                      +2 CR
+                    </text>
+                  </g>
+                  <circle cx="152" cy="24" r="4.5" fill="#626a9f" fillOpacity="0.7" />
+                </svg>
+              </div>
+
+              <div>
+                <span className="inline-block text-[9.5px] font-bold uppercase tracking-widest text-[#128063] bg-[#16a37f]/15 px-2.5 py-0.5 rounded-full mb-2">
+                  Tarifas Claras
+                </span>
+                <h4 className="text-sm font-black text-[#1e2246] uppercase tracking-wide leading-snug">
+                  Inscripción ($10) y Extra Créditos
+                </h4>
+                <p className="text-xs text-[#4c5384] font-medium mt-1 leading-relaxed">
+                  Pase por cada nivel CEFR y condiciones del Bundle +2 ($12).
+                </p>
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-[#16a37f]/20 flex items-center justify-between gap-2">
+                <span className="text-[10.5px] font-bold uppercase tracking-widest text-[#128063] group-hover:text-[#1e2246]">
+                  {openAccordion === 'fees' ? 'Ocultar tarifas' : 'Ver condiciones'}
+                </span>
+                <span
+                  className={`w-7 h-7 rounded-full flex items-center justify-center transition-all duration-300 ease-out ${
+                    openAccordion === 'fees'
+                      ? 'rotate-180 bg-[#1e2246] text-[#ffc749]'
+                      : 'bg-white text-[#128063] group-hover:bg-[#16a37f] group-hover:text-white'
+                  }`}
+                >
+                  <ChevronDownSvg className="w-3.5 h-3.5" />
+                </span>
+              </div>
+            </button>
+
+            {/* Panel inline solo para MÓVIL */}
+            <div
+              className={`md:hidden grid transition-[grid-template-rows,opacity] duration-300 ease-out ${
+                openAccordion === 'fees' ? 'grid-rows-[1fr] opacity-100 mt-2.5' : 'grid-rows-[0fr] opacity-0'
+              }`}
+            >
+              <div className="overflow-hidden">
+                <div className="bg-white/90 border-2 border-[#1e2246] rounded-2xl p-4 shadow-md flex flex-col gap-3">
+                  <div>
+                    <h5 className="text-xs font-black uppercase tracking-wider text-[#1e2246]">
+                      $10 • Inscripción por Nivel
+                    </h5>
+                    <p className="text-xs text-[#4c5384] font-medium mt-1 leading-relaxed">
+                      Se abona al iniciar tu curso y cada vez que culminas un nivel CEFR para pasar al siguiente. Activa tu nuevo módulo y materiales.
+                    </p>
+                  </div>
+                  <div className="pt-3 border-t border-[#dfe2f2]">
+                    <h5 className="text-xs font-black uppercase tracking-wider text-[#128063]">
+                      $12 • Bundle 2 Extra Créditos
+                    </h5>
+                    <p className="text-xs text-[#4c5384] font-medium mt-1 leading-relaxed">
+                      Se paga aparte para cursar más lecciones en vivo al mes si deseas ir por delante del ritmo promedio. Válidos dentro de tu ciclo activo (no acumulativos).
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ================================================== */}
+        {/* PANEL EXPANDIDO DE ESCRITORIO (Cero huecos en grid)*/}
+        {/* ================================================== */}
+        {openAccordion && (
+          <div
+            key={`desktop-panel-${openAccordion}`}
+            className="hidden md:block mt-4 relative ola-bento-panel-in"
+          >
+            {/* Indicador espacial conectado exactamente a la tarjeta Bento activa */}
+            <div
+              className="w-4 h-4 bg-white border-l-2 border-t-2 border-[#1e2246] rotate-45 absolute -top-2 z-20 transition-all duration-300"
+              style={{
+                left:
+                  openAccordion === 'cohorts'
+                    ? 'calc(16.66% - 8px)'
+                    : openAccordion === 'benefits'
+                    ? 'calc(50% - 8px)'
+                    : 'calc(83.33% - 8px)',
+              }}
+            />
+
+            <div className="relative z-10 bg-white/92 backdrop-blur-2xl border-2 border-[#1e2246] rounded-[1.85rem] p-6 shadow-[0_18px_40px_-14px_rgba(30,34,70,0.28)]">
+              {openAccordion === 'cohorts' && (
+                <div>
                   <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-                    <span className="text-xs font-semibold text-[#4c5384]">
-                      Selecciona un corte para ver cómo funciona tu ciclo mensual:
-                    </span>
+                    <div>
+                      <h5 className="text-sm font-black text-[#1e2246] uppercase tracking-wide">
+                        Cohortes de Cobro y Política de Vencimiento
+                      </h5>
+                      <p className="text-xs text-[#4c5384] font-medium">
+                        Selecciona una fecha de corte para ver cómo corre tu ciclo mensual:
+                      </p>
+                    </div>
                     <div className="inline-flex bg-[#e8eaf7] rounded-full p-1 border border-white">
                       {[15, 30].map((day) => (
                         <button
-                          key={day}
+                          key={`d-coh-${day}`}
                           type="button"
                           onClick={() => setSelectedCohort(day)}
-                          className={`px-3.5 py-1.5 rounded-full text-[11px] font-black uppercase tracking-wider transition-all duration-200 cursor-pointer ${
+                          className={`px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-wider transition-all duration-200 cursor-pointer ${
                             selectedCohort === day
                               ? 'bg-[#454d82] text-[#ffc749] shadow-sm'
                               : 'text-[#454d82] hover:text-[#1e2246]'
@@ -495,8 +888,7 @@ function CreditsAndCohortsExplainer({ onScrollTo }) {
                     </div>
                   </div>
 
-                  {/* Línea de tiempo Día 1 / Día 15 / Día 30 */}
-                  <div className="bg-white/90 border border-[#dfe2f2] rounded-2xl p-4">
+                  <div className="bg-[#f6f7fc] border border-[#dfe2f2] rounded-2xl p-4">
                     <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-wider text-[#50567d] mb-3">
                       <span>Día 1</span>
                       <span className={selectedCohort === 15 ? 'text-[#1e2246]' : ''}>Día 15</span>
@@ -516,139 +908,67 @@ function CreditsAndCohortsExplainer({ onScrollTo }) {
                       </div>
                     </div>
 
-                    <div className="flex items-start gap-2.5">
-                      <span className="w-7 h-7 rounded-lg bg-[#454d82] text-[#ffc749] font-black text-xs flex items-center justify-center shrink-0 mt-0.5">
-                        {selectedCohort}
-                      </span>
-                      <p className="text-xs font-semibold text-[#3b4170] leading-relaxed">
-                        {selectedCohort === 15 ? (
-                          <>
-                            <strong className="font-black text-[#1e2246]">Cohorte Día 15:</strong> Tu ciclo cierra el 15 de cada mes. Al renovar tu mensualidad, recibes 4 nuevos créditos para el periodo siguiente.
-                          </>
-                        ) : (
-                          <>
-                            <strong className="font-black text-[#1e2246]">Cohorte Día 30:</strong> Tu ciclo cierra al final de cada mes. Ideal para sincronizar tu pago con tu quincena de cierre y renovar tus 4 créditos.
-                          </>
-                        )}
-                      </p>
-                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
+                      <div className="lg:col-span-7 flex items-start gap-2.5">
+                        <span className="w-7 h-7 rounded-lg bg-[#454d82] text-[#ffc749] font-black text-xs flex items-center justify-center shrink-0 mt-0.5">
+                          {selectedCohort}
+                        </span>
+                        <p className="text-xs font-medium text-[#3b4170] leading-relaxed">
+                          {selectedCohort === 15 ? (
+                            <>
+                              <strong className="font-bold text-[#1e2246]">Cohorte Día 15:</strong> Tu ciclo cierra el 15 de cada mes. Al renovar tu mensualidad, recibes 4 nuevos créditos para el periodo siguiente.
+                            </>
+                          ) : (
+                            <>
+                              <strong className="font-bold text-[#1e2246]">Cohorte Día 30:</strong> Tu ciclo cierra al final de cada mes. Ideal para sincronizar tu pago con tu quincena de cierre y renovar tus 4 créditos.
+                            </>
+                          )}
+                        </p>
+                      </div>
 
-                    {/* Política explícita: No acumulativos */}
-                    <div className="mt-3.5 pt-3 border-t border-[#dfe2f2] flex items-start gap-2">
-                      <svg className="w-4 h-4 text-[#ee665b] shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth="2.4" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <p className="text-[11px] font-bold text-[#9b2c23] leading-snug">
-                        <strong className="font-black">No acumulativos:</strong> Al vencer tu fecha de corte (Día {selectedCohort}), los créditos no utilizados expiran y no se trasladan al mes siguiente.
-                      </p>
+                      <div className="lg:col-span-5 bg-[#ee665b]/10 border border-[#ee665b]/30 rounded-xl p-3 flex items-start gap-2">
+                        <svg className="w-4 h-4 text-[#ee665b] shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth="2.4" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <p className="text-[11px] font-semibold text-[#9b2c23] leading-snug">
+                          <strong className="font-bold">No acumulativos:</strong> Al vencer tu corte (Día {selectedCohort}), los créditos no utilizados expiran y no se trasladan al mes siguiente.
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
+              )}
 
-          {/* ACORDEÓN 2: ¿POR QUÉ TE BENEFICIA ESTE SISTEMA? */}
-          <div className="bg-white/70 backdrop-blur-xl border border-white/95 rounded-2xl shadow-[0_6px_18px_-8px_rgba(69,77,130,0.18)] overflow-hidden transition-colors hover:bg-white/85">
-            <button
-              type="button"
-              onClick={() => toggleAccordion('benefits')}
-              aria-expanded={openAccordion === 'benefits'}
-              className="w-full px-5 py-4 flex items-center justify-between gap-3 text-left cursor-pointer focus:outline-none"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <span className="w-9 h-9 rounded-xl bg-[#fff3d1] text-[#1e2246] border border-[#ffc749] flex items-center justify-center shrink-0">
-                  <SparkleSvg className="w-4 h-4 text-[#d9970f]" />
-                </span>
-                <div className="min-w-0">
-                  <h4 className="text-xs sm:text-sm font-black text-[#1e2246] uppercase tracking-wide leading-tight">
+              {openAccordion === 'benefits' && (
+                <div>
+                  <h5 className="text-sm font-black text-[#1e2246] uppercase tracking-wide mb-3.5">
                     ¿Por qué te beneficia este sistema?
-                  </h4>
-                  <p className="text-[11px] font-medium text-[#50567d] truncate">
-                    Flexibilidad real de agenda, constancia y control sin cargos sorpresa
-                  </p>
-                </div>
-              </div>
-              <span
-                className={`w-8 h-8 rounded-full bg-[#e8eaf7] text-[#454d82] flex items-center justify-center shrink-0 transition-transform duration-300 ease-out ${
-                  openAccordion === 'benefits' ? 'rotate-180 bg-[#ffc749] text-[#1e2246]' : ''
-                }`}
-              >
-                <ChevronDownSvg className="w-4 h-4" />
-              </span>
-            </button>
-
-            <div
-              className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${
-                openAccordion === 'benefits' ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-              }`}
-            >
-              <div className="overflow-hidden">
-                <div className="px-5 pb-5 pt-2 border-t border-[#626a9f]/15">
-                  <div className="bg-[#fff3d1]/75 border border-[#ffc749] rounded-2xl p-4">
-                    <ul className="space-y-2.5 text-xs font-semibold text-[#282d57]">
-                      <li className="flex items-start gap-2.5">
-                        <CheckSvg className="w-4 h-4 text-[#128063] shrink-0 mt-0.5" />
-                        <span>Sin horarios fijos: agendas tus clases del mes en los días y horas que mejor se adaptan a tu rutina.</span>
-                      </li>
-                      <li className="flex items-start gap-2.5">
-                        <CheckSvg className="w-4 h-4 text-[#128063] shrink-0 mt-0.5" />
-                        <span>Avanza por delante del ritmo promedio añadiendo el Bundle de 2 créditos extra ($12 aparte) cuando lo necesites.</span>
-                      </li>
-                      <li className="flex items-start gap-2.5">
-                        <CheckSvg className="w-4 h-4 text-[#128063] shrink-0 mt-0.5" />
-                        <span>Estudio 24/7 sin límites: tus prácticas en la web no gastan créditos, solo las clases en vivo con profesores y compañeros.</span>
-                      </li>
-                      <li className="flex items-start gap-2.5">
-                        <CheckSvg className="w-4 h-4 text-[#128063] shrink-0 mt-0.5" />
-                        <span>Ritmo constante y sin cargos automáticos sorpresa: el corte mensual impulsa tu constancia y tú verificas cada pago.</span>
-                      </li>
-                    </ul>
+                  </h5>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                    {[
+                      'Sin horarios fijos: agendas tus clases del mes en los días y horas que mejor se adaptan a tu rutina.',
+                      'Avanza por delante del ritmo promedio añadiendo el Bundle de 2 créditos extra ($12 aparte) cuando lo necesites.',
+                      'Estudio 24/7 sin límites: tus prácticas en la web no gastan créditos, solo las clases en vivo con profesores y compañeros.',
+                      'Ritmo constante y sin cargos automáticos sorpresa: el corte mensual impulsa tu constancia y tú verificas cada pago.',
+                    ].map((item, idx) => (
+                      <div
+                        key={idx}
+                        className="bg-[#fff8e6] border border-[#ffc749]/75 rounded-2xl p-3.5 flex items-start gap-2.5 text-xs font-medium text-[#282d57]"
+                      >
+                        <span className="w-5 h-5 rounded-full bg-[#16a37f] text-white flex items-center justify-center shrink-0 mt-0.5">
+                          <CheckSvg className="w-3 h-3" />
+                        </span>
+                        <span className="leading-relaxed">{item}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
+              )}
 
-          {/* ACORDEÓN 3: INSCRIPCIÓN POR NIVEL ($10) Y DETALLES DE EXTRA CRÉDITOS */}
-          <div className="bg-white/70 backdrop-blur-xl border border-white/95 rounded-2xl shadow-[0_6px_18px_-8px_rgba(69,77,130,0.18)] overflow-hidden transition-colors hover:bg-white/85">
-            <button
-              type="button"
-              onClick={() => toggleAccordion('fees')}
-              aria-expanded={openAccordion === 'fees'}
-              className="w-full px-5 py-4 flex items-center justify-between gap-3 text-left cursor-pointer focus:outline-none"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <span className="w-9 h-9 rounded-xl bg-[#ffc749] text-[#1e2246] border border-[#1e2246]/25 flex items-center justify-center shrink-0 font-black text-xs">
-                  $10
-                </span>
-                <div className="min-w-0">
-                  <h4 className="text-xs sm:text-sm font-black text-[#1e2246] uppercase tracking-wide leading-tight">
-                    Inscripción por nivel ($10) y detalles de Extra Créditos
-                  </h4>
-                  <p className="text-[11px] font-medium text-[#50567d] truncate">
-                    Renovación de nivel CEFR y condiciones del Bundle +2 ($12)
-                  </p>
-                </div>
-              </div>
-              <span
-                className={`w-8 h-8 rounded-full bg-[#e8eaf7] text-[#454d82] flex items-center justify-center shrink-0 transition-transform duration-300 ease-out ${
-                  openAccordion === 'fees' ? 'rotate-180 bg-[#ffc749] text-[#1e2246]' : ''
-                }`}
-              >
-                <ChevronDownSvg className="w-4 h-4" />
-              </span>
-            </button>
-
-            <div
-              className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${
-                openAccordion === 'fees' ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-              }`}
-            >
-              <div className="overflow-hidden">
-                <div className="px-5 pb-5 pt-2 border-t border-[#626a9f]/15 grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-white/90 border border-[#dfe2f2] rounded-2xl p-4 flex items-start gap-3.5">
-                    <div className="w-11 h-11 rounded-2xl bg-[#ffc749] border-2 border-[#1e2246] shadow-[0_3px_0_#1e2246] flex items-center justify-center font-black text-sm text-[#1e2246] shrink-0">
+              {openAccordion === 'fees' && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div className="bg-[#fffaf0] border border-[#ffc749] rounded-2xl p-4 flex items-start gap-3.5">
+                    <div className="w-12 h-12 rounded-2xl bg-[#ffc749] border-2 border-[#1e2246] shadow-[0_3px_0_#1e2246] flex items-center justify-center font-black text-base text-[#1e2246] shrink-0">
                       $10
                     </div>
                     <div>
@@ -661,9 +981,9 @@ function CreditsAndCohortsExplainer({ onScrollTo }) {
                     </div>
                   </div>
 
-                  <div className="bg-white/90 border border-[#dfe2f2] rounded-2xl p-4 flex items-start gap-3.5">
-                    <div className="w-11 h-11 rounded-2xl bg-[#16a37f] border-2 border-[#1e2246] shadow-[0_3px_0_#1e2246] flex flex-col items-center justify-center text-white shrink-0 leading-none">
-                      <span className="font-black text-xs">$12</span>
+                  <div className="bg-[#f0fbf7] border border-[#16a37f]/55 rounded-2xl p-4 flex items-start gap-3.5">
+                    <div className="w-12 h-12 rounded-2xl bg-[#16a37f] border-2 border-[#1e2246] shadow-[0_3px_0_#1e2246] flex flex-col items-center justify-center text-white shrink-0 leading-none">
+                      <span className="font-black text-sm">$12</span>
                       <span className="text-[8px] font-black uppercase opacity-90">+2 Cr</span>
                     </div>
                     <div>
@@ -676,10 +996,10 @@ function CreditsAndCohortsExplainer({ onScrollTo }) {
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
-        </div>
+        )}
 
         {/* FRANJA COMPACTA DE MÉTODOS DE PAGO */}
         <div className="mt-5 pt-5 border-t border-white/75 flex flex-col sm:flex-row sm:items-center justify-between gap-3">

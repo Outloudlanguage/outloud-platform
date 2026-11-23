@@ -373,7 +373,7 @@ export default function LandingPage({
             : 'bg-white/25 backdrop-blur-xl border-b border-white/50 py-3.5'
         }`}
       >
-        <div className="max-w-6xl mx-auto px-5 sm:px-8 flex items-center justify-between gap-3">
+        <div className="max-w-[1380px] mx-auto px-5 sm:px-8 lg:px-10 flex items-center justify-between gap-4">
           {/* Optically Aligned Brand Logo */}
           <button
             type="button"
@@ -387,13 +387,13 @@ export default function LandingPage({
           </button>
 
           {/* Desktop Frosted Glass Nav Pill */}
-          <nav className="hidden lg:flex items-center gap-1 ola-glass rounded-full px-2.5 py-1.5">
+          <nav className="hidden lg:flex items-center gap-0.5 xl:gap-1 ola-glass rounded-full px-2 py-1.5 shrink-0">
             {NAV_LINKS.map((link) => (
               <button
                 key={link.href}
                 type="button"
                 onClick={() => scrollToSection(link.href)}
-                className="relative px-4 py-2 rounded-full text-xs font-extrabold uppercase tracking-wider text-[#3b4170] hover:text-[#1e2246] hover:bg-white/80 transition-all duration-200 cursor-pointer hover:-translate-y-0.5 active:translate-y-0"
+                className="relative whitespace-nowrap px-3 xl:px-4 py-2 rounded-full text-xs font-extrabold uppercase tracking-wider text-[#3b4170] hover:text-[#1e2246] hover:bg-white/80 transition-all duration-200 cursor-pointer hover:-translate-y-0.5 active:translate-y-0"
               >
                 {link.label}
               </button>
@@ -405,7 +405,7 @@ export default function LandingPage({
             <button
               type="button"
               onClick={onPlacementClick}
-              className="hidden md:inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-xs font-black uppercase tracking-wider text-[#454d82] hover:text-[#1e2246] bg-white/60 hover:bg-white/90 backdrop-blur-xl border border-white/90 shadow-sm hover:-translate-y-0.5 transition-all cursor-pointer"
+              className="hidden md:inline-flex whitespace-nowrap items-center gap-1.5 px-4 py-2.5 rounded-full text-xs font-black uppercase tracking-wider text-[#454d82] hover:text-[#1e2246] bg-white/60 hover:bg-white/90 backdrop-blur-xl border border-white/90 shadow-sm hover:-translate-y-0.5 transition-all cursor-pointer"
             >
               <span>Placement Test</span>
             </button>
@@ -413,7 +413,7 @@ export default function LandingPage({
             <button
               type="button"
               onClick={openLoginModal}
-              className="ola-btn-yellow px-4 sm:px-6 py-2.5 rounded-full text-[11px] sm:text-xs font-black uppercase tracking-widest cursor-pointer flex items-center gap-1.5 sm:gap-2"
+              className="ola-btn-yellow whitespace-nowrap px-4 sm:px-6 py-2.5 rounded-full text-[11px] sm:text-xs font-black uppercase tracking-widest cursor-pointer flex items-center gap-1.5 sm:gap-2"
             >
               <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
