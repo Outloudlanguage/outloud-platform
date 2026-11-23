@@ -3,6 +3,7 @@ import { OutLoudIcon, OutLoudHorizontalLogo } from './components/OutLoudBrand';
 import LoginModal from './components/LoginModal';
 import LandingMethodSection from './components/LandingMethodSection';
 import LandingLevelsAndPlans from './components/LandingLevelsAndPlans';
+import LandingTrialAndEnroll from './components/LandingTrialAndEnroll';
 
 const NAV_LINKS = [
   { label: 'Method', href: '#method' },
@@ -351,37 +352,14 @@ export default function LandingPage({
       />
 
       {/* ================================================== */}
-      {/* STAGE 4-5 ANCHOR SLOTS (Live Bridges Until Migrated) */}
+      {/* STAGE 4 & 5: FREE TRIAL, ONBOARDING FORM & FOOTER  */}
       {/* ================================================== */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-8 pb-24 space-y-8">
-
-        <section id="free-trial" className="bg-[#fff3d1] border-2 border-[#ffc749] rounded-[2rem] p-8 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div>
-            <span className="text-[11px] font-black uppercase tracking-widest text-[#23274d]">Stage 4 Ready to Launch</span>
-            <h3 className="text-2xl font-black text-[#23274d] mt-1">Experience a Real Lesson &amp; Placement Test</h3>
-            <p className="text-sm text-[#60668a] mt-1">Test our interactive player or discover your CEFR level right now.</p>
-          </div>
-          <div className="flex flex-wrap gap-3 shrink-0">
-            <button type="button" onClick={onFreeLessonClick} className="ola-btn-yellow px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest cursor-pointer">
-              Launch Free Lesson
-            </button>
-            <button type="button" onClick={onPlacementClick} className="ola-btn-outline px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest cursor-pointer">
-              Placement Test
-            </button>
-          </div>
-        </section>
-
-        <section id="enroll" className="bg-[#626a9f] border-2 border-[#23274d] rounded-[2rem] p-8 text-white shadow-[0_8px_0_#23274d] flex flex-col md:flex-row items-center justify-between gap-6">
-          <div>
-            <span className="text-[11px] font-black uppercase tracking-widest text-[#ffc749]">Stage 5 Incoming</span>
-            <h3 className="text-2xl font-black text-white mt-1">Start Your Onboarding Application</h3>
-            <p className="text-sm text-white/80 mt-1">The complete Supabase + Discord registration form will embed right here.</p>
-          </div>
-          <button type="button" onClick={onRegisterClick} className="ola-btn-yellow px-7 py-3.5 rounded-full text-xs font-black uppercase tracking-widest shrink-0 cursor-pointer">
-            Open Onboarding Form →
-          </button>
-        </section>
-      </div>
+      <LandingTrialAndEnroll
+        onFreeLessonClick={onFreeLessonClick}
+        onPlacementClick={onPlacementClick}
+        onScrollTo={scrollToSection}
+        onOpenLogin={() => setIsLoginOpen(true)}
+      />
 
       {/* ================================================== */}
       {/* TACTILE LIGHT-MODE LOGIN MODAL                     */}

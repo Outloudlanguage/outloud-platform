@@ -291,7 +291,12 @@ export default function App() {
       {currentPage === 'free-lesson' && (
         <FreeLesson 
           onReturnHome={() => navigate('login')} 
-          onReturnToRegister={() => navigate('register')} 
+          onReturnToRegister={() => {
+            navigate('login');
+            setTimeout(() => {
+              document.getElementById('enroll')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 150);
+          }} 
         />
       )}
 
