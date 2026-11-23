@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
+import LandingCycleSection from './LandingCycleSection';
 
 const ECOSYSTEM_MINI_CARDS = [
   {
@@ -75,58 +76,7 @@ const ECOSYSTEM_MINI_CARDS = [
   },
 ];
 
-const CYCLE_STEPS = [
-  {
-    num: '01',
-    shortLabel: 'Live Lab',
-    title: 'PASO 1: Live Lab',
-    tag: 'Adquisición Natural',
-    desc: 'Entra a tu cuenta y adquiere nuevo vocabulario de forma interactiva.',
-    detail: 'Explora situaciones reales con audio nativo y práctica de voz para interiorizar expresiones sin traducir.',
-    icon: 'https://i.postimg.cc/hvd9RVBP/14(3).png',
-    highlight: 'Audio nativo + comparación vocal',
-  },
-  {
-    num: '02',
-    shortLabel: 'Práctica',
-    title: 'PASO 2: Práctica interactiva',
-    tag: 'Consolidación 24/7',
-    desc: 'Completa los ejercicios para afianzar lo aprendido.',
-    detail: 'Refuerza tu comprensión con nuestro workbook digital interactivo y prepara tu mente antes de hablar en vivo.',
-    icon: 'https://i.postimg.cc/Cx1bFyYc/Diseno-sin-titulo-(15).png',
-    highlight: 'Feedback visual inmediato',
-  },
-  {
-    num: '03',
-    shortLabel: 'Agenda',
-    title: 'PASO 3: Agenda tus clases',
-    tag: 'Horario Flexible',
-    desc: 'Reserva sesiones 100% en vivo con un profesor.',
-    detail: 'Elige el día y la hora que mejor se adapten a tu rutina desde tu calendario interactivo en el Student Hub.',
-    icon: 'https://i.postimg.cc/L5KJf7c8/16(3).png',
-    highlight: 'Horarios de lunes a sábado',
-  },
-  {
-    num: '04',
-    shortLabel: 'En Vivo',
-    title: 'PASO 4: Clase 100% en vivo',
-    tag: 'Evaluación Real',
-    desc: 'Un instructor dictará clases interactivas, completamente prácticas, te aconsejará y te evaluará.',
-    detail: 'Recibe corrección inmediata en pronunciación y fluidez mientras validas tu dominio para avanzar a la siguiente unidad.',
-    icon: 'https://i.postimg.cc/RVTW6gX3/17(2).png',
-    highlight: 'Acompañamiento real 1-a-1 o grupal',
-  },
-  {
-    num: '05',
-    shortLabel: 'Comunidad',
-    title: 'PASO 5: Aplica lo aprendido',
-    tag: 'Inmersión Social',
-    desc: 'Participa en actividades comunitarias con otros alumnos: foros, debates, club de conversación, salas de chat y más.',
-    detail: 'Convierte el inglés en un hábito diario interactuando con compañeros de tu nivel y desbloqueando logros en tu perfil.',
-    icon: 'https://i.postimg.cc/MKtGKvpz/18(1).png',
-    highlight: 'Foros, debates y salas en vivo',
-  },
-];
+// Study cycle logic & animated UI scenes now live in LandingCycleSection.jsx
 
 const ArrowDownIcon = ({ className = 'w-4 h-4' }) => (
   <svg className={className} fill="none" stroke="currentColor" strokeWidth="2.8" viewBox="0 0 24 24">
@@ -140,16 +90,7 @@ const ArrowRightIcon = ({ className = 'w-4 h-4' }) => (
   </svg>
 );
 
-const ArrowLeftIcon = ({ className = 'w-4 h-4' }) => (
-  <svg className={className} fill="none" stroke="currentColor" strokeWidth="2.8" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
-  </svg>
-);
-
 export default function LandingMethodSection({ onScrollTo }) {
-  const [activeStepIndex, setActiveStepIndex] = useState(0);
-  const currentStep = CYCLE_STEPS[activeStepIndex];
-  const progressPercent = (activeStepIndex / (CYCLE_STEPS.length - 1)) * 100;
 
   return (
     <section id="method" className="relative py-16 sm:py-24 scroll-mt-24">
@@ -541,210 +482,9 @@ export default function LandingMethodSection({ onScrollTo }) {
         </div>
 
         {/* ================================================== */}
-        {/* PART C: INTERACTIVE 5-STEP METHOD ENGINE (#cycle)  */}
+        {/* PART C: MODERN LIVING STUDY CYCLE STUDIO (#cycle)  */}
         {/* ================================================== */}
-        <div id="cycle" className="mt-20 sm:mt-28 scroll-mt-24 relative">
-          {/* Strong Dual-Tone Backlight Halo */}
-          <div
-            className="absolute -inset-4 rounded-[3.2rem] blur-3xl opacity-75 -z-10 pointer-events-none"
-            style={{
-              background:
-                'linear-gradient(120deg, rgba(255,199,73,0.48) 0%, rgba(121,131,196,0.52) 50%, rgba(98,106,159,0.55) 100%)',
-            }}
-          />
-
-          <div className="ola-glass rounded-[2.5rem] overflow-hidden relative">
-            {/* Header Bar */}
-            <div className="px-6 sm:px-10 pt-8 sm:pt-10 pb-6 border-b border-white/70 flex flex-col md:flex-row md:items-end justify-between gap-4">
-              <div>
-                <div className="inline-flex items-center gap-2 bg-[#454d82] text-[#ffc749] px-3.5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest mb-3 shadow-sm">
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                  <span>Mecánica de Aprendizaje</span>
-                </div>
-                <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#1e2246] tracking-tight leading-tight">
-                  El Ciclo de Estudio OutLoud
-                </h3>
-                <p className="text-xs sm:text-sm text-[#4c5384] font-medium mt-1.5">
-                  Toca cualquier estación o pulsa <strong className="font-black text-[#1e2246]">Continuar</strong> para ver cómo dominas cada unidad.
-                </p>
-              </div>
-
-              <div className="inline-flex items-center gap-2 self-start md:self-auto bg-white/70 backdrop-blur-md border border-white rounded-full px-4 py-2 shrink-0 shadow-sm">
-                <span className="text-[10px] font-black uppercase tracking-widest text-[#50567d]">Paso</span>
-                <span className="text-sm font-black text-[#454d82]">{activeStepIndex + 1}</span>
-                <span className="text-xs font-bold text-[#50567d]">/ {CYCLE_STEPS.length}</span>
-              </div>
-            </div>
-
-            {/* Interactive 5-Step Connected Rail */}
-            <div className="px-4 sm:px-10 pt-6 pb-2">
-              <div className="relative">
-                {/* Connecting Progress Track */}
-                <div className="hidden md:block absolute top-6 left-[10%] right-[10%] h-2 bg-white/60 rounded-full overflow-hidden shadow-inner">
-                  <div
-                    className="h-full bg-gradient-to-r from-[#626a9f] via-[#7c85bc] to-[#ffc749] transition-all duration-500 ease-out rounded-full"
-                    style={{ width: `${progressPercent}%` }}
-                  />
-                </div>
-
-                {/* Step Selector Buttons */}
-                <div className="grid grid-cols-5 gap-2 sm:gap-4 relative z-10">
-                  {CYCLE_STEPS.map((step, idx) => {
-                    const isActive = idx === activeStepIndex;
-                    const isCompleted = idx < activeStepIndex;
-
-                    return (
-                      <button
-                        key={step.num}
-                        type="button"
-                        onClick={() => setActiveStepIndex(idx)}
-                        className="flex flex-col items-center group cursor-pointer focus:outline-none"
-                      >
-                        <div
-                          className={`w-11 h-11 sm:w-12 sm:h-12 rounded-2xl border-2 flex items-center justify-center font-black text-xs sm:text-sm transition-all duration-200 ${
-                            isActive
-                              ? 'bg-[#ffc749] border-[#1e2246] text-[#1e2246] scale-110 shadow-[0_4px_0_#1e2246,0_10px_22px_rgba(255,199,73,0.6)]'
-                              : isCompleted
-                              ? 'bg-[#454d82] border-[#1e2246] text-white shadow-md'
-                              : 'bg-white/75 border-white text-[#50567d] shadow-sm group-hover:border-[#626a9f] group-hover:text-[#1e2246] group-hover:-translate-y-0.5'
-                          }`}
-                        >
-                          {isCompleted ? (
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                            </svg>
-                          ) : (
-                            step.num
-                          )}
-                        </div>
-                        <span
-                          className={`mt-2 text-[10px] sm:text-xs font-black uppercase tracking-wider text-center leading-tight transition-colors ${
-                            isActive ? 'text-[#1e2246]' : 'text-[#50567d] group-hover:text-[#454d82]'
-                          }`}
-                        >
-                          {step.shortLabel}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            {/* Active Spotlight Stage */}
-            <div className="p-5 sm:p-10">
-              <div
-                key={currentStep.num}
-                className="bg-white/55 backdrop-blur-xl border border-white/90 rounded-[2rem] p-6 sm:p-9 grid grid-cols-1 md:grid-cols-12 gap-6 sm:gap-8 items-center shadow-inner animate-fade-in"
-              >
-                {/* Visual Icon Stage with Indigo Glass + Backlight */}
-                <div className="md:col-span-4 flex flex-col items-center justify-center">
-                  <div className="relative">
-                    <div
-                      className="absolute -inset-4 rounded-[2.5rem] blur-2xl opacity-65 pointer-events-none"
-                      style={{ background: 'radial-gradient(circle, rgba(98,106,159,0.7), rgba(255,199,73,0.45))' }}
-                    />
-                    <div className="ola-glass-indigo relative w-32 h-32 sm:w-40 sm:h-40 rounded-[2rem] flex items-center justify-center p-7">
-                      <img
-                        src={currentStep.icon}
-                        alt={currentStep.title}
-                        className="w-full h-full object-contain brightness-0 invert drop-shadow-md"
-                      />
-                    </div>
-                    <div className="absolute -top-3 -right-3 bg-[#ffc749] text-[#1e2246] border-2 border-[#1e2246] rounded-full px-3 py-1 text-xs font-black shadow-[0_3px_0_#1e2246]">
-                      #{currentStep.num}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Copy & Controls */}
-                <div className="md:col-span-8 flex flex-col items-center md:items-start text-center md:text-left">
-                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-3">
-                    <span className="inline-block text-[10px] font-black uppercase tracking-widest text-white bg-[#454d82] px-3 py-1 rounded-full">
-                      {currentStep.tag}
-                    </span>
-                    <span className="inline-block text-[10px] font-black uppercase tracking-widest text-[#1e2246] bg-[#fff3d1] border border-[#ffc749] px-3 py-1 rounded-full">
-                      {currentStep.highlight}
-                    </span>
-                  </div>
-
-                  <h4 className="text-2xl sm:text-3xl font-black text-[#1e2246] uppercase tracking-tight mb-3">
-                    {currentStep.title}
-                  </h4>
-
-                  <p className="text-base sm:text-lg font-bold text-[#1e2246]/90 leading-relaxed mb-3">
-                    {currentStep.desc}
-                  </p>
-
-                  <p className="text-xs sm:text-sm font-medium text-[#50567d] leading-relaxed mb-7 max-w-xl">
-                    {currentStep.detail}
-                  </p>
-
-                  {/* Interactive Navigation Bar */}
-                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 w-full">
-                    <button
-                      type="button"
-                      disabled={activeStepIndex === 0}
-                      onClick={() => setActiveStepIndex((prev) => Math.max(0, prev - 1))}
-                      className="ola-btn-outline px-5 py-3 rounded-full text-xs font-black uppercase tracking-widest cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed flex items-center gap-2"
-                    >
-                      <ArrowLeftIcon className="w-4 h-4" />
-                      <span>Anterior</span>
-                    </button>
-
-                    {activeStepIndex < CYCLE_STEPS.length - 1 ? (
-                      <button
-                        type="button"
-                        onClick={() => setActiveStepIndex((prev) => prev + 1)}
-                        className="ola-btn-yellow px-7 py-3 rounded-full text-xs font-black uppercase tracking-widest cursor-pointer flex items-center gap-2"
-                      >
-                        <span>Continuar</span>
-                        <ArrowRightIcon className="w-4 h-4" />
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => onScrollTo?.('#enroll')}
-                        className="ola-btn-yellow px-8 py-3 rounded-full text-xs font-black uppercase tracking-widest cursor-pointer flex items-center gap-2"
-                      >
-                        <span>Inscribirme Ahora</span>
-                        <ArrowRightIcon className="w-4 h-4" />
-                      </button>
-                    )}
-
-                    {activeStepIndex === CYCLE_STEPS.length - 1 && (
-                      <button
-                        type="button"
-                        onClick={() => setActiveStepIndex(0)}
-                        className="ola-reactive-text text-xs font-black uppercase tracking-widest text-[#454d82] cursor-pointer"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                        </svg>
-                        <span>Reiniciar Ciclo</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Continuous Loop Footer Note */}
-              <div className="mt-5 flex flex-col sm:flex-row items-center justify-between gap-2 px-2 text-[11px] font-bold text-[#4c5384]">
-                <span className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#16a37f] shadow-[0_0_8px_#16a37f] shrink-0" />
-                  Al aprobar el Paso 4, tu profesor desbloquea automáticamente la siguiente unidad.
-                </span>
-                <span className="text-[#1e2246] uppercase tracking-wider font-black flex items-center gap-1.5">
-                  <span>Ciclo continuo A1</span>
-                  <ArrowRightIcon className="w-3.5 h-3.5 text-[#454d82]" />
-                  <span>C2</span>
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
+        <LandingCycleSection onScrollTo={onScrollTo} />
       </div>
     </section>
   );
