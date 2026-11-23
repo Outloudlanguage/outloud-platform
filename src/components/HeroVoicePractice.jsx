@@ -1,4 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
+import OutLoudParticleField from './OutLoudParticleField';
+
+const BASE_BAR_HEIGHTS = [14, 28, 18, 44, 24, 34];
 
 // ==========================================================
 // CONFIG: PEGA AQUÍ TU URL DE AUDIO HOSTED Y EL SUBTÍTULO (SOLO INGLÉS)
@@ -211,10 +214,21 @@ export default function HeroVoicePractice({ onFreeLessonClick }) {
   // Live 60fps Mic Analyser Refs (Zero React Re-Renders)
   const audioCtxRef = useRef(null);
   const rafRef = useRef(null);
+  const micLevelRef = useRef(0);
   const leftBarRefs = useRef([]);
   const rightBarRefs = useRef([]);
 
+  const restoreRestingBarHeights = () => {
+    leftBarRefs.current.forEach((el, idx) => {
+      if (el) el.style.height = `${Math.round(BASE_BAR_HEIGHTS[idx] * 0.48)}px`;
+    });
+    rightBarRefs.current.forEach((el, idx) => {
+      if (el) el.style.height = `${Math.round(BASE_BAR_HEIGHTS[5 - idx] * 0.48)}px`;
+    });
+  };
+
   const stopMicAnalyser = () => {
+    micLevelRef.current = 0;
     if (rafRef.current) {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
@@ -223,19 +237,8 @@ export default function HeroVoicePractice({ onFreeLessonClick }) {
       audioCtxRef.current.close().catch(() => {});
       audioCtxRef.current = null;
     }
+    restoreRestingBarHeights();
   };
-
-  // Clear direct DOM heights whenever leaving recording phase
-  useEffect(() => {
-    if (phase !== 'recording') {
-      leftBarRefs.current.forEach((el) => {
-        if (el) el.style.height = '';
-      });
-      rightBarRefs.current.forEach((el) => {
-        if (el) el.style.height = '';
-      });
-    }
-  }, [phase]);
 
   const cleanupResources = () => {
     stopMicAnalyser();
@@ -302,13 +305,16 @@ export default function HeroVoicePractice({ onFreeLessonClick }) {
 
       const tick = () => {
         analyser.getByteFrequencyData(dataArray);
+        let sum = 0;
         for (let i = 0; i < 6; i++) {
           const bin = dataArray[i + 2] || 0;
           const level = Math.min(1, (bin / 185) * barWeights[i]);
+          sum += level;
           const px = Math.round(10 + level * 46);
           if (leftBarRefs.current[i]) leftBarRefs.current[i].style.height = `${px}px`;
           if (rightBarRefs.current[5 - i]) rightBarRefs.current[5 - i].style.height = `${px}px`;
         }
+        micLevelRef.current = sum / 6;
         rafRef.current = requestAnimationFrame(tick);
       };
       rafRef.current = requestAnimationFrame(tick);
@@ -825,12 +831,15 @@ export default function HeroVoicePractice({ onFreeLessonClick }) {
 
         <div className="ola-glass-lavender rounded-[2.5rem] px-6 py-8 sm:px-8 sm:py-10 relative overflow-hidden">
           <div
-            className="absolute inset-0 opacity-35 pointer-events-none"
+            className="absolute inset-0 opacity-30 pointer-events-none"
             style={{
               backgroundImage: 'radial-gradient(rgba(98, 106, 159, 0.28) 1px, transparent 1px)',
               backgroundSize: '20px 20px',
             }}
           />
+
+          {/* INTERACTIVE 60FPS PHYSICS PLAYGROUND (Brand Shapes Colliding & Popping) */}
+          <OutLoudParticleField phase={phase} micLevelRef={micLevelRef} />
 
           {/* ================================================== */}
           {/* EMBLEMA INTERACTIVO CENTRAL + ONDAS REACTIVAS      */}
@@ -838,7 +847,7 @@ export default function HeroVoicePractice({ onFreeLessonClick }) {
           <div className="relative z-10 flex items-center justify-center gap-4 sm:gap-6 mb-7">
             {/* Ecualizador Izquierdo (Real-Time Mic Volume in 'recording') */}
             <div className="flex items-center gap-1 sm:gap-1.5 h-16">
-              {[14, 28, 18, 44, 24, 34].map((h, i) => (
+              {BASE_BAR_HEIGHTS.map((h, i) => (
                 <span
                   key={`sl-${i}`}
                   ref={(el) => {
@@ -848,7 +857,7 @@ export default function HeroVoicePractice({ onFreeLessonClick }) {
                     isCssWaveActive ? 'ola-hero-eq' : ''
                   }`}
                   style={{
-                    height: isCssWaveActive ? `${h}px` : `${Math.round(h * 0.4)}px`,
+                    height: isCssWaveActive ? `${h}px` : `${Math.round(h * 0.48)}px`,
                     backgroundColor:
                       phase === 'recording' || phase === 'ready_to_record'
                         ? '#ee665b'
@@ -949,7 +958,7 @@ export default function HeroVoicePractice({ onFreeLessonClick }) {
 
             {/* Ecualizador Derecho (Real-Time Mic Volume in 'recording') */}
             <div className="flex items-center gap-1 sm:gap-1.5 h-16">
-              {[34, 24, 44, 18, 28, 14].map((h, i) => (
+              {[...BASE_BAR_HEIGHTS].reverse().map((h, i) => (
                 <span
                   key={`sr-${i}`}
                   ref={(el) => {
@@ -959,7 +968,7 @@ export default function HeroVoicePractice({ onFreeLessonClick }) {
                     isCssWaveActive ? 'ola-hero-eq' : ''
                   }`}
                   style={{
-                    height: isCssWaveActive ? `${h}px` : `${Math.round(h * 0.4)}px`,
+                    height: isCssWaveActive ? `${h}px` : `${Math.round(h * 0.48)}px`,
                     backgroundColor:
                       phase === 'recording' || phase === 'ready_to_record'
                         ? '#ee665b'
