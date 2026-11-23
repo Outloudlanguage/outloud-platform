@@ -6,9 +6,9 @@ const CYCLE_STEPS = [
   {
     num: '01',
     shortLabel: 'Live Lab',
-    title: 'Live Lab Interactivo',
-    desc: 'Escucha situaciones reales y entrena tu pronunciación comparando tu voz al instante, sin traducir.',
-    accent: '#ffc749',
+    title: 'Escucha y repite con voz real',
+    stageSubtitle: 'Entrenas tu oído y tu pronunciación en situaciones cotidianas, sin traducir.',
+    desc: 'Entra a tu cuenta, escucha voces reales y entrena tu pronunciación hablando desde el primer minuto.',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.3" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 2a3.5 3.5 0 00-3.5 3.5v6a3.5 3.5 0 007 0v-6A3.5 3.5 0 0012 2z" />
@@ -19,21 +19,21 @@ const CYCLE_STEPS = [
   {
     num: '02',
     shortLabel: 'Práctica',
-    title: 'Práctica Interactiva',
-    desc: 'Afianza lo aprendido con ejercicios dinámicos en tu workbook digital y corrección visual inmediata.',
-    accent: '#16a37f',
+    title: 'Afianza a tu propio ritmo',
+    stageSubtitle: 'Ejercicios cortos y dinámicos que fijan lo aprendido antes de tu clase en vivo.',
+    desc: 'Completa actividades prácticas en tu workbook digital para consolidar vocabulario y confianza.',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.3" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
       </svg>
     ),
   },
   {
     num: '03',
     shortLabel: 'Agenda',
-    title: 'Agenda tus Clases',
-    desc: 'Elige el día y la hora que mejor se adapten a tu rutina y reserva tu sesión en vivo en segundos.',
-    accent: '#626a9f',
+    title: 'Tú eliges cuándo conectar',
+    stageSubtitle: 'Reservas el día y la hora que encajan con tu vida junto a un instructor disponible.',
+    desc: 'Coordina tus sesiones individuales o grupales según tu horario, sin ataduras rígidas.',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.3" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -43,9 +43,9 @@ const CYCLE_STEPS = [
   {
     num: '04',
     shortLabel: 'En Vivo',
-    title: 'Clase 100% En Vivo',
-    desc: 'Practica con un profesor real, recibe feedback instantáneo y desbloquea tu siguiente unidad.',
-    accent: '#ee665b',
+    title: 'Conversación real cara a cara',
+    stageSubtitle: 'Un profesor te escucha, corrige tu pronunciación al instante y guía tu avance.',
+    desc: 'Vives clases 100% prácticas donde hablas de verdad, recibes feedback humano y avanzas de unidad.',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.3" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -55,334 +55,431 @@ const CYCLE_STEPS = [
   {
     num: '05',
     shortLabel: 'Comunidad',
-    title: 'Aplica en Comunidad',
-    desc: 'Conversa en foros, debates, chats y el club de conversación para convertir el inglés en un hábito.',
-    accent: '#ffc749',
+    title: 'Habla con personas reales',
+    stageSubtitle: 'Foros, debates y club de conversación para convertir el inglés en parte de tu día.',
+    desc: 'Comparte con compañeros de tu mismo nivel en dinámicas sociales que te dan soltura natural.',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.3" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
       </svg>
     ),
   },
 ];
 
 // ==========================================================
-// 5 BESPOKE ANIMATED MINI-UI SCENES (Show, Don't Tell)
+// 5 HUMAN-CENTERED EDITORIAL VECTOR SCENES (Custom SVGs)
 // ==========================================================
-function CycleVisualStage({ stepIndex }) {
-  // STAGE 0: LIVE LAB (Audio Wave + Vocal Comparison Match)
+function HumanCycleIllustration({ stepIndex }) {
+  // SCENE 1: LIVE LAB — Student wearing headphones smiling & speaking back to an audio voice
   if (stepIndex === 0) {
     return (
-      <div key="stage-0" className="ola-stage-in w-full max-w-md mx-auto flex flex-col gap-4">
-        {/* Phrase Card with Live Equalizer */}
-        <div className="bg-white/85 backdrop-blur-xl border border-white rounded-3xl p-5 shadow-[0_14px_30px_-10px_rgba(69,77,130,0.22)]">
-          <div className="flex items-center justify-between gap-3 mb-3">
-            <div className="flex items-center gap-2">
-              <span className="w-8 h-8 rounded-full bg-[#ffc749] border-2 border-[#1e2246] flex items-center justify-center text-[#1e2246]">
-                <svg className="w-3.5 h-3.5 translate-x-0.5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M8 5.14v14l11-7-11-7z" />
-                </svg>
-              </span>
-              <div className="flex items-center gap-[3px] h-5">
-                {[10, 18, 12, 22, 14, 20, 9, 16, 11].map((h, i) => (
-                  <span
-                    key={i}
-                    className="ola-cyc-wave w-[3px] rounded-full"
-                    style={{
-                      height: `${h}px`,
-                      backgroundColor: i % 3 === 0 ? '#ffc749' : '#626a9f',
-                      animationDelay: `${i * 0.1}s`,
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-            <span className="text-[10px] font-black uppercase tracking-widest text-[#454d82] bg-[#e8eaf7] px-2.5 py-1 rounded-full">
-              Unit 1
-            </span>
-          </div>
+      <svg
+        key="human-0"
+        viewBox="0 0 420 220"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className="ola-stage-in w-full max-w-[430px] h-auto overflow-visible"
+        aria-label="Estudiante escuchando y practicando pronunciación con audífonos"
+      >
+        {/* Warm Ambient Backdrop Halo */}
+        <circle cx="155" cy="118" r="82" fill="#ffc749" fillOpacity="0.28" />
+        <circle cx="305" cy="95" r="56" fill="#626a9f" fillOpacity="0.16" />
 
-          <p className="text-lg sm:text-xl font-black text-[#1e2246] leading-snug">
-            &ldquo;Nice to{' '}
-            <span className="bg-[#ffc749]/75 px-1.5 py-0.5 rounded-lg">meet you!</span>&rdquo;
-          </p>
-        </div>
+        {/* Human Character: Smiling Student with Headphones */}
+        <g className="ola-human-breathe">
+          {/* Shoulders / Sweater */}
+          <path
+            d="M84 206 C84 166, 114 148, 155 148 C196 148, 226 166, 226 206 Z"
+            fill="#626a9f"
+          />
+          <path
+            d="M132 150 Q155 170 178 150"
+            stroke="#ffc749"
+            strokeWidth="5"
+            strokeLinecap="round"
+          />
+          {/* Neck */}
+          <rect x="143" y="128" width="24" height="26" rx="10" fill="#eab694" />
+          {/* Hair Back */}
+          <circle cx="155" cy="94" r="46" fill="#1e2246" />
+          {/* Face */}
+          <circle cx="155" cy="98" r="37" fill="#f5c9a8" />
+          {/* Stylish Fringe */}
+          <path
+            d="M119 90 C124 62, 152 54, 178 62 C188 66, 193 78, 192 88 C178 75, 144 74, 119 90 Z"
+            fill="#1e2246"
+          />
+          {/* Rosy Cheeks */}
+          <ellipse cx="136" cy="108" rx="6" ry="3.5" fill="#ee665b" fillOpacity="0.32" />
+          <ellipse cx="176" cy="108" rx="6" ry="3.5" fill="#ee665b" fillOpacity="0.32" />
+          {/* Friendly Eyes */}
+          <path d="M139 95 Q144 90 149 95" stroke="#1e2246" strokeWidth="3.2" strokeLinecap="round" />
+          <path d="M164 95 Q169 90 174 95" stroke="#1e2246" strokeWidth="3.2" strokeLinecap="round" />
+          {/* Warm Talking Smile */}
+          <path
+            className="ola-smile-talk"
+            d="M145 110 Q156 123 168 110 Z"
+            fill="#1e2246"
+          />
+          <path d="M150 115 Q156 119 163 115" stroke="#ee665b" strokeWidth="2.5" strokeLinecap="round" />
 
-        {/* Voice Match Feedback Bar */}
-        <div className="bg-white/70 backdrop-blur-xl border border-white rounded-2xl p-4 shadow-sm flex items-center justify-between gap-4 ola-pop-delay-1">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <span className="w-10 h-10 rounded-xl bg-[#626a9f] text-[#ffc749] flex items-center justify-center shrink-0 shadow-sm">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.3" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 2a3.5 3.5 0 00-3.5 3.5v6a3.5 3.5 0 007 0v-6A3.5 3.5 0 0012 2z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 10.5a7 7 0 01-14 0m7 7V21" />
-              </svg>
-            </span>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between text-[11px] font-black text-[#1e2246] mb-1.5">
-                <span>Comparación vocal</span>
-                <span className="text-[#128063]">96%</span>
-              </div>
-              <div className="w-full h-2 bg-[#dfe2f2] rounded-full overflow-hidden">
-                <div className="ola-bar-fill h-full rounded-full bg-gradient-to-r from-[#626a9f] via-[#ffc749] to-[#16a37f]" style={{ width: '96%' }} />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+          {/* OutLoud Brand Headphones */}
+          <path
+            d="M112 96 C112 46, 198 46, 198 96"
+            stroke="#ffc749"
+            strokeWidth="10"
+            strokeLinecap="round"
+          />
+          <rect x="103" y="84" width="16" height="32" rx="8" fill="#454d82" stroke="#1e2246" strokeWidth="2.5" />
+          <rect x="191" y="84" width="16" height="32" rx="8" fill="#454d82" stroke="#1e2246" strokeWidth="2.5" />
+          <circle cx="111" cy="100" r="3" fill="#ffc749" />
+          <circle cx="199" cy="100" r="3" fill="#ffc749" />
+        </g>
+
+        {/* Animated Sound Arcs Radiating Between Voice & Listener */}
+        <g className="ola-wave-float">
+          <path d="M220 96 Q230 105 220 114" stroke="#626a9f" strokeWidth="3.5" strokeLinecap="round" />
+          <path d="M231 87 Q246 105 231 123" stroke="#ffc749" strokeWidth="3.5" strokeLinecap="round" />
+          <path d="M243 79 Q262 105 243 131" stroke="#626a9f" strokeWidth="3" strokeLinecap="round" strokeOpacity="0.65" />
+        </g>
+
+        {/* Expressive English Speech Bubble (Zero Translations) */}
+        <g className="ola-bubble-bob">
+          <rect
+            x="252"
+            y="42"
+            width="154"
+            height="62"
+            rx="20"
+            fill="#ffffff"
+            stroke="#1e2246"
+            strokeWidth="2.5"
+          />
+          <path d="M268 104 L256 119 L286 104 Z" fill="#ffffff" stroke="#1e2246" strokeWidth="2.5" strokeLinejoin="round" />
+          <rect x="266" y="99" width="22" height="7" fill="#ffffff" />
+
+          {/* Audio Play Dot + Equalizer */}
+          <circle cx="275" cy="64" r="9" fill="#ffc749" stroke="#1e2246" strokeWidth="2" />
+          <path d="M273 60 L279 64 L273 68 Z" fill="#1e2246" />
+          <rect x="292" y="59" width="4" height="10" rx="2" fill="#626a9f" className="ola-cyc-wave" />
+          <rect x="299" y="55" width="4" height="18" rx="2" fill="#ffc749" className="ola-cyc-wave" style={{ animationDelay: '0.15s' }} />
+          <rect x="306" y="58" width="4" height="12" rx="2" fill="#626a9f" className="ola-cyc-wave" style={{ animationDelay: '0.3s' }} />
+          <rect x="313" y="54" width="4" height="20" rx="2" fill="#626a9f" className="ola-cyc-wave" style={{ animationDelay: '0.45s' }} />
+
+          <text x="266" y="91" fill="#1e2246" fontSize="13.5" fontWeight="900" fontFamily="Montserrat, sans-serif">
+            &ldquo;Nice to meet you!&rdquo;
+          </text>
+        </g>
+
+        {/* Student Echo Reply Pill */}
+        <g className="ola-pop-delay-1">
+          <rect x="260" y="132" width="136" height="40" rx="20" fill="#626a9f" />
+          <circle cx="281" cy="152" r="10" fill="#16a37f" />
+          <path d="M277 152 L280 155 L286 149" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          <text x="298" y="156" fill="#ffffff" fontSize="11" fontWeight="800" fontFamily="Montserrat, sans-serif">
+            Natural &amp; clear!
+          </text>
+        </g>
+      </svg>
     );
   }
 
-  // STAGE 1: PRÁCTICA INTERACTIVA (Interactive Workbook Snap)
+  // SCENE 2: PRÁCTICA INTERACTIVA — Relaxed student with coffee & tablet having an "aha!" moment
   if (stepIndex === 1) {
     return (
-      <div key="stage-1" className="ola-stage-in w-full max-w-md mx-auto flex flex-col gap-4">
-        <div className="bg-white/85 backdrop-blur-xl border border-white rounded-3xl p-5 shadow-[0_14px_30px_-10px_rgba(69,77,130,0.22)]">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-black uppercase tracking-widest text-[#454d82]">
-              Workbook Digital
-            </span>
-            <span className="inline-flex items-center gap-1 text-[10px] font-black text-[#128063] bg-[#16a37f]/15 px-2.5 py-1 rounded-full">
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-              <span>Correcto</span>
-            </span>
-          </div>
+      <svg
+        key="human-1"
+        viewBox="0 0 420 220"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className="ola-stage-in w-full max-w-[430px] h-auto overflow-visible"
+        aria-label="Estudiante practicando cómodamente con su cuaderno digital y una taza de café"
+      >
+        <circle cx="205" cy="116" r="86" fill="#626a9f" fillOpacity="0.14" />
+        <circle cx="112" cy="80" r="44" fill="#ffc749" fillOpacity="0.28" />
 
-          {/* Interactive Fill-in-the-Blank Prompt */}
-          <p className="text-base sm:text-lg font-extrabold text-[#1e2246] leading-relaxed mb-5">
-            I{' '}
-            <span className="ola-chip-snap inline-flex items-center gap-1 px-3 py-0.5 mx-1 rounded-xl bg-[#16a37f] text-white font-black shadow-md">
-              practice
-            </span>{' '}
-            English every day.
-          </p>
+        {/* Cozy Desk Surface */}
+        <rect x="36" y="182" width="348" height="12" rx="6" fill="#626a9f" fillOpacity="0.25" />
 
-          {/* Answer Option Chips */}
-          <div className="flex flex-wrap gap-2">
-            {['practicing', 'practice', 'practiced'].map((word) => {
-              const isRight = word === 'practice';
-              return (
-                <span
-                  key={word}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-black border transition-all ${
-                    isRight
-                      ? 'bg-[#ffc749] border-[#1e2246] text-[#1e2246] shadow-[0_3px_0_#1e2246]'
-                      : 'bg-[#f6f7fc] border-[#dfe2f2] text-[#50567d]/65'
-                  }`}
-                >
-                  {word}
-                </span>
-              );
-            })}
-          </div>
-        </div>
+        {/* Student Character Leaning In Comfortably */}
+        <g className="ola-human-breathe">
+          {/* Torso */}
+          <path
+            d="M118 184 C118 148, 146 134, 180 134 C214 134, 240 148, 240 184 Z"
+            fill="#ffc749"
+            stroke="#1e2246"
+            strokeWidth="2.5"
+          />
+          {/* Neck */}
+          <rect x="169" y="114" width="22" height="24" rx="9" fill="#d99f79" />
+          {/* Curly Hair Bun & Crown */}
+          <circle cx="154" cy="60" r="18" fill="#1e2246" />
+          <circle cx="180" cy="86" r="38" fill="#1e2246" />
+          {/* Face */}
+          <circle cx="184" cy="90" r="32" fill="#e5ad87" />
+          {/* Hair Bangs */}
+          <path d="M153 84 C162 60, 198 56, 214 78 C196 72, 174 72, 153 84 Z" fill="#1e2246" />
+          {/* Glasses (Academic Warmth) */}
+          <circle cx="174" cy="90" r="8.5" stroke="#1e2246" strokeWidth="2.4" fill="#ffffff" fillOpacity="0.3" />
+          <circle cx="197" cy="90" r="8.5" stroke="#1e2246" strokeWidth="2.4" fill="#ffffff" fillOpacity="0.3" />
+          <path d="M182.5 90 L188.5 90" stroke="#1e2246" strokeWidth="2.4" />
+          <circle cx="175" cy="90" r="2.3" fill="#1e2246" />
+          <circle cx="198" cy="90" r="2.3" fill="#1e2246" />
+          {/* Confident Smile */}
+          <path d="M177 104 Q186 112 195 104" stroke="#1e2246" strokeWidth="2.8" strokeLinecap="round" />
 
-        {/* Mastery Gate Progress Strip */}
-        <div className="bg-white/70 backdrop-blur-xl border border-white rounded-2xl px-4 py-3.5 shadow-sm flex items-center gap-3 ola-pop-delay-1">
-          <div className="w-9 h-9 rounded-xl bg-[#16a37f] text-white flex items-center justify-center shrink-0">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.8" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <div className="flex-1">
-            <div className="flex justify-between text-[11px] font-black text-[#1e2246] mb-1">
-              <span>Progreso de unidad</span>
-              <span className="text-[#454d82]">85%</span>
-            </div>
-            <div className="w-full h-2 bg-[#dfe2f2] rounded-full overflow-hidden">
-              <div className="ola-bar-fill h-full rounded-full bg-gradient-to-r from-[#626a9f] to-[#16a37f]" style={{ width: '85%' }} />
-            </div>
-          </div>
-        </div>
-      </div>
+          {/* Tablet / Digital Workbook Held Up */}
+          <rect
+            x="206"
+            y="112"
+            width="118"
+            height="74"
+            rx="14"
+            fill="#ffffff"
+            stroke="#1e2246"
+            strokeWidth="2.8"
+          />
+          <rect x="218" y="124" width="54" height="8" rx="4" fill="#626a9f" fillOpacity="0.3" />
+          <rect x="218" y="139" width="92" height="10" rx="5" fill="#e8eaf7" />
+          <rect x="218" y="139" width="76" height="10" rx="5" fill="#16a37f" className="ola-bar-fill" />
+          {/* Interactive Check Pills Inside Tablet */}
+          <rect x="218" y="157" width="44" height="18" rx="9" fill="#ffc749" />
+          <rect x="268" y="157" width="44" height="18" rx="9" fill="#626a9f" />
+          <path d="M235 166 L239 170 L246 162" stroke="#1e2246" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M285 166 L289 170 L296 162" stroke="#ffffff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+        </g>
+
+        {/* Warm Coffee Mug on Desk (Human Touch) */}
+        <g>
+          <path d="M74 148 H102 V174 C102 180 97 184 91 184 H85 C79 184 74 180 74 174 Z" fill="#ffffff" stroke="#1e2246" strokeWidth="2.5" />
+          <path d="M102 155 C112 155, 112 173, 102 173" stroke="#1e2246" strokeWidth="2.5" strokeLinecap="round" />
+          <path className="ola-steam" d="M82 140 Q78 132 84 126" stroke="#626a9f" strokeWidth="2.2" strokeLinecap="round" strokeOpacity="0.6" />
+          <path className="ola-steam" d="M93 139 Q89 131 95 125" stroke="#ffc749" strokeWidth="2.2" strokeLinecap="round" style={{ animationDelay: '0.5s' }} />
+        </g>
+
+        {/* Floating "Aha!" Lightbulb Spark */}
+        <g className="ola-bubble-bob">
+          <circle cx="312" cy="64" r="24" fill="#ffc749" stroke="#1e2246" strokeWidth="2.5" />
+          <path
+            d="M312 52 C305 52 301 57 301 63 C301 67 303.5 70 306 72 L306 75 H318 L318 72 C320.5 70 323 67 323 63 C323 57 319 52 312 52 Z"
+            fill="#ffffff"
+            stroke="#1e2246"
+            strokeWidth="2"
+          />
+          <path d="M308 79 H316" stroke="#1e2246" strokeWidth="2.4" strokeLinecap="round" />
+          <path d="M312 31 V36 M340 46 L336 50 M344 68 H339 M284 46 L288 50" stroke="#454d82" strokeWidth="2.6" strokeLinecap="round" />
+        </g>
+      </svg>
     );
   }
 
-  // STAGE 2: AGENDA TUS CLASES (Smart Flexible Booking UI)
+  // SCENE 3: AGENDA TUS CLASES — Student choosing a flexible time & connecting with a real instructor
   if (stepIndex === 2) {
     return (
-      <div key="stage-2" className="ola-stage-in w-full max-w-md mx-auto flex flex-col gap-4">
-        <div className="bg-white/85 backdrop-blur-xl border border-white rounded-3xl p-5 shadow-[0_14px_30px_-10px_rgba(69,77,130,0.22)]">
-          {/* Week Strip */}
-          <div className="grid grid-cols-5 gap-2 mb-4">
-            {[
-              { d: 'LUN', n: '14' },
-              { d: 'MAR', n: '15' },
-              { d: 'MIÉ', n: '16', active: true },
-              { d: 'JUE', n: '17' },
-              { d: 'VIE', n: '18' },
-            ].map((item) => (
-              <div
-                key={item.d}
-                className={`rounded-2xl py-2.5 flex flex-col items-center justify-center border transition-all ${
-                  item.active
-                    ? 'bg-[#ffc749] border-[#1e2246] text-[#1e2246] shadow-[0_4px_0_#1e2246] -translate-y-0.5'
-                    : 'bg-[#f6f7fc] border-[#dfe2f2] text-[#50567d]'
-                }`}
-              >
-                <span className="text-[9px] font-black tracking-wider">{item.d}</span>
-                <span className="text-sm font-black mt-0.5">{item.n}</span>
-              </div>
-            ))}
-          </div>
+      <svg
+        key="human-2"
+        viewBox="0 0 420 220"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className="ola-stage-in w-full max-w-[430px] h-auto overflow-visible"
+        aria-label="Estudiante coordinando horario flexible con un profesor en vivo"
+      >
+        <circle cx="115" cy="122" r="66" fill="#ffc749" fillOpacity="0.26" />
+        <circle cx="310" cy="112" r="68" fill="#626a9f" fillOpacity="0.18" />
 
-          {/* Time Slots */}
-          <div className="grid grid-cols-3 gap-2">
-            {['10:00 AM', '4:00 PM', '7:00 PM'].map((slot) => {
-              const selected = slot === '7:00 PM';
-              return (
-                <div
-                  key={slot}
-                  className={`py-2 px-2 rounded-xl text-center text-[11px] font-black border ${
-                    selected
-                      ? 'bg-[#626a9f] border-[#1e2246] text-white shadow-md'
-                      : 'bg-white border-[#dfe2f2] text-[#50567d]'
-                  }`}
-                >
-                  {slot}
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        {/* Flowing Connection Arc Linking Student & Teacher */}
+        <path
+          d="M155 92 Q210 42 268 88"
+          stroke="#626a9f"
+          strokeWidth="3.5"
+          strokeDasharray="7 7"
+          strokeLinecap="round"
+        />
 
-        {/* Confirmed Booking Toast */}
-        <div className="bg-white/80 backdrop-blur-xl border border-white rounded-2xl px-4 py-3.5 shadow-sm flex items-center justify-between gap-3 ola-pop-delay-1">
-          <div className="flex items-center gap-3">
-            <span className="w-9 h-9 rounded-full bg-[#16a37f] text-white flex items-center justify-center shrink-0">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-            </span>
-            <div>
-              <p className="text-xs font-black text-[#1e2246] leading-tight">Clase en vivo reservada</p>
-              <p className="text-[10px] font-bold text-[#50567d]">Miércoles • 7:00 PM</p>
-            </div>
-          </div>
-          <span className="w-2.5 h-2.5 rounded-full bg-[#16a37f] animate-pulse shrink-0" />
-        </div>
-      </div>
+        {/* LEFT PERSON: Student Picking a Time */}
+        <g className="ola-human-breathe">
+          <path d="M56 202 C56 168, 80 152, 114 152 C148 152, 172 168, 172 202 Z" fill="#454d82" />
+          <rect x="104" y="134" width="20" height="22" rx="8" fill="#f3c5a2" />
+          <circle cx="114" cy="102" r="34" fill="#1e2246" />
+          <circle cx="114" cy="106" r="29" fill="#f3c5a2" />
+          <path d="M86 98 C92 75, 126 70, 142 94 C126 86, 102 86, 86 98 Z" fill="#1e2246" />
+          <circle cx="104" cy="106" r="2.6" fill="#1e2246" />
+          <circle cx="124" cy="106" r="2.6" fill="#1e2246" />
+          <path d="M105 117 Q114 125 123 117" stroke="#1e2246" strokeWidth="2.8" strokeLinecap="round" />
+        </g>
+
+        {/* CENTER FLOATING SCHEDULE BADGE */}
+        <g className="ola-bubble-bob">
+          <rect x="164" y="90" width="94" height="84" rx="20" fill="#ffffff" stroke="#1e2246" strokeWidth="2.6" />
+          <rect x="164" y="90" width="94" height="26" rx="14" fill="#ffc749" />
+          <rect x="164" y="106" width="94" height="10" fill="#ffc749" />
+          <text x="211" y="108" textAnchor="middle" fill="#1e2246" fontSize="10" fontWeight="900" fontFamily="Montserrat, sans-serif">
+            MIÉ • 7 PM
+          </text>
+          {/* Checkmark Confirmation */}
+          <circle cx="211" cy="145" r="18" fill="#16a37f" />
+          <path d="M203 145 L209 151 L220 139" stroke="#ffffff" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" />
+        </g>
+
+        {/* RIGHT PERSON: Friendly Teacher Ready & Waiting */}
+        <g className="ola-human-breathe" style={{ animationDelay: '0.6s' }}>
+          <path d="M250 202 C250 168, 274 152, 308 152 C342 152, 366 168, 366 202 Z" fill="#ffc749" stroke="#1e2246" strokeWidth="2.5" />
+          <rect x="298" y="134" width="20" height="22" rx="8" fill="#c98d68" />
+          <circle cx="308" cy="102" r="34" fill="#2d2640" />
+          <circle cx="308" cy="106" r="29" fill="#d49872" />
+          <path d="M280 96 C290 74, 326 74, 336 96 C322 86, 294 86, 280 96 Z" fill="#2d2640" />
+          <circle cx="298" cy="106" r="2.6" fill="#1e2246" />
+          <circle cx="318" cy="106" r="2.6" fill="#1e2246" />
+          <path d="M299 117 Q308 125 317 117" stroke="#1e2246" strokeWidth="2.8" strokeLinecap="round" />
+          {/* Teacher Headset Mic */}
+          <path d="M276 105 C276 66, 340 66, 340 105" stroke="#626a9f" strokeWidth="6" strokeLinecap="round" />
+          <path d="M338 108 Q336 122 321 122" stroke="#1e2246" strokeWidth="2.5" strokeLinecap="round" />
+        </g>
+
+        {/* Floating "See you then!" Chip */}
+        <g className="ola-pop-delay-1">
+          <rect x="266" y="34" width="114" height="30" rx="15" fill="#1e2246" />
+          <text x="323" y="53" textAnchor="middle" fill="#ffc749" fontSize="10.5" fontWeight="800" fontFamily="Montserrat, sans-serif">
+            &ldquo;See you at 7!&rdquo;
+          </text>
+        </g>
+      </svg>
     );
   }
 
-  // STAGE 3: CLASE 100% EN VIVO (Live Teacher + Student Room UI)
+  // SCENE 4: CLASE 100% EN VIVO — Expressive teacher & student talking face-to-face with live dialogue
   if (stepIndex === 3) {
     return (
-      <div key="stage-3" className="ola-stage-in w-full max-w-md mx-auto flex flex-col gap-4">
-        <div className="bg-white/85 backdrop-blur-xl border border-white rounded-3xl p-5 shadow-[0_14px_30px_-10px_rgba(69,77,130,0.22)]">
-          {/* Top Live Bar */}
-          <div className="flex items-center justify-between mb-4">
-            <span className="inline-flex items-center gap-1.5 bg-[#ee665b]/15 text-[#c93f34] px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
-              <span className="w-2 h-2 rounded-full bg-[#ee665b] animate-ping" />
-              <span>En Vivo</span>
-            </span>
-            <span className="text-[10px] font-black text-[#454d82] uppercase tracking-wider">
-              Live Speaking Lab
-            </span>
-          </div>
+      <svg
+        key="human-3"
+        viewBox="0 0 420 220"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className="ola-stage-in w-full max-w-[430px] h-auto overflow-visible"
+        aria-label="Profesor y estudiante conversando cara a cara en clase en vivo"
+      >
+        {/* Warm Split Live Frame */}
+        <rect x="26" y="34" width="174" height="156" rx="26" fill="#626a9f" stroke="#1e2246" strokeWidth="2.6" />
+        <rect x="220" y="34" width="174" height="156" rx="26" fill="#fff3d1" stroke="#1e2246" strokeWidth="2.6" />
 
-          {/* Two Participant Tiles */}
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            <div className="rounded-2xl bg-[#626a9f] p-3.5 text-white flex flex-col items-center justify-center gap-2 relative overflow-hidden">
-              <div className="w-11 h-11 rounded-full bg-[#ffc749] border-2 border-white text-[#1e2246] flex items-center justify-center font-black text-xs shadow-md">
-                PRO
-              </div>
-              <span className="text-[10px] font-black uppercase tracking-wider text-white/95">
-                Instructor
-              </span>
-            </div>
+        {/* Live Dot Badge */}
+        <rect x="42" y="48" width="66" height="22" rx="11" fill="#1e2246" fillOpacity="0.45" />
+        <circle cx="55" cy="59" r="4.5" fill="#ee665b" className="ola-pulse-dot" />
+        <text x="66" y="63" fill="#ffffff" fontSize="9.5" fontWeight="900" fontFamily="Montserrat, sans-serif">
+          EN VIVO
+        </text>
 
-            <div className="rounded-2xl bg-[#fff3d1] border border-[#ffc749] p-3.5 text-[#1e2246] flex flex-col items-center justify-center gap-2">
-              <div className="w-11 h-11 rounded-full bg-white border-2 border-[#626a9f] text-[#454d82] flex items-center justify-center shadow-sm">
-                <div className="flex items-center gap-[2.5px] h-4">
-                  {[8, 15, 10, 14].map((h, i) => (
-                    <span
-                      key={i}
-                      className="ola-cyc-wave w-[2.5px] rounded-full bg-[#626a9f]"
-                      style={{ height: `${h}px`, animationDelay: `${i * 0.14}s` }}
-                    />
-                  ))}
-                </div>
-              </div>
-              <span className="text-[10px] font-black uppercase tracking-wider text-[#1e2246]">
-                Tú Hablando
-              </span>
-            </div>
-          </div>
+        {/* LEFT: Smiling Instructor Guiding & Encouraging */}
+        <g className="ola-human-breathe">
+          <path d="M62 188 C62 156, 82 144, 113 144 C144 144, 164 156, 164 188 Z" fill="#ffc749" />
+          <rect x="103" y="126" width="20" height="22" rx="8" fill="#e6b08a" />
+          <circle cx="113" cy="98" r="31" fill="#1e2246" />
+          <circle cx="113" cy="102" r="26" fill="#f0bf9c" />
+          <path d="M88 94 C94 74, 126 70, 138 92 C124 84, 102 84, 88 94 Z" fill="#1e2246" />
+          <path d="M100 100 Q104 96 108 100" stroke="#1e2246" strokeWidth="2.6" strokeLinecap="round" />
+          <path d="M118 100 Q122 96 126 100" stroke="#1e2246" strokeWidth="2.6" strokeLinecap="round" />
+          <path d="M104 112 Q113 121 122 112 Z" fill="#1e2246" className="ola-smile-talk" />
+          {/* Friendly Raised Hand Wave */}
+          <path d="M156 154 C166 138, 174 132, 178 140 C182 148, 172 166, 162 172 Z" fill="#f0bf9c" stroke="#1e2246" strokeWidth="2" />
+        </g>
 
-          {/* Live Feedback Line */}
-          <div className="bg-[#f6f7fc] border border-[#dfe2f2] rounded-xl px-3.5 py-2.5 flex items-center justify-between gap-2">
-            <span className="text-xs font-bold text-[#1e2246]">&ldquo;Great fluency &amp; accent!&rdquo;</span>
-            <span className="text-[10px] font-black text-[#128063] bg-[#16a37f]/15 px-2 py-0.5 rounded-md shrink-0">
-              Aprobado
-            </span>
-          </div>
-        </div>
+        {/* RIGHT: Confident Student Speaking Back */}
+        <g className="ola-human-breathe" style={{ animationDelay: '0.5s' }}>
+          <path d="M256 188 C256 156, 276 144, 307 144 C338 144, 358 156, 358 188 Z" fill="#454d82" />
+          <rect x="297" y="126" width="20" height="22" rx="8" fill="#cf9570" />
+          <circle cx="307" cy="96" r="32" fill="#1e2246" />
+          <circle cx="307" cy="102" r="26" fill="#dba07c" />
+          <path d="M282 95 C288 73, 326 73, 332 95 C318 85, 296 85, 282 95 Z" fill="#1e2246" />
+          <circle cx="298" cy="101" r="2.6" fill="#1e2246" />
+          <circle cx="316" cy="101" r="2.6" fill="#1e2246" />
+          <path d="M298 112 Q307 121 316 112" stroke="#1e2246" strokeWidth="2.8" strokeLinecap="round" />
+        </g>
 
-        {/* Unit Unlock Chip */}
-        <div className="bg-[#ffc749] border-2 border-[#1e2246] rounded-2xl px-4 py-3 shadow-[0_4px_0_#1e2246] flex items-center justify-between ola-pop-delay-1">
-          <div className="flex items-center gap-2.5">
-            <svg className="w-5 h-5 text-[#1e2246]" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
-            </svg>
-            <span className="text-xs font-black uppercase tracking-wider text-[#1e2246]">
-              Siguiente Unidad Desbloqueada
-            </span>
-          </div>
-          <svg className="w-4 h-4 text-[#1e2246]" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-          </svg>
-        </div>
-      </div>
+        {/* Center Bridge: Live Voice Connection Heartbeat */}
+        <g className="ola-bubble-bob">
+          <circle cx="210" cy="112" r="24" fill="#ffffff" stroke="#1e2246" strokeWidth="2.6" />
+          <rect x="197" y="106" width="4" height="12" rx="2" fill="#626a9f" className="ola-cyc-wave" />
+          <rect x="204" y="100" width="4" height="24" rx="2" fill="#ffc749" className="ola-cyc-wave" style={{ animationDelay: '0.15s' }} />
+          <rect x="211" y="103" width="4" height="18" rx="2" fill="#16a37f" className="ola-cyc-wave" style={{ animationDelay: '0.3s' }} />
+          <rect x="218" y="107" width="4" height="10" rx="2" fill="#626a9f" className="ola-cyc-wave" style={{ animationDelay: '0.45s' }} />
+        </g>
+
+        {/* Encouragement Spark Banner */}
+        <g className="ola-pop-delay-1">
+          <rect x="122" y="176" width="176" height="32" rx="16" fill="#16a37f" stroke="#1e2246" strokeWidth="2.2" />
+          <text x="210" y="196" textAnchor="middle" fill="#ffffff" fontSize="11" fontWeight="900" fontFamily="Montserrat, sans-serif">
+            &ldquo;Great pronunciation!&rdquo;
+          </text>
+        </g>
+      </svg>
     );
   }
 
-  // STAGE 4: APLICA EN COMUNIDAD (Forums, Debates & Conversation Club)
+  // SCENE 5: COMUNIDAD OUTLOUD — 3 diverse classmates chatting & laughing together
   return (
-    <div key="stage-4" className="ola-stage-in w-full max-w-md mx-auto flex flex-col gap-3.5">
-      {/* Bubble 1 */}
-      <div className="bg-white/85 backdrop-blur-xl border border-white rounded-3xl rounded-tl-md p-4 shadow-[0_12px_26px_-10px_rgba(69,77,130,0.22)] max-w-[90%]">
-        <div className="flex items-center justify-between gap-2 mb-1">
-          <span className="text-[10px] font-black uppercase tracking-wider text-[#626a9f]">
-            #debate-semanal
-          </span>
-          <span className="text-[9px] font-bold text-[#50567d]">Ahora</span>
-        </div>
-        <p className="text-xs sm:text-sm font-bold text-[#1e2246] leading-snug">
-          &ldquo;What&apos;s the best city you&apos;ve ever visited and why?&rdquo;
-        </p>
-      </div>
+    <svg
+      key="human-4"
+      viewBox="0 0 420 220"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className="ola-stage-in w-full max-w-[430px] h-auto overflow-visible"
+      aria-label="Comunidad de estudiantes conversando juntos en inglés"
+    >
+      {/* Warm Community Circle Aura */}
+      <circle cx="210" cy="126" r="88" fill="#ffc749" fillOpacity="0.24" />
+      <circle cx="210" cy="126" r="64" stroke="#626a9f" strokeWidth="2" strokeDasharray="6 6" strokeOpacity="0.35" />
 
-      {/* Bubble 2 (Student Reply) */}
-      <div className="self-end bg-[#626a9f] text-white rounded-3xl rounded-tr-md p-4 shadow-[0_12px_26px_-10px_rgba(69,77,130,0.4)] max-w-[88%] ola-pop-delay-1">
-        <p className="text-xs sm:text-sm font-semibold leading-snug">
-          &ldquo;I loved Warsaw! The architecture and cafés were unforgettable.&rdquo;
-        </p>
-      </div>
+      {/* PERSON 1 (Left) */}
+      <g className="ola-human-breathe">
+        <path d="M46 202 C46 170, 68 156, 98 156 C128 156, 150 170, 150 202 Z" fill="#626a9f" />
+        <rect x="89" y="140" width="18" height="20" rx="7" fill="#f3c5a2" />
+        <circle cx="98" cy="112" r="28" fill="#1e2246" />
+        <circle cx="98" cy="116" r="24" fill="#f3c5a2" />
+        <path d="M75 110 C80 90, 114 88, 121 108 C108 100, 88 100, 75 110 Z" fill="#1e2246" />
+        <path d="M88 115 Q92 111 96 115" stroke="#1e2246" strokeWidth="2.4" strokeLinecap="round" />
+        <path d="M101 115 Q105 111 109 115" stroke="#1e2246" strokeWidth="2.4" strokeLinecap="round" />
+        <path d="M91 124 Q98 131 106 124" stroke="#1e2246" strokeWidth="2.5" strokeLinecap="round" />
+      </g>
 
-      {/* Community Live Bar */}
-      <div className="bg-white/75 backdrop-blur-xl border border-white rounded-2xl px-4 py-3 shadow-sm flex items-center justify-between gap-3 ola-pop-delay-2">
-        <div className="flex items-center gap-2.5">
-          <div className="flex -space-x-2">
-            {['#ffc749', '#626a9f', '#16a37f'].map((bg, i) => (
-              <span
-                key={i}
-                className="w-7 h-7 rounded-full border-2 border-white flex items-center justify-center text-[9px] font-black text-white shadow-sm"
-                style={{ backgroundColor: bg, color: bg === '#ffc749' ? '#1e2246' : '#ffffff' }}
-              >
-                {['MG', 'JR', 'AL'][i]}
-              </span>
-            ))}
-          </div>
-          <span className="text-xs font-black text-[#1e2246]">Club de Conversación</span>
-        </div>
-        <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-[#128063]">
-          <span className="w-2 h-2 rounded-full bg-[#16a37f] animate-pulse" />
-          <span>Activo</span>
-        </span>
-      </div>
-    </div>
+      {/* PERSON 3 (Right) */}
+      <g className="ola-human-breathe" style={{ animationDelay: '0.7s' }}>
+        <path d="M270 202 C270 170, 292 156, 322 156 C352 156, 374 170, 374 202 Z" fill="#ee665b" />
+        <rect x="313" y="140" width="18" height="20" rx="7" fill="#c78a65" />
+        <circle cx="322" cy="110" r="30" fill="#1e2246" />
+        <circle cx="322" cy="116" r="24" fill="#d49670" />
+        <path d="M299 109 C305 90, 338 90, 345 109 C332 101, 312 101, 299 109 Z" fill="#1e2246" />
+        <circle cx="314" cy="115" r="2.3" fill="#1e2246" />
+        <circle cx="330" cy="115" r="2.3" fill="#1e2246" />
+        <path d="M314 124 Q322 132 330 124" stroke="#1e2246" strokeWidth="2.5" strokeLinecap="round" />
+      </g>
+
+      {/* PERSON 2 (Center Foreground — Warm Spotlight) */}
+      <g className="ola-human-breathe" style={{ animationDelay: '0.35s' }}>
+        <path d="M150 206 C150 168, 174 152, 210 152 C246 152, 270 168, 270 206 Z" fill="#ffc749" stroke="#1e2246" strokeWidth="2.6" />
+        <rect x="200" y="134" width="20" height="22" rx="8" fill="#e6b18c" />
+        <circle cx="210" cy="100" r="34" fill="#2b2240" />
+        <circle cx="210" cy="106" r="28" fill="#f0be9b" />
+        <path d="M182 99 C188 76, 232 76, 238 99 C222 89, 198 89, 182 99 Z" fill="#2b2240" />
+        <path d="M197 105 Q201 100 205 105" stroke="#1e2246" strokeWidth="2.6" strokeLinecap="round" />
+        <path d="M215 105 Q219 100 223 105" stroke="#1e2246" strokeWidth="2.6" strokeLinecap="round" />
+        <path d="M201 116 Q210 126 219 116 Z" fill="#1e2246" className="ola-smile-talk" />
+      </g>
+
+      {/* Floating Shared Conversation Bubbles Above the Group */}
+      <g className="ola-bubble-bob">
+        <rect x="64" y="34" width="112" height="34" rx="17" fill="#ffffff" stroke="#1e2246" strokeWidth="2.2" />
+        <text x="120" y="55" textAnchor="middle" fill="#1e2246" fontSize="11" fontWeight="900" fontFamily="Montserrat, sans-serif">
+          &ldquo;Let&apos;s chat!&rdquo;
+        </text>
+      </g>
+
+      <g className="ola-bubble-bob" style={{ animationDelay: '0.45s' }}>
+        <rect x="234" y="28" width="132" height="36" rx="18" fill="#454d82" stroke="#1e2246" strokeWidth="2.2" />
+        <text x="300" y="50" textAnchor="middle" fill="#ffc749" fontSize="11" fontWeight="900" fontFamily="Montserrat, sans-serif">
+          &ldquo;Count me in!&rdquo;
+        </text>
+      </g>
+    </svg>
   );
 }
 
@@ -392,18 +489,23 @@ function CycleVisualStage({ stepIndex }) {
 export default function LandingCycleSection({ onScrollTo }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
+  const [cycleTick, setCycleTick] = useState(0); // Forces fresh progress animation on every step switch
   const touchStartX = useRef(null);
 
-  const isAutoPlaying = !isPaused && !isHovered;
-
+  // Guaranteed automatic cycling — only pauses if user explicitly toggles Pause
   useEffect(() => {
-    if (!isAutoPlaying) return;
+    if (isPaused) return;
     const timer = setTimeout(() => {
       setActiveIndex((prev) => (prev + 1) % CYCLE_STEPS.length);
+      setCycleTick((t) => t + 1);
     }, STEP_DURATION_MS);
     return () => clearTimeout(timer);
-  }, [activeIndex, isAutoPlaying]);
+  }, [activeIndex, isPaused, cycleTick]);
+
+  const handleSelectStep = (idx) => {
+    setActiveIndex(idx);
+    setCycleTick((t) => t + 1);
+  };
 
   const handleTouchStart = (e) => {
     touchStartX.current = e.touches[0].clientX;
@@ -413,11 +515,11 @@ export default function LandingCycleSection({ onScrollTo }) {
     if (touchStartX.current === null) return;
     const diff = touchStartX.current - e.changedTouches[0].clientX;
     if (Math.abs(diff) > 42) {
-      setActiveIndex((prev) =>
+      const nextIdx =
         diff > 0
-          ? (prev + 1) % CYCLE_STEPS.length
-          : (prev - 1 + CYCLE_STEPS.length) % CYCLE_STEPS.length
-      );
+          ? (activeIndex + 1) % CYCLE_STEPS.length
+          : (activeIndex - 1 + CYCLE_STEPS.length) % CYCLE_STEPS.length;
+      handleSelectStep(nextIdx);
     }
     touchStartX.current = null;
   };
@@ -425,81 +527,111 @@ export default function LandingCycleSection({ onScrollTo }) {
   const activeStep = CYCLE_STEPS[activeIndex];
 
   return (
-    <div
-      id="cycle"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      className="mt-20 sm:mt-28 scroll-mt-24 relative"
-    >
+    <div id="cycle" className="mt-20 sm:mt-28 scroll-mt-24 relative">
       <style>{`
         @keyframes olaStageIn {
-          0% { opacity: 0; transform: translateY(16px) scale(0.96); }
+          0% { opacity: 0; transform: translateY(14px) scale(0.96); }
           100% { opacity: 1; transform: translateY(0) scale(1); }
         }
         @keyframes olaPopDelay {
-          0% { opacity: 0; transform: translateY(10px) scale(0.96); }
+          0% { opacity: 0; transform: translateY(8px) scale(0.95); }
           100% { opacity: 1; transform: translateY(0) scale(1); }
         }
         @keyframes olaStepProgress {
           from { transform: scaleX(0); }
           to { transform: scaleX(1); }
         }
+        @keyframes olaHumanBreathe {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-4px); }
+        }
+        @keyframes olaBubbleBob {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-6px); }
+        }
+        @keyframes olaSmileTalk {
+          0%, 100% { transform: scaleY(1); }
+          45% { transform: scaleY(0.65); }
+          70% { transform: scaleY(1.12); }
+        }
+        @keyframes olaSteamRise {
+          0% { opacity: 0; transform: translateY(4px); }
+          50% { opacity: 0.9; transform: translateY(-3px); }
+          100% { opacity: 0; transform: translateY(-8px); }
+        }
+        @keyframes olaCycWave {
+          0%, 100% { transform: scaleY(0.45); }
+          50% { transform: scaleY(1); }
+        }
         @keyframes olaBarFill {
           from { transform: scaleX(0); }
           to { transform: scaleX(1); }
         }
-        @keyframes olaChipSnap {
-          0% { transform: scale(0.8); }
-          60% { transform: scale(1.08); }
-          100% { transform: scale(1); }
+        @keyframes olaPulseDot {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.45; transform: scale(1.25); }
         }
-        @keyframes olaCycWave {
-          0%, 100% { transform: scaleY(0.35); }
-          50% { transform: scaleY(1); }
-        }
+
         .ola-stage-in {
           animation: olaStageIn 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards;
         }
         .ola-pop-delay-1 {
           opacity: 0;
-          animation: olaPopDelay 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.14s forwards;
+          animation: olaPopDelay 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.16s forwards;
         }
-        .ola-pop-delay-2 {
-          opacity: 0;
-          animation: olaPopDelay 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.28s forwards;
+        .ola-human-breathe {
+          animation: olaHumanBreathe 3.6s ease-in-out infinite;
+        }
+        .ola-bubble-bob {
+          animation: olaBubbleBob 3.2s ease-in-out infinite;
+        }
+        .ola-smile-talk {
+          transform-box: fill-box;
+          transform-origin: center;
+          animation: olaSmileTalk 1.6s ease-in-out infinite;
+        }
+        .ola-steam {
+          animation: olaSteamRise 2.2s ease-in-out infinite;
+        }
+        .ola-wave-float {
+          animation: olaBubbleBob 2.4s ease-in-out infinite;
+        }
+        .ola-cyc-wave {
+          transform-box: fill-box;
+          transform-origin: center;
+          animation: olaCycWave 1.05s ease-in-out infinite;
+        }
+        .ola-bar-fill {
+          transform-box: fill-box;
+          transform-origin: left;
+          animation: olaBarFill 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
+        }
+        .ola-pulse-dot {
+          transform-box: fill-box;
+          transform-origin: center;
+          animation: olaPulseDot 1.3s ease-in-out infinite;
         }
         .ola-step-progress {
           transform-origin: left;
           animation: olaStepProgress ${STEP_DURATION_MS}ms linear forwards;
         }
-        .ola-bar-fill {
-          transform-origin: left;
-          animation: olaBarFill 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
-        }
-        .ola-chip-snap {
-          animation: olaChipSnap 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 0.12s both;
-        }
-        .ola-cyc-wave {
-          transform-origin: center;
-          animation: olaCycWave 1.05s ease-in-out infinite;
-        }
         .ola-cycle-stage-glass {
           background: linear-gradient(
             148deg,
-            rgba(235, 238, 255, 0.8) 0%,
-            rgba(209, 215, 248, 0.68) 55%,
-            rgba(255, 244, 212, 0.72) 100%
+            rgba(235, 238, 255, 0.82) 0%,
+            rgba(213, 219, 249, 0.7) 55%,
+            rgba(255, 244, 214, 0.76) 100%
           );
           backdrop-filter: blur(28px) saturate(195%);
           -webkit-backdrop-filter: blur(28px) saturate(195%);
-          border: 1.5px solid rgba(255, 255, 255, 0.92);
+          border: 1.5px solid rgba(255, 255, 255, 0.94);
           box-shadow:
             0 24px 54px -14px rgba(72, 80, 136, 0.28),
-            inset 0 2px 2px rgba(255, 255, 255, 0.95);
+            inset 0 2px 2px rgba(255, 255, 255, 0.96);
         }
       `}</style>
 
-      {/* CLEAN EDITORIAL HEADER (Zero Clutter Pills) */}
+      {/* CLEAN EDITORIAL HEADER */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10 sm:mb-12">
         <div>
           <h3 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#1e2246] tracking-tight leading-[1.06]">
@@ -510,11 +642,11 @@ export default function LandingCycleSection({ onScrollTo }) {
             </span>
           </h3>
           <p className="text-sm sm:text-base text-[#4c5384] font-semibold mt-3 max-w-xl">
-            Cinco pasos conectados en bucle continuo que convierten la práctica diaria en fluidez real.
+            Cinco momentos pensados alrededor de personas reales, práctica constante y conversación en vivo.
           </p>
         </div>
 
-        {/* Minimal Play/Pause Loop Control */}
+        {/* Clear Play / Pause Toggle */}
         <button
           type="button"
           onClick={() => setIsPaused((prev) => !prev)}
@@ -525,7 +657,7 @@ export default function LandingCycleSection({ onScrollTo }) {
               <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M8 5.14v14l11-7-11-7z" />
               </svg>
-              <span>Reanudar ciclo</span>
+              <span>Reanudar</span>
             </>
           ) : (
             <>
@@ -533,17 +665,17 @@ export default function LandingCycleSection({ onScrollTo }) {
                 <rect x="6" y="5" width="4" height="14" rx="1.2" />
                 <rect x="14" y="5" width="4" height="14" rx="1.2" />
               </svg>
-              <span>Ciclo automático</span>
+              <span>Pausar</span>
             </>
           )}
         </button>
       </div>
 
       {/* ================================================== */}
-      {/* MODERN SPLIT STUDIO: STEP DECK + LIVE UI STAGE     */}
+      {/* MODERN SPLIT STUDIO: STEP DECK + HUMAN SCENE STAGE */}
       {/* ================================================== */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-stretch">
-        {/* MOBILE HORIZONTAL STEP SELECTOR (Shows above stage on mobile only) */}
+        {/* MOBILE HORIZONTAL STEP SELECTOR */}
         <div className="lg:hidden grid grid-cols-5 gap-1.5">
           {CYCLE_STEPS.map((step, idx) => {
             const isActive = idx === activeIndex;
@@ -551,7 +683,7 @@ export default function LandingCycleSection({ onScrollTo }) {
               <button
                 key={step.num}
                 type="button"
-                onClick={() => setActiveIndex(idx)}
+                onClick={() => handleSelectStep(idx)}
                 className={`relative rounded-2xl py-2.5 px-1 flex flex-col items-center justify-center gap-1 border transition-all cursor-pointer overflow-hidden ${
                   isActive
                     ? 'bg-[#1e2246] border-[#1e2246] text-white shadow-md -translate-y-0.5'
@@ -564,9 +696,9 @@ export default function LandingCycleSection({ onScrollTo }) {
                 <span className="text-[9px] font-extrabold uppercase tracking-tight truncate max-w-full">
                   {step.shortLabel}
                 </span>
-                {isActive && isAutoPlaying && (
+                {isActive && !isPaused && (
                   <span
-                    key={`mprog-${activeIndex}`}
+                    key={`mprog-${cycleTick}`}
                     className="ola-step-progress absolute bottom-0 left-0 right-0 h-[3px] bg-[#ffc749]"
                   />
                 )}
@@ -575,7 +707,7 @@ export default function LandingCycleSection({ onScrollTo }) {
           })}
         </div>
 
-        {/* LEFT COLUMN (DESKTOP): KINETIC ACCORDION STEP DECK */}
+        {/* LEFT COLUMN (DESKTOP): KINETIC STEP DECK */}
         <div className="hidden lg:flex lg:col-span-5 flex-col gap-3 justify-between">
           {CYCLE_STEPS.map((step, idx) => {
             const isActive = idx === activeIndex;
@@ -583,7 +715,7 @@ export default function LandingCycleSection({ onScrollTo }) {
               <button
                 key={step.num}
                 type="button"
-                onClick={() => setActiveIndex(idx)}
+                onClick={() => handleSelectStep(idx)}
                 className={`group relative w-full text-left rounded-[1.6rem] p-4 sm:p-5 transition-all duration-300 cursor-pointer overflow-hidden focus:outline-none ${
                   isActive
                     ? 'bg-white/90 backdrop-blur-2xl border-2 border-[#1e2246] shadow-[0_8px_0_#1e2246,0_18px_36px_-10px_rgba(69,77,130,0.3)] -translate-y-0.5'
@@ -591,7 +723,6 @@ export default function LandingCycleSection({ onScrollTo }) {
                 }`}
               >
                 <div className="flex items-start gap-4">
-                  {/* Step Icon Orb */}
                   <div
                     className={`w-11 h-11 rounded-2xl border-2 flex items-center justify-center shrink-0 transition-all duration-300 ${
                       isActive
@@ -602,7 +733,6 @@ export default function LandingCycleSection({ onScrollTo }) {
                     {step.icon}
                   </div>
 
-                  {/* Step Title & Expanding Copy */}
                   <div className="flex-1 min-w-0 pt-0.5">
                     <div className="flex items-center justify-between gap-2">
                       <h4
@@ -610,7 +740,7 @@ export default function LandingCycleSection({ onScrollTo }) {
                           isActive ? 'text-[#1e2246]' : 'text-[#3b4170] group-hover:text-[#1e2246]'
                         }`}
                       >
-                        {step.title}
+                        {step.shortLabel}
                       </h4>
                       <span
                         className={`text-xs font-black tabular-nums ${
@@ -634,9 +764,9 @@ export default function LandingCycleSection({ onScrollTo }) {
                 </div>
 
                 {/* Live Auto-Advance Progress Line */}
-                {isActive && isAutoPlaying && (
+                {isActive && !isPaused && (
                   <span
-                    key={`dprog-${activeIndex}`}
+                    key={`dprog-${cycleTick}`}
                     className="ola-step-progress absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-[#626a9f] via-[#ffc749] to-[#16a37f]"
                   />
                 )}
@@ -645,7 +775,7 @@ export default function LandingCycleSection({ onScrollTo }) {
           })}
         </div>
 
-        {/* RIGHT COLUMN (DESKTOP) / MAIN STAGE (MOBILE): LIVING UI VISUALIZER */}
+        {/* RIGHT COLUMN (DESKTOP) / MAIN STAGE (MOBILE): CLEAR CONTEXT + HUMAN ILLUSTRATION */}
         <div
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
@@ -660,7 +790,7 @@ export default function LandingCycleSection({ onScrollTo }) {
             }}
           />
 
-          <div className="ola-cycle-stage-glass flex-1 rounded-[2.5rem] p-6 sm:p-9 flex flex-col justify-between relative overflow-hidden min-h-[390px] sm:min-h-[450px]">
+          <div className="ola-cycle-stage-glass flex-1 rounded-[2.5rem] p-6 sm:p-8 flex flex-col justify-between relative overflow-hidden min-h-[430px] sm:min-h-[480px]">
             {/* Subtle Dotted Glass Texture */}
             <div
               className="absolute inset-0 opacity-30 pointer-events-none"
@@ -670,31 +800,50 @@ export default function LandingCycleSection({ onScrollTo }) {
               }}
             />
 
-            {/* Giant Watermark Number */}
-            <span className="pointer-events-none select-none absolute -top-6 right-5 text-[8rem] sm:text-[10rem] font-black leading-none text-[#454d82]/[0.07]">
+            {/* Giant Soft Watermark Number */}
+            <span className="pointer-events-none select-none absolute -top-5 right-6 text-[7.5rem] sm:text-[9rem] font-black leading-none text-[#454d82]/[0.07]">
               {activeStep.num}
             </span>
 
-            {/* Centered Animated UI Preview */}
-            <div className="relative z-10 flex-1 flex items-center justify-center py-4">
-              <CycleVisualStage stepIndex={activeIndex} />
-            </div>
-
-            {/* Mobile Step Caption (Since desktop shows caption inside the left deck) */}
-            <div className="lg:hidden relative z-10 mt-4 pt-4 border-t border-white/75 text-center">
-              <h4 className="text-lg font-black text-[#1e2246]">{activeStep.title}</h4>
-              <p className="text-xs font-semibold text-[#4c5384] mt-1 leading-relaxed">
-                {activeStep.desc}
+            {/* CLEAR STAGE CONTEXT HEADER (Replaces the Empty Top Space) */}
+            <div key={`head-${activeStep.num}`} className="ola-stage-in relative z-10 pr-12">
+              <div className="flex items-center gap-2.5 mb-2">
+                <span className="inline-flex items-center justify-center px-3 py-1 rounded-full bg-[#1e2246] text-[#ffc749] text-[10px] font-black uppercase tracking-widest">
+                  Paso {activeStep.num} de 05 • {activeStep.shortLabel}
+                </span>
+              </div>
+              <h4 className="text-xl sm:text-2xl font-black text-[#1e2246] tracking-tight leading-snug">
+                {activeStep.title}
+              </h4>
+              <p className="text-xs sm:text-sm font-semibold text-[#4c5384] mt-1 leading-relaxed max-w-lg">
+                {activeStep.stageSubtitle}
               </p>
             </div>
 
-            {/* Bottom Continuous-Loop Bar & Direct CTA */}
-            <div className="relative z-10 mt-5 pt-4 border-t border-white/75 flex flex-col sm:flex-row items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-xs font-extrabold text-[#3b4170]">
-                <svg className="w-4 h-4 text-[#454d82] shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                <span>Bucle continuo de unidad en unidad (A1 → C2)</span>
+            {/* HUMAN-CENTERED EDITORIAL SVG SCENE */}
+            <div className="relative z-10 flex-1 flex items-center justify-center py-4 sm:py-5">
+              <HumanCycleIllustration stepIndex={activeIndex} />
+            </div>
+
+            {/* Bottom Progress Dots + Loop Bar */}
+            <div className="relative z-10 pt-4 border-t border-white/75 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                {CYCLE_STEPS.map((s, idx) => (
+                  <button
+                    key={s.num}
+                    type="button"
+                    onClick={() => handleSelectStep(idx)}
+                    aria-label={`Ver paso ${s.num}: ${s.shortLabel}`}
+                    className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
+                      idx === activeIndex
+                        ? 'w-8 bg-[#1e2246]'
+                        : 'w-2 bg-[#626a9f]/35 hover:bg-[#626a9f]'
+                    }`}
+                  />
+                ))}
+                <span className="ml-2 text-[11px] font-extrabold text-[#454d82]">
+                  Bucle continuo A1 → C2
+                </span>
               </div>
 
               <button
