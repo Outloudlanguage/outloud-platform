@@ -26,6 +26,9 @@ const INVEST_OPTIONS = ['A) 3 meses o menos', 'B) 6 meses', 'C) 9 meses o más']
 // =========================================
 // MINI-RETO GRAMATICAL (2 PALABRAS FALTANTES)
 // =========================================
+const MINI_TRIAL_AUDIO_URL =
+  'https://pub-f968bc599b9e4b30965522b355899a7e.r2.dev/ElevenLabs_2026-11-23T19_23_14_Hope%20-%20upbeat%20and%20clear_pvc_s50_v3.mp3';
+
 const GRAMMAR_SENTENCE = {
   before: 'They',
   after: 'English together right now.',
@@ -676,33 +679,57 @@ export default function LandingTrialAndEnroll({
   const [selectedOption, setSelectedOption] = useState(null);
   const [wrongShakeTick, setWrongShakeTick] = useState(0);
   const [isSpeakingPrompt, setIsSpeakingPrompt] = useState(false);
+  const trialAudioRef = useRef(null);
 
   // Estado interactivo de la tarjeta Prueba de Nivelación (Explorador de bandas CEFR)
   const [activeDiagIdx, setActiveDiagIdx] = useState(2); // Inicia en B1
 
   const activeDiag = DIAGNOSTIC_BANDS[activeDiagIdx];
 
-  const handlePlayMiniPrompt = (textToRead = GRAMMAR_SENTENCE.fullCorrect) => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
-    try {
-      window.speechSynthesis.cancel();
-      const utter = new SpeechSynthesisUtterance(textToRead);
-      utter.lang = 'en-US';
-      utter.rate = 0.95;
-      utter.onstart = () => setIsSpeakingPrompt(true);
-      utter.onend = () => setIsSpeakingPrompt(false);
-      utter.onerror = () => setIsSpeakingPrompt(false);
-      setIsSpeakingPrompt(true);
-      window.speechSynthesis.speak(utter);
-    } catch {
-      setIsSpeakingPrompt(false);
+  useEffect(() => {
+    const preloader = new Audio(MINI_TRIAL_AUDIO_URL);
+    preloader.preload = 'auto';
+
+    return () => {
+      if (trialAudioRef.current) {
+        trialAudioRef.current.pause();
+        trialAudioRef.current.currentTime = 0;
+        trialAudioRef.current.onended = null;
+        trialAudioRef.current.onerror = null;
+        trialAudioRef.current = null;
+      }
+    };
+  }, []);
+
+  const handlePlayMiniPrompt = () => {
+    if (trialAudioRef.current) {
+      trialAudioRef.current.pause();
+      trialAudioRef.current.currentTime = 0;
+      trialAudioRef.current.onended = null;
+      trialAudioRef.current.onerror = null;
+      trialAudioRef.current = null;
     }
+
+    const audio = new Audio(MINI_TRIAL_AUDIO_URL);
+    trialAudioRef.current = audio;
+    setIsSpeakingPrompt(true);
+
+    const stopPlaybackState = () => {
+      if (trialAudioRef.current === audio) {
+        trialAudioRef.current = null;
+      }
+      setIsSpeakingPrompt(false);
+    };
+
+    audio.onended = stopPlaybackState;
+    audio.onerror = stopPlaybackState;
+    audio.play().catch(stopPlaybackState);
   };
 
   const handleMiniOptionClick = (opt) => {
     setSelectedOption(opt);
     if (opt.isCorrect) {
-      handlePlayMiniPrompt(GRAMMAR_SENTENCE.fullCorrect);
+      handlePlayMiniPrompt();
     } else {
       setWrongShakeTick((t) => t + 1);
     }
@@ -799,7 +826,7 @@ export default function LandingTrialAndEnroll({
                       {selectedOption?.isCorrect && (
                         <button
                           type="button"
-                          onClick={() => handlePlayMiniPrompt(GRAMMAR_SENTENCE.fullCorrect)}
+                          onClick={handlePlayMiniPrompt}
                           aria-label="Escuchar oración completa"
                           className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border border-[#1e2246] cursor-pointer transition-all ${
                             isSpeakingPrompt

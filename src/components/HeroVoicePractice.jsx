@@ -4,10 +4,11 @@ import OutLoudParticleField from './OutLoudParticleField';
 const BASE_BAR_HEIGHTS = [14, 28, 18, 44, 24, 34];
 
 // ==========================================================
-// CONFIG: PEGA AQUÍ TU URL DE AUDIO HOSTED Y EL SUBTÍTULO (SOLO INGLÉS)
+// CONFIG: AUDIO HOSTED EN R2 Y SUBTÍTULO (SOLO INGLÉS)
 // ==========================================================
-const MODEL_AUDIO_URL = ''; // Ej: 'https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/hero-sample.mp3'
-const MODEL_SUBTITLE_EN = 'Hi! I am ready to speak English OutLoud.';
+const MODEL_AUDIO_URL =
+  'https://pub-f968bc599b9e4b30965522b355899a7e.r2.dev/ElevenLabs_2026-11-23T19_22_15_Hope%20-%20upbeat%20and%20clear_pvc_s50_v3.mp3';
+const MODEL_SUBTITLE_EN = 'I am ready to learn English with Outloud.';
 
 // ==========================================================
 // SUBTLE SYNTHESIZED UI AUDIO ("Juice" — Zero External Files)
@@ -209,7 +210,6 @@ export default function HeroVoicePractice({ onFreeLessonClick }) {
   const chunksRef = useRef([]);
   const recordTimerRef = useRef(null);
   const resetTimerRef = useRef(null);
-  const speechFallbackTimerRef = useRef(null);
 
   // Live 60fps Mic Analyser Refs (Zero React Re-Renders)
   const audioCtxRef = useRef(null);
@@ -244,22 +244,20 @@ export default function HeroVoicePractice({ onFreeLessonClick }) {
     stopMicAnalyser();
     if (recordTimerRef.current) clearInterval(recordTimerRef.current);
     if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
-    if (speechFallbackTimerRef.current) clearTimeout(speechFallbackTimerRef.current);
 
     if (modelAudioRef.current) {
       modelAudioRef.current.pause();
       modelAudioRef.current.currentTime = 0;
       modelAudioRef.current.onended = null;
+      modelAudioRef.current.onerror = null;
       modelAudioRef.current = null;
     }
     if (userAudioRef.current) {
       userAudioRef.current.pause();
       userAudioRef.current.currentTime = 0;
       userAudioRef.current.onended = null;
+      userAudioRef.current.onerror = null;
       userAudioRef.current = null;
-    }
-    if (typeof window !== 'undefined' && window.speechSynthesis) {
-      window.speechSynthesis.cancel();
     }
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       try {
@@ -277,6 +275,9 @@ export default function HeroVoicePractice({ onFreeLessonClick }) {
   };
 
   useEffect(() => {
+    // Preload real R2 audio so playback starts immediately on tap
+    const preloader = new Audio(MODEL_AUDIO_URL);
+    preloader.preload = 'auto';
     return () => cleanupResources();
   }, []);
 
@@ -323,46 +324,29 @@ export default function HeroVoicePractice({ onFreeLessonClick }) {
     }
   };
 
-  // Reproduce la URL alojada o usa SpeechSynthesis en inglés como respaldo temporal
+  // Reproduce únicamente el audio real alojado en R2 (cero TTS)
   const playModelAudio = (onDone) => {
-    if (MODEL_AUDIO_URL && MODEL_AUDIO_URL.trim() !== '') {
-      const audio = new Audio(MODEL_AUDIO_URL);
-      modelAudioRef.current = audio;
-      audio.onended = () => {
-        modelAudioRef.current = null;
-        onDone();
-      };
-      audio.onerror = () => {
-        modelAudioRef.current = null;
-        playSpeechFallback(onDone);
-      };
-      audio.play().catch(() => {
-        modelAudioRef.current = null;
-        playSpeechFallback(onDone);
-      });
-    } else {
-      playSpeechFallback(onDone);
+    if (modelAudioRef.current) {
+      modelAudioRef.current.pause();
+      modelAudioRef.current.currentTime = 0;
+      modelAudioRef.current.onended = null;
+      modelAudioRef.current.onerror = null;
+      modelAudioRef.current = null;
     }
-  };
 
-  const playSpeechFallback = (onDone) => {
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(MODEL_SUBTITLE_EN);
-      utterance.lang = 'en-US';
-      utterance.rate = 0.94;
-      utterance.onend = () => {
-        if (speechFallbackTimerRef.current) clearTimeout(speechFallbackTimerRef.current);
-        onDone();
-      };
-      utterance.onerror = () => {
-        speechFallbackTimerRef.current = setTimeout(onDone, 2200);
-      };
-      speechFallbackTimerRef.current = setTimeout(onDone, 4200);
-      window.speechSynthesis.speak(utterance);
-    } else {
-      speechFallbackTimerRef.current = setTimeout(onDone, 2600);
-    }
+    const audio = new Audio(MODEL_AUDIO_URL);
+    modelAudioRef.current = audio;
+
+    const finish = () => {
+      if (modelAudioRef.current === audio) {
+        modelAudioRef.current = null;
+      }
+      onDone();
+    };
+
+    audio.onended = finish;
+    audio.onerror = finish;
+    audio.play().catch(finish);
   };
 
   // PASO 1: Tocar el logo -> chime + suena el audio modelo + subtítulo en inglés
