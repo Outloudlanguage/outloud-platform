@@ -138,11 +138,13 @@ export default function LandingMethodSection({ onScrollTo }) {
           </p>
         </div>
 
-        {/* 3 HERO CARDS (Cata/Kinta Tactile Reactivity in OutLoud Palette) */}
+        {/* 3 BACKLIT GLASS HERO CARDS */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-stretch">
-          {/* HERO CARD 1: INMERSIÓN TOTAL (Soft Yellow Theme) */}
-          <div className="group bg-[#fff3d1] border-2 border-[#23274d] rounded-[2.25rem] p-7 sm:p-8 shadow-[0_8px_0_#23274d] hover:-translate-y-1.5 hover:shadow-[0_12px_0_#23274d] transition-all duration-200 flex flex-col justify-between relative overflow-hidden">
-            <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-[#ffc749]/40 pointer-events-none" />
+          {/* HERO CARD 1: INMERSIÓN TOTAL (Backlit Warm Yellow Glass) */}
+          <div className="group relative flex flex-col">
+            <div className="absolute -inset-2 rounded-[2.6rem] bg-gradient-to-br from-[#ffc749]/60 via-[#ffe6a3]/40 to-transparent blur-2xl opacity-70 group-hover:opacity-100 transition-opacity duration-500 -z-10" />
+            <div className="flex-1 bg-[#fff3d1]/80 backdrop-blur-2xl border-2 border-[#23274d] rounded-[2.25rem] p-7 sm:p-8 shadow-[0_8px_0_#23274d,inset_0_1px_1px_rgba(255,255,255,0.9)] group-hover:-translate-y-2 group-hover:shadow-[0_14px_0_#23274d,0_24px_40px_-10px_rgba(255,199,73,0.55)] transition-all duration-200 flex flex-col justify-between relative overflow-hidden">
+              <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-[#ffc749]/40 pointer-events-none" />
 
             <div className="relative z-10">
               <div className="flex items-center justify-between gap-4 mb-6">
@@ -173,18 +175,21 @@ export default function LandingMethodSection({ onScrollTo }) {
             </div>
 
             <button
-              type="button"
-              onClick={() => onScrollTo?.('#cycle')}
-              className="relative z-10 mt-8 w-full py-3.5 px-5 rounded-full bg-white hover:bg-[#ffc749] text-[#23274d] border-2 border-[#23274d] shadow-[0_4px_0_#23274d] active:translate-y-0.5 font-black text-xs uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-2"
-            >
-              <span>Ver el Ciclo de Estudio</span>
-              <span>↓</span>
-            </button>
+                type="button"
+                onClick={() => onScrollTo?.('#cycle')}
+                className="ola-btn-outline relative z-10 mt-8 w-full py-3.5 px-5 rounded-full font-black text-xs uppercase tracking-widest cursor-pointer flex items-center justify-center gap-2 group/btn"
+              >
+                <span>Ver el Ciclo de Estudio</span>
+                <span className="transition-transform group-hover/btn:translate-y-0.5">↓</span>
+              </button>
+            </div>
           </div>
 
-          {/* HERO CARD 2: ACCESO 24/7 (Featured Brand Indigo Theme) */}
-          <div className="group bg-[#626a9f] border-2 border-[#23274d] rounded-[2.25rem] p-7 sm:p-8 text-white shadow-[0_10px_0_#23274d] hover:-translate-y-1.5 hover:shadow-[0_14px_0_#23274d] transition-all duration-200 flex flex-col justify-between relative overflow-hidden">
-            <div className="absolute -bottom-12 -right-12 w-40 h-40 rounded-full bg-white/10 pointer-events-none" />
+          {/* HERO CARD 2: ACCESO 24/7 (Backlit Featured Indigo Glass) */}
+          <div className="group relative flex flex-col">
+            <div className="absolute -inset-2 rounded-[2.6rem] bg-gradient-to-br from-[#626a9f]/70 via-[#a8b0de]/50 to-[#ffc749]/45 blur-2xl opacity-75 group-hover:opacity-100 transition-opacity duration-500 -z-10" />
+            <div className="flex-1 bg-[#626a9f]/90 backdrop-blur-2xl border-2 border-[#23274d] rounded-[2.25rem] p-7 sm:p-8 text-white shadow-[0_10px_0_#23274d,inset_0_1px_1px_rgba(255,255,255,0.3)] group-hover:-translate-y-2 group-hover:shadow-[0_14px_0_#23274d,0_26px_45px_-10px_rgba(98,106,159,0.6)] transition-all duration-200 flex flex-col justify-between relative overflow-hidden">
+              <div className="absolute -bottom-12 -right-12 w-40 h-40 rounded-full bg-white/10 pointer-events-none" />
 
             <div className="relative z-10">
               <div className="flex items-center justify-between gap-4 mb-6">
@@ -214,18 +219,21 @@ export default function LandingMethodSection({ onScrollTo }) {
             </div>
 
             <button
-              type="button"
-              onClick={() => onScrollTo?.('#levels')}
-              className="ola-btn-yellow relative z-10 mt-8 w-full py-3.5 px-5 rounded-full font-black text-xs uppercase tracking-widest cursor-pointer flex items-center justify-center gap-2"
-            >
-              <span>Niveles y Módulos</span>
-              <span>↓</span>
-            </button>
+                type="button"
+                onClick={() => onScrollTo?.('#levels')}
+                className="ola-btn-yellow bg-[#ffc749] text-[#23274d] border-2 border-[#23274d] relative z-10 mt-8 w-full py-3.5 px-5 rounded-full font-black text-xs uppercase tracking-widest cursor-pointer flex items-center justify-center gap-2 group/btn"
+              >
+                <span>Niveles y Módulos</span>
+                <span className="transition-transform group-hover/btn:translate-y-0.5">↓</span>
+              </button>
+            </div>
           </div>
 
-          {/* HERO CARD 3: CLASES 100% EN VIVO (Crisp White Theme) */}
-          <div className="group bg-white border-2 border-[#23274d] rounded-[2.25rem] p-7 sm:p-8 shadow-[0_8px_0_#23274d] hover:-translate-y-1.5 hover:shadow-[0_12px_0_#23274d] transition-all duration-200 flex flex-col justify-between relative overflow-hidden">
-            <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-[#e8eaf7] pointer-events-none" />
+          {/* HERO CARD 3: CLASES 100% EN VIVO (Backlit Frosted White Glass) */}
+          <div className="group relative flex flex-col">
+            <div className="absolute -inset-2 rounded-[2.6rem] bg-gradient-to-br from-[#a8b0de]/55 via-[#e8eaf7]/50 to-[#ffc749]/35 blur-2xl opacity-70 group-hover:opacity-100 transition-opacity duration-500 -z-10" />
+            <div className="flex-1 bg-white/75 backdrop-blur-2xl border-2 border-[#23274d] rounded-[2.25rem] p-7 sm:p-8 shadow-[0_8px_0_#23274d,inset_0_1px_1px_rgba(255,255,255,0.95)] group-hover:-translate-y-2 group-hover:shadow-[0_14px_0_#23274d,0_24px_40px_-10px_rgba(98,106,159,0.4)] transition-all duration-200 flex flex-col justify-between relative overflow-hidden">
+              <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-[#e8eaf7]/70 pointer-events-none" />
 
             <div className="relative z-10">
               <div className="flex items-center justify-between gap-4 mb-6">
@@ -255,13 +263,14 @@ export default function LandingMethodSection({ onScrollTo }) {
             </div>
 
             <button
-              type="button"
-              onClick={() => onScrollTo?.('#enroll')}
-              className="relative z-10 mt-8 w-full py-3.5 px-5 rounded-full bg-[#e8eaf7] hover:bg-[#ffc749] text-[#23274d] border-2 border-[#23274d] shadow-[0_4px_0_#23274d] active:translate-y-0.5 font-black text-xs uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-2"
-            >
-              <span>Inscribirse</span>
-              <span>→</span>
-            </button>
+                type="button"
+                onClick={() => onScrollTo?.('#enroll')}
+                className="ola-btn-outline relative z-10 mt-8 w-full py-3.5 px-5 rounded-full font-black text-xs uppercase tracking-widest cursor-pointer flex items-center justify-center gap-2 group/btn"
+              >
+                <span>Inscribirse</span>
+                <span className="transition-transform group-hover/btn:translate-x-1">→</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -312,8 +321,9 @@ export default function LandingMethodSection({ onScrollTo }) {
         {/* ================================================== */}
         {/* PART C: INTERACTIVE 5-STEP METHOD ENGINE (#cycle)  */}
         {/* ================================================== */}
-        <div id="cycle" className="mt-20 sm:mt-28 scroll-mt-24">
-          <div className="bg-white border-2 border-[#23274d] rounded-[2.5rem] shadow-[0_12px_0_#23274d] overflow-hidden relative">
+        <div id="cycle" className="mt-20 sm:mt-28 scroll-mt-24 relative">
+          <div className="absolute -inset-3 rounded-[3rem] bg-gradient-to-r from-[#ffc749]/35 via-[#a8b0de]/40 to-[#626a9f]/35 blur-3xl opacity-80 -z-10 pointer-events-none" />
+          <div className="bg-white/75 backdrop-blur-2xl border-2 border-[#23274d] rounded-[2.5rem] shadow-[0_12px_0_#23274d,inset_0_1px_1px_rgba(255,255,255,0.95)] overflow-hidden relative">
             {/* Subtle Corner Brand Patterns */}
             <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-[#fff3d1] opacity-80 pointer-events-none" />
             <div className="absolute -bottom-20 -left-16 w-52 h-52 rounded-full bg-[#e8eaf7] opacity-80 pointer-events-none" />

@@ -222,8 +222,10 @@ export default function LandingLevelsAndPlans({ onScrollTo, onPlacementClick }) 
             </button>
           </div>
 
-          {/* Main Light-Mode Explorer Container */}
-          <div className="bg-white border-2 border-[#23274d] rounded-[2.5rem] shadow-[0_12px_0_#23274d] p-5 sm:p-8 lg:p-10">
+          {/* Main Backlit Frosted Glass Explorer Container */}
+          <div className="relative">
+            <div className="absolute -inset-3 rounded-[3rem] bg-gradient-to-br from-[#626a9f]/30 via-[#e8eaf7]/50 to-[#ffc749]/35 blur-3xl opacity-85 -z-10 pointer-events-none" />
+            <div className="bg-white/75 backdrop-blur-2xl border-2 border-[#23274d] rounded-[2.5rem] shadow-[0_12px_0_#23274d,inset_0_1px_1px_rgba(255,255,255,0.95)] p-5 sm:p-8 lg:p-10">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-stretch">
               {/* CHART COLUMN (First on Mobile, Right on Desktop) */}
               <div className="lg:col-span-6 lg:order-2 flex flex-col justify-between bg-[#f6f7fc] border-2 border-[#dfe2f2] rounded-[2rem] p-5 sm:p-7">
@@ -394,6 +396,7 @@ export default function LandingLevelsAndPlans({ onScrollTo, onPlacementClick }) 
                 })}
               </div>
             </div>
+            </div>
           </div>
         </div>
       </section>
@@ -445,16 +448,18 @@ export default function LandingLevelsAndPlans({ onScrollTo, onPlacementClick }) 
               const themeStyles =
                 plan.theme === 'indigo'
                   ? {
-                      card: 'bg-[#626a9f] text-white border-[#23274d]',
+                      card: 'bg-[#626a9f]/92 backdrop-blur-2xl text-white border-[#23274d]',
+                      glow: '0 14px 0 #23274d, 0 28px 55px -10px rgba(98, 106, 159, 0.55), 0 0 32px -6px rgba(255, 199, 73, 0.35)',
                       badge: 'bg-[#ffc749] text-[#23274d] border-[#23274d]',
                       price: 'text-[#ffc749]',
-                      muted: 'text-white/80',
+                      muted: 'text-white/85',
                       checkBg: 'bg-[#ffc749] text-[#23274d]',
                       divider: 'border-white/15',
                     }
                   : plan.theme === 'yellow'
                   ? {
-                      card: 'bg-[#fff3d1] text-[#23274d] border-[#23274d]',
+                      card: 'bg-[#fff3d1]/88 backdrop-blur-2xl text-[#23274d] border-[#23274d]',
+                      glow: '0 14px 0 #23274d, 0 28px 55px -10px rgba(255, 199, 73, 0.55)',
                       badge: 'bg-white text-[#23274d] border-[#23274d]',
                       price: 'text-[#23274d]',
                       muted: 'text-[#23274d]/80',
@@ -462,7 +467,8 @@ export default function LandingLevelsAndPlans({ onScrollTo, onPlacementClick }) 
                       divider: 'border-[#23274d]/15',
                     }
                   : {
-                      card: 'bg-white text-[#23274d] border-[#23274d]',
+                      card: 'bg-white/85 backdrop-blur-2xl text-[#23274d] border-[#23274d]',
+                      glow: '0 14px 0 #23274d, 0 28px 55px -10px rgba(98, 106, 159, 0.4)',
                       badge: 'bg-[#e8eaf7] text-[#626a9f] border-[#626a9f]/30',
                       price: 'text-[#626a9f]',
                       muted: 'text-[#60668a]',
@@ -485,6 +491,7 @@ export default function LandingLevelsAndPlans({ onScrollTo, onPlacementClick }) 
                     transform: cardTransform,
                     transformStyle: 'preserve-3d',
                     filter: isCenter ? 'none' : 'saturate(0.85)',
+                    boxShadow: isCenter ? themeStyles.glow : undefined,
                   }}
                 >
                   {/* Top Row: Tier & Badge */}
@@ -589,7 +596,7 @@ export default function LandingLevelsAndPlans({ onScrollTo, onPlacementClick }) 
           </div>
 
           {/* Onboarding Fee & Billing Transparency Banner */}
-          <div className="mt-10 bg-white border-2 border-[#dfe2f2] rounded-[2rem] p-5 sm:p-7 grid grid-cols-1 md:grid-cols-3 gap-5 items-center shadow-sm">
+          <div className="mt-10 bg-white/75 backdrop-blur-2xl border-2 border-white/90 rounded-[2rem] p-5 sm:p-7 grid grid-cols-1 md:grid-cols-3 gap-5 items-center shadow-[0_14px_34px_-12px_rgba(98,106,159,0.24)]">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-2xl bg-[#fff3d1] border-2 border-[#ffc749] flex items-center justify-center font-black text-lg text-[#23274d] shrink-0">
                 $10

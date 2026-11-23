@@ -38,11 +38,11 @@ export function OutLoudIcon({ className = 'w-10 h-10', withTile = true }) {
   );
 }
 
-export function OutLoudWordmark({ className = 'h-8 w-auto', fill = '#626a9f' }) {
+export function OutLoudWordmark({ className = 'h-10 w-auto', fill = '#626a9f' }) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 1078.27 409.8"
+      viewBox="48 34 984 344"
       className={className}
       aria-label="OutLoud"
     >
@@ -74,11 +74,18 @@ export function OutLoudWordmark({ className = 'h-8 w-auto', fill = '#626a9f' }) 
   );
 }
 
-export function OutLoudHorizontalLogo({ iconClass = 'w-10 h-10', wordmarkClass = 'h-8 w-auto' }) {
+export function OutLoudHorizontalLogo({
+  iconClass = 'w-11 h-11 sm:w-12 sm:h-12',
+  wordmarkClass = 'h-9 sm:h-11 w-auto',
+}) {
   return (
-    <div className="inline-flex items-center gap-2.5 select-none">
-      <OutLoudIcon className={iconClass} />
-      <OutLoudWordmark className={wordmarkClass} />
+    <div className="inline-flex items-center gap-2.5 sm:gap-3 select-none group">
+      <OutLoudIcon
+        className={`${iconClass} shrink-0 drop-shadow-[0_6px_12px_rgba(98,106,159,0.22)] transition-transform duration-300 group-hover:rotate-[-6deg] group-hover:scale-105`}
+      />
+      <OutLoudWordmark
+        className={`${wordmarkClass} translate-y-[3px] drop-shadow-[0_2px_6px_rgba(98,106,159,0.12)] transition-transform duration-300 group-hover:translate-x-0.5`}
+      />
     </div>
   );
 }

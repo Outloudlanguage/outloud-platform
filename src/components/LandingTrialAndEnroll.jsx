@@ -223,7 +223,9 @@ export function OnboardingFormCard({ onFreeTrialClick, onSuccessComplete }) {
   };
 
   return (
-    <div className="ola-light-phone bg-white border-2 border-[#23274d] rounded-[2.5rem] shadow-[0_14px_0_#23274d] p-6 sm:p-8 lg:p-12 relative">
+    <div className="relative">
+      <div className="absolute -inset-3 rounded-[3rem] bg-gradient-to-br from-[#ffc749]/35 via-[#a8b0de]/45 to-[#626a9f]/35 blur-3xl opacity-85 -z-10 pointer-events-none" />
+      <div className="ola-light-phone bg-white/80 backdrop-blur-2xl border-2 border-[#23274d] rounded-[2.5rem] shadow-[0_14px_0_#23274d,inset_0_1px_1px_rgba(255,255,255,0.95)] p-6 sm:p-8 lg:p-12 relative">
       <style>{`
         .ola-light-phone .PhoneInput { display: flex; align-items: center; width: 100%; }
         .ola-light-phone .PhoneInputInput {
@@ -523,6 +525,7 @@ export function OnboardingFormCard({ onFreeTrialClick, onSuccessComplete }) {
           </div>
         </form>
       )}
+      </div>
     </div>
   );
 }
@@ -544,8 +547,8 @@ export default function LandingTrialAndEnroll({
       <section id="free-trial" className="py-16 sm:py-24 scroll-mt-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-stretch">
-            {/* PRIMARY CARD: FREE INTERACTIVE LESSON */}
-            <div className="lg:col-span-7 bg-[#fff3d1] border-2 border-[#23274d] rounded-[2.5rem] p-7 sm:p-10 shadow-[0_10px_0_#23274d] flex flex-col justify-between relative overflow-hidden">
+            {/* PRIMARY CARD: FREE INTERACTIVE LESSON (Backlit Glass) */}
+            <div className="lg:col-span-7 bg-[#fff3d1]/85 backdrop-blur-2xl border-2 border-[#23274d] rounded-[2.5rem] p-7 sm:p-10 shadow-[0_10px_0_#23274d,0_24px_45px_-12px_rgba(255,199,73,0.55)] hover:-translate-y-1.5 transition-all duration-200 flex flex-col justify-between relative overflow-hidden">
               <div className="absolute -top-12 -right-12 w-44 h-44 rounded-full bg-[#ffc749]/45 pointer-events-none" />
 
               <div className="relative z-10">
@@ -586,8 +589,8 @@ export default function LandingTrialAndEnroll({
               </div>
             </div>
 
-            {/* SECONDARY CARD: PLACEMENT TEST */}
-            <div className="lg:col-span-5 bg-[#626a9f] border-2 border-[#23274d] rounded-[2.5rem] p-7 sm:p-10 text-white shadow-[0_10px_0_#23274d] flex flex-col justify-between relative overflow-hidden">
+            {/* SECONDARY CARD: PLACEMENT TEST (Backlit Indigo Glass) */}
+            <div className="lg:col-span-5 bg-[#626a9f]/92 backdrop-blur-2xl border-2 border-[#23274d] rounded-[2.5rem] p-7 sm:p-10 text-white shadow-[0_10px_0_#23274d,0_24px_45px_-12px_rgba(98,106,159,0.55)] hover:-translate-y-1.5 transition-all duration-200 flex flex-col justify-between relative overflow-hidden">
               <div className="absolute -bottom-16 -right-16 w-48 h-48 rounded-full bg-white/10 pointer-events-none" />
 
               <div className="relative z-10">
@@ -642,7 +645,7 @@ export default function LandingTrialAndEnroll({
       {/* ================================================== */}
       {/* LIGHT-MODE BRAND FOOTER & SOCIALS                  */}
       {/* ================================================== */}
-      <footer className="bg-white border-t-2 border-[#dfe2f2] pt-14 pb-10 mt-8">
+      <footer className="bg-white/75 backdrop-blur-2xl border-t-2 border-white/90 pt-14 pb-10 mt-8 shadow-[0_-12px_36px_-14px_rgba(98,106,159,0.2)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-8">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-10 pb-10 border-b-2 border-[#e8eaf7]">
             {/* Brand Column */}
@@ -679,7 +682,7 @@ export default function LandingTrialAndEnroll({
                     <button
                       type="button"
                       onClick={() => onScrollTo?.(item.href)}
-                      className="hover:text-[#626a9f] transition-colors cursor-pointer"
+                      className="ola-reactive-text text-[#60668a] hover:text-[#23274d] font-bold cursor-pointer"
                     >
                       {item.label}
                     </button>
