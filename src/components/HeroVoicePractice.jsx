@@ -502,7 +502,7 @@ export default function HeroVoicePractice({ onFreeLessonClick }) {
     phase === 'congrats';
 
   return (
-    <div className="relative w-full max-w-[490px] mx-auto flex items-center justify-center py-6 sm:py-8">
+    <div className="relative w-full max-w-[460px] mx-auto flex items-center justify-center py-6 sm:py-8">
       <style>{`
         /* Caja lavanda-índigo ligera y moderna */
         .ola-glass-lavender {
@@ -989,14 +989,15 @@ export default function HeroVoicePractice({ onFreeLessonClick }) {
           {/* ================================================== */}
           <div className="relative z-10 min-h-[104px] bg-white/82 backdrop-blur-xl border border-white rounded-3xl px-5 py-4 sm:px-6 sm:py-5 flex flex-col items-center justify-center text-center shadow-[0_10px_28px_-12px_rgba(69,77,130,0.22)]">
             {phase === 'idle' && (
-              <p className="text-sm sm:text-base font-bold text-[#1e2246] leading-snug max-w-sm animate-fade-in">
-                Ejercicio de pronunciación, toca el logo para una práctica rápida.
+              <p className="text-sm sm:text-[15px] font-medium text-[#2b315d] leading-relaxed max-w-xs animate-fade-in">
+                Ejercicio de pronunciación —{' '}
+                <strong className="font-semibold text-[#1e2246]">toca el logo</strong> para una práctica rápida.
               </p>
             )}
 
             {phase === 'ready_to_record' && (
               <div className="animate-fade-in">
-                <p className="text-sm sm:text-base font-black text-[#d94a3f] leading-snug">
+                <p className="text-sm sm:text-base font-semibold text-[#d94a3f] leading-snug">
                   Graba tu pronunciación y compara
                 </p>
               </div>

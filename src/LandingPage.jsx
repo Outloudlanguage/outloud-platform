@@ -38,7 +38,7 @@ export default function LandingPage({
 
   return (
     <div
-      className="min-h-screen w-full text-[#1e2246] font-montserrat overflow-x-hidden relative selection:bg-[#ffc749] selection:text-[#1e2246]"
+      className="ola-landing-type min-h-screen w-full text-[#1e2246] font-montserrat overflow-x-hidden relative selection:bg-[#ffc749] selection:text-[#1e2246]"
       style={{
         background:
           'linear-gradient(155deg, #d7dcf5 0%, #eaedfb 32%, #f7eff0 64%, #fdebc0 100%)',
@@ -268,6 +268,34 @@ export default function LandingPage({
         .ola-reactive-text:active {
           transform: translateY(0px) scale(0.98);
         }
+
+        /* REFINED EDITORIAL WEIGHT SCALE (Less Heavy Bold on Desktop & Mobile) */
+        .ola-landing-type .font-black { font-weight: 800; }
+        .ola-landing-type .font-extrabold { font-weight: 700; }
+        .ola-landing-type h3.font-black,
+        .ola-landing-type h4.font-black,
+        .ola-landing-type h5.font-black,
+        .ola-landing-type p.font-black,
+        .ola-landing-type span.font-black,
+        .ola-landing-type button.font-black,
+        .ola-landing-type a.font-black {
+          font-weight: 700;
+        }
+        .ola-landing-type .text-5xl.font-black { font-weight: 800; }
+        .ola-landing-type nav button { font-weight: 600; }
+        .ola-landing-type p.font-bold,
+        .ola-landing-type p.font-semibold,
+        .ola-landing-type li.font-semibold {
+          font-weight: 500;
+        }
+        .ola-landing-type p.font-medium,
+        .ola-landing-type li.font-medium {
+          font-weight: 400;
+        }
+        .ola-landing-type p strong,
+        .ola-landing-type li strong {
+          font-weight: 600;
+        }
       `}</style>
 
       {/* ================================================== */}
@@ -324,7 +352,7 @@ export default function LandingPage({
             : 'bg-white/25 backdrop-blur-xl border-b border-white/50 py-3.5'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 flex items-center justify-between gap-3">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8 flex items-center justify-between gap-3">
           {/* Optically Aligned Brand Logo */}
           <button
             type="button"
@@ -424,37 +452,37 @@ export default function LandingPage({
       </header>
 
       {/* ================================================== */}
-      {/* VISUAL-FIRST HERO (Interactive Voice Lab Above Fold) */}
+      {/* VISUAL-FIRST HERO (Balanced Margins & Clean Type)  */}
       {/* ================================================== */}
       <section className="relative z-10 pt-24 pb-12 sm:pt-32 sm:pb-20 lg:pt-36 lg:pb-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
-            {/* LEFT COLUMN: Crisp Editorial Punch (No Wall of Text) */}
-            <div className="lg:col-span-6 flex flex-col items-center lg:items-start text-center lg:text-left">
-              <h1 className="text-4xl sm:text-5xl lg:text-[4rem] font-black text-[#1e2246] leading-[1.02] tracking-tight mb-4">
+        <div className="max-w-[1060px] mx-auto px-5 sm:px-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-8 items-center">
+            {/* LEFT COLUMN: Centered-Balanced Editorial Punch */}
+            <div className="lg:col-span-6 flex flex-col items-center lg:items-start text-center lg:text-left lg:pl-2">
+              <h1 className="text-4xl sm:text-5xl lg:text-[3.75rem] font-extrabold text-[#1e2246] leading-[1.04] tracking-tight mb-4">
                 Your Voice,{' '}
                 <span className="relative inline-block">
                   <span className="relative z-10 text-[#454d82]">Amplified.</span>
-                  <span className="absolute -left-1.5 -right-1.5 bottom-1.5 h-4 bg-[#ffc749] -z-0 rounded-full -rotate-1 shadow-[0_4px_14px_rgba(255,199,73,0.65)]" />
+                  <span className="absolute -left-1.5 -right-1.5 bottom-1.5 h-3.5 bg-[#ffc749] -z-0 rounded-full -rotate-1 shadow-[0_4px_14px_rgba(255,199,73,0.65)]" />
                 </span>
               </h1>
 
               <p
-                className="text-sm sm:text-lg font-bold text-[#2b315d] max-w-md mb-6 leading-snug"
+                className="text-sm sm:text-[1.05rem] font-medium text-[#3b4170] max-w-[400px] mb-7 leading-relaxed"
                 style={{ textShadow: '0 2px 12px rgba(255, 255, 255, 0.85)' }}
               >
                 Inglés 100% en vivo y práctica vocal interactiva 24/7 — sin traducir.
               </p>
 
               {/* Desktop Primary Actions */}
-              <div className="hidden lg:flex items-center gap-4 mt-2">
+              <div className="hidden lg:flex items-center gap-3.5">
                 <button
                   type="button"
                   onClick={onFreeLessonClick}
-                  className="ola-btn-yellow ola-btn-free-pulse px-8 py-3.5 rounded-full text-xs font-black uppercase tracking-widest cursor-pointer flex items-center gap-2 group"
+                  className="ola-btn-yellow ola-btn-free-pulse px-7 py-3.5 rounded-full text-xs font-bold uppercase tracking-widest cursor-pointer flex items-center gap-2 group"
                 >
                   <span>PRUEBA GRATIS</span>
-                  <svg className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" fill="none" stroke="currentColor" strokeWidth="2.6" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                   </svg>
                 </button>
@@ -462,7 +490,7 @@ export default function LandingPage({
                 <button
                   type="button"
                   onClick={() => scrollToSection('#plans')}
-                  className="ola-btn-outline px-7 py-3.5 rounded-full text-xs font-black uppercase tracking-widest cursor-pointer"
+                  className="ola-btn-outline px-6 py-3.5 rounded-full text-xs font-semibold uppercase tracking-widest cursor-pointer"
                 >
                   Ver Planes
                 </button>
@@ -478,14 +506,14 @@ export default function LandingPage({
                 <button
                   type="button"
                   onClick={onFreeLessonClick}
-                  className="ola-btn-yellow ola-btn-free-pulse flex-1 py-3.5 px-4 rounded-full text-xs font-black uppercase tracking-widest cursor-pointer"
+                  className="ola-btn-yellow ola-btn-free-pulse flex-1 py-3.5 px-4 rounded-full text-xs font-bold uppercase tracking-widest cursor-pointer"
                 >
                   PRUEBA GRATIS
                 </button>
                 <button
                   type="button"
                   onClick={() => scrollToSection('#plans')}
-                  className="ola-btn-outline flex-1 py-3.5 px-4 rounded-full text-xs font-black uppercase tracking-widest cursor-pointer"
+                  className="ola-btn-outline flex-1 py-3.5 px-4 rounded-full text-xs font-semibold uppercase tracking-widest cursor-pointer"
                 >
                   Ver Planes
                 </button>

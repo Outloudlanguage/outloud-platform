@@ -1013,28 +1013,7 @@ export default function LandingLevelsAndPlans({ onScrollTo, onPlacementClick }) 
             </p>
           </div>
 
-          {/* Barra Selectora Rápida de los 5 Planes (Visibilidad inmediata de Solo $5 y B2B $120) */}
-          <div className="flex items-center justify-center mb-3">
-            <div className="ola-glass inline-flex flex-wrap items-center justify-center gap-1.5 rounded-3xl sm:rounded-full p-1.5">
-              {PAYMENT_PLANS.map((p, idx) => {
-                const isActive = idx === activePlanIndex;
-                return (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => setActivePlanIndex(idx)}
-                    className={`px-3.5 py-2 rounded-full text-[11px] font-black uppercase tracking-wider transition-all duration-200 cursor-pointer ${
-                      isActive
-                        ? 'bg-[#1e2246] text-[#ffc749] shadow-md scale-[1.03]'
-                        : 'text-[#454d82] hover:text-[#1e2246] hover:bg-white/75'
-                    }`}
-                  >
-                    {p.shortTab}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          
 
           {/* ESCENARIO COVERFLOW 3D (Hover en bordes en escritorio + Swipe táctil en móvil) */}
           <div
