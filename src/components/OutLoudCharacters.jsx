@@ -1,12 +1,87 @@
 import React from 'react';
 
 // ==========================================================
-// REUSABLE ANATOMICAL PARTS
-// Local origin (0, 0) = Base of chin / top of neck
-// IMPORTANT: Never place a CSS animation class on the same
-// <g> as an SVG transform="translate(...)" attribute.
+// CAPA 1: CABELLO TRASERO (Siempre renderizado DETRÁS del
+// cuello, cuello de camisa y hombros — cero efecto hijab/barba)
 // ==========================================================
+function CharacterBackHair({
+  hairStyle = 'wavy', // 'wavy' | 'bun' | 'short' | 'locs' | 'curly'
+  hairColor = '#1e2246',
+  hairHighlight = '#3b437a',
+}) {
+  if (hairStyle === 'wavy') {
+    return (
+      <g>
+        {/* Melena larga cayendo libremente por detrás del cuello y los hombros */}
+        <path
+          d="M -35 -42 C -38 -70, -20 -80, 0 -80 C 20 -80, 38 -70, 35 -42 C 37 -18, 44 10, 44 38 C 44 47, 36 52, 26 48 L -26 48 C -36 52, -44 47, -44 38 C -44 10, -37 -18, -35 -42 Z"
+          fill={hairColor}
+        />
+        <path
+          d="M -37 8 C -39 22, -41 34, -36 42 M 37 8 C 39 22, 41 34, 36 42"
+          stroke={hairHighlight}
+          strokeWidth="2.4"
+          strokeLinecap="round"
+          opacity="0.55"
+        />
+      </g>
+    );
+  }
 
+  if (hairStyle === 'locs') {
+    return (
+      <g>
+        {/* Cabello largo trenzado/locs cayendo por detrás de la nuca y hombros */}
+        <path
+          d="M -35 -42 C -37 -69, -21 -79, 0 -79 C 21 -79, 37 -69, 35 -42 C 38 -12, 42 14, 41 36 C 41 44, 33 48, 24 44 L -24 44 C -33 48, -41 44, -41 36 C -42 14, -38 -12, -35 -42 Z"
+          fill={hairColor}
+        />
+        <circle cx="-36" cy="36" r="6" fill={hairColor} />
+        <circle cx="36" cy="36" r="6" fill={hairColor} />
+        <circle cx="-39" cy="20" r="5.5" fill={hairColor} />
+        <circle cx="39" cy="20" r="5.5" fill={hairColor} />
+      </g>
+    );
+  }
+
+  if (hairStyle === 'bun') {
+    return (
+      <g>
+        <circle cx="-11" cy="-78" r="16.5" fill={hairColor} />
+        <path d="M -23 -78 Q -11 -88 1 -78" stroke={hairHighlight} strokeWidth="2.5" strokeLinecap="round" opacity="0.65" />
+        {/* Solo parte superior detrás de la cabeza (no baja frente al cuello) */}
+        <path d="M -32 -36 C -34 -64, -18 -76, 0 -76 C 18 -76, 34 -64, 32 -36 L 26 -20 L -26 -20 Z" fill={hairColor} />
+      </g>
+    );
+  }
+
+  if (hairStyle === 'curly') {
+    return (
+      <g fill={hairColor}>
+        <circle cx="-23" cy="-58" r="17" />
+        <circle cx="-8" cy="-68" r="18" />
+        <circle cx="10" cy="-68" r="18" />
+        <circle cx="24" cy="-57" r="17" />
+        <circle cx="-29" cy="-41" r="13" />
+        <circle cx="29" cy="-41" r="13" />
+      </g>
+    );
+  }
+
+  // 'short'
+  return (
+    <path
+      d="M -31 -34 C -33 -63, -18 -77, 2 -77 C 22 -77, 34 -62, 31 -34 L 26 -22 L -26 -22 Z"
+      fill={hairColor}
+    />
+  );
+}
+
+// ==========================================================
+// CAPA 2: TORSO Y HOMBROS ANATÓMICOS (ESTRICTAMENTE 2 BRAZOS)
+// Si leftArmRaised / rightArmRaised es true, NO dibuja brazo
+// colgando en ese lado — solo queda el costado limpio del torso.
+// ==========================================================
 function CharacterTorso({
   shirtColor = '#626a9f',
   shirtShadow = '#4c548a',
@@ -14,47 +89,75 @@ function CharacterTorso({
   collarColor = '#ffffff',
   skinColor = '#f4c5a3',
   skinShadow = '#da9e77',
+  leftArmRaised = false,
+  rightArmRaised = false,
 }) {
   return (
     <g>
-      {/* Tapered Neck Flowing Naturally into Shoulders */}
+      {/* Cuello anatómico afinado entrando limpio dentro del cuello de la prenda */}
       <path
         d="M -10 -14 L 10 -14 C 10 -2, 13 9, 20 18 L 20 26 L -20 26 L -20 18 C -13 9, -10 -2, -10 -14 Z"
         fill={skinColor}
       />
-      {/* Cast Shadow Directly Under the Jawline */}
+      {/* Sombra proyectada por la mandíbula sobre el cuello */}
       <path
         d="M -10.5 -12 L 10.5 -12 C 10.5 -3, 11 1, 11.5 4 C 4.5 9, -4.5 9, -11.5 4 C -11 1, -10.5 -3, -10.5 -12 Z"
         fill={skinShadow}
       />
 
-      {/* Sculpted Sloping Shoulders & Torso */}
+      {/* BRAZO IZQUIERDO COLGANDO (Solo si NO está levantado) */}
+      {!leftArmRaised && (
+        <g>
+          <path
+            d="M -22 16 C -41 18, -52 28, -54 48 L -51 98 L -32 98 L -33 44 C -32 30, -28 22, -22 16 Z"
+            fill={shirtColor}
+          />
+          <path
+            d="M -35 45 Q -33 70 -35 96"
+            stroke={shirtShadow}
+            strokeWidth="2.4"
+            strokeLinecap="round"
+            opacity="0.5"
+          />
+        </g>
+      )}
+
+      {/* BRAZO DERECHO COLGANDO (Solo si NO está levantado) */}
+      {!rightArmRaised && (
+        <g>
+          <path
+            d="M 22 16 C 41 18, 52 28, 54 48 L 51 98 L 32 98 L 33 44 C 32 30, 28 22, 22 16 Z"
+            fill={shirtColor}
+          />
+          <path
+            d="M 33 22 C 45 27, 52 36, 54 48 L 51 98 L 36 98 L 37 44 C 37 34, 36 27, 33 22 Z"
+            fill={shirtShadow}
+            fillOpacity="0.38"
+          />
+          <path
+            d="M 35 45 Q 33 70 35 96"
+            stroke={shirtShadow}
+            strokeWidth="2.4"
+            strokeLinecap="round"
+            opacity="0.5"
+          />
+        </g>
+      )}
+
+      {/* PECHO / TRONCO CENTRAL (Costados limpios; nunca duplica brazos) */}
       <path
-        d="M -19 15 C -37 17, -51 25, -55 46 L -52 98 L 52 98 L 55 46 C 51 25, 37 17, 19 15 Q 0 28 -19 15 Z"
+        d="M -19 15 C -28 16, -34 21, -35 32 L -33 98 L 33 98 L 35 32 C 34 21, 28 16, 19 15 Q 0 28 -19 15 Z"
         fill={shirtColor}
       />
-      {/* Cel-Shading Along Side */}
+
+      {/* Sombra sutil lateral derecha sobre el torso */}
       <path
-        d="M 28 19 C 43 24, 52 33, 55 46 L 52 98 L 34 98 L 36 44 C 36 32, 33 24, 28 19 Z"
+        d="M 22 17 C 30 19, 34 24, 35 32 L 33 98 L 22 98 L 23 36 C 23 26, 23 21, 22 17 Z"
         fill={shirtShadow}
-        fillOpacity="0.42"
-      />
-      {/* Sleeve Seam Contours */}
-      <path
-        d="M -37 46 Q -35 68 -37 96"
-        stroke={shirtShadow}
-        strokeWidth="2.4"
-        strokeLinecap="round"
-        opacity="0.52"
-      />
-      <path
-        d="M 37 46 Q 35 68 37 96"
-        stroke={shirtShadow}
-        strokeWidth="2.4"
-        strokeLinecap="round"
-        opacity="0.52"
+        fillOpacity="0.22"
       />
 
+      {/* Variaciones de Cuello de Prenda */}
       {collarStyle === 'crew' && (
         <path
           d="M -20 14 Q 0 30 20 14 L 22 20 Q 0 36 -22 20 Z"
@@ -86,12 +189,12 @@ function CharacterTorso({
           <path
             d="M -22 14 L -3 50 L -3 98 L -12 98 L -12 52 L -26 17 Z"
             fill={shirtShadow}
-            opacity="0.55"
+            opacity="0.5"
           />
           <path
             d="M 22 14 L 3 50 L 3 98 L 12 98 L 12 52 L 26 17 Z"
             fill={shirtShadow}
-            opacity="0.55"
+            opacity="0.5"
           />
         </g>
       )}
@@ -99,13 +202,17 @@ function CharacterTorso({
   );
 }
 
+// ==========================================================
+// CAPA 3: ROSTRO, OREJAS Y FLEQUILLO FRONTAL
+// (Solo frente de la cabeza — cero formas debajo del mentón)
+// ==========================================================
 function CharacterHead({
   skinColor = '#f4c5a3',
   skinShadow = '#da9e77',
   hairColor = '#1e2246',
   hairHighlight = '#3b437a',
-  hairStyle = 'wavy', // 'wavy' | 'bun' | 'short' | 'locs' | 'curly'
-  expression = 'talk', // 'talk' | 'smile' | 'laugh'
+  hairStyle = 'wavy',
+  expression = 'talk',
   glasses = false,
   headphones = false,
   headset = false,
@@ -114,50 +221,7 @@ function CharacterHead({
 }) {
   return (
     <g>
-      {/* BACK HAIR LAYER (Full Crown & Volume) */}
-      {hairStyle === 'wavy' && (
-        <path
-          d="M -35 -36 C -39 -66, -22 -79, 0 -79 C 22 -79, 39 -66, 35 -36 C 37 -14, 38 2, 26 9 C 18 12, -18 12, -26 9 C -38 2, -37 -14, -35 -36 Z"
-          fill={hairColor}
-        />
-      )}
-      {hairStyle === 'bun' && (
-        <g>
-          <circle cx="-11" cy="-78" r="16.5" fill={hairColor} />
-          <path d="M -23 -78 Q -11 -88 1 -78" stroke={hairHighlight} strokeWidth="2.5" strokeLinecap="round" opacity="0.65" />
-          <ellipse cx="0" cy="-44" rx="33" ry="33" fill={hairColor} />
-        </g>
-      )}
-      {hairStyle === 'short' && (
-        <path
-          d="M -31 -34 C -33 -63, -18 -77, 2 -77 C 22 -77, 34 -62, 31 -34 L 27 -24 L -27 -24 Z"
-          fill={hairColor}
-        />
-      )}
-      {hairStyle === 'locs' && (
-        <g>
-          <path
-            d="M -35 -36 C -37 -66, -21 -77, 0 -77 C 21 -77, 37 -66, 35 -36 L 35 -2 C 35 6, 27 10, 20 6 L -20 6 C -27 10, -35 6, -35 -2 Z"
-            fill={hairColor}
-          />
-          <circle cx="-30" cy="-10" r="6" fill={hairColor} />
-          <circle cx="30" cy="-10" r="6" fill={hairColor} />
-          <circle cx="-26" cy="2" r="5.5" fill={hairColor} />
-          <circle cx="26" cy="2" r="5.5" fill={hairColor} />
-        </g>
-      )}
-      {hairStyle === 'curly' && (
-        <g fill={hairColor}>
-          <circle cx="-23" cy="-58" r="17" />
-          <circle cx="-8" cy="-68" r="18" />
-          <circle cx="10" cy="-68" r="18" />
-          <circle cx="24" cy="-57" r="17" />
-          <circle cx="-29" cy="-41" r="13" />
-          <circle cx="29" cy="-41" r="13" />
-        </g>
-      )}
-
-      {/* SCULPTED EARS */}
+      {/* Orejas esculpidas */}
       <g>
         <path d="M -25 -35 C -33 -36, -34 -21, -25 -19 Z" fill={skinColor} />
         <path d="M -27 -30 Q -30 -27 -27 -23" stroke={skinShadow} strokeWidth="2" strokeLinecap="round" fill="none" />
@@ -165,22 +229,21 @@ function CharacterHead({
         <path d="M 27 -30 Q 30 -27 27 -23" stroke={skinShadow} strokeWidth="2" strokeLinecap="round" fill="none" />
       </g>
 
-      {/* SCULPTED OVAL-TAPERED FACE & JAW */}
+      {/* Rostro y mandíbula esculpida */}
       <path
         d="M -26 -35 C -26 -55, -16 -65, 0 -65 C 16 -65, 26 -55, 26 -35 C 26 -17, 19 -5, 9 -1 C 3 1.5, -3 1.5, -9 -1 C -19 -5, -26 -17, -26 -35 Z"
         fill={skinColor}
       />
 
-      {/* Soft Cheekbone Warmth */}
+      {/* Rubor sutil */}
       <ellipse cx={-16 + gazeX * 0.45} cy="-21" rx="5.2" ry="2.7" fill="#ee665b" fillOpacity="0.22" />
       <ellipse cx={16 + gazeX * 0.45} cy="-21" rx="5.2" ry="2.7" fill="#ee665b" fillOpacity="0.22" />
 
-      {/* FACIAL FEATURES */}
+      {/* Rasgos faciales */}
       <g transform={`translate(${gazeX}, 0)`}>
         <path d="M -16 -38 Q -11 -42 -5.5 -39" stroke={hairColor} strokeWidth="2.4" strokeLinecap="round" fill="none" />
         <path d="M 5.5 -39 Q 11 -42 16 -38" stroke={hairColor} strokeWidth="2.4" strokeLinecap="round" fill="none" />
 
-        {/* Blinking Eyes */}
         <g className="ola-rig-blink" style={{ animationDelay: blinkDelay }}>
           {expression === 'laugh' ? (
             <>
@@ -197,10 +260,8 @@ function CharacterHead({
           )}
         </g>
 
-        {/* Subtle Nose */}
         <path d="M 0 -29 C -2 -23.5, -2.5 -21, 2.2 -20" stroke={skinShadow} strokeWidth="2.1" strokeLinecap="round" fill="none" />
 
-        {/* Expressive Mouth */}
         {expression === 'talk' ? (
           <g className="ola-rig-talk">
             <path d="M -9 -13 Q 0 -11.5 9 -13 C 9 -4, 4 -2, 0 -2 C -4 -2, -9 -4, -9 -13 Z" fill="#3d2236" />
@@ -211,7 +272,6 @@ function CharacterHead({
           <path d="M -9 -12.5 Q 0 -5.5 10 -13.5" stroke="#1e2246" strokeWidth="2.5" strokeLinecap="round" fill="none" />
         )}
 
-        {/* Glasses */}
         {glasses && (
           <g>
             <rect x="-20.5" y="-36" width="18" height="13.5" rx="6" stroke="#1e2246" strokeWidth="2.1" fill="#ffffff" fillOpacity="0.22" />
@@ -221,7 +281,7 @@ function CharacterHead({
         )}
       </g>
 
-      {/* FRONT HAIR & FOREHEAD FRAMING (Full, Natural Coverage — Never Bald) */}
+      {/* Flequillo y volumen superior del cabello */}
       {hairStyle === 'wavy' && (
         <g>
           <path
@@ -242,7 +302,6 @@ function CharacterHead({
       )}
       {hairStyle === 'short' && (
         <g>
-          {/* Full Textured Crop with Clean Sideburns & Swooping Front Lock */}
           <path
             d="M -28 -32 C -30 -58, -14 -76, 8 -74 C 24 -72, 32 -56, 28 -32 L 24 -34 C 24 -44, 18 -49, 10 -49 C 0 -49, -10 -46, -24 -38 L -24 -30 Z"
             fill={hairColor}
@@ -261,7 +320,6 @@ function CharacterHead({
       )}
       {hairStyle === 'curly' && (
         <g fill={hairColor}>
-          {/* Lush Foreground Curls Framing Forehead */}
           <circle cx="-18" cy="-50" r="10.5" />
           <circle cx="-6" cy="-53" r="11" />
           <circle cx="7" cy="-53" r="11" />
@@ -270,7 +328,7 @@ function CharacterHead({
         </g>
       )}
 
-      {/* OUTLOUD BRAND HEADPHONES */}
+      {/* Audífonos OutLoud */}
       {headphones && (
         <g>
           <path d="M -32 -32 C -32 -78, 32 -78, 32 -32" stroke="#ffc749" strokeWidth="7.5" strokeLinecap="round" fill="none" />
@@ -281,7 +339,7 @@ function CharacterHead({
         </g>
       )}
 
-      {/* SLIM STUDIO HEADSET MIC */}
+      {/* Headset profesional */}
       {headset && (
         <g>
           <path d="M -29 -32 C -29 -72, 29 -72, 29 -32" stroke="#454d82" strokeWidth="4.5" strokeLinecap="round" fill="none" />
@@ -296,7 +354,7 @@ function CharacterHead({
 }
 
 // ==========================================================
-// MAIN EXPORT: 5 BUG-FREE, RIGGED HUMAN EDITORIAL SCENES
+// COMPONENTE PRINCIPAL: 5 ESCENAS HUMANAS ANATÓMICAS
 // ==========================================================
 export default function OutLoudCycleScene({ stepIndex }) {
   return (
@@ -367,12 +425,8 @@ export default function OutLoudCycleScene({ stepIndex }) {
           to { stroke-dashoffset: -28; }
         }
 
-        .ola-scene-in {
-          animation: olaSceneIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-        }
-        .ola-rig-breathe {
-          animation: olaRigBreathe 3.8s ease-in-out infinite;
-        }
+        .ola-scene-in { animation: olaSceneIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+        .ola-rig-breathe { animation: olaRigBreathe 3.8s ease-in-out infinite; }
         .ola-rig-head-nod {
           transform-box: fill-box;
           transform-origin: 50% 92%;
@@ -418,24 +472,18 @@ export default function OutLoudCycleScene({ stepIndex }) {
           transform-origin: 25% 88%;
           animation: olaGestureChat 2.4s ease-in-out infinite;
         }
-        .ola-bubble-float {
-          animation: olaBubbleFloat 3.4s ease-in-out infinite;
-        }
+        .ola-bubble-float { animation: olaBubbleFloat 3.4s ease-in-out infinite; }
         .ola-eq-pulse {
           transform-box: fill-box;
           transform-origin: center;
           animation: olaEqPulse 1s ease-in-out infinite;
         }
-        .ola-steam-curl {
-          animation: olaSteamCurl 2.4s ease-in-out infinite;
-        }
-        .ola-dash-flow {
-          animation: olaDashFlow 1.6s linear infinite;
-        }
+        .ola-steam-curl { animation: olaSteamCurl 2.4s ease-in-out infinite; }
+        .ola-dash-flow { animation: olaDashFlow 1.6s linear infinite; }
       `}</style>
 
       {/* ================================================== */}
-      {/* SCENE 0: LIVE LAB — LISTENING & SPEAKING OUTLOUD   */}
+      {/* SCENE 0: LIVE LAB (Cabello detrás + 2 brazos)      */}
       {/* ================================================== */}
       {stepIndex === 0 && (
         <svg
@@ -452,14 +500,16 @@ export default function OutLoudCycleScene({ stepIndex }) {
             </clipPath>
           </defs>
 
-          {/* Soft Studio Backdrops */}
           <circle cx="148" cy="134" r="86" fill="#ffc749" fillOpacity="0.28" />
           <circle cx="338" cy="112" r="64" fill="#626a9f" fillOpacity="0.16" />
 
-          {/* STUDENT CHARACTER (Outer <g> = Static Position, Inner <g> = Breathe Animation) */}
           <g clipPath="url(#ola-floor-0)">
             <g transform="translate(148, 138) scale(0.95)">
               <g className="ola-rig-breathe">
+                {/* 1. CABELLO TRASERO DETRÁS DEL CUELLO Y HOMBROS */}
+                <CharacterBackHair hairStyle="wavy" hairColor="#1e2246" hairHighlight="#3e467d" />
+
+                {/* 2. TORSO (Sin brazo izquierdo colgando porque ese brazo está levantado) */}
                 <CharacterTorso
                   shirtColor="#626a9f"
                   shirtShadow="#454d82"
@@ -467,29 +517,32 @@ export default function OutLoudCycleScene({ stepIndex }) {
                   collarColor="#ffffff"
                   skinColor="#f4c5a3"
                   skinShadow="#da9e77"
+                  leftArmRaised={true}
+                  rightArmRaised={false}
                 />
 
-                {/* Connected Left Arm Gently Touching Headphone Cup */}
+                {/* BRAZO IZQUIERDO ARTICULADO (Único brazo en ese lado, conectado al hombro) */}
                 <g>
                   <path
-                    d="M -38 25 C -56 26, -70 30, -72 41 C -74 50, -64 56, -54 53 C -45 50, -37 46, -34 38 Z"
+                    d="M -24 18 C -45 20, -64 26, -68 38 C -71 48, -60 55, -48 52 C -38 49, -32 45, -31 35 Z"
                     fill="#626a9f"
                   />
                   <g className="ola-hand-headphone">
                     <path
-                      d="M -70 38 C -69 20, -60 -2, -52 -18 L -39 -13 C -45 3, -51 22, -54 40 C -58 46, -68 46, -70 38 Z"
+                      d="M -66 36 C -66 18, -58 -4, -50 -19 L -37 -14 C -43 2, -49 22, -52 40 C -56 46, -65 44, -66 36 Z"
                       fill="#626a9f"
                     />
-                    <path d="M -53 -16 L -38 -11 L -36 -16 L -51 -21 Z" fill="#ffc749" />
+                    <path d="M -51 -17 L -36 -12 L -34 -17 L -49 -22 Z" fill="#ffc749" />
                     <path
-                      d="M -49 -19 C -50 -31, -43 -39, -35 -37 C -30 -36, -30 -28, -33 -20 C -35 -15, -45 -13, -49 -19 Z"
+                      d="M -47 -20 C -48 -32, -41 -40, -33 -38 C -28 -37, -28 -29, -31 -21 C -33 -16, -43 -14, -47 -20 Z"
                       fill="#f4c5a3"
                     />
-                    <path d="M -37 -20 C -31 -22, -29 -28, -33 -30" stroke="#da9e77" strokeWidth="2" strokeLinecap="round" />
-                    <path d="M -45 -29 L -37 -31 M -45 -24 L -37 -26" stroke="#da9e77" strokeWidth="1.6" strokeLinecap="round" />
+                    <path d="M -35 -21 C -29 -23, -27 -29, -31 -31" stroke="#da9e77" strokeWidth="2" strokeLinecap="round" />
+                    <path d="M -43 -30 L -35 -32 M -43 -25 L -35 -27" stroke="#da9e77" strokeWidth="1.6" strokeLinecap="round" />
                   </g>
                 </g>
 
+                {/* 3. CABEZA AL FRENTE */}
                 <g className="ola-rig-head-listen">
                   <CharacterHead
                     skinColor="#f4c5a3"
@@ -506,10 +559,8 @@ export default function OutLoudCycleScene({ stepIndex }) {
             </g>
           </g>
 
-          {/* Grounded Surface Line */}
           <rect x="44" y="224" width="372" height="6" rx="3" fill="#626a9f" fillOpacity="0.2" />
 
-          {/* Acoustic Sound Arcs Flowing Between Audio Prompt & Student */}
           <g transform="translate(216, 108)">
             <g className="ola-bubble-float">
               <path d="M 0 -12 Q 10 0 0 12" stroke="#626a9f" strokeWidth="3.2" strokeLinecap="round" />
@@ -518,14 +569,12 @@ export default function OutLoudCycleScene({ stepIndex }) {
             </g>
           </g>
 
-          {/* Interactive Audio Model Bubble (Outer Static, Inner Float) */}
           <g transform="translate(262, 40)">
             <g className="ola-bubble-float" style={{ animationDelay: '0.25s' }}>
               <rect x="0" y="0" width="174" height="72" rx="22" fill="#ffffff" stroke="#1e2246" strokeWidth="2.4" />
               <path d="M 16 72 L 4 86 L 34 72 Z" fill="#ffffff" stroke="#1e2246" strokeWidth="2.4" strokeLinejoin="round" />
               <rect x="14" y="67" width="22" height="7" fill="#ffffff" />
 
-              {/* Native Audio Play Indicator */}
               <circle cx="24" cy="24" r="10" fill="#ffc749" stroke="#1e2246" strokeWidth="2" />
               <path d="M 21.5 20 L 28 24 L 21.5 28 Z" fill="#1e2246" />
               <rect x="42" y="19" width="4" height="10" rx="2" fill="#626a9f" className="ola-eq-pulse" />
@@ -542,7 +591,6 @@ export default function OutLoudCycleScene({ stepIndex }) {
             </g>
           </g>
 
-          {/* Voice Comparison Success Pill */}
           <g transform="translate(274, 146)">
             <g className="ola-bubble-float" style={{ animationDelay: '0.7s' }}>
               <rect x="0" y="0" width="150" height="44" rx="22" fill="#454d82" />
@@ -557,7 +605,7 @@ export default function OutLoudCycleScene({ stepIndex }) {
       )}
 
       {/* ================================================== */}
-      {/* SCENE 1: PRÁCTICA — STUDENT AT DESK WITH TABLET    */}
+      {/* SCENE 1: PRÁCTICA (Ambos brazos activos al frente) */}
       {/* ================================================== */}
       {stepIndex === 1 && (
         <svg
@@ -577,10 +625,13 @@ export default function OutLoudCycleScene({ stepIndex }) {
           <circle cx="174" cy="130" r="88" fill="#626a9f" fillOpacity="0.14" />
           <circle cx="96" cy="96" r="44" fill="#ffc749" fillOpacity="0.28" />
 
-          {/* STUDENT SITTING BEHIND DESK (Outer Static Position, Inner Breathe) */}
           <g clipPath="url(#ola-desk-clip)">
             <g transform="translate(172, 134) scale(0.88)">
               <g className="ola-rig-breathe">
+                {/* 1. CABELLO TRASERO */}
+                <CharacterBackHair hairStyle="bun" hairColor="#1e2246" hairHighlight="#3c4375" />
+
+                {/* 2. TORSO (Sin brazos colgando — ambos brazos están al frente trabajando) */}
                 <CharacterTorso
                   shirtColor="#ffc749"
                   shirtShadow="#e0a422"
@@ -588,30 +639,31 @@ export default function OutLoudCycleScene({ stepIndex }) {
                   collarColor="#ffffff"
                   skinColor="#d99b72"
                   skinShadow="#b8774e"
+                  leftArmRaised={true}
+                  rightArmRaised={true}
                 />
 
-                {/* Connected Left Arm Resting Smoothly Along Desk Edge */}
+                {/* BRAZO IZQUIERDO apoyado sobre el escritorio */}
                 <g>
                   <path
-                    d="M -38 25 C -55 34, -58 58, -46 72 C -34 84, -18 84, -10 74 C -6 68, -14 58, -26 56 C -33 54, -34 40, -38 25 Z"
+                    d="M -25 18 C -46 24, -56 48, -46 68 C -36 82, -18 82, -10 72 C -6 66, -14 58, -26 56 C -33 54, -33 36, -25 18 Z"
                     fill="#ffc749"
                   />
-                  {/* Sculpted Left Hand Resting Flat (No Floating Circle!) */}
                   <path
                     d="M -18 65 C -8 62, 4 65, 6 72 C 8 78, -2 82, -14 80 C -20 79, -24 68, -18 65 Z"
                     fill="#d99b72"
                   />
                 </g>
 
-                {/* Connected Right Arm + Writing Stylus Hand */}
+                {/* BRAZO DERECHO sosteniendo el lápiz óptico */}
                 <g>
                   <path
-                    d="M 38 25 C 55 32, 66 48, 60 62 C 54 72, 42 70, 36 58 C 33 48, 34 34, 38 25 Z"
+                    d="M 25 18 C 46 24, 62 44, 58 60 C 53 70, 40 70, 32 58 C 29 48, 30 32, 25 18 Z"
                     fill="#e0a422"
                   />
                   <g className="ola-hand-write">
                     <path
-                      d="M 52 54 C 66 56, 82 54, 94 48 L 98 60 C 84 68, 66 72, 50 68 C 44 65, 46 55, 52 54 Z"
+                      d="M 48 52 C 64 55, 82 54, 94 48 L 98 60 C 84 68, 64 72, 46 66 C 41 63, 42 54, 48 52 Z"
                       fill="#ffc749"
                     />
                     <path
@@ -623,6 +675,7 @@ export default function OutLoudCycleScene({ stepIndex }) {
                   </g>
                 </g>
 
+                {/* 3. CABEZA */}
                 <g className="ola-rig-head-nod">
                   <CharacterHead
                     skinColor="#d99b72"
@@ -640,10 +693,8 @@ export default function OutLoudCycleScene({ stepIndex }) {
             </g>
           </g>
 
-          {/* Grounded Desk Surface */}
           <rect x="28" y="212" width="404" height="10" rx="5" fill="#626a9f" fillOpacity="0.24" />
 
-          {/* Interactive Workbook Tablet Resting on Desk */}
           <g transform="translate(260, 128)">
             <rect x="0" y="0" width="144" height="84" rx="16" fill="#ffffff" stroke="#1e2246" strokeWidth="2.5" />
             <rect x="14" y="14" width="60" height="8" rx="4" fill="#626a9f" fillOpacity="0.32" />
@@ -655,7 +706,6 @@ export default function OutLoudCycleScene({ stepIndex }) {
             <path d="M 97 61 L 101.5 65.5 L 109.5 56.5" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
           </g>
 
-          {/* Warm Ceramic Coffee Mug Sitting on Desk */}
           <g transform="translate(52, 170)">
             <path d="M 0 6 H 32 V 32 C 32 38 27 42 21 42 H 11 C 5 42 0 38 0 32 Z" fill="#ffffff" stroke="#1e2246" strokeWidth="2.4" />
             <path d="M 32 13 C 42 13, 42 31, 32 31" stroke="#1e2246" strokeWidth="2.4" strokeLinecap="round" />
@@ -664,7 +714,6 @@ export default function OutLoudCycleScene({ stepIndex }) {
             <path className="ola-steam-curl" d="M 22 -3 Q 18 -11 24 -17" stroke="#ffc749" strokeWidth="2.2" strokeLinecap="round" style={{ animationDelay: '0.8s' }} />
           </g>
 
-          {/* Floating "Aha!" Lightbulb Properly Positioned Above Workbook (Outer Static, Inner Float) */}
           <g transform="translate(342, 62)">
             <g className="ola-bubble-float">
               <circle cx="0" cy="0" r="24" fill="#ffc749" stroke="#1e2246" strokeWidth="2.4" />
@@ -682,7 +731,7 @@ export default function OutLoudCycleScene({ stepIndex }) {
       )}
 
       {/* ================================================== */}
-      {/* SCENE 2: AGENDA — STUDENT & TEACHER CONNECTING     */}
+      {/* SCENE 2: AGENDA (2 brazos limpios + cabello atrás) */}
       {/* ================================================== */}
       {stepIndex === 2 && (
         <svg
@@ -702,7 +751,6 @@ export default function OutLoudCycleScene({ stepIndex }) {
           <circle cx="96" cy="144" r="66" fill="#ffc749" fillOpacity="0.24" />
           <circle cx="364" cy="144" r="66" fill="#626a9f" fillOpacity="0.18" />
 
-          {/* Animated Connection Arc Between Student & Teacher */}
           <path
             d="M 122 80 Q 230 24 338 80"
             stroke="#626a9f"
@@ -713,9 +761,10 @@ export default function OutLoudCycleScene({ stepIndex }) {
           />
 
           <g clipPath="url(#ola-floor-2)">
-            {/* LEFT CHARACTER: Student Giving Clean Attached Thumbs-Up */}
+            {/* ESTUDIANTE (Brazo izquierdo abajo, brazo derecho haciendo pulgar arriba) */}
             <g transform="translate(94, 146) scale(0.84)">
               <g className="ola-rig-breathe">
+                <CharacterBackHair hairStyle="short" hairColor="#1e2246" hairHighlight="#3d457c" />
                 <CharacterTorso
                   shirtColor="#626a9f"
                   shirtShadow="#454d82"
@@ -723,22 +772,24 @@ export default function OutLoudCycleScene({ stepIndex }) {
                   collarColor="#ffc749"
                   skinColor="#f2c4a0"
                   skinShadow="#d69c73"
+                  leftArmRaised={false}
+                  rightArmRaised={true}
                 />
 
-                {/* Connected Right Arm Raising into Thumbs-Up (Clearly Spaced from Calendar) */}
+                {/* Único brazo derecho conectado al hombro levantando pulgar arriba */}
                 <g>
                   <path
-                    d="M 38 24 C 52 24, 64 28, 68 38 C 71 46, 62 53, 52 50 C 44 47, 38 42, 36 34 Z"
+                    d="M 24 18 C 44 20, 62 26, 67 38 C 70 46, 60 53, 49 50 C 39 47, 32 42, 31 33 Z"
                     fill="#626a9f"
                   />
                   <g className="ola-thumb-bounce">
                     <path
-                      d="M 56 36 C 61 20, 68 6, 72 -4 L 84 0 C 81 13, 76 28, 70 42 C 66 48, 56 44, 56 36 Z"
+                      d="M 54 36 C 59 20, 66 6, 70 -4 L 82 0 C 79 13, 74 28, 68 42 C 64 48, 54 44, 54 36 Z"
                       fill="#626a9f"
                     />
-                    <rect x="70" y="-16" width="18" height="17" rx="7" fill="#f2c4a0" />
-                    <path d="M 72 -14 C 71 -24, 75 -32, 80 -31 C 84 -30, 84 -22, 81 -15 Z" fill="#f2c4a0" />
-                    <path d="M 79 -11 H 86 M 79 -7 H 86 M 79 -3 H 85" stroke="#d69c73" strokeWidth="1.8" strokeLinecap="round" />
+                    <rect x="68" y="-16" width="18" height="17" rx="7" fill="#f2c4a0" />
+                    <path d="M 70 -14 C 69 -24, 73 -32, 78 -31 C 82 -30, 82 -22, 79 -15 Z" fill="#f2c4a0" />
+                    <path d="M 77 -11 H 84 M 77 -7 H 84 M 77 -3 H 83" stroke="#d69c73" strokeWidth="1.8" strokeLinecap="round" />
                   </g>
                 </g>
 
@@ -757,9 +808,10 @@ export default function OutLoudCycleScene({ stepIndex }) {
               </g>
             </g>
 
-            {/* RIGHT CHARACTER: Friendly Instructor with Headset */}
+            {/* PROFESORA (Cabello largo detrás del cuello/hombros + ambos brazos relajados) */}
             <g transform="translate(366, 146) scale(0.84)">
               <g className="ola-rig-breathe" style={{ animationDelay: '0.6s' }}>
+                <CharacterBackHair hairStyle="locs" hairColor="#1e2246" hairHighlight="#3a4173" />
                 <CharacterTorso
                   shirtColor="#ffc749"
                   shirtShadow="#dfa21e"
@@ -767,6 +819,8 @@ export default function OutLoudCycleScene({ stepIndex }) {
                   collarColor="#ffffff"
                   skinColor="#b87b56"
                   skinShadow="#965d3b"
+                  leftArmRaised={false}
+                  rightArmRaised={false}
                 />
                 <g className="ola-rig-head-nod" style={{ animationDelay: '0.8s' }}>
                   <CharacterHead
@@ -785,10 +839,8 @@ export default function OutLoudCycleScene({ stepIndex }) {
             </g>
           </g>
 
-          {/* Grounded Floor Line */}
           <rect x="34" y="222" width="392" height="6" rx="3" fill="#626a9f" fillOpacity="0.2" />
 
-          {/* CENTER FLOATING SCHEDULE CARD (Outer Static, Inner Float — Zero Overlap) */}
           <g transform="translate(182, 96)">
             <g className="ola-bubble-float">
               <rect x="0" y="0" width="96" height="90" rx="22" fill="#ffffff" stroke="#1e2246" strokeWidth="2.5" />
@@ -801,7 +853,6 @@ export default function OutLoudCycleScene({ stepIndex }) {
             </g>
           </g>
 
-          {/* Teacher Confirmation Bubble */}
           <g transform="translate(298, 22)">
             <g className="ola-bubble-float" style={{ animationDelay: '0.5s' }}>
               <rect x="0" y="0" width="124" height="32" rx="16" fill="#1e2246" />
@@ -814,7 +865,7 @@ export default function OutLoudCycleScene({ stepIndex }) {
       )}
 
       {/* ================================================== */}
-      {/* SCENE 3: EN VIVO — FACE-TO-FACE LIVE VIDEO ROOM    */}
+      {/* SCENE 3: EN VIVO (Cabello atrás + solo 2 brazos)   */}
       {/* ================================================== */}
       {stepIndex === 3 && (
         <svg
@@ -834,14 +885,17 @@ export default function OutLoudCycleScene({ stepIndex }) {
             </clipPath>
           </defs>
 
-          {/* LEFT VIDEO TILE (Instructor Waving Warmly Inside Frame) */}
+          {/* INSTRUCTORA SALUDANDO */}
           <rect x="24" y="22" width="190" height="178" rx="28" fill="#626a9f" />
           <g clipPath="url(#ola-frame-left)">
             <circle cx="118" cy="138" r="76" fill="#ffffff" fillOpacity="0.09" />
 
-            {/* Outer Static Position Locked Inside Left Clip Frame */}
             <g transform="translate(106, 140) scale(0.86)">
               <g className="ola-rig-breathe">
+                {/* 1. Cabello largo detrás del cuello y hombros */}
+                <CharacterBackHair hairStyle="wavy" hairColor="#1e2246" hairHighlight="#3c4375" />
+
+                {/* 2. Torso (Sin brazo derecho colgando porque está saludando) */}
                 <CharacterTorso
                   shirtColor="#ffc749"
                   shirtShadow="#e0a422"
@@ -849,32 +903,35 @@ export default function OutLoudCycleScene({ stepIndex }) {
                   collarColor="#ffffff"
                   skinColor="#e8b48e"
                   skinShadow="#cc9066"
+                  leftArmRaised={false}
+                  rightArmRaised={true}
                 />
 
-                {/* Connected Articulated Right Arm Waving Inside Frame */}
+                {/* Único brazo derecho saludando conectado al hombro */}
                 <g>
                   <path
-                    d="M 38 24 C 54 20, 68 18, 76 24 C 82 30, 78 40, 68 42 C 56 44, 44 46, 38 40 Z"
+                    d="M 24 18 C 44 18, 64 19, 73 25 C 79 31, 75 41, 64 43 C 52 45, 36 45, 31 36 Z"
                     fill="#ffc749"
                   />
                   <g className="ola-forearm-wave">
                     <path
-                      d="M 68 30 C 72 14, 78 -2, 82 -14 L 94 -10 C 91 4, 87 20, 81 34 C 77 40, 67 38, 68 30 Z"
+                      d="M 64 31 C 69 14, 76 -2, 80 -14 L 92 -10 C 89 4, 84 20, 78 35 C 74 41, 63 39, 64 31 Z"
                       fill="#ffc749"
                     />
-                    <path d="M 81 -12 L 95 -8 L 93 -3 L 79 -7 Z" fill="#ffffff" />
+                    <path d="M 79 -12 L 93 -8 L 91 -3 L 77 -7 Z" fill="#ffffff" />
                     <path
-                      d="M 81 -12 C 79 -21, 83 -28, 91 -28 C 98 -28, 102 -21, 99 -12 C 97 -7, 83 -7, 81 -12 Z"
+                      d="M 79 -12 C 77 -21, 81 -28, 89 -28 C 96 -28, 100 -21, 97 -12 C 95 -7, 81 -7, 79 -12 Z"
                       fill="#e8b48e"
                     />
-                    <path d="M 82 -15 C 75 -18, 74 -25, 78 -27 C 81 -28, 84 -23, 85 -19 Z" fill="#e8b48e" />
-                    <path d="M 83 -25 L 81 -37 C 81 -40, 86 -40, 86 -37 L 87 -26 Z" fill="#e8b48e" />
-                    <path d="M 87 -27 L 87 -40 C 87 -43, 92 -43, 92 -40 L 91 -27 Z" fill="#e8b48e" />
-                    <path d="M 91 -26 L 93 -38 C 94 -41, 98 -40, 98 -37 L 95 -25 Z" fill="#e8b48e" />
-                    <path d="M 95 -23 L 99 -33 C 100 -35, 104 -34, 103 -31 L 98 -20 Z" fill="#e8b48e" />
+                    <path d="M 80 -15 C 73 -18, 72 -25, 76 -27 C 79 -28, 82 -23, 83 -19 Z" fill="#e8b48e" />
+                    <path d="M 81 -25 L 79 -37 C 79 -40, 84 -40, 84 -37 L 85 -26 Z" fill="#e8b48e" />
+                    <path d="M 85 -27 L 85 -40 C 85 -43, 90 -43, 90 -40 L 89 -27 Z" fill="#e8b48e" />
+                    <path d="M 89 -26 L 91 -38 C 92 -41, 96 -40, 96 -37 L 93 -25 Z" fill="#e8b48e" />
+                    <path d="M 93 -23 L 97 -33 C 98 -35, 102 -34, 101 -31 L 96 -20 Z" fill="#e8b48e" />
                   </g>
                 </g>
 
+                {/* 3. Cabeza */}
                 <g className="ola-rig-head-nod">
                   <CharacterHead
                     skinColor="#e8b48e"
@@ -889,7 +946,6 @@ export default function OutLoudCycleScene({ stepIndex }) {
               </g>
             </g>
 
-            {/* Live Badge */}
             <rect x="38" y="36" width="70" height="24" rx="12" fill="#1e2246" fillOpacity="0.45" />
             <circle cx="51" cy="48" r="4.5" fill="#ee665b" className="ola-eq-pulse" />
             <text x="62" y="51.5" fill="#ffffff" fontSize="9.5" fontWeight="900" fontFamily="Montserrat, sans-serif">
@@ -898,14 +954,14 @@ export default function OutLoudCycleScene({ stepIndex }) {
           </g>
           <rect x="24" y="22" width="190" height="178" rx="28" stroke="#1e2246" strokeWidth="2.6" />
 
-          {/* RIGHT VIDEO TILE (Student Engaged & Speaking Back Inside Frame) */}
+          {/* ESTUDIANTE CONVERSANDO */}
           <rect x="246" y="22" width="190" height="178" rx="28" fill="#fff3d1" />
           <g clipPath="url(#ola-frame-right)">
             <circle cx="341" cy="138" r="76" fill="#ffc749" fillOpacity="0.28" />
 
-            {/* Outer Static Position Locked Inside Right Clip Frame */}
             <g transform="translate(341, 140) scale(0.86)">
               <g className="ola-rig-breathe" style={{ animationDelay: '0.5s' }}>
+                <CharacterBackHair hairStyle="curly" hairColor="#1e2246" hairHighlight="#3c4375" />
                 <CharacterTorso
                   shirtColor="#454d82"
                   shirtShadow="#2d3361"
@@ -913,6 +969,8 @@ export default function OutLoudCycleScene({ stepIndex }) {
                   collarColor="#ffffff"
                   skinColor="#ce926c"
                   skinShadow="#ad714c"
+                  leftArmRaised={false}
+                  rightArmRaised={false}
                 />
                 <g className="ola-rig-head-listen" style={{ animationDelay: '0.4s' }}>
                   <CharacterHead
@@ -931,7 +989,6 @@ export default function OutLoudCycleScene({ stepIndex }) {
           </g>
           <rect x="246" y="22" width="190" height="178" rx="28" stroke="#1e2246" strokeWidth="2.6" />
 
-          {/* Center Live Audio Bridge Medallion */}
           <g transform="translate(230, 111)">
             <g className="ola-bubble-float">
               <circle cx="0" cy="0" r="24" fill="#ffffff" stroke="#1e2246" strokeWidth="2.6" />
@@ -942,7 +999,6 @@ export default function OutLoudCycleScene({ stepIndex }) {
             </g>
           </g>
 
-          {/* Positive Feedback Banner */}
           <g transform="translate(138, 184)">
             <rect x="0" y="0" width="184" height="34" rx="17" fill="#16a37f" stroke="#1e2246" strokeWidth="2.4" />
             <text x="92" y="21" textAnchor="middle" fill="#ffffff" fontSize="11.5" fontWeight="900" fontFamily="Montserrat, sans-serif">
@@ -953,7 +1009,7 @@ export default function OutLoudCycleScene({ stepIndex }) {
       )}
 
       {/* ================================================== */}
-      {/* SCENE 4: COMUNIDAD — 3 DIVERSE CLASSMATES CHATTING */}
+      {/* SCENE 4: COMUNIDAD (3 compañeros, 2 brazos c/u)    */}
       {/* ================================================== */}
       {stepIndex === 4 && (
         <svg
@@ -974,9 +1030,10 @@ export default function OutLoudCycleScene({ stepIndex }) {
           <circle cx="230" cy="136" r="70" stroke="#626a9f" strokeWidth="2" strokeDasharray="6 6" strokeOpacity="0.32" />
 
           <g clipPath="url(#ola-floor-4)">
-            {/* CLASSMATE 1 (Left — Smiling & Laughing Inward) */}
+            {/* COMPAÑERO IZQUIERDO */}
             <g transform="translate(106, 152) scale(0.78)">
               <g className="ola-rig-breathe">
+                <CharacterBackHair hairStyle="short" hairColor="#1e2246" hairHighlight="#3d457c" />
                 <CharacterTorso
                   shirtColor="#626a9f"
                   shirtShadow="#454d82"
@@ -984,6 +1041,8 @@ export default function OutLoudCycleScene({ stepIndex }) {
                   collarColor="#ffffff"
                   skinColor="#f4c5a3"
                   skinShadow="#da9e77"
+                  leftArmRaised={false}
+                  rightArmRaised={false}
                 />
                 <g className="ola-rig-head-nod">
                   <CharacterHead
@@ -1000,9 +1059,10 @@ export default function OutLoudCycleScene({ stepIndex }) {
               </g>
             </g>
 
-            {/* CLASSMATE 3 (Right — Engaged & Smiling Inward) */}
+            {/* COMPAÑERA DERECHA */}
             <g transform="translate(354, 152) scale(0.78)">
               <g className="ola-rig-breathe" style={{ animationDelay: '0.7s' }}>
+                <CharacterBackHair hairStyle="bun" hairColor="#1e2246" hairHighlight="#3a4173" />
                 <CharacterTorso
                   shirtColor="#ee665b"
                   shirtShadow="#c94b41"
@@ -1010,6 +1070,8 @@ export default function OutLoudCycleScene({ stepIndex }) {
                   collarColor="#fff3d1"
                   skinColor="#b87b56"
                   skinShadow="#965d3b"
+                  leftArmRaised={false}
+                  rightArmRaised={false}
                 />
                 <g className="ola-rig-head-nod" style={{ animationDelay: '0.6s' }}>
                   <CharacterHead
@@ -1027,9 +1089,10 @@ export default function OutLoudCycleScene({ stepIndex }) {
               </g>
             </g>
 
-            {/* CLASSMATE 2 (Center Foreground — Conversing with Expressive Connected Gesture) */}
+            {/* COMPAÑERO CENTRAL (Brazo izquierdo abajo, brazo derecho gesticulando) */}
             <g transform="translate(230, 148) scale(0.84)">
               <g className="ola-rig-breathe" style={{ animationDelay: '0.35s' }}>
+                <CharacterBackHair hairStyle="curly" hairColor="#1e2246" hairHighlight="#483f66" />
                 <CharacterTorso
                   shirtColor="#ffc749"
                   shirtShadow="#e0a422"
@@ -1037,26 +1100,28 @@ export default function OutLoudCycleScene({ stepIndex }) {
                   collarColor="#ffffff"
                   skinColor="#e2aa84"
                   skinShadow="#c28760"
+                  leftArmRaised={false}
+                  rightArmRaised={true}
                 />
 
-                {/* Connected Conversational Right Arm & Hand */}
+                {/* Único brazo derecho gesticulando */}
                 <g>
                   <path
-                    d="M 38 24 C 52 24, 64 30, 67 42 C 69 50, 61 56, 51 52 C 44 48, 38 42, 36 34 Z"
+                    d="M 24 18 C 44 21, 61 28, 65 41 C 68 50, 58 56, 48 52 C 39 48, 32 42, 31 33 Z"
                     fill="#ffc749"
                   />
                   <g className="ola-gesture-chat">
                     <path
-                      d="M 55 40 C 63 26, 72 14, 80 6 L 90 14 C 82 26, 74 38, 66 48 C 61 52, 53 48, 55 40 Z"
+                      d="M 52 40 C 60 26, 70 14, 78 6 L 88 14 C 80 26, 72 38, 64 48 C 59 52, 50 48, 52 40 Z"
                       fill="#ffc749"
                     />
                     <path
-                      d="M 78 4 C 80 -4, 88 -9, 95 -5 C 101 -1, 100 8, 93 13 C 88 16, 77 12, 78 4 Z"
+                      d="M 76 4 C 78 -4, 86 -9, 93 -5 C 99 -1, 98 8, 91 13 C 86 16, 75 12, 76 4 Z"
                       fill="#e2aa84"
                     />
-                    <path d="M 82 -2 C 78 -8, 81 -14, 85 -13 C 88 -12, 88 -7, 87 -4 Z" fill="#e2aa84" />
-                    <path d="M 88 -6 L 94 -14 C 96 -16, 99 -13, 97 -10 L 92 -3 Z" fill="#e2aa84" />
-                    <path d="M 92 -2 L 100 -8 C 103 -10, 105 -6, 102 -4 L 95 2 Z" fill="#e2aa84" />
+                    <path d="M 80 -2 C 76 -8, 79 -14, 83 -13 C 86 -12, 86 -7, 85 -4 Z" fill="#e2aa84" />
+                    <path d="M 86 -6 L 92 -14 C 94 -16, 97 -13, 95 -10 L 90 -3 Z" fill="#e2aa84" />
+                    <path d="M 90 -2 L 98 -8 C 101 -10, 103 -6, 100 -4 L 93 2 Z" fill="#e2aa84" />
                   </g>
                 </g>
 
@@ -1075,10 +1140,8 @@ export default function OutLoudCycleScene({ stepIndex }) {
             </g>
           </g>
 
-          {/* Grounded Floor Line */}
           <rect x="38" y="222" width="384" height="6" rx="3" fill="#626a9f" fillOpacity="0.2" />
 
-          {/* Shared Conversation Bubbles (Outer Static, Inner Float) */}
           <g transform="translate(62, 26)">
             <g className="ola-bubble-float">
               <rect x="0" y="0" width="118" height="36" rx="18" fill="#ffffff" stroke="#1e2246" strokeWidth="2.3" />

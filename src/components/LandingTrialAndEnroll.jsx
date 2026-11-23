@@ -24,13 +24,18 @@ const INTEREST_OPTIONS = [
 const INVEST_OPTIONS = ['A) 3 meses o menos', 'B) 6 meses', 'C) 9 meses o más'];
 
 // =========================================
-// MINI-ESCENARIO INTERACTIVO (CARD PRUEBA GRATIS)
+// MINI-RETO GRAMATICAL (2 PALABRAS FALTANTES)
 // =========================================
-const MINI_TRIAL_PROMPT = "Hi! What can I get for you today?";
+const GRAMMAR_SENTENCE = {
+  before: 'They',
+  after: 'English together right now.',
+  fullCorrect: 'They are speaking English together right now.',
+};
+
 const MINI_TRIAL_OPTIONS = [
-  { id: 'a', text: "I'll have a latte, please.", isCorrect: true },
-  { id: 'b', text: 'I want coffee give me.', isCorrect: false },
-  { id: 'c', text: 'Yes, good morning table.', isCorrect: false },
+  { id: 'a', text: 'are speaking', isCorrect: true },
+  { id: 'b', text: 'is speaking', isCorrect: false },
+  { id: 'c', text: 'are speak', isCorrect: false },
 ];
 
 // =========================================
@@ -677,11 +682,11 @@ export default function LandingTrialAndEnroll({
 
   const activeDiag = DIAGNOSTIC_BANDS[activeDiagIdx];
 
-  const handlePlayMiniPrompt = () => {
+  const handlePlayMiniPrompt = (textToRead = GRAMMAR_SENTENCE.fullCorrect) => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
     try {
       window.speechSynthesis.cancel();
-      const utter = new SpeechSynthesisUtterance(MINI_TRIAL_PROMPT);
+      const utter = new SpeechSynthesisUtterance(textToRead);
       utter.lang = 'en-US';
       utter.rate = 0.95;
       utter.onstart = () => setIsSpeakingPrompt(true);
@@ -696,7 +701,9 @@ export default function LandingTrialAndEnroll({
 
   const handleMiniOptionClick = (opt) => {
     setSelectedOption(opt);
-    if (!opt.isCorrect) {
+    if (opt.isCorrect) {
+      handlePlayMiniPrompt(GRAMMAR_SENTENCE.fullCorrect);
+    } else {
       setWrongShakeTick((t) => t + 1);
     }
   };
@@ -713,6 +720,24 @@ export default function LandingTrialAndEnroll({
         }
         .ola-mini-shake {
           animation: olaMiniShake 0.34s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+        }
+
+        /* Pulso intenso e invitante para el botón de Prueba Gratis */
+        @keyframes olaTrialIntensePulse {
+          0%, 100% {
+            transform: scale(1);
+            box-shadow: 0 5px 0 #1e2246, 0 0 0 0 rgba(255, 199, 73, 0.95), 0 14px 30px -4px rgba(255, 199, 73, 0.75);
+          }
+          50% {
+            transform: scale(1.055);
+            box-shadow: 0 8px 0 #1e2246, 0 0 0 18px rgba(255, 199, 73, 0), 0 20px 42px -2px rgba(255, 199, 73, 1);
+          }
+        }
+        .ola-trial-intense-pulse {
+          animation: olaTrialIntensePulse 1.35s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+        }
+        .ola-trial-intense-pulse:hover {
+          animation: none;
         }
         .ola-gateway-indigo {
           background: linear-gradient(150deg, rgba(104, 113, 172, 0.93) 0%, rgba(69, 77, 130, 0.92) 100%);
@@ -756,42 +781,56 @@ export default function LandingTrialAndEnroll({
                   </h2>
 
                   <p className="text-sm text-[#282d57] font-semibold leading-relaxed mb-5 max-w-xl">
-                    Responde este mini-reto de 5 segundos y descubre cómo aprendes en situaciones reales sin traducir:
+                    Completa las dos palabras que faltan en la oración y comprueba cómo practicas gramática en contexto real:
                   </p>
 
-                  {/* MINI-RETO INTERACTIVO EMBEBIDO */}
+                  {/* MINI-RETO GRAMATICAL INTERACTIVO (COMPLETAR ESPACIOS) */}
                   <div
                     key={`trial-box-${wrongShakeTick}`}
-                    className={`bg-white/85 backdrop-blur-xl border-2 border-white rounded-3xl p-4 sm:p-5 mb-6 shadow-[0_12px_28px_-12px_rgba(69,77,130,0.22)] ${
+                    className={`bg-white/88 backdrop-blur-xl border-2 border-white rounded-3xl p-4 sm:p-5 mb-6 shadow-[0_12px_28px_-12px_rgba(69,77,130,0.22)] ${
                       selectedOption && !selectedOption.isCorrect ? 'ola-mini-shake border-[#ee665b]/70' : ''
                     }`}
                   >
-                    {/* Línea de audio del escenario */}
-                    <div className="flex items-center justify-between gap-3 mb-3.5">
-                      <button
-                        type="button"
-                        onClick={handlePlayMiniPrompt}
-                        className="inline-flex items-center gap-2.5 text-left cursor-pointer group/play focus:outline-none"
-                      >
-                        <span
-                          className={`w-10 h-10 rounded-full border-2 border-[#1e2246] flex items-center justify-center shrink-0 transition-transform duration-150 group-hover/play:scale-105 active:scale-95 ${
-                            isSpeakingPrompt ? 'bg-[#16a37f] text-white' : 'bg-[#ffc749] text-[#1e2246]'
+                    <div className="flex items-center justify-between gap-2 mb-3">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-[#454d82]">
+                        Práctica de gramática • Selecciona la opción correcta
+                      </span>
+
+                      {selectedOption?.isCorrect && (
+                        <button
+                          type="button"
+                          onClick={() => handlePlayMiniPrompt(GRAMMAR_SENTENCE.fullCorrect)}
+                          aria-label="Escuchar oración completa"
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border border-[#1e2246] cursor-pointer transition-all ${
+                            isSpeakingPrompt
+                              ? 'bg-[#16a37f] text-white'
+                              : 'bg-[#ffc749] text-[#1e2246] hover:brightness-105'
                           }`}
                         >
-                          <VolumeSvg className="w-4 h-4" />
-                        </span>
-                        <div>
-                          <span className="text-[9.5px] font-black uppercase tracking-widest text-[#626a9f] block">
-                            Escucha en un café • Toca para oír
-                          </span>
-                          <span className="text-sm sm:text-base font-black text-[#1e2246] leading-tight">
-                            &ldquo;{MINI_TRIAL_PROMPT}&rdquo;
-                          </span>
-                        </div>
-                      </button>
+                          <VolumeSvg className="w-3.5 h-3.5" />
+                          <span>Oír</span>
+                        </button>
+                      )}
                     </div>
 
-                    {/* 3 opciones interactivas */}
+                    {/* Oración con espacio interactivo */}
+                    <p className="text-base sm:text-lg font-black text-[#1e2246] leading-relaxed mb-4">
+                      &ldquo;{GRAMMAR_SENTENCE.before}{' '}
+                      <span
+                        className={`inline-flex items-center justify-center min-w-[126px] px-3 py-0.5 mx-1 rounded-xl border-2 transition-all duration-200 align-baseline ${
+                          selectedOption?.isCorrect
+                            ? 'bg-[#16a37f] border-[#1e2246] text-white shadow-sm'
+                            : selectedOption && !selectedOption.isCorrect
+                            ? 'bg-[#ee665b]/15 border-[#ee665b] text-[#9b2c23]'
+                            : 'bg-[#fff3d1] border-dashed border-[#626a9f] text-[#626a9f]/70'
+                        }`}
+                      >
+                        {selectedOption ? selectedOption.text : '_____ _____'}
+                      </span>{' '}
+                      {GRAMMAR_SENTENCE.after}&rdquo;
+                    </p>
+
+                    {/* 3 opciones gramaticales coherentes */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       {MINI_TRIAL_OPTIONS.map((opt) => {
                         const isPicked = selectedOption?.id === opt.id;
@@ -803,7 +842,7 @@ export default function LandingTrialAndEnroll({
                             key={opt.id}
                             type="button"
                             onClick={() => handleMiniOptionClick(opt)}
-                            className={`text-left px-3.5 py-2.5 rounded-2xl text-xs font-extrabold border-2 transition-all duration-150 active:scale-[0.97] cursor-pointer flex items-center justify-between gap-2 ${
+                            className={`px-3.5 py-2.5 rounded-2xl text-xs font-extrabold border-2 transition-all duration-150 active:scale-[0.97] cursor-pointer flex items-center justify-center gap-2 ${
                               isSuccess
                                 ? 'bg-[#16a37f] border-[#1e2246] text-white shadow-[0_3px_0_#1e2246]'
                                 : isWrong
@@ -811,7 +850,7 @@ export default function LandingTrialAndEnroll({
                                 : 'bg-[#f6f7fc] border-[#dfe2f2] text-[#1e2246] hover:border-[#454d82] hover:bg-white'
                             }`}
                           >
-                            <span className="leading-snug">{opt.text}</span>
+                            <span>{opt.text}</span>
                             {isSuccess && <CheckSvg className="w-4 h-4 shrink-0" />}
                           </button>
                         );
@@ -830,10 +869,10 @@ export default function LandingTrialAndEnroll({
                             <span className="w-5 h-5 rounded-full bg-[#16a37f] text-white flex items-center justify-center shrink-0">
                               <CheckSvg className="w-3 h-3" />
                             </span>
-                            <span>¡Exacto! Así de natural se siente estudiar la Unidad 1 completa.</span>
+                            <span>¡Exacto! Así dominas la gramática en uso real, sin memorizar tablas.</span>
                           </>
                         ) : (
-                          <span>Casi — escucha la frase y elige la respuesta más natural.</span>
+                          <span>Revisa la concordancia con &ldquo;They&rdquo; y la acción en progreso (&ldquo;right now&rdquo;).</span>
                         )}
                       </div>
                     )}
@@ -844,7 +883,7 @@ export default function LandingTrialAndEnroll({
                   <button
                     type="button"
                     onClick={onFreeLessonClick}
-                    className={`ola-btn-yellow w-full sm:w-auto px-8 py-4 rounded-full text-xs sm:text-sm font-black uppercase tracking-widest cursor-pointer flex items-center justify-center gap-2.5 group/btn ${
+                    className={`ola-btn-yellow ola-trial-intense-pulse w-full sm:w-auto px-8 py-4 rounded-full text-xs sm:text-sm font-black uppercase tracking-widest cursor-pointer flex items-center justify-center gap-2.5 group/btn ${
                       selectedOption?.isCorrect ? 'ring-4 ring-[#16a37f]/45' : ''
                     }`}
                   >

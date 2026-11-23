@@ -293,8 +293,23 @@ function CreditsAndCohortsExplainer({ onScrollTo }) {
             </h3>
           </div>
           <p className="text-xs sm:text-sm text-[#4c5384] font-semibold max-w-md leading-relaxed">
-            Un modelo diseñado para darte control total de tu tiempo y presupuesto: nunca pagas por clases perdidas ni dependes de horarios rígidos.
+            Puedes <strong className="font-black text-[#1e2246]">aprender, practicar y estudiar tanto como quieras, donde quieras y cuando quieras</strong> con todas las funciones del sitio. Los créditos son <strong className="font-black text-[#454d82]">exclusivamente</strong> para agendar clases en vivo con profesores y compañeros.
           </p>
+        </div>
+
+        {/* AVISO DESTACADO: PLATAFORMA LIBRE 24/7 vs CRÉDITOS SOLO EN VIVO */}
+        <div className="mb-6 bg-[#fff3d1]/85 border border-[#ffc749] rounded-2xl px-4 py-3.5 sm:px-5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div className="flex items-start sm:items-center gap-2.5">
+            <span className="w-6 h-6 rounded-full bg-[#16a37f] text-white flex items-center justify-center shrink-0 mt-0.5 sm:mt-0">
+              <CheckSvg className="w-3.5 h-3.5" />
+            </span>
+            <p className="text-xs font-bold text-[#1e2246] leading-snug">
+              Lecciones, audios, práctica vocal, workbooks, foros y chats son <strong className="font-black underline decoration-[#ffc749] decoration-2 underline-offset-2">100% ilimitados 24/7</strong> — no consumen créditos.
+            </p>
+          </div>
+          <span className="self-start sm:self-center shrink-0 text-[10px] font-black uppercase tracking-widest bg-[#1e2246] text-[#ffc749] px-3 py-1 rounded-full">
+            Créditos = Solo En Vivo
+          </span>
         </div>
 
         {/* BLOQUE VISUAL INTERACTIVO (2 Columnas) */}
@@ -309,10 +324,10 @@ function CreditsAndCohortsExplainer({ onScrollTo }) {
                   </span>
                   <div>
                     <h4 className="text-sm font-black text-[#1e2246] uppercase tracking-wide leading-tight">
-                      1 Crédito = 1 Clase 100% En Vivo
+                      1 Crédito = 1 Clase En Vivo con Profesores y Compañeros
                     </h4>
                     <p className="text-[11px] font-semibold text-[#50567d]">
-                      Tu mensualidad CEFR recarga 4 créditos cada mes
+                      Se usan únicamente al agendar sesiones en vivo (4 incluidos/mes)
                     </p>
                   </div>
                 </div>
@@ -554,12 +569,12 @@ function CreditsAndCohortsExplainer({ onScrollTo }) {
               <h4 className="text-xs font-black uppercase tracking-widest text-[#1e2246]">
                 Zinli • PayPal • Binance
               </h4>
-              <p className="text-xs text-[#4c5384] font-medium mt-1 leading-snug">
+              <p className="text-xs text-[#4c5384] font-medium mt-1 leading-snug text-left">
                 Verificación rápida desde tu cuenta.{' '}
                 <button
                   type="button"
                   onClick={() => onScrollTo?.('#enroll')}
-                  className="font-black text-[#454d82] underline decoration-[#ffc749] decoration-2 underline-offset-2 hover:text-[#1e2246] cursor-pointer"
+                  className="inline text-left align-baseline font-black text-[#454d82] underline decoration-[#ffc749] decoration-2 underline-offset-2 hover:text-[#1e2246] cursor-pointer"
                 >
                   Consulte sobre pagos en su moneda local.
                 </button>
