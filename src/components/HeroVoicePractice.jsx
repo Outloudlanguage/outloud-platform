@@ -2,37 +2,31 @@ import React, { useState, useRef, useEffect } from 'react';
 import { OutLoudIcon } from './OutLoudBrand';
 
 // ==========================================================
-// CONFIG: PASTE YOUR HOSTED AUDIO URL & SUBTITLE TEXT HERE
+// CONFIG: PEGA AQUÍ TU URL DE AUDIO HOSTED Y LOS SUBTÍTULOS
 // ==========================================================
-const MODEL_AUDIO_URL = ''; // e.g. 'https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/hero-sample.mp3'
+const MODEL_AUDIO_URL = ''; // Ej: 'https://pub-4ca81ef087364b84a5b486b76cc2b72e.r2.dev/hero-sample.mp3'
 const MODEL_SUBTITLE_EN = 'Hi! I am ready to speak English OutLoud.';
 const MODEL_SUBTITLE_ES = '¡Hola! Estoy listo para hablar inglés en voz alta.';
 
 // ==========================================================
-// CUSTOM VECTOR ICONS (Play -> Pause -> Mic -> Repeat -> Check)
+// CUSTOM VECTOR SVGs (Cero emojis genéricos)
 // ==========================================================
-const PlaySvg = ({ className = 'w-5 h-5' }) => (
-  <svg className={className} fill="currentColor" viewBox="0 0 24 24">
-    <path d="M8 5.14v14l11-7-11-7z" />
+const RecordMicSvg = ({ className = 'w-12 h-12' }) => (
+  <svg className={className} fill="none" stroke="currentColor" strokeWidth="2.3" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 2a3.5 3.5 0 00-3.5 3.5v6a3.5 3.5 0 007 0v-6A3.5 3.5 0 0012 2z" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M19 10.5a7 7 0 01-14 0m7 7V21m-3.5 0h7" />
   </svg>
 );
 
-const PauseSvg = ({ className = 'w-5 h-5' }) => (
+const PauseSvg = ({ className = 'w-12 h-12' }) => (
   <svg className={className} fill="currentColor" viewBox="0 0 24 24">
-    <rect x="6" y="5" width="4" height="14" rx="1.5" />
-    <rect x="14" y="5" width="4" height="14" rx="1.5" />
+    <rect x="6" y="4.5" width="4.2" height="15" rx="1.6" />
+    <rect x="13.8" y="4.5" width="4.2" height="15" rx="1.6" />
   </svg>
 );
 
-const MicSvg = ({ className = 'w-5 h-5' }) => (
+const RepeatSvg = ({ className = 'w-11 h-11' }) => (
   <svg className={className} fill="none" stroke="currentColor" strokeWidth="2.4" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M12 1a4 4 0 00-4 4v7a4 4 0 008 0V5a4 4 0 00-4-4z" />
-    <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-14 0m7 7v4m-4 0h8" />
-  </svg>
-);
-
-const RepeatSvg = ({ className = 'w-5 h-5' }) => (
-  <svg className={className} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" d="M17 2l4 4-4 4" />
     <path strokeLinecap="round" strokeLinejoin="round" d="M3 11V9a4 4 0 014-4h14" />
     <path strokeLinecap="round" strokeLinejoin="round" d="M7 22l-4-4 4-4" />
@@ -40,16 +34,15 @@ const RepeatSvg = ({ className = 'w-5 h-5' }) => (
   </svg>
 );
 
-const CheckSvg = ({ className = 'w-5 h-5' }) => (
+const CheckSvg = ({ className = 'w-12 h-12' }) => (
   <svg className={className} fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
   </svg>
 );
 
 export default function HeroVoicePractice() {
-  // Phases: 'idle' | 'playing_model' | 'ready_to_record' | 'recording' | 'comparing_model' | 'comparing_user' | 'congrats'
+  // Fases: 'idle' | 'playing_model' | 'ready_to_record' | 'recording' | 'comparing_model' | 'comparing_user' | 'congrats'
   const [phase, setPhase] = useState('idle');
-  const [isPaused, setIsPaused] = useState(false);
   const [micError, setMicError] = useState('');
   const [recordSeconds, setRecordSeconds] = useState(0);
 
@@ -63,7 +56,6 @@ export default function HeroVoicePractice() {
   const resetTimerRef = useRef(null);
   const speechFallbackTimerRef = useRef(null);
 
-  // Full cleanup helper
   const cleanupResources = () => {
     if (recordTimerRef.current) clearInterval(recordTimerRef.current);
     if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
@@ -106,12 +98,11 @@ export default function HeroVoicePractice() {
   const resetAll = () => {
     cleanupResources();
     setPhase('idle');
-    setIsPaused(false);
     setRecordSeconds(0);
     setMicError('');
   };
 
-  // Helper: Plays hosted MODEL_AUDIO_URL, or falls back to English SpeechSynthesis until URL is added
+  // Reproduce la URL alojada o usa SpeechSynthesis en inglés como respaldo temporal
   const playModelAudio = (onDone) => {
     if (MODEL_AUDIO_URL && MODEL_AUDIO_URL.trim() !== '') {
       const audio = new Audio(MODEL_AUDIO_URL);
@@ -146,7 +137,6 @@ export default function HeroVoicePractice() {
       utterance.onerror = () => {
         speechFallbackTimerRef.current = setTimeout(onDone, 2200);
       };
-      // Safety net in case mobile speechSynthesis never fires onend
       speechFallbackTimerRef.current = setTimeout(onDone, 4200);
       window.speechSynthesis.speak(utterance);
     } else {
@@ -154,41 +144,16 @@ export default function HeroVoicePractice() {
     }
   };
 
-  // STEP 1: Start listening to model audio
+  // PASO 1: Tocar el logo -> suena el audio modelo + subtítulos
   const handleStartPractice = () => {
     setMicError('');
-    setIsPaused(false);
     setPhase('playing_model');
     playModelAudio(() => {
-      setIsPaused(false);
       setPhase('ready_to_record');
     });
   };
 
-  // STEP 1b: Pause / Resume while model plays
-  const handleTogglePauseModel = () => {
-    if (modelAudioRef.current) {
-      if (modelAudioRef.current.paused) {
-        modelAudioRef.current.play().catch(() => {});
-        setIsPaused(false);
-      } else {
-        modelAudioRef.current.pause();
-        setIsPaused(true);
-      }
-      return;
-    }
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      if (window.speechSynthesis.paused) {
-        window.speechSynthesis.resume();
-        setIsPaused(false);
-      } else if (window.speechSynthesis.speaking) {
-        window.speechSynthesis.pause();
-        setIsPaused(true);
-      }
-    }
-  };
-
-  // STEP 2: Start Recording User's Voice into Internal Memory
+  // PASO 2: Tocar el símbolo rojo coral -> graba en memoria interna + subtítulos
   const handleStartRecording = async () => {
     setMicError('');
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -219,7 +184,6 @@ export default function HeroVoicePractice() {
       };
 
       recorder.onstop = () => {
-        // Release microphone hardware immediately
         if (mediaStreamRef.current) {
           mediaStreamRef.current.getTracks().forEach((t) => t.stop());
           mediaStreamRef.current = null;
@@ -231,7 +195,7 @@ export default function HeroVoicePractice() {
         const blobUrl = URL.createObjectURL(blob);
         userBlobUrlRef.current = blobUrl;
 
-        // Immediately start Back-to-Back Comparison: Model Audio -> User Recording
+        // Reproduce modelo + grabación del usuario para comparar y reinicia el ciclo automáticamente
         runBackToBackComparison(blobUrl);
       };
 
@@ -242,7 +206,6 @@ export default function HeroVoicePractice() {
       recordTimerRef.current = setInterval(() => {
         setRecordSeconds((prev) => {
           if (prev >= 11) {
-            // Auto-stop at 12s so guests don't get stuck recording
             handleStopRecording();
             return 12;
           }
@@ -255,7 +218,7 @@ export default function HeroVoicePractice() {
     }
   };
 
-  // STEP 3: Stop Recording -> Triggers onstop -> Back-to-Back Autoplay
+  // PASO 3: Tocar el símbolo de pausa -> detiene la grabación
   const handleStopRecording = () => {
     if (recordTimerRef.current) clearInterval(recordTimerRef.current);
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
@@ -263,7 +226,7 @@ export default function HeroVoicePractice() {
     }
   };
 
-  // STEP 4: Autoplay Model Audio -> Immediately Followed by User's Recording -> Congrats -> Reset
+  // PASO 4: Comparación automática (Modelo -> Tu Voz) -> Felicitación -> Reinicio automático
   const runBackToBackComparison = (blobUrl) => {
     setPhase('comparing_model');
 
@@ -277,7 +240,7 @@ export default function HeroVoicePractice() {
         setPhase('congrats');
         resetTimerRef.current = setTimeout(() => {
           resetAll();
-        }, 2800);
+        }, 2300);
       };
 
       userAudio.onended = finishCycle;
@@ -286,12 +249,10 @@ export default function HeroVoicePractice() {
     });
   };
 
-  // Master Button Action Router
-  const handleMainButtonClick = () => {
+  // Controlador único sobre el emblema central
+  const handleCenterClick = () => {
     if (phase === 'idle') {
       handleStartPractice();
-    } else if (phase === 'playing_model') {
-      handleTogglePauseModel();
     } else if (phase === 'ready_to_record') {
       handleStartRecording();
     } else if (phase === 'recording') {
@@ -302,123 +263,112 @@ export default function HeroVoicePractice() {
   };
 
   const isWaveActive =
-    (phase === 'playing_model' && !isPaused) ||
+    phase === 'playing_model' ||
     phase === 'recording' ||
     phase === 'comparing_model' ||
     phase === 'comparing_user';
 
-  const showSubtitles = phase !== 'idle';
-
-  // Dynamic Button Visual Config
-  const getButtonConfig = () => {
-    switch (phase) {
-      case 'playing_model':
-        return {
-          label: isPaused ? 'Reanudar audio modelo' : 'Escuchando modelo...',
-          icon: isPaused ? <PlaySvg className="w-5 h-5 translate-x-0.5" /> : <PauseSvg className="w-5 h-5" />,
-          classes: 'ola-btn-yellow',
-          pulse: false,
-        };
-      case 'ready_to_record':
-        return {
-          label: 'Toca para grabar',
-          icon: <MicSvg className="w-5 h-5" />,
-          classes: 'ola-btn-yellow ola-invite-pulse',
-          pulse: true,
-        };
-      case 'recording':
-        return {
-          label: `Grabando (0:${String(recordSeconds).padStart(2, '0')}) • Detener`,
-          icon: <PauseSvg className="w-5 h-5" />,
-          classes: 'bg-[#ee665b] text-white border-2 border-[#1e2246] shadow-[0_5px_0_#1e2246,0_0_32px_rgba(238,102,91,0.75)] ola-record-pulse',
-          pulse: true,
-        };
-      case 'comparing_model':
-        return {
-          label: 'Comparando: Audio Modelo',
-          icon: <RepeatSvg className="w-5 h-5 animate-spin" style={{ animationDuration: '3s' }} />,
-          classes: 'bg-[#ffc749] text-[#1e2246] border-2 border-[#1e2246] shadow-[0_5px_0_#1e2246]',
-          pulse: false,
-        };
-      case 'comparing_user':
-        return {
-          label: 'Comparando: Tu Voz',
-          icon: <RepeatSvg className="w-5 h-5 animate-spin" style={{ animationDuration: '2s' }} />,
-          classes: 'bg-[#16a37f] text-white border-2 border-[#1e2246] shadow-[0_5px_0_#1e2246,0_0_26px_rgba(22,163,127,0.65)]',
-          pulse: false,
-        };
-      case 'congrats':
-        return {
-          label: '¡Excelente! Así se habla OutLoud',
-          icon: <CheckSvg className="w-5 h-5" />,
-          classes: 'bg-[#16a37f] text-white border-2 border-[#1e2246] shadow-[0_5px_0_#1e2246,0_0_30px_rgba(22,163,127,0.7)]',
-          pulse: false,
-        };
-      case 'idle':
-      default:
-        return {
-          label: 'Toca aquí para practicar',
-          icon: <PlaySvg className="w-5 h-5 translate-x-0.5" />,
-          classes: 'ola-btn-yellow',
-          pulse: false,
-        };
-    }
-  };
-
-  const btnConfig = getButtonConfig();
+  const isCenterClickable =
+    phase === 'idle' ||
+    phase === 'ready_to_record' ||
+    phase === 'recording' ||
+    phase === 'congrats';
 
   return (
     <div className="relative w-full max-w-[490px] mx-auto flex items-center justify-center py-6 sm:py-8">
       <style>{`
-        @keyframes olaInvitePulse {
+        /* Caja morada/lavanda ligera y moderna (Light Glassmorphism) */
+        .ola-glass-lavender {
+          background: linear-gradient(
+            148deg,
+            rgba(235, 238, 255, 0.78) 0%,
+            rgba(205, 211, 246, 0.66) 55%,
+            rgba(182, 190, 238, 0.64) 100%
+          );
+          backdrop-filter: blur(28px) saturate(195%);
+          -webkit-backdrop-filter: blur(28px) saturate(195%);
+          border: 1.5px solid rgba(255, 255, 255, 0.92);
+          box-shadow:
+            0 24px 54px -14px rgba(72, 80, 136, 0.28),
+            0 0 42px -10px rgba(98, 106, 159, 0.35),
+            inset 0 2px 2px rgba(255, 255, 255, 0.95),
+            inset 0 -1px 1px rgba(98, 106, 159, 0.14);
+        }
+
+        /* Pulso suave en el logo en reposo para invitar al clic */
+        @keyframes olaLogoInvite {
           0%, 100% {
             transform: scale(1);
-            box-shadow: 0 5px 0 #1e2246, 0 0 0 0 rgba(255, 199, 73, 0.85), 0 14px 30px -4px rgba(255, 199, 73, 0.7);
+            filter: drop-shadow(0 14px 24px rgba(72, 80, 136, 0.28));
           }
           50% {
-            transform: scale(1.045);
-            box-shadow: 0 7px 0 #1e2246, 0 0 0 16px rgba(255, 199, 73, 0), 0 18px 38px -2px rgba(255, 199, 73, 0.95);
+            transform: scale(1.05);
+            filter: drop-shadow(0 18px 30px rgba(255, 199, 73, 0.55));
           }
         }
-        @keyframes olaRecordPulse {
+        .ola-logo-invite {
+          animation: olaLogoInvite 2.4s ease-in-out infinite;
+        }
+
+        /* Pulso intenso en rojo coral para invitar a grabar */
+        @keyframes olaCoralPulse {
           0%, 100% {
             transform: scale(1);
-            box-shadow: 0 5px 0 #1e2246, 0 0 0 0 rgba(238, 102, 91, 0.8);
+            box-shadow: 0 0 0 0 rgba(238, 102, 91, 0.8), 0 14px 32px -4px rgba(238, 102, 91, 0.65);
           }
           50% {
-            transform: scale(1.03);
-            box-shadow: 0 6px 0 #1e2246, 0 0 0 16px rgba(238, 102, 91, 0);
+            transform: scale(1.08);
+            box-shadow: 0 0 0 20px rgba(238, 102, 91, 0), 0 18px 40px -2px rgba(238, 102, 91, 0.85);
           }
         }
-        .ola-invite-pulse {
-          animation: olaInvitePulse 1.15s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+        .ola-coral-pulse {
+          animation: olaCoralPulse 1.15s cubic-bezier(0.22, 1, 0.36, 1) infinite;
         }
-        .ola-record-pulse {
-          animation: olaRecordPulse 1s ease-in-out infinite;
+
+        /* Anillo sutil mientras graba */
+        @keyframes olaRecordingRing {
+          0%, 100% {
+            box-shadow: 0 0 0 0 rgba(238, 102, 91, 0.55), 0 14px 28px -6px rgba(238, 102, 91, 0.5);
+          }
+          50% {
+            box-shadow: 0 0 0 14px rgba(238, 102, 91, 0), 0 16px 32px -4px rgba(238, 102, 91, 0.65);
+          }
+        }
+        .ola-recording-ring {
+          animation: olaRecordingRing 1s ease-in-out infinite;
+        }
+
+        @keyframes olaMorphIn {
+          0% { opacity: 0; transform: scale(0.72) rotate(-8deg); }
+          70% { opacity: 1; transform: scale(1.06) rotate(2deg); }
+          100% { opacity: 1; transform: scale(1) rotate(0deg); }
+        }
+        .ola-morph-in {
+          animation: olaMorphIn 0.34s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
       `}</style>
 
       {/* ================================================== */}
-      {/* RESTORED BRAND PATTERNS AROUND THE STUDIO CARD     */}
+      {/* PATRONES DE MARCA ALREDEDOR DE LA TARJETA          */}
       {/* ================================================== */}
 
-      {/* TOP-LEFT: Audio Wave Pill Brand Pattern */}
-      <div className="ola-float-slow absolute -top-2 left-0 sm:-top-1 sm:-left-4 z-30 bg-[#fff3d1]/95 backdrop-blur-xl border-2 border-[#ffc749] rounded-full px-3.5 py-1.5 shadow-[0_10px_24px_-6px_rgba(255,199,73,0.65)] flex items-center gap-2 pointer-events-none">
-        <span className="w-5 h-5 rounded-full bg-[#454d82] flex items-center justify-center">
+      {/* TOP-LEFT: Audio Wave Pill */}
+      <div className="ola-float-slow absolute -top-2 left-0 sm:-top-1 sm:-left-4 z-30 bg-[#fff3d1]/95 backdrop-blur-xl border-2 border-[#ffc749] rounded-full px-3.5 py-1.5 shadow-[0_10px_24px_-6px_rgba(255,199,73,0.6)] flex items-center gap-2 pointer-events-none">
+        <span className="w-5 h-5 rounded-full bg-[#626a9f] flex items-center justify-center">
           <span className="w-2 h-2 rounded-full bg-[#ffc749]" />
         </span>
         <div className="flex items-center gap-[3px] h-4">
           {[9, 15, 7, 14, 10, 6].map((h, i) => (
             <span
               key={i}
-              className="ola-hero-eq w-[3px] rounded-full bg-[#454d82]"
+              className="ola-hero-eq w-[3px] rounded-full bg-[#626a9f]"
               style={{ height: `${h}px`, animationDelay: `${i * 0.12}s` }}
             />
           ))}
         </div>
       </div>
 
-      {/* TOP-RIGHT: Layered Speech Bubbles Brand Pattern */}
+      {/* TOP-RIGHT: Layered Speech Bubbles */}
       <div className="ola-float-alt absolute -top-3 right-0 sm:-top-2 sm:-right-4 z-30 pointer-events-none drop-shadow-md">
         <svg width="88" height="58" viewBox="0 0 86 58" fill="none">
           <rect x="6" y="4" width="58" height="34" rx="10" fill="#a8b0de" />
@@ -432,7 +382,7 @@ export default function HeroVoicePractice() {
         </svg>
       </div>
 
-      {/* BOTTOM-LEFT: Dot Matrix Brand Pattern */}
+      {/* BOTTOM-LEFT: Dot Matrix */}
       <div className="absolute -bottom-3 -left-1 sm:-bottom-4 sm:-left-6 z-0 pointer-events-none">
         <svg width="74" height="54" viewBox="0 0 64 48" fill="none">
           {[0, 1, 2, 3].map((row) =>
@@ -449,7 +399,7 @@ export default function HeroVoicePractice() {
         </svg>
       </div>
 
-      {/* BOTTOM-RIGHT: Geometric Quarter-Arcs & Triangle Brand Pattern */}
+      {/* BOTTOM-RIGHT: Geometric Shapes */}
       <div className="ola-float-alt absolute -bottom-4 -right-1 sm:-bottom-5 sm:-right-5 z-30 pointer-events-none drop-shadow-md">
         <svg width="74" height="66" viewBox="0 0 68 62" fill="none">
           <path d="M12 24A16 16 0 0 1 28 8V24H12Z" fill="#ffc749" />
@@ -460,115 +410,155 @@ export default function HeroVoicePractice() {
       </div>
 
       {/* ================================================== */}
-      {/* BACKLIT DEEP-INDIGO GLASS VOICE STUDIO CARD        */}
+      {/* CAJA LAVANDA-ÍNDIGO LIGHT GLASSMORPHISM            */}
       {/* ================================================== */}
       <div className="relative w-full z-20">
-        {/* Dual-Color Backlight Behind Studio Card */}
+        {/* Backlight suave detrás de la tarjeta */}
         <div
-          className="absolute -inset-4 rounded-[3rem] blur-3xl opacity-85 -z-10 pointer-events-none"
+          className="absolute -inset-4 rounded-[3rem] blur-3xl opacity-80 -z-10 pointer-events-none"
           style={{
             background:
-              'radial-gradient(circle at 25% 20%, rgba(255,199,73,0.72), transparent 55%), radial-gradient(circle at 80% 80%, rgba(98,106,159,0.78), transparent 62%)',
+              'radial-gradient(circle at 25% 20%, rgba(255,199,73,0.65), transparent 55%), radial-gradient(circle at 80% 80%, rgba(98,106,159,0.58), transparent 65%)',
           }}
         />
 
-        <div className="ola-glass-indigo rounded-[2.5rem] p-6 sm:p-8 text-white relative overflow-hidden">
-          {/* Subtle Dot Texture Inside Card */}
+        <div className="ola-glass-lavender rounded-[2.5rem] px-6 py-8 sm:px-8 sm:py-10 relative overflow-hidden">
+          {/* Textura sutil de puntos luminosos */}
           <div
-            className="absolute inset-0 opacity-20 pointer-events-none"
+            className="absolute inset-0 opacity-35 pointer-events-none"
             style={{
-              backgroundImage: 'radial-gradient(rgba(255,255,255,0.45) 1px, transparent 1px)',
-              backgroundSize: '18px 18px',
+              backgroundImage: 'radial-gradient(rgba(98, 106, 159, 0.28) 1px, transparent 1px)',
+              backgroundSize: '20px 20px',
             }}
           />
 
-          {/* Top Status Pill */}
-          <div className="relative z-10 flex items-center justify-between gap-2 mb-5">
-            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-3.5 py-1">
-              <span
-                className={`w-2 h-2 rounded-full ${
-                  phase === 'recording'
-                    ? 'bg-[#ee665b] animate-ping'
-                    : phase === 'congrats' || phase === 'comparing_user'
-                    ? 'bg-[#16a37f] animate-pulse'
-                    : 'bg-[#ffc749] animate-pulse'
-                }`}
-              />
-              <span className="text-[10px] font-black uppercase tracking-widest text-[#ffc749]">
-                {phase === 'idle' && 'OutLoud Voice Lab'}
-                {phase === 'playing_model' && 'Paso 1 • Escucha'}
-                {phase === 'ready_to_record' && 'Paso 2 • Tu Turno'}
-                {phase === 'recording' && 'Micrófono Activo'}
-                {phase === 'comparing_model' && 'Comparación • Modelo'}
-                {phase === 'comparing_user' && 'Comparación • Tu Voz'}
-                {phase === 'congrats' && '¡Completado!'}
-              </span>
-            </div>
-
-            {phase !== 'idle' && (
-              <button
-                type="button"
-                onClick={resetAll}
-                className="text-[10px] font-black uppercase tracking-widest text-white/65 hover:text-[#ffc749] transition-colors cursor-pointer"
-              >
-                Reiniciar
-              </button>
-            )}
-          </div>
-
-          {/* Centerpiece Icon Flanked by Reactive Equalizer Waves */}
-          <div className="relative z-10 flex items-center justify-center gap-3 sm:gap-5 my-3">
-            {/* Left Equalizer */}
-            <div className="flex items-center gap-1 sm:gap-1.5 h-14">
-              {[14, 28, 18, 42, 24, 34].map((h, i) => (
+          {/* ================================================== */}
+          {/* EMBLEMA INTERACTIVO CENTRAL + ONDAS DE AUDIO       */}
+          {/* ================================================== */}
+          <div className="relative z-10 flex items-center justify-center gap-4 sm:gap-6 mb-7">
+            {/* Ecualizador Izquierdo */}
+            <div className="flex items-center gap-1 sm:gap-1.5 h-16">
+              {[14, 28, 18, 44, 24, 34].map((h, i) => (
                 <span
                   key={`sl-${i}`}
                   className={`w-1.5 rounded-full transition-all duration-300 ${isWaveActive ? 'ola-hero-eq' : ''}`}
                   style={{
-                    height: isWaveActive ? `${h}px` : `${Math.round(h * 0.42)}px`,
+                    height: isWaveActive ? `${h}px` : `${Math.round(h * 0.4)}px`,
                     backgroundColor:
-                      phase === 'recording'
+                      phase === 'recording' || phase === 'ready_to_record'
                         ? '#ee665b'
                         : phase === 'comparing_user' || phase === 'congrats'
                         ? '#16a37f'
                         : i % 2 === 0
                         ? '#ffc749'
-                        : 'rgba(255,255,255,0.65)',
+                        : '#626a9f',
                     animationDelay: `${i * 0.09}s`,
                   }}
                 />
               ))}
             </div>
 
-            {/* OutLoud Headphone Mark */}
-            <div
-              className={`relative transition-transform duration-300 ${
-                phase === 'recording'
-                  ? 'scale-105'
-                  : phase === 'congrats'
-                  ? 'scale-110'
-                  : 'ola-float-slow'
+            {/* BOTÓN CENTRAL TRANSFORMABLE (Logo -> Grabar Coral -> Pausa -> Comparar -> Check) */}
+            <button
+              type="button"
+              onClick={handleCenterClick}
+              disabled={!isCenterClickable}
+              aria-label={
+                phase === 'idle'
+                  ? 'Iniciar ejercicio de pronunciación'
+                  : phase === 'ready_to_record'
+                  ? 'Grabar tu pronunciación'
+                  : phase === 'recording'
+                  ? 'Detener grabación'
+                  : 'Práctica de voz OutLoud'
+              }
+              className={`relative w-32 h-32 sm:w-36 sm:h-36 flex items-center justify-center rounded-[2rem] focus:outline-none transition-transform duration-200 ${
+                isCenterClickable ? 'cursor-pointer active:scale-95' : 'cursor-default'
               }`}
             >
-              <OutLoudIcon className="w-28 h-28 sm:w-32 sm:h-32 drop-shadow-[0_16px_26px_rgba(0,0,0,0.4)]" />
-            </div>
+              {/* FASE IDLE / PLAYING MODEL: EL LOGO ES EL BOTÓN */}
+              {(phase === 'idle' || phase === 'playing_model') && (
+                <div
+                  key="logo-state"
+                  className={`ola-morph-in relative flex items-center justify-center ${
+                    phase === 'idle' ? 'ola-logo-invite hover:scale-105 transition-transform' : 'scale-105'
+                  }`}
+                >
+                  {phase === 'playing_model' && (
+                    <span className="absolute -inset-2 rounded-[2.2rem] border-2 border-[#ffc749] animate-ping opacity-45 pointer-events-none" />
+                  )}
+                  <OutLoudIcon className="w-32 h-32 sm:w-36 sm:h-36" />
+                </div>
+              )}
 
-            {/* Right Equalizer */}
-            <div className="flex items-center gap-1 sm:gap-1.5 h-14">
-              {[34, 24, 42, 18, 28, 14].map((h, i) => (
+              {/* FASE READY TO RECORD: SÍMBOLO DE GRABAR PULSANDO FUERTE EN ROJO CORAL */}
+              {phase === 'ready_to_record' && (
+                <div
+                  key="record-state"
+                  className="ola-morph-in ola-coral-pulse w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-[#ee665b] border-[3px] border-white text-white flex flex-col items-center justify-center"
+                >
+                  <RecordMicSvg className="w-11 h-11 sm:w-12 sm:h-12" />
+                  <span className="text-[9px] font-black uppercase tracking-widest mt-1">
+                    Grabar
+                  </span>
+                </div>
+              )}
+
+              {/* FASE RECORDING: SÍMBOLO DE PAUSA */}
+              {phase === 'recording' && (
+                <div
+                  key="pause-state"
+                  className="ola-morph-in ola-recording-ring w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-[#ee665b] border-[3px] border-white text-white flex flex-col items-center justify-center"
+                >
+                  <PauseSvg className="w-11 h-11 sm:w-12 sm:h-12" />
+                  <span className="text-[10px] font-black tracking-widest mt-0.5 tabular-nums">
+                    0:{String(recordSeconds).padStart(2, '0')}
+                  </span>
+                </div>
+              )}
+
+              {/* FASE COMPARING: SÍMBOLO DE COMPARAR / REPETIR */}
+              {(phase === 'comparing_model' || phase === 'comparing_user') && (
+                <div
+                  key="compare-state"
+                  className={`ola-morph-in w-28 h-28 sm:w-32 sm:h-32 rounded-full border-[3px] border-white text-white flex flex-col items-center justify-center shadow-xl ${
+                    phase === 'comparing_user' ? 'bg-[#16a37f]' : 'bg-[#626a9f]'
+                  }`}
+                >
+                  <RepeatSvg
+                    className="w-11 h-11 animate-spin"
+                    style={{ animationDuration: '2.4s' }}
+                  />
+                </div>
+              )}
+
+              {/* FASE CONGRATS: CHECK DE ÉXITO */}
+              {phase === 'congrats' && (
+                <div
+                  key="congrats-state"
+                  className="ola-morph-in w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-[#16a37f] border-[3px] border-white text-white flex items-center justify-center shadow-[0_14px_34px_rgba(22,163,127,0.55)]"
+                >
+                  <CheckSvg className="w-14 h-14" />
+                </div>
+              )}
+            </button>
+
+            {/* Ecualizador Derecho */}
+            <div className="flex items-center gap-1 sm:gap-1.5 h-16">
+              {[34, 24, 44, 18, 28, 14].map((h, i) => (
                 <span
                   key={`sr-${i}`}
                   className={`w-1.5 rounded-full transition-all duration-300 ${isWaveActive ? 'ola-hero-eq' : ''}`}
                   style={{
-                    height: isWaveActive ? `${h}px` : `${Math.round(h * 0.42)}px`,
+                    height: isWaveActive ? `${h}px` : `${Math.round(h * 0.4)}px`,
                     backgroundColor:
-                      phase === 'recording'
+                      phase === 'recording' || phase === 'ready_to_record'
                         ? '#ee665b'
                         : phase === 'comparing_user' || phase === 'congrats'
                         ? '#16a37f'
                         : i % 2 === 1
                         ? '#ffc749'
-                        : 'rgba(255,255,255,0.65)',
+                        : '#626a9f',
                     animationDelay: `${(5 - i) * 0.09}s`,
                   }}
                 />
@@ -576,74 +566,67 @@ export default function HeroVoicePractice() {
             </div>
           </div>
 
-          {/* LIVE SUBTITLES / FEEDBACK STAGE */}
-          <div className="relative z-10 min-h-[82px] bg-[#1e2246]/55 backdrop-blur-md border border-white/15 rounded-2xl px-4 py-3.5 mb-5 flex flex-col items-center justify-center text-center shadow-inner">
-            {phase === 'congrats' ? (
+          {/* ================================================== */}
+          {/* CAJA DE INSTRUCCIONES / SUBTÍTULOS (LIGHT GLASS)   */}
+          {/* ================================================== */}
+          <div className="relative z-10 min-h-[104px] bg-white/80 backdrop-blur-xl border border-white rounded-3xl px-5 py-4 sm:px-6 sm:py-5 flex flex-col items-center justify-center text-center shadow-[0_10px_28px_-12px_rgba(69,77,130,0.22)]">
+            {phase === 'idle' && (
+              <p className="text-sm sm:text-base font-bold text-[#1e2246] leading-snug max-w-sm animate-fade-in">
+                Ejercicio de pronunciación, toca el logo para una práctica rápida.
+              </p>
+            )}
+
+            {phase === 'ready_to_record' && (
               <div className="animate-fade-in">
-                <p className="text-sm sm:text-base font-black text-[#ffc749] tracking-wide">
-                  ¡Lo hiciste increíble!
-                </p>
-                <p className="text-[11px] font-semibold text-white/85 mt-1">
-                  Escuchar y comparar tu propia voz acelera tu fluidez desde el día uno.
+                <p className="text-sm sm:text-base font-black text-[#d94a3f] leading-snug">
+                  Graba tu pronunciación y compara
                 </p>
               </div>
-            ) : showSubtitles ? (
+            )}
+
+            {(phase === 'playing_model' ||
+              phase === 'recording' ||
+              phase === 'comparing_model' ||
+              phase === 'comparing_user') && (
               <div className="animate-fade-in">
-                <p className="text-sm sm:text-base font-black text-white leading-snug">
+                {(phase === 'comparing_model' || phase === 'comparing_user') && (
+                  <span
+                    className={`inline-block text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full mb-1.5 ${
+                      phase === 'comparing_user'
+                        ? 'bg-[#16a37f]/15 text-[#128063]'
+                        : 'bg-[#626a9f]/15 text-[#454d82]'
+                    }`}
+                  >
+                    {phase === 'comparing_user' ? 'Tu grabación' : 'Audio modelo'}
+                  </span>
+                )}
+                <p className="text-sm sm:text-base font-black text-[#1e2246] leading-snug">
                   &ldquo;{MODEL_SUBTITLE_EN}&rdquo;
                 </p>
-                <p className="text-[11px] font-semibold text-[#ffc749]/90 mt-1">
+                <p className="text-xs font-semibold text-[#50567d] mt-1">
                   {MODEL_SUBTITLE_ES}
                 </p>
               </div>
-            ) : (
-              <div>
-                <p className="text-xs sm:text-sm font-extrabold text-white/95 leading-snug">
-                  Escucha, repite y compara tu pronunciación al instante.
+            )}
+
+            {phase === 'congrats' && (
+              <div className="animate-fade-in">
+                <p className="text-base font-black text-[#128063] leading-snug">
+                  ¡Excelente pronunciación!
                 </p>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-white/55 mt-1">
-                  Usa tu micrófono • Sin registro
+                <p className="text-xs font-semibold text-[#50567d] mt-1">
+                  Así se practica en OutLoud.
                 </p>
               </div>
             )}
           </div>
 
-          {/* Microphone Error Alert (if denied) */}
+          {/* Alerta si el usuario bloqueó el micrófono */}
           {micError && (
-            <div className="relative z-10 mb-4 bg-[#ee665b]/20 border border-[#ee665b] text-white text-[11px] font-bold rounded-xl px-3.5 py-2.5 text-center">
+            <div className="relative z-10 mt-3 bg-[#ee665b]/15 border border-[#ee665b] text-[#9b2c23] text-xs font-bold rounded-2xl px-4 py-2.5 text-center">
               {micError}
             </div>
           )}
-
-          {/* PRIMARY INTERACTIVE VOICE BUTTON */}
-          <button
-            type="button"
-            onClick={handleMainButtonClick}
-            disabled={phase === 'comparing_model' || phase === 'comparing_user'}
-            className={`relative z-10 w-full py-4 px-5 rounded-full font-black text-xs sm:text-sm uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2.5 transition-all disabled:cursor-default ${btnConfig.classes}`}
-          >
-            <span className="shrink-0">{btnConfig.icon}</span>
-            <span>{btnConfig.label}</span>
-          </button>
-
-          {/* Compact 3-Step Visual Indicator Strip */}
-          <div className="relative z-10 mt-4 flex items-center justify-center gap-4 text-[10px] font-black uppercase tracking-widest text-white/60">
-            <span className={phase === 'playing_model' ? 'text-[#ffc749]' : ''}>1. Escucha</span>
-            <span className="w-1 h-1 rounded-full bg-white/30" />
-            <span className={phase === 'ready_to_record' || phase === 'recording' ? 'text-[#ffc749]' : ''}>
-              2. Graba
-            </span>
-            <span className="w-1 h-1 rounded-full bg-white/30" />
-            <span
-              className={
-                phase === 'comparing_model' || phase === 'comparing_user' || phase === 'congrats'
-                  ? 'text-[#16a37f]'
-                  : ''
-              }
-            >
-              3. Compara
-            </span>
-          </div>
         </div>
       </div>
     </div>

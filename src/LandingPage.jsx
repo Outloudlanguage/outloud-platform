@@ -171,6 +171,23 @@ export default function LandingPage({
           box-shadow: 0 2px 0 #1e2246, 0 6px 14px -4px rgba(255, 199, 73, 0.45);
         }
 
+        @keyframes olaFreePulse {
+          0%, 100% {
+            transform: scale(1);
+            box-shadow: 0 5px 0 #1e2246, 0 0 0 0 rgba(255, 199, 73, 0.8), 0 14px 28px -4px rgba(255, 199, 73, 0.65);
+          }
+          50% {
+            transform: scale(1.04);
+            box-shadow: 0 7px 0 #1e2246, 0 0 0 12px rgba(255, 199, 73, 0), 0 18px 36px -2px rgba(255, 199, 73, 0.9);
+          }
+        }
+        .ola-btn-free-pulse {
+          animation: olaFreePulse 2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+        }
+        .ola-btn-free-pulse:hover {
+          animation: none;
+        }
+
         /* TACTILE GLASS OUTLINE CTA */
         .ola-btn-outline {
           background: rgba(255, 255, 255, 0.6);
@@ -418,14 +435,14 @@ export default function LandingPage({
                 Inglés 100% en vivo y práctica vocal interactiva 24/7 — sin traducir.
               </p>
 
-              {/* Desktop Secondary Actions (Compact & Clean) */}
-              <div className="hidden lg:flex items-center gap-3.5 mt-2">
+              {/* Desktop Primary Actions */}
+              <div className="hidden lg:flex items-center gap-4 mt-2">
                 <button
                   type="button"
                   onClick={onFreeLessonClick}
-                  className="ola-btn-yellow px-7 py-3.5 rounded-full text-xs font-black uppercase tracking-widest cursor-pointer flex items-center gap-2 group"
+                  className="ola-btn-yellow ola-btn-free-pulse px-8 py-3.5 rounded-full text-xs font-black uppercase tracking-widest cursor-pointer flex items-center gap-2 group"
                 >
-                  <span>Lección Completa Gratis</span>
+                  <span>PRUEBA GRATIS</span>
                   <svg className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                   </svg>
@@ -445,19 +462,19 @@ export default function LandingPage({
             <div className="lg:col-span-6 w-full">
               <HeroVoicePractice />
 
-              {/* Mobile Compact Secondary Actions Below the Studio */}
+              {/* Mobile Actions Below the Studio */}
               <div className="flex lg:hidden items-center justify-center gap-3 mt-6">
                 <button
                   type="button"
                   onClick={onFreeLessonClick}
-                  className="ola-btn-outline flex-1 py-3 px-4 rounded-full text-[11px] font-black uppercase tracking-wider cursor-pointer"
+                  className="ola-btn-yellow ola-btn-free-pulse flex-1 py-3.5 px-4 rounded-full text-xs font-black uppercase tracking-widest cursor-pointer"
                 >
-                  Unidad 1 Gratis
+                  PRUEBA GRATIS
                 </button>
                 <button
                   type="button"
                   onClick={() => scrollToSection('#plans')}
-                  className="ola-btn-outline flex-1 py-3 px-4 rounded-full text-[11px] font-black uppercase tracking-wider cursor-pointer"
+                  className="ola-btn-outline flex-1 py-3.5 px-4 rounded-full text-xs font-black uppercase tracking-widest cursor-pointer"
                 >
                   Ver Planes
                 </button>

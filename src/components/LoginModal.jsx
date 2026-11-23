@@ -1,24 +1,61 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../SupabaseClient';
 import { OutLoudIcon, OutLoudWordmark } from './OutLoudBrand';
 
 export default function LoginModal({ isOpen, onClose, onLogin, onEnrollClick }) {
+  const [shouldRender, setShouldRender] = useState(isOpen);
+  const [isClosing, setIsClosing] = useState(false);
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
+  const closeTimerRef = useRef(null);
+
   useEffect(() => {
-    if (!isOpen) return;
+    if (isOpen) {
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+      setIsClosing(false);
+      setShouldRender(true);
+    } else if (shouldRender) {
+      setIsClosing(true);
+      closeTimerRef.current = setTimeout(() => {
+        setShouldRender(false);
+        setIsClosing(false);
+      }, 240);
+    }
+    return () => {
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    };
+  }, [isOpen, shouldRender]);
+
+  const triggerClose = useCallback(
+    (afterClose) => {
+      if (isClosing) return;
+      setIsClosing(true);
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = setTimeout(() => {
+        setShouldRender(false);
+        setIsClosing(false);
+        onClose?.();
+        afterClose?.();
+      }, 240);
+    },
+    [isClosing, onClose]
+  );
+
+  useEffect(() => {
+    if (!shouldRender) return;
     const handleEsc = (e) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') triggerClose();
     };
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
-  }, [isOpen, onClose]);
+  }, [shouldRender, triggerClose]);
 
-  if (!isOpen) return null;
+  if (!shouldRender) return null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -57,50 +94,186 @@ export default function LoginModal({ isOpen, onClose, onLogin, onEnrollClick }) 
   return (
     <div
       id="ola-login-backdrop"
-      onClick={(e) => e.target.id === 'ola-login-backdrop' && onClose()}
-      className="fixed inset-0 z-[9000] bg-[#1e2246]/55 backdrop-blur-xl flex items-center justify-center p-4 animate-fade-in font-montserrat"
+      onClick={(e) => e.target.id === 'ola-login-backdrop' && triggerClose()}
+      className={`fixed inset-0 z-[9000] bg-[#1e2246]/55 backdrop-blur-xl flex items-center justify-center p-4 font-montserrat ${
+        isClosing ? 'ola-backdrop-out' : 'ola-backdrop-in'
+      }`}
+      style={{ perspective: '1200px' }}
     >
       <style>{`
-        @keyframes olaModalPop {
-          0% { opacity: 0; transform: translateY(18px) scale(0.95); }
-          100% { opacity: 1; transform: translateY(0) scale(1); }
+        /* Backdrop Enter & Exit */
+        @keyframes olaBackdropIn {
+          from { opacity: 0; backdrop-filter: blur(0px); }
+          to { opacity: 1; backdrop-filter: blur(20px); }
         }
+        @keyframes olaBackdropOut {
+          from { opacity: 1; }
+          to { opacity: 0; }
+        }
+
+        /* 3D Spring Entrance for Modal Card */
+        @keyframes olaCardEnter {
+          0% {
+            opacity: 0;
+            transform: translateY(42px) scale(0.88) rotateX(9deg);
+          }
+          62% {
+            opacity: 1;
+            transform: translateY(-5px) scale(1.018) rotateX(-1.2deg);
+          }
+          82% {
+            transform: translateY(2px) scale(0.995) rotateX(0.4deg);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0) scale(1) rotateX(0deg);
+          }
+        }
+
+        /* Crisp Exit */
+        @keyframes olaCardExit {
+          0% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+          100% {
+            opacity: 0;
+            transform: translateY(26px) scale(0.92);
+          }
+        }
+
+        /* Ambient Backlight Halo Bloom */
+        @keyframes olaHaloBloom {
+          0% { opacity: 0; transform: scale(0.65); }
+          65% { opacity: 0.9; transform: scale(1.06); }
+          100% { opacity: 0.82; transform: scale(1); }
+        }
+
+        /* Diagonal Glass Specular Sheen Sweep on Open */
+        @keyframes olaGlassSweep {
+          0% { left: -140%; opacity: 0; }
+          20% { opacity: 1; }
+          100% { left: 165%; opacity: 0; }
+        }
+
+        /* Brand Icon Elastic Bounce */
+        @keyframes olaIconPop {
+          0% { opacity: 0; transform: scale(0.45) rotate(-14deg) translateY(14px); }
+          65% { opacity: 1; transform: scale(1.1) rotate(4deg) translateY(-3px); }
+          85% { transform: scale(0.96) rotate(-1.5deg) translateY(1px); }
+          100% { opacity: 1; transform: scale(1) rotate(0deg) translateY(0); }
+        }
+
+        /* Staggered Field Cascade */
+        @keyframes olaStaggerUp {
+          0% { opacity: 0; transform: translateY(16px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Live Equalizer Bars */
         @keyframes olaModalEq {
           0%, 100% { transform: scaleY(0.32); }
           50% { transform: scaleY(1); }
         }
-        .ola-modal-pop {
-          animation: olaModalPop 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+
+        .ola-backdrop-in {
+          animation: olaBackdropIn 0.28s ease-out forwards;
         }
+        .ola-backdrop-out {
+          animation: olaBackdropOut 0.24s ease-in forwards;
+          pointer-events: none;
+        }
+
+        .ola-card-in {
+          transform-origin: center bottom;
+          animation: olaCardEnter 0.52s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+          will-change: transform, opacity;
+        }
+        .ola-card-out {
+          animation: olaCardExit 0.23s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards;
+          will-change: transform, opacity;
+        }
+
+        .ola-halo-in {
+          animation: olaHaloBloom 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        .ola-sheen-sweep {
+          position: absolute;
+          top: 0;
+          left: -140%;
+          width: 75%;
+          height: 100%;
+          background: linear-gradient(
+            115deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.42) 48%,
+            rgba(255, 255, 255, 0.08) 70%,
+            transparent 100%
+          );
+          transform: skewX(-20deg);
+          pointer-events: none;
+          z-index: 30;
+          animation: olaGlassSweep 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.22s forwards;
+        }
+
+        .ola-icon-enter {
+          opacity: 0;
+          animation: olaIconPop 0.56s cubic-bezier(0.34, 1.56, 0.64, 1) 0.12s forwards;
+        }
+
+        .ola-stagger-1 { opacity: 0; animation: olaStaggerUp 0.38s cubic-bezier(0.22, 1, 0.36, 1) 0.18s forwards; }
+        .ola-stagger-2 { opacity: 0; animation: olaStaggerUp 0.38s cubic-bezier(0.22, 1, 0.36, 1) 0.24s forwards; }
+        .ola-stagger-3 { opacity: 0; animation: olaStaggerUp 0.38s cubic-bezier(0.22, 1, 0.36, 1) 0.30s forwards; }
+        .ola-stagger-4 { opacity: 0; animation: olaStaggerUp 0.38s cubic-bezier(0.22, 1, 0.36, 1) 0.36s forwards; }
+        .ola-stagger-5 { opacity: 0; animation: olaStaggerUp 0.38s cubic-bezier(0.22, 1, 0.36, 1) 0.42s forwards; }
+
         .ola-modal-eq {
           transform-origin: center;
           animation: olaModalEq 1s ease-in-out infinite;
         }
+
         .ola-login-shell {
-          background: linear-gradient(155deg, rgba(255, 255, 255, 0.84) 0%, rgba(238, 241, 252, 0.78) 55%, rgba(255, 246, 222, 0.82) 100%);
+          background: linear-gradient(155deg, rgba(255, 255, 255, 0.86) 0%, rgba(238, 241, 252, 0.8) 55%, rgba(255, 246, 222, 0.84) 100%);
           backdrop-filter: blur(28px) saturate(190%);
           -webkit-backdrop-filter: blur(28px) saturate(190%);
-          border: 1.5px solid rgba(255, 255, 255, 0.92);
+          border: 1.5px solid rgba(255, 255, 255, 0.94);
           box-shadow:
             0 28px 70px -12px rgba(20, 24, 58, 0.55),
             0 0 46px -8px rgba(255, 199, 73, 0.45),
             inset 0 1.5px 1px rgba(255, 255, 255, 0.98);
         }
+
+        @media (prefers-reduced-motion: reduce) {
+          .ola-card-in, .ola-card-out, .ola-backdrop-in, .ola-backdrop-out,
+          .ola-halo-in, .ola-icon-enter, .ola-stagger-1, .ola-stagger-2,
+          .ola-stagger-3, .ola-stagger-4, .ola-stagger-5 {
+            animation: none !important;
+            opacity: 1 !important;
+            transform: none !important;
+          }
+          .ola-sheen-sweep { display: none; }
+        }
       `}</style>
 
       {/* Backlit Container Wrapper */}
-      <div className="relative w-full max-w-[430px] ola-modal-pop">
+      <div className={`relative w-full max-w-[430px] ${isClosing ? 'ola-card-out' : 'ola-card-in'}`}>
         {/* Dual-Tone Ambient Backlight Halo */}
         <div
-          className="absolute -inset-4 rounded-[3rem] blur-3xl opacity-80 pointer-events-none -z-10"
+          className={`absolute -inset-5 rounded-[3.2rem] blur-3xl pointer-events-none -z-10 ${
+            isClosing ? 'opacity-0 transition-opacity duration-200' : 'ola-halo-in'
+          }`}
           style={{
             background:
-              'radial-gradient(circle at 20% 15%, rgba(255,199,73,0.65), transparent 55%), radial-gradient(circle at 85% 85%, rgba(98,106,159,0.75), transparent 60%)',
+              'radial-gradient(circle at 20% 15%, rgba(255,199,73,0.7), transparent 55%), radial-gradient(circle at 85% 85%, rgba(98,106,159,0.78), transparent 60%)',
           }}
         />
 
         {/* Frosted Glass Modal Card */}
         <div className="ola-login-shell relative w-full rounded-[2.25rem] overflow-hidden">
+          {/* Specular Light Sweep Across Card on Open */}
+          {!isClosing && <div className="ola-sheen-sweep" />}
+
           {/* ================================================== */}
           {/* EXPRESSIVE INDIGO GLASS HEADER STAGE               */}
           {/* ================================================== */}
@@ -111,7 +284,7 @@ export default function LoginModal({ isOpen, onClose, onLogin, onEnrollClick }) 
                 'linear-gradient(145deg, rgba(72, 80, 136, 0.96) 0%, rgba(35, 39, 77, 0.96) 100%)',
             }}
           >
-            {/* Subtle Dot Texture & Corner Glow Inside Banner */}
+            {/* Subtle Dot Texture & Bottom Golden Glow */}
             <div
               className="absolute inset-0 opacity-20 pointer-events-none"
               style={{
@@ -120,16 +293,16 @@ export default function LoginModal({ isOpen, onClose, onLogin, onEnrollClick }) 
               }}
             />
             <div
-              className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-56 h-24 rounded-full blur-2xl opacity-45 pointer-events-none"
+              className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-56 h-24 rounded-full blur-2xl opacity-50 pointer-events-none"
               style={{ background: '#ffc749' }}
             />
 
-            {/* Close Button (Custom SVG) */}
+            {/* Close Button */}
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => triggerClose()}
               aria-label="Cerrar inicio de sesión"
-              className="absolute top-4 right-4 z-20 w-9 h-9 rounded-full bg-white/15 hover:bg-[#ffc749] border border-white/25 hover:border-[#1e2246] text-white hover:text-[#1e2246] flex items-center justify-center transition-all cursor-pointer active:scale-95"
+              className="absolute top-4 right-4 z-20 w-9 h-9 rounded-full bg-white/15 hover:bg-[#ffc749] border border-white/25 hover:border-[#1e2246] text-white hover:text-[#1e2246] flex items-center justify-center transition-all cursor-pointer hover:rotate-90 active:scale-95"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.8" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -137,7 +310,7 @@ export default function LoginModal({ isOpen, onClose, onLogin, onEnrollClick }) 
             </button>
 
             {/* Live Portal Pill */}
-            <div className="relative z-10 inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-3.5 py-1 mb-4">
+            <div className="ola-stagger-1 relative z-10 inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-3.5 py-1 mb-4">
               <span className="w-2 h-2 rounded-full bg-[#16a37f] animate-pulse shadow-[0_0_8px_#16a37f]" />
               <span className="text-[10px] font-black uppercase tracking-widest text-[#ffc749]">
                 Campus Portal • 24/7
@@ -161,7 +334,9 @@ export default function LoginModal({ isOpen, onClose, onLogin, onEnrollClick }) 
                   ))}
                 </div>
 
-                <OutLoudIcon className="w-16 h-16 drop-shadow-[0_10px_20px_rgba(0,0,0,0.35)]" />
+                <div className="ola-icon-enter">
+                  <OutLoudIcon className="w-16 h-16 drop-shadow-[0_12px_22px_rgba(0,0,0,0.38)]" />
+                </div>
 
                 <div className="flex items-center gap-[3px] h-7">
                   {[26, 14, 20, 10].map((h, i) => (
@@ -178,15 +353,17 @@ export default function LoginModal({ isOpen, onClose, onLogin, onEnrollClick }) 
                 </div>
               </div>
 
-              <OutLoudWordmark className="h-8 w-auto mb-1.5" fill="#ffffff" />
-              <p className="text-[11px] font-semibold text-white/75 tracking-wide">
-                Estudiantes, Profesores &amp; Administración
-              </p>
+              <div className="ola-stagger-1 flex flex-col items-center">
+                <OutLoudWordmark className="h-8 w-auto mb-1.5" fill="#ffffff" />
+                <p className="text-[11px] font-semibold text-white/75 tracking-wide">
+                  Estudiantes, Profesores &amp; Administración
+                </p>
+              </div>
             </div>
           </div>
 
           {/* ================================================== */}
-          {/* FROSTED GLASS FORM BODY                            */}
+          {/* FROSTED GLASS FORM BODY (Staggered Cascade)        */}
           {/* ================================================== */}
           <div className="p-6 sm:p-8 relative z-10">
             {errorMsg && (
@@ -199,8 +376,8 @@ export default function LoginModal({ isOpen, onClose, onLogin, onEnrollClick }) 
             )}
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              {/* Email Input */}
-              <div>
+              {/* Email Input (No autoFocus — keyboard opens only on user tap) */}
+              <div className="ola-stagger-2">
                 <label className="block text-[11px] font-black uppercase tracking-widest text-[#1e2246] mb-1.5">
                   Correo Electrónico
                 </label>
@@ -219,14 +396,13 @@ export default function LoginModal({ isOpen, onClose, onLogin, onEnrollClick }) 
                     }}
                     placeholder="student@outloudlanguage.com"
                     required
-                    autoFocus
                     className="w-full bg-white/75 focus:bg-white border-2 border-white focus:border-[#454d82] rounded-2xl pl-10 pr-4 py-3.5 text-sm font-semibold text-[#1e2246] placeholder-[#50567d]/55 outline-none shadow-sm focus:shadow-[0_0_0_4px_rgba(255,199,73,0.3)] transition-all"
                   />
                 </div>
               </div>
 
               {/* Password Input */}
-              <div>
+              <div className="ola-stagger-3">
                 <label className="block text-[11px] font-black uppercase tracking-widest text-[#1e2246] mb-1.5">
                   Contraseña
                 </label>
@@ -268,39 +444,38 @@ export default function LoginModal({ isOpen, onClose, onLogin, onEnrollClick }) 
               </div>
 
               {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="ola-btn-yellow w-full py-4 mt-2 rounded-full font-black text-xs uppercase tracking-widest cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2 group"
-              >
-                {isLoading ? (
-                  <>
-                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3.5" />
-                      <path className="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8v3a5 5 0 00-5 5H4z" />
-                    </svg>
-                    <span>Ingresando al Campus...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Entrar a Mi Hub</span>
-                    <svg className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" fill="none" stroke="currentColor" strokeWidth="2.8" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                    </svg>
-                  </>
-                )}
-              </button>
+              <div className="ola-stagger-4">
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="ola-btn-yellow w-full py-4 mt-2 rounded-full font-black text-xs uppercase tracking-widest cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2 group"
+                >
+                  {isLoading ? (
+                    <>
+                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3.5" />
+                        <path className="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8v3a5 5 0 00-5 5H4z" />
+                      </svg>
+                      <span>Ingresando al Campus...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Entrar a Mi Hub</span>
+                      <svg className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" fill="none" stroke="currentColor" strokeWidth="2.8" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                      </svg>
+                    </>
+                  )}
+                </button>
+              </div>
             </form>
 
             {/* Footer Enrollment Helper */}
-            <div className="mt-6 pt-5 border-t border-[#626a9f]/20 flex flex-col sm:flex-row items-center justify-between gap-2.5 text-xs font-bold text-[#50567d]">
+            <div className="ola-stagger-5 mt-6 pt-5 border-t border-[#626a9f]/20 flex flex-col sm:flex-row items-center justify-between gap-2.5 text-xs font-bold text-[#50567d]">
               <span>¿Aún no tienes cuenta?</span>
               <button
                 type="button"
-                onClick={() => {
-                  onClose();
-                  onEnrollClick?.();
-                }}
+                onClick={() => triggerClose(() => onEnrollClick?.())}
                 className="ola-reactive-text text-[#454d82] font-black uppercase tracking-wider text-[11px] cursor-pointer group"
               >
                 <span>Solicitar Inscripción</span>

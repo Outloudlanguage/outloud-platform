@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 // =========================================
 // CUSTOM SVG ICONS (Zero Emojis / Raw Glyphs)
@@ -15,11 +15,7 @@ const ArrowRightSvg = ({ className = 'w-4 h-4' }) => (
   </svg>
 );
 
-const ArrowLeftSvg = ({ className = 'w-4 h-4' }) => (
-  <svg className={className} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
-  </svg>
-);
+// ArrowLeftSvg removed — carousel now uses far-edge hover (desktop) & live swipe (touch)
 
 const SparkleSvg = ({ className = 'w-4 h-4' }) => (
   <svg className={className} fill="currentColor" viewBox="0 0 24 24">
@@ -208,7 +204,15 @@ export default function LandingLevelsAndPlans({ onScrollTo, onPlacementClick }) 
   const [activeLevelId, setActiveLevelId] = useState('A1');
   const [hoveredLevelId, setHoveredLevelId] = useState(null);
   const [activePlanIndex, setActivePlanIndex] = useState(1);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [hoverEdge, setHoverEdge] = useState(null); // 'left' | 'right' | null
+
   const touchStartX = useRef(null);
+  const touchStartY = useRef(null);
+  const isHorizontalSwipe = useRef(null);
+  const hoverDelayRef = useRef(null);
+  const hoverIntervalRef = useRef(null);
 
   const focusedLevelId = hoveredLevelId || activeLevelId;
   const activeLevelObj = LEVELS_DATA.find((l) => l.id === focusedLevelId) || LEVELS_DATA[0];
@@ -226,18 +230,70 @@ export default function LandingLevelsAndPlans({ onScrollTo, onPlacementClick }) 
     setActivePlanIndex((prev) => (prev === PAYMENT_PLANS.length - 1 ? 0 : prev + 1));
   };
 
-  const handleTouchStart = (e) => {
-    touchStartX.current = e.touches[0].clientX;
+  // Desktop Far-Edge Hover Auto-Scroll (comfortable browsing cadence)
+  const stopEdgeHover = () => {
+    setHoverEdge(null);
+    if (hoverDelayRef.current) clearTimeout(hoverDelayRef.current);
+    if (hoverIntervalRef.current) clearInterval(hoverIntervalRef.current);
+    hoverDelayRef.current = null;
+    hoverIntervalRef.current = null;
   };
 
-  const handleTouchEnd = (e) => {
-    if (touchStartX.current === null) return;
-    const diff = touchStartX.current - e.changedTouches[0].clientX;
-    if (Math.abs(diff) > 45) {
-      if (diff > 0) handleNextPlan();
-      else handlePrevPlan();
+  const startEdgeHover = (direction) => {
+    // Only engage edge-hover scrolling on true mouse/trackpad devices
+    if (typeof window !== 'undefined' && !window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+      return;
     }
+    stopEdgeHover();
+    setHoverEdge(direction);
+
+    const step = direction === 'left' ? handlePrevPlan : handleNextPlan;
+    // Brief gentle delay avoids accidental triggers when passing over the section
+    hoverDelayRef.current = setTimeout(() => {
+      step();
+      hoverIntervalRef.current = setInterval(step, 1150);
+    }, 240);
+  };
+
+  useEffect(() => {
+    return () => stopEdgeHover();
+  }, []);
+
+  // Mobile / Touch Live-Tracking 3D Swipe
+  const handleTouchStart = (e) => {
+    if (e.touches.length !== 1) return;
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+    isHorizontalSwipe.current = null;
+    setIsDragging(true);
+  };
+
+  const handleTouchMove = (e) => {
+    if (touchStartX.current === null || e.touches.length !== 1) return;
+    const dx = e.touches[0].clientX - touchStartX.current;
+    const dy = e.touches[0].clientY - touchStartY.current;
+
+    if (isHorizontalSwipe.current === null && (Math.abs(dx) > 6 || Math.abs(dy) > 6)) {
+      isHorizontalSwipe.current = Math.abs(dx) > Math.abs(dy);
+    }
+
+    if (isHorizontalSwipe.current) {
+      // Smooth elastic clamp so cards glide with your thumb
+      const clamped = Math.max(-165, Math.min(165, dx));
+      setDragOffset(clamped);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (isHorizontalSwipe.current) {
+      if (dragOffset < -42) handleNextPlan();
+      else if (dragOffset > 42) handlePrevPlan();
+    }
+    setIsDragging(false);
+    setDragOffset(0);
     touchStartX.current = null;
+    touchStartY.current = null;
+    isHorizontalSwipe.current = null;
   };
 
   return (
@@ -565,26 +621,59 @@ export default function LandingLevelsAndPlans({ onScrollTo, onPlacementClick }) 
             </p>
           </div>
 
-          {/* 3D COVERFLOW STAGE (Generous Clearance — Zero Overlap) */}
+          {/* 3D COVERFLOW STAGE (Desktop Far-Edge Hover + Live Touch Swipe) */}
           <div
             onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
-            className="relative w-full min-h-[590px] sm:min-h-[610px] py-6 flex items-center justify-center select-none"
+            onTouchCancel={handleTouchEnd}
+            onMouseLeave={stopEdgeHover}
+            className="relative w-full min-h-[590px] sm:min-h-[610px] py-6 flex items-center justify-center select-none touch-pan-y"
             style={{ perspective: '1300px' }}
           >
+            {/* DESKTOP FAR-LEFT HOVER SCROLL ZONE */}
+            <div
+              onMouseEnter={() => startEdgeHover('left')}
+              onMouseLeave={stopEdgeHover}
+              onClick={handlePrevPlan}
+              aria-hidden="true"
+              className="hidden md:block absolute inset-y-8 left-0 w-[18%] lg:w-[22%] z-40 cursor-w-resize rounded-l-[2.5rem] transition-opacity duration-300"
+              style={{
+                background:
+                  hoverEdge === 'left'
+                    ? 'linear-gradient(90deg, rgba(255,199,73,0.18) 0%, transparent 100%)'
+                    : 'transparent',
+              }}
+            />
+
+            {/* DESKTOP FAR-RIGHT HOVER SCROLL ZONE */}
+            <div
+              onMouseEnter={() => startEdgeHover('right')}
+              onMouseLeave={stopEdgeHover}
+              onClick={handleNextPlan}
+              aria-hidden="true"
+              className="hidden md:block absolute inset-y-8 right-0 w-[18%] lg:w-[22%] z-40 cursor-e-resize rounded-r-[2.5rem] transition-opacity duration-300"
+              style={{
+                background:
+                  hoverEdge === 'right'
+                    ? 'linear-gradient(270deg, rgba(255,199,73,0.18) 0%, transparent 100%)'
+                    : 'transparent',
+              }}
+            />
+
             {PAYMENT_PLANS.map((plan, index) => {
               let offset = index - activePlanIndex;
               if (offset > 1) offset -= PAYMENT_PLANS.length;
               if (offset < -1) offset += PAYMENT_PLANS.length;
 
               const isCenter = offset === 0;
-              const isLeft = offset === -1;
+              const dragProgress = dragOffset / 280;
+              const liveOffset = offset + dragProgress;
 
-              const cardTransform = isCenter
-                ? 'translateX(0%) scale(1) rotateY(0deg)'
-                : isLeft
-                ? 'translateX(-58%) scale(0.82) rotateY(18deg)'
-                : 'translateX(58%) scale(0.82) rotateY(-18deg)';
+              const translatePct = liveOffset * 58;
+              const liveScale = Math.max(0.78, 1 - Math.abs(liveOffset) * 0.18);
+              const liveRotateY = -liveOffset * 18;
+              const cardTransform = `translateX(${translatePct}%) scale(${liveScale}) rotateY(${liveRotateY}deg)`;
 
               const isIndigo = plan.theme === 'indigo';
               const isYellow = plan.theme === 'yellow';
@@ -614,13 +703,16 @@ export default function LandingLevelsAndPlans({ onScrollTo, onPlacementClick }) 
                 <div
                   key={plan.id}
                   onClick={() => !isCenter && setActivePlanIndex(index)}
-                  className={`absolute w-[88%] max-w-[355px] sm:max-w-[405px] rounded-[2.25rem] p-6 sm:p-8 flex flex-col justify-between transition-all duration-500 ease-out ${surfaceClass} ${
-                    isCenter ? 'z-30 opacity-100' : 'z-10 opacity-50 hover:opacity-75 cursor-pointer'
+                  className={`absolute w-[88%] max-w-[355px] sm:max-w-[405px] rounded-[2.25rem] p-6 sm:p-8 flex flex-col justify-between ${
+                    isDragging ? 'transition-none' : 'transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]'
+                  } ${surfaceClass} ${
+                    isCenter ? 'z-30 opacity-100' : 'z-10 opacity-55 hover:opacity-80 cursor-pointer'
                   }`}
                   style={{
                     transform: cardTransform,
                     transformStyle: 'preserve-3d',
-                    filter: isCenter ? 'none' : 'blur(1.2px) saturate(0.85)',
+                    willChange: 'transform, opacity',
+                    filter: isCenter ? 'none' : 'blur(1px) saturate(0.85)',
                   }}
                 >
                   <div>
@@ -690,39 +782,24 @@ export default function LandingLevelsAndPlans({ onScrollTo, onPlacementClick }) 
             })}
           </div>
 
-          {/* Coverflow Navigation Controls (Cleanly Spaced Below Stage) */}
-          <div className="flex items-center justify-center gap-4 mt-6">
-            <button
-              type="button"
-              onClick={handlePrevPlan}
-              aria-label="Plan anterior"
-              className="ola-btn-outline w-11 h-11 rounded-full flex items-center justify-center cursor-pointer"
-            >
-              <ArrowLeftSvg className="w-5 h-5" />
-            </button>
-
+          {/* Minimal Pagination Indicator (No Redundant Arrows) */}
+          <div className="flex flex-col items-center justify-center gap-2.5 mt-4">
             <div className="ola-glass flex items-center gap-2 rounded-full px-4 py-2.5">
               {PAYMENT_PLANS.map((p, idx) => (
                 <button
                   key={p.id}
                   type="button"
                   onClick={() => setActivePlanIndex(idx)}
-                  className={`h-2.5 rounded-full transition-all cursor-pointer ${
+                  className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer ${
                     idx === activePlanIndex ? 'w-8 bg-[#1e2246]' : 'w-2.5 bg-[#626a9f]/35 hover:bg-[#626a9f]'
                   }`}
                   aria-label={p.name}
                 />
               ))}
             </div>
-
-            <button
-              type="button"
-              onClick={handleNextPlan}
-              aria-label="Siguiente plan"
-              className="ola-btn-outline w-11 h-11 rounded-full flex items-center justify-center cursor-pointer"
-            >
-              <ArrowRightSvg className="w-5 h-5" />
-            </button>
+            <span className="text-[10px] font-black uppercase tracking-widest text-[#50567d]/80 md:hidden">
+              Desliza para ver los planes
+            </span>
           </div>
 
           {/* Backlit Glass Onboarding & Billing Strip (Custom SVG Icons) */}
