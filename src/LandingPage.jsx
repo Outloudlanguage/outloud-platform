@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { OutLoudIcon, OutLoudHorizontalLogo } from './components/OutLoudBrand';
 import LoginModal from './components/LoginModal';
+import LandingMethodSection from './components/LandingMethodSection';
 
 const NAV_LINKS = [
   { label: 'Method', href: '#method' },
@@ -332,69 +333,18 @@ export default function LandingPage({
             </div>
           </div>
 
-          {/* 3-CARD VALUE STRIP (Directly inspired by your mockup's Why OutLoud row) */}
-          <div className="mt-16 sm:mt-20">
-            <h2 className="text-center text-2xl sm:text-3xl font-black text-[#23274d] tracking-tight mb-8">
-              Why OutLoud?
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Card 1: Soft Yellow */}
-              <div className="bg-[#fff3d1] border-2 border-[#ffc749] rounded-3xl p-7 shadow-sm hover:-translate-y-1 transition-transform">
-                <div className="w-12 h-12 rounded-2xl bg-[#ffc749] border-2 border-[#23274d] flex items-center justify-center mb-5 shadow-[0_3px_0_#23274d]">
-                  <svg className="w-6 h-6 text-[#23274d]" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-black text-[#23274d] mb-2">Active Speaking First</h3>
-                <p className="text-sm text-[#60668a] font-medium leading-relaxed">
-                  Listen, repeat, compare your own voice against native models, and put every unit into action inside live teacher labs.
-                </p>
-              </div>
-
-              {/* Card 2: Brand Indigo */}
-              <div className="bg-[#626a9f] border-2 border-[#23274d] rounded-3xl p-7 text-white shadow-[0_8px_0_#23274d] hover:-translate-y-1 transition-transform">
-                <div className="w-12 h-12 rounded-2xl bg-white/15 border-2 border-white/30 flex items-center justify-center mb-5">
-                  <svg className="w-6 h-6 text-[#ffc749]" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-black text-white mb-2">Structured Community</h3>
-                <p className="text-sm text-white/85 font-medium leading-relaxed">
-                  Practice with classmates in moderated seminar chat rooms, bilingual Q&amp;A boards, and English-only teacher debates.
-                </p>
-              </div>
-
-              {/* Card 3: Crisp White */}
-              <div className="bg-white border-2 border-[#dfe2f2] rounded-3xl p-7 shadow-sm hover:border-[#626a9f] hover:-translate-y-1 transition-all">
-                <div className="w-12 h-12 rounded-2xl bg-[#e8eaf7] border-2 border-[#626a9f]/30 flex items-center justify-center mb-5">
-                  <svg className="w-6 h-6 text-[#626a9f]" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-black text-[#23274d] mb-2">Mastery-Gated Progress</h3>
-                <p className="text-sm text-[#60668a] font-medium leading-relaxed">
-                  No one falls behind. Complete each unit&apos;s interactive lesson and workbook before unlocking your next live evaluation.
-                </p>
-              </div>
-            </div>
           </div>
-        </div>
       </section>
 
       {/* ================================================== */}
-      {/* STAGE 2-5 ANCHOR SLOTS (Live Bridges Until Migrated) */}
+      {/* STAGE 2: COURSE INFO HERO CARDS + 5-STEP CYCLE     */}
+      {/* ================================================== */}
+      <LandingMethodSection onScrollTo={scrollToSection} />
+
+      {/* ================================================== */}
+      {/* STAGE 3-5 ANCHOR SLOTS (Live Bridges Until Migrated) */}
       {/* ================================================== */}
       <div className="max-w-7xl mx-auto px-4 sm:px-8 pb-24 space-y-8">
-        <section id="method" className="ola-card rounded-[2rem] p-8 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div>
-            <span className="text-[11px] font-black uppercase tracking-widest text-[#626a9f]">Stage 2 Incoming</span>
-            <h3 className="text-2xl font-black text-[#23274d] mt-1">The OutLoud Method &amp; Course Info</h3>
-            <p className="text-sm text-[#60668a] mt-1">Interactive 4-step mechanics &amp; Hero/Mini cards will live right here.</p>
-          </div>
-          <button type="button" onClick={onInfoClick} className="ola-btn-outline px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest shrink-0 cursor-pointer">
-            Open Current Info Page →
-          </button>
-        </section>
 
         <section id="levels" className="ola-card rounded-[2rem] p-8 flex flex-col md:flex-row items-center justify-between gap-6">
           <div>
