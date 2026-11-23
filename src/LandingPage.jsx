@@ -19,10 +19,18 @@ export default function LandingPage({
   onLogin,
   onPlacementClick,
   onFreeLessonClick,
+  initialLoginOpen = false,
+  onLoginModalToggle,
 }) {
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [isLoginOpen, setIsLoginOpen] = useState(initialLoginOpen);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    if (initialLoginOpen) {
+      setIsLoginOpen(true);
+    }
+  }, [initialLoginOpen]);
 
   useEffect(() => {
     const onScroll = () => setIsScrolled(window.scrollY > 18);
@@ -30,8 +38,21 @@ export default function LandingPage({
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  const openLoginModal = () => {
+    setIsLoginOpen(true);
+    onLoginModalToggle?.(true);
+  };
+
+  const closeLoginModal = () => {
+    setIsLoginOpen(false);
+    onLoginModalToggle?.(false);
+  };
+
   const scrollToSection = (href) => {
     setIsMobileMenuOpen(false);
+    if (window.location.hash === '#login') {
+      window.history.replaceState({ page: 'home' }, '', '/');
+    }
     const el = document.querySelector(href);
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
@@ -391,7 +412,7 @@ export default function LandingPage({
 
             <button
               type="button"
-              onClick={() => setIsLoginOpen(true)}
+              onClick={openLoginModal}
               className="ola-btn-yellow px-4 sm:px-6 py-2.5 rounded-full text-[11px] sm:text-xs font-black uppercase tracking-widest cursor-pointer flex items-center gap-1.5 sm:gap-2"
             >
               <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
@@ -454,12 +475,12 @@ export default function LandingPage({
       {/* ================================================== */}
       {/* VISUAL-FIRST HERO (Balanced Margins & Clean Type)  */}
       {/* ================================================== */}
-      <section className="relative z-10 pt-24 pb-12 sm:pt-32 sm:pb-20 lg:pt-36 lg:pb-24">
+      <section className="relative z-10 pt-28 pb-12 sm:pt-32 sm:pb-20 lg:pt-36 lg:pb-24">
         <div className="max-w-[1060px] mx-auto px-5 sm:px-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-8 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-8 items-center">
             {/* LEFT COLUMN: Centered-Balanced Editorial Punch */}
             <div className="lg:col-span-6 flex flex-col items-center lg:items-start text-center lg:text-left lg:pl-2">
-              <h1 className="text-4xl sm:text-5xl lg:text-[3.75rem] font-extrabold text-[#1e2246] leading-[1.04] tracking-tight mb-4">
+              <h1 className="text-4xl sm:text-5xl lg:text-[3.75rem] font-extrabold text-[#1e2246] leading-[1.04] tracking-tight mb-3.5 sm:mb-4">
                 Your Voice,{' '}
                 <span className="relative inline-block">
                   <span className="relative z-10 text-[#454d82]">Amplified.</span>
@@ -468,7 +489,7 @@ export default function LandingPage({
               </h1>
 
               <p
-                className="text-sm sm:text-[1.05rem] font-medium text-[#3b4170] max-w-[400px] mb-7 leading-relaxed"
+                className="text-sm sm:text-[1.05rem] font-medium text-[#3b4170] max-w-[380px] sm:max-w-[400px] mb-0 lg:mb-7 leading-relaxed"
                 style={{ textShadow: '0 2px 12px rgba(255, 255, 255, 0.85)' }}
               >
                 Inglés 100% en vivo y práctica vocal interactiva 24/7 — sin traducir.
@@ -538,7 +559,7 @@ export default function LandingPage({
           onFreeLessonClick={onFreeLessonClick}
           onPlacementClick={onPlacementClick}
           onScrollTo={scrollToSection}
-          onOpenLogin={() => setIsLoginOpen(true)}
+          onOpenLogin={openLoginModal}
         />
       </div>
 
@@ -547,7 +568,7 @@ export default function LandingPage({
       {/* ================================================== */}
       <LoginModal
         isOpen={isLoginOpen}
-        onClose={() => setIsLoginOpen(false)}
+        onClose={closeLoginModal}
         onLogin={onLogin}
         onEnrollClick={() => scrollToSection('#enroll')}
       />

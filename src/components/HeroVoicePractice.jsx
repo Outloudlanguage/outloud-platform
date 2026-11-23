@@ -8,7 +8,7 @@ const BASE_BAR_HEIGHTS = [14, 28, 18, 44, 24, 34];
 // ==========================================================
 const MODEL_AUDIO_URL =
   'https://pub-f968bc599b9e4b30965522b355899a7e.r2.dev/ElevenLabs_2026-11-23T19_22_15_Hope%20-%20upbeat%20and%20clear_pvc_s50_v3.mp3';
-const MODEL_SUBTITLE_EN = 'I am ready to learn English with Outloud.';
+const MODEL_SUBTITLE_EN = 'I am ready to learn English with OutLoud.';
 
 // ==========================================================
 // SUBTLE SYNTHESIZED UI AUDIO ("Juice" — Zero External Files)
@@ -486,7 +486,7 @@ export default function HeroVoicePractice({ onFreeLessonClick }) {
     phase === 'congrats';
 
   return (
-    <div className="relative w-full max-w-[460px] mx-auto flex items-center justify-center py-6 sm:py-8">
+    <div className="relative w-full max-w-[460px] mx-auto flex items-center justify-center pt-4 pb-5 sm:py-8">
       <style>{`
         /* Caja lavanda-índigo ligera y moderna */
         .ola-glass-lavender {

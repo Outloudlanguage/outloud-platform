@@ -83,7 +83,7 @@ export default function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [currentPage, setCurrentPage] = useState(() => {
     const hash = window.location.hash.replace('#', '');
-    return hash || 'login';
+    return hash || 'home';
   });
 
   // --- GLOBAL DOM PROTECTION & ANTI-TRANSLATION LOCK ---
@@ -181,20 +181,45 @@ export default function App() {
   // ------------------------------------
 
   useEffect(() => {
-    window.history.replaceState({ page: currentPage }, '', `#${currentPage}`);
+    const VALID_ROUTES = [
+      'home',
+      'login',
+      'info',
+      'cycle',
+      'levels',
+      'register',
+      'free-lesson',
+      'placement-test',
+      'cata-beta',
+      'domus',
+      'admin',
+      'teacher',
+      'hub',
+    ];
+
+    const targetUrl = currentPage === 'home' ? '/' : `#${currentPage}`;
+    window.history.replaceState({ page: currentPage }, '', targetUrl);
 
     const handlePopState = (event) => {
       if (event.state && event.state.page) {
         setCurrentPage(event.state.page);
       } else {
         const hash = window.location.hash.replace('#', '');
-        if (hash) setCurrentPage(hash);
+        if (!hash) {
+          setCurrentPage('home');
+        } else if (VALID_ROUTES.includes(hash)) {
+          setCurrentPage(hash);
+        }
       }
     };
 
     const handleHashChange = () => {
       const hash = window.location.hash.replace('#', '');
-      if (hash) setCurrentPage(hash);
+      if (!hash) {
+        setCurrentPage('home');
+      } else if (VALID_ROUTES.includes(hash)) {
+        setCurrentPage(hash);
+      }
     };
 
     window.addEventListener('popstate', handlePopState);
@@ -206,15 +231,26 @@ export default function App() {
   }, [currentPage]);
 
   const navigate = useCallback((page) => {
-    setCurrentPage(page);
-    window.history.pushState({ page }, '', `#${page}`);
+    const target = page || 'home';
+    setCurrentPage(target);
+    const nextUrl = target === 'home' ? '/' : `#${target}`;
+    window.history.pushState({ page: target }, '', nextUrl);
+  }, []);
+
+  const handleLoginModalToggle = useCallback((isOpen) => {
+    if (isOpen) {
+      window.history.replaceState({ page: 'login' }, '', '#login');
+    } else {
+      setCurrentPage('home');
+      window.history.replaceState({ page: 'home' }, '', '/');
+    }
   }, []);
 
   const handleLoginSuccess = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     
     if (!session) {
-      navigate('login');
+      navigate('home');
       return;
     }
 
@@ -234,10 +270,10 @@ export default function App() {
     } else if (role === 'admin' || role === 'general_manager') {
       navigate('admin'); 
     } else {
-      // Failsafe: If no role is found at all, stay on login and alert
+      // Failsafe: If no role is found at all, return cleanly to home and alert
       alert("Error: Your account has not been assigned a role yet. Contact support.");
       await supabase.auth.signOut();
-      navigate('login');
+      navigate('home');
     }
   };
 
@@ -251,8 +287,10 @@ export default function App() {
     <>
       {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
 
-      {currentPage === 'login' && (
+      {(currentPage === 'home' || currentPage === 'login') && (
         <LandingPage
+          initialLoginOpen={currentPage === 'login'}
+          onLoginModalToggle={handleLoginModalToggle}
           onLogin={handleLoginSuccess}
           onInfoClick={() => navigate('info')}
           onPlacementClick={() => navigate('placement-test')}
@@ -263,7 +301,7 @@ export default function App() {
 
       {currentPage === 'info' && (
         <CourseInfoPage
-          onReturnHome={() => navigate('login')}
+          onReturnHome={() => navigate('home')}
           onRegister={() => navigate('register')}
           onCycleClick={() => navigate('cycle')}
           onLevelsClick={() => navigate('levels')}
@@ -272,27 +310,27 @@ export default function App() {
 
       {currentPage === 'cycle' && (
         <CyclePage
-          onReturnHome={() => navigate('login')}
+          onReturnHome={() => navigate('home')}
           onRegister={() => navigate('register')}
         />
       )}
 
       {currentPage === 'levels' && (
-        <LevelsPage onReturnHome={() => navigate('login')} />
+        <LevelsPage onReturnHome={() => navigate('home')} />
       )}
 
       {currentPage === 'register' && (
         <RegistrationPage 
-          onReturnHome={() => navigate('login')} 
+          onReturnHome={() => navigate('home')} 
           onFreeTrialClick={handleStartFreeLesson} 
         />
       )}
 
       {currentPage === 'free-lesson' && (
         <FreeLesson 
-          onReturnHome={() => navigate('login')} 
+          onReturnHome={() => navigate('home')} 
           onReturnToRegister={() => {
-            navigate('login');
+            navigate('home');
             setTimeout(() => {
               document.getElementById('enroll')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }, 150);
@@ -319,10 +357,10 @@ export default function App() {
         <ProtectedRoute 
           allowedRoles={['GENERAL_MANAGER', 'Admin', 'ADMIN']} 
           forcedLanguage="en" 
-          onUnauthorized={() => navigate('login')}
+          onUnauthorized={() => navigate('home')}
         >
           <AdminHub 
-            onReturnHome={() => navigate('login')} 
+            onReturnHome={() => navigate('home')} 
           />
         </ProtectedRoute>
       )}
@@ -332,10 +370,10 @@ export default function App() {
         <ProtectedRoute 
           allowedRoles={['Teacher', 'TEACHER']} 
           forcedLanguage="en" 
-          onUnauthorized={() => navigate('login')}
+          onUnauthorized={() => navigate('home')}
         >
           <TeacherHub 
-            onReturnHome={() => navigate('login')} 
+            onReturnHome={() => navigate('home')} 
           />
         </ProtectedRoute>
       )}
@@ -345,9 +383,9 @@ export default function App() {
           allowedRoles={['Student', 'STUDENT']} 
           forcedLanguage="en" 
           isStudentHub={true} 
-          onUnauthorized={() => navigate('login')}
+          onUnauthorized={() => navigate('home')}
         >
-          <StudentHub onReturnHome={() => navigate('login')} /> 
+          <StudentHub onReturnHome={() => navigate('home')} /> 
         </ProtectedRoute>
       )}
     </>

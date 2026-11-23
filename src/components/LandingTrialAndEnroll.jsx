@@ -567,45 +567,54 @@ export function OnboardingFormCard({ onFreeTrialClick, onSuccessComplete }) {
                 hasError={errors.investTime}
               />
 
-              <div className="mt-1">
-                <button
-                  type="button"
-                  onClick={() => setFormData((prev) => ({ ...prev, referralToggle: !prev.referralToggle }))}
-                  className="w-full cursor-pointer flex justify-between items-center rounded-2xl bg-white/60 hover:bg-white/90 border-2 border-white/90 px-4 py-3 text-xs font-bold text-[#1e2246] transition-colors"
-                >
-                  <span>Quiero recomendar este curso a alguien</span>
-                  <svg
-                    className={`w-4 h-4 text-[#454d82] transition-transform duration-200 ${
-                      formData.referralToggle ? 'rotate-180' : ''
-                    }`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+              {/* Bloque opcional separado visualmente de las metas obligatorias */}
+              <div className="mt-2 pt-4 border-t border-[#626a9f]/20">
+                <div className="rounded-2xl bg-white/45 border border-dashed border-[#626a9f]/35 p-3">
+                  <button
+                    type="button"
+                    onClick={() => setFormData((prev) => ({ ...prev, referralToggle: !prev.referralToggle }))}
+                    aria-expanded={formData.referralToggle}
+                    className="w-full cursor-pointer flex justify-between items-center gap-2 text-left text-xs font-semibold text-[#3b4170] hover:text-[#1e2246] transition-colors"
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
+                    <span className="leading-snug">
+                      ¿Quieres recomendar este curso a alguien?{' '}
+                      <span className="inline-block text-[10px] font-bold uppercase tracking-wider text-[#626a9f] bg-white/80 px-2 py-0.5 rounded-full ml-1">
+                        Opcional
+                      </span>
+                    </span>
+                    <svg
+                      className={`w-4 h-4 shrink-0 text-[#454d82] transition-transform duration-200 ${
+                        formData.referralToggle ? 'rotate-180' : ''
+                      }`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
 
-                {formData.referralToggle && (
-                  <div className="mt-3 flex flex-col gap-2.5 animate-fade-in">
-                    <input
-                      type="text"
-                      placeholder="Nombre del referido"
-                      value={formData.refName}
-                      onChange={(e) => handleInputChange('refName', e.target.value)}
-                      className="w-full rounded-2xl bg-white/70 border-2 border-white/90 focus:border-[#454d82] focus:bg-white px-4 py-2.5 text-xs font-semibold text-[#1e2246] outline-none"
-                    />
-                    <div className="w-full rounded-2xl bg-white/70 border-2 border-white/90 focus-within:border-[#454d82] focus-within:bg-white px-4 py-2">
-                      <PhoneInput
-                        defaultCountry="VE"
-                        international
-                        placeholder="Teléfono del referido"
-                        value={formData.refPhone}
-                        onChange={(value) => handleInputChange('refPhone', value)}
+                  {formData.referralToggle && (
+                    <div className="mt-3 pt-3 border-t border-[#626a9f]/15 flex flex-col gap-2.5 animate-fade-in">
+                      <input
+                        type="text"
+                        placeholder="Nombre del referido (opcional)"
+                        value={formData.refName}
+                        onChange={(e) => handleInputChange('refName', e.target.value)}
+                        className="w-full rounded-xl bg-white/80 border border-white focus:border-[#454d82] focus:bg-white px-3.5 py-2.5 text-xs font-semibold text-[#1e2246] outline-none"
                       />
+                      <div className="w-full rounded-xl bg-white/80 border border-white focus-within:border-[#454d82] focus-within:bg-white px-3.5 py-2">
+                        <PhoneInput
+                          defaultCountry="VE"
+                          international
+                          placeholder="Teléfono del referido (opcional)"
+                          value={formData.refPhone}
+                          onChange={(value) => handleInputChange('refPhone', value)}
+                        />
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
 
@@ -827,15 +836,15 @@ export default function LandingTrialAndEnroll({
                         <button
                           type="button"
                           onClick={handlePlayMiniPrompt}
-                          aria-label="Escuchar oración completa"
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border border-[#1e2246] cursor-pointer transition-all ${
+                          aria-label="Oír oración completa"
+                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold tracking-wider border border-[#1e2246] cursor-pointer transition-all active:scale-95 ${
                             isSpeakingPrompt
-                              ? 'bg-[#16a37f] text-white'
-                              : 'bg-[#ffc749] text-[#1e2246] hover:brightness-105'
+                              ? 'bg-[#16a37f] text-white shadow-sm'
+                              : 'bg-[#ffc749] text-[#1e2246] hover:bg-[#ffd66b]'
                           }`}
                         >
-                          <VolumeSvg className="w-3.5 h-3.5" />
-                          <span>Oír</span>
+                          <VolumeSvg className={`w-3.5 h-3.5 ${isSpeakingPrompt ? 'animate-pulse' : ''}`} />
+                          <span>OÍR</span>
                         </button>
                       )}
                     </div>

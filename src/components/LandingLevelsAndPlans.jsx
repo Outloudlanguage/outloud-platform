@@ -248,13 +248,24 @@ const PAYMENT_PLANS = [
 ];
 
 // =========================================
-// 4. EXPLICADOR INTERACTIVO DE CRÉDITOS Y COHORTES
+// 4. EXPLICADOR INTERACTIVO DE CRÉDITOS + ACORDEONES
 // =========================================
+const ChevronDownSvg = ({ className = 'w-4 h-4' }) => (
+  <svg className={className} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+  </svg>
+);
+
 function CreditsAndCohortsExplainer({ onScrollTo }) {
-  const [hasExtraBundle, setHasExtraBundle] = useState(false); // Bundle de +2 créditos por $12 aparte
+  const [hasExtraBundle, setHasExtraBundle] = useState(false); // Bundle de +2 créditos ($12 aparte)
   const [selectedCohort, setSelectedCohort] = useState(15); // 15 o 30
+  const [openAccordion, setOpenAccordion] = useState(null); // null = todos colapsados por defecto
 
   const totalLiveCredits = hasExtraBundle ? 6 : 4;
+
+  const toggleAccordion = (key) => {
+    setOpenAccordion((prev) => (prev === key ? null : key));
+  };
 
   return (
     <div className="mt-14 sm:mt-16 relative">
@@ -267,9 +278,9 @@ function CreditsAndCohortsExplainer({ onScrollTo }) {
         }}
       />
 
-      <div className="ola-glass rounded-[2.5rem] p-6 sm:p-8 lg:p-10">
-        {/* Encabezado */}
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 pb-6 mb-7 border-b border-white/75">
+      <div className="ola-glass rounded-[2.5rem] p-5 sm:p-8 lg:p-10">
+        {/* Encabezado visible por defecto */}
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 pb-5 mb-6 border-b border-white/75">
           <div>
             <span className="inline-flex items-center gap-2 bg-[#454d82] text-[#ffc749] px-3.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest mb-3">
               <SparkleSvg className="w-3 h-3" />
@@ -282,297 +293,407 @@ function CreditsAndCohortsExplainer({ onScrollTo }) {
             </h3>
           </div>
           <p className="text-xs sm:text-sm text-[#4c5384] font-semibold max-w-md leading-relaxed">
-            Puedes <strong className="font-black text-[#1e2246]">aprender, practicar y estudiar tanto como quieras, donde quieras y cuando quieras</strong> con todas las funciones del sitio. Los créditos son <strong className="font-black text-[#454d82]">exclusivamente</strong> para agendar clases en vivo con profesores y compañeros.
+            Puedes <strong className="font-black text-[#1e2246]">aprender, practicar y estudiar tanto como quieras, donde quieras y cuando quieras</strong> en la plataforma. Los créditos se usan exclusivamente para agendar clases en vivo.
           </p>
         </div>
 
-        {/* AVISO DESTACADO: PLATAFORMA LIBRE 24/7 vs CRÉDITOS SOLO EN VIVO */}
+        {/* TAKEAWAY PRINCIPAL VISIBLE POR DEFECTO: CRÉDITOS = SOLO EN VIVO */}
         <div className="mb-6 bg-[#fff3d1]/85 border border-[#ffc749] rounded-2xl px-4 py-3.5 sm:px-5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
           <div className="flex items-start sm:items-center gap-2.5">
             <span className="w-6 h-6 rounded-full bg-[#16a37f] text-white flex items-center justify-center shrink-0 mt-0.5 sm:mt-0">
               <CheckSvg className="w-3.5 h-3.5" />
             </span>
             <p className="text-xs font-bold text-[#1e2246] leading-snug">
-              Lecciones, audios, práctica vocal, workbooks, foros y chats son <strong className="font-black underline decoration-[#ffc749] decoration-2 underline-offset-2">100% ilimitados 24/7</strong> — no consumen créditos.
+              Lecciones, audios, práctica vocal, workbooks, foros y chats son{' '}
+              <strong className="font-black underline decoration-[#ffc749] decoration-2 underline-offset-2">
+                100% ilimitados 24/7
+              </strong>{' '}
+              — no consumen créditos.
             </p>
           </div>
           <span className="self-start sm:self-center shrink-0 text-[10px] font-black uppercase tracking-widest bg-[#1e2246] text-[#ffc749] px-3 py-1 rounded-full">
-            Créditos = Solo En Vivo
+            CRÉDITOS = SOLO EN VIVO
           </span>
         </div>
 
-        {/* BLOQUE VISUAL INTERACTIVO (2 Columnas) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8 items-stretch">
-          {/* COLUMNA IZQUIERDA: SIMULADOR VISUAL DE 4 CRÉDITOS + BUNDLE EXTRA ($12) */}
-          <div className="lg:col-span-7 bg-white/65 backdrop-blur-xl border border-white/95 rounded-[2rem] p-5 sm:p-6 flex flex-col justify-between shadow-inner">
-            <div>
-              <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-                <div className="flex items-center gap-2.5">
-                  <span className="w-8 h-8 rounded-xl bg-[#ffc749] border-2 border-[#1e2246] text-[#1e2246] font-black text-xs flex items-center justify-center shrink-0">
-                    1:1
-                  </span>
-                  <div>
-                    <h4 className="text-sm font-black text-[#1e2246] uppercase tracking-wide leading-tight">
-                      1 Crédito = 1 Clase En Vivo con Profesores y Compañeros
-                    </h4>
-                    <p className="text-[11px] font-semibold text-[#50567d]">
-                      4 créditos incluidos al mes • Opcional: Bundle de +2 por $12 aparte
-                    </p>
-                  </div>
-                </div>
-
-                {/* Toggle táctil para el Bundle de 2 Extra Créditos ($12 USD aparte) */}
-                <button
-                  type="button"
-                  onClick={() => setHasExtraBundle((prev) => !prev)}
-                  className={`inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[10.5px] font-black uppercase tracking-wider border-2 transition-all duration-150 active:scale-95 cursor-pointer ${
-                    hasExtraBundle
-                      ? 'bg-[#16a37f] border-[#1e2246] text-white shadow-[0_3px_0_#1e2246]'
-                      : 'bg-white border-[#16a37f] text-[#128063] hover:bg-[#16a37f]/10'
-                  }`}
-                >
-                  {hasExtraBundle ? (
-                    <>
-                      <CheckSvg className="w-3.5 h-3.5" />
-                      <span>Bundle +2 ($12) Activo</span>
-                    </>
-                  ) : (
-                    <>
-                      <PlusSvg className="w-3.5 h-3.5" />
-                      <span>Añadir Bundle +2 ($12)</span>
-                    </>
-                  )}
-                </button>
-              </div>
-
-              {/* FICHA VISUAL: 4 INCLUIDOS + PAQUETE DE 2 EXTRA CRÉDITOS ($12 APARTE) */}
-              <div className="grid grid-cols-2 sm:grid-cols-6 gap-2.5 my-5 items-stretch">
-                {[1, 2, 3, 4].map((num) => (
-                  <div
-                    key={`base-${num}`}
-                    className="rounded-2xl bg-[#fff3d1] border-2 border-[#ffc749] p-3 flex flex-col items-center justify-center text-center shadow-sm"
-                  >
-                    <span className="w-7 h-7 rounded-full bg-[#ffc749] border border-[#1e2246] text-[#1e2246] font-black text-xs flex items-center justify-center mb-1.5">
-                      {num}
-                    </span>
-                    <span className="text-[9px] font-black uppercase tracking-wider text-[#1e2246]">
-                      Sem {num}
-                    </span>
-                    <span className="text-[8px] font-bold text-[#50567d] uppercase">Incluido</span>
-                  </div>
-                ))}
-
-                {/* Paquete unificado de 2 Extra Créditos ($12 USD aparte) */}
-                <button
-                  type="button"
-                  onClick={() => setHasExtraBundle((prev) => !prev)}
-                  className={`col-span-2 rounded-2xl p-3 flex flex-col items-center justify-center text-center transition-all duration-200 cursor-pointer border-2 relative ${
-                    hasExtraBundle
-                      ? 'bg-[#16a37f]/15 border-[#16a37f] shadow-md -translate-y-0.5'
-                      : 'bg-white/70 border-dashed border-[#16a37f]/60 hover:border-[#16a37f] hover:bg-white'
-                  }`}
-                >
-                  <span className="text-[8.5px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-[#16a37f] text-white mb-2">
-                    Bundle +2 • $12 Aparte
-                  </span>
-                  <div className="flex items-center justify-center gap-2 mb-1">
-                    {['+1', '+2'].map((lbl) => (
-                      <span
-                        key={lbl}
-                        className={`w-7 h-7 rounded-full font-black text-xs flex items-center justify-center transition-colors ${
-                          hasExtraBundle
-                            ? 'bg-[#16a37f] text-white shadow-sm'
-                            : 'bg-[#e8eaf7] text-[#454d82]'
-                        }`}
-                      >
-                        {lbl}
-                      </span>
-                    ))}
-                  </div>
-                  <span className="text-[9px] font-black uppercase tracking-wider text-[#128063]">
-                    {hasExtraBundle ? '2 créditos extra activos' : 'Toca para simular'}
-                  </span>
-                </button>
+        {/* SIMULADOR INTERACTIVO FULL-WIDTH VISIBLE POR DEFECTO */}
+        <div className="bg-white/70 backdrop-blur-xl border border-white/95 rounded-[2rem] p-5 sm:p-6 shadow-inner mb-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div className="flex items-center gap-2.5">
+              <span className="w-8 h-8 rounded-xl bg-[#ffc749] border-2 border-[#1e2246] text-[#1e2246] font-black text-xs flex items-center justify-center shrink-0">
+                1:1
+              </span>
+              <div>
+                <h4 className="text-sm font-black text-[#1e2246] uppercase tracking-wide leading-tight">
+                  1 Crédito = 1 Clase En Vivo con Profesores y Compañeros
+                </h4>
+                <p className="text-[11px] font-semibold text-[#50567d]">
+                  4 créditos incluidos al mes • Opcional: Bundle de +2 por $12 aparte
+                </p>
               </div>
             </div>
 
-            {/* Resultado dinámico del simulador */}
-            <div className="bg-[#1e2246] text-white rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <p className="text-xs font-black uppercase tracking-wider text-[#ffc749]">
-                  {hasExtraBundle
-                    ? `${totalLiveCredits} Clases En Vivo • Ritmo Acelerado (+$12 USD aparte)`
-                    : `${totalLiveCredits} Clases En Vivo • Ritmo Estándar (Incluido)`}
-                </p>
-                <p className="text-xs font-medium text-white/85 mt-1 leading-snug">
-                  {hasExtraBundle
-                    ? 'Pagando el Bundle de 2 créditos extra ($12 aparte) puedes ver hasta 6 lecciones en vivo al mes y adelantarte al ritmo promedio.'
-                    : 'Incluye 1 clase semanal (12 unidades en 3 meses). Si deseas avanzar más lecciones al mes, añade el Bundle de 2 créditos extra por $12 aparte.'}
-                </p>
+            {/* Toggle interactivo + AÑADIR BUNDLE +2 ($12) */}
+            <button
+              type="button"
+              onClick={() => setHasExtraBundle((prev) => !prev)}
+              className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-[10.5px] font-black uppercase tracking-wider border-2 transition-all duration-150 active:scale-95 cursor-pointer ${
+                hasExtraBundle
+                  ? 'bg-[#16a37f] border-[#1e2246] text-white shadow-[0_3px_0_#1e2246]'
+                  : 'bg-white border-[#16a37f] text-[#128063] hover:bg-[#16a37f]/10'
+              }`}
+            >
+              {hasExtraBundle ? (
+                <>
+                  <CheckSvg className="w-3.5 h-3.5" />
+                  <span>Bundle +2 ($12) Activo</span>
+                </>
+              ) : (
+                <>
+                  <PlusSvg className="w-3.5 h-3.5" />
+                  <span>Añadir Bundle +2 ($12)</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Grilla visual de 4 créditos base + paquete interactivo +2 */}
+          <div className="grid grid-cols-2 sm:grid-cols-6 gap-2.5 my-5 items-stretch">
+            {[1, 2, 3, 4].map((num) => (
+              <div
+                key={`base-${num}`}
+                className="rounded-2xl bg-[#fff3d1] border-2 border-[#ffc749] p-3 flex flex-col items-center justify-center text-center shadow-sm"
+              >
+                <span className="w-7 h-7 rounded-full bg-[#ffc749] border border-[#1e2246] text-[#1e2246] font-black text-xs flex items-center justify-center mb-1.5">
+                  {num}
+                </span>
+                <span className="text-[9px] font-black uppercase tracking-wider text-[#1e2246]">
+                  Sem {num}
+                </span>
+                <span className="text-[8px] font-bold text-[#50567d] uppercase">Incluido</span>
+              </div>
+            ))}
+
+            <button
+              type="button"
+              onClick={() => setHasExtraBundle((prev) => !prev)}
+              className={`col-span-2 rounded-2xl p-3 flex flex-col items-center justify-center text-center transition-all duration-200 cursor-pointer border-2 ${
+                hasExtraBundle
+                  ? 'bg-[#16a37f]/15 border-[#16a37f] shadow-md -translate-y-0.5'
+                  : 'bg-white/75 border-dashed border-[#16a37f]/60 hover:border-[#16a37f] hover:bg-white'
+              }`}
+            >
+              <span className="text-[8.5px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-[#16a37f] text-white mb-2">
+                Bundle +2 • $12 Aparte
+              </span>
+              <div className="flex items-center justify-center gap-2 mb-1">
+                {['+1', '+2'].map((lbl) => (
+                  <span
+                    key={lbl}
+                    className={`w-7 h-7 rounded-full font-black text-xs flex items-center justify-center transition-colors ${
+                      hasExtraBundle
+                        ? 'bg-[#16a37f] text-white shadow-sm'
+                        : 'bg-[#e8eaf7] text-[#454d82]'
+                    }`}
+                  >
+                    {lbl}
+                  </span>
+                ))}
+              </div>
+              <span className="text-[9px] font-black uppercase tracking-wider text-[#128063]">
+                {hasExtraBundle ? '2 créditos extra activos' : 'Toca para simular'}
+              </span>
+            </button>
+          </div>
+
+          {/* Barra de resultado del simulador */}
+          <div className="bg-[#1e2246] text-white rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-black uppercase tracking-wider text-[#ffc749]">
+                {hasExtraBundle
+                  ? `${totalLiveCredits} Clases En Vivo • Ritmo Acelerado (+$12 USD aparte)`
+                  : `${totalLiveCredits} Clases En Vivo • Ritmo Estándar (Incluido)`}
+              </p>
+              <p className="text-xs font-medium text-white/85 mt-1 leading-snug">
+                {hasExtraBundle
+                  ? 'Pagando el Bundle de 2 créditos extra ($12 aparte) puedes ver hasta 6 lecciones en vivo al mes y adelantarte al ritmo promedio.'
+                  : 'Incluye 1 clase semanal (12 unidades en 3 meses). Si deseas avanzar más rápido, añade el Bundle de 2 créditos extra por $12 aparte.'}
+              </p>
+            </div>
+            <span
+              className={`self-start sm:self-center shrink-0 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border ${
+                hasExtraBundle
+                  ? 'bg-[#16a37f] border-white/30 text-white'
+                  : 'bg-white/15 border-white/25 text-white'
+              }`}
+            >
+              {hasExtraBundle ? '+$12 USD Aparte' : 'Incluido en tu Plan'}
+            </span>
+          </div>
+        </div>
+
+        {/* ================================================== */}
+        {/* 3 ACORDEONES COLAPSABLES (Colapsados por defecto)  */}
+        {/* ================================================== */}
+        <div className="flex flex-col gap-3">
+          {/* ACORDEÓN 1: COHORTES Y FECHAS DE CORTE */}
+          <div className="bg-white/70 backdrop-blur-xl border border-white/95 rounded-2xl shadow-[0_6px_18px_-8px_rgba(69,77,130,0.18)] overflow-hidden transition-colors hover:bg-white/85">
+            <button
+              type="button"
+              onClick={() => toggleAccordion('cohorts')}
+              aria-expanded={openAccordion === 'cohorts'}
+              className="w-full px-5 py-4 flex items-center justify-between gap-3 text-left cursor-pointer focus:outline-none"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="w-9 h-9 rounded-xl bg-[#454d82] text-[#ffc749] border border-[#1e2246]/20 flex items-center justify-center shrink-0 font-black text-xs">
+                  15/30
+                </span>
+                <div className="min-w-0">
+                  <h4 className="text-xs sm:text-sm font-black text-[#1e2246] uppercase tracking-wide leading-tight">
+                    Cohortes y fechas de corte
+                  </h4>
+                  <p className="text-[11px] font-medium text-[#50567d] truncate">
+                    Elige Día 15 o Día 30 • Política de créditos no acumulativos
+                  </p>
+                </div>
               </div>
               <span
-                className={`self-start sm:self-center shrink-0 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border ${
-                  hasExtraBundle
-                    ? 'bg-[#16a37f] border-white/30 text-white'
-                    : 'bg-white/15 border-white/25 text-white'
+                className={`w-8 h-8 rounded-full bg-[#e8eaf7] text-[#454d82] flex items-center justify-center shrink-0 transition-transform duration-300 ease-out ${
+                  openAccordion === 'cohorts' ? 'rotate-180 bg-[#ffc749] text-[#1e2246]' : ''
                 }`}
               >
-                {hasExtraBundle ? '+$12 USD Aparte' : 'Incluido en tu Plan'}
+                <ChevronDownSvg className="w-4 h-4" />
               </span>
+            </button>
+
+            <div
+              className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${
+                openAccordion === 'cohorts' ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+              }`}
+            >
+              <div className="overflow-hidden">
+                <div className="px-5 pb-5 pt-2 border-t border-[#626a9f]/15">
+                  <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                    <span className="text-xs font-semibold text-[#4c5384]">
+                      Selecciona un corte para ver cómo funciona tu ciclo mensual:
+                    </span>
+                    <div className="inline-flex bg-[#e8eaf7] rounded-full p-1 border border-white">
+                      {[15, 30].map((day) => (
+                        <button
+                          key={day}
+                          type="button"
+                          onClick={() => setSelectedCohort(day)}
+                          className={`px-3.5 py-1.5 rounded-full text-[11px] font-black uppercase tracking-wider transition-all duration-200 cursor-pointer ${
+                            selectedCohort === day
+                              ? 'bg-[#454d82] text-[#ffc749] shadow-sm'
+                              : 'text-[#454d82] hover:text-[#1e2246]'
+                          }`}
+                        >
+                          Día {day}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Línea de tiempo Día 1 / Día 15 / Día 30 */}
+                  <div className="bg-white/90 border border-[#dfe2f2] rounded-2xl p-4">
+                    <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-wider text-[#50567d] mb-3">
+                      <span>Día 1</span>
+                      <span className={selectedCohort === 15 ? 'text-[#1e2246]' : ''}>Día 15</span>
+                      <span className={selectedCohort === 30 ? 'text-[#1e2246]' : ''}>Día 30</span>
+                    </div>
+
+                    <div className="relative h-3 bg-[#e8eaf7] rounded-full overflow-visible mb-4">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-[#626a9f] to-[#ffc749] transition-all duration-300"
+                        style={{ width: selectedCohort === 15 ? '50%' : '100%' }}
+                      />
+                      <div
+                        className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-[#ffc749] border-2 border-[#1e2246] shadow-md flex items-center justify-center transition-all duration-300"
+                        style={{ left: selectedCohort === 15 ? '50%' : '97%' }}
+                      >
+                        <span className="w-2 h-2 rounded-full bg-[#1e2246]" />
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-2.5">
+                      <span className="w-7 h-7 rounded-lg bg-[#454d82] text-[#ffc749] font-black text-xs flex items-center justify-center shrink-0 mt-0.5">
+                        {selectedCohort}
+                      </span>
+                      <p className="text-xs font-semibold text-[#3b4170] leading-relaxed">
+                        {selectedCohort === 15 ? (
+                          <>
+                            <strong className="font-black text-[#1e2246]">Cohorte Día 15:</strong> Tu ciclo cierra el 15 de cada mes. Al renovar tu mensualidad, recibes 4 nuevos créditos para el periodo siguiente.
+                          </>
+                        ) : (
+                          <>
+                            <strong className="font-black text-[#1e2246]">Cohorte Día 30:</strong> Tu ciclo cierra al final de cada mes. Ideal para sincronizar tu pago con tu quincena de cierre y renovar tus 4 créditos.
+                          </>
+                        )}
+                      </p>
+                    </div>
+
+                    {/* Política explícita: No acumulativos */}
+                    <div className="mt-3.5 pt-3 border-t border-[#dfe2f2] flex items-start gap-2">
+                      <svg className="w-4 h-4 text-[#ee665b] shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth="2.4" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <p className="text-[11px] font-bold text-[#9b2c23] leading-snug">
+                        <strong className="font-black">No acumulativos:</strong> Al vencer tu fecha de corte (Día {selectedCohort}), los créditos no utilizados expiran y no se trasladan al mes siguiente.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* COLUMNA DERECHA: SELECTOR VISUAL DE COHORTES (DÍA 15 vs DÍA 30) */}
-          <div className="lg:col-span-5 bg-white/65 backdrop-blur-xl border border-white/95 rounded-[2rem] p-5 sm:p-6 flex flex-col justify-between shadow-inner">
-            <div>
-              <div className="flex items-center justify-between gap-2 mb-4">
-                <div>
-                  <h4 className="text-sm font-black text-[#1e2246] uppercase tracking-wide leading-tight">
-                    Cohortes de Cobro
+          {/* ACORDEÓN 2: ¿POR QUÉ TE BENEFICIA ESTE SISTEMA? */}
+          <div className="bg-white/70 backdrop-blur-xl border border-white/95 rounded-2xl shadow-[0_6px_18px_-8px_rgba(69,77,130,0.18)] overflow-hidden transition-colors hover:bg-white/85">
+            <button
+              type="button"
+              onClick={() => toggleAccordion('benefits')}
+              aria-expanded={openAccordion === 'benefits'}
+              className="w-full px-5 py-4 flex items-center justify-between gap-3 text-left cursor-pointer focus:outline-none"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="w-9 h-9 rounded-xl bg-[#fff3d1] text-[#1e2246] border border-[#ffc749] flex items-center justify-center shrink-0">
+                  <SparkleSvg className="w-4 h-4 text-[#d9970f]" />
+                </span>
+                <div className="min-w-0">
+                  <h4 className="text-xs sm:text-sm font-black text-[#1e2246] uppercase tracking-wide leading-tight">
+                    ¿Por qué te beneficia este sistema?
                   </h4>
-                  <p className="text-[11px] font-semibold text-[#50567d]">
-                    Elige tu fecha de corte mensual
+                  <p className="text-[11px] font-medium text-[#50567d] truncate">
+                    Flexibilidad real de agenda, constancia y control sin cargos sorpresa
                   </p>
-                </div>
-
-                {/* Toggle Día 15 / Día 30 */}
-                <div className="inline-flex bg-[#e8eaf7] rounded-full p-1 border border-white">
-                  {[15, 30].map((day) => (
-                    <button
-                      key={day}
-                      type="button"
-                      onClick={() => setSelectedCohort(day)}
-                      className={`px-3.5 py-1.5 rounded-full text-[11px] font-black uppercase tracking-wider transition-all duration-200 cursor-pointer ${
-                        selectedCohort === day
-                          ? 'bg-[#454d82] text-[#ffc749] shadow-sm'
-                          : 'text-[#454d82] hover:text-[#1e2246]'
-                      }`}
-                    >
-                      Día {day}
-                    </button>
-                  ))}
                 </div>
               </div>
+              <span
+                className={`w-8 h-8 rounded-full bg-[#e8eaf7] text-[#454d82] flex items-center justify-center shrink-0 transition-transform duration-300 ease-out ${
+                  openAccordion === 'benefits' ? 'rotate-180 bg-[#ffc749] text-[#1e2246]' : ''
+                }`}
+              >
+                <ChevronDownSvg className="w-4 h-4" />
+              </span>
+            </button>
 
-              {/* Línea de tiempo visual del ciclo mensual */}
-              <div className="relative bg-white/85 border border-[#dfe2f2] rounded-2xl p-4 my-4">
-                <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-wider text-[#50567d] mb-3">
-                  <span>Día 1</span>
-                  <span className={selectedCohort === 15 ? 'text-[#1e2246]' : ''}>Día 15</span>
-                  <span className={selectedCohort === 30 ? 'text-[#1e2246]' : ''}>Día 30</span>
-                </div>
-
-                {/* Barra de línea de tiempo */}
-                <div className="relative h-3 bg-[#e8eaf7] rounded-full overflow-visible mb-4">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-[#626a9f] to-[#ffc749] transition-all duration-300"
-                    style={{ width: selectedCohort === 15 ? '50%' : '100%' }}
-                  />
-                  <div
-                    className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-[#ffc749] border-2 border-[#1e2246] shadow-md flex items-center justify-center transition-all duration-300"
-                    style={{ left: selectedCohort === 15 ? '50%' : '96%' }}
-                  >
-                    <span className="w-2 h-2 rounded-full bg-[#1e2246]" />
+            <div
+              className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${
+                openAccordion === 'benefits' ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+              }`}
+            >
+              <div className="overflow-hidden">
+                <div className="px-5 pb-5 pt-2 border-t border-[#626a9f]/15">
+                  <div className="bg-[#fff3d1]/75 border border-[#ffc749] rounded-2xl p-4">
+                    <ul className="space-y-2.5 text-xs font-semibold text-[#282d57]">
+                      <li className="flex items-start gap-2.5">
+                        <CheckSvg className="w-4 h-4 text-[#128063] shrink-0 mt-0.5" />
+                        <span>Sin horarios fijos: agendas tus clases del mes en los días y horas que mejor se adaptan a tu rutina.</span>
+                      </li>
+                      <li className="flex items-start gap-2.5">
+                        <CheckSvg className="w-4 h-4 text-[#128063] shrink-0 mt-0.5" />
+                        <span>Avanza por delante del ritmo promedio añadiendo el Bundle de 2 créditos extra ($12 aparte) cuando lo necesites.</span>
+                      </li>
+                      <li className="flex items-start gap-2.5">
+                        <CheckSvg className="w-4 h-4 text-[#128063] shrink-0 mt-0.5" />
+                        <span>Estudio 24/7 sin límites: tus prácticas en la web no gastan créditos, solo las clases en vivo con profesores y compañeros.</span>
+                      </li>
+                      <li className="flex items-start gap-2.5">
+                        <CheckSvg className="w-4 h-4 text-[#128063] shrink-0 mt-0.5" />
+                        <span>Ritmo constante y sin cargos automáticos sorpresa: el corte mensual impulsa tu constancia y tú verificas cada pago.</span>
+                      </li>
+                    </ul>
                   </div>
-                </div>
-
-                <div className="flex items-start gap-2.5">
-                  <span className="w-7 h-7 rounded-lg bg-[#454d82] text-[#ffc749] font-black text-xs flex items-center justify-center shrink-0 mt-0.5">
-                    {selectedCohort}
-                  </span>
-                  <p className="text-xs font-semibold text-[#3b4170] leading-snug">
-                    {selectedCohort === 15 ? (
-                      <>
-                        <strong className="font-black text-[#1e2246]">Cohorte Día 15:</strong> Tu ciclo cierra el 15 de cada mes. Al renovar tu mensualidad, recibes 4 nuevos créditos para el periodo siguiente.
-                      </>
-                    ) : (
-                      <>
-                        <strong className="font-black text-[#1e2246]">Cohorte Día 30:</strong> Tu ciclo cierra al final de cada mes. Ideal para sincronizar tu pago con tu quincena de cierre y renovar tus 4 créditos.
-                      </>
-                    )}
-                  </p>
-                </div>
-
-                {/* Aviso claro: Créditos NO acumulativos */}
-                <div className="mt-3.5 pt-3 border-t border-[#dfe2f2] flex items-start gap-2">
-                  <svg className="w-4 h-4 text-[#ee665b] shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth="2.4" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <p className="text-[11px] font-bold text-[#9b2c23] leading-snug">
-                    <strong className="font-black">No acumulativos:</strong> Al vencer tu fecha de corte (Día {selectedCohort}), los créditos no utilizados expiran y no se trasladan al mes siguiente.
-                  </p>
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* Por qué es beneficioso */}
-            <div className="bg-[#fff3d1]/80 border border-[#ffc749] rounded-2xl p-4">
-              <p className="text-[11px] font-black uppercase tracking-widest text-[#1e2246] mb-1.5">
-                ¿Por qué te beneficia este sistema?
-              </p>
-              <ul className="space-y-1.5 text-xs font-semibold text-[#282d57]">
-                <li className="flex items-start gap-2">
-                  <CheckSvg className="w-3.5 h-3.5 text-[#128063] shrink-0 mt-0.5" />
-                  <span>Sin horarios fijos: agendas tus clases del mes en los días y horas que mejor te funcionen.</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckSvg className="w-3.5 h-3.5 text-[#128063] shrink-0 mt-0.5" />
-                  <span>Avanza por delante del ritmo promedio añadiendo el Bundle de 2 créditos extra ($12 aparte).</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckSvg className="w-3.5 h-3.5 text-[#128063] shrink-0 mt-0.5" />
-                  <span>Ritmo constante y sin cargos automáticos: el corte mensual impulsa tu constancia y tú verificas tu pago.</span>
-                </li>
-              </ul>
+          {/* ACORDEÓN 3: INSCRIPCIÓN POR NIVEL ($10) Y DETALLES DE EXTRA CRÉDITOS */}
+          <div className="bg-white/70 backdrop-blur-xl border border-white/95 rounded-2xl shadow-[0_6px_18px_-8px_rgba(69,77,130,0.18)] overflow-hidden transition-colors hover:bg-white/85">
+            <button
+              type="button"
+              onClick={() => toggleAccordion('fees')}
+              aria-expanded={openAccordion === 'fees'}
+              className="w-full px-5 py-4 flex items-center justify-between gap-3 text-left cursor-pointer focus:outline-none"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="w-9 h-9 rounded-xl bg-[#ffc749] text-[#1e2246] border border-[#1e2246]/25 flex items-center justify-center shrink-0 font-black text-xs">
+                  $10
+                </span>
+                <div className="min-w-0">
+                  <h4 className="text-xs sm:text-sm font-black text-[#1e2246] uppercase tracking-wide leading-tight">
+                    Inscripción por nivel ($10) y detalles de Extra Créditos
+                  </h4>
+                  <p className="text-[11px] font-medium text-[#50567d] truncate">
+                    Renovación de nivel CEFR y condiciones del Bundle +2 ($12)
+                  </p>
+                </div>
+              </div>
+              <span
+                className={`w-8 h-8 rounded-full bg-[#e8eaf7] text-[#454d82] flex items-center justify-center shrink-0 transition-transform duration-300 ease-out ${
+                  openAccordion === 'fees' ? 'rotate-180 bg-[#ffc749] text-[#1e2246]' : ''
+                }`}
+              >
+                <ChevronDownSvg className="w-4 h-4" />
+              </span>
+            </button>
+
+            <div
+              className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${
+                openAccordion === 'fees' ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+              }`}
+            >
+              <div className="overflow-hidden">
+                <div className="px-5 pb-5 pt-2 border-t border-[#626a9f]/15 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-white/90 border border-[#dfe2f2] rounded-2xl p-4 flex items-start gap-3.5">
+                    <div className="w-11 h-11 rounded-2xl bg-[#ffc749] border-2 border-[#1e2246] shadow-[0_3px_0_#1e2246] flex items-center justify-center font-black text-sm text-[#1e2246] shrink-0">
+                      $10
+                    </div>
+                    <div>
+                      <h5 className="text-xs font-black uppercase tracking-widest text-[#1e2246]">
+                        Inscripción por Nivel
+                      </h5>
+                      <p className="text-xs text-[#4c5384] font-medium mt-1 leading-relaxed">
+                        Se abona al iniciar tu curso y cada vez que culminas un nivel CEFR para pasar al siguiente. Activa tu nuevo módulo, materiales y seguimiento.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-white/90 border border-[#dfe2f2] rounded-2xl p-4 flex items-start gap-3.5">
+                    <div className="w-11 h-11 rounded-2xl bg-[#16a37f] border-2 border-[#1e2246] shadow-[0_3px_0_#1e2246] flex flex-col items-center justify-center text-white shrink-0 leading-none">
+                      <span className="font-black text-xs">$12</span>
+                      <span className="text-[8px] font-black uppercase opacity-90">+2 Cr</span>
+                    </div>
+                    <div>
+                      <h5 className="text-xs font-black uppercase tracking-widest text-[#1e2246]">
+                        Bundle 2 Extra Créditos
+                      </h5>
+                      <p className="text-xs text-[#4c5384] font-medium mt-1 leading-relaxed">
+                        Se paga aparte para cursar más lecciones en vivo al mes si deseas ir por delante del ritmo promedio. Válidos dentro de tu ciclo activo (no acumulativos).
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* FRANJA INFERIOR: INSCRIPCIÓN POR NIVEL + BUNDLE EXTRA ($12) + MÉTODOS DE PAGO */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-6 border-t border-white/75">
-          {/* 1. Inscripción por nivel */}
-          <div className="bg-white/60 backdrop-blur-md border border-white rounded-2xl p-4 flex items-start gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-[#ffc749] border-2 border-[#1e2246] shadow-[0_3px_0_#1e2246] flex items-center justify-center font-black text-base text-[#1e2246] shrink-0">
-              $10
-            </div>
-            <div>
-              <h4 className="text-xs font-black uppercase tracking-widest text-[#1e2246]">
-                Inscripción por Nivel
-              </h4>
-              <p className="text-xs text-[#4c5384] font-medium mt-1 leading-snug">
-                Se realiza al iniciar tu curso y cada vez que culminas un nivel CEFR para pasar al siguiente. Activa tu nuevo módulo y materiales.
-              </p>
-            </div>
-          </div>
-
-          {/* 2. Bundle de 2 Extra Créditos ($12 aparte) */}
-          <div className="bg-white/60 backdrop-blur-md border border-white rounded-2xl p-4 flex items-start gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-[#16a37f] border-2 border-[#1e2246] shadow-[0_3px_0_#1e2246] flex flex-col items-center justify-center text-white shrink-0 leading-none">
-              <span className="font-black text-sm">$12</span>
-              <span className="text-[8px] font-black uppercase tracking-wider opacity-90">+2 Cr</span>
-            </div>
-            <div>
-              <h4 className="text-xs font-black uppercase tracking-widest text-[#1e2246]">
-                Bundle 2 Extra Créditos
-              </h4>
-              <p className="text-xs text-[#4c5384] font-medium mt-1 leading-snug">
-                Se paga aparte para cursar más lecciones en vivo al mes si deseas ir por delante del ritmo promedio. Válidos dentro de tu ciclo activo (no acumulativos).
-              </p>
-            </div>
-          </div>
-
-          {/* 3. Métodos de pago reales */}
-          <div className="bg-white/60 backdrop-blur-md border border-white rounded-2xl p-4 flex items-start gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-white border-2 border-[#1e2246] shadow-[0_3px_0_#1e2246] flex items-center justify-center text-[#454d82] shrink-0">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+        {/* FRANJA COMPACTA DE MÉTODOS DE PAGO */}
+        <div className="mt-5 pt-5 border-t border-white/75 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-white border-2 border-[#1e2246] shadow-[0_2px_0_#1e2246] flex items-center justify-center text-[#454d82] shrink-0">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
             </div>
             <div>
-              <h4 className="text-xs font-black uppercase tracking-widest text-[#1e2246]">
-                Zinli • PayPal • Binance
-              </h4>
-              <p className="text-xs text-[#4c5384] font-medium mt-1 leading-snug text-left">
+              <p className="text-xs font-black uppercase tracking-widest text-[#1e2246]">
+                Métodos de pago: Zinli • PayPal • Binance
+              </p>
+              <p className="text-xs text-[#4c5384] font-medium text-left">
                 Verificación rápida desde tu cuenta.{' '}
                 <button
                   type="button"
