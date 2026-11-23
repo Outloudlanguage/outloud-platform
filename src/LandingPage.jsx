@@ -289,7 +289,7 @@ export default function LandingPage({
         />
 
         <svg
-          className="absolute top-[22%] left-0 w-full h-56 opacity-[0.22]"
+          className="absolute top-[46%] left-0 w-full h-56 opacity-[0.14]"
           viewBox="0 0 1440 240"
           preserveAspectRatio="none"
           fill="none"
@@ -297,12 +297,12 @@ export default function LandingPage({
           <path
             d="M0 120 Q 180 20, 360 120 T 720 120 T 1080 120 T 1440 120"
             stroke="#626a9f"
-            strokeWidth="3.5"
+            strokeWidth="3"
           />
           <path
             d="M0 155 Q 200 225, 400 135 T 820 135 T 1200 155 T 1440 105"
             stroke="#ffc749"
-            strokeWidth="4"
+            strokeWidth="3.5"
           />
         </svg>
 
@@ -453,10 +453,15 @@ export default function LandingPage({
                 </span>
               </h1>
 
-              <p className="text-base sm:text-lg text-[#3e446b] font-medium leading-relaxed max-w-xl mb-8">
-                Aprende inglés hablando desde el primer día. Lecciones interactivas 24/7, práctica vocal instantánea y clases{' '}
-                <strong className="font-black text-[#1e2246]">100% en vivo</strong> diseñadas para que dejes de traducir en tu cabeza.
-              </p>
+              <div className="bg-white/55 backdrop-blur-xl border border-white/85 rounded-2xl px-5 py-4 sm:px-6 sm:py-4.5 shadow-[0_12px_28px_-12px_rgba(55,63,118,0.2)] max-w-xl mb-8">
+                <p className="text-sm sm:text-base lg:text-lg text-[#1e2246] font-semibold leading-relaxed">
+                  Aprende inglés hablando desde el primer día. Lecciones interactivas 24/7, práctica vocal instantánea y clases{' '}
+                  <strong className="font-black text-[#454d82] underline decoration-[#ffc749] decoration-[3px] underline-offset-2">
+                    100% en vivo
+                  </strong>{' '}
+                  diseñadas para que dejes de traducir en tu cabeza.
+                </p>
+              </div>
 
               {/* Primary Tactile CTAs */}
               <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
@@ -485,10 +490,10 @@ export default function LandingPage({
                 <button
                   type="button"
                   onClick={() => scrollToSection('#cycle')}
-                  className="ola-reactive-text text-xs font-black uppercase tracking-widest text-[#454d82] cursor-pointer group"
+                  className="ola-reactive-text text-[11px] sm:text-xs font-black uppercase tracking-widest text-[#454d82] cursor-pointer group"
                 >
-                  <span>Descubre cómo funciona el ciclo en 5 pasos</span>
-                  <svg className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <span>Ver el ciclo de estudio en 5 pasos</span>
+                  <svg className="w-4 h-4 shrink-0 transition-transform duration-200 group-hover:translate-x-1" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                   </svg>
                 </button>
