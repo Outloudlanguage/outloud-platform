@@ -11,6 +11,7 @@ import StudentHub from './StudentHub';
 import TeacherHub from './TeacherHub';
 import PlacementTest from './components/PlacementTest';
 import CataLanding from './Cata-Beta/CataLanding';
+import SplashScreen from './components/SplashScreen';
 import DomusApp from './DomusApp';
 
 // ==========================================
@@ -79,6 +80,7 @@ const ProtectedRoute = ({ children, allowedRoles, forcedLanguage, isStudentHub =
 // MAIN APP COMPONENT
 // ==========================================
 export default function App() {
+  const [showSplash, setShowSplash] = useState(true);
   const [currentPage, setCurrentPage] = useState(() => {
     const hash = window.location.hash.replace('#', '');
     return hash || 'login';
@@ -247,6 +249,8 @@ export default function App() {
 
   return (
     <>
+      {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
+
       {currentPage === 'login' && (
         <LoginPage
           onLogin={handleLoginSuccess}
