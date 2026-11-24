@@ -218,6 +218,43 @@ const AdminThemeStyles = () => (
     .PhoneInputCustom .PhoneInputCountry { margin-right: 0.4rem; }
     .PhoneInputCustom .PhoneInputCountrySelectArrow { color: #454d82; }
     .PhoneInputCustom .PhoneInputCountrySelect { color: #1e2246; background: #ffffff; }
+
+    /* Mobile Editorial Surface & 60fps Scroll Optimizations */
+    .ola-no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .ola-no-scrollbar::-webkit-scrollbar { display: none; }
+
+    @media (max-width: 1023px) {
+      .ola-adm-glass,
+      .ola-adm-card-pearl {
+        background: #fdfcf8 !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        border: 2px solid rgba(30, 34, 70, 0.14) !important;
+        box-shadow: 0 5px 0 rgba(30, 34, 70, 0.08), 0 12px 24px -14px rgba(30, 34, 70, 0.18) !important;
+      }
+      .ola-adm-glass-gold,
+      .ola-adm-card-gold {
+        border: 2px solid #1e2246 !important;
+        box-shadow: 0 5px 0 #1e2246 !important;
+      }
+      .ola-adm-glass-indigo,
+      .ola-adm-card-indigo {
+        border: 2px solid #1e2246 !important;
+        box-shadow: 0 5px 0 #1e2246 !important;
+      }
+      .ola-adm-glass-mint,
+      .ola-adm-card-mint {
+        border: 2px solid rgba(22, 163, 127, 0.65) !important;
+        box-shadow: 0 5px 0 rgba(18, 128, 99, 0.18) !important;
+      }
+      .ola-adm-bento:hover {
+        transform: none !important;
+      }
+      .ola-adm-float,
+      .ola-adm-float-rev {
+        animation: none !important;
+      }
+    }
   `}</style>
 );
 
@@ -518,9 +555,10 @@ const ProvisioningModal = ({ isOpen, onClose, supabase, onSuccess, initialData }
     <div
       id="prov-overlay"
       onClick={(e) => e.target.id === 'prov-overlay' && onClose()}
-      className="fixed inset-0 z-[400] flex items-center justify-center bg-[#1e2246]/55 backdrop-blur-xl px-4 font-montserrat"
+      className="fixed inset-0 z-[400] flex items-end sm:items-center justify-center bg-[#1e2246]/60 sm:backdrop-blur-xl p-0 sm:px-4 font-montserrat"
     >
-      <div className="ola-adm-card-pearl ola-adm-modal-in rounded-[2.25rem] p-6 sm:p-8 max-w-4xl w-full relative flex flex-col overflow-hidden max-h-[92vh]">
+      <div className="ola-adm-card-pearl ola-adm-modal-in rounded-t-[2.25rem] sm:rounded-[2.25rem] p-5 sm:p-8 pb-7 sm:pb-8 max-w-4xl w-full relative flex flex-col overflow-hidden max-h-[92dvh]">
+        <div className="sm:hidden w-12 h-1.5 rounded-full bg-[#1e2246]/20 mx-auto mb-4 shrink-0" />
         <div className="flex justify-between items-center mb-5 border-b border-[#626a9f]/15 pb-4 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-2xl bg-[#ffc749] border-2 border-[#1e2246] shadow-[0_3px_0_#1e2246] flex items-center justify-center text-[#1e2246] shrink-0">
@@ -2810,13 +2848,13 @@ const AdminHub = () => {
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2.5 w-full md:w-auto shrink-0">
             <button
               type="button"
               onClick={() => setAccountsView('STATISTICS')}
-              className="ola-adm-btn-outline px-5 py-2.5 rounded-full text-[11px] font-bold uppercase tracking-widest cursor-pointer"
+              className="ola-adm-btn-outline px-4 sm:px-5 py-3 sm:py-2.5 rounded-full text-[10.5px] sm:text-[11px] font-bold uppercase tracking-wider sm:tracking-widest cursor-pointer text-center"
             >
-              Statistics Hub
+              Statistics
             </button>
             <button
               type="button"
@@ -2824,9 +2862,9 @@ const AdminHub = () => {
                 setProvisioningInitialData(null);
                 setIsProvisioningModalOpen(true);
               }}
-              className="ola-adm-btn-yellow px-5 py-2.5 rounded-full text-[11px] font-bold uppercase tracking-widest cursor-pointer"
+              className="ola-adm-btn-yellow px-4 sm:px-5 py-3 sm:py-2.5 rounded-full text-[10.5px] sm:text-[11px] font-bold uppercase tracking-wider sm:tracking-widest cursor-pointer text-center"
             >
-              + Provisionar Cuenta
+              + Provisionar
             </button>
           </div>
         </section>
@@ -2939,8 +2977,18 @@ const AdminHub = () => {
           )}
         </section>
 
-        {/* 3. THE 3-CARD HERO BENTO TRIO (Butter-Gold / Periwinkle-Indigo / Pearl-White) */}
-        <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* 3. THE 3-CARD HERO BENTO TRIO (Mobile Snap-Carousel / Desktop 3-Col Grid) */}
+        <section className="flex flex-col gap-2.5">
+          <div className="lg:hidden flex items-center justify-between px-1">
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#454d82]">
+              Acciones Rápidas
+            </span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#626a9f] bg-white px-2.5 py-0.5 rounded-full border border-[#1e2246]/15">
+              Desliza →
+            </span>
+          </div>
+
+          <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 -mx-4 px-4 pb-3 ola-no-scrollbar lg:grid lg:grid-cols-3 lg:gap-6 lg:mx-0 lg:px-0 lg:pb-0 lg:overflow-visible">
           {/* HERO 1: BUTTER-GOLD — CREATE ACCOUNT */}
           <button
             type="button"
@@ -2948,7 +2996,7 @@ const AdminHub = () => {
               setProvisioningInitialData(null);
               setIsProvisioningModalOpen(true);
             }}
-            className="ola-adm-card-gold ola-adm-bento group relative rounded-[2.25rem] p-5 sm:p-6 flex flex-col justify-between text-left cursor-pointer focus:outline-none min-h-[340px]"
+            className="ola-adm-card-gold ola-adm-bento group relative rounded-[2rem] lg:rounded-[2.25rem] p-5 sm:p-6 flex flex-col justify-between text-left cursor-pointer focus:outline-none w-[84vw] max-w-[340px] shrink-0 snap-center lg:w-auto lg:max-w-none min-h-[300px] lg:min-h-[340px]"
           >
             <div className="pointer-events-none select-none absolute -bottom-10 -right-10 opacity-[0.09] group-hover:opacity-[0.14] transition-opacity">
               <OutLoudIcon withTile={false} className="w-44 h-44" />
@@ -2986,7 +3034,7 @@ const AdminHub = () => {
           <button
             type="button"
             onClick={() => setAccountsView('STATISTICS')}
-            className="ola-adm-card-indigo ola-adm-bento group relative rounded-[2.25rem] p-5 sm:p-6 flex flex-col justify-between text-left cursor-pointer focus:outline-none min-h-[340px]"
+            className="ola-adm-card-indigo ola-adm-bento group relative rounded-[2rem] lg:rounded-[2.25rem] p-5 sm:p-6 flex flex-col justify-between text-left cursor-pointer focus:outline-none w-[84vw] max-w-[340px] shrink-0 snap-center lg:w-auto lg:max-w-none min-h-[300px] lg:min-h-[340px]"
           >
             <div className="pointer-events-none select-none absolute -bottom-10 -right-10 opacity-[0.12]">
               <OutLoudIcon withTile={false} className="w-44 h-44" />
@@ -3021,7 +3069,7 @@ const AdminHub = () => {
           </button>
 
           {/* HERO 3: PEARL-WHITE FROSTED — 10-DAY ACTIVE PULSE */}
-          <div className="ola-adm-card-pearl ola-adm-bento group relative rounded-[2.25rem] p-5 sm:p-6 flex flex-col justify-between text-left min-h-[340px]">
+          <div className="ola-adm-card-pearl ola-adm-bento group relative rounded-[2rem] lg:rounded-[2.25rem] p-5 sm:p-6 flex flex-col justify-between text-left w-[84vw] max-w-[340px] shrink-0 snap-center lg:w-auto lg:max-w-none min-h-[300px] lg:min-h-[340px]">
             <div className="relative z-10 w-full h-36 rounded-[1.5rem] bg-[#f4f6fc] border border-white shadow-inner flex items-center justify-center gap-5 px-4 mb-5">
               <div className="relative w-28 h-28 flex items-center justify-center shrink-0">
                 <svg className="w-full h-full transform -rotate-90" viewBox="0 0 104 104">
@@ -3094,6 +3142,7 @@ const AdminHub = () => {
                 {pendingLeadsCount > 0 ? `Ver ${pendingLeadsCount} Leads Pendientes →` : 'Ir al Directorio →'}
               </button>
             </div>
+          </div>
           </div>
         </section>
 
@@ -3199,8 +3248,8 @@ const AdminHub = () => {
             )}
           </div>
 
-          {/* Directory Rows */}
-          <div className="flex flex-col gap-2.5 max-h-[540px] overflow-y-auto custom-scrollbar pr-1">
+          {/* Directory Rows (Editorial Contact Cards on Mobile / Crisp Rows on Desktop) */}
+          <div className="flex flex-col gap-3 lg:max-h-[540px] lg:overflow-y-auto custom-scrollbar lg:pr-1">
             {isLoadingDirectory ? (
               <div className="py-16 flex items-center justify-center">
                 <div className="w-8 h-8 border-4 border-[#626a9f] border-t-[#ffc749] rounded-full animate-spin" />
@@ -3218,78 +3267,48 @@ const AdminHub = () => {
                   <div
                     key={user.id}
                     onClick={() => setSelectedStudent(user)}
-                    className={`border-2 rounded-2xl p-3.5 sm:p-4 flex items-center justify-between gap-3 transition-all cursor-pointer group ${
+                    className={`border-2 rounded-2xl p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all cursor-pointer group ${
                       isPending
-                        ? 'bg-gradient-to-r from-[#fff9e8] to-[#ffe69e] border-[#ffc749] hover:brightness-[1.01] shadow-sm'
-                        : 'bg-white border-white hover:border-[#626a9f]/45 shadow-sm hover:-translate-y-0.5'
+                        ? 'bg-gradient-to-r from-[#fff9e8] to-[#ffe69e] border-[#1e2246] sm:border-[#ffc749] shadow-[0_3px_0_#1e2246] sm:shadow-sm'
+                        : 'bg-white border-[#1e2246]/12 sm:border-white hover:border-[#626a9f]/45 shadow-sm lg:hover:-translate-y-0.5'
                     }`}
                   >
-                    <div className="flex items-center gap-3.5 min-w-0 flex-1">
-                      <img
-                        src={
-                          user.avatar_url ||
-                          `https://ui-avatars.com/api/?name=${user.first_name || 'U'}+${user.last_name || ''}&background=626a9f&color=fff`
-                        }
-                        className="w-11 h-11 rounded-full border-2 border-[#1e2246]/20 object-cover shrink-0"
-                        alt="User"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-extrabold text-sm text-[#1e2246] truncate">
-                            {user.first_name || 'Nuevo'} {user.last_name || 'Usuario'}
-                          </h4>
-                          {isPending && (
-                            <span className="bg-[#1e2246] text-[#ffc749] px-2.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider shrink-0">
-                              Pending Lead
-                            </span>
+                    {/* Top Row: Identity + Level Stamp */}
+                    <div className="flex items-center justify-between gap-3 min-w-0 flex-1">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <img
+                          src={
+                            user.avatar_url ||
+                            `https://ui-avatars.com/api/?name=${user.first_name || 'U'}+${user.last_name || ''}&background=626a9f&color=fff`
+                          }
+                          className="w-11 h-11 rounded-full border-2 border-[#1e2246]/25 object-cover shrink-0"
+                          alt="User"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <h4 className="font-extrabold text-sm text-[#1e2246] truncate">
+                              {user.first_name || 'Nuevo'} {user.last_name || 'Usuario'}
+                            </h4>
+                            {isPending && (
+                              <span className="bg-[#1e2246] text-[#ffc749] px-2 py-0.5 rounded-full text-[8.5px] font-extrabold uppercase tracking-wider shrink-0">
+                                Pending Lead
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11.5px] sm:text-xs font-medium text-[#50567d] truncate mt-0.5">
+                            {user.email}
+                          </p>
+                          {user.whatsapp && (
+                            <p className="sm:hidden text-[10.5px] font-bold text-[#454d82] truncate mt-0.5">
+                              {user.whatsapp}
+                            </p>
                           )}
                         </div>
-                        <p className="text-xs font-medium text-[#50567d] truncate">
-                          {user.email} {user.whatsapp ? `• ${user.whatsapp}` : ''}
-                        </p>
                       </div>
-                    </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
-                      {directoryTab === 'teachers' && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedTeacher(user);
-                          }}
-                          className="bg-[#e7faf3] hover:bg-[#16a37f] text-[#128063] hover:text-white px-3.5 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer"
-                        >
-                          Metrics
-                        </button>
-                      )}
-
-                      {!isPending && directoryTab === 'students' && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setImpersonatingStudent(user);
-                          }}
-                          className="hidden sm:inline-flex bg-[#e8eaf7] hover:bg-[#ffc749] text-[#454d82] hover:text-[#1e2246] px-3.5 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer"
-                        >
-                          View As
-                        </button>
-                      )}
-
-                      <button
-                        type="button"
-                        onClick={(e) => handleDeleteUser(user, e)}
-                        className="w-8 h-8 rounded-full bg-[#ee665b]/15 text-[#c93f34] hover:bg-[#ee665b] hover:text-white flex items-center justify-center transition-colors cursor-pointer shrink-0"
-                        title="Delete User"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-
+                      {/* Mobile Level Stamp (Right of Identity) */}
                       <div
-                        className={`w-10 h-10 rounded-xl flex items-center justify-center font-extrabold text-xs shrink-0 ${
+                        className={`sm:hidden w-10 h-10 rounded-xl flex items-center justify-center font-extrabold text-xs shrink-0 ${
                           levelBadge.includes('C')
                             ? 'bg-[#ffc749] text-[#1e2246] border-2 border-[#1e2246]'
                             : levelBadge.includes('B')
@@ -3298,6 +3317,65 @@ const AdminHub = () => {
                         }`}
                       >
                         {levelBadge}
+                      </div>
+                    </div>
+
+                    {/* Action Bar (Full-width touch footer on mobile / inline on desktop) */}
+                    <div className="flex items-center justify-between sm:justify-end gap-2 pt-2.5 sm:pt-0 border-t sm:border-t-0 border-[#1e2246]/10 shrink-0">
+                      <span className="sm:hidden text-[10px] font-extrabold uppercase tracking-wider text-[#626a9f]">
+                        {isPending ? 'Revisar solicitud →' : 'Abrir ficha →'}
+                      </span>
+
+                      <div className="flex items-center gap-2">
+                        {directoryTab === 'teachers' && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedTeacher(user);
+                            }}
+                            className="bg-[#e7faf3] hover:bg-[#16a37f] text-[#128063] hover:text-white border border-[#16a37f]/35 px-3.5 py-2 sm:py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider transition-colors cursor-pointer"
+                          >
+                            Metrics
+                          </button>
+                        )}
+
+                        {!isPending && directoryTab === 'students' && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setImpersonatingStudent(user);
+                            }}
+                            className="inline-flex bg-[#e8eaf7] hover:bg-[#ffc749] text-[#454d82] hover:text-[#1e2246] border border-[#626a9f]/25 px-3.5 py-2 sm:py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider transition-colors cursor-pointer"
+                          >
+                            View As
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteUser(user, e)}
+                          className="w-9 h-9 sm:w-8 sm:h-8 rounded-full bg-[#ee665b]/15 text-[#c93f34] hover:bg-[#ee665b] hover:text-white flex items-center justify-center transition-colors cursor-pointer shrink-0"
+                          title="Delete User"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+
+                        {/* Desktop Level Stamp */}
+                        <div
+                          className={`hidden sm:flex w-10 h-10 rounded-xl items-center justify-center font-extrabold text-xs shrink-0 ${
+                            levelBadge.includes('C')
+                              ? 'bg-[#ffc749] text-[#1e2246] border-2 border-[#1e2246]'
+                              : levelBadge.includes('B')
+                              ? 'bg-[#5b64a0] text-[#ffc749]'
+                              : 'bg-[#e8eaf7] text-[#1e2246]'
+                          }`}
+                        >
+                          {levelBadge}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -3328,17 +3406,17 @@ const AdminHub = () => {
           </h1>
         </div>
 
-        {/* Floating Sub Navigation Pills */}
-        <div className="bg-white/95 border border-white rounded-full p-1.5 flex overflow-x-auto max-w-full gap-1 shadow-[0_10px_26px_-10px_rgba(69,77,130,0.22)]">
+        {/* Floating Sub Navigation Pills (Edge-to-Edge Editorial Rail on Mobile) */}
+        <div className="-mx-4 px-4 py-1 sm:mx-0 sm:p-1.5 sm:bg-white/95 sm:border sm:border-white sm:rounded-full flex overflow-x-auto max-w-none sm:max-w-full gap-2 sm:gap-1 ola-no-scrollbar sm:shadow-[0_10px_26px_-10px_rgba(69,77,130,0.22)]">
           {['General', 'Staff', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'Chat', 'Forum'].map((tab) => (
             <button
               type="button"
               key={tab}
               onClick={() => setActiveCommsTab(tab)}
-              className={`px-3.5 sm:px-4 py-2 rounded-full font-bold text-[11px] uppercase tracking-wider whitespace-nowrap cursor-pointer transition-colors ${
+              className={`px-4 py-2 rounded-full font-extrabold text-[11px] uppercase tracking-wider whitespace-nowrap cursor-pointer transition-colors border-2 sm:border-0 ${
                 activeCommsTab === tab
-                  ? 'bg-[#1e2246] text-[#ffc749] shadow-sm'
-                  : 'text-[#454d82] hover:text-[#1e2246] hover:bg-[#f2f4fc]'
+                  ? 'bg-[#1e2246] text-[#ffc749] border-[#1e2246] shadow-[0_3px_0_#ffc749] sm:shadow-sm'
+                  : 'bg-white sm:bg-transparent text-[#454d82] border-[#1e2246]/15 hover:text-[#1e2246] hover:bg-[#f2f4fc]'
               }`}
             >
               {tab}
@@ -3450,8 +3528,8 @@ const AdminHub = () => {
           </div>
 
           {/* Feed Right */}
-          <div className="lg:col-span-7 ola-adm-card-pearl rounded-[2.25rem] p-5 sm:p-6 flex flex-col w-full min-h-[520px] max-h-[72vh] relative overflow-hidden">
-            <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-3.5 pr-1 pb-16 lg:pb-2">
+          <div className="lg:col-span-7 ola-adm-card-pearl rounded-[2rem] lg:rounded-[2.25rem] p-4 sm:p-6 flex flex-col w-full lg:min-h-[520px] lg:max-h-[72vh] relative">
+            <div className="flex-1 lg:overflow-y-auto custom-scrollbar flex flex-col gap-3.5 lg:pr-1 pb-4 lg:pb-2">
               {announcements.length === 0 ? (
                 <div className="py-20 text-center text-[#626a9f] font-bold uppercase tracking-widest text-xs">
                   No hay anuncios activos para este canal.
@@ -3500,10 +3578,11 @@ const AdminHub = () => {
               <button
                 type="button"
                 onClick={() => setIsMobileCommsComposerOpen(true)}
-                className="ola-adm-btn-yellow absolute bottom-5 right-5 w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold z-50 cursor-pointer"
+                className="ola-adm-btn-yellow fixed bottom-24 right-4 px-5 h-12 rounded-full flex items-center justify-center gap-1.5 text-xs font-extrabold uppercase tracking-wider z-[180] cursor-pointer"
                 aria-label="New Announcement"
               >
-                +
+                <span className="text-lg leading-none">+</span>
+                <span>Publicar</span>
               </button>
             )}
           </div>
@@ -3639,22 +3718,22 @@ const AdminHub = () => {
           </div>
 
           {/* Right: 4-Metric Bento Stack */}
-          <div className="lg:col-span-3 grid grid-cols-2 lg:flex lg:flex-col gap-3.5">
-            <div className="ola-adm-card-pearl flex-1 rounded-2xl p-4 flex flex-col items-center justify-center text-center">
-              <span className="text-[10px] font-bold text-[#626a9f] uppercase tracking-widest">Gross Revenue</span>
-              <span className="text-2xl font-extrabold text-[#1e2246] mt-0.5">${finRevenue.toLocaleString()}</span>
+          <div className="lg:col-span-3 grid grid-cols-2 lg:flex lg:flex-col gap-3">
+            <div className="ola-adm-card-pearl flex-1 rounded-2xl p-3.5 sm:p-4 flex flex-col items-center justify-center text-center">
+              <span className="text-[9.5px] sm:text-[10px] font-bold text-[#626a9f] uppercase tracking-wider sm:tracking-widest">Gross Revenue</span>
+              <span className="text-xl sm:text-2xl font-extrabold text-[#1e2246] mt-0.5 truncate max-w-full">${finRevenue.toLocaleString()}</span>
             </div>
-            <div className="bg-gradient-to-br from-white to-[#fff0ef] border-2 border-white flex-1 rounded-2xl p-4 flex flex-col items-center justify-center text-center shadow-sm">
-              <span className="text-[10px] font-bold text-[#c93f34] uppercase tracking-widest">Payroll Liability</span>
-              <span className="text-2xl font-extrabold text-[#c93f34] mt-0.5">-${finPayroll.toLocaleString()}</span>
+            <div className="bg-[#fff7f6] border-2 border-[#ee665b]/35 lg:border-white flex-1 rounded-2xl p-3.5 sm:p-4 flex flex-col items-center justify-center text-center shadow-sm">
+              <span className="text-[9.5px] sm:text-[10px] font-bold text-[#c93f34] uppercase tracking-wider sm:tracking-widest">Payroll</span>
+              <span className="text-xl sm:text-2xl font-extrabold text-[#c93f34] mt-0.5 truncate max-w-full">-${finPayroll.toLocaleString()}</span>
             </div>
-            <div className="bg-gradient-to-br from-white to-[#fff8e1] border-2 border-white flex-1 rounded-2xl p-4 flex flex-col items-center justify-center text-center shadow-sm">
-              <span className="text-[10px] font-bold text-[#9a6700] uppercase tracking-widest">Digital Overhead</span>
-              <span className="text-2xl font-extrabold text-[#b37a00] mt-0.5">-${finOverhead.toLocaleString()}</span>
+            <div className="bg-[#fffbf0] border-2 border-[#ffc749]/65 lg:border-white flex-1 rounded-2xl p-3.5 sm:p-4 flex flex-col items-center justify-center text-center shadow-sm">
+              <span className="text-[9.5px] sm:text-[10px] font-bold text-[#9a6700] uppercase tracking-wider sm:tracking-widest">Overhead</span>
+              <span className="text-xl sm:text-2xl font-extrabold text-[#b37a00] mt-0.5 truncate max-w-full">-${finOverhead.toLocaleString()}</span>
             </div>
-            <div className="ola-adm-card-mint flex-1 rounded-2xl p-4 flex flex-col items-center justify-center text-center">
-              <span className="text-[10px] font-bold text-[#128063] uppercase tracking-widest">Net Profit</span>
-              <span className="text-3xl font-extrabold text-[#128063] mt-0.5">${netProfit.toLocaleString()}</span>
+            <div className="ola-adm-card-mint flex-1 rounded-2xl p-3.5 sm:p-4 flex flex-col items-center justify-center text-center">
+              <span className="text-[9.5px] sm:text-[10px] font-bold text-[#128063] uppercase tracking-wider sm:tracking-widest">Net Profit</span>
+              <span className="text-2xl sm:text-3xl font-extrabold text-[#128063] mt-0.5 truncate max-w-full">${netProfit.toLocaleString()}</span>
             </div>
           </div>
         </div>
@@ -3784,9 +3863,10 @@ const AdminHub = () => {
         {showRenewalsModal && (
           <div
             onClick={(e) => e.target === e.currentTarget && setShowRenewalsModal(false)}
-            className="fixed inset-0 z-[500] flex items-center justify-center bg-[#1e2246]/55 backdrop-blur-xl p-4"
+            className="fixed inset-0 z-[500] flex items-end sm:items-center justify-center bg-[#1e2246]/60 sm:backdrop-blur-xl p-0 sm:p-4"
           >
-            <div className="ola-adm-card-pearl ola-adm-modal-in rounded-[2.25rem] w-full max-w-2xl p-6 sm:p-8 flex flex-col max-h-[80vh]">
+            <div className="ola-adm-card-pearl ola-adm-modal-in rounded-t-[2.25rem] sm:rounded-[2.25rem] w-full max-w-2xl p-5 sm:p-8 pb-7 flex flex-col max-h-[84dvh]">
+              <div className="sm:hidden w-12 h-1.5 rounded-full bg-[#1e2246]/20 mx-auto mb-4 shrink-0" />
               <div className="flex justify-between items-center mb-5 border-b border-[#626a9f]/15 pb-3.5">
                 <div>
                   <h3 className="text-xl font-extrabold text-[#1e2246]">Pending Level Renewals</h3>
@@ -3948,38 +4028,59 @@ const AdminHub = () => {
           </h1>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5 w-full">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5 w-full">
           {SETTINGS_TILES.map((tile) => (
             <button
               type="button"
               key={tile.name}
               onClick={() => (tile.action ? tile.action() : showToast(`${tile.name} module coming soon.`, 'info'))}
-              className={`${tile.accent} ola-adm-bento rounded-[2rem] p-5 sm:p-6 flex flex-col items-center justify-between text-center min-h-[215px] cursor-pointer group focus:outline-none`}
+              className={`${tile.accent} ola-adm-bento rounded-[1.75rem] sm:rounded-[2rem] cursor-pointer group focus:outline-none ${
+                tile.active
+                  ? 'col-span-2 sm:col-span-1 p-4 sm:p-6 flex flex-row sm:flex-col items-center justify-between gap-4 sm:gap-0 text-left sm:text-center min-h-[116px] sm:min-h-[215px]'
+                  : 'col-span-1 p-3.5 sm:p-6 flex flex-col items-center justify-between text-center min-h-[152px] sm:min-h-[215px]'
+              }`}
             >
               <span
-                className={`self-end text-[9.5px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full ${
+                className={`${tile.active ? 'hidden sm:inline-block' : 'inline-block'} self-end text-[9px] sm:text-[9.5px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full ${
                   tile.active ? 'bg-[#1e2246] text-[#ffc749]' : 'bg-[#e8eaf7] text-[#626a9f]'
                 }`}
               >
                 {tile.active ? 'Active' : 'Soon'}
               </span>
 
-              <div className="w-full h-24 rounded-2xl bg-white/80 border border-white flex items-center justify-center my-2.5 shadow-inner">
+              <div
+                className={`${
+                  tile.active
+                    ? 'w-24 h-20 sm:w-full sm:h-24 shrink-0'
+                    : 'w-full h-16 sm:h-24 my-2 sm:my-2.5'
+                } rounded-2xl bg-white/85 border border-white flex items-center justify-center shadow-inner`}
+              >
                 {tile.customArt ? (
                   tile.customArt
                 ) : (
-                  <div className="w-12 h-12 rounded-xl bg-[#f4f6fc] border-2 border-[#1e2246]/15 group-hover:border-[#1e2246] flex items-center justify-center text-[#454d82] group-hover:text-[#1e2246] transition-colors">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="1.9" viewBox="0 0 24 24">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[#f4f6fc] border-2 border-[#1e2246]/15 group-hover:border-[#1e2246] flex items-center justify-center text-[#454d82] group-hover:text-[#1e2246] transition-colors">
+                    <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" strokeWidth="1.9" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d={tile.icon} />
                     </svg>
                   </div>
                 )}
               </div>
 
-              <div>
+              <div className={tile.active ? 'flex-1 sm:flex-none' : ''}>
+                {tile.active && (
+                  <span className="sm:hidden inline-block text-[8.5px] font-extrabold uppercase tracking-widest bg-[#1e2246] text-[#ffc749] px-2.5 py-0.5 rounded-full mb-1">
+                    Active Module
+                  </span>
+                )}
                 <h3 className="text-[#1e2246] font-extrabold text-sm sm:text-base tracking-tight">{tile.name}</h3>
-                <p className="text-[11px] text-[#50567d] font-medium mt-0.5 leading-snug">{tile.desc}</p>
+                <p className="text-[10.5px] sm:text-[11px] text-[#50567d] font-medium mt-0.5 leading-snug">{tile.desc}</p>
               </div>
+
+              {tile.active && (
+                <span className="sm:hidden w-9 h-9 rounded-full bg-[#1e2246] text-[#ffc749] flex items-center justify-center text-sm font-extrabold shrink-0">
+                  →
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -4060,20 +4161,25 @@ const AdminHub = () => {
           1. FLOATING LANDING-STYLE TOP PILL NAVBAR
       ========================================== */}
       {!isPreviewMode && (
-        <header className="sticky top-0 z-[150] px-4 sm:px-6 lg:px-10 py-3.5 bg-white/60 backdrop-blur-2xl border-b border-white/85">
-          <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
-            {/* Left: Real OutLoud Logo */}
-            <button
-              type="button"
-              onClick={() => handleModuleSwitch('ACCOUNTS')}
-              className="flex items-center gap-2.5 cursor-pointer focus:outline-none hover:opacity-90 transition-opacity shrink-0"
-              title="OutLoud Admin Command"
-            >
-              <OutLoudHorizontalLogo iconClass="w-9 h-9 sm:w-10 sm:h-10" wordmarkClass="h-7 sm:h-8 w-auto" />
-              <span className="hidden xl:inline-flex items-center text-[9.5px] font-extrabold uppercase tracking-widest bg-[#1e2246] text-[#ffc749] px-2.5 py-1 rounded-full">
-                Admin
+        <header className="sticky top-0 z-[150] px-3.5 sm:px-6 lg:px-10 py-3 lg:py-3.5 bg-[#fdfcf8]/95 lg:bg-white/60 lg:backdrop-blur-2xl border-b-2 border-[#1e2246]/10 lg:border-white/85">
+          <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-3">
+            {/* Left: Real OutLoud Logo + Active Module Pill on Mobile */}
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => handleModuleSwitch('ACCOUNTS')}
+                className="flex items-center gap-2 cursor-pointer focus:outline-none hover:opacity-90 transition-opacity shrink-0"
+                title="OutLoud Admin Command"
+              >
+                <OutLoudHorizontalLogo iconClass="w-8 h-8 sm:w-10 sm:h-10" wordmarkClass="h-6 sm:h-8 w-auto" />
+                <span className="hidden xl:inline-flex items-center text-[9.5px] font-extrabold uppercase tracking-widest bg-[#1e2246] text-[#ffc749] px-2.5 py-1 rounded-full">
+                  Admin
+                </span>
+              </button>
+              <span className="lg:hidden inline-flex items-center text-[9px] font-extrabold uppercase tracking-widest bg-[#1e2246] text-[#ffc749] px-2.5 py-1 rounded-full">
+                {NAV_ITEMS.find((i) => i.id === activeModule)?.short || 'Admin'}
               </span>
-            </button>
+            </div>
 
             {/* Center: Floating White Pill Bar (Desktop — Mirrors Landing Page Navbar) */}
             <nav className="hidden lg:flex items-center gap-1 bg-white/95 border border-white rounded-full px-2 py-1.5 shadow-[0_10px_28px_-10px_rgba(69,77,130,0.22)]">
@@ -4101,7 +4207,7 @@ const AdminHub = () => {
 
             {/* Right: Heartbeat Status Pill + Quick Provision + Admin Profile Capsule */}
             <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
-              {/* Heartbeat Health Pill */}
+              {/* Heartbeat Health Pill (Compact dot on phones, full pill on desktop) */}
               <button
                 type="button"
                 onClick={() => {
@@ -4112,10 +4218,10 @@ const AdminHub = () => {
                   }
                 }}
                 title={hasLiveAlert ? 'Live Class Alert Active' : 'All Live Classes Healthy'}
-                className={`hidden sm:inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[10.5px] font-extrabold uppercase tracking-wider border cursor-pointer transition-colors ${
+                className={`inline-flex items-center gap-1.5 sm:gap-2 rounded-full px-2.5 sm:px-3 py-1.5 text-[10px] sm:text-[10.5px] font-extrabold uppercase tracking-wider border-2 cursor-pointer transition-colors ${
                   hasLiveAlert
                     ? 'bg-[#ee665b] text-white border-[#1e2246] animate-pulse'
-                    : 'bg-white/95 text-[#128063] border-white shadow-sm hover:bg-white'
+                    : 'bg-[#e7faf3] lg:bg-white/95 text-[#128063] border-[#16a37f]/35 lg:border-white shadow-sm hover:bg-white'
                 }`}
               >
                 <span
@@ -4126,7 +4232,20 @@ const AdminHub = () => {
                 <span className="hidden md:inline">{hasLiveAlert ? 'SOS Alert' : 'Live OK'}</span>
               </button>
 
-              {/* Quick + Provision Keycap */}
+              {/* Mobile Quick + Provision Mini-Keycap */}
+              <button
+                type="button"
+                onClick={() => {
+                  setProvisioningInitialData(null);
+                  setIsProvisioningModalOpen(true);
+                }}
+                aria-label="Provisionar Cuenta"
+                className="lg:hidden w-9 h-9 rounded-full bg-[#ffc749] text-[#1e2246] border-2 border-[#1e2246] shadow-[0_2px_0_#1e2246] flex items-center justify-center text-lg font-extrabold cursor-pointer active:translate-y-0.5"
+              >
+                +
+              </button>
+
+              {/* Desktop Quick + Provision Keycap */}
               <button
                 type="button"
                 onClick={() => {
@@ -4450,54 +4569,59 @@ const AdminHub = () => {
                 )}
 
                 <div
-                  className={`flex items-center gap-2 shrink-0 ${
+                  className={`flex gap-2 shrink-0 ${
                     isMobile
-                      ? 'w-full justify-between'
+                      ? 'w-full flex-col'
                       : !['Manuals', 'Cue Cards'].includes(contentType)
-                      ? 'border-l border-[#626a9f]/20 pl-3'
-                      : 'ml-auto'
+                      ? 'items-center border-l border-[#626a9f]/20 pl-3'
+                      : 'items-center ml-auto'
                   }`}
                 >
                   {isMobile && (
-                    <button
-                      type="button"
-                      onClick={() => setIsMobileContentSettingsOpen(true)}
-                      className="ola-adm-btn-outline px-3.5 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider shrink-0 cursor-pointer"
-                    >
-                      Settings
-                    </button>
+                    <div className="flex items-center justify-between gap-2 w-full">
+                      <button
+                        type="button"
+                        onClick={() => setIsMobileContentSettingsOpen(true)}
+                        className="ola-adm-btn-outline px-3.5 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider shrink-0 cursor-pointer"
+                      >
+                        ⚙ {selectedLevel ? selectedLevel.split(':')[0] : 'Level'} • {selectedUnit || 'Unit'}
+                      </button>
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider bg-[#1e2246] text-[#ffc749] px-3 py-1 rounded-full shrink-0">
+                        {contentType}
+                      </span>
+                    </div>
                   )}
 
-                  <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
+                  <div className={`flex items-center gap-1.5 sm:gap-2 shrink-0 ${isMobile ? 'w-full justify-between' : 'ml-auto'}`}>
                     {!['Manuals', 'Cue Cards'].includes(contentType) && (
                       <>
                         <button
                           type="button"
                           onClick={handleUndoWorkspace}
-                          className="px-3 py-1.5 rounded-full bg-[#e8eaf7] hover:bg-white text-[#454d82] hover:text-[#1e2246] font-bold uppercase text-[10px] tracking-wider cursor-pointer"
+                          className="flex-1 lg:flex-none px-2.5 sm:px-3 py-2 lg:py-1.5 rounded-full bg-[#e8eaf7] hover:bg-white text-[#454d82] hover:text-[#1e2246] font-extrabold uppercase text-[10px] tracking-wider cursor-pointer text-center"
                         >
                           Undo
                         </button>
                         <button
                           type="button"
                           onClick={handleDuplicateScreen}
-                          className="px-3 py-1.5 rounded-full bg-[#e8eaf7] hover:bg-white text-[#454d82] hover:text-[#1e2246] font-bold uppercase text-[10px] tracking-wider cursor-pointer"
+                          className="flex-1 lg:flex-none px-2.5 sm:px-3 py-2 lg:py-1.5 rounded-full bg-[#e8eaf7] hover:bg-white text-[#454d82] hover:text-[#1e2246] font-extrabold uppercase text-[10px] tracking-wider cursor-pointer text-center"
                         >
-                          Duplicate
+                          {isMobile ? 'Dup' : 'Duplicate'}
                         </button>
                       </>
                     )}
                     <button
                       type="button"
                       onClick={() => setIsPreviewMode(true)}
-                      className="ola-adm-btn-outline px-3.5 py-1.5 rounded-full font-bold uppercase text-[10px] tracking-wider cursor-pointer"
+                      className="ola-adm-btn-outline flex-1 lg:flex-none px-3 sm:px-3.5 py-2 lg:py-1.5 rounded-full font-extrabold uppercase text-[10px] tracking-wider cursor-pointer text-center"
                     >
                       Preview
                     </button>
                     <button
                       type="button"
                       onClick={() => setIsSaveModalOpen(true)}
-                      className="ola-adm-btn-yellow px-4 py-1.5 rounded-full font-bold uppercase text-[10px] tracking-wider cursor-pointer"
+                      className="ola-adm-btn-yellow flex-1 lg:flex-none px-3.5 sm:px-4 py-2 lg:py-1.5 rounded-full font-extrabold uppercase text-[10px] tracking-wider cursor-pointer text-center"
                     >
                       Save
                     </button>
@@ -5689,10 +5813,13 @@ const AdminHub = () => {
       </main>
 
       {/* ==========================================
-          4. MOBILE FLOATING CAPSULE DOCK
+4. MOBILE FLOATING EDITORIAL CAPSULE DOCK
       ========================================== */}
       {!isPreviewMode && (
-        <nav className="lg:hidden fixed bottom-3 left-3 right-3 h-16 bg-white/92 backdrop-blur-2xl border-2 border-white rounded-full flex items-center justify-around px-1.5 z-[200] shadow-[0_14px_34px_-8px_rgba(30,34,70,0.3)]">
+        <nav
+          className="lg:hidden fixed bottom-3 left-2.5 right-2.5 bg-[#fdfcf8] border-2 border-[#1e2246] rounded-[1.75rem] flex items-center justify-between px-1.5 py-1.5 z-[200] shadow-[0_5px_0_#1e2246,0_14px_28px_-8px_rgba(30,34,70,0.32)]"
+          style={{ marginBottom: 'env(safe-area-inset-bottom, 0px)' }}
+        >
           {NAV_ITEMS.map((item) => {
             const isActive = activeModule === item.id;
             return (
@@ -5700,15 +5827,17 @@ const AdminHub = () => {
                 type="button"
                 key={item.id}
                 onClick={() => handleModuleSwitch(item.id)}
-                className={`relative flex flex-col items-center justify-center gap-0.5 px-2.5 py-1.5 rounded-full transition-colors cursor-pointer ${
-                  isActive ? 'bg-[#1e2246] text-[#ffc749]' : 'text-[#454d82] hover:text-[#1e2246]'
+                className={`relative flex-1 flex flex-col items-center justify-center gap-1 py-1.5 rounded-2xl transition-all cursor-pointer ${
+                  isActive
+                    ? 'bg-[#ffc749] text-[#1e2246] border-2 border-[#1e2246] shadow-[0_2px_0_#1e2246] -translate-y-0.5'
+                    : 'text-[#454d82] border-2 border-transparent active:bg-[#f2f4fc]'
                 }`}
               >
                 {item.badge && !isActive && (
-                  <span className="absolute top-1 right-2 w-2 h-2 rounded-full bg-[#ee665b]" />
+                  <span className="absolute top-1 right-2.5 w-2 h-2 rounded-full bg-[#ee665b] border border-[#fdfcf8]" />
                 )}
-                <div className="w-5 h-5">{item.icon}</div>
-                <span className="text-[8.5px] font-bold leading-none">{item.short}</span>
+                <div className="w-4 h-4 sm:w-5 sm:h-5">{item.icon}</div>
+                <span className="text-[9px] font-extrabold leading-none tracking-tight">{item.short}</span>
               </button>
             );
           })}
