@@ -154,7 +154,7 @@ export default function TrophyRoom({ targetUser, currentUserRole, onClose, isAdm
   useEffect(() => {
     if (!targetUser?.id) return;
     fetchTrophyData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [targetUser]);
 
   const fetchTrophyData = async () => {

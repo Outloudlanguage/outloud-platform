@@ -90,7 +90,7 @@ export default function ForumBoard({ currentUser, onClose }) {
   useEffect(() => {
     fetchChannels();
     fetchMyReputation();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, []);
 
   const fetchMyReputation = async () => {

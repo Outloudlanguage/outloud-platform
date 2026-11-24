@@ -191,7 +191,7 @@ const AdminCalendar = () => {
 
   useEffect(() => {
     fetchCalendarData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [baseDate]);
 
   // --- 3. MODAL ACTIONS ---

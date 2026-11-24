@@ -3257,7 +3257,7 @@ const AdminHub = () => {
 
     useEffect(() => {
       fetchOverhead();
-      // eslint-disable-next-line react-hooks/exhaustive-deps
+      
     }, []);
 
     const handleAddExpense = async (e) => {

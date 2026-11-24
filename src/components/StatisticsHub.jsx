@@ -77,7 +77,7 @@ const StatisticsHub = () => {
       }
     };
     fetchEntities();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, []);
 
   const selectEngineById = (engineId) => {

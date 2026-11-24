@@ -100,7 +100,7 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
     } else if (newRoomLevel === 'STAFF') {
       setNewRoomLevel('ALL');
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [internalScope]);
 
   const handleModerateUser = (userId, userName, action) => {
@@ -155,7 +155,7 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
     return () => {
       supabase.removeChannel(roomChannel);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [internalScope, userRole, normalizedLevel]);
 
   useEffect(() => {
@@ -214,7 +214,7 @@ export default function SeminarRoom({ currentUser, userRole = 'student', onClose
     return () => {
       supabase.removeChannel(channel);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [activeRoom?.id]);
 
   useEffect(() => {

@@ -119,7 +119,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
       setPayType('Mensualidad');
       updatePrice('Mensualidad', userData.level || 'A1: Básico 1');
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [userData]);
 
   useEffect(() => {
@@ -134,7 +134,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
         fetchPaymentHistory();
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [isOpen, isPending, userData, activeTab, userRole]);
 
   const fetchPaymentHistory = async () => {
