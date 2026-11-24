@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { LEVEL_OPTIONS } from '../../../constants/adminConfigs';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
@@ -6,14 +6,16 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts';
 
+const MONTHLY_PRICES = { A1: 20, A2: 20, B1: 30, B2: 30, C1: 50, C2: 50 };
+const getBaseLevel = (lvlString) => (lvlString ? lvlString.split(':')[0].trim() : 'A1');
+const getDefaultCohort = () => (new Date().getDate() <= 15 ? 15 : 30);
+
 const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, onSuccess, onImpersonate }) => {
   const reportRef = useRef(null);
   const [activeTab, setActiveTab] = useState('INFO_PERSONAL');
   const userRole = userData?.role || 'Student';
 
-  // ==========================================
-  // TAB 1: INFO PERSONAL (Provisioning, Creds, Overrides)
-  // ==========================================
+  // TAB 1: INFO PERSONAL
   const [provEmail, setProvEmail] = useState('');
   const [provPassword, setProvPassword] = useState('');
   const [provFirstName, setProvFirstName] = useState('');
@@ -29,14 +31,10 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   const [isProcessing, setIsProcessing] = useState(false);
   const [accountStatus, setAccountStatus] = useState('active');
 
-  // Academic Overrides State
   const [levelOverride, setLevelOverride] = useState('A1: Básico 1');
   const [unitOverride, setUnitOverride] = useState(1);
 
-  // ==========================================
   // TAB 2: FINANZAS (Students)
-  // ==========================================
-  const getDefaultCohort = () => (new Date().getDate() <= 15 ? 15 : 30);
   const [cohort, setCohort] = useState(15);
   const [credits, setCredits] = useState(0);
 
@@ -48,16 +46,12 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   const [paymentHistory, setPaymentHistory] = useState([]);
   const [isLoadingPayments, setIsLoadingPayments] = useState(false);
 
-  // ==========================================
   // TAB 3: ESTADISTICAS (Students)
-  // ==========================================
   const [academicHistory, setAcademicHistory] = useState([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // ==========================================
-  // TEACHER PAYROLL & STATS ENGINE STATES
-  // ==========================================
+  // TEACHER PAYROLL & STATS STATES
   const [pendingClasses, setPendingClasses] = useState([]);
   const [pendingShifts, setPendingShifts] = useState([]);
   const [payrollCadence, setPayrollCadence] = useState('Monthly');
@@ -70,7 +64,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   const [opMetrics, setOpMetrics] = useState(null);
   const [opScore, setOpScore] = useState(0);
 
-  // Lightweight Toast Feedback
+  // Lightweight Toast
   const [modalToast, setModalToast] = useState(null);
   const showToast = (message, tone = 'success') => {
     setModalToast({ message, tone });
@@ -78,11 +72,6 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
       setModalToast((curr) => (curr?.message === message ? null : curr));
     }, 3400);
   };
-
-  // DYNAMIC TIERED PRICING
-  const MONTHLY_PRICES = { A1: 20, A2: 20, B1: 30, B2: 30, C1: 50, C2: 50 };
-
-  const getBaseLevel = (lvlString) => (lvlString ? lvlString.split(':')[0].trim() : 'A1');
 
   const updatePrice = (type, levelString) => {
     if (type === 'Extra') setPayAmount(12);
@@ -109,7 +98,8 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
       setIsEditingCreds(false);
 
       setAccountStatus(userData.status || 'active');
-      setLevelOverride(userData.level || 'A1: Básico 1');
+      const initLevel = userData.level || 'A1: Básico 1';
+      setLevelOverride(initLevel);
       setUnitOverride(userData.unit || 1);
 
       setCohort(userData.cohort || getDefaultCohort());
@@ -117,27 +107,15 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
 
       setActiveTab('INFO_PERSONAL');
       setPayType('Mensualidad');
-      updatePrice('Mensualidad', userData.level || 'A1: Básico 1');
+      setPayAmount(MONTHLY_PRICES[getBaseLevel(initLevel)] || 20);
     }
-    
   }, [userData]);
 
-  useEffect(() => {
-    if (isOpen && !isPending && userData?.id && !String(userData?.id).startsWith('mock')) {
-      if (activeTab === 'ESTADISTICAS' && userRole === 'Student') {
-        fetchAcademicHistory();
-      }
-      if ((activeTab === 'PAYROLL' || activeTab === 'TEACHER_STATS') && userRole === 'Teacher') {
-        fetchTeacherPayroll();
-      }
-      if (activeTab === 'FINANZAS' && userRole === 'Student') {
-        fetchPaymentHistory();
-      }
-    }
-    
-  }, [isOpen, isPending, userData, activeTab, userRole]);
-
-  const fetchPaymentHistory = async () => {
+  // ==========================================
+  // DATA FETCHERS (Clean useCallback)
+  // ==========================================
+  const fetchPaymentHistory = useCallback(async () => {
+    if (!userData?.id) return;
     setIsLoadingPayments(true);
     try {
       const { data, error } = await supabase
@@ -152,12 +130,29 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
     } finally {
       setIsLoadingPayments(false);
     }
-  };
+  }, [supabase, userData?.id]);
 
-  // ==========================================
-  // TEACHER PAYROLL & RADAR LOGIC
-  // ==========================================
-  const fetchTeacherPayroll = async () => {
+  const fetchAcademicHistory = useCallback(async () => {
+    if (!userData?.id) return;
+    setIsLoadingHistory(true);
+    try {
+      const { data, error } = await supabase
+        .from('academic_records')
+        .select('*, teacher:profiles!teacher_id(first_name, last_name)')
+        .eq('student_id', userData.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setAcademicHistory(data || []);
+    } catch (error) {
+      console.error('Error fetching academic history:', error);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  }, [supabase, userData?.id]);
+
+  const fetchTeacherPayroll = useCallback(async () => {
+    if (!userData?.id) return;
     setIsFetchingPayroll(true);
     try {
       const { data: classes } = await supabase
@@ -283,8 +278,40 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
     } finally {
       setIsFetchingPayroll(false);
     }
-  };
+  }, [
+    supabase,
+    userData?.id,
+    userData?.total_rating_questions,
+    userData?.total_positive_ratings,
+    userData?.payroll_cadence,
+  ]);
 
+  useEffect(() => {
+    if (isOpen && !isPending && userData?.id && !String(userData?.id).startsWith('mock')) {
+      if (activeTab === 'ESTADISTICAS' && userRole === 'Student') {
+        fetchAcademicHistory();
+      }
+      if ((activeTab === 'PAYROLL' || activeTab === 'TEACHER_STATS') && userRole === 'Teacher') {
+        fetchTeacherPayroll();
+      }
+      if (activeTab === 'FINANZAS' && userRole === 'Student') {
+        fetchPaymentHistory();
+      }
+    }
+  }, [
+    isOpen,
+    isPending,
+    userData?.id,
+    activeTab,
+    userRole,
+    fetchAcademicHistory,
+    fetchTeacherPayroll,
+    fetchPaymentHistory,
+  ]);
+
+  // ==========================================
+  // TEACHER PAYROLL ACTIONS
+  // ==========================================
   const handleSaveCadence = async (newCadence) => {
     setPayrollCadence(newCadence);
     try {
@@ -393,26 +420,8 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   }
 
   // ==========================================
-  // ACADEMIC LOGIC
+  // ACADEMIC & PDF ACTIONS
   // ==========================================
-  const fetchAcademicHistory = async () => {
-    setIsLoadingHistory(true);
-    try {
-      const { data, error } = await supabase
-        .from('academic_records')
-        .select(`*, teacher:profiles!teacher_id(first_name, last_name)`)
-        .eq('student_id', userData.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setAcademicHistory(data || []);
-    } catch (error) {
-      console.error('Error fetching academic history:', error);
-    } finally {
-      setIsLoadingHistory(false);
-    }
-  };
-
   const handleGenerateReport = async () => {
     if (!reportRef.current) return;
     setIsGenerating(true);
@@ -464,7 +473,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   };
 
   // ==========================================
-  // FINANCIAL LOGIC (STUDENTS)
+  // FINANCIAL ACTIONS (STUDENTS)
   // ==========================================
   const handlePayTypeChange = (e) => {
     const newType = e.target.value;
@@ -474,7 +483,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
 
   const calculateProration = (targetCohort, price) => {
     const today = new Date();
-    let nextBilling = new Date(today.getFullYear(), today.getMonth(), targetCohort);
+    const nextBilling = new Date(today.getFullYear(), today.getMonth(), targetCohort);
     if (today.getDate() >= targetCohort) nextBilling.setMonth(nextBilling.getMonth() + 1);
     const daysLeft = Math.max(0, Math.ceil((nextBilling - today) / (1000 * 60 * 60 * 24)));
     return ((price / 30) * daysLeft).toFixed(2);
@@ -490,7 +499,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
         return;
       }
       const today = new Date();
-      let nextBilling = new Date(today.getFullYear(), today.getMonth(), cohort);
+      const nextBilling = new Date(today.getFullYear(), today.getMonth(), cohort);
       if (today.getDate() >= cohort) nextBilling.setMonth(nextBilling.getMonth() + 1);
 
       const { error } = await supabase
@@ -676,7 +685,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   };
 
   // ==========================================
-  // ACCOUNT CONTROL LOGIC (Auth & DB Link)
+  // ACCOUNT CONTROL ACTIONS
   // ==========================================
   const handleProvisionAccount = async () => {
     if (!provEmail || !provPassword || !provFirstName || !provLastName) {
@@ -852,10 +861,6 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
     }
   };
 
-  const handleOverlayClick = (e) => {
-    if (e.target.id === 'modal-overlay') onClose();
-  };
-
   const getTabsForRole = () => {
     if (userRole === 'Admin') {
       return [{ id: 'INFO_PERSONAL', label: 'Info Personal & Control' }];
@@ -883,7 +888,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
   return (
     <div
       id="modal-overlay"
-      onClick={handleOverlayClick}
+      onClick={(e) => e.target.id === 'modal-overlay' && onClose()}
       className="fixed inset-0 z-[300] flex items-end md:items-center justify-center p-0 md:p-4 bg-[#1e2246]/55 backdrop-blur-xl font-montserrat text-[#1e2246]"
     >
       <style>{`
@@ -905,7 +910,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
 
       {/* TOAST */}
       {modalToast && (
-        <div className="ola-adm-toast-in fixed bottom-6 left-1/2 z-[9500] px-5 py-3 rounded-full bg-[#1e2246] text-white border-2 border-[#ffc749] shadow-2xl flex items-center gap-2.5 text-xs font-bold max-w-[92vw]">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9500] px-5 py-3 rounded-full bg-[#1e2246] text-white border-2 border-[#ffc749] shadow-2xl flex items-center gap-2.5 text-xs font-bold max-w-[92vw]">
           <span
             className={`w-2.5 h-2.5 rounded-full shrink-0 ${
               modalToast.tone === 'error'
@@ -919,9 +924,9 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
         </div>
       )}
 
-      <div className="ola-adm-glass ola-adm-modal-in relative w-full max-w-4xl max-h-[92vh] rounded-t-[2.25rem] md:rounded-[2.5rem] flex flex-col overflow-hidden">
+      <div className="bg-gradient-to-br from-white/95 to-[#f2f4fd]/90 backdrop-blur-2xl border-2 border-white shadow-[0_24px_54px_-16px_rgba(30,34,70,0.34),inset_0_2px_2px_#ffffff] relative w-full max-w-4xl max-h-[92vh] rounded-t-[2.25rem] md:rounded-[2.5rem] flex flex-col overflow-hidden">
         {/* TOP IDENTITY HEADER */}
-        <div className="relative z-10 flex items-start justify-between p-5 sm:p-7 border-b border-[#626a9f]/15 bg-white/60 shrink-0">
+        <div className="relative z-10 flex items-start justify-between p-5 sm:p-7 border-b border-[#626a9f]/15 bg-white/80 shrink-0">
           <div className="flex items-center gap-4 overflow-hidden w-full pr-4">
             <div className="relative shrink-0">
               <img
@@ -932,7 +937,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                   )}&background=626a9f&color=fff`
                 }
                 alt="Profile Avatar"
-                className={`w-14 h-14 sm:w-18 sm:h-18 rounded-2xl object-cover border-2 shadow-sm ${
+                className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl object-cover border-2 shadow-sm ${
                   isPending
                     ? 'border-[#ffc749]'
                     : accountStatus === 'suspended'
@@ -967,14 +972,14 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
               <div className="flex flex-wrap items-center gap-2 mt-2">
                 {!isPending && userRole === 'Student' && (
                   <>
-                    <span className="text-[10px] font-bold uppercase tracking-wider bg-[#1e2246] text-[#ffc749] px-2.5 py-0.5 rounded-full">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider bg-[#1e2246] text-[#ffc749] px-2.5 py-0.5 rounded-full">
                       Nivel {getBaseLevel(levelOverride)} • U{unitOverride}
                     </span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider bg-[#fff3d1] text-[#1e2246] border border-[#ffc749] px-2.5 py-0.5 rounded-full">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider bg-[#fff3d1] text-[#1e2246] border border-[#ffc749] px-2.5 py-0.5 rounded-full">
                       {credits} Créditos
                     </span>
                     {userData.level_completed && (
-                      <span className="text-[10px] font-bold uppercase tracking-wider bg-[#16a37f] text-white px-2.5 py-0.5 rounded-full animate-pulse">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider bg-[#16a37f] text-white px-2.5 py-0.5 rounded-full animate-pulse">
                         Nivel Completado • Renovar
                       </span>
                     )}
@@ -983,10 +988,10 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
 
                 {!isPending && userRole !== 'Student' && (
                   <>
-                    <span className="text-[10px] font-bold uppercase tracking-wider bg-[#454d82] text-white px-2.5 py-0.5 rounded-full">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider bg-[#5b64a0] text-white px-2.5 py-0.5 rounded-full">
                       {userRole}
                     </span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider bg-[#e7faf3] text-[#128063] px-2.5 py-0.5 rounded-full">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider bg-[#e7faf3] text-[#128063] px-2.5 py-0.5 rounded-full">
                       Desde {new Date(userData.created_at || Date.now()).toLocaleDateString('es-ES')}
                     </span>
                   </>
@@ -996,7 +1001,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                   <button
                     type="button"
                     onClick={() => onImpersonate(userData)}
-                    className="inline-flex items-center gap-1.5 bg-white hover:bg-[#ffc749] text-[#1e2246] border border-[#1e2246]/30 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer shadow-sm"
+                    className="inline-flex items-center gap-1.5 bg-white hover:bg-[#ffc749] text-[#1e2246] border border-[#1e2246]/35 px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider transition-colors cursor-pointer shadow-sm"
                   >
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -1019,15 +1024,15 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
           </button>
         </div>
 
-        {/* INSTANT TAB SWITCHER */}
-        <div className="relative z-10 px-5 sm:px-7 py-3 bg-white/40 border-b border-[#626a9f]/15 shrink-0">
-          <div className="flex gap-1.5 bg-[#e8eaf7]/85 p-1 rounded-2xl border border-white">
+        {/* FLOATING PILL TAB SWITCHER */}
+        <div className="relative z-10 px-5 sm:px-7 py-3 bg-white/55 border-b border-[#626a9f]/15 shrink-0">
+          <div className="flex gap-1 bg-[#e8eaf7] p-1 rounded-full border border-white">
             {activeTabs.map((tab) => (
               <button
                 type="button"
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 py-2.5 px-3 rounded-xl text-[10.5px] sm:text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors ${
+                className={`flex-1 py-2.5 px-3 rounded-full text-[10.5px] sm:text-xs font-extrabold uppercase tracking-wider cursor-pointer transition-colors ${
                   activeTab === tab.id
                     ? 'bg-[#1e2246] text-[#ffc749] shadow-sm'
                     : 'text-[#454d82] hover:text-[#1e2246]'
@@ -1047,9 +1052,9 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
           {activeTab === 'INFO_PERSONAL' && (
             <div className="space-y-6">
               {isPending && (
-                <div className="ola-adm-glass-gold rounded-3xl p-5 sm:p-6">
+                <div className="bg-gradient-to-br from-[#fff9e8] to-[#ffe69e] border-2 border-white shadow-sm rounded-3xl p-5 sm:p-6">
                   <div className="border-b border-[#1e2246]/15 pb-3.5 mb-5">
-                    <span className="inline-block text-[9.5px] font-bold uppercase tracking-widest bg-[#1e2246] text-[#ffc749] px-2.5 py-0.5 rounded-full mb-1.5">
+                    <span className="inline-block text-[9.5px] font-extrabold uppercase tracking-widest bg-[#1e2246] text-[#ffc749] px-2.5 py-0.5 rounded-full mb-1.5">
                       Solicitud Pendiente
                     </span>
                     <h4 className="text-[#1e2246] font-extrabold text-base uppercase">
@@ -1060,7 +1065,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                     </p>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-4 items-center bg-white/75 border border-white p-4 rounded-2xl mb-5">
+                  <div className="flex flex-col sm:flex-row gap-4 items-center bg-white/85 border border-white p-4 rounded-2xl mb-5">
                     <div className="w-16 h-16 rounded-2xl border-2 border-[#1e2246] overflow-hidden bg-white flex items-center justify-center shrink-0">
                       {provAvatarUrl ? (
                         <img src={provAvatarUrl} alt="Preview" className="w-full h-full object-cover" />
@@ -1100,7 +1105,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                         type="text"
                         value={provFirstName}
                         onChange={(e) => setProvFirstName(e.target.value)}
-                        className="w-full bg-white/90 focus:bg-white border-2 border-white focus:border-[#454d82] rounded-xl px-3.5 py-2.5 text-[#1e2246] text-sm font-semibold outline-none"
+                        className="w-full bg-white border-2 border-white focus:border-[#454d82] rounded-xl px-3.5 py-2.5 text-[#1e2246] text-sm font-semibold outline-none shadow-sm"
                         required
                       />
                     </div>
@@ -1110,7 +1115,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                         type="text"
                         value={provLastName}
                         onChange={(e) => setProvLastName(e.target.value)}
-                        className="w-full bg-white/90 focus:bg-white border-2 border-white focus:border-[#454d82] rounded-xl px-3.5 py-2.5 text-[#1e2246] text-sm font-semibold outline-none"
+                        className="w-full bg-white border-2 border-white focus:border-[#454d82] rounded-xl px-3.5 py-2.5 text-[#1e2246] text-sm font-semibold outline-none shadow-sm"
                         required
                       />
                     </div>
@@ -1122,7 +1127,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                         type="email"
                         value={provEmail}
                         onChange={(e) => setProvEmail(e.target.value)}
-                        className="w-full bg-white/90 focus:bg-white border-2 border-white focus:border-[#454d82] rounded-xl px-3.5 py-2.5 text-[#1e2246] text-sm font-semibold outline-none"
+                        className="w-full bg-white border-2 border-white focus:border-[#454d82] rounded-xl px-3.5 py-2.5 text-[#1e2246] text-sm font-semibold outline-none shadow-sm"
                       />
                     </div>
                     <div>
@@ -1134,14 +1139,14 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                         placeholder="Ej: OlaStudent.2026"
                         value={provPassword}
                         onChange={(e) => setProvPassword(e.target.value)}
-                        className="w-full bg-white/90 focus:bg-white border-2 border-white focus:border-[#454d82] rounded-xl px-3.5 py-2.5 text-[#1e2246] text-sm font-semibold outline-none"
+                        className="w-full bg-white border-2 border-white focus:border-[#454d82] rounded-xl px-3.5 py-2.5 text-[#1e2246] text-sm font-semibold outline-none shadow-sm"
                       />
                     </div>
                     <div className="md:col-span-2">
                       <label className="block text-[10px] text-[#454d82] font-bold uppercase mb-1">
                         Teléfono (WhatsApp)
                       </label>
-                      <div className="ola-smm-phone w-full rounded-xl px-3.5 py-2 bg-white/90 focus-within:bg-white border-2 border-white focus-within:border-[#454d82]">
+                      <div className="ola-smm-phone w-full rounded-xl px-3.5 py-2 bg-white border-2 border-white focus-within:border-[#454d82] shadow-sm">
                         <PhoneInput
                           defaultCountry="VE"
                           international
@@ -1214,7 +1219,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                       type="button"
                       onClick={handleDeleteLead}
                       disabled={isProcessing}
-                      className="ola-adm-btn-danger w-1/3 py-3.5 font-bold tracking-widest text-xs uppercase rounded-full disabled:opacity-50 cursor-pointer"
+                      className="w-1/3 py-3.5 bg-[#ee665b] text-white border-2 border-[#1e2246] shadow-[0_4px_0_#1e2246] font-extrabold tracking-widest text-xs uppercase rounded-full disabled:opacity-50 cursor-pointer"
                     >
                       Descartar
                     </button>
@@ -1222,7 +1227,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                       type="button"
                       onClick={handleProvisionAccount}
                       disabled={isProcessing}
-                      className="ola-adm-btn-yellow w-2/3 py-3.5 font-bold tracking-widest text-xs uppercase rounded-full disabled:opacity-50 cursor-pointer"
+                      className="w-2/3 py-3.5 bg-gradient-to-b from-[#ffd66b] to-[#ffc749] text-[#1e2246] border-2 border-[#1e2246] shadow-[0_4px_0_#1e2246] hover:-translate-y-0.5 font-extrabold tracking-widest text-xs uppercase rounded-full disabled:opacity-50 cursor-pointer transition-all"
                     >
                       {isProcessing ? 'Procesando...' : 'Confirmar y Activar ✓'}
                     </button>
@@ -1232,7 +1237,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
 
               {/* ACADEMIC OVERRIDES (GOD MODE) */}
               {!isPending && userRole === 'Student' && (
-                <div className="bg-white/75 border border-white rounded-3xl p-5 shadow-sm">
+                <div className="bg-[#f4f6fc] border border-white rounded-3xl p-5 shadow-inner">
                   <div className="flex flex-wrap justify-between items-center gap-3 mb-4 border-b border-[#626a9f]/15 pb-3">
                     <div>
                       <h4 className="text-xs font-extrabold text-[#454d82] uppercase tracking-widest">
@@ -1246,7 +1251,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                       type="button"
                       onClick={handleSaveOverrides}
                       disabled={isProcessing}
-                      className="ola-adm-btn-yellow text-[10.5px] uppercase font-bold px-4 py-2 rounded-full disabled:opacity-50 cursor-pointer"
+                      className="bg-gradient-to-b from-[#ffd66b] to-[#ffc749] text-[#1e2246] border-2 border-[#1e2246] shadow-[0_3px_0_#1e2246] text-[10.5px] uppercase font-extrabold px-4 py-2 rounded-full disabled:opacity-50 cursor-pointer"
                     >
                       Guardar Overrides
                     </button>
@@ -1259,7 +1264,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                       <select
                         value={levelOverride}
                         onChange={(e) => setLevelOverride(e.target.value)}
-                        className="w-full bg-[#f6f7fc] border-2 border-white focus:border-[#454d82] rounded-xl px-3.5 py-2.5 text-[#1e2246] text-xs font-bold outline-none cursor-pointer"
+                        className="w-full bg-white border-2 border-[#dfe2f2] focus:border-[#454d82] rounded-xl px-3.5 py-2.5 text-[#1e2246] text-xs font-bold outline-none cursor-pointer"
                       >
                         {LEVEL_OPTIONS.map((l) => (
                           <option key={l} value={l}>
@@ -1278,7 +1283,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                         max="92"
                         value={unitOverride}
                         onChange={(e) => setUnitOverride(parseInt(e.target.value, 10) || 1)}
-                        className="w-full bg-[#f6f7fc] border-2 border-white focus:border-[#454d82] rounded-xl px-3.5 py-2.5 text-[#1e2246] text-xs font-bold outline-none"
+                        className="w-full bg-white border-2 border-[#dfe2f2] focus:border-[#454d82] rounded-xl px-3.5 py-2.5 text-[#1e2246] text-xs font-bold outline-none"
                       />
                     </div>
                   </div>
@@ -1288,7 +1293,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
               {/* CREDENTIALS & KILL SWITCH */}
               {!isPending && (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                  <div className="md:col-span-2 bg-white/75 border border-white rounded-3xl p-5 shadow-sm">
+                  <div className="md:col-span-2 bg-[#f4f6fc] border border-white rounded-3xl p-5 shadow-inner">
                     <div className="flex justify-between items-center mb-4 border-b border-[#626a9f]/15 pb-3">
                       <h4 className="text-xs font-extrabold text-[#454d82] uppercase tracking-widest">
                         Credenciales &amp; Perfil
@@ -1297,7 +1302,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                         <button
                           type="button"
                           onClick={() => setIsEditingCreds(true)}
-                          className="text-[10.5px] uppercase font-bold text-[#454d82] hover:text-[#1e2246] bg-[#e8eaf7] hover:bg-[#ffc749] px-3.5 py-1.5 rounded-full transition-colors cursor-pointer"
+                          className="text-[10.5px] uppercase font-extrabold text-[#454d82] hover:text-[#1e2246] bg-white hover:bg-[#ffc749] border border-[#dfe2f2] px-3.5 py-1.5 rounded-full transition-colors cursor-pointer"
                         >
                           Editar
                         </button>
@@ -1306,7 +1311,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                           <button
                             type="button"
                             onClick={() => setIsEditingCreds(false)}
-                            className="text-[10.5px] uppercase font-bold text-[#50567d] bg-[#e8eaf7] px-3 py-1.5 rounded-full cursor-pointer"
+                            className="text-[10.5px] uppercase font-bold text-[#50567d] bg-white border border-[#dfe2f2] px-3 py-1.5 rounded-full cursor-pointer"
                           >
                             Cancelar
                           </button>
@@ -1314,7 +1319,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                             type="button"
                             onClick={handleUpdateCredentials}
                             disabled={isProcessing}
-                            className="ola-adm-btn-yellow text-[10.5px] uppercase font-bold px-3.5 py-1.5 rounded-full disabled:opacity-50 cursor-pointer"
+                            className="bg-[#ffc749] text-[#1e2246] border-2 border-[#1e2246] text-[10.5px] uppercase font-extrabold px-3.5 py-1.5 rounded-full disabled:opacity-50 cursor-pointer"
                           >
                             {isProcessing ? '...' : 'Guardar'}
                           </button>
@@ -1369,7 +1374,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                     </div>
                   </div>
 
-                  <div className="bg-white/75 border border-white rounded-3xl p-5 flex flex-col justify-between items-center text-center shadow-sm">
+                  <div className="bg-[#f4f6fc] border border-white rounded-3xl p-5 flex flex-col justify-between items-center text-center shadow-inner">
                     <div>
                       <h4 className="text-[10px] font-bold text-[#626a9f] uppercase tracking-widest mb-1">
                         Estado de Cuenta
@@ -1386,8 +1391,10 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                       type="button"
                       onClick={() => handleKillSwitch(accountStatus === 'active' ? 'suspended' : 'active')}
                       disabled={isProcessing}
-                      className={`w-full mt-4 py-3 rounded-full text-[10.5px] font-bold uppercase tracking-widest transition-all disabled:opacity-50 cursor-pointer ${
-                        accountStatus === 'active' ? 'ola-adm-btn-danger' : 'ola-adm-btn-yellow'
+                      className={`w-full mt-4 py-3 rounded-full text-[10.5px] font-extrabold uppercase tracking-widest transition-all border-2 border-[#1e2246] shadow-[0_3px_0_#1e2246] disabled:opacity-50 cursor-pointer ${
+                        accountStatus === 'active'
+                          ? 'bg-[#ee665b] text-white'
+                          : 'bg-gradient-to-b from-[#ffd66b] to-[#ffc749] text-[#1e2246]'
                       }`}
                     >
                       {accountStatus === 'active' ? 'Suspender Acceso' : 'Reactivar Acceso'}
@@ -1403,25 +1410,25 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                     Respuestas de Registro
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                    <div className="bg-white/70 border border-white rounded-2xl p-4">
+                    <div className="bg-[#f4f6fc] border border-white rounded-2xl p-4 shadow-inner">
                       <p className="text-[10px] text-[#626a9f] font-bold uppercase mb-1">Motivo del Curso</p>
                       <p className="text-sm text-[#1e2246] font-semibold truncate">
                         {userData.reason || 'No especificado'}
                       </p>
                     </div>
-                    <div className="bg-white/70 border border-white rounded-2xl p-4">
+                    <div className="bg-[#f4f6fc] border border-white rounded-2xl p-4 shadow-inner">
                       <p className="text-[10px] text-[#626a9f] font-bold uppercase mb-1">Meta de Fluidez</p>
                       <p className="text-sm text-[#1e2246] font-semibold truncate">
                         {userData.fluent_time || 'No especificado'}
                       </p>
                     </div>
-                    <div className="bg-white/70 border border-white rounded-2xl p-4">
+                    <div className="bg-[#f4f6fc] border border-white rounded-2xl p-4 shadow-inner">
                       <p className="text-[10px] text-[#626a9f] font-bold uppercase mb-1">Categoría de Interés</p>
                       <p className="text-sm text-[#1e2246] font-semibold truncate">
                         {userData.interest || 'No especificado'}
                       </p>
                     </div>
-                    <div className="bg-white/70 border border-white rounded-2xl p-4">
+                    <div className="bg-[#f4f6fc] border border-white rounded-2xl p-4 shadow-inner">
                       <p className="text-[10px] text-[#626a9f] font-bold uppercase mb-1">Fecha de Registro</p>
                       <p className="text-sm text-[#1e2246] font-semibold truncate">
                         {new Date(userData.created_at || Date.now()).toLocaleDateString('es-ES', {
@@ -1446,7 +1453,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     {/* COHORT & PRORATION */}
-                    <div className="bg-white/75 border border-white rounded-3xl p-5 shadow-sm">
+                    <div className="bg-[#f4f6fc] border border-white rounded-3xl p-5 shadow-inner">
                       <div className="flex justify-between items-center mb-4 border-b border-[#626a9f]/15 pb-3">
                         <h4 className="text-xs font-extrabold text-[#454d82] uppercase tracking-widest">
                           Billing &amp; Cohort
@@ -1455,7 +1462,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                           type="button"
                           onClick={handleSaveCohort}
                           disabled={isProcessing}
-                          className="ola-adm-btn-outline text-[10px] uppercase font-bold px-3.5 py-1.5 rounded-full cursor-pointer disabled:opacity-50"
+                          className="bg-white hover:bg-[#fff3d1] text-[#1e2246] border-2 border-[#1e2246] text-[10px] uppercase font-extrabold px-3.5 py-1.5 rounded-full cursor-pointer disabled:opacity-50"
                         >
                           Guardar Corte
                         </button>
@@ -1468,13 +1475,13 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                           <select
                             value={cohort}
                             onChange={(e) => setCohort(parseInt(e.target.value, 10))}
-                            className="w-full bg-[#f6f7fc] border-2 border-white focus:border-[#454d82] rounded-xl px-3 py-2.5 text-[#1e2246] text-xs font-bold outline-none cursor-pointer"
+                            className="w-full bg-white border-2 border-[#dfe2f2] focus:border-[#454d82] rounded-xl px-3 py-2.5 text-[#1e2246] text-xs font-bold outline-none cursor-pointer"
                           >
                             <option value={15}>Día 15 del mes</option>
                             <option value={30}>Día 30 del mes</option>
                           </select>
                         </div>
-                        <div className="flex-1 bg-[#fff3d1] border border-[#ffc749] rounded-xl p-2.5 flex flex-col justify-center items-center text-center">
+                        <div className="flex-1 bg-[#fff3d1] border-2 border-[#ffc749] rounded-xl p-2.5 flex flex-col justify-center items-center text-center">
                           <span className="text-[9px] text-[#454d82] uppercase font-bold">Prorrateo Hoy</span>
                           <span className="text-lg font-extrabold text-[#1e2246] leading-tight">${proratedDue}</span>
                         </div>
@@ -1482,7 +1489,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                     </div>
 
                     {/* CREDITS & REFUND */}
-                    <div className="bg-white/75 border border-white rounded-3xl p-5 flex flex-col justify-center shadow-sm">
+                    <div className="bg-[#f4f6fc] border border-white rounded-3xl p-5 flex flex-col justify-center shadow-inner">
                       <div className="flex justify-between items-center gap-2 mb-2.5">
                         <h3 className="text-[#1e2246] font-extrabold text-lg">
                           Créditos: <span className="text-[#454d82]">{credits}</span>
@@ -1490,7 +1497,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                         <button
                           type="button"
                           onClick={handleRefund}
-                          className="ola-adm-btn-yellow font-bold text-[10px] uppercase tracking-wider px-3.5 py-2 rounded-full cursor-pointer shrink-0"
+                          className="bg-gradient-to-b from-[#ffd66b] to-[#ffc749] text-[#1e2246] border-2 border-[#1e2246] shadow-[0_3px_0_#1e2246] font-extrabold text-[10px] uppercase tracking-wider px-3.5 py-2 rounded-full cursor-pointer shrink-0"
                         >
                           +1 Credit (Refund)
                         </button>
@@ -1503,19 +1510,18 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
 
                   {/* SUBSCRIPTION SUMMARY */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="bg-white/75 border border-white rounded-2xl p-4 text-center shadow-sm">
+                    <div className="bg-white border border-[#dfe2f2] rounded-2xl p-4 text-center shadow-sm">
                       <p className="text-[10px] text-[#626a9f] font-bold uppercase tracking-widest mb-1">
                         Tarifa Mensual ({getBaseLevel(levelOverride)})
                       </p>
                       <p className="text-3xl text-[#1e2246] font-extrabold">
-                        ${MONTHLY_PRICES[getBaseLevel(levelOverride)] || 20} <span className="text-xs text-[#626a9f]">USD</span>
+                        ${MONTHLY_PRICES[getBaseLevel(levelOverride)] || 20}{' '}
+                        <span className="text-xs text-[#626a9f]">USD</span>
                       </p>
                     </div>
                     <div
                       className={`border-2 rounded-2xl p-4 text-center shadow-sm ${
-                        isPastDue
-                          ? 'bg-[#ee665b]/12 border-[#ee665b]'
-                          : 'bg-white/75 border-white'
+                        isPastDue ? 'bg-[#fff2f1] border-[#ee665b]' : 'bg-white border-[#dfe2f2]'
                       }`}
                     >
                       <p className="text-[10px] text-[#626a9f] font-bold uppercase tracking-widest mb-1">
@@ -1531,7 +1537,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                           : 'No asignada'}
                       </p>
                       {isPastDue && (
-                        <p className="text-[9.5px] text-[#c93f34] font-bold uppercase mt-1 animate-pulse">
+                        <p className="text-[9.5px] text-[#c93f34] font-extrabold uppercase mt-1 animate-pulse">
                           Vencido • Créditos en 0
                         </p>
                       )}
@@ -1542,8 +1548,8 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                   <div
                     className={`rounded-3xl p-5 sm:p-6 border-2 ${
                       userData.level_completed
-                        ? 'ola-adm-glass-gold border-[#ffc749]'
-                        : 'ola-adm-glass-mint border-[#16a37f]/45'
+                        ? 'bg-gradient-to-br from-[#fff9e8] to-[#ffe69e] border-[#ffc749]'
+                        : 'bg-gradient-to-br from-[#ebfcf6] to-[#d1f4e8] border-[#16a37f]/45'
                     }`}
                   >
                     {userData.level_completed ? (
@@ -1592,7 +1598,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                           <button
                             type="submit"
                             disabled={isProcessing}
-                            className="ola-adm-btn-yellow w-full py-3.5 font-bold tracking-widest text-xs uppercase rounded-full disabled:opacity-50 cursor-pointer"
+                            className="w-full py-3.5 bg-gradient-to-b from-[#ffd66b] to-[#ffc749] text-[#1e2246] border-2 border-[#1e2246] shadow-[0_4px_0_#1e2246] font-extrabold tracking-widest text-xs uppercase rounded-full disabled:opacity-50 cursor-pointer"
                           >
                             {isProcessing ? 'Procesando...' : `Renovar Nivel y Confirmar $${payAmount}`}
                           </button>
@@ -1658,7 +1664,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                           <button
                             type="submit"
                             disabled={isProcessing}
-                            className="ola-adm-btn-yellow w-full py-3.5 font-bold tracking-widest text-xs uppercase rounded-full disabled:opacity-50 cursor-pointer"
+                            className="w-full py-3.5 bg-gradient-to-b from-[#ffd66b] to-[#ffc749] text-[#1e2246] border-2 border-[#1e2246] shadow-[0_4px_0_#1e2246] font-extrabold tracking-widest text-xs uppercase rounded-full disabled:opacity-50 cursor-pointer"
                           >
                             {isProcessing ? 'Verificando...' : `Confirmar Pago de $${payAmount}`}
                           </button>
@@ -1672,7 +1678,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                     <h3 className="text-xs font-extrabold text-[#454d82] uppercase tracking-widest mb-3 border-b border-[#626a9f]/15 pb-2">
                       Historial de Pagos
                     </h3>
-                    <div className="bg-white/65 border border-white rounded-2xl p-4 shadow-inner">
+                    <div className="bg-[#f4f6fc] border border-white rounded-2xl p-4 shadow-inner">
                       {isLoadingPayments ? (
                         <div className="py-8 flex justify-center">
                           <div className="w-6 h-6 border-2 border-[#626a9f] border-t-[#ffc749] rounded-full animate-spin" />
@@ -1689,7 +1695,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                               className="flex justify-between items-center bg-white border border-[#dfe2f2] p-3.5 rounded-2xl shadow-sm"
                             >
                               <div>
-                                <p className="text-[#1e2246] font-bold text-sm">
+                                <p className="text-[#1e2246] font-extrabold text-sm">
                                   {payment.payment_type || 'Mensualidad'}
                                 </p>
                                 <p className="text-[10.5px] text-[#50567d] font-semibold mt-0.5">
@@ -1704,12 +1710,12 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                                     type="button"
                                     onClick={() => handleVerifyPendingPayment(payment)}
                                     disabled={isProcessing}
-                                    className="ola-adm-btn-yellow mt-1 px-3 py-1 rounded-full text-[9.5px] font-bold uppercase cursor-pointer disabled:opacity-50"
+                                    className="mt-1 px-3 py-1 rounded-full bg-[#ffc749] border border-[#1e2246] text-[#1e2246] text-[9.5px] font-extrabold uppercase cursor-pointer disabled:opacity-50"
                                   >
                                     Verificar
                                   </button>
                                 ) : (
-                                  <span className="text-[9.5px] text-[#128063] uppercase font-bold">
+                                  <span className="text-[9.5px] text-[#128063] uppercase font-extrabold">
                                     {payment.status}
                                   </span>
                                 )}
@@ -1722,7 +1728,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                   </div>
                 </>
               ) : (
-                <div className="py-12 text-center text-xs font-bold text-[#626a9f] uppercase tracking-widest bg-white/60 rounded-2xl border border-white">
+                <div className="py-12 text-center text-xs font-bold text-[#626a9f] uppercase tracking-widest bg-[#f4f6fc] rounded-2xl border border-white">
                   El estudiante debe estar activo para registrar pagos.
                 </div>
               )}
@@ -1737,11 +1743,11 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
               {!isPending ? (
                 <>
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-white/80 border border-white rounded-2xl p-4 shadow-sm text-center">
+                    <div className="bg-white border border-[#dfe2f2] rounded-2xl p-4 shadow-sm text-center">
                       <p className="text-[10px] text-[#626a9f] font-bold uppercase mb-1">Unidad Actual</p>
                       <p className="text-2xl text-[#1e2246] font-extrabold">Unit {userData.unit || 1}</p>
                     </div>
-                    <div className="bg-[#fff3d1]/85 border border-[#ffc749] rounded-2xl p-4 shadow-sm text-center">
+                    <div className="bg-[#fff3d1] border-2 border-[#ffc749] rounded-2xl p-4 shadow-sm text-center">
                       <p className="text-[10px] text-[#454d82] font-bold uppercase mb-1">Puntaje Promedio</p>
                       <p className="text-2xl text-[#1e2246] font-extrabold">{userData.lesson_score || '0'} / 100</p>
                     </div>
@@ -1761,7 +1767,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                         type="button"
                         onClick={handleGenerateReport}
                         disabled={isGenerating || academicHistory.length === 0}
-                        className="ola-adm-btn-outline px-5 py-2.5 text-[11px] font-bold uppercase tracking-wider rounded-full flex items-center gap-2 disabled:opacity-45 cursor-pointer"
+                        className="px-5 py-2.5 bg-white hover:bg-[#fff3d1] text-[#1e2246] border-2 border-[#1e2246] shadow-[0_3px_0_rgba(30,34,70,0.16)] text-[11px] font-extrabold uppercase tracking-wider rounded-full flex items-center gap-2 disabled:opacity-45 cursor-pointer"
                       >
                         <svg className="w-4 h-4 text-[#454d82]" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -1775,7 +1781,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                         <div className="w-8 h-8 border-4 border-[#626a9f] border-t-[#ffc749] rounded-full animate-spin" />
                       </div>
                     ) : academicHistory.length === 0 ? (
-                      <div className="py-10 text-center text-xs font-bold text-[#626a9f] uppercase tracking-widest bg-white/60 rounded-2xl border border-white">
+                      <div className="py-10 text-center text-xs font-bold text-[#626a9f] uppercase tracking-widest bg-[#f4f6fc] rounded-2xl border border-white">
                         El estudiante aún no tiene registros académicos.
                       </div>
                     ) : (
@@ -1783,20 +1789,20 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                         {academicHistory.map((record) => (
                           <div
                             key={record.id}
-                            className="bg-white/80 border border-white rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm"
+                            className="bg-white border border-[#dfe2f2] rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm"
                           >
                             <div className="flex items-center gap-3.5">
                               <div
                                 className={`w-12 h-12 rounded-2xl flex items-center justify-center font-extrabold text-sm shrink-0 ${
                                   record.score_percentage >= 75
                                     ? 'bg-[#e7faf3] text-[#128063] border border-[#16a37f]/45'
-                                    : 'bg-[#ee665b]/15 text-[#c93f34] border border-[#ee665b]/45'
+                                    : 'bg-[#fff2f1] text-[#c93f34] border border-[#ee665b]/45'
                                 }`}
                               >
                                 {Math.round(record.score_percentage)}%
                               </div>
                               <div>
-                                <span className="font-bold text-[#1e2246] text-sm uppercase block">
+                                <span className="font-extrabold text-[#1e2246] text-sm uppercase block">
                                   {record.activity_type}
                                 </span>
                                 <span className="text-[11px] text-[#50567d] font-medium">
@@ -1819,7 +1825,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                   </div>
                 </>
               ) : (
-                <div className="py-12 text-center text-xs font-bold text-[#626a9f] uppercase tracking-widest bg-white/60 rounded-2xl border border-white">
+                <div className="py-12 text-center text-xs font-bold text-[#626a9f] uppercase tracking-widest bg-[#f4f6fc] rounded-2xl border border-white">
                   Las estadísticas se generarán una vez que la cuenta esté activa.
                 </div>
               )}
@@ -1840,7 +1846,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                   <select
                     value={payrollCadence}
                     onChange={(e) => handleSaveCadence(e.target.value)}
-                    className="bg-white border border-[#dfe2f2] rounded-full px-3 py-1.5 text-xs font-bold text-[#1e2246] outline-none cursor-pointer"
+                    className="bg-white border-2 border-[#dfe2f2] rounded-full px-3.5 py-1.5 text-xs font-bold text-[#1e2246] outline-none cursor-pointer"
                   >
                     <option value="Weekly">Semanal</option>
                     <option value="Bi-Weekly">Quincenal</option>
@@ -1856,7 +1862,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
               ) : (
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                    <div className="ola-adm-glass-gold rounded-3xl p-5 flex flex-col justify-center items-center text-center">
+                    <div className="bg-gradient-to-br from-[#fff9e8] to-[#ffe69e] border-2 border-white shadow-sm rounded-3xl p-5 flex flex-col justify-center items-center text-center">
                       <span className="text-[10px] text-[#454d82] uppercase font-bold tracking-widest mb-1">
                         Monto a Pagar
                       </span>
@@ -1864,24 +1870,24 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                       <span className="text-[9.5px] text-[#4c5384] uppercase mt-1.5 font-bold">Ciclo Pendiente</span>
                     </div>
 
-                    <div className="md:col-span-2 bg-white/80 border border-white rounded-3xl p-5 shadow-sm flex flex-col justify-center">
+                    <div className="md:col-span-2 bg-[#f4f6fc] border border-white rounded-3xl p-5 shadow-inner flex flex-col justify-center">
                       <h4 className="text-[10px] text-[#454d82] uppercase font-bold tracking-widest mb-3 border-b border-[#626a9f]/15 pb-2">
                         Desglose de Horas &amp; Guardias
                       </h4>
-                      <div className="grid grid-cols-2 gap-3.5">
-                        <div className="flex justify-between items-center bg-[#f6f7fc] px-3.5 py-2.5 rounded-xl">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="flex justify-between items-center bg-white px-3.5 py-2.5 rounded-xl border border-[#dfe2f2]">
                           <span className="text-xs text-[#3b4170] font-bold">Día ($3/hr)</span>
                           <span className="text-sm font-extrabold text-[#1e2246]">{dayClassesCount}</span>
                         </div>
-                        <div className="flex justify-between items-center bg-[#e7faf3] px-3.5 py-2.5 rounded-xl">
+                        <div className="flex justify-between items-center bg-[#e7faf3] px-3.5 py-2.5 rounded-xl border border-[#16a37f]/30">
                           <span className="text-xs text-[#128063] font-bold">Noche ($4/hr)</span>
                           <span className="text-sm font-extrabold text-[#128063]">{nightClassesCount}</span>
                         </div>
-                        <div className="flex justify-between items-center bg-[#fff3d1] px-3.5 py-2.5 rounded-xl">
+                        <div className="flex justify-between items-center bg-[#fff3d1] px-3.5 py-2.5 rounded-xl border border-[#ffc749]">
                           <span className="text-xs text-[#1e2246] font-bold">No-Shows ($2)</span>
                           <span className="text-sm font-extrabold text-[#1e2246]">{noShowCount}</span>
                         </div>
-                        <div className="flex justify-between items-center bg-[#e8eaf7] px-3.5 py-2.5 rounded-xl">
+                        <div className="flex justify-between items-center bg-[#e8eaf7] px-3.5 py-2.5 rounded-xl border border-[#626a9f]/25">
                           <span className="text-xs text-[#454d82] font-bold">Guardias ($2)</span>
                           <span className="text-sm font-extrabold text-[#454d82]">{shiftCount}</span>
                         </div>
@@ -1889,7 +1895,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                     </div>
                   </div>
 
-                  <div className="ola-adm-glass-mint rounded-3xl p-5 sm:p-6">
+                  <div className="bg-gradient-to-br from-[#ebfcf6] to-[#d1f4e8] border-2 border-[#16a37f]/45 rounded-3xl p-5 sm:p-6">
                     <h4 className="text-[#128063] font-extrabold uppercase text-sm tracking-wider mb-1">
                       Liquidar Ciclo
                     </h4>
@@ -1929,7 +1935,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                         <button
                           type="submit"
                           disabled={isProcessing || finalTotalPayroll === 0}
-                          className="ola-adm-btn-yellow px-7 py-3 rounded-full font-bold text-xs uppercase tracking-widest cursor-pointer disabled:opacity-45 shrink-0"
+                          className="px-7 py-3 rounded-full font-extrabold text-xs uppercase tracking-widest text-[#1e2246] bg-gradient-to-b from-[#ffd66b] to-[#ffc749] border-2 border-[#1e2246] shadow-[0_4px_0_#1e2246] cursor-pointer disabled:opacity-45 shrink-0"
                         >
                           Marcar como Pagado ✓
                         </button>
@@ -1947,8 +1953,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
           {activeTab === 'TEACHER_STATS' && userRole === 'Teacher' && (
             <div className="space-y-5">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {/* Pedagogical Radar */}
-                <div className="bg-white/80 border border-white rounded-3xl p-5 shadow-sm flex flex-col items-center">
+                <div className="bg-[#f4f6fc] border border-white rounded-3xl p-5 shadow-inner flex flex-col items-center">
                   <p className="text-[10px] font-bold text-[#626a9f] uppercase tracking-widest mb-1">
                     Calificación Pedagógica
                   </p>
@@ -1967,8 +1972,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                   </div>
                 </div>
 
-                {/* Operational Radar */}
-                <div className="bg-white/80 border border-white rounded-3xl p-5 shadow-sm flex flex-col items-center">
+                <div className="bg-[#f4f6fc] border border-white rounded-3xl p-5 shadow-inner flex flex-col items-center">
                   <p className="text-[10px] font-bold text-[#626a9f] uppercase tracking-widest mb-1">
                     Cumplimiento Operativo
                   </p>
@@ -2078,7 +2082,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                         className={`font-extrabold px-3 py-1 rounded-full text-xs ${
                           record.score_percentage >= 75
                             ? 'bg-[#e7faf3] text-[#128063]'
-                            : 'bg-[#ee665b]/15 text-[#c93f34]'
+                            : 'bg-[#fff2f1] text-[#c93f34]'
                         }`}
                       >
                         Calificación: {Math.round(record.score_percentage)} / 100

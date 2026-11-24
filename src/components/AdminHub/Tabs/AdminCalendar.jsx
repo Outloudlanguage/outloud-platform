@@ -1,9 +1,45 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../../SupabaseClient';
+
+const DAY_NAMES = ['LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB', 'DOM'];
+
+const TIME_SLOTS = [
+  '8:00 am',
+  '9:00 am',
+  '10:00 am',
+  '11:00 am',
+  '12:00 pm',
+  '1:00 pm',
+  '2:00 pm',
+  '3:00 pm',
+  '4:00 pm',
+  '5:00 pm',
+  '6:00 pm',
+  '7:00 pm',
+  '8:00 pm',
+];
+
+const getWeekDates = (date) => {
+  const currentDay = date.getDay();
+  const distanceToMonday = currentDay === 0 ? -6 : 1 - currentDay;
+  const monday = new Date(date);
+  monday.setDate(date.getDate() + distanceToMonday);
+
+  const dates = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    dates.push(d);
+  }
+  return dates;
+};
+
+const getLocalDateString = (d) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
 const AdminCalendar = () => {
   // Navigation & Filter States
-  const [baseDate, setBaseDate] = useState(new Date());
+  const [baseDate, setBaseDate] = useState(() => new Date());
   const [activeTab, setActiveTab] = useState('OVERALL');
   const [filterTeacherId, setFilterTeacherId] = useState('ALL');
   const [showTeacherDropdown, setShowTeacherDropdown] = useState(false);
@@ -39,45 +75,9 @@ const AdminCalendar = () => {
     }, 3200);
   };
 
-  const dayNames = ['LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB', 'DOM'];
-
-  const times = [
-    '8:00 am',
-    '9:00 am',
-    '10:00 am',
-    '11:00 am',
-    '12:00 pm',
-    '1:00 pm',
-    '2:00 pm',
-    '3:00 pm',
-    '4:00 pm',
-    '5:00 pm',
-    '6:00 pm',
-    '7:00 pm',
-    '8:00 pm',
-  ];
-
-  // --- 1. DATE LOGIC ---
-  const getWeekDates = (date) => {
-    const currentDay = date.getDay();
-    const distanceToMonday = currentDay === 0 ? -6 : 1 - currentDay;
-    const monday = new Date(date);
-    monday.setDate(date.getDate() + distanceToMonday);
-
-    const dates = [];
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(monday);
-      d.setDate(monday.getDate() + i);
-      dates.push(d);
-    }
-    return dates;
-  };
-
   const weekDates = getWeekDates(baseDate);
   const currentMonthName = baseDate.toLocaleString('es-ES', { month: 'long' }).toUpperCase();
-  const todayStr = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(
-    new Date().getDate()
-  ).padStart(2, '0')}`;
+  const todayStr = getLocalDateString(new Date());
 
   const handleWeekChange = (direction) => {
     setBaseDate((prev) => {
@@ -95,13 +95,11 @@ const AdminCalendar = () => {
     });
   };
 
-  const getLocalDateString = (d) => {
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  };
-
-  // --- 2. DATA FETCHING ---
-  const fetchCalendarData = async () => {
+  // --- DATA FETCHING ---
+  const fetchCalendarData = useCallback(async () => {
     try {
+      const currentWeek = getWeekDates(baseDate);
+
       const { data: teachersData } = await supabase
         .from('profiles')
         .select('id, first_name, last_name')
@@ -109,8 +107,8 @@ const AdminCalendar = () => {
 
       if (teachersData) {
         setTeachers(teachersData);
-        if (teachersData.length > 0 && !selectedTeacherId) {
-          setSelectedTeacherId(teachersData[0].id);
+        if (teachersData.length > 0) {
+          setSelectedTeacherId((prev) => prev || teachersData[0].id);
         }
       }
 
@@ -132,9 +130,9 @@ const AdminCalendar = () => {
 
       if (upcomingData) setUpcomingActivities(upcomingData);
 
-      const startDate = new Date(weekDates[0]);
+      const startDate = new Date(currentWeek[0]);
       startDate.setHours(0, 0, 0, 0);
-      const endDate = new Date(weekDates[6]);
+      const endDate = new Date(currentWeek[6]);
       endDate.setHours(23, 59, 59, 999);
 
       const { data: sessionsData, error } = await supabase
@@ -187,14 +185,13 @@ const AdminCalendar = () => {
     } catch (error) {
       console.error('Error fetching calendar data:', error);
     }
-  };
+  }, [baseDate]);
 
   useEffect(() => {
     fetchCalendarData();
-    
-  }, [baseDate]);
+  }, [fetchCalendarData]);
 
-  // --- 3. MODAL ACTIONS ---
+  // --- MODAL ACTIONS ---
   const handleOpenBlock = async () => {
     if (!selectedTeacherId) return showToast('Debes asignar un profesor.', 'error');
     setIsProcessing(true);
@@ -224,7 +221,7 @@ const AdminCalendar = () => {
 
       if (error) throw error;
       await fetchCalendarData();
-      closeSlotModal();
+      setSelectedSlot(null);
       showToast('Bloque abierto exitosamente.', 'success');
     } catch (error) {
       console.error(error);
@@ -239,7 +236,7 @@ const AdminCalendar = () => {
     try {
       await supabase.from('live_sessions').delete().eq('id', selectedSlot.data.id);
       await fetchCalendarData();
-      closeSlotModal();
+      setSelectedSlot(null);
       showToast('Disponibilidad cerrada.', 'info');
     } catch (error) {
       console.error(error);
@@ -262,7 +259,7 @@ const AdminCalendar = () => {
         })
         .eq('id', selectedSlot.data.id);
       await fetchCalendarData();
-      closeSlotModal();
+      setSelectedSlot(null);
       showToast('Reserva cancelada. El bloque está disponible.', 'info');
     } catch (error) {
       console.error(error);
@@ -277,7 +274,7 @@ const AdminCalendar = () => {
       day: dIdx,
       time: tIdx,
       date: weekDates[dIdx],
-      timeStr: times[tIdx],
+      timeStr: TIME_SLOTS[tIdx],
       data: currentData,
     });
     if (!currentData && teachers.length > 0) {
@@ -292,8 +289,6 @@ const AdminCalendar = () => {
       setSelectedUnit(1);
     }
   };
-
-  const closeSlotModal = () => setSelectedSlot(null);
 
   const handleAssignShift = async (e) => {
     e.preventDefault();
@@ -319,17 +314,17 @@ const AdminCalendar = () => {
 
   const getSlotStyle = (slotData) => {
     if (!slotData) {
-      return 'bg-white/60 hover:bg-white text-[#626a9f]/55 border-white/90 hover:border-[#626a9f]/45';
+      return 'bg-white/75 hover:bg-white text-[#626a9f]/60 border-white hover:border-[#626a9f]/45';
     }
     if (slotData.status === 'booked' || slotData.status === 'completed') {
       if (slotData.class_type === 'Unit Class') {
-        return 'bg-[#ffc749] text-[#1e2246] font-bold border-[#1e2246] shadow-[0_3px_0_#1e2246]';
+        return 'bg-gradient-to-b from-[#ffd66b] to-[#ffc749] text-[#1e2246] font-extrabold border-[#1e2246] shadow-[0_3px_0_#1e2246]';
       }
       if (slotData.class_type === '1-on-1 Tutoring') {
-        return 'bg-[#454d82] text-white font-bold border-[#1e2246] shadow-[0_3px_0_#1e2246]';
+        return 'bg-[#5b64a0] text-white font-extrabold border-[#1e2246] shadow-[0_3px_0_#1e2246]';
       }
       if (slotData.class_type === 'Social Activity') {
-        return 'bg-[#7c5dfa] text-white font-bold border-[#1e2246] shadow-[0_3px_0_#1e2246]';
+        return 'bg-[#7c5dfa] text-white font-extrabold border-[#1e2246] shadow-[0_3px_0_#1e2246]';
       }
     }
     return 'bg-[#e7faf3] text-[#128063] border-[#16a37f]/55 hover:bg-[#d2f5e8]';
@@ -337,16 +332,15 @@ const AdminCalendar = () => {
 
   const selectedTeacherObj = teachers.find((t) => t.id === filterTeacherId);
 
-  // Ring Chart Math
-  const circleRadius = 64;
+  const circleRadius = 56;
   const circleCircumference = 2 * Math.PI * circleRadius;
   const strokeDashoffset = circleCircumference - (bookedPercentage / 100) * circleCircumference;
 
   return (
-    <div className="w-full max-w-[1440px] flex flex-col xl:h-[calc(100vh-145px)] xl:min-h-[650px] font-montserrat gap-5 relative z-10 text-[#1e2246] pb-8 xl:pb-0">
+    <div className="w-full max-w-7xl mx-auto flex flex-col font-montserrat gap-6 relative z-10 text-[#1e2246] pb-12">
       {/* TOAST FEEDBACK */}
       {calToast && (
-        <div className="ola-adm-toast-in fixed bottom-24 lg:bottom-8 left-1/2 z-[9500] px-5 py-3 rounded-full bg-[#1e2246] text-white border-2 border-[#ffc749] shadow-2xl flex items-center gap-2.5 text-xs font-bold max-w-[92vw]">
+        <div className="fixed bottom-24 lg:bottom-8 left-1/2 -translate-x-1/2 z-[9500] px-5 py-3 rounded-full bg-[#1e2246] text-white border-2 border-[#ffc749] shadow-2xl flex items-center gap-2.5 text-xs font-bold max-w-[92vw]">
           <span
             className={`w-2.5 h-2.5 rounded-full shrink-0 ${
               calToast.tone === 'error'
@@ -360,16 +354,29 @@ const AdminCalendar = () => {
         </div>
       )}
 
-      {/* TOP CONTROLS BAR (Clean in-flow pill bar — no fragile absolute collisions) */}
-      <div className="ola-adm-glass rounded-[1.75rem] px-4 py-3 sm:px-5 flex flex-wrap items-center justify-between gap-3 shrink-0">
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+      {/* EDITORIAL HEADER + FLOATING CONTROLS BAR */}
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+        <div>
+          <span className="inline-block text-[10px] font-bold uppercase tracking-widest bg-white/95 border border-white px-3.5 py-1 rounded-full text-[#454d82] shadow-sm mb-2">
+            Master Schedule • Live Labs &amp; Guardias
+          </span>
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight leading-none">
+            <span className="text-[#1e2246]">Agenda Maestra. </span>
+            <span className="text-[#626a9f]">
+              Horarios y Guardias<span className="text-[#ffc749]">.</span>
+            </span>
+          </h1>
+        </div>
+
+        {/* Clean In-Flow Floating Pill Controls */}
+        <div className="bg-gradient-to-br from-white/95 to-[#f2f4fd]/85 backdrop-blur-2xl border-2 border-white shadow-[0_14px_30px_-14px_rgba(55,63,118,0.22)] rounded-full px-3 py-2 flex flex-wrap items-center gap-2 sm:gap-3">
           <button
             type="button"
             onClick={() => {
               setShiftTeacherId(teachers.length > 0 ? teachers[0].id : '');
               setShowShiftModal(true);
             }}
-            className="ola-adm-btn-yellow px-4 py-2 rounded-full font-bold text-[10.5px] sm:text-xs uppercase tracking-wider cursor-pointer flex items-center gap-1.5"
+            className="px-4 py-2 rounded-full font-extrabold text-[10.5px] sm:text-xs uppercase tracking-wider text-[#1e2246] bg-gradient-to-b from-[#ffd66b] to-[#ffc749] border-2 border-[#1e2246] shadow-[0_3px_0_#1e2246] hover:-translate-y-0.5 active:translate-y-0.5 transition-all cursor-pointer flex items-center gap-1.5"
           >
             <span className="text-sm leading-none">+</span>
             <span>Assign Shift</span>
@@ -378,96 +385,95 @@ const AdminCalendar = () => {
           <button
             type="button"
             onClick={() => setBaseDate(new Date())}
-            className="px-3.5 py-2 rounded-full bg-white/80 hover:bg-white border border-white text-[10.5px] font-bold uppercase tracking-wider text-[#454d82] hover:text-[#1e2246] cursor-pointer shadow-sm"
+            className="px-3.5 py-2 rounded-full bg-white hover:bg-[#e8eaf7] border border-[#dfe2f2] text-[10.5px] font-bold uppercase tracking-wider text-[#454d82] hover:text-[#1e2246] cursor-pointer transition-colors"
           >
             Hoy
           </button>
-        </div>
 
-        {/* Week & Month Steppers */}
-        <div className="flex items-center gap-2 sm:gap-4 bg-white/75 border border-white rounded-full px-3 py-1.5 shadow-inner ml-auto">
-          <div className="flex items-center gap-1 sm:gap-2">
-            <button
-              type="button"
-              onClick={() => handleWeekChange(-1)}
-              aria-label="Semana anterior"
-              className="w-7 h-7 rounded-full hover:bg-[#e8eaf7] text-[#454d82] hover:text-[#1e2246] flex items-center justify-center cursor-pointer transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.8" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-            <span className="text-[10px] sm:text-xs font-extrabold text-[#1e2246] uppercase tracking-widest min-w-[60px] text-center">
-              Semana
-            </span>
-            <button
-              type="button"
-              onClick={() => handleWeekChange(1)}
-              aria-label="Semana siguiente"
-              className="w-7 h-7 rounded-full hover:bg-[#e8eaf7] text-[#454d82] hover:text-[#1e2246] flex items-center justify-center cursor-pointer transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.8" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          </div>
+          <div className="flex items-center gap-1.5 bg-[#f4f6fc] border border-white rounded-full px-2.5 py-1 shadow-inner ml-auto">
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => handleWeekChange(-1)}
+                aria-label="Semana anterior"
+                className="w-7 h-7 rounded-full hover:bg-white text-[#454d82] hover:text-[#1e2246] flex items-center justify-center cursor-pointer transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.8" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <span className="text-[10px] font-extrabold text-[#1e2246] uppercase tracking-widest min-w-[54px] text-center">
+                Semana
+              </span>
+              <button
+                type="button"
+                onClick={() => handleWeekChange(1)}
+                aria-label="Semana siguiente"
+                className="w-7 h-7 rounded-full hover:bg-white text-[#454d82] hover:text-[#1e2246] flex items-center justify-center cursor-pointer transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.8" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
 
-          <div className="w-px h-5 bg-[#626a9f]/20" />
+            <div className="w-px h-4 bg-[#626a9f]/25" />
 
-          <div className="flex items-center gap-1 sm:gap-2">
-            <button
-              type="button"
-              onClick={() => handleMonthChange(-1)}
-              aria-label="Mes anterior"
-              className="w-7 h-7 rounded-full hover:bg-[#e8eaf7] text-[#454d82] hover:text-[#1e2246] flex items-center justify-center cursor-pointer transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.8" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-            <span className="text-[10px] sm:text-xs font-extrabold text-[#454d82] uppercase tracking-widest min-w-[84px] text-center">
-              {currentMonthName}
-            </span>
-            <button
-              type="button"
-              onClick={() => handleMonthChange(1)}
-              aria-label="Mes siguiente"
-              className="w-7 h-7 rounded-full hover:bg-[#e8eaf7] text-[#454d82] hover:text-[#1e2246] flex items-center justify-center cursor-pointer transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.8" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => handleMonthChange(-1)}
+                aria-label="Mes anterior"
+                className="w-7 h-7 rounded-full hover:bg-white text-[#454d82] hover:text-[#1e2246] flex items-center justify-center cursor-pointer transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.8" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <span className="text-[10px] font-extrabold text-[#454d82] uppercase tracking-widest min-w-[78px] text-center">
+                {currentMonthName}
+              </span>
+              <button
+                type="button"
+                onClick={() => handleMonthChange(1)}
+                aria-label="Mes siguiente"
+                className="w-7 h-7 rounded-full hover:bg-white text-[#454d82] hover:text-[#1e2246] flex items-center justify-center cursor-pointer transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.8" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       {/* MAIN CONTENT SPLIT ROW */}
-      <div className="flex flex-col xl:flex-row gap-5 flex-1 min-h-0 relative z-20">
-        {/* LEFT COLUMN: Bento Booking Ring + Upcoming */}
-        <div className="w-full xl:w-[29%] flex flex-col sm:grid sm:grid-cols-2 xl:flex xl:flex-col gap-5 xl:h-full shrink-0">
-          {/* Interactive Students Booked Bento Card */}
+      <div className="flex flex-col xl:flex-row gap-6 items-start relative z-20">
+        {/* LEFT COLUMN: Butter-Gold Coverage Ring + Pearl Upcoming Feed */}
+        <div className="w-full xl:w-[29%] flex flex-col sm:grid sm:grid-cols-2 xl:flex xl:flex-col gap-5 shrink-0">
+          {/* Clickable Butter-Gold Students Booked Ring Card */}
           <button
             type="button"
             onClick={() => setShowUnbookedModal(true)}
-            className="ola-adm-glass-gold ola-adm-bento w-full rounded-[2rem] p-5 flex flex-col items-center justify-center cursor-pointer focus:outline-none group shrink-0"
+            className="bg-gradient-to-br from-[#fff9e8] to-[#ffe69e] border-2 border-white shadow-[0_22px_44px_-18px_rgba(196,138,12,0.28),inset_0_2px_2px_rgba(255,255,255,0.96)] w-full rounded-[2.25rem] p-5 flex flex-col items-center justify-center cursor-pointer focus:outline-none group hover:-translate-y-1 transition-all"
           >
-            <div className="w-full flex items-center justify-between mb-2">
-              <span className="text-[9.5px] font-bold uppercase tracking-widest text-[#454d82]">
+            <div className="w-full flex items-center justify-between mb-3">
+              <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#454d82]">
                 Weekly Coverage
               </span>
-              <span className="text-[9.5px] font-bold uppercase tracking-wider bg-[#1e2246] text-[#ffc749] px-2.5 py-0.5 rounded-full">
+              <span className="text-[9.5px] font-extrabold uppercase tracking-wider bg-[#1e2246] text-[#ffc749] px-2.5 py-1 rounded-full">
                 {unbookedStudents.length} Unbooked
               </span>
             </div>
 
             <div className="relative w-32 h-32 flex items-center justify-center my-1 group-hover:scale-105 transition-transform duration-300">
-              <svg className="w-full h-full transform -rotate-90 overflow-visible" viewBox="0 0 160 160">
-                <circle cx="80" cy="80" r="64" fill="none" stroke="rgba(30,34,70,0.12)" strokeWidth="11" />
+              <svg className="w-full h-full transform -rotate-90 overflow-visible" viewBox="0 0 144 144">
+                <circle cx="72" cy="72" r={circleRadius} fill="none" stroke="rgba(30,34,70,0.12)" strokeWidth="11" />
                 <circle
-                  cx="80"
-                  cy="80"
-                  r="64"
+                  cx="72"
+                  cy="72"
+                  r={circleRadius}
                   fill="none"
                   stroke="#1e2246"
                   strokeWidth="11"
@@ -483,23 +489,23 @@ const AdminCalendar = () => {
               </div>
             </div>
 
-            <p className="text-[11px] font-bold text-[#1e2246] uppercase tracking-widest mt-1">
+            <p className="text-[11px] font-extrabold text-[#1e2246] uppercase tracking-widest mt-2">
               View Unbooked Students →
             </p>
           </button>
 
-          {/* Upcoming Sessions Card */}
-          <div className="ola-adm-glass rounded-[2rem] p-5 flex-1 flex flex-col min-h-[280px] xl:min-h-0">
+          {/* Pearl Upcoming Sessions Card */}
+          <div className="bg-gradient-to-br from-white/95 to-[#f2f4fd]/85 backdrop-blur-2xl border-2 border-white shadow-[0_20px_42px_-18px_rgba(55,63,118,0.2)] rounded-[2.25rem] p-5 flex flex-col min-h-[340px]">
             <div className="flex items-center justify-between mb-4 shrink-0">
               <h3 className="text-base font-extrabold text-[#1e2246] tracking-tight">Upcoming Live</h3>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-[#454d82] bg-white/80 px-2.5 py-0.5 rounded-full">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-[#454d82] bg-[#e8eaf7] px-2.5 py-0.5 rounded-full">
                 Next {upcomingActivities.length}
               </span>
             </div>
 
-            <ul className="space-y-2.5 flex-1 overflow-y-auto custom-scrollbar pr-1 min-h-0">
+            <ul className="space-y-2.5 flex-1 overflow-y-auto custom-scrollbar pr-1 max-h-[300px]">
               {upcomingActivities.length === 0 ? (
-                <li className="text-center text-[#626a9f] text-xs font-bold uppercase tracking-widest py-10">
+                <li className="text-center text-[#626a9f] text-xs font-bold uppercase tracking-widest py-12">
                   No upcoming sessions
                 </li>
               ) : (
@@ -510,7 +516,7 @@ const AdminCalendar = () => {
                   return (
                     <li
                       key={act.id}
-                      className="flex flex-col gap-1 text-xs bg-white/80 hover:bg-white p-3.5 rounded-2xl border border-white shadow-sm transition-colors"
+                      className="flex flex-col gap-1 text-xs bg-white p-3.5 rounded-2xl border border-[#dfe2f2] shadow-sm"
                     >
                       <div className="flex items-center justify-between w-full">
                         <div className="flex items-center gap-2 truncate">
@@ -519,18 +525,18 @@ const AdminCalendar = () => {
                               act.class_type === 'Unit Class'
                                 ? 'bg-[#ffc749] border border-[#1e2246]'
                                 : act.class_type === '1-on-1 Tutoring'
-                                ? 'bg-[#454d82]'
+                                ? 'bg-[#5b64a0]'
                                 : 'bg-[#7c5dfa]'
                             }`}
                           />
-                          <span className="font-bold text-[#1e2246] uppercase tracking-wider text-[10.5px] truncate">
+                          <span className="font-extrabold text-[#1e2246] uppercase tracking-wider text-[10.5px] truncate">
                             {act.class_type}
                           </span>
                         </div>
-                        <span className="font-bold text-[#454d82] text-[11px] shrink-0">{timeStr}</span>
+                        <span className="font-extrabold text-[#454d82] text-[11px] shrink-0">{timeStr}</span>
                       </div>
                       <div className="flex items-center justify-between pl-4 text-[11px]">
-                        <span className="text-[#50567d] font-medium truncate pr-2">
+                        <span className="text-[#50567d] font-semibold truncate pr-2">
                           Prof. {act.teacher?.first_name || 'TBA'}
                         </span>
                         <span className="text-[#128063] font-bold shrink-0">{dateStr}</span>
@@ -545,7 +551,7 @@ const AdminCalendar = () => {
               href="https://wa.me/584226885683"
               target="_blank"
               rel="noreferrer"
-              className="ola-adm-btn-outline w-full mt-4 py-3 rounded-2xl font-bold text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 shrink-0"
+              className="w-full mt-4 py-3 rounded-full bg-white hover:bg-[#fff3d1] text-[#1e2246] border-2 border-[#1e2246] shadow-[0_3px_0_rgba(30,34,70,0.16)] font-extrabold text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 shrink-0 transition-all hover:-translate-y-0.5"
             >
               <svg className="w-4 h-4 text-[#16a37f]" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
@@ -555,17 +561,17 @@ const AdminCalendar = () => {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: Master Weekly Schedule Grid */}
-        <div className="ola-adm-glass w-full xl:w-[71%] rounded-[2.25rem] min-h-[560px] xl:h-full flex flex-col overflow-hidden">
+        {/* RIGHT COLUMN: Master 7-Day x 13-Hour Schedule Canvas */}
+        <div className="bg-gradient-to-br from-white/95 to-[#f2f4fd]/85 backdrop-blur-2xl border-2 border-white shadow-[0_20px_42px_-18px_rgba(55,63,118,0.2)] w-full xl:w-[71%] rounded-[2.25rem] flex flex-col overflow-hidden">
           {/* Filter Tabs + Non-Clipped Teacher Dropdown */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between p-4 sm:px-6 border-b border-[#626a9f]/15 gap-3 relative z-40 shrink-0 bg-white/45">
-            <div className="flex overflow-x-auto gap-1.5 bg-[#e8eaf7]/85 p-1 rounded-full border border-white [&::-webkit-scrollbar]:hidden">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between p-4 sm:px-6 border-b border-[#626a9f]/15 gap-3 relative z-40 shrink-0 bg-white/70">
+            <div className="flex overflow-x-auto gap-1 bg-[#e8eaf7] p-1 rounded-full border border-white [&::-webkit-scrollbar]:hidden">
               {['OVERALL', 'LIVE LABS', 'TUTORING', 'SOCIALS'].map((tab) => (
                 <button
                   type="button"
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`shrink-0 px-3.5 py-2 rounded-full text-[10.5px] font-bold uppercase tracking-wider cursor-pointer whitespace-nowrap ${
+                  className={`shrink-0 px-3.5 py-2 rounded-full text-[10.5px] font-extrabold uppercase tracking-wider cursor-pointer whitespace-nowrap transition-colors ${
                     activeTab === tab
                       ? 'bg-[#1e2246] text-[#ffc749] shadow-sm'
                       : 'text-[#454d82] hover:text-[#1e2246]'
@@ -576,21 +582,19 @@ const AdminCalendar = () => {
               ))}
             </div>
 
-            {/* Teacher Filter Placed Outside Overflow-X Container (Zero Clipping) */}
+            {/* Non-Clipped Teacher Dropdown */}
             <div className="relative shrink-0">
               <button
                 type="button"
                 onClick={() => setShowTeacherDropdown((prev) => !prev)}
-                className={`w-full sm:w-auto flex items-center justify-between sm:justify-center gap-2 px-4 py-2 rounded-full text-[10.5px] font-bold uppercase tracking-wider border-2 cursor-pointer transition-colors ${
+                className={`w-full sm:w-auto flex items-center justify-between sm:justify-center gap-2 px-4 py-2 rounded-full text-[10.5px] font-extrabold uppercase tracking-wider border-2 cursor-pointer transition-colors ${
                   filterTeacherId !== 'ALL' || showTeacherDropdown
                     ? 'bg-[#1e2246] border-[#1e2246] text-[#ffc749]'
-                    : 'bg-white border-white text-[#454d82] hover:border-[#626a9f]/40'
+                    : 'bg-white border-[#dfe2f2] text-[#454d82] hover:border-[#626a9f]'
                 }`}
               >
                 <span className="truncate max-w-[140px]">
-                  {selectedTeacherObj
-                    ? `Prof. ${selectedTeacherObj.first_name}`
-                    : 'All Teachers'}
+                  {selectedTeacherObj ? `Prof. ${selectedTeacherObj.first_name}` : 'All Teachers'}
                 </span>
                 <svg
                   className={`w-3.5 h-3.5 transition-transform duration-150 ${
@@ -598,7 +602,7 @@ const AdminCalendar = () => {
                   }`}
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="2.5"
+                  strokeWidth="2.6"
                   viewBox="0 0 24 24"
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -607,21 +611,18 @@ const AdminCalendar = () => {
 
               {showTeacherDropdown && (
                 <>
-                  <div
-                    className="fixed inset-0 z-40"
-                    onClick={() => setShowTeacherDropdown(false)}
-                  />
-                  <div className="ola-adm-modal-in absolute top-full mt-2 right-0 w-56 bg-white/95 backdrop-blur-2xl border-2 border-[#1e2246] rounded-2xl shadow-2xl py-1.5 z-50 flex flex-col max-h-64 overflow-y-auto custom-scrollbar">
+                  <div className="fixed inset-0 z-40" onClick={() => setShowTeacherDropdown(false)} />
+                  <div className="absolute top-full mt-2 right-0 w-56 bg-white border-2 border-[#1e2246] rounded-2xl shadow-2xl p-1.5 z-50 flex flex-col max-h-64 overflow-y-auto custom-scrollbar">
                     <button
                       type="button"
                       onClick={() => {
                         setFilterTeacherId('ALL');
                         setShowTeacherDropdown(false);
                       }}
-                      className={`text-left px-4 py-2.5 text-xs font-bold uppercase tracking-wider cursor-pointer ${
+                      className={`text-left px-3.5 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-wider cursor-pointer ${
                         filterTeacherId === 'ALL'
                           ? 'bg-[#fff3d1] text-[#1e2246]'
-                          : 'text-[#454d82] hover:bg-[#f2f4fb]'
+                          : 'text-[#454d82] hover:bg-[#f4f6fc]'
                       }`}
                     >
                       All Teachers
@@ -635,10 +636,10 @@ const AdminCalendar = () => {
                           setFilterTeacherId(t.id);
                           setShowTeacherDropdown(false);
                         }}
-                        className={`text-left px-4 py-2.5 text-xs font-semibold truncate cursor-pointer ${
+                        className={`text-left px-3.5 py-2.5 rounded-xl text-xs font-bold truncate cursor-pointer ${
                           filterTeacherId === t.id
-                            ? 'bg-[#454d82] text-[#ffc749] font-bold'
-                            : 'text-[#1e2246] hover:bg-[#f2f4fb]'
+                            ? 'bg-[#1e2246] text-[#ffc749]'
+                            : 'text-[#1e2246] hover:bg-[#f4f6fc]'
                         }`}
                       >
                         {t.first_name} {t.last_name}
@@ -651,7 +652,7 @@ const AdminCalendar = () => {
           </div>
 
           {/* Color Legend Strip */}
-          <div className="px-4 sm:px-6 py-2 bg-white/30 border-b border-[#626a9f]/10 flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] font-bold uppercase tracking-wider text-[#50567d] shrink-0">
+          <div className="px-4 sm:px-6 py-2.5 bg-[#f4f6fc]/80 border-b border-[#626a9f]/10 flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] font-extrabold uppercase tracking-wider text-[#50567d] shrink-0">
             <span className="inline-flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-[#16a37f]" /> Available
             </span>
@@ -659,7 +660,7 @@ const AdminCalendar = () => {
               <span className="w-2.5 h-2.5 rounded-full bg-[#ffc749] border border-[#1e2246]" /> Unit Class
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#454d82]" /> 1-on-1 Tutoring
+              <span className="w-2.5 h-2.5 rounded-full bg-[#5b64a0]" /> 1-on-1 Tutoring
             </span>
             <span className="inline-flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-[#7c5dfa]" /> Social
@@ -667,18 +668,18 @@ const AdminCalendar = () => {
             <span className="ml-auto text-[9.5px] text-[#626a9f] sm:hidden">← Swipe grid →</span>
           </div>
 
-          {/* Scrollable 7-Day Grid (Safe horizontal scroll on mobile so columns never squish) */}
-          <div className="flex-1 overflow-auto custom-scrollbar relative z-20 min-h-0">
+          {/* Responsive 7-Day Grid */}
+          <div className="max-h-[68vh] overflow-auto custom-scrollbar relative z-20">
             <div className="min-w-[660px] w-full flex flex-col">
               {/* Sticky Day Headers */}
-              <div className="grid grid-cols-7 gap-2 px-4 sm:px-6 py-3 bg-[#f3f5fc]/95 backdrop-blur-md border-b border-[#626a9f]/15 sticky top-0 z-30">
-                {dayNames.map((day, idx) => {
+              <div className="grid grid-cols-7 gap-2 px-4 sm:px-6 py-3 bg-white/95 backdrop-blur-md border-b border-[#626a9f]/15 sticky top-0 z-30">
+                {DAY_NAMES.map((day, idx) => {
                   const isToday = getLocalDateString(weekDates[idx]) === todayStr;
                   return (
                     <div
                       key={day}
                       className={`flex items-center justify-center gap-1.5 py-1.5 rounded-xl ${
-                        isToday ? 'bg-[#1e2246] text-[#ffc749] shadow-sm' : 'text-[#454d82]'
+                        isToday ? 'bg-[#1e2246] text-[#ffc749] shadow-sm' : 'bg-[#f4f6fc] text-[#454d82]'
                       }`}
                     >
                       <span className="text-[10px] font-bold tracking-widest">{day}</span>
@@ -693,13 +694,14 @@ const AdminCalendar = () => {
               {/* Time Slots */}
               <div className="p-4 sm:p-6">
                 <div className="grid grid-cols-7 gap-2">
-                  {times.map((time, tIdx) => (
+                  {TIME_SLOTS.map((time, tIdx) => (
                     <React.Fragment key={time}>
-                      {dayNames.map((_, dIdx) => {
+                      {DAY_NAMES.map((_, dIdx) => {
                         const dateStr = getLocalDateString(weekDates[dIdx]);
                         const slotData = sessions.find((s) => {
-                          if (s.session_date !== dateStr || s.time_slot.toLowerCase() !== time.toLowerCase())
+                          if (s.session_date !== dateStr || s.time_slot.toLowerCase() !== time.toLowerCase()) {
                             return false;
+                          }
                           if (activeTab === 'LIVE LABS' && s.class_type !== 'Unit Class') return false;
                           if (activeTab === 'TUTORING' && s.class_type !== '1-on-1 Tutoring') return false;
                           if (activeTab === 'SOCIALS' && s.class_type !== 'Social Activity') return false;
@@ -716,12 +718,12 @@ const AdminCalendar = () => {
                               slotData
                             )}`}
                           >
-                            <span className="absolute top-1 left-2 text-[7.5px] font-bold opacity-60 uppercase tracking-tight pointer-events-none">
+                            <span className="absolute top-1 left-2 text-[7.5px] font-bold opacity-65 uppercase tracking-tight pointer-events-none">
                               {time}
                             </span>
 
                             {!slotData ? (
-                              <span className="text-[9px] font-bold text-[#454d82] opacity-0 group-hover:opacity-100 transition-opacity mt-2">
+                              <span className="text-[9px] font-extrabold text-[#454d82] opacity-0 group-hover:opacity-100 transition-opacity mt-2">
                                 + ABRIR
                               </span>
                             ) : slotData.status === 'available' ? (
@@ -760,13 +762,13 @@ const AdminCalendar = () => {
       {/* --- SLOT MANAGEMENT MODAL --- */}
       {selectedSlot && (
         <div
-          onClick={(e) => e.target === e.currentTarget && closeSlotModal()}
+          onClick={(e) => e.target === e.currentTarget && setSelectedSlot(null)}
           className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[#1e2246]/55 backdrop-blur-xl"
         >
-          <div className="ola-adm-glass ola-adm-modal-in rounded-[2.25rem] w-full max-w-md p-6 sm:p-8 relative">
+          <div className="bg-gradient-to-br from-white/95 to-[#f2f4fd]/90 backdrop-blur-2xl border-2 border-white shadow-2xl rounded-[2.25rem] w-full max-w-md p-6 sm:p-8 relative">
             <button
               type="button"
-              onClick={closeSlotModal}
+              onClick={() => setSelectedSlot(null)}
               aria-label="Cerrar"
               className="absolute top-5 right-5 w-9 h-9 rounded-full bg-white hover:bg-[#ffc749] border-2 border-[#1e2246] text-[#1e2246] font-bold flex items-center justify-center cursor-pointer"
             >
@@ -787,27 +789,21 @@ const AdminCalendar = () => {
             {selectedSlot.data?.status === 'booked' || selectedSlot.data?.status === 'completed' ? (
               <div className="space-y-4">
                 <div className="bg-[#e7faf3] border border-[#16a37f]/45 rounded-2xl p-4 text-center">
-                  <p className="text-[10px] text-[#128063] font-bold uppercase tracking-widest mb-0.5">
-                    Estado
-                  </p>
+                  <p className="text-[10px] text-[#128063] font-bold uppercase tracking-widest mb-0.5">Estado</p>
                   <p className="text-sm font-extrabold text-[#1e2246] uppercase">
                     {selectedSlot.data.status === 'completed' ? 'Clase Completada' : 'Clase Reservada'}
                   </p>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-white/80 border border-white rounded-2xl p-4 text-center shadow-sm">
-                    <p className="text-[10px] text-[#626a9f] font-bold uppercase tracking-widest mb-1">
-                      Estudiante
-                    </p>
-                    <p className="text-sm font-bold text-[#1e2246] truncate">
+                  <div className="bg-white border border-[#dfe2f2] rounded-2xl p-4 text-center shadow-sm">
+                    <p className="text-[10px] text-[#626a9f] font-bold uppercase tracking-widest mb-1">Estudiante</p>
+                    <p className="text-sm font-extrabold text-[#1e2246] truncate">
                       {selectedSlot.data.student?.first_name || 'Sin Nombre'}
                     </p>
                   </div>
-                  <div className="bg-white/80 border border-white rounded-2xl p-4 text-center shadow-sm">
-                    <p className="text-[10px] text-[#626a9f] font-bold uppercase tracking-widest mb-1">
-                      Profesor
-                    </p>
-                    <p className="text-sm font-bold text-[#1e2246] truncate">
+                  <div className="bg-white border border-[#dfe2f2] rounded-2xl p-4 text-center shadow-sm">
+                    <p className="text-[10px] text-[#626a9f] font-bold uppercase tracking-widest mb-1">Profesor</p>
+                    <p className="text-sm font-extrabold text-[#1e2246] truncate">
                       {selectedSlot.data.teacher?.first_name || 'Sin Asignar'}
                     </p>
                   </div>
@@ -816,14 +812,14 @@ const AdminCalendar = () => {
                   type="button"
                   disabled={isProcessing}
                   onClick={handleCancelBooking}
-                  className="ola-adm-btn-danger w-full py-3.5 mt-2 font-bold text-xs uppercase tracking-widest rounded-full cursor-pointer disabled:opacity-50"
+                  className="w-full py-3.5 mt-2 bg-[#ee665b] text-white border-2 border-[#1e2246] shadow-[0_4px_0_#1e2246] hover:-translate-y-0.5 font-extrabold text-xs uppercase tracking-widest rounded-full cursor-pointer disabled:opacity-50 transition-all"
                 >
                   {isProcessing ? 'Procesando...' : 'Cancelar Reserva'}
                 </button>
               </div>
             ) : selectedSlot.data?.status === 'available' ? (
               <div className="space-y-5 text-center py-2">
-                <div className="w-16 h-16 bg-[#e7faf3] text-[#128063] border-2 border-[#16a37f] rounded-2xl flex items-center justify-center mx-auto">
+                <div className="w-16 h-16 bg-[#e7faf3] text-[#128063] border-2 border-[#1e2246] shadow-[0_3px_0_#1e2246] rounded-2xl flex items-center justify-center mx-auto">
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
@@ -845,7 +841,7 @@ const AdminCalendar = () => {
                   type="button"
                   disabled={isProcessing}
                   onClick={handleCloseBlock}
-                  className="ola-adm-btn-outline w-full py-3.5 font-bold text-xs uppercase tracking-widest rounded-full cursor-pointer disabled:opacity-50"
+                  className="w-full py-3.5 bg-white hover:bg-[#fff2f1] text-[#1e2246] border-2 border-[#1e2246] shadow-[0_3px_0_rgba(30,34,70,0.16)] font-extrabold text-xs uppercase tracking-widest rounded-full cursor-pointer disabled:opacity-50 transition-all"
                 >
                   {isProcessing ? 'Procesando...' : 'Cerrar Disponibilidad'}
                 </button>
@@ -867,7 +863,7 @@ const AdminCalendar = () => {
                     <select
                       value={selectedTeacherId}
                       onChange={(e) => setSelectedTeacherId(e.target.value)}
-                      className="w-full p-3 bg-white border-2 border-white focus:border-[#454d82] rounded-xl text-xs font-bold text-[#1e2246] outline-none cursor-pointer shadow-sm"
+                      className="w-full p-3 bg-white border-2 border-[#dfe2f2] focus:border-[#454d82] rounded-xl text-xs font-bold text-[#1e2246] outline-none cursor-pointer"
                     >
                       {teachers.map((t) => (
                         <option key={t.id} value={t.id}>
@@ -884,7 +880,7 @@ const AdminCalendar = () => {
                     <select
                       value={selectedClassType}
                       onChange={(e) => setSelectedClassType(e.target.value)}
-                      className="w-full p-3 bg-white border-2 border-white focus:border-[#454d82] rounded-xl text-xs font-bold text-[#1e2246] outline-none cursor-pointer shadow-sm"
+                      className="w-full p-3 bg-white border-2 border-[#dfe2f2] focus:border-[#454d82] rounded-xl text-xs font-bold text-[#1e2246] outline-none cursor-pointer"
                     >
                       <option value="Unit Class">Unit Class (Regular)</option>
                       <option value="1-on-1 Tutoring">1-on-1 Tutoring</option>
@@ -927,7 +923,7 @@ const AdminCalendar = () => {
                   type="button"
                   disabled={isProcessing}
                   onClick={handleOpenBlock}
-                  className="ola-adm-btn-yellow w-full mt-2 py-3.5 font-bold text-xs uppercase tracking-widest rounded-full cursor-pointer disabled:opacity-50"
+                  className="w-full mt-2 py-3.5 rounded-full font-extrabold text-xs uppercase tracking-widest text-[#1e2246] bg-gradient-to-b from-[#ffd66b] to-[#ffc749] border-2 border-[#1e2246] shadow-[0_4px_0_#1e2246] hover:-translate-y-0.5 active:translate-y-0.5 transition-all cursor-pointer disabled:opacity-50"
                 >
                   {isProcessing ? 'Procesando...' : 'Abrir Bloque ✓'}
                 </button>
@@ -943,7 +939,7 @@ const AdminCalendar = () => {
           onClick={(e) => e.target === e.currentTarget && setShowUnbookedModal(false)}
           className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[#1e2246]/55 backdrop-blur-xl"
         >
-          <div className="ola-adm-glass ola-adm-modal-in rounded-[2.25rem] w-full max-w-md p-6 sm:p-8 relative flex flex-col max-h-[80vh]">
+          <div className="bg-gradient-to-br from-white/95 to-[#f2f4fd]/90 backdrop-blur-2xl border-2 border-white shadow-2xl rounded-[2.25rem] w-full max-w-md p-6 sm:p-8 relative flex flex-col max-h-[80vh]">
             <button
               type="button"
               onClick={() => setShowUnbookedModal(false)}
@@ -966,9 +962,9 @@ const AdminCalendar = () => {
                 unbookedStudents.map((student) => (
                   <div
                     key={student.id}
-                    className="bg-white/85 border border-white rounded-2xl p-3.5 flex items-center justify-between shadow-sm"
+                    className="bg-white border border-[#dfe2f2] rounded-2xl p-3.5 flex items-center justify-between shadow-sm"
                   >
-                    <p className="text-sm font-bold text-[#1e2246] truncate max-w-[170px]">
+                    <p className="text-sm font-extrabold text-[#1e2246] truncate max-w-[170px]">
                       {student.first_name} {student.last_name}
                     </p>
                     <div className="text-right shrink-0 pl-3">
@@ -991,7 +987,7 @@ const AdminCalendar = () => {
           onClick={(e) => e.target === e.currentTarget && setShowShiftModal(false)}
           className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-[#1e2246]/55 backdrop-blur-xl"
         >
-          <div className="ola-adm-glass ola-adm-modal-in rounded-[2.25rem] w-full max-w-md p-6 sm:p-8 relative flex flex-col">
+          <div className="bg-gradient-to-br from-white/95 to-[#f2f4fd]/90 backdrop-blur-2xl border-2 border-white shadow-2xl rounded-[2.25rem] w-full max-w-md p-6 sm:p-8 relative flex flex-col">
             <button
               type="button"
               onClick={() => setShowShiftModal(false)}
@@ -1019,7 +1015,7 @@ const AdminCalendar = () => {
                 <select
                   value={shiftTeacherId}
                   onChange={(e) => setShiftTeacherId(e.target.value)}
-                  className="w-full p-3.5 bg-white border-2 border-white focus:border-[#454d82] rounded-xl text-xs font-bold text-[#1e2246] outline-none cursor-pointer shadow-sm"
+                  className="w-full p-3.5 bg-white border-2 border-[#dfe2f2] focus:border-[#454d82] rounded-xl text-xs font-bold text-[#1e2246] outline-none cursor-pointer"
                   required
                 >
                   <option value="" disabled>
@@ -1041,7 +1037,7 @@ const AdminCalendar = () => {
                   type="date"
                   value={shiftDate}
                   onChange={(e) => setShiftDate(e.target.value)}
-                  className="w-full p-3.5 bg-white border-2 border-white focus:border-[#454d82] rounded-xl text-xs font-bold text-[#1e2246] outline-none cursor-pointer shadow-sm"
+                  className="w-full p-3.5 bg-white border-2 border-[#dfe2f2] focus:border-[#454d82] rounded-xl text-xs font-bold text-[#1e2246] outline-none cursor-pointer"
                   required
                 />
               </div>
@@ -1049,7 +1045,7 @@ const AdminCalendar = () => {
               <button
                 type="submit"
                 disabled={isProcessing}
-                className="ola-adm-btn-yellow w-full mt-2 py-3.5 font-bold text-xs uppercase tracking-widest rounded-full cursor-pointer disabled:opacity-50"
+                className="w-full mt-2 py-3.5 rounded-full font-extrabold text-xs uppercase tracking-widest text-[#1e2246] bg-gradient-to-b from-[#ffd66b] to-[#ffc749] border-2 border-[#1e2246] shadow-[0_4px_0_#1e2246] hover:-translate-y-0.5 active:translate-y-0.5 transition-all cursor-pointer disabled:opacity-50"
               >
                 {isProcessing ? 'Processing...' : 'Authorize Shift ✓'}
               </button>

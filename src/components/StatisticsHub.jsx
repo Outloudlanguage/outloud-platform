@@ -31,18 +31,21 @@ const ENGINE_DIRECTORY = [
   { id: 'e12', code: 'E12', category: 'Curriculum', name: 'Engine 12: Curriculum Bottlenecks', short: 'Curriculum Bottlenecks', component: CurriculumBottleneckHeatmap, allowedScopes: ['global', 'student'] },
 ];
 
+const INITIAL_ENGINE = ENGINE_DIRECTORY[0];
+
 const StatisticsHub = () => {
-  const [activeEngineId, setActiveEngineId] = useState(ENGINE_DIRECTORY[0].id);
-  const [selectedScope, setSelectedScope] = useState(ENGINE_DIRECTORY[0].allowedScopes[0]);
+  const [activeEngineId, setActiveEngineId] = useState(INITIAL_ENGINE.id);
+  const [selectedScope, setSelectedScope] = useState(INITIAL_ENGINE.allowedScopes[0]);
   const [showReport, setShowReport] = useState(false);
   const [users, setUsers] = useState({ teachers: [], students: [] });
   const [selectedEntityId, setSelectedEntityId] = useState('');
   const [loadingUsers, setLoadingUsers] = useState(true);
 
-  const activeEngine = ENGINE_DIRECTORY.find((e) => e.id === activeEngineId) || ENGINE_DIRECTORY[0];
+  const activeEngine = ENGINE_DIRECTORY.find((e) => e.id === activeEngineId) || INITIAL_ENGINE;
 
-  // Fetch Users for the Individual Dropdown (with case-insensitive role matching & profiles fallback)
+  // Fetch Users for the Individual Dropdown (users table with profiles fallback)
   useEffect(() => {
+    let isMounted = true;
     const fetchEntities = async () => {
       try {
         setLoadingUsers(true);
@@ -61,23 +64,29 @@ const StatisticsHub = () => {
           if (profilesData) rows = profilesData;
         }
 
+        if (!isMounted) return;
+
         const teachers = rows.filter((u) => String(u.role || '').toLowerCase() === 'teacher');
         const students = rows.filter((u) => String(u.role || '').toLowerCase() === 'student');
         setUsers({ teachers, students });
 
-        if (activeEngine.allowedScopes[0] === 'teacher' && teachers.length > 0) {
+        const defaultScope = INITIAL_ENGINE.allowedScopes[0];
+        if (defaultScope === 'teacher' && teachers.length > 0) {
           setSelectedEntityId(teachers[0].id);
-        } else if (activeEngine.allowedScopes[0] === 'student' && students.length > 0) {
+        } else if (defaultScope === 'student' && students.length > 0) {
           setSelectedEntityId(students[0].id);
         }
       } catch (err) {
         console.error('Error fetching entities for dropdown:', err);
       } finally {
-        setLoadingUsers(false);
+        if (isMounted) setLoadingUsers(false);
       }
     };
+
     fetchEntities();
-    
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const selectEngineById = (engineId) => {
@@ -141,18 +150,49 @@ const StatisticsHub = () => {
 
   return (
     <div className="ola-statistics-hub ola-stats-light w-full font-montserrat text-[#1e2246] print:p-0">
-      {/* Scoped Light-Glass Overrides (Preserves StatisticsHub.css report & print rules) */}
       <style>{`
         .ola-stats-light {
           background: transparent !important;
           padding: 0 !important;
         }
         .ola-stats-light .hub-glass-container {
-          background: linear-gradient(142deg, rgba(255, 255, 255, 0.84) 0%, rgba(244, 246, 255, 0.64) 100%) !important;
-          backdrop-filter: blur(26px) saturate(185%) !important;
-          -webkit-backdrop-filter: blur(26px) saturate(185%) !important;
-          border: 1.5px solid rgba(255, 255, 255, 0.96) !important;
-          box-shadow: 0 22px 48px -16px rgba(55, 63, 118, 0.22), inset 0 1.5px 1px #ffffff !important;
+          background: linear-gradient(160deg, rgba(255, 255, 255, 0.94) 0%, rgba(242, 244, 253, 0.84) 100%) !important;
+          backdrop-filter: blur(22px) saturate(175%) !important;
+          -webkit-backdrop-filter: blur(22px) saturate(175%) !important;
+          border: 2px solid #ffffff !important;
+          box-shadow: 0 22px 46px -18px rgba(55, 63, 118, 0.22), inset 0 2px 2px #ffffff !important;
+        }
+        .ola-stats-btn-yellow {
+          background: linear-gradient(180deg, #ffd66b 0%, #ffc749 100%);
+          color: #1e2246;
+          border: 2px solid #1e2246;
+          box-shadow: 0 4px 0 #1e2246, 0 10px 22px -6px rgba(255, 199, 73, 0.55);
+          transition: transform 0.14s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.14s ease, filter 0.14s ease;
+        }
+        .ola-stats-btn-yellow:hover {
+          filter: brightness(1.04);
+          transform: translateY(-2px);
+          box-shadow: 0 6px 0 #1e2246, 0 14px 26px -6px rgba(255, 199, 73, 0.72);
+        }
+        .ola-stats-btn-yellow:active {
+          transform: translateY(3px) scale(0.99);
+          box-shadow: 0 1px 0 #1e2246;
+        }
+        .ola-stats-btn-outline {
+          background: rgba(255, 255, 255, 0.95);
+          color: #1e2246;
+          border: 2px solid #1e2246;
+          box-shadow: 0 3px 0 rgba(30, 34, 70, 0.16);
+          transition: transform 0.14s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.14s ease, background 0.14s ease;
+        }
+        .ola-stats-btn-outline:hover {
+          background: #ffffff;
+          transform: translateY(-2px);
+          box-shadow: 0 5px 0 #626a9f;
+        }
+        .ola-stats-btn-outline:active {
+          transform: translateY(2px) scale(0.99);
+          box-shadow: 0 1px 0 rgba(30, 34, 70, 0.2);
         }
         @keyframes olaStatsStageIn {
           0% { opacity: 0; transform: translateY(8px) scale(0.99); }
@@ -164,19 +204,23 @@ const StatisticsHub = () => {
       `}</style>
 
       {/* MAIN BENTO CONTAINER */}
-      <div className="hub-glass-container relative flex flex-col lg:flex-row w-full max-w-[1440px] mx-auto rounded-[2.25rem] overflow-hidden print:shadow-none print:border-none print:rounded-none">
-        {/* LEFT COLUMN: LIGHT-GLASS CONTROLS RAIL */}
-        <aside className="w-full lg:w-[320px] xl:w-[340px] bg-white/55 border-b lg:border-b-0 lg:border-r border-[#626a9f]/15 p-5 sm:p-7 flex flex-col shrink-0 print:hidden">
+      <div className="hub-glass-container relative flex flex-col lg:flex-row w-full max-w-7xl mx-auto rounded-[2.25rem] overflow-hidden print:shadow-none print:border-none print:rounded-none">
+        {/* LEFT COLUMN: CONTROLS RAIL */}
+        <aside className="w-full lg:w-[320px] xl:w-[345px] bg-white/70 border-b lg:border-b-0 lg:border-r border-[#626a9f]/15 p-5 sm:p-6 flex flex-col shrink-0 print:hidden">
           {/* Header */}
-          <div className="flex items-center justify-between gap-3 mb-6 pb-4 border-b border-[#626a9f]/15">
+          <div className="flex items-center justify-between gap-3 mb-5 pb-4 border-b border-[#626a9f]/15">
             <div>
-              <span className="inline-flex items-center gap-1.5 text-[9.5px] font-bold uppercase tracking-widest bg-[#1e2246] text-[#ffc749] px-2.5 py-0.5 rounded-full mb-1.5">
+              <span className="inline-flex items-center gap-1.5 text-[9.5px] font-extrabold uppercase tracking-widest bg-[#1e2246] text-[#ffc749] px-3 py-0.5 rounded-full mb-1.5">
                 OutLoud Intelligence
               </span>
-              <h1 className="text-xl sm:text-2xl font-extrabold text-[#1e2246] tracking-tight leading-none">
-                Statistics Hub
+              <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight leading-none">
+                <span className="text-[#1e2246]">Statistics </span>
+                <span className="text-[#626a9f]">
+                  Hub<span className="text-[#ffc749]">.</span>
+                </span>
               </h1>
             </div>
+
             <div className="w-11 h-11 rounded-2xl bg-[#ffc749] border-2 border-[#1e2246] shadow-[0_3px_0_#1e2246] flex items-center justify-center text-[#1e2246] shrink-0">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.3" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -185,17 +229,17 @@ const StatisticsHub = () => {
           </div>
 
           {/* Controls Stack */}
-          <div className="flex flex-col gap-5 flex-1">
+          <div className="flex flex-col gap-4 flex-1">
             {/* Control 1: Engine Selector */}
             <div>
-              <label className="text-[10px] text-[#454d82] uppercase font-bold tracking-widest mb-1.5 block">
+              <label className="text-[10px] text-[#454d82] uppercase font-extrabold tracking-widest mb-1.5 block">
                 Data Engine ({ENGINE_DIRECTORY.length})
               </label>
               <div className="relative">
                 <select
                   value={activeEngineId}
                   onChange={handleEngineChange}
-                  className="w-full bg-white border-2 border-white focus:border-[#454d82] text-[#1e2246] text-xs sm:text-sm font-bold rounded-2xl pl-4 pr-10 py-3 truncate appearance-none outline-none shadow-sm cursor-pointer transition-colors"
+                  className="w-full bg-white border-2 border-[#dfe2f2] focus:border-[#454d82] text-[#1e2246] text-xs sm:text-sm font-bold rounded-2xl pl-4 pr-10 py-3 truncate appearance-none outline-none shadow-sm cursor-pointer transition-colors"
                 >
                   {ENGINE_DIRECTORY.map((eng) => (
                     <option key={eng.id} value={eng.id}>
@@ -207,7 +251,7 @@ const StatisticsHub = () => {
                   className="w-4 h-4 text-[#454d82] absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="2.5"
+                  strokeWidth="2.6"
                   viewBox="0 0 24 24"
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -215,12 +259,12 @@ const StatisticsHub = () => {
               </div>
             </div>
 
-            {/* Control 2: Instant Scope Switcher */}
+            {/* Control 2: Floating Pill Scope Switcher */}
             <div>
-              <label className="text-[10px] text-[#454d82] uppercase font-bold tracking-widest mb-1.5 block">
+              <label className="text-[10px] text-[#454d82] uppercase font-extrabold tracking-widest mb-1.5 block">
                 Analysis Scope
               </label>
-              <div className="flex gap-1.5 bg-[#e8eaf7]/85 p-1 rounded-2xl border border-white">
+              <div className="flex gap-1 bg-[#e8eaf7] p-1 rounded-full border border-white">
                 {activeEngine.allowedScopes.map((scope) => {
                   const isPicked = selectedScope === scope;
                   return (
@@ -228,7 +272,7 @@ const StatisticsHub = () => {
                       type="button"
                       key={scope}
                       onClick={() => handleScopeChange(scope)}
-                      className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors ${
+                      className={`flex-1 py-2 px-3 rounded-full text-[11px] font-extrabold uppercase tracking-wider cursor-pointer transition-colors ${
                         isPicked
                           ? 'bg-[#1e2246] text-[#ffc749] shadow-sm'
                           : 'text-[#454d82] hover:text-[#1e2246]'
@@ -243,7 +287,7 @@ const StatisticsHub = () => {
 
             {/* Control 3: Target Profile */}
             <div>
-              <label className="text-[10px] text-[#454d82] uppercase font-bold tracking-widest mb-1.5 block">
+              <label className="text-[10px] text-[#454d82] uppercase font-extrabold tracking-widest mb-1.5 block">
                 Target Profile
               </label>
               <div className="relative">
@@ -253,8 +297,8 @@ const StatisticsHub = () => {
                   disabled={selectedScope === 'global' || loadingUsers}
                   className={`w-full text-xs sm:text-sm font-bold rounded-2xl pl-4 pr-10 py-3 truncate appearance-none outline-none border-2 transition-colors ${
                     selectedScope === 'global'
-                      ? 'bg-[#f2f4fb] border-white text-[#626a9f]/60 cursor-not-allowed'
-                      : 'bg-white border-white focus:border-[#454d82] text-[#1e2246] shadow-sm cursor-pointer'
+                      ? 'bg-[#f4f6fc] border-white text-[#626a9f]/65 cursor-not-allowed'
+                      : 'bg-white border-[#dfe2f2] focus:border-[#454d82] text-[#1e2246] shadow-sm cursor-pointer'
                   }`}
                 >
                   {getEntityOptions()}
@@ -264,7 +308,7 @@ const StatisticsHub = () => {
                     className="w-4 h-4 text-[#454d82] absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
                     fill="none"
                     stroke="currentColor"
-                    strokeWidth="2.5"
+                    strokeWidth="2.6"
                     viewBox="0 0 24 24"
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -273,12 +317,12 @@ const StatisticsHub = () => {
               </div>
             </div>
 
-            {/* Quick-Jump Engine Grid (Desktop convenience) */}
+            {/* Quick-Jump Engine Directory (Desktop) */}
             <div className="hidden lg:flex flex-col flex-1 min-h-0 mt-1">
-              <span className="text-[10px] text-[#626a9f] uppercase font-bold tracking-widest mb-2 block">
+              <span className="text-[10px] text-[#626a9f] uppercase font-extrabold tracking-widest mb-2 block">
                 Quick Switch
               </span>
-              <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-1.5 max-h-[250px]">
+              <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-1.5 max-h-[260px]">
                 {ENGINE_DIRECTORY.map((eng) => {
                   const isActive = eng.id === activeEngineId;
                   return (
@@ -286,15 +330,15 @@ const StatisticsHub = () => {
                       type="button"
                       key={eng.id}
                       onClick={() => selectEngineById(eng.id)}
-                      className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between gap-2 cursor-pointer transition-colors ${
+                      className={`w-full text-left px-3.5 py-2.5 rounded-2xl text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all border-2 ${
                         isActive
-                          ? 'bg-[#fff3d1] text-[#1e2246] font-bold border border-[#ffc749]'
-                          : 'bg-white/60 hover:bg-white text-[#4c5384] border border-transparent'
+                          ? 'bg-gradient-to-r from-[#fff9e8] to-[#ffe69e] text-[#1e2246] border-[#ffc749] shadow-sm'
+                          : 'bg-white/75 hover:bg-white text-[#4c5384] border-transparent hover:border-[#dfe2f2]'
                       }`}
                     >
                       <span className="truncate">{eng.short}</span>
                       <span
-                        className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-md shrink-0 ${
+                        className={`text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full shrink-0 ${
                           isActive ? 'bg-[#1e2246] text-[#ffc749]' : 'bg-[#e8eaf7] text-[#454d82]'
                         }`}
                       >
@@ -311,32 +355,32 @@ const StatisticsHub = () => {
           <button
             type="button"
             onClick={() => setShowReport((prev) => !prev)}
-            className={`mt-6 w-full py-3.5 rounded-full font-bold text-xs uppercase tracking-widest cursor-pointer ${
-              showReport ? 'ola-adm-btn-outline' : 'ola-adm-btn-yellow'
+            className={`mt-5 w-full py-3.5 rounded-full font-extrabold text-xs uppercase tracking-widest cursor-pointer ${
+              showReport ? 'ola-stats-btn-outline' : 'ola-stats-btn-yellow'
             }`}
           >
-            {showReport ? 'Hide Report Details' : 'Read Written Report'}
+            {showReport ? 'Hide Written Report' : 'Read Written Report →'}
           </button>
         </aside>
 
         {/* RIGHT COLUMN: ANALYTICS STAGE */}
-        <section className="flex-1 flex flex-col min-w-0 p-5 sm:p-8 print:w-full print:p-0 print:bg-white">
-          {/* Stage Top Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pb-4 mb-6 border-b border-[#626a9f]/15 print:hidden">
+        <section className="flex-1 flex flex-col min-w-0 p-5 sm:p-7 print:w-full print:p-0 print:bg-white">
+          {/* Dark-Navy Status & Export Strip */}
+          <div className="bg-[#1e2246] text-white rounded-[1.5rem] px-4 py-3.5 sm:px-6 mb-5 flex flex-wrap items-center justify-between gap-3 shadow-md print:hidden">
             <div className="flex items-center gap-3 min-w-0">
-              <span className="w-10 h-10 rounded-xl bg-[#454d82] text-[#ffc749] font-extrabold text-xs flex items-center justify-center shrink-0 shadow-sm">
+              <span className="w-10 h-10 rounded-xl bg-[#ffc749] text-[#1e2246] font-extrabold text-xs flex items-center justify-center shrink-0">
                 {activeEngine.code}
               </span>
               <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-[9.5px] font-bold uppercase tracking-widest bg-[#fff3d1] text-[#1e2246] border border-[#ffc749] px-2 py-0.5 rounded-full">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-[9px] font-extrabold uppercase tracking-widest bg-white/15 text-[#ffc749] px-2.5 py-0.5 rounded-full">
                     {activeEngine.category}
                   </span>
-                  <span className="text-[9.5px] font-bold uppercase tracking-widest bg-[#e8eaf7] text-[#454d82] px-2 py-0.5 rounded-full">
-                    {selectedScope}
+                  <span className="text-[9px] font-bold uppercase tracking-widest bg-white/10 text-white/85 px-2.5 py-0.5 rounded-full">
+                    Scope: {selectedScope}
                   </span>
                 </div>
-                <h2 className="text-base sm:text-lg font-extrabold text-[#1e2246] truncate mt-0.5">
+                <h2 className="text-sm sm:text-base font-extrabold text-white truncate mt-0.5">
                   {activeEngine.short}
                 </h2>
               </div>
@@ -345,21 +389,21 @@ const StatisticsHub = () => {
             <button
               type="button"
               onClick={handlePrint}
-              className="ola-adm-btn-outline px-4 py-2 rounded-full text-[11px] font-bold uppercase tracking-wider flex items-center gap-2 cursor-pointer shrink-0"
+              className="px-4 py-2 rounded-full bg-[#ffc749] hover:bg-[#ffd66b] text-[#1e2246] text-[10.5px] font-extrabold uppercase tracking-wider flex items-center gap-2 cursor-pointer shrink-0 transition-transform active:scale-95"
               title="Print or Export PDF"
             >
-              <svg className="w-4 h-4 text-[#454d82]" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.3" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
               </svg>
               <span>Print / PDF</span>
             </button>
           </div>
 
-          {/* Engine Viewport Bento Card */}
-          <div className="flex-1 flex items-center justify-center bg-white/75 border border-white rounded-[2rem] p-4 sm:p-7 shadow-inner print:bg-white print:border-none print:shadow-none print:p-0">
+          {/* Engine Viewport Stage */}
+          <div className="flex-1 flex items-center justify-center bg-[#f4f6fc]/85 border-2 border-white rounded-[2rem] p-3 sm:p-5 shadow-inner print:bg-white print:border-none print:shadow-none print:p-0">
             <div
               key={`${activeEngineId}-${selectedScope}-${selectedEntityId}`}
-              className={`engine-wrapper ola-stats-stage-in w-full max-w-3xl ${showReport ? 'report-visible' : ''}`}
+              className={`engine-wrapper ola-stats-stage-in w-full max-w-4xl ${showReport ? 'report-visible' : ''}`}
             >
               <ActiveComponent
                 teacherId={selectedScope === 'teacher' ? selectedEntityId : undefined}

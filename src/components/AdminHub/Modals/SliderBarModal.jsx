@@ -1,126 +1,324 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+
+const DEFAULT_SLIDER_OPTIONS = [
+  { id: 1, text: 'Pretty', isCorrect: false },
+  { id: 2, text: 'Beautiful', isCorrect: true },
+  { id: 3, text: 'Gorgeous', isCorrect: false },
+];
+
+const toHex = (val, fallback) => (typeof val === 'string' && /^#[0-9a-fA-F]{6}$/.test(val) ? val : fallback);
 
 const SliderBarModal = ({ isOpen, initialData = {}, onSave, onCancel }) => {
-  const [options, setOptions] = useState(initialData.options || [
-    { id: 1, text: 'Pretty', isCorrect: false },
-    { id: 2, text: 'Beautiful', isCorrect: true },
-    { id: 3, text: 'Gorgeous', isCorrect: false },
-  ]);
+  const [options, setOptions] = useState(initialData.options || DEFAULT_SLIDER_OPTIONS);
   const [orientation, setOrientation] = useState(initialData.orientation || 'horizontal');
-  const [barColor, setBarColor] = useState(initialData.barColor || 'rgba(255,255,255,0.2)'); 
-  const [barThickness, setBarThickness] = useState(initialData.barThickness || '16');
-  const [handleColor, setHandleColor] = useState(initialData.handleColor || '#fcd34d');
+  const [barColor, setBarColor] = useState(initialData.barColor || '#dfe2f2');
+  const [barThickness, setBarThickness] = useState(initialData.barThickness || '14');
+  const [handleColor, setHandleColor] = useState(initialData.handleColor || '#ffc749');
   const [barText, setBarText] = useState(initialData.barText || '');
-  const [barTextColor, setBarTextColor] = useState(initialData.barTextColor || '#ffffff');
+  const [barTextColor, setBarTextColor] = useState(initialData.barTextColor || '#1e2246');
   const [fontSize, setFontSize] = useState(initialData.fontSize || '16');
   const [fontFamily, setFontFamily] = useState(initialData.fontFamily || 'Montserrat');
-  const [textColor, setTextColor] = useState(initialData.textColor || '#ffffff');
+  const [textColor, setTextColor] = useState(initialData.textColor || '#1e2246');
 
-  const addOption = () => { if (options.length < 10) setOptions([...options, { id: Date.now(), text: `Option ${options.length + 1}`, isCorrect: false }]); };
-  const removeOption = (id) => { if (options.length > 2) setOptions(options.filter(o => o.id !== id)); };
-  const updateOptionText = (id, text) => { setOptions(options.map(o => o.id === id ? { ...o, text } : o)); };
-  const toggleCorrect = (id) => { setOptions(options.map(o => o.id === id ? { ...o, isCorrect: !o.isCorrect } : o)); };
+  useEffect(() => {
+    if (isOpen) {
+      setOptions(initialData?.options?.length ? initialData.options : DEFAULT_SLIDER_OPTIONS);
+      setOrientation(initialData?.orientation || 'horizontal');
+      setBarColor(initialData?.barColor || '#dfe2f2');
+      setBarThickness(initialData?.barThickness || '14');
+      setHandleColor(initialData?.handleColor || '#ffc749');
+      setBarText(initialData?.barText || '');
+      setBarTextColor(initialData?.barTextColor || '#1e2246');
+      setFontSize(initialData?.fontSize || '16');
+      setFontFamily(initialData?.fontFamily || 'Montserrat');
+      setTextColor(initialData?.textColor || '#1e2246');
+    }
+  }, [isOpen, initialData]);
 
-  const handleSave = () => { onSave({ options, orientation, barColor, barThickness, handleColor, barText, barTextColor, fontSize, fontFamily, textColor }); };
+  const addOption = () => {
+    if (options.length < 10) {
+      setOptions([...options, { id: Date.now(), text: `Option ${options.length + 1}`, isCorrect: false }]);
+    }
+  };
+  const removeOption = (id) => {
+    if (options.length > 2) setOptions(options.filter((o) => o.id !== id));
+  };
+  const updateOptionText = (id, text) => {
+    setOptions(options.map((o) => (o.id === id ? { ...o, text } : o)));
+  };
+  const toggleCorrect = (id) => {
+    setOptions(options.map((o) => (o.id === id ? { ...o, isCorrect: !o.isCorrect } : o)));
+  };
+
+  const handleSave = () => {
+    onSave({
+      options,
+      orientation,
+      barColor,
+      barThickness,
+      handleColor,
+      barText,
+      barTextColor,
+      fontSize,
+      fontFamily,
+      textColor,
+    });
+  };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[250] flex items-center justify-center bg-[#070b19]/80 backdrop-blur-md p-4 font-montserrat">
-      <div className="w-full max-w-3xl bg-[#070b19]/40 backdrop-blur-xl border border-white/20 rounded-[30px] shadow-2xl overflow-hidden animate-fade-in flex flex-col max-h-[90vh]">
-        
-        <div className="bg-white/5 p-6 border-b border-white/10 shrink-0">
-          <h2 className="text-white font-black text-lg uppercase tracking-widest drop-shadow-md">SLIDER BAR</h2>
-          <p className="text-white/70 text-xs mt-2 font-medium">Create up to 10 nuanced options. Students lose 20% comprehension for resting on an incorrect answer.</p>
-        </div>
-        
-        <div className="p-6 overflow-y-auto custom-scrollbar flex flex-col gap-8">
-          
-          <div className="flex flex-col gap-4">
-             <div className="flex justify-between items-end mb-2 border-b border-white/10 pb-3">
-               <h3 className="text-[10px] font-bold uppercase tracking-widest text-[#fcd34d] drop-shadow-md">Nuance Options (Min 2, Max 10)</h3>
-               <button onClick={addOption} disabled={options.length >= 10} className="text-[9px] font-black uppercase tracking-widest bg-white/10 text-white border border-white/20 px-4 py-2 rounded-full shadow-md hover:bg-white/20 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 transition-all">+ Add Option ({options.length}/10)</button>
-             </div>
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {options.map((opt, index) => (
-                   <div key={opt.id} className={`relative bg-white/5 border rounded-xl p-4 flex flex-col gap-3 shadow-sm transition-colors ${opt.isCorrect ? 'border-green-400/50 shadow-[0_0_10px_rgba(74,222,128,0.2)]' : 'border-white/10 focus-within:border-[#fcd34d]/50'}`}>
-                      <div className="flex justify-between items-center border-b border-white/10 pb-2">
-                         <span className="text-[10px] font-bold text-[#fcd34d] uppercase tracking-widest drop-shadow-md">POSITION {index + 1}</span>
-                         <label className="flex items-center gap-2 cursor-pointer group">
-                           <input type="checkbox" checked={opt.isCorrect} onChange={() => toggleCorrect(opt.id)} className="w-4 h-4 text-green-400 bg-transparent border-white/30 rounded focus:ring-green-400 focus:ring-offset-0 cursor-pointer" />
-                           <span className={`text-[9px] font-bold uppercase tracking-widest transition-colors ${opt.isCorrect ? 'text-green-400 drop-shadow-md' : 'text-white/40 group-hover:text-white/80'}`}>{opt.isCorrect ? 'Correct Answer' : 'Mark Correct'}</span>
-                         </label>
-                      </div>
-                      <input type="text" value={opt.text} onChange={(e) => updateOptionText(opt.id, e.target.value)} placeholder="Option Text..." className="w-full p-3 bg-[#070b19] border border-white/20 rounded-lg text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#fcd34d] placeholder-white/30 shadow-inner" />
-                      {options.length > 2 && <button onClick={() => removeOption(opt.id)} className="absolute -top-3 -right-3 w-7 h-7 bg-red-500/20 text-red-400 rounded-full border border-red-500/50 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-lg text-xs" title="Remove Option">✕</button>}
-                   </div>
-                ))}
-             </div>
+    <div
+      onClick={(e) => e.target === e.currentTarget && onCancel()}
+      className="fixed inset-0 z-[250] flex items-center justify-center bg-[#1e2246]/55 backdrop-blur-xl p-4 font-montserrat text-[#1e2246]"
+    >
+      <div className="w-full max-w-3xl bg-gradient-to-br from-white/95 to-[#f2f4fd]/90 backdrop-blur-2xl border-2 border-white rounded-[2.25rem] shadow-[0_24px_54px_-16px_rgba(30,34,70,0.34),inset_0_2px_2px_#ffffff] overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="bg-white/75 p-5 sm:p-6 border-b border-[#626a9f]/15 flex items-start justify-between gap-4 shrink-0">
+          <div>
+            <span className="inline-block text-[9.5px] font-bold uppercase tracking-widest bg-[#fff3d1] text-[#1e2246] border border-[#ffc749] px-2.5 py-0.5 rounded-full mb-1">
+              Content Studio • Scale
+            </span>
+            <h2 className="text-[#1e2246] font-extrabold text-xl uppercase tracking-tight">
+              Slider Bar
+            </h2>
+            <p className="text-[#4c5384] text-xs mt-1 font-medium">
+              Create up to 10 nuanced stops and mark the target position.
+            </p>
           </div>
-          
-          <div className="flex flex-col lg:flex-row gap-6">
-             <div className="flex-[1.5] bg-white/5 p-6 rounded-2xl border border-white/10 flex flex-col gap-5 shadow-inner">
-               <h3 className="font-bold text-[#fcd34d] text-[10px] uppercase tracking-widest border-b border-white/10 pb-2 drop-shadow-md">Slider Track Styling</h3>
-               <div className="grid grid-cols-2 gap-5 items-end">
-                  <div className="flex flex-col gap-2 col-span-2">
-                    <span className="text-[9px] font-bold uppercase text-white/70 tracking-widest">Orientation</span>
-                    <select value={orientation} onChange={(e) => setOrientation(e.target.value)} className="w-full p-3 bg-[#070b19] border border-white/20 rounded-xl text-xs font-semibold text-white focus:outline-none focus:border-[#fcd34d]">
-                      <option value="horizontal">Horizontal ↔</option>
-                      <option value="vertical">Vertical ↕</option>
-                    </select>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="w-9 h-9 bg-white hover:bg-[#ffc749] border-2 border-[#1e2246] text-[#1e2246] rounded-full font-bold flex items-center justify-center shrink-0 cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="p-6 overflow-y-auto custom-scrollbar flex flex-col gap-6">
+          {/* Options */}
+          <div className="flex flex-col gap-3.5">
+            <div className="flex justify-between items-center border-b border-[#626a9f]/15 pb-3">
+              <h3 className="text-[10.5px] font-extrabold uppercase tracking-widest text-[#454d82]">
+                Nuance Options (Min 2, Max 10)
+              </h3>
+              <button
+                type="button"
+                onClick={addOption}
+                disabled={options.length >= 10}
+                className="text-[10px] font-extrabold uppercase tracking-widest bg-[#e8eaf7] hover:bg-[#ffc749] text-[#1e2246] border border-[#1e2246]/20 hover:border-[#1e2246] px-4 py-2 rounded-full transition-colors disabled:opacity-40 cursor-pointer"
+              >
+                + Add Option ({options.length}/10)
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+              {options.map((opt, index) => (
+                <div
+                  key={opt.id}
+                  className={`relative rounded-2xl p-4 flex flex-col gap-2.5 border-2 transition-all ${
+                    opt.isCorrect
+                      ? 'bg-[#e7faf3] border-[#16a37f] shadow-sm'
+                      : 'bg-[#f4f6fc] border-white focus-within:border-[#454d82] shadow-inner'
+                  }`}
+                >
+                  <div className="flex justify-between items-center border-b border-[#626a9f]/15 pb-2">
+                    <span className="text-[10px] font-extrabold text-[#454d82] uppercase tracking-widest">
+                      Position {index + 1}
+                    </span>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={opt.isCorrect}
+                        onChange={() => toggleCorrect(opt.id)}
+                        className="w-4 h-4 accent-[#16a37f] rounded cursor-pointer"
+                      />
+                      <span
+                        className={`text-[10px] font-extrabold uppercase tracking-wider ${
+                          opt.isCorrect ? 'text-[#128063]' : 'text-[#626a9f]'
+                        }`}
+                      >
+                        {opt.isCorrect ? 'Correct ✓' : 'Mark Correct'}
+                      </span>
+                    </label>
                   </div>
-                  <div className="flex flex-col gap-2">
-                    <span className="text-[9px] font-bold uppercase text-white/70 tracking-widest text-center">Track Color</span>
-                    <input type="color" value={barColor === 'rgba(255,255,255,0.2)' ? '#ffffff' : barColor} onChange={(e) => setBarColor(e.target.value)} className="w-full h-10 rounded-lg cursor-pointer bg-transparent border border-white/20" />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <span className="text-[9px] font-bold uppercase text-white/70 tracking-widest text-center">Handle Color</span>
-                    <input type="color" value={handleColor} onChange={(e) => setHandleColor(e.target.value)} className="w-full h-10 rounded-lg cursor-pointer bg-transparent border border-white/20" />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <span className="text-[9px] font-bold uppercase text-white/70 tracking-widest text-center">Thickness (px)</span>
-                    <input type="number" min="4" max="100" value={barThickness} onChange={(e) => setBarThickness(e.target.value)} className="w-full p-2.5 bg-[#070b19] border border-white/20 rounded-lg text-xs font-semibold text-white focus:outline-none focus:border-[#fcd34d] text-center" />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <span className="text-[9px] font-bold uppercase text-white/70 tracking-widest text-center">Inner Text Color</span>
-                    <input type="color" value={barTextColor} onChange={(e) => setBarTextColor(e.target.value)} className="w-full h-10 rounded-lg cursor-pointer bg-transparent border border-white/20" />
-                  </div>
-                  <div className="flex flex-col gap-2 col-span-2">
-                    <span className="text-[9px] font-bold uppercase text-white/70 tracking-widest">Inner Bar Text (Optional)</span>
-                    <input type="text" value={barText} onChange={(e) => setBarText(e.target.value)} placeholder="e.g. Intensity ->" className="w-full p-3 bg-[#070b19] border border-white/20 rounded-xl text-xs text-white focus:outline-none focus:border-[#fcd34d] placeholder-white/30" />
-                  </div>
-               </div>
-             </div>
-             
-             <div className="flex-1 bg-white/5 p-6 rounded-2xl border border-white/10 flex flex-col gap-5 shadow-inner">
-               <h3 className="font-bold text-[#fcd34d] text-[10px] uppercase tracking-widest border-b border-white/10 pb-2 drop-shadow-md">Floating Text Styling</h3>
-               <div className="grid grid-cols-1 gap-5 items-end">
-                  <div className="flex flex-col gap-2">
-                    <span className="text-[9px] font-bold uppercase text-white/70 tracking-widest text-center">Text Color</span>
-                    <input type="color" value={textColor} onChange={(e) => setTextColor(e.target.value)} className="w-full h-10 rounded-lg cursor-pointer bg-transparent border border-white/20" />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <span className="text-[9px] font-bold uppercase text-white/70 tracking-widest text-center">Size</span>
-                    <select value={fontSize} onChange={(e) => setFontSize(e.target.value)} className="w-full p-2.5 bg-[#070b19] border border-white/20 rounded-lg text-xs font-semibold text-white focus:outline-none focus:border-[#fcd34d]">
-                      {['12', '14', '16', '18', '20', '24', '28'].map(sz => <option key={sz} value={sz}>{sz}px</option>)}
-                    </select>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <span className="text-[9px] font-bold uppercase text-white/70 tracking-widest text-center">Font</span>
-                    <select value={fontFamily} onChange={(e) => setFontFamily(e.target.value)} className="w-full p-2.5 bg-[#070b19] border border-white/20 rounded-lg text-xs font-semibold text-white focus:outline-none focus:border-[#fcd34d]">
-                      <option value="Montserrat">Montserrat</option>
-                      <option value="Tabarra">Tabarra</option>
-                      <option value="Arial">Arial</option>
-                    </select>
-                  </div>
-               </div>
-             </div>
+
+                  <input
+                    type="text"
+                    value={opt.text}
+                    onChange={(e) => updateOptionText(opt.id, e.target.value)}
+                    placeholder="Option text..."
+                    className="w-full p-2.5 bg-white border border-[#dfe2f2] focus:border-[#454d82] rounded-xl text-sm font-semibold text-[#1e2246] outline-none placeholder-[#626a9f]/50"
+                  />
+
+                  {options.length > 2 && (
+                    <button
+                      type="button"
+                      onClick={() => removeOption(opt.id)}
+                      className="absolute -top-2.5 -right-2.5 w-7 h-7 bg-[#ee665b] text-white rounded-full border-2 border-white flex items-center justify-center hover:brightness-110 shadow-md text-xs font-bold cursor-pointer"
+                      title="Remove Option"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Styling Columns */}
+          <div className="flex flex-col lg:flex-row gap-5">
+            <div className="flex-[1.5] bg-[#f4f6fc] p-5 rounded-3xl border border-white flex flex-col gap-4 shadow-inner">
+              <h3 className="font-extrabold text-[#454d82] text-[10.5px] uppercase tracking-widest border-b border-[#626a9f]/15 pb-2">
+                Slider Track Styling
+              </h3>
+
+              <div className="grid grid-cols-2 gap-3.5 items-end">
+                <div className="flex flex-col gap-1.5 col-span-2">
+                  <span className="text-[9.5px] font-bold uppercase text-[#454d82] tracking-wider">Orientation</span>
+                  <select
+                    value={orientation}
+                    onChange={(e) => setOrientation(e.target.value)}
+                    className="w-full p-2.5 bg-white border-2 border-[#dfe2f2] focus:border-[#454d82] rounded-xl text-xs font-bold text-[#1e2246] outline-none cursor-pointer"
+                  >
+                    <option value="horizontal">Horizontal ↔</option>
+                    <option value="vertical">Vertical ↕</option>
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[9.5px] font-bold uppercase text-[#454d82] tracking-wider text-center">
+                    Track Color
+                  </span>
+                  <input
+                    type="color"
+                    value={toHex(barColor, '#dfe2f2')}
+                    onChange={(e) => setBarColor(e.target.value)}
+                    className="w-full h-10 rounded-xl cursor-pointer bg-white border-2 border-[#dfe2f2] p-1"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[9.5px] font-bold uppercase text-[#454d82] tracking-wider text-center">
+                    Handle Color
+                  </span>
+                  <input
+                    type="color"
+                    value={toHex(handleColor, '#ffc749')}
+                    onChange={(e) => setHandleColor(e.target.value)}
+                    className="w-full h-10 rounded-xl cursor-pointer bg-white border-2 border-[#dfe2f2] p-1"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[9.5px] font-bold uppercase text-[#454d82] tracking-wider text-center">
+                    Thickness (px)
+                  </span>
+                  <input
+                    type="number"
+                    min="4"
+                    max="100"
+                    value={barThickness}
+                    onChange={(e) => setBarThickness(e.target.value)}
+                    className="w-full p-2.5 bg-white border-2 border-[#dfe2f2] focus:border-[#454d82] rounded-xl text-xs font-bold text-[#1e2246] outline-none text-center"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[9.5px] font-bold uppercase text-[#454d82] tracking-wider text-center">
+                    Inner Text Color
+                  </span>
+                  <input
+                    type="color"
+                    value={toHex(barTextColor, '#1e2246')}
+                    onChange={(e) => setBarTextColor(e.target.value)}
+                    className="w-full h-10 rounded-xl cursor-pointer bg-white border-2 border-[#dfe2f2] p-1"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5 col-span-2">
+                  <span className="text-[9.5px] font-bold uppercase text-[#454d82] tracking-wider">
+                    Inner Bar Text (Optional)
+                  </span>
+                  <input
+                    type="text"
+                    value={barText}
+                    onChange={(e) => setBarText(e.target.value)}
+                    placeholder="e.g. Intensity →"
+                    className="w-full p-2.5 bg-white border-2 border-[#dfe2f2] focus:border-[#454d82] rounded-xl text-xs font-semibold text-[#1e2246] outline-none placeholder-[#626a9f]/50"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex-1 bg-[#f4f6fc] p-5 rounded-3xl border border-white flex flex-col gap-4 shadow-inner">
+              <h3 className="font-extrabold text-[#454d82] text-[10.5px] uppercase tracking-widest border-b border-[#626a9f]/15 pb-2">
+                Floating Label
+              </h3>
+
+              <div className="grid grid-cols-1 gap-4 items-end">
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[9.5px] font-bold uppercase text-[#454d82] tracking-wider text-center">
+                    Text Color
+                  </span>
+                  <input
+                    type="color"
+                    value={toHex(textColor, '#1e2246')}
+                    onChange={(e) => setTextColor(e.target.value)}
+                    className="w-full h-10 rounded-xl cursor-pointer bg-white border-2 border-[#dfe2f2] p-1"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[9.5px] font-bold uppercase text-[#454d82] tracking-wider text-center">
+                    Size
+                  </span>
+                  <select
+                    value={fontSize}
+                    onChange={(e) => setFontSize(e.target.value)}
+                    className="w-full p-2.5 bg-white border-2 border-[#dfe2f2] focus:border-[#454d82] rounded-xl text-xs font-bold text-[#1e2246] outline-none cursor-pointer"
+                  >
+                    {['12', '14', '16', '18', '20', '24', '28'].map((sz) => (
+                      <option key={sz} value={sz}>
+                        {sz}px
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[9.5px] font-bold uppercase text-[#454d82] tracking-wider text-center">
+                    Font
+                  </span>
+                  <select
+                    value={fontFamily}
+                    onChange={(e) => setFontFamily(e.target.value)}
+                    className="w-full p-2.5 bg-white border-2 border-[#dfe2f2] focus:border-[#454d82] rounded-xl text-xs font-bold text-[#1e2246] outline-none cursor-pointer"
+                  >
+                    <option value="Montserrat">Montserrat</option>
+                    <option value="Tabarra">Tabarra</option>
+                    <option value="Arial">Arial</option>
+                  </select>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-        
-        <div className="p-5 bg-black/40 border-t border-white/10 flex justify-end gap-4 shrink-0 rounded-b-[30px]">
-          <button type="button" onClick={onCancel} className="px-6 py-3 rounded-full font-bold text-xs uppercase tracking-widest text-white/80 bg-white/5 border border-white/20 hover:bg-white/10 hover:text-white transition-all">CANCEL</button>
-          <button type="button" onClick={handleSave} className="px-8 py-3 rounded-full font-black text-xs uppercase tracking-widest text-[#08203e] bg-[#fcd34d] hover:scale-105 active:scale-95 transition-all shadow-[0_0_15px_rgba(252,211,77,0.4)]">SAVE</button>
+
+        <div className="p-5 bg-white/75 border-t border-[#626a9f]/15 flex justify-end gap-3 shrink-0">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-6 py-3 rounded-full font-bold text-xs uppercase tracking-widest text-[#1e2246] bg-white border-2 border-[#1e2246] shadow-[0_3px_0_rgba(30,34,70,0.16)] hover:-translate-y-0.5 transition-all cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            className="px-8 py-3 rounded-full font-extrabold text-xs uppercase tracking-widest text-[#1e2246] bg-gradient-to-b from-[#ffd66b] to-[#ffc749] border-2 border-[#1e2246] shadow-[0_4px_0_#1e2246] hover:-translate-y-0.5 active:translate-y-0.5 transition-all cursor-pointer"
+          >
+            Save ✓
+          </button>
         </div>
       </div>
     </div>

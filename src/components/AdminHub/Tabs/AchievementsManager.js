@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../../../SupabaseClient';
 
 // ==========================================
@@ -47,9 +47,6 @@ const METRICS_DICTIONARY = [
   { id: 'staff_eval_notes_words', label: 'Eval Notes Word Count', desc: 'Depth of qualitative feedback written for students.', group: 'Staff & Operations' },
 ];
 
-// ==========================================
-// PRE-COMPILED RENDERING ENGINES
-// ==========================================
 const getTierColor = (tier) => {
   const colors = {
     Bronze: '#d97706',
@@ -110,10 +107,9 @@ const TrophyPlayer = ({ assetUrl, videoUrl, tier, color, isModal = false, isUnlo
         clearTimeout(fadeOutTimer);
         clearTimeout(swapTimer);
       };
-    } else {
-      setShowSpawn(false);
-      setFading(false);
     }
+    setShowSpawn(false);
+    setFading(false);
   }, [isModal, isUnlocked, videoUrl, assetUrl]);
 
   const activeUrl = showSpawn ? videoUrl : assetUrl;
@@ -191,7 +187,7 @@ export default function AchievementsManager({ onBack }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const fetchAchievements = async () => {
+  const fetchAchievements = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('achievements')
@@ -200,11 +196,11 @@ export default function AchievementsManager({ onBack }) {
     if (error) console.error('Error fetching achievements', error);
     else setAchievements(data || []);
     setLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
     fetchAchievements();
-  }, []);
+  }, [fetchAchievements]);
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -257,21 +253,24 @@ export default function AchievementsManager({ onBack }) {
   };
 
   const addCondition = () => {
-    setFormData({
-      ...formData,
-      conditions: [...formData.conditions, { metric: 'academic_lessons_completed', operator: '>=', value: 1 }],
-    });
+    setFormData((prev) => ({
+      ...prev,
+      conditions: [...prev.conditions, { metric: 'academic_lessons_completed', operator: '>=', value: 1 }],
+    }));
   };
 
   const removeCondition = (index) => {
-    const newConditions = formData.conditions.filter((_, i) => i !== index);
-    setFormData({ ...formData, conditions: newConditions });
+    setFormData((prev) => ({
+      ...prev,
+      conditions: prev.conditions.filter((_, i) => i !== index),
+    }));
   };
 
   const updateCondition = (index, field, value) => {
-    const newConditions = [...formData.conditions];
-    newConditions[index][field] = value;
-    setFormData({ ...formData, conditions: newConditions });
+    setFormData((prev) => ({
+      ...prev,
+      conditions: prev.conditions.map((c, i) => (i === index ? { ...c, [field]: value } : c)),
+    }));
   };
 
   const groupedMetrics = METRICS_DICTIONARY.reduce((acc, metric) => {
@@ -282,36 +281,47 @@ export default function AchievementsManager({ onBack }) {
   const hexColorPreview = getTierColor(formData.tier);
 
   return (
-    <div className="flex flex-col w-full max-w-[1440px] lg:h-[calc(100vh-145px)] relative z-10 font-montserrat text-[#1e2246] pb-10 lg:pb-0">
-      {/* HEADER */}
-      <div className="flex items-center gap-3.5 mb-5 shrink-0">
+    <div className="flex flex-col w-full max-w-7xl mx-auto relative z-10 font-montserrat text-[#1e2246] pb-12">
+      {/* Two-Tone Editorial Header */}
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6 shrink-0">
+        <div className="flex items-center gap-3.5">
+          <button
+            type="button"
+            onClick={onBack}
+            className="w-10 h-10 bg-white hover:bg-[#ffc749] border-2 border-[#1e2246] shadow-[0_3px_0_#1e2246] text-[#1e2246] rounded-full flex items-center justify-center font-bold transition-all active:translate-y-0.5 cursor-pointer"
+          >
+            ←
+          </button>
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight leading-none">
+              <span className="text-[#1e2246]">Trophy </span>
+              <span className="text-[#626a9f]">
+                Composer<span className="text-[#ffc749]">.</span>
+              </span>
+            </h2>
+            <p className="text-[11px] font-bold text-[#454d82] uppercase tracking-widest mt-1">
+              Omni-Track Rule Engine &amp; 3D Assets
+            </p>
+          </div>
+        </div>
+
         <button
           type="button"
-          onClick={onBack}
-          className="w-10 h-10 bg-white hover:bg-[#ffc749] border-2 border-[#1e2246] text-[#1e2246] rounded-full flex items-center justify-center font-bold transition-all active:scale-90 cursor-pointer shadow-sm"
+          onClick={() => openEditor()}
+          className="px-5 py-2.5 rounded-full font-extrabold text-[11px] uppercase tracking-widest text-[#1e2246] bg-gradient-to-b from-[#ffd66b] to-[#ffc749] border-2 border-[#1e2246] shadow-[0_4px_0_#1e2246] hover:-translate-y-0.5 active:translate-y-0.5 transition-all cursor-pointer"
         >
-          ←
+          + New Trophy
         </button>
-        <div>
-          <h2 className="text-xl sm:text-2xl font-extrabold uppercase tracking-tight text-[#1e2246] leading-none">
-            Trophy Composer
-          </h2>
-          <p className="text-[11px] font-bold text-[#454d82] uppercase tracking-widest mt-1">
-            Omni-Track Rule Engine &amp; 3D Assets
-          </p>
-        </div>
       </div>
 
-      <div className="flex-1 flex flex-col lg:flex-row gap-5 min-h-0">
-        {/* ========================================== */}
-        {/* LEFT PANE: CATALOG LIST                    */}
-        {/* ========================================== */}
+      <div className="flex flex-col lg:flex-row gap-6 items-start">
+        {/* LEFT PANE: CATALOG LIST */}
         <div
-          className={`ola-adm-glass rounded-[2.25rem] overflow-hidden flex flex-col ${
-            isEditing ? 'hidden lg:flex flex-[0.82]' : 'flex-1'
+          className={`bg-gradient-to-br from-white/95 to-[#f2f4fd]/85 backdrop-blur-2xl border-2 border-white shadow-[0_20px_42px_-18px_rgba(55,63,118,0.2)] rounded-[2.25rem] overflow-hidden flex flex-col w-full ${
+            isEditing ? 'hidden lg:flex lg:flex-[0.82]' : 'flex-1'
           }`}
         >
-          <div className="p-5 sm:px-6 border-b border-[#626a9f]/15 flex justify-between items-center bg-white/55 shrink-0">
+          <div className="p-5 sm:px-6 border-b border-[#626a9f]/15 flex justify-between items-center bg-white/75 shrink-0">
             <div>
               <h3 className="font-extrabold text-[#1e2246] uppercase tracking-wider text-xs sm:text-sm">
                 Active Database
@@ -320,34 +330,30 @@ export default function AchievementsManager({ onBack }) {
                 {achievements.length} Trophies
               </span>
             </div>
-            <button
-              type="button"
-              onClick={() => openEditor()}
-              className="ola-adm-btn-yellow px-4 py-2 rounded-full text-[10.5px] font-bold uppercase tracking-wider cursor-pointer"
-            >
-              + New Trophy
-            </button>
+            <span className="px-3 py-1 rounded-full bg-[#e7faf3] text-[#128063] text-[10px] font-extrabold uppercase tracking-wider">
+              Omni-Track
+            </span>
           </div>
 
-          <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-5 flex flex-col gap-2.5">
+          <div className="max-h-[68vh] overflow-y-auto custom-scrollbar p-4 sm:p-5 flex flex-col gap-2.5">
             {loading ? (
-              <div className="h-full flex items-center justify-center py-12">
+              <div className="py-16 flex items-center justify-center">
                 <div className="w-8 h-8 border-4 border-[#626a9f] border-t-[#ffc749] rounded-full animate-spin" />
               </div>
             ) : achievements.length === 0 ? (
-              <div className="text-center text-[#626a9f] text-xs font-bold py-12 uppercase tracking-widest">
+              <div className="text-center text-[#626a9f] text-xs font-bold py-14 uppercase tracking-widest">
                 Catalog is empty. Add your first trophy.
               </div>
             ) : (
               achievements.map((ach) => (
                 <div
                   key={ach.id}
-                  className={`bg-white/85 hover:bg-white border border-white p-3.5 sm:p-4 rounded-2xl flex items-center justify-between transition-all shadow-sm ${
+                  className={`bg-white border-2 border-white hover:border-[#626a9f]/40 p-3.5 sm:p-4 rounded-2xl flex items-center justify-between transition-all shadow-sm ${
                     !ach.is_active ? 'opacity-55 grayscale' : ''
                   }`}
                 >
                   <div className="flex items-center gap-3.5 min-w-0 pr-3">
-                    <div className="w-11 h-11 rounded-xl flex items-center justify-center border border-[#1e2246]/20 shrink-0 bg-[#1e2246] text-[#ffc749] overflow-hidden">
+                    <div className="w-11 h-11 rounded-xl flex items-center justify-center border-2 border-[#1e2246] shrink-0 bg-[#1e2246] text-[#ffc749] overflow-hidden">
                       {ach.asset_url ? (
                         ach.asset_url.includes('<iframe') ? (
                           <span className="text-[9px] font-extrabold uppercase tracking-wider">VID</span>
@@ -382,7 +388,7 @@ export default function AchievementsManager({ onBack }) {
                     <button
                       type="button"
                       onClick={() => openEditor(ach)}
-                      className="w-9 h-9 bg-[#e8eaf7] hover:bg-[#454d82] text-[#454d82] hover:text-white rounded-xl flex items-center justify-center transition-colors cursor-pointer text-sm"
+                      className="w-9 h-9 bg-[#e8eaf7] hover:bg-[#1e2246] text-[#454d82] hover:text-[#ffc749] rounded-full flex items-center justify-center transition-colors cursor-pointer text-sm"
                       title="Edit Trophy"
                     >
                       ✏️
@@ -390,7 +396,7 @@ export default function AchievementsManager({ onBack }) {
                     <button
                       type="button"
                       onClick={() => handleDelete(ach.id)}
-                      className="w-9 h-9 bg-[#ee665b]/15 hover:bg-[#ee665b] text-[#c93f34] hover:text-white rounded-xl flex items-center justify-center transition-colors cursor-pointer text-xs font-bold"
+                      className="w-9 h-9 bg-[#ee665b]/15 hover:bg-[#ee665b] text-[#c93f34] hover:text-white rounded-full flex items-center justify-center transition-colors cursor-pointer text-xs font-bold"
                       title="Delete Trophy"
                     >
                       ✕
@@ -402,12 +408,10 @@ export default function AchievementsManager({ onBack }) {
           </div>
         </div>
 
-        {/* ========================================== */}
-        {/* RIGHT PANE: OMNI-TRACK COMPOSER            */}
-        {/* ========================================== */}
+        {/* RIGHT PANE: OMNI-TRACK COMPOSER */}
         {isEditing && (
-          <div className="ola-adm-glass ola-adm-modal-in flex-[1.35] rounded-[2.25rem] overflow-hidden flex flex-col">
-            <div className="p-5 sm:px-6 border-b border-[#626a9f]/15 bg-white/55 shrink-0 flex justify-between items-center">
+          <div className="bg-gradient-to-br from-white/95 to-[#f2f4fd]/85 backdrop-blur-2xl border-2 border-white shadow-[0_20px_42px_-18px_rgba(55,63,118,0.2)] flex-[1.35] w-full rounded-[2.25rem] overflow-hidden flex flex-col">
+            <div className="p-5 sm:px-6 border-b border-[#626a9f]/15 bg-white/75 shrink-0 flex justify-between items-center">
               <h3 className="font-extrabold text-[#1e2246] uppercase tracking-tight text-base sm:text-lg">
                 {formData.id ? 'Edit Achievement' : 'Create New Trophy'}
               </h3>
@@ -420,10 +424,10 @@ export default function AchievementsManager({ onBack }) {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-5 sm:p-6">
-              <form onSubmit={handleSave} className="flex flex-col gap-6">
+            <div className="max-h-[72vh] overflow-y-auto custom-scrollbar p-5 sm:p-6">
+              <form onSubmit={handleSave} className="flex flex-col gap-5">
                 {/* Basic Meta */}
-                <div className="flex flex-col gap-4 bg-white/75 border border-white rounded-3xl p-5 shadow-sm">
+                <div className="flex flex-col gap-4 bg-[#f4f6fc] border border-white rounded-3xl p-5 shadow-inner">
                   <div>
                     <label className="block text-[10px] text-[#454d82] font-bold uppercase tracking-widest mb-1.5">
                       Trophy Title
@@ -432,7 +436,7 @@ export default function AchievementsManager({ onBack }) {
                       type="text"
                       value={formData.title}
                       onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                      className="w-full bg-white border-2 border-white focus:border-[#454d82] rounded-xl px-4 py-2.5 text-[#1e2246] text-sm font-semibold outline-none shadow-sm"
+                      className="w-full bg-white border-2 border-[#dfe2f2] focus:border-[#454d82] rounded-xl px-4 py-2.5 text-[#1e2246] text-sm font-semibold outline-none shadow-sm"
                       placeholder="e.g., The Metronome"
                       required
                     />
@@ -444,7 +448,7 @@ export default function AchievementsManager({ onBack }) {
                     <textarea
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      className="w-full bg-white border-2 border-white focus:border-[#454d82] rounded-xl px-4 py-2.5 text-[#1e2246] text-sm font-medium outline-none resize-none h-20 shadow-sm"
+                      className="w-full bg-white border-2 border-[#dfe2f2] focus:border-[#454d82] rounded-xl px-4 py-2.5 text-[#1e2246] text-sm font-medium outline-none resize-none h-20 shadow-sm"
                       placeholder="Describe how to earn this achievement..."
                       required
                     />
@@ -457,7 +461,7 @@ export default function AchievementsManager({ onBack }) {
                       <select
                         value={formData.target_audience}
                         onChange={(e) => setFormData({ ...formData, target_audience: e.target.value })}
-                        className="w-full bg-white border-2 border-white focus:border-[#454d82] rounded-xl px-3 py-2.5 text-[#1e2246] text-xs font-bold outline-none cursor-pointer shadow-sm"
+                        className="w-full bg-white border-2 border-[#dfe2f2] focus:border-[#454d82] rounded-xl px-3 py-2.5 text-[#1e2246] text-xs font-bold outline-none cursor-pointer"
                       >
                         <option value="student">Student</option>
                         <option value="teacher">Teacher</option>
@@ -471,7 +475,7 @@ export default function AchievementsManager({ onBack }) {
                       <select
                         value={formData.category}
                         onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                        className="w-full bg-white border-2 border-white focus:border-[#454d82] rounded-xl px-3 py-2.5 text-[#1e2246] text-xs font-bold outline-none cursor-pointer shadow-sm"
+                        className="w-full bg-white border-2 border-[#dfe2f2] focus:border-[#454d82] rounded-xl px-3 py-2.5 text-[#1e2246] text-xs font-bold outline-none cursor-pointer"
                       >
                         <option>Milestone</option>
                         <option>Consistency</option>
@@ -487,7 +491,7 @@ export default function AchievementsManager({ onBack }) {
                       <select
                         value={formData.tier}
                         onChange={(e) => setFormData({ ...formData, tier: e.target.value })}
-                        className="w-full bg-white border-2 border-white focus:border-[#454d82] rounded-xl px-3 py-2.5 text-[#1e2246] text-xs font-bold outline-none cursor-pointer shadow-sm"
+                        className="w-full bg-white border-2 border-[#dfe2f2] focus:border-[#454d82] rounded-xl px-3 py-2.5 text-[#1e2246] text-xs font-bold outline-none cursor-pointer"
                       >
                         <option>Bronze</option>
                         <option>Silver</option>
@@ -499,8 +503,8 @@ export default function AchievementsManager({ onBack }) {
                   </div>
                 </div>
 
-                {/* CASCADING RULE BUILDER */}
-                <div className="ola-adm-glass-gold rounded-3xl p-5">
+                {/* BUTTER-GOLD CASCADING RULE BUILDER */}
+                <div className="bg-gradient-to-br from-[#fff9e8] to-[#ffe69e] border-2 border-white rounded-3xl p-5 shadow-sm">
                   <div className="flex flex-wrap justify-between items-center gap-3 mb-4 border-b border-[#1e2246]/15 pb-3">
                     <div>
                       <h4 className="text-xs sm:text-sm font-extrabold text-[#1e2246] uppercase tracking-wider">
@@ -513,7 +517,7 @@ export default function AchievementsManager({ onBack }) {
                     <button
                       type="button"
                       onClick={addCondition}
-                      className="bg-[#1e2246] hover:bg-[#454d82] text-[#ffc749] px-3.5 py-2 rounded-full text-[10.5px] font-bold uppercase tracking-wider cursor-pointer shrink-0"
+                      className="bg-[#1e2246] hover:bg-[#454d82] text-[#ffc749] px-4 py-2 rounded-full text-[10.5px] font-extrabold uppercase tracking-wider cursor-pointer shrink-0"
                     >
                       + Add Rule
                     </button>
@@ -523,7 +527,7 @@ export default function AchievementsManager({ onBack }) {
                     {formData.conditions.map((cond, index) => (
                       <div
                         key={index}
-                        className="flex flex-col md:flex-row gap-2.5 bg-white/85 p-3.5 rounded-2xl border border-white relative group shadow-sm"
+                        className="flex flex-col md:flex-row gap-2.5 bg-white p-3.5 rounded-2xl border border-white relative shadow-sm"
                       >
                         <div className="flex-[2] relative">
                           <div className="flex justify-between items-center mb-1">
@@ -546,7 +550,7 @@ export default function AchievementsManager({ onBack }) {
                           <select
                             value={cond.metric}
                             onChange={(e) => updateCondition(index, 'metric', e.target.value)}
-                            className="w-full bg-[#f6f7fc] border border-[#dfe2f2] focus:border-[#454d82] rounded-xl px-3 py-2.5 text-[#1e2246] text-xs font-semibold outline-none cursor-pointer"
+                            className="w-full bg-[#f4f6fc] border border-[#dfe2f2] focus:border-[#454d82] rounded-xl px-3 py-2.5 text-[#1e2246] text-xs font-semibold outline-none cursor-pointer"
                           >
                             {Object.entries(groupedMetrics).map(([groupName, metrics]) => (
                               <optgroup key={groupName} label={groupName}>
@@ -567,7 +571,7 @@ export default function AchievementsManager({ onBack }) {
                           <select
                             value={cond.operator}
                             onChange={(e) => updateCondition(index, 'operator', e.target.value)}
-                            className="w-full bg-[#f6f7fc] border border-[#dfe2f2] focus:border-[#454d82] rounded-xl px-2.5 py-2.5 text-[#1e2246] text-xs font-bold outline-none cursor-pointer text-center"
+                            className="w-full bg-[#f4f6fc] border border-[#dfe2f2] focus:border-[#454d82] rounded-xl px-2.5 py-2.5 text-[#1e2246] text-xs font-bold outline-none cursor-pointer text-center"
                           >
                             <option value=">=">Greater or Eq (&gt;=)</option>
                             <option value="<=">Less or Eq (&lt;=)</option>
@@ -583,7 +587,7 @@ export default function AchievementsManager({ onBack }) {
                             type="number"
                             value={cond.value}
                             onChange={(e) => updateCondition(index, 'value', parseInt(e.target.value, 10) || 0)}
-                            className="w-full bg-[#f6f7fc] border border-[#dfe2f2] focus:border-[#454d82] rounded-xl px-3 py-2.5 text-[#1e2246] text-xs font-extrabold outline-none text-center"
+                            className="w-full bg-[#f4f6fc] border border-[#dfe2f2] focus:border-[#454d82] rounded-xl px-3 py-2.5 text-[#1e2246] text-xs font-extrabold outline-none text-center"
                             required
                           />
                         </div>
@@ -591,7 +595,7 @@ export default function AchievementsManager({ onBack }) {
                         <button
                           type="button"
                           onClick={() => removeCondition(index)}
-                          className="absolute -top-2.5 -right-2.5 w-7 h-7 bg-[#ee665b] text-white rounded-full shadow-md flex items-center justify-center text-xs font-bold cursor-pointer"
+                          className="absolute -top-2.5 -right-2.5 w-7 h-7 bg-[#ee665b] text-white border-2 border-white rounded-full shadow-md flex items-center justify-center text-xs font-bold cursor-pointer"
                           title="Remove condition"
                         >
                           ✕
@@ -604,7 +608,7 @@ export default function AchievementsManager({ onBack }) {
                         ref={tooltipRef}
                         className="bg-[#1e2246] text-white p-4 rounded-2xl shadow-lg text-xs font-medium leading-relaxed border-2 border-[#ffc749]"
                       >
-                        <span className="uppercase tracking-widest text-[#ffc749] text-[9.5px] font-bold block mb-1">
+                        <span className="uppercase tracking-widest text-[#ffc749] text-[9.5px] font-extrabold block mb-1">
                           Metric Definition
                         </span>
                         {activeTooltip}
@@ -614,7 +618,7 @@ export default function AchievementsManager({ onBack }) {
                 </div>
 
                 {/* CLOUDFLARE ASSET FIELDS */}
-                <div className="flex flex-col gap-3.5 bg-white/75 border border-white rounded-3xl p-5 shadow-sm">
+                <div className="flex flex-col gap-3.5 bg-[#f4f6fc] border border-white rounded-3xl p-5 shadow-inner">
                   <div>
                     <label className="block text-[10px] text-[#454d82] font-bold uppercase tracking-widest mb-1.5">
                       Cloudflare Asset URL (Idle Image / Loop Iframe)
@@ -624,7 +628,7 @@ export default function AchievementsManager({ onBack }) {
                       placeholder="https://... or <iframe>..."
                       value={formData.asset_url}
                       onChange={(e) => setFormData({ ...formData, asset_url: e.target.value })}
-                      className="w-full bg-white border-2 border-white focus:border-[#454d82] rounded-xl px-4 py-2.5 text-[#1e2246] text-xs sm:text-sm font-medium outline-none shadow-sm"
+                      className="w-full bg-white border-2 border-[#dfe2f2] focus:border-[#454d82] rounded-xl px-4 py-2.5 text-[#1e2246] text-xs sm:text-sm font-medium outline-none"
                     />
                   </div>
                   <div>
@@ -636,7 +640,7 @@ export default function AchievementsManager({ onBack }) {
                       placeholder="https://... or <iframe>..."
                       value={formData.video_url}
                       onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
-                      className="w-full bg-white border-2 border-white focus:border-[#16a37f] rounded-xl px-4 py-2.5 text-[#1e2246] text-xs sm:text-sm font-medium outline-none shadow-sm"
+                      className="w-full bg-white border-2 border-[#dfe2f2] focus:border-[#16a37f] rounded-xl px-4 py-2.5 text-[#1e2246] text-xs sm:text-sm font-medium outline-none"
                     />
                   </div>
                   <div>
@@ -647,14 +651,14 @@ export default function AchievementsManager({ onBack }) {
                       type="number"
                       value={formData.sort_order}
                       onChange={(e) => setFormData({ ...formData, sort_order: parseInt(e.target.value, 10) || 0 })}
-                      className="w-28 bg-white border-2 border-white focus:border-[#454d82] rounded-xl px-3.5 py-2.5 text-[#1e2246] text-sm font-bold outline-none shadow-sm"
+                      className="w-28 bg-white border-2 border-[#dfe2f2] focus:border-[#454d82] rounded-xl px-3.5 py-2.5 text-[#1e2246] text-sm font-bold outline-none"
                     />
                   </div>
                 </div>
 
                 {/* LIVE STUDENT RENDER PREVIEW */}
-                <div className="flex flex-col items-center justify-center bg-white/65 border border-white rounded-3xl p-6 shadow-inner select-none">
-                  <span className="text-[10px] font-bold text-[#454d82] uppercase tracking-widest mb-1">
+                <div className="flex flex-col items-center justify-center bg-[#f4f6fc] border border-white rounded-3xl p-6 shadow-inner select-none">
+                  <span className="text-[10px] font-extrabold text-[#454d82] uppercase tracking-widest mb-1">
                     Live Student Render
                   </span>
                   <p className="text-xs text-[#50567d] mb-5 text-center max-w-xs">
@@ -663,7 +667,7 @@ export default function AchievementsManager({ onBack }) {
 
                   <div
                     onClick={() => setShowPreviewModal(true)}
-                    className="relative w-full max-w-[260px] rounded-[2rem] border-2 border-white bg-white/90 shadow-xl overflow-hidden cursor-pointer group hover:-translate-y-1 transition-all"
+                    className="relative w-full max-w-[260px] rounded-[2rem] border-2 border-white bg-white shadow-xl overflow-hidden cursor-pointer group hover:-translate-y-1 transition-all"
                   >
                     <div className="relative h-56 w-full bg-gradient-to-b from-[#1e2246] via-[#171b3a] to-[#0f132b] overflow-hidden flex items-center justify-center">
                       <div
@@ -704,7 +708,7 @@ export default function AchievementsManager({ onBack }) {
 
                 {/* VISIBILITY TOGGLES */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                  <label className="flex items-center gap-3.5 cursor-pointer bg-white/80 p-4 rounded-2xl border border-white hover:border-[#ffc749] transition-colors shadow-sm">
+                  <label className="flex items-center gap-3.5 cursor-pointer bg-white p-4 rounded-2xl border-2 border-white hover:border-[#ffc749] transition-colors shadow-sm">
                     <input
                       type="checkbox"
                       checked={formData.is_secret}
@@ -717,7 +721,7 @@ export default function AchievementsManager({ onBack }) {
                     </div>
                   </label>
 
-                  <label className="flex items-center gap-3.5 cursor-pointer bg-white/80 p-4 rounded-2xl border border-white hover:border-[#16a37f] transition-colors shadow-sm">
+                  <label className="flex items-center gap-3.5 cursor-pointer bg-white p-4 rounded-2xl border-2 border-white hover:border-[#16a37f] transition-colors shadow-sm">
                     <input
                       type="checkbox"
                       checked={formData.is_active}
@@ -736,13 +740,13 @@ export default function AchievementsManager({ onBack }) {
                   <button
                     type="button"
                     onClick={() => setIsEditing(false)}
-                    className="ola-adm-btn-outline flex-1 py-3.5 text-xs font-bold uppercase tracking-widest rounded-full cursor-pointer"
+                    className="flex-1 py-3.5 text-xs font-bold uppercase tracking-widest rounded-full bg-white text-[#1e2246] border-2 border-[#1e2246] shadow-[0_3px_0_rgba(30,34,70,0.16)] cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="ola-adm-btn-yellow flex-[2] py-3.5 text-xs font-bold uppercase tracking-widest rounded-full cursor-pointer"
+                    className="flex-[2] py-3.5 text-xs font-extrabold uppercase tracking-widest rounded-full text-[#1e2246] bg-gradient-to-b from-[#ffd66b] to-[#ffc749] border-2 border-[#1e2246] shadow-[0_4px_0_#1e2246] hover:-translate-y-0.5 active:translate-y-0.5 transition-all cursor-pointer"
                   >
                     Save Logic &amp; Asset ✓
                   </button>
@@ -760,7 +764,7 @@ export default function AchievementsManager({ onBack }) {
           onClick={() => setShowPreviewModal(false)}
         >
           <div
-            className="ola-adm-glass ola-adm-modal-in rounded-[2.5rem] p-6 sm:p-9 max-w-xl w-full relative flex flex-col items-center text-center my-auto"
+            className="bg-gradient-to-br from-white/95 to-[#f2f4fd]/90 backdrop-blur-2xl border-2 border-white shadow-2xl rounded-[2.5rem] p-6 sm:p-9 max-w-xl w-full relative flex flex-col items-center text-center my-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -802,7 +806,7 @@ export default function AchievementsManager({ onBack }) {
               </span>
             </div>
 
-            <div className="w-full bg-white/85 border border-white rounded-2xl p-5 mb-5 shadow-sm">
+            <div className="w-full bg-white border border-[#dfe2f2] rounded-2xl p-5 mb-5 shadow-sm">
               <h4 className="text-[10px] font-bold text-[#454d82] uppercase tracking-widest mb-1.5">
                 Objective Completed
               </h4>

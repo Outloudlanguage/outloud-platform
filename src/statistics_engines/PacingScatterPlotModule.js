@@ -1,15 +1,40 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  ScatterChart, 
-  Scatter, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  ScatterChart,
+  Scatter,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
-  ZAxis
+  ZAxis,
+  Legend,
 } from 'recharts';
 import { supabase } from '../SupabaseClient';
+
+const CustomScatterTooltip = ({ active, payload }) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div className="bg-white border-2 border-[#1e2246] p-3.5 rounded-2xl shadow-[0_6px_0_rgba(30,34,70,0.12)] hide-on-print font-montserrat">
+        <p className="text-[#128063] font-extrabold text-xs uppercase tracking-wider mb-1">
+          {data.studentName}
+        </p>
+        <div className="text-[#1e2246] text-xs font-semibold space-y-0.5">
+          <p>
+            Tiempo Matriculado:{' '}
+            <span className="text-[#454d82] font-extrabold">{data.exactMonths.toFixed(1)} meses</span>
+          </p>
+          <p>
+            Avance:{' '}
+            <span className="text-[#454d82] font-extrabold">{data.exactLevels} niveles completados</span>
+          </p>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
 
 const PacingScatterPlotModule = ({ studentId }) => {
   const [loading, setLoading] = useState(true);
@@ -20,7 +45,6 @@ const PacingScatterPlotModule = ({ studentId }) => {
       try {
         setLoading(true);
 
-        // Build the base query
         let query = supabase
           .from('profiles')
           .select(`
@@ -32,57 +56,50 @@ const PacingScatterPlotModule = ({ studentId }) => {
           `)
           .in('role', ['student', 'Student']);
 
-        // Apply dual-mode filter
         if (studentId) {
           query = query.eq('id', studentId);
         }
 
         const { data, error } = await query;
-
         if (error) throw error;
 
         const standard = [];
         const outliers = [];
 
-        // Helper function to add visual jitter to prevent dot overlapping in the SVG
         const jitter = (value, range = 0.35) => Math.max(0, value + (Math.random() - 0.5) * range);
 
         if (data && data.length > 0) {
-          data.forEach(student => {
+          data.forEach((student) => {
             if (!student.payments || student.payments.length === 0) return;
 
-            // 1. Calculate Time Enrolled (X-Axis)
             const dates = student.payments
-              .map(p => new Date(p.paid_date))
-              .filter(d => !isNaN(d));
-            
+              .map((p) => new Date(p.paid_date))
+              .filter((d) => !isNaN(d));
+
             if (dates.length === 0) return;
-            
+
             const firstBillingDate = new Date(Math.min(...dates));
             const monthsEnrolled = (new Date() - firstBillingDate) / (1000 * 60 * 60 * 24 * 30.44);
 
-            // 2. Calculate Levels Completed (Y-Axis)
-            const uniqueLevels = new Set(student.payments.map(p => p.level_billed));
-            let levelsCompleted = uniqueLevels.size; 
-            
-            // 3. Jitter coordinates (less jitter for an individual dot to keep it accurate)
+            const uniqueLevels = new Set(student.payments.map((p) => p.level_billed));
+            const levelsCompleted = uniqueLevels.size;
+
             const plotX = parseFloat(jitter(monthsEnrolled, studentId ? 0 : 0.4).toFixed(2));
             const plotY = parseFloat(jitter(levelsCompleted, studentId ? 0 : 0.4).toFixed(2));
-            
+
             const studentName = `${student.first_name || 'Estudiante'} ${student.last_name || ''}`.trim();
 
-            const dataPoint = { 
-              x: plotX, 
-              y: plotY, 
-              exactMonths: monthsEnrolled, 
+            const dataPoint = {
+              x: plotX,
+              y: plotY,
+              exactMonths: monthsEnrolled,
               exactLevels: levelsCompleted,
-              studentName: studentName,
-              studentId: student.id
+              studentName,
+              studentId: student.id,
             };
 
-            // 4. Isolate Outliers (Completed 4 levels in <= 3 months AND above pace)
             const isAbovePace = student.engine_student_status?.[0]?.is_optimal_pace;
-            
+
             if (levelsCompleted >= 4 && monthsEnrolled <= 3 && isAbovePace) {
               outliers.push(dataPoint);
             } else {
@@ -91,11 +108,9 @@ const PacingScatterPlotModule = ({ studentId }) => {
           });
         }
 
-        // Strict Reality: No mock data padding.
         setChartData({ standard, outliers });
-
       } catch (error) {
-        console.error("Error fetching pacing data:", error);
+        console.error('Error fetching pacing data:', error);
         setChartData({ standard: [], outliers: [] });
       } finally {
         setLoading(false);
@@ -103,34 +118,37 @@ const PacingScatterPlotModule = ({ studentId }) => {
     };
 
     fetchPacingData();
-  }, [studentId]); // Re-fire anytime the dual-mode dropdown changes
-
-  // Custom Tooltip to identify the specific student
-  const CustomScatterTooltip = ({ active, payload }) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div className="bg-slate-900 border border-slate-700 p-3 rounded-lg shadow-xl hide-on-print">
-          <p className="text-emerald-400 font-black mb-1 uppercase tracking-wider">{data.studentName}</p>
-          <div className="text-white text-xs font-medium space-y-1">
-            <p>Tiempo Matriculado: <span className="text-slate-300">{data.exactMonths.toFixed(1)} meses</span></p>
-            <p>Avance: <span className="text-slate-300">{data.exactLevels} niveles completados</span></p>
-          </div>
-        </div>
-      );
-    }
-    return null;
-  };
+  }, [studentId]);
 
   if (loading) {
-    return <div className="p-4 md:p-8 text-white/50 text-center font-bold tracking-widest">LOADING PACING DATA...</div>;
+    return (
+      <div className="p-8 flex flex-col items-center justify-center gap-3 min-h-[300px] font-montserrat">
+        <div className="w-8 h-8 border-4 border-[#626a9f] border-t-[#ffc749] rounded-full animate-spin" />
+        <span className="text-[#454d82] font-bold uppercase tracking-widest text-xs">
+          Loading Pacing Data...
+        </span>
+      </div>
+    );
   }
 
-  const currentDate = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const currentDate = new Date().toLocaleDateString('es-ES', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  const totalCount = chartData.standard.length + chartData.outliers.length;
+  const outlierCount = chartData.outliers.length;
+  const outlierPct = totalCount > 0 ? ((outlierCount / totalCount) * 100).toFixed(1) : 0;
 
   return (
-    <div id="printable-pacing-report" className="relative flex flex-col w-full bg-transparent md:bg-white/5 md:backdrop-blur-xl border-transparent md:border-white/10 md:rounded-[2rem] p-0 md:p-8 shadow-none md:shadow-2xl">
-      
+    <div
+      id="printable-pacing-report"
+      className="relative flex flex-col w-full h-full bg-white/75 rounded-[1.75rem] p-4 sm:p-6 font-montserrat text-[#1e2246]"
+    >
       <style>{`
         @media print {
           @page { size: portrait; margin: 15mm; }
@@ -148,136 +166,181 @@ const PacingScatterPlotModule = ({ studentId }) => {
 
       {/* Print-Only Header Date */}
       <div className="print-header" style={{ display: 'none' }}>
-        <p style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 'bold' }}>Reporte de Rendimiento Generado:</p>
-        <p style={{ fontSize: '16px', fontWeight: '900', textTransform: 'capitalize' }}>{currentDate}</p>
-      </div>
-
-      <div className="mb-6 border-b border-white/10 pb-4" style={{ borderBottomWidth: '1px' }}>
-        <h3 className="text-xl md:text-2xl font-black tracking-widest uppercase text-white">
-          {studentId ? "Ritmo Personal de Estudio" : "Desempeño Global y Acelerado"}
-        </h3>
-        <p className="text-sm font-bold text-yellow-400 uppercase tracking-wide">
-          {studentId ? "Seguimiento de Progreso Individual" : "Casos Atípicos (Outliers)"}
+        <p style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 'bold' }}>
+          Reporte de Rendimiento Generado:
+        </p>
+        <p style={{ fontSize: '16px', fontWeight: '900', textTransform: 'capitalize' }}>
+          {currentDate}
         </p>
       </div>
 
-      <div className="h-72 w-full mb-6" style={{ minHeight: '300px' }}>
+      {/* Header */}
+      <div className="mb-5 flex flex-wrap justify-between items-end gap-3 border-b border-[#626a9f]/15 pb-4">
+        <div>
+          <span className="inline-block text-[9.5px] font-bold uppercase tracking-widest bg-[#e7faf3] text-[#128063] px-2.5 py-0.5 rounded-full mb-1.5">
+            {studentId ? 'Velocidad Individual' : 'Outliers • Acelerados'}
+          </span>
+          <h3 className="text-lg sm:text-xl font-extrabold tracking-tight uppercase text-[#1e2246]">
+            {studentId ? 'Ritmo Personal de Estudio' : 'Desempeño Global y Acelerado'}
+          </h3>
+          <p className="text-[11px] font-bold text-[#4c5384] uppercase tracking-wider">
+            {studentId ? 'Meses Matriculado vs Niveles Completados' : 'Casos Atípicos (Outliers)'}
+          </p>
+        </div>
+
+        <div className="bg-[#e7faf3] border border-[#16a37f]/35 rounded-2xl px-4 py-2 text-right">
+          <p className="text-[9.5px] text-[#128063] uppercase font-bold tracking-widest">
+            {studentId ? 'Categoría' : 'Acelerados'}
+          </p>
+          <p className="text-2xl sm:text-3xl font-extrabold text-[#128063] leading-tight">
+            {studentId ? (outlierCount > 0 ? 'Top' : 'Std') : `${outlierPct}%`}
+          </p>
+        </div>
+      </div>
+
+      {/* Recessed Chart Well */}
+      <div className="h-72 w-full mb-5 bg-[#f4f6fc] border border-white rounded-3xl p-3 sm:p-4 shadow-inner">
         <ResponsiveContainer width="100%" height="100%">
-          <ScatterChart margin={{ top: 10, right: 10, bottom: 0, left: -20 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
-            
-            <XAxis 
-              type="number" 
-              dataKey="x" 
-              name="Meses Matriculado" 
-              domain={[0, 12]} 
+          <ScatterChart margin={{ top: 12, right: 16, bottom: 4, left: -16 }}>
+            <CartesianGrid strokeDasharray="4 4" stroke="rgba(98, 106, 159, 0.2)" />
+            <XAxis
+              type="number"
+              dataKey="x"
+              name="Meses Matriculado"
+              domain={[0, 12]}
               tickCount={7}
-              tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }}
-              axisLine={{ stroke: '#64748b' }}
-              tickLine={{ stroke: '#64748b' }}
+              tick={{ fill: '#454d82', fontSize: 11, fontWeight: 700 }}
+              axisLine={{ stroke: 'rgba(98, 106, 159, 0.25)' }}
+              tickLine={false}
             />
-            
-            <YAxis 
-              type="number" 
-              dataKey="y" 
-              name="Niveles Completados" 
-              domain={[0, 4]} 
+            <YAxis
+              type="number"
+              dataKey="y"
+              name="Niveles Completados"
+              domain={[0, 4]}
               tickCount={5}
-              tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }}
-              axisLine={{ stroke: '#64748b' }}
-              tickLine={{ stroke: '#64748b' }}
+              tick={{ fill: '#454d82', fontSize: 11, fontWeight: 700 }}
+              axisLine={false}
+              tickLine={false}
             />
-            
-            {/* ZAxis ensures consistent dot sizing across the SVG */}
-            <ZAxis type="number" range={[50, 50]} />
-            
-            <Tooltip 
-              cursor={{ strokeDasharray: '3 3', stroke: '#ffffff40' }} 
+            <ZAxis type="number" range={[70, 70]} />
+            <Tooltip
+              cursor={{ strokeDasharray: '4 4', stroke: '#626a9f' }}
               wrapperClassName="hide-on-print"
               content={<CustomScatterTooltip />}
             />
-            
-            {/* Standard Cohort Progression */}
-            <Scatter 
-              name={studentId ? "Ritmo de Estudiante" : "Ritmo Estándar"} 
-              data={chartData.standard} 
-              fill="#64748b" 
-              fillOpacity={0.6} 
-              isAnimationActive={false} 
+            <Legend
+              wrapperStyle={{
+                paddingTop: '8px',
+                fontSize: '12px',
+                fontWeight: 700,
+                color: '#1e2246',
+              }}
             />
-            
-            {/* Fast-Track Outliers Highlight (Only renders if data exists) */}
-            <Scatter 
-              name="Casos Acelerados" 
-              data={chartData.outliers} 
-              fill="#10b981" 
-              fillOpacity={0.9} 
-              isAnimationActive={false} 
+            <Scatter
+              name={studentId ? 'Ritmo de Estudiante' : 'Ritmo Estándar'}
+              data={chartData.standard}
+              fill="#5b64a0"
+              fillOpacity={0.75}
+              isAnimationActive={false}
+            />
+            <Scatter
+              name="Casos Acelerados"
+              data={chartData.outliers}
+              fill="#16a37f"
+              fillOpacity={0.95}
+              isAnimationActive={false}
             />
           </ScatterChart>
         </ResponsiveContainer>
       </div>
 
-      <div className="mt-auto pt-6 border-t border-white/10 flex items-start gap-4" style={{ paddingTop: '24px' }}>
-        <div className="bg-black/40 p-3 rounded-xl flex-shrink-0 hide-on-print">
-          <svg className="w-6 h-6 text-white hide-on-print" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      {/* Narrative Directive Footer */}
+      <div className="mt-auto bg-[#f9fafe] border border-[#dfe2f2] rounded-2xl p-4 sm:p-5 flex items-start gap-3.5">
+        <div className="w-11 h-11 rounded-xl bg-[#e7faf3] border-2 border-[#1e2246] shadow-[0_2px_0_#1e2246] flex items-center justify-center shrink-0 hide-on-print text-[#128063]">
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth="2.3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
           </svg>
         </div>
-        <div className="text-sm leading-relaxed text-slate-300 font-medium w-full" style={{ textAlign: 'justify', color: 'inherit' }}>
+
+        <div className="text-xs sm:text-sm leading-relaxed text-[#3b4170] font-medium w-full">
+          <span className="uppercase tracking-widest text-[10px] font-extrabold text-[#454d82] block mb-1.5">
+            {studentId ? 'Directiva de Seguimiento' : 'Directiva Académica Global'}
+          </span>
+
           {(() => {
-            const hasData = chartData.standard.length > 0 || chartData.outliers.length > 0;
-            if (!hasData) return <p>No se han registrado datos de progresión y pagos suficientes para realizar un análisis de ritmo de aprendizaje.</p>;
-            
-            if (studentId) {
-              const studentData = chartData.outliers.length > 0 ? chartData.outliers[0] : chartData.standard[0];
-              if (!studentData) return <p>Faltan datos de facturación o progreso para calcular el ritmo exacto de este estudiante.</p>;
-              
-              const isOutlier = chartData.outliers.length > 0;
-              const estado = isOutlier ? "ACELERADO" : "ESTÁNDAR";
-              const colorClass = isOutlier ? "text-emerald-400" : "text-blue-400";
-              const estrategia = isOutlier 
-                ? "El estudiante avanza a un ritmo excepcional (≥ 4 niveles completados en ≤ 3 meses). Considerar invitarlo al programa intensivo o utilizarlo como caso de éxito en marketing." 
-                : "El estudiante mantiene una velocidad de aprendizaje dentro del promedio proyectado. Continuar monitoreando su rendimiento general en clases para asegurar retención a largo plazo.";
-
+            if (totalCount === 0) {
               return (
                 <p>
-                  Este estudiante ha estado matriculado de forma continua durante <strong>{studentData.exactMonths.toFixed(1)} meses</strong> y ha completado un total de <strong>{studentData.exactLevels} niveles</strong>. 
-                  Basado en este historial de progresión, su ritmo de aprendizaje actual se clasifica como <strong className={colorClass}>{estado}</strong>.
-                  <br/><br/>
-                  <span className="uppercase tracking-widest text-[10px] font-black opacity-70 block mb-1">Directiva de Seguimiento:</span>
-                  {estrategia}
-                </p>
-              );
-            } else {
-              const totalStudents = chartData.standard.length + chartData.outliers.length;
-              const outlierCount = chartData.outliers.length;
-              const outlierPercent = ((outlierCount / totalStudents) * 100).toFixed(1);
-              
-              let estado = "NORMAL";
-              let colorClass = "text-blue-400";
-              let estrategia = "La cohorte de estudiantes en general avanza al ritmo esperado. Mantener las metodologías y ciclos de enseñanza estándar.";
-              
-              if (outlierPercent >= 10) {
-                estado = "ALTO RENDIMIENTO";
-                colorClass = "text-emerald-400";
-                estrategia = "Existe un porcentaje significativo de estudiantes acelerados. Se recomienda abrir más horarios de niveles avanzados y considerar estrategias de ventas adicionales ('upsells') hacia programas de inmersión.";
-              } else if (outlierPercent > 0) {
-                estado = "PROMEDIO SÓLIDO";
-                colorClass = "text-yellow-400";
-                estrategia = "Aparición temprana de estudiantes de alto rendimiento identificada. Monitorear de cerca a estos casos atípicos (puntos verdes) para proveer material estimulante y evitar desgaste por aburrimiento.";
-              }
-
-              return (
-                <p>
-                  De los <strong>{totalStudents}</strong> perfiles activos analizados globalmente, <strong>{outlierCount}</strong> estudiantes ({outlierPercent}%) se clasifican como atípicos acelerados, logrando completar 4 o más niveles en periodos inferiores a 3 meses. 
-                  Este volumen indica un comportamiento de progresión global de categoría <strong className={colorClass}>{estado}</strong>.
-                  <br/><br/>
-                  <span className="uppercase tracking-widest text-[10px] font-black opacity-70 block mb-1">Directiva Académica Global:</span>
-                  {estrategia}
+                  No se han registrado datos de progresión y pagos suficientes para realizar un análisis de ritmo de aprendizaje.
                 </p>
               );
             }
+
+            if (studentId) {
+              const studentData =
+                chartData.outliers.length > 0 ? chartData.outliers[0] : chartData.standard[0];
+              if (!studentData) {
+                return (
+                  <p>
+                    Faltan datos de facturación o progreso para calcular el ritmo exacto de este estudiante.
+                  </p>
+                );
+              }
+
+              const isOutlier = chartData.outliers.length > 0;
+              const estado = isOutlier ? 'ACELERADO' : 'ESTÁNDAR';
+              const colorClass = isOutlier ? 'text-[#128063]' : 'text-[#454d82]';
+              const estrategia = isOutlier
+                ? 'El estudiante avanza a un ritmo excepcional (≥ 4 niveles completados en ≤ 3 meses). Considerar invitarlo al programa intensivo o utilizarlo como caso de éxito en marketing.'
+                : 'El estudiante mantiene una velocidad de aprendizaje dentro del promedio proyectado. Continuar monitoreando su rendimiento general en clases para asegurar retención a largo plazo.';
+
+              return (
+                <p>
+                  Este estudiante ha estado matriculado de forma continua durante{' '}
+                  <strong className="text-[#1e2246]">{studentData.exactMonths.toFixed(1)} meses</strong> y ha
+                  completado un total de{' '}
+                  <strong className="text-[#1e2246]">{studentData.exactLevels} niveles</strong>. Basado en este
+                  historial de progresión, su ritmo de aprendizaje actual se clasifica como{' '}
+                  <strong className={colorClass}>{estado}</strong>. {estrategia}
+                </p>
+              );
+            }
+
+            let estado = 'NORMAL';
+            let colorClass = 'text-[#454d82]';
+            let estrategia =
+              'La cohorte de estudiantes en general avanza al ritmo esperado. Mantener las metodologías y ciclos de enseñanza estándar.';
+
+            if (parseFloat(outlierPct) >= 10) {
+              estado = 'ALTO RENDIMIENTO';
+              colorClass = 'text-[#128063]';
+              estrategia =
+                'Existe un porcentaje significativo de estudiantes acelerados. Se recomienda abrir más horarios de niveles avanzados y considerar estrategias de ventas adicionales (upsells) hacia programas de inmersión.';
+            } else if (parseFloat(outlierPct) > 0) {
+              estado = 'PROMEDIO SÓLIDO';
+              colorClass = 'text-[#b37a00]';
+              estrategia =
+                'Aparición temprana de estudiantes de alto rendimiento identificada. Monitorear de cerca a estos casos atípicos (puntos verdes) para proveer material estimulante y evitar desgaste por aburrimiento.';
+            }
+
+            return (
+              <p>
+                De los <strong className="text-[#1e2246]">{totalCount}</strong> perfiles activos analizados
+                globalmente, <strong className="text-[#1e2246]">{outlierCount}</strong> estudiantes ({outlierPct}%) se
+                clasifican como atípicos acelerados, logrando completar 4 o más niveles en periodos inferiores a 3
+                meses. Este volumen indica un comportamiento de progresión global de categoría{' '}
+                <strong className={colorClass}>{estado}</strong>. {estrategia}
+              </p>
+            );
           })()}
         </div>
       </div>

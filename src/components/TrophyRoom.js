@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../SupabaseClient';
 import { OutLoudIcon } from './OutLoudBrand';
 
@@ -65,10 +65,9 @@ const TrophyPlayer = ({ assetUrl, videoUrl, tier, color, isModal = false, isUnlo
         clearTimeout(fadeOutTimer);
         clearTimeout(swapTimer);
       };
-    } else {
-      setShowSpawn(false);
-      setFading(false);
     }
+    setShowSpawn(false);
+    setFading(false);
   }, [isModal, isUnlocked, videoUrl, assetUrl]);
 
   const activeUrl = showSpawn ? videoUrl : assetUrl;
@@ -112,26 +111,39 @@ const TrophyPlayer = ({ assetUrl, videoUrl, tier, color, isModal = false, isUnlo
   );
 };
 
+// Flat 2px-Stroked Duotone Trophy Emblem matching Landing Page SVG grammar
+const TrophyHeaderEmblem = () => (
+  <svg className="w-12 h-12 shrink-0" viewBox="0 0 64 64" fill="none">
+    <rect x="4" y="4" width="56" height="56" rx="16" fill="#ffc749" stroke="#1e2246" strokeWidth="2.6" />
+    <path d="M22 20 H15 C15 29 18.5 34 24 34" stroke="#1e2246" strokeWidth="2.4" strokeLinecap="round" />
+    <path d="M42 20 H49 C49 29 45.5 34 40 34" stroke="#1e2246" strokeWidth="2.4" strokeLinecap="round" />
+    <path d="M21 16 H43 V29 C43 37 38 42 32 42 C26 42 21 37 21 29 V16 Z" fill="#ffffff" stroke="#1e2246" strokeWidth="2.4" />
+    <circle cx="32" cy="27" r="5.5" fill="#5b64a0" />
+    <rect x="29" y="42" width="6" height="5" fill="#5b64a0" stroke="#1e2246" strokeWidth="2" />
+    <rect x="23" y="47" width="18" height="5" rx="2.5" fill="#16a37f" stroke="#1e2246" strokeWidth="2.2" />
+  </svg>
+);
+
 const TrophyRoomStyles = () => (
   <style>{`
-    .ola-trophy-shell {
-      background: linear-gradient(155deg, #d7dcf5 0%, #eaedfb 34%, #f7eff0 66%, #fdebc0 100%);
+    .ola-trophy-canvas {
+      background: linear-gradient(125deg, #fdebc0 0%, #f6eff5 44%, #e5e8fa 76%, #d9dff8 100%);
     }
-    .ola-trophy-glass {
-      background: linear-gradient(142deg, rgba(255, 255, 255, 0.86) 0%, rgba(244, 246, 255, 0.66) 100%);
-      backdrop-filter: blur(26px) saturate(185%);
-      -webkit-backdrop-filter: blur(26px) saturate(185%);
-      border: 1.5px solid rgba(255, 255, 255, 0.96);
-      box-shadow: 0 22px 50px -16px rgba(55, 63, 118, 0.25), inset 0 1.5px 1px #ffffff;
+    .ola-trophy-card-pearl {
+      background: linear-gradient(160deg, rgba(255, 255, 255, 0.94) 0%, rgba(242, 244, 253, 0.84) 100%);
+      backdrop-filter: blur(22px) saturate(175%);
+      -webkit-backdrop-filter: blur(22px) saturate(175%);
+      border: 2px solid #ffffff;
+      box-shadow: 0 20px 42px -18px rgba(55, 63, 118, 0.22), inset 0 2px 2px #ffffff;
     }
-    .ola-trophy-card {
+    .ola-trophy-lift {
       transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.22s ease, border-color 0.22s ease;
     }
-    .ola-trophy-card:hover {
+    .ola-trophy-lift:hover {
       transform: translateY(-6px);
-      box-shadow: 0 24px 46px -14px rgba(30, 34, 70, 0.32);
+      box-shadow: 0 24px 48px -16px rgba(30, 34, 70, 0.32);
     }
-    .ola-trophy-card:active {
+    .ola-trophy-lift:active {
       transform: translateY(-1px) scale(0.99);
     }
     @keyframes olaTrophyModalIn {
@@ -150,14 +162,12 @@ export default function TrophyRoom({ targetUser, currentUserRole, onClose, isAdm
   const [activeCategory, setActiveCategory] = useState('ALL');
   const [loading, setLoading] = useState(true);
   const [selectedTrophy, setSelectedTrophy] = useState(null);
+  const [isUpdatingOverride, setIsUpdatingOverride] = useState(false);
 
-  useEffect(() => {
-    if (!targetUser?.id) return;
-    fetchTrophyData();
-    
-  }, [targetUser]);
+  const targetUserId = targetUser?.id || null;
 
-  const fetchTrophyData = async () => {
+  const fetchTrophyData = useCallback(async () => {
+    if (!targetUserId) return;
     setLoading(true);
     try {
       const { data: achievements } = await supabase
@@ -168,7 +178,7 @@ export default function TrophyRoom({ targetUser, currentUserRole, onClose, isAdm
       const { data: progress } = await supabase
         .from('user_achievements')
         .select('*')
-        .eq('user_id', targetUser.id);
+        .eq('user_id', targetUserId);
 
       const progressMap = {};
       if (progress) {
@@ -184,12 +194,55 @@ export default function TrophyRoom({ targetUser, currentUserRole, onClose, isAdm
     } finally {
       setLoading(false);
     }
+  }, [targetUserId]);
+
+  useEffect(() => {
+    fetchTrophyData();
+  }, [fetchTrophyData]);
+
+  const handleAdminOverride = async (trophy, shouldUnlock) => {
+    if (!isAdminOverrideEnabled || currentUserRole !== 'admin' || !targetUserId) return;
+    setIsUpdatingOverride(true);
+    try {
+      if (shouldUnlock) {
+        await supabase.from('user_achievements').upsert(
+          {
+            user_id: targetUserId,
+            achievement_id: trophy.id,
+            current_progress: trophy.target_value || 1,
+            unlocked_at: new Date().toISOString(),
+          },
+          { onConflict: 'user_id,achievement_id' }
+        );
+      } else {
+        await supabase
+          .from('user_achievements')
+          .delete()
+          .eq('user_id', targetUserId)
+          .eq('achievement_id', trophy.id);
+      }
+      await fetchTrophyData();
+      setSelectedTrophy((prev) =>
+        prev
+          ? {
+              ...prev,
+              isUnlocked: shouldUnlock,
+              currentVal: shouldUnlock ? prev.target_value || 1 : 0,
+            }
+          : null
+      );
+    } catch (err) {
+      console.error('Error updating trophy override:', err);
+    } finally {
+      setIsUpdatingOverride(false);
+    }
   };
 
-  const categories = ['ALL', ...new Set(catalog.map((a) => a.category))];
+  const categories = ['ALL', ...new Set(catalog.map((a) => a.category).filter(Boolean))];
   const filteredCatalog =
     activeCategory === 'ALL' ? catalog : catalog.filter((a) => a.category === activeCategory);
   const unlockedCount = catalog.filter((a) => !!userProgress[a.id]?.unlocked_at).length;
+  const completionPct = catalog.length > 0 ? Math.round((unlockedCount / catalog.length) * 100) : 0;
 
   if (loading) {
     return (
@@ -208,37 +261,32 @@ export default function TrophyRoom({ targetUser, currentUserRole, onClose, isAdm
     >
       <TrophyRoomStyles />
 
-      <div className="ola-trophy-shell ola-trophy-modal-in w-full h-full max-w-7xl relative border-2 border-white/95 shadow-2xl rounded-none sm:rounded-[2.5rem] flex flex-col overflow-hidden z-10">
-        {/* Subtle Architectural Dotted Grid */}
+      <div className="ola-trophy-canvas ola-trophy-modal-in w-full h-full max-w-7xl relative border-2 border-white shadow-2xl rounded-none sm:rounded-[2.5rem] flex flex-col overflow-hidden z-10">
+        {/* Architectural Dot Grid matching Landing Page */}
         <div
           className="absolute inset-0 pointer-events-none z-0 opacity-75"
           style={{
-            backgroundImage: 'radial-gradient(rgba(72, 80, 134, 0.2) 1.4px, transparent 1.4px)',
-            backgroundSize: '24px 24px',
+            backgroundImage: 'radial-gradient(rgba(82, 91, 146, 0.22) 1.5px, transparent 1.5px)',
+            backgroundSize: '28px 28px',
           }}
         />
 
         {/* TOP HEADER */}
-        <header className="flex justify-between items-center p-5 sm:px-8 sm:py-6 border-b border-white/90 shrink-0 bg-white/65 backdrop-blur-2xl relative z-20 shadow-sm">
-          <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 bg-[#ffc749] rounded-2xl border-2 border-[#1e2246] shadow-[0_3px_0_#1e2246] flex items-center justify-center text-[#1e2246] shrink-0">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.1" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 007.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M7.73 9.728a6.726 6.726 0 002.748 1.35m8.272-6.842V4.5c0 2.108-.966 3.99-2.48 5.228m2.48-5.492a46.32 46.32 0 012.916.52 6.003 6.003 0 01-5.395 4.972m0 0a6.726 6.726 0 01-2.749 1.35m0 0a6.772 6.772 0 01-3.044 0"
-                />
-              </svg>
-            </div>
-            <div>
-              <h2 className="text-xl sm:text-2xl font-extrabold text-[#1e2246] uppercase tracking-tight leading-none">
-                Trophy Cabinet
-              </h2>
-              <p className="text-[#454d82] font-bold text-[10.5px] sm:text-xs uppercase tracking-widest mt-1">
+        <header className="flex justify-between items-center p-5 sm:px-8 sm:py-5 border-b-2 border-white shrink-0 bg-white/75 backdrop-blur-2xl relative z-20 shadow-sm">
+          <div className="flex items-center gap-3.5 min-w-0">
+            <TrophyHeaderEmblem />
+            <div className="min-w-0">
+              <span className="inline-block text-[9.5px] font-extrabold uppercase tracking-widest bg-[#1e2246] text-[#ffc749] px-2.5 py-0.5 rounded-full mb-1">
                 {currentUserRole === 'admin'
-                  ? `Viewing: ${targetUser.first_name}'s Achievements`
-                  : `OutLoud Legacy • ${unlockedCount} / ${catalog.length} Unlocked`}
-              </p>
+                  ? `Viewing: ${targetUser?.first_name || 'Student'}`
+                  : 'Tu Legado OutLoud'}
+              </span>
+              <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight leading-none truncate">
+                <span className="text-[#1e2246]">Trophy </span>
+                <span className="text-[#626a9f]">
+                  Cabinet<span className="text-[#ffc749]">.</span>
+                </span>
+              </h2>
             </div>
           </div>
 
@@ -246,32 +294,56 @@ export default function TrophyRoom({ targetUser, currentUserRole, onClose, isAdm
             type="button"
             onClick={onClose}
             aria-label="Close Trophy Cabinet"
-            className="w-10 h-10 bg-white hover:bg-[#ffc749] border-2 border-[#1e2246] text-[#1e2246] rounded-full flex items-center justify-center transition-all active:scale-90 font-bold cursor-pointer shadow-sm"
+            className="w-10 h-10 bg-white hover:bg-[#ffc749] border-2 border-[#1e2246] shadow-[0_3px_0_#1e2246] text-[#1e2246] rounded-full flex items-center justify-center transition-all active:translate-y-0.5 font-bold cursor-pointer shrink-0"
           >
             ✕
           </button>
         </header>
 
-        {/* CATEGORY FILTER PILLS */}
-        <div className="flex gap-2 overflow-x-auto custom-scrollbar px-5 sm:px-8 py-3.5 bg-white/45 shrink-0 border-b border-white/80 relative z-20">
-          {categories.map((cat) => (
-            <button
-              type="button"
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
-              className={`px-4 py-2 rounded-full font-bold text-[10.5px] sm:text-xs uppercase tracking-wider whitespace-nowrap cursor-pointer transition-colors ${
-                activeCategory === cat
-                  ? 'bg-[#1e2246] text-[#ffc749] shadow-sm'
-                  : 'bg-white/80 text-[#454d82] hover:bg-white border border-white'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
+        {/* DARK-NAVY LEGACY PROGRESS STRIP + FLOATING CATEGORY PILLS */}
+        <div className="px-5 sm:px-8 pt-4 pb-3 shrink-0 relative z-20 flex flex-col gap-3.5">
+          <div className="bg-[#1e2246] text-white rounded-[1.5rem] px-5 py-3.5 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#ffc749] shrink-0" />
+              <div>
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#ffc749] block leading-none">
+                  Colección Desbloqueada
+                </span>
+                <p className="text-xs sm:text-sm font-bold text-white mt-0.5">
+                  {unlockedCount} de {catalog.length} Trofeos Conquistados ({completionPct}%)
+                </p>
+              </div>
+            </div>
+
+            <div className="w-full sm:w-56 h-2.5 bg-white/15 rounded-full overflow-hidden shrink-0">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-[#ffc749] to-[#16a37f] transition-all duration-700"
+                style={{ width: `${completionPct}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Floating White Pill Filter Capsule */}
+          <div className="flex gap-1.5 overflow-x-auto custom-scrollbar bg-white/95 border-2 border-white rounded-full p-1.5 w-fit max-w-full shadow-[0_10px_24px_-12px_rgba(69,77,130,0.22)]">
+            {categories.map((cat) => (
+              <button
+                type="button"
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                className={`px-4 py-1.5 rounded-full font-extrabold text-[10.5px] sm:text-xs uppercase tracking-wider whitespace-nowrap cursor-pointer transition-colors ${
+                  activeCategory === cat
+                    ? 'bg-[#1e2246] text-[#ffc749] shadow-sm'
+                    : 'text-[#454d82] hover:text-[#1e2246] hover:bg-[#f2f4fc]'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* TROPHY SHOWCASE GRID */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-5 sm:p-8 relative z-10">
+        <div className="flex-1 overflow-y-auto custom-scrollbar px-5 sm:px-8 pb-8 pt-2 relative z-10">
           {filteredCatalog.length === 0 ? (
             <div className="h-full flex items-center justify-center text-[#626a9f] font-bold uppercase tracking-widest text-xs py-16">
               No trophies in this category yet.
@@ -291,14 +363,25 @@ export default function TrophyRoom({ targetUser, currentUserRole, onClose, isAdm
                   <div
                     key={trophy.id}
                     onClick={() => setSelectedTrophy({ ...trophy, isUnlocked, currentVal })}
-                    className={`ola-trophy-card relative w-full max-w-[290px] rounded-[2rem] border-2 flex flex-col overflow-hidden cursor-pointer group ${
+                    className={`ola-trophy-lift relative w-full max-w-[290px] rounded-[2rem] border-2 flex flex-col overflow-hidden cursor-pointer group ${
                       isUnlocked
-                        ? 'bg-white/85 border-white shadow-[0_18px_38px_-14px_rgba(55,63,118,0.24)]'
-                        : 'bg-white/60 border-white/80 opacity-85'
+                        ? 'bg-white border-white shadow-[0_20px_40px_-16px_rgba(55,63,118,0.24)]'
+                        : 'bg-white/75 border-white/90 shadow-sm'
                     }`}
                   >
                     {/* DEEP INDIGO 3D PEDESTAL CHAMBER (Preserves mix-blend-screen video brilliance) */}
                     <div className="relative h-60 sm:h-64 w-full bg-gradient-to-b from-[#1e2246] via-[#171b3a] to-[#0f132b] overflow-hidden flex items-center justify-center">
+                      {/* Top Status Pill */}
+                      <span
+                        className={`absolute top-3 right-3 z-30 text-[9px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
+                          isUnlocked
+                            ? 'bg-[#16a37f] text-white'
+                            : 'bg-white/15 text-white/80 backdrop-blur-md'
+                        }`}
+                      >
+                        {isUnlocked ? 'Unlocked ✓' : 'Locked'}
+                      </span>
+
                       {isUnlocked && (
                         <>
                           <div
@@ -336,12 +419,11 @@ export default function TrophyRoom({ targetUser, currentUserRole, onClose, isAdm
 
                       {!isUnlocked && (
                         <div className="absolute inset-0 flex items-center justify-center z-30">
-                          <div className="bg-[#1e2246]/80 backdrop-blur-md p-3.5 rounded-full border border-white/25 shadow-xl">
-                            <svg className="w-7 h-7 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <div className="bg-white/95 p-3.5 rounded-2xl border-2 border-[#1e2246] shadow-[0_4px_0_#1e2246] text-[#1e2246]">
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.3" viewBox="0 0 24 24">
                               <path
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
-                                strokeWidth="2"
                                 d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
                               />
                             </svg>
@@ -351,16 +433,16 @@ export default function TrophyRoom({ targetUser, currentUserRole, onClose, isAdm
                     </div>
 
                     {/* LIGHT-GLASS PLAQUE */}
-                    <div className="p-4 sm:p-5 text-center flex flex-col items-center flex-1 justify-between bg-white/85">
+                    <div className="p-4 sm:p-5 text-center flex flex-col items-center flex-1 justify-between bg-white">
                       <div>
-                        <h3 className="text-xs sm:text-sm font-extrabold uppercase tracking-tight text-[#1e2246] mb-1.5 line-clamp-2">
+                        <h3 className="text-xs sm:text-sm font-extrabold uppercase tracking-tight text-[#1e2246] mb-2 line-clamp-2">
                           {isSecret && currentUserRole === 'admin' ? `[SECRET] ${trophy.title}` : trophy.title}
                         </h3>
                         <span
-                          className="inline-block px-3 py-0.5 rounded-full text-[9.5px] font-bold uppercase tracking-widest border"
+                          className="inline-block px-3 py-0.5 rounded-full text-[9.5px] font-extrabold uppercase tracking-widest border"
                           style={{
                             color: isUnlocked ? '#1e2246' : '#626a9f',
-                            backgroundColor: isUnlocked ? `${hexColor}30` : '#f2f4fb',
+                            backgroundColor: isUnlocked ? `${hexColor}30` : '#f4f6fc',
                             borderColor: isUnlocked ? hexColor : '#dfe2f2',
                           }}
                         >
@@ -370,6 +452,12 @@ export default function TrophyRoom({ targetUser, currentUserRole, onClose, isAdm
 
                       {!isUnlocked && trophy.target_value > 1 && (
                         <div className="w-full mt-3.5">
+                          <div className="flex justify-between text-[9.5px] font-bold text-[#626a9f] mb-1">
+                            <span>Progreso</span>
+                            <span>
+                              {currentVal}/{trophy.target_value}
+                            </span>
+                          </div>
                           <div className="w-full h-2 bg-[#e8eaf7] rounded-full overflow-hidden">
                             <div
                               className="h-full rounded-full transition-all duration-700"
@@ -397,21 +485,21 @@ export default function TrophyRoom({ targetUser, currentUserRole, onClose, isAdm
           onClick={() => setSelectedTrophy(null)}
         >
           <div
-            className="ola-trophy-glass ola-trophy-modal-in rounded-[2.5rem] p-6 sm:p-9 max-w-xl w-full relative flex flex-col items-center text-center my-auto"
+            className="ola-trophy-card-pearl ola-trophy-modal-in rounded-[2.5rem] p-6 sm:p-9 max-w-xl w-full relative flex flex-col items-center text-center my-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               type="button"
               onClick={() => setSelectedTrophy(null)}
-              className="absolute top-5 right-5 w-9 h-9 bg-white hover:bg-[#ffc749] border-2 border-[#1e2246] text-[#1e2246] rounded-full font-bold flex items-center justify-center z-50 cursor-pointer"
+              className="absolute top-5 right-5 w-9 h-9 bg-white hover:bg-[#ffc749] border-2 border-[#1e2246] shadow-[0_3px_0_#1e2246] text-[#1e2246] rounded-full font-bold flex items-center justify-center z-50 cursor-pointer"
             >
               ✕
             </button>
 
             {/* Cinematic 3D Viewport */}
             <div
-              className={`w-full max-w-[280px] aspect-[3/4] mb-6 relative z-10 flex items-center justify-center overflow-hidden rounded-[2rem] shadow-xl border-2 border-[#1e2246] bg-gradient-to-b from-[#1e2246] to-[#0f132b] ${
-                selectedTrophy.isUnlocked ? 'opacity-100' : 'opacity-65 grayscale'
+              className={`w-full max-w-[270px] aspect-[3/4] mb-6 relative z-10 flex items-center justify-center overflow-hidden rounded-[2rem] shadow-xl border-2 border-[#1e2246] bg-gradient-to-b from-[#1e2246] to-[#0f132b] ${
+                selectedTrophy.isUnlocked ? 'opacity-100' : 'opacity-70 grayscale'
               }`}
             >
               <TrophyPlayer
@@ -425,12 +513,11 @@ export default function TrophyRoom({ targetUser, currentUserRole, onClose, isAdm
 
               {!selectedTrophy.isUnlocked && (
                 <div className="absolute inset-0 flex items-center justify-center z-40">
-                  <div className="bg-[#1e2246]/85 p-6 rounded-full border border-white/25 shadow-2xl">
-                    <svg className="w-12 h-12 text-white/85" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="bg-white/95 p-5 rounded-3xl border-2 border-[#1e2246] shadow-[0_5px_0_#1e2246] text-[#1e2246]">
+                    <svg className="w-10 h-10" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        strokeWidth="2"
                         d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
                       />
                     </svg>
@@ -445,7 +532,7 @@ export default function TrophyRoom({ targetUser, currentUserRole, onClose, isAdm
 
             <div className="flex items-center gap-2 mb-5">
               <span
-                className="px-3.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border"
+                className="px-3.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest border"
                 style={{
                   color: '#1e2246',
                   backgroundColor: `${getTierColor(selectedTrophy.tier)}35`,
@@ -454,20 +541,22 @@ export default function TrophyRoom({ targetUser, currentUserRole, onClose, isAdm
               >
                 {selectedTrophy.tier} Tier
               </span>
-              <span className="px-3.5 py-1 rounded-full bg-[#e8eaf7] text-[#454d82] text-[10px] font-bold uppercase tracking-widest">
+              <span className="px-3.5 py-1 rounded-full bg-[#e8eaf7] text-[#454d82] text-[10px] font-extrabold uppercase tracking-widest">
                 {selectedTrophy.category}
               </span>
             </div>
 
-            <div className="w-full bg-white/85 border border-white rounded-2xl p-5 mb-5 shadow-sm">
-              <h4 className="text-[10px] font-bold text-[#454d82] uppercase tracking-widest mb-1.5">Objective</h4>
+            <div className="w-full bg-[#f4f6fc] border border-white rounded-2xl p-5 mb-5 shadow-inner">
+              <h4 className="text-[10px] font-extrabold text-[#454d82] uppercase tracking-widest mb-1.5">
+                Objective
+              </h4>
               <p className="text-xs sm:text-sm text-[#282d57] font-medium leading-relaxed">
                 {selectedTrophy.description}
               </p>
             </div>
 
             {!selectedTrophy.isUnlocked && selectedTrophy.target_value > 1 && (
-              <div className="w-full bg-white/85 border border-white rounded-2xl p-5 mb-5 shadow-sm">
+              <div className="w-full bg-white border border-[#dfe2f2] rounded-2xl p-5 mb-5 shadow-sm">
                 <div className="flex justify-between items-end mb-2.5">
                   <div className="text-left">
                     <span className="text-[10px] font-bold uppercase tracking-widest text-[#626a9f] block">
@@ -482,7 +571,7 @@ export default function TrophyRoom({ targetUser, currentUserRole, onClose, isAdm
                     {Math.round((selectedTrophy.currentVal / selectedTrophy.target_value) * 100)}%
                   </span>
                 </div>
-                <div className="w-full h-2.5 bg-[#e8eaf7] rounded-full overflow-hidden">
+                <div className="w-full h-3 bg-[#e8eaf7] rounded-full overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all duration-700"
                     style={{
@@ -512,16 +601,20 @@ export default function TrophyRoom({ targetUser, currentUserRole, onClose, isAdm
                 {!selectedTrophy.isUnlocked ? (
                   <button
                     type="button"
-                    className="flex-1 py-3 bg-[#ee665b] text-white border-2 border-[#1e2246] shadow-[0_3px_0_#1e2246] rounded-full font-bold text-xs uppercase tracking-widest cursor-pointer"
+                    disabled={isUpdatingOverride}
+                    onClick={() => handleAdminOverride(selectedTrophy, true)}
+                    className="flex-1 py-3 bg-gradient-to-b from-[#ffd66b] to-[#ffc749] text-[#1e2246] border-2 border-[#1e2246] shadow-[0_4px_0_#1e2246] rounded-full font-extrabold text-xs uppercase tracking-widest cursor-pointer disabled:opacity-50"
                   >
-                    Force Unlock
+                    {isUpdatingOverride ? 'Updating...' : 'Force Unlock ✓'}
                   </button>
                 ) : (
                   <button
                     type="button"
-                    className="flex-1 py-3 bg-[#ee665b]/15 hover:bg-[#ee665b] text-[#c93f34] hover:text-white border-2 border-[#ee665b] rounded-full font-bold text-xs uppercase tracking-widest transition-colors cursor-pointer"
+                    disabled={isUpdatingOverride}
+                    onClick={() => handleAdminOverride(selectedTrophy, false)}
+                    className="flex-1 py-3 bg-[#fff2f1] hover:bg-[#ee665b] text-[#c93f34] hover:text-white border-2 border-[#ee665b] rounded-full font-extrabold text-xs uppercase tracking-widest transition-colors cursor-pointer disabled:opacity-50"
                   >
-                    Revoke Trophy
+                    {isUpdatingOverride ? 'Updating...' : 'Revoke Trophy'}
                   </button>
                 )}
               </div>
