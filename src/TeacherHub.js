@@ -93,6 +93,31 @@ const TeacherThemeStyles = () => (
       100% { opacity: 1; transform: translateY(0) scale(1); }
     }
     .ola-th-modal-pop { animation: olaThModalPop 0.24s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+
+    .ola-no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .ola-no-scrollbar::-webkit-scrollbar { display: none; }
+
+    @media (max-width: 1023px) {
+      .ola-th-card-pearl {
+        background: #fdfcf8 !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        border: 2px solid rgba(30, 34, 70, 0.14) !important;
+        box-shadow: 0 5px 0 rgba(30, 34, 70, 0.08), 0 12px 24px -14px rgba(30, 34, 70, 0.18) !important;
+      }
+      .ola-th-card-gold,
+      .ola-th-card-indigo {
+        border: 2px solid #1e2246 !important;
+        box-shadow: 0 5px 0 #1e2246 !important;
+      }
+      .ola-th-card-mint {
+        border: 2px solid rgba(22, 163, 127, 0.65) !important;
+        box-shadow: 0 5px 0 rgba(18, 128, 99, 0.18) !important;
+      }
+      .ola-th-lift:hover {
+        transform: none !important;
+      }
+    }
   `}</style>
 );
 
@@ -205,13 +230,14 @@ const ProfileOverlay = ({ isOpen, onClose, teacher, pendingCount, onOpenEvaluati
   if (!isOpen) return null;
   return (
     <div
-      className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-[#1e2246]/55 backdrop-blur-xl font-montserrat"
+      className="fixed inset-0 z-[300] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#1e2246]/65 sm:backdrop-blur-xl font-montserrat"
       onClick={onClose}
     >
       <div
-        className="ola-th-card-pearl ola-th-modal-pop rounded-[2.25rem] p-6 w-full max-w-sm flex flex-col gap-3"
+        className="ola-th-card-pearl ola-th-modal-pop rounded-t-[2rem] sm:rounded-[2.25rem] p-5 sm:p-6 pb-8 sm:pb-6 w-full sm:max-w-sm flex flex-col gap-3"
         onClick={(e) => e.stopPropagation()}
       >
+        <div className="sm:hidden w-12 h-1.5 rounded-full bg-[#1e2246]/20 mx-auto mb-1" />
         <div className="flex items-center gap-3.5 border-b border-[#626a9f]/15 pb-4 mb-1">
           <img
             src={
@@ -295,7 +321,7 @@ const JitsiRoom = ({ session, teacher, onLeave }) => {
   };
 
   return (
-    <div className="fixed bottom-24 lg:bottom-6 right-4 sm:right-6 z-[9999] bg-[#1e2246] text-white border-2 border-[#ffc749] shadow-[0_20px_44px_-12px_rgba(30,34,70,0.6)] rounded-[2rem] p-5 max-w-xs w-full text-center flex flex-col items-center font-montserrat">
+    <div className="fixed bottom-24 lg:bottom-6 left-4 right-4 sm:left-auto sm:right-6 z-[9999] bg-[#1e2246] text-white border-2 border-[#ffc749] shadow-[0_20px_44px_-12px_rgba(30,34,70,0.6)] rounded-[2rem] p-5 sm:max-w-xs sm:w-full text-center flex flex-col items-center font-montserrat">
       <div className="flex items-center gap-2.5 mb-2">
         <span className="w-3 h-3 bg-[#ee665b] rounded-full animate-pulse shadow-[0_0_12px_#ee665b]" />
         <h2 className="text-xs font-extrabold uppercase tracking-widest text-[#ffc749]">
@@ -432,8 +458,11 @@ const EvaluationModal = ({ isOpen, onClose, pendingClasses, onGradeSubmitted, te
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[#1e2246]/60 backdrop-blur-xl font-montserrat overflow-y-auto">
-      <div className="ola-th-card-pearl ola-th-modal-pop relative w-full max-w-3xl rounded-[2.25rem] flex flex-col overflow-hidden my-auto max-h-[90vh]">
+    <div className="fixed inset-0 z-[200] flex items-end md:items-center justify-center p-0 md:p-4 bg-[#1e2246]/65 md:backdrop-blur-xl font-montserrat overflow-y-auto">
+      <div className="ola-th-card-pearl ola-th-modal-pop relative w-full max-w-3xl rounded-t-[2rem] md:rounded-[2.25rem] flex flex-col overflow-hidden md:my-auto max-h-[92dvh]">
+        <div className="md:hidden pt-3 pb-1 bg-[#fdfcf8] shrink-0">
+          <div className="w-12 h-1.5 rounded-full bg-[#1e2246]/20 mx-auto" />
+        </div>
         <div className="p-5 sm:p-7 border-b border-[#626a9f]/15 bg-white/75 flex justify-between items-start gap-4 shrink-0">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -601,9 +630,12 @@ const TeacherRosterModal = ({ isOpen, onClose, teacherId }) => {
   return (
     <div
       onClick={(e) => e.target === e.currentTarget && onClose()}
-      className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-[#1e2246]/55 backdrop-blur-xl font-montserrat"
+      className="fixed inset-0 z-[250] flex items-end md:items-center justify-center p-0 md:p-4 bg-[#1e2246]/65 md:backdrop-blur-xl font-montserrat"
     >
-      <div className="ola-th-card-pearl ola-th-modal-pop relative w-full max-w-2xl rounded-[2.25rem] flex flex-col max-h-[85vh] overflow-hidden">
+      <div className="ola-th-card-pearl ola-th-modal-pop relative w-full max-w-2xl rounded-t-[2rem] md:rounded-[2.25rem] flex flex-col max-h-[88dvh] overflow-hidden">
+        <div className="md:hidden pt-3 pb-1 bg-[#fdfcf8] shrink-0">
+          <div className="w-12 h-1.5 rounded-full bg-[#1e2246]/20 mx-auto" />
+        </div>
         <div className="p-5 sm:p-6 border-b border-[#626a9f]/15 flex justify-between items-center bg-white/75 shrink-0">
           <div>
             <span className="text-[10px] font-bold uppercase tracking-widest text-[#454d82] block">
@@ -983,7 +1015,7 @@ const TeacherMetricsModal = ({ isOpen, onClose, teacherId, teacherData }) => {
   return (
     <div
       onClick={(e) => e.target === e.currentTarget && onClose()}
-      className="fixed inset-0 z-[700] flex items-center justify-center p-4 bg-[#1e2246]/55 backdrop-blur-xl font-montserrat"
+      className="fixed inset-0 z-[700] flex items-end md:items-center justify-center p-0 md:p-4 bg-[#1e2246]/65 md:backdrop-blur-xl font-montserrat"
     >
       {/* INFO OVERLAYS */}
       {infoOverlay && (
@@ -1053,7 +1085,10 @@ const TeacherMetricsModal = ({ isOpen, onClose, teacherId, teacherData }) => {
         </div>
       )}
 
-      <div className="ola-th-card-pearl ola-th-modal-pop relative w-full max-w-4xl rounded-[2.25rem] flex flex-col h-[85vh] overflow-hidden">
+      <div className="ola-th-card-pearl ola-th-modal-pop relative w-full max-w-4xl rounded-t-[2rem] md:rounded-[2.25rem] flex flex-col h-[90dvh] md:h-[85vh] overflow-hidden">
+        <div className="md:hidden pt-3 pb-1 bg-[#fdfcf8] shrink-0">
+          <div className="w-12 h-1.5 rounded-full bg-[#1e2246]/20 mx-auto" />
+        </div>
         <div className="flex flex-col border-b border-[#626a9f]/15 shrink-0 bg-white/80 pt-5 px-6 pb-4">
           <div className="flex justify-between items-center mb-4">
             <div>
@@ -1529,17 +1564,17 @@ const TeacherHub = ({ onReturnHome }) => {
       {/* ==========================================
           1. FLOATING LANDING-STYLE TOP NAVBAR
       ========================================== */}
-      <header className="sticky top-0 z-40 px-4 sm:px-6 lg:px-10 py-3.5 bg-white/60 backdrop-blur-2xl border-b border-white/85">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
-          {/* Left: Real OutLoud Logo */}
+      <header className="sticky top-0 z-40 px-3.5 sm:px-6 lg:px-10 py-3 lg:py-3.5 bg-[#fdfcf8]/95 lg:bg-white/60 lg:backdrop-blur-2xl border-b-2 border-[#1e2246]/10 lg:border-white/85">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-3">
+          {/* Left: Real OutLoud Logo + Role Pill */}
           <button
             type="button"
             onClick={onReturnHome}
-            className="flex items-center gap-2.5 cursor-pointer focus:outline-none shrink-0"
+            className="flex items-center gap-2 cursor-pointer focus:outline-none shrink-0"
             title="Volver al inicio"
           >
-            <OutLoudHorizontalLogo iconClass="w-9 h-9 sm:w-10 sm:h-10" wordmarkClass="h-7 sm:h-8 w-auto" />
-            <span className="hidden xl:inline-flex items-center text-[9.5px] font-extrabold uppercase tracking-widest bg-[#1e2246] text-[#ffc749] px-2.5 py-1 rounded-full">
+            <OutLoudHorizontalLogo iconClass="w-8 h-8 sm:w-10 sm:h-10" wordmarkClass="h-6 sm:h-8 w-auto" />
+            <span className="inline-flex lg:hidden xl:inline-flex items-center text-[9px] sm:text-[9.5px] font-extrabold uppercase tracking-widest bg-[#1e2246] text-[#ffc749] px-2.5 py-1 rounded-full">
               Teacher
             </span>
           </button>
@@ -1653,23 +1688,23 @@ const TeacherHub = ({ onReturnHome }) => {
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          <div className="flex items-center gap-2.5 w-full md:w-auto shrink-0">
             <a
               href="https://wa.me/584226885683"
               target="_blank"
               rel="noreferrer"
-              className="ola-th-btn-outline px-5 py-2.5 rounded-full text-[11px] font-extrabold uppercase tracking-widest"
+              className="ola-th-btn-outline flex-1 md:flex-none text-center px-4 sm:px-5 py-3 sm:py-2.5 rounded-full text-[10.5px] sm:text-[11px] font-extrabold uppercase tracking-wider sm:tracking-widest"
             >
-              Request Substitute
+              Request Sub
             </a>
             {nextClass && (
               <button
                 type="button"
                 onClick={() => handleAction('Live')}
                 disabled={isLaunching}
-                className="ola-th-btn-yellow px-5 py-2.5 rounded-full text-[11px] font-extrabold uppercase tracking-widest cursor-pointer disabled:opacity-50"
+                className="ola-th-btn-yellow flex-1 md:flex-none text-center px-4 sm:px-5 py-3 sm:py-2.5 rounded-full text-[10.5px] sm:text-[11px] font-extrabold uppercase tracking-wider sm:tracking-widest cursor-pointer disabled:opacity-50"
               >
-                {isLaunching ? 'Launching...' : `Start Class (U${nextClass.unit}) →`}
+                {isLaunching ? 'Launching...' : `Start (U${nextClass.unit}) →`}
               </button>
             )}
           </div>
@@ -1739,13 +1774,23 @@ const TeacherHub = ({ onReturnHome }) => {
             3. THE 3-CARD WORKFLOW HERO ROW
             (Start Class / Teaching Kit / Payroll & Metrics)
         ========================================== */}
-        <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <section className="flex flex-col gap-2.5">
+          <div className="lg:hidden flex items-center justify-between px-1">
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#454d82]">
+              Flujo de Clase
+            </span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#626a9f] bg-white px-2.5 py-0.5 rounded-full border border-[#1e2246]/15">
+              Desliza →
+            </span>
+          </div>
+
+          <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 -mx-4 px-4 pb-3 ola-no-scrollbar lg:grid lg:grid-cols-3 lg:gap-6 lg:mx-0 lg:px-0 lg:pb-0 lg:overflow-visible">
           {/* HERO 1: BUTTER-GOLD — START CLASS */}
           <button
             type="button"
             disabled={!nextClass || isLaunching}
             onClick={() => handleAction('Live')}
-            className={`ola-th-card-gold group relative rounded-[2.25rem] p-5 sm:p-6 flex flex-col justify-between text-left overflow-hidden focus:outline-none min-h-[370px] ${
+            className={`ola-th-card-gold group relative rounded-[2rem] lg:rounded-[2.25rem] p-5 sm:p-6 flex flex-col justify-between text-left overflow-hidden focus:outline-none w-[84vw] max-w-[345px] shrink-0 snap-center lg:w-auto lg:max-w-none min-h-[330px] lg:min-h-[370px] ${
               nextClass ? 'ola-th-lift cursor-pointer' : 'opacity-85 cursor-not-allowed'
             }`}
           >
@@ -1790,7 +1835,7 @@ const TeacherHub = ({ onReturnHome }) => {
           </button>
 
           {/* HERO 2: PERIWINKLE-INDIGO — TEACHING KIT (MANUALS + CUE CARDS) */}
-          <div className="ola-th-card-indigo ola-th-lift group relative rounded-[2.25rem] p-5 sm:p-6 flex flex-col justify-between text-left overflow-hidden min-h-[370px]">
+          <div className="ola-th-card-indigo ola-th-lift group relative rounded-[2rem] lg:rounded-[2.25rem] p-5 sm:p-6 flex flex-col justify-between text-left overflow-hidden w-[84vw] max-w-[345px] shrink-0 snap-center lg:w-auto lg:max-w-none min-h-[330px] lg:min-h-[370px]">
             <div className="pointer-events-none select-none absolute -bottom-10 -right-10 opacity-[0.12]">
               <OutLoudIcon withTile={false} className="w-44 h-44" />
             </div>
@@ -1833,7 +1878,7 @@ const TeacherHub = ({ onReturnHome }) => {
           <button
             type="button"
             onClick={() => setIsMetricsOpen(true)}
-            className="ola-th-card-pearl ola-th-lift group relative rounded-[2.25rem] p-5 sm:p-6 flex flex-col justify-between text-left overflow-hidden cursor-pointer focus:outline-none min-h-[370px]"
+            className="ola-th-card-pearl ola-th-lift group relative rounded-[2rem] lg:rounded-[2.25rem] p-5 sm:p-6 flex flex-col justify-between text-left overflow-hidden cursor-pointer focus:outline-none w-[84vw] max-w-[345px] shrink-0 snap-center lg:w-auto lg:max-w-none min-h-[330px] lg:min-h-[370px]"
           >
             <div className="relative z-10 w-full h-40 rounded-[1.5rem] bg-[#f4f6fc] border border-white shadow-inner flex items-center justify-center gap-5 px-4 mb-5">
               <div className="relative w-28 h-28 flex items-center justify-center shrink-0">
@@ -1891,6 +1936,7 @@ const TeacherHub = ({ onReturnHome }) => {
               </span>
             </div>
           </button>
+          </div>
         </section>
 
         {/* ==========================================
@@ -2038,14 +2084,14 @@ const TeacherHub = ({ onReturnHome }) => {
             )}
           </div>
 
-          <div className="flex gap-2 overflow-x-auto pb-3 mb-5 custom-scrollbar">
+          <div className="-mx-5 px-5 sm:mx-0 sm:px-0 flex gap-2 overflow-x-auto pb-2 mb-5 ola-no-scrollbar">
             <button
               type="button"
               onClick={() => setActiveCategory(null)}
-              className={`px-4 py-2 rounded-full text-[11px] font-extrabold whitespace-nowrap cursor-pointer border ${
+              className={`px-4 py-2 rounded-full text-[11px] font-extrabold whitespace-nowrap cursor-pointer border-2 sm:border ${
                 !activeCategory
                   ? 'bg-[#1e2246] border-[#1e2246] text-[#ffc749]'
-                  : 'bg-white border-white text-[#454d82]'
+                  : 'bg-white border-[#1e2246]/15 sm:border-white text-[#454d82]'
               }`}
             >
               Todos ({announcements.length})
@@ -2055,10 +2101,10 @@ const TeacherHub = ({ onReturnHome }) => {
                 type="button"
                 key={cat}
                 onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
-                className={`px-4 py-2 rounded-full text-[11px] font-bold whitespace-nowrap cursor-pointer border ${
+                className={`px-4 py-2 rounded-full text-[11px] font-bold whitespace-nowrap cursor-pointer border-2 sm:border ${
                   activeCategory === cat
                     ? 'bg-[#1e2246] border-[#1e2246] text-[#ffc749]'
-                    : 'bg-white border-white text-[#454d82] hover:border-[#626a9f]/35'
+                    : 'bg-white border-[#1e2246]/15 sm:border-white text-[#454d82] hover:border-[#626a9f]/35'
                 }`}
               >
                 {cat}
@@ -2102,43 +2148,80 @@ const TeacherHub = ({ onReturnHome }) => {
       </main>
 
       {/* ==========================================
-          6. MOBILE FLOATING CAPSULE DOCK
+6. MOBILE FLOATING EDITORIAL CAPSULE DOCK
       ========================================== */}
-      <nav className="lg:hidden fixed bottom-3 left-3 right-3 h-16 bg-white/92 backdrop-blur-2xl border-2 border-white rounded-full flex items-center justify-around px-2 z-50 shadow-[0_14px_34px_-8px_rgba(30,34,70,0.3)]">
+      <nav
+        className="lg:hidden fixed bottom-3 left-2.5 right-2.5 bg-[#fdfcf8] border-2 border-[#1e2246] rounded-[1.75rem] flex items-center justify-between px-1.5 py-1.5 z-50 shadow-[0_5px_0_#1e2246,0_14px_28px_-8px_rgba(30,34,70,0.32)]"
+        style={{ marginBottom: 'env(safe-area-inset-bottom, 0px)' }}
+      >
         <button
           type="button"
           onClick={() => handleAction('Calendar')}
-          className="flex flex-col items-center gap-0.5 text-[#454d82] hover:text-[#1e2246] px-2 cursor-pointer"
+          className="flex-1 flex flex-col items-center justify-center gap-1 py-1.5 rounded-2xl text-[#454d82] active:bg-[#fff3d1] active:text-[#1e2246] cursor-pointer"
         >
-          <span className="text-xs font-extrabold">Roster</span>
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.1" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <span className="text-[9px] font-extrabold leading-none">Roster</span>
         </button>
+
         <button
           type="button"
           onClick={() => handleAction('Manual')}
-          className="flex flex-col items-center gap-0.5 text-[#454d82] hover:text-[#1e2246] px-2 cursor-pointer"
+          className="flex-1 flex flex-col items-center justify-center gap-1 py-1.5 rounded-2xl text-[#454d82] active:bg-[#fff3d1] active:text-[#1e2246] cursor-pointer"
         >
-          <span className="text-xs font-extrabold">Manuals</span>
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.1" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+          </svg>
+          <span className="text-[9px] font-extrabold leading-none">Manuals</span>
         </button>
+
         <button
           type="button"
           onClick={() => handleAction('Tools')}
-          className="flex flex-col items-center gap-0.5 text-[#454d82] hover:text-[#1e2246] px-2 cursor-pointer"
+          className="flex-1 flex flex-col items-center justify-center gap-1 py-1.5 rounded-2xl text-[#454d82] active:bg-[#fff3d1] active:text-[#1e2246] cursor-pointer"
         >
-          <span className="text-xs font-extrabold">Cards</span>
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.1" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          </svg>
+          <span className="text-[9px] font-extrabold leading-none">Cards</span>
         </button>
+
         <button
           type="button"
           onClick={() => handleAction('Community_CHAT')}
-          className="flex flex-col items-center gap-0.5 text-[#454d82] hover:text-[#1e2246] px-2 cursor-pointer"
+          className="flex-1 flex flex-col items-center justify-center gap-1 py-1.5 rounded-2xl text-[#454d82] active:bg-[#fff3d1] active:text-[#1e2246] cursor-pointer"
         >
-          <span className="text-xs font-extrabold">Chat</span>
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.1" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          </svg>
+          <span className="text-[9px] font-extrabold leading-none">Chat</span>
         </button>
+
         <button
           type="button"
-          onClick={() => handleAction('Community_BOARD')}
-          className="flex flex-col items-center gap-0.5 text-[#454d82] hover:text-[#1e2246] px-2 cursor-pointer"
+          onClick={() => (pendingEvaluations.length > 0 ? setIsEvalModalOpen(true) : handleAction('Community_BOARD'))}
+          className={`relative flex-1 flex flex-col items-center justify-center gap-1 py-1.5 rounded-2xl cursor-pointer ${
+            pendingEvaluations.length > 0
+              ? 'bg-[#ee665b] text-white border-2 border-[#1e2246] shadow-[0_2px_0_#1e2246] -translate-y-0.5'
+              : 'bg-[#ffc749] text-[#1e2246] border-2 border-[#1e2246] shadow-[0_2px_0_#1e2246] -translate-y-0.5'
+          }`}
         >
-          <span className="text-xs font-extrabold">Forum</span>
+          {pendingEvaluations.length > 0 ? (
+            <>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-[9px] font-extrabold leading-none">Grade ({pendingEvaluations.length})</span>
+            </>
+          ) : (
+            <>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.1" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
+              </svg>
+              <span className="text-[9px] font-extrabold leading-none">Forum</span>
+            </>
+          )}
         </button>
       </nav>
 

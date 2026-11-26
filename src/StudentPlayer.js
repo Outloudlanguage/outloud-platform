@@ -3,13 +3,30 @@ import { supabase } from './SupabaseClient';
 import RecordCompareActivity from './RecordCompareActivity';
 import { OutLoudHorizontalLogo, OutLoudIcon } from './components/OutLoudBrand';
 
+const isDirectVideoUrl = (url) => /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(url || '');
+
 const extractVideoUrl = (rawInput) => {
   if (!rawInput) return '';
-  if (rawInput.includes('<iframe') && rawInput.includes('src=')) {
-    const match = rawInput.match(/src=["'](.*?)["']/);
-    if (match && match[1]) return match[1];
+  let url = rawInput.trim();
+  if (url.includes('<iframe') && url.includes('src=')) {
+    const match = url.match(/src=["'](.*?)["']/);
+    if (match && match[1]) url = match[1];
   }
-  return rawInput;
+
+  // Cloudflare Stream: transparent pillarbox/letterbox + OutLoud gold controls
+  if (/cloudflarestream\.com|videodelivery\.net/i.test(url)) {
+    try {
+      const parsed = new URL(url);
+      parsed.searchParams.set('letterboxColor', 'transparent');
+      parsed.searchParams.set('primaryColor', '#ffc749');
+      return parsed.toString();
+    } catch {
+      const sep = url.includes('?') ? '&' : '?';
+      return `${url}${sep}letterboxColor=transparent&primaryColor=%23ffc749`;
+    }
+  }
+
+  return url;
 };
 
 // Strips punctuation and spaces for bulletproof string comparison
@@ -168,8 +185,31 @@ const PlayerThemeStyles = () => (
     .ola-sp-enter { animation: olaSpEnter 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
     .ola-sp-spark { animation: olaSpSpark 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
 
+    .ola-sp-video-stage {
+      background: linear-gradient(135deg, #fdebc0 0%, #eaedfb 52%, #cfd6f7 100%);
+    }
+
     .ola-sp-root .font-black { font-weight: 800; }
     .ola-sp-root .font-extrabold { font-weight: 700; }
+
+    @media (max-width: 1023px) {
+      .ola-sp-card-pearl {
+        background: #fdfcf8 !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        border: 2px solid #1e2246 !important;
+        box-shadow: 0 5px 0 rgba(30, 34, 70, 0.14), 0 12px 24px -14px rgba(30, 34, 70, 0.18) !important;
+      }
+      .ola-sp-card-gold,
+      .ola-sp-card-indigo {
+        border: 2px solid #1e2246 !important;
+        box-shadow: 0 5px 0 #1e2246 !important;
+      }
+      .ola-sp-float,
+      .ola-sp-wave {
+        animation: none !important;
+      }
+    }
   `}</style>
 );
 
@@ -709,7 +749,7 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
           <PlayerBackdrop />
 
           {/* STICKY FLOATING-PILL TOP HEADER */}
-          <header className="sticky top-0 w-full px-4 sm:px-6 lg:px-10 py-3.5 z-50 shrink-0 border-b border-white/85 bg-white/60 backdrop-blur-2xl">
+          <header className="sticky top-0 w-full px-3.5 sm:px-6 lg:px-10 py-3 lg:py-3.5 z-50 shrink-0 border-b-2 lg:border-b border-[#1e2246]/10 lg:border-white/85 bg-[#fdfcf8]/95 lg:bg-white/60 lg:backdrop-blur-2xl">
             <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
               {/* Left: Real OutLoud Logo */}
               <div className="flex items-center gap-2.5 min-w-0 shrink-0">
@@ -799,27 +839,53 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
                       el.type === 'video' ? 'max-w-5xl' : 'max-w-4xl'
                     } rounded-[2.25rem] p-3 sm:p-5 mx-auto relative overflow-hidden`}
                   >
-                    {el.type === 'video' && (
-                      <div className="flex flex-col gap-3">
-                        <div className="flex items-center justify-between px-2">
-                          <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest bg-[#1e2246] text-[#ffc749] px-3 py-1 rounded-full">
-                            Video Interactivo
-                          </span>
-                          {videoWatched && (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-[#e7faf3] text-[#128063] px-3 py-1 rounded-full">
-                              ✓ Visto
+                    {el.type === 'video' && (() => {
+                      const videoSrc = extractVideoUrl(el.url);
+                      const directFile = isDirectVideoUrl(videoSrc);
+                      const isBunnyEmbed = /mediadelivery\.net/i.test(videoSrc);
+
+                      return (
+                        <div className="flex flex-col gap-3">
+                          <div className="flex items-center justify-between px-2">
+                            <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest bg-[#1e2246] text-[#ffc749] px-3 py-1 rounded-full">
+                              Video Interactivo
                             </span>
-                          )}
+                            {videoWatched && (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-[#e7faf3] text-[#128063] px-3 py-1 rounded-full">
+                                ✓ Visto
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="ola-sp-video-stage w-full rounded-[1.6rem] border-2 border-[#1e2246]/15 overflow-hidden flex items-center justify-center p-2 sm:p-3 shadow-inner">
+                            {directFile ? (
+                              <video
+                                src={videoSrc}
+                                controls
+                                playsInline
+                                controlsList="nodownload"
+                                onContextMenu={(e) => e.preventDefault()}
+                                onEnded={() => setVideoWatched(true)}
+                                className="w-auto max-w-full max-h-[68vh] rounded-[1.15rem] bg-transparent shadow-md"
+                              />
+                            ) : (
+                              <iframe
+                                src={videoSrc}
+                                title="Lesson Video"
+                                allowTransparency="true"
+                                className={`border-0 rounded-[1.15rem] bg-transparent ${
+                                  isBunnyEmbed
+                                    ? 'w-full max-w-[740px] aspect-[4/3] mx-auto shadow-md'
+                                    : 'w-full aspect-video'
+                                }`}
+                                allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                                allowFullScreen
+                              />
+                            )}
+                          </div>
                         </div>
-                        <iframe
-                          src={extractVideoUrl(el.url)}
-                          title="Lesson Video"
-                          className="w-full aspect-video border-2 border-[#1e2246]/15 rounded-[1.6rem] bg-[#1e2246] shadow-inner"
-                          allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
-                          allowFullScreen
-                        />
-                      </div>
-                    )}
+                      );
+                    })()}
 
                     {el.type === 'image' && (
                       <div className="bg-[#f4f6fc] rounded-[1.6rem] p-2 sm:p-3 border border-white flex items-center justify-center">
@@ -1578,8 +1644,11 @@ const StudentPlayer = ({ activityType, student, onExit, onComplete }) => {
           {dockElements.some(
             (el) => el.type === 'nav_button' && !contentElements.some((c) => c.type === 'record_compare')
           ) && (
-            <div className="fixed bottom-4 left-4 right-4 z-[520] flex justify-center pointer-events-none">
-              <div className="ola-sp-card-pearl pointer-events-auto rounded-full p-2 pl-4 sm:pl-6 max-w-2xl w-full flex items-center justify-between gap-3 relative shadow-[0_18px_40px_-12px_rgba(30,34,70,0.34)]">
+            <div
+              className="fixed bottom-3 sm:bottom-4 left-3 right-3 sm:left-4 sm:right-4 z-[520] flex justify-center pointer-events-none"
+              style={{ marginBottom: 'env(safe-area-inset-bottom, 0px)' }}
+            >
+              <div className="ola-sp-card-pearl pointer-events-auto rounded-full p-1.5 sm:p-2 pl-4 sm:pl-6 max-w-2xl w-full flex items-center justify-between gap-2.5 sm:gap-3 relative shadow-[0_6px_0_#1e2246,0_16px_32px_-10px_rgba(30,34,70,0.34)] lg:shadow-[0_18px_40px_-12px_rgba(30,34,70,0.34)]">
                 {/* Spark burst on perfect check */}
                 {navButtonState === 'correct' && (
                   <div className="pointer-events-none absolute -top-2 left-10 flex items-center justify-center">
