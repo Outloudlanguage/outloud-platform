@@ -863,19 +863,19 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
 
   const getTabsForRole = () => {
     if (userRole === 'Admin') {
-      return [{ id: 'INFO_PERSONAL', label: 'Info Personal & Control' }];
+      return [{ id: 'INFO_PERSONAL', label: 'Info Personal & Control', short: 'Info & Control' }];
     }
     if (userRole === 'Teacher') {
       return [
-        { id: 'INFO_PERSONAL', label: 'Info Personal' },
-        { id: 'PAYROLL', label: 'Nómina & Desglose' },
-        { id: 'TEACHER_STATS', label: 'Estadísticas' },
+        { id: 'INFO_PERSONAL', label: 'Info Personal', short: 'Info' },
+        { id: 'PAYROLL', label: 'Nómina & Desglose', short: 'Nómina' },
+        { id: 'TEACHER_STATS', label: 'Estadísticas', short: 'Stats' },
       ];
     }
     return [
-      { id: 'INFO_PERSONAL', label: 'Info Personal' },
-      { id: 'FINANZAS', label: 'Finanzas & Créditos' },
-      { id: 'ESTADISTICAS', label: 'Estadísticas' },
+      { id: 'INFO_PERSONAL', label: 'Info Personal', short: 'Info' },
+      { id: 'FINANZAS', label: 'Finanzas & Créditos', short: 'Finanzas' },
+      { id: 'ESTADISTICAS', label: 'Estadísticas', short: 'Stats' },
     ];
   };
 
@@ -889,7 +889,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
     <div
       id="modal-overlay"
       onClick={(e) => e.target.id === 'modal-overlay' && onClose()}
-      className="fixed inset-0 z-[300] flex items-end md:items-center justify-center p-0 md:p-4 bg-[#1e2246]/55 backdrop-blur-xl font-montserrat text-[#1e2246]"
+      className="fixed inset-0 z-[300] flex items-end md:items-center justify-center p-0 md:p-4 bg-[#1e2246]/65 md:backdrop-blur-xl font-montserrat text-[#1e2246]"
     >
       <style>{`
         .ola-smm-phone .PhoneInput { display: flex; align-items: center; width: 100%; }
@@ -906,6 +906,22 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
         .ola-smm-phone .PhoneInputCountry { margin-right: 0.4rem; }
         .ola-smm-phone .PhoneInputCountrySelectArrow { color: #454d82; }
         .ola-smm-phone .PhoneInputCountrySelect { color: #1e2246; background: #ffffff; }
+
+        @media (max-width: 767px) {
+          .ola-smm-sheet {
+            background: #fdfcf8 !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            border: 2px solid #1e2246 !important;
+            border-bottom: none !important;
+            box-shadow: 0 -8px 30px rgba(30, 34, 70, 0.28) !important;
+          }
+          .ola-smm-card {
+            background: #ffffff !important;
+            border: 2px solid rgba(30, 34, 70, 0.14) !important;
+            box-shadow: 0 3px 0 rgba(30, 34, 70, 0.08) !important;
+          }
+        }
       `}</style>
 
       {/* TOAST */}
@@ -924,10 +940,15 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
         </div>
       )}
 
-      <div className="bg-gradient-to-br from-white/95 to-[#f2f4fd]/90 backdrop-blur-2xl border-2 border-white shadow-[0_24px_54px_-16px_rgba(30,34,70,0.34),inset_0_2px_2px_#ffffff] relative w-full max-w-4xl max-h-[92vh] rounded-t-[2.25rem] md:rounded-[2.5rem] flex flex-col overflow-hidden">
+      <div className="ola-smm-sheet bg-gradient-to-br from-white/95 to-[#f2f4fd]/90 md:backdrop-blur-2xl border-2 border-[#1e2246] md:border-white shadow-[0_24px_54px_-16px_rgba(30,34,70,0.34),inset_0_2px_2px_#ffffff] relative w-full max-w-4xl max-h-[92dvh] rounded-t-[2rem] md:rounded-[2.5rem] flex flex-col overflow-hidden">
+        {/* MOBILE DRAG HANDLE */}
+        <div className="md:hidden pt-3 pb-1 bg-[#fdfcf8] shrink-0">
+          <div className="w-12 h-1.5 rounded-full bg-[#1e2246]/20 mx-auto" />
+        </div>
+
         {/* TOP IDENTITY HEADER */}
-        <div className="relative z-10 flex items-start justify-between p-5 sm:p-7 border-b border-[#626a9f]/15 bg-white/80 shrink-0">
-          <div className="flex items-center gap-4 overflow-hidden w-full pr-4">
+        <div className="relative z-10 flex items-start justify-between px-4 pt-2 pb-4 sm:p-7 border-b-2 md:border-b border-[#1e2246]/10 md:border-[#626a9f]/15 bg-[#fdfcf8] md:bg-white/80 shrink-0">
+          <div className="flex items-center gap-3 sm:gap-4 overflow-hidden w-full pr-2 sm:pr-4">
             <div className="relative shrink-0">
               <img
                 src={
@@ -937,7 +958,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                   )}&background=626a9f&color=fff`
                 }
                 alt="Profile Avatar"
-                className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl object-cover border-2 shadow-sm ${
+                className={`w-12 h-12 sm:w-16 sm:h-16 rounded-2xl object-cover border-2 shadow-sm ${
                   isPending
                     ? 'border-[#ffc749]'
                     : accountStatus === 'suspended'
@@ -1025,27 +1046,31 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
         </div>
 
         {/* FLOATING PILL TAB SWITCHER */}
-        <div className="relative z-10 px-5 sm:px-7 py-3 bg-white/55 border-b border-[#626a9f]/15 shrink-0">
-          <div className="flex gap-1 bg-[#e8eaf7] p-1 rounded-full border border-white">
+        <div className="relative z-10 px-4 sm:px-7 py-2.5 sm:py-3 bg-[#fdfcf8] md:bg-white/55 border-b-2 md:border-b border-[#1e2246]/10 md:border-[#626a9f]/15 shrink-0">
+          <div className="flex gap-1.5 sm:gap-1 bg-[#e8eaf7] p-1 rounded-2xl sm:rounded-full border-2 sm:border border-[#1e2246]/15 sm:border-white">
             {activeTabs.map((tab) => (
               <button
                 type="button"
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 py-2.5 px-3 rounded-full text-[10.5px] sm:text-xs font-extrabold uppercase tracking-wider cursor-pointer transition-colors ${
+                className={`flex-1 py-2 sm:py-2.5 px-2.5 sm:px-3 rounded-xl sm:rounded-full text-[10.5px] sm:text-xs font-extrabold uppercase tracking-wider cursor-pointer transition-all whitespace-nowrap ${
                   activeTab === tab.id
-                    ? 'bg-[#1e2246] text-[#ffc749] shadow-sm'
-                    : 'text-[#454d82] hover:text-[#1e2246]'
+                    ? 'bg-[#ffc749] md:bg-[#1e2246] text-[#1e2246] md:text-[#ffc749] border-2 md:border-0 border-[#1e2246] shadow-[0_2px_0_#1e2246] md:shadow-sm'
+                    : 'text-[#454d82] hover:text-[#1e2246] border-2 md:border-0 border-transparent'
                 }`}
               >
-                {tab.label}
+                <span className="sm:hidden">{tab.short}</span>
+                <span className="hidden sm:inline">{tab.label}</span>
               </button>
             ))}
           </div>
         </div>
 
         {/* BODY CONTENT */}
-        <div className="relative z-10 flex-grow overflow-y-auto custom-scrollbar p-5 sm:p-7">
+        <div
+          className="relative z-10 flex-grow overflow-y-auto custom-scrollbar p-4 sm:p-7"
+          style={{ paddingBottom: 'calc(1.75rem + env(safe-area-inset-bottom, 0px))' }}
+        >
           {/* ==========================================
               TAB 1: INFO PERSONAL
           ========================================== */}
@@ -1214,12 +1239,12 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                     </div>
                   )}
 
-                  <div className="flex gap-3 mt-6">
+                  <div className="flex flex-col-reverse sm:flex-row gap-3 mt-6">
                     <button
                       type="button"
                       onClick={handleDeleteLead}
                       disabled={isProcessing}
-                      className="w-1/3 py-3.5 bg-[#ee665b] text-white border-2 border-[#1e2246] shadow-[0_4px_0_#1e2246] font-extrabold tracking-widest text-xs uppercase rounded-full disabled:opacity-50 cursor-pointer"
+                      className="w-full sm:w-1/3 py-3.5 bg-[#ee665b] text-white border-2 border-[#1e2246] shadow-[0_4px_0_#1e2246] font-extrabold tracking-widest text-xs uppercase rounded-full disabled:opacity-50 cursor-pointer"
                     >
                       Descartar
                     </button>
@@ -1227,7 +1252,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                       type="button"
                       onClick={handleProvisionAccount}
                       disabled={isProcessing}
-                      className="w-2/3 py-3.5 bg-gradient-to-b from-[#ffd66b] to-[#ffc749] text-[#1e2246] border-2 border-[#1e2246] shadow-[0_4px_0_#1e2246] hover:-translate-y-0.5 font-extrabold tracking-widest text-xs uppercase rounded-full disabled:opacity-50 cursor-pointer transition-all"
+                      className="w-full sm:w-2/3 py-3.5 bg-gradient-to-b from-[#ffd66b] to-[#ffc749] text-[#1e2246] border-2 border-[#1e2246] shadow-[0_4px_0_#1e2246] hover:-translate-y-0.5 font-extrabold tracking-widest text-xs uppercase rounded-full disabled:opacity-50 cursor-pointer transition-all"
                     >
                       {isProcessing ? 'Procesando...' : 'Confirmar y Activar ✓'}
                     </button>
@@ -1467,7 +1492,7 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                           Guardar Corte
                         </button>
                       </div>
-                      <div className="flex gap-3 items-end">
+                      <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
                         <div className="flex-1">
                           <label className="block text-[10px] text-[#626a9f] font-bold uppercase mb-1.5">
                             Cohorte Mensual
@@ -1692,18 +1717,18 @@ const StudentManagerModal = ({ isOpen, onClose, userData, isPending, supabase, o
                           {paymentHistory.map((payment) => (
                             <div
                               key={payment.id}
-                              className="flex justify-between items-center bg-white border border-[#dfe2f2] p-3.5 rounded-2xl shadow-sm"
+                              className="ola-smm-card flex justify-between items-center gap-3 bg-white border border-[#dfe2f2] p-3.5 rounded-2xl shadow-sm"
                             >
-                              <div>
-                                <p className="text-[#1e2246] font-extrabold text-sm">
+                              <div className="min-w-0 flex-1">
+                                <p className="text-[#1e2246] font-extrabold text-sm truncate">
                                   {payment.payment_type || 'Mensualidad'}
                                 </p>
-                                <p className="text-[10.5px] text-[#50567d] font-semibold mt-0.5">
+                                <p className="text-[10.5px] text-[#50567d] font-semibold mt-0.5 break-words">
                                   Ref: <strong className="text-[#454d82]">{payment.reference_number}</strong> •{' '}
                                   {new Date(payment.created_at).toLocaleDateString('es-ES')}
                                 </p>
                               </div>
-                              <div className="text-right">
+                              <div className="text-right shrink-0">
                                 <p className="text-[#128063] font-extrabold text-base">${payment.amount}</p>
                                 {payment.status === 'processing' ? (
                                   <button

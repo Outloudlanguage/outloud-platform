@@ -21,7 +21,7 @@ import StudentManagerModal from './components/AdminHub/Tabs/StudentManagerModal'
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import StatisticsHub from './components/StatisticsHub';
-import AchievementsManager from './components/AdminHub/Tabs/AchievementsManager';
+
 import CommercialFunnelModule from './statistics_engines/CommercialFunnelModule';
 import ProfitMarginAnalysis from './statistics_engines/ProfitMarginAnalysis';
 import { OutLoudHorizontalLogo, OutLoudIcon } from './components/OutLoudBrand';
@@ -372,19 +372,7 @@ const EvaluatorTileIllustration = () => (
   </svg>
 );
 
-const TrophyTileIllustration = () => (
-  <svg className="w-24 h-20 transition-transform duration-300 group-hover:scale-105" viewBox="0 0 120 96" fill="none">
-    <path d="M22 30 L24 35 L29 37 L24 39 L22 44 L20 39 L15 37 L20 35 Z" fill="#626a9f" />
-    <circle cx="98" cy="28" r="3.5" fill="#ffc749" />
-    <path d="M40 24 H30 C30 38 35 45 43 45" stroke="#1e2246" strokeWidth="2.4" strokeLinecap="round" />
-    <path d="M80 24 H90 C90 38 85 45 77 45" stroke="#1e2246" strokeWidth="2.4" strokeLinecap="round" />
-    <path d="M38 18 H82 V40 C82 54 72 62 60 62 C48 62 38 54 38 40 V18 Z" fill="#ffc749" stroke="#1e2246" strokeWidth="2.4" />
-    <circle cx="60" cy="38" r="10" fill="#1e2246" />
-    <path d="M60 32 L61.8 36 L66 36.4 L62.8 39 L63.8 43 L60 40.8 L56.2 43 L57.2 39 L54 36.4 L58.2 36 Z" fill="#ffc749" />
-    <rect x="55" y="62" width="10" height="9" fill="#626a9f" stroke="#1e2246" strokeWidth="2.2" />
-    <rect x="44" y="71" width="32" height="8" rx="4" fill="#16a37f" stroke="#1e2246" strokeWidth="2.2" />
-  </svg>
-);
+
 
 const adminNavIcons = {
   accounts: (
@@ -3942,9 +3930,7 @@ const AdminHub = () => {
       );
     }
 
-    if (settingsView === 'ACHIEVEMENTS') {
-      return <AchievementsManager onBack={() => setSettingsView('MENU')} />;
-    }
+    
 
     const SETTINGS_TILES = [
       {
@@ -3955,14 +3941,7 @@ const AdminHub = () => {
         customArt: <EvaluatorTileIllustration />,
         action: () => setSettingsView('EVALUATOR'),
       },
-      {
-        name: 'Achievements',
-        desc: 'Manage badges & 3D trophies',
-        active: true,
-        accent: 'ola-adm-card-mint',
-        customArt: <TrophyTileIllustration />,
-        action: () => setSettingsView('ACHIEVEMENTS'),
-      },
+      
       {
         name: 'Tenants',
         desc: 'Workspace & access keys',

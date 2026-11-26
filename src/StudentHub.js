@@ -3,7 +3,6 @@ import { supabase } from './SupabaseClient';
 import StudentPlayer from './StudentPlayer';
 import ForumBoard from './ForumBoard';
 import SeminarRoom from './SeminarRoom';
-import TrophyRoom from './components/TrophyRoom';
 import { OutLoudHorizontalLogo, OutLoudIcon } from './components/OutLoudBrand';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts';
 
@@ -129,6 +128,34 @@ const HubThemeStyles = () => (
 
     .ola-sh-root .font-black { font-weight: 800; }
     .ola-sh-root .font-extrabold { font-weight: 700; }
+
+    .ola-no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .ola-no-scrollbar::-webkit-scrollbar { display: none; }
+
+    @media (max-width: 1023px) {
+      .ola-sh-card-pearl,
+      .ola-sh-card-cream,
+      .ola-sh-card-ice {
+        background: #fdfcf8 !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        border: 2px solid rgba(30, 34, 70, 0.14) !important;
+        box-shadow: 0 5px 0 rgba(30, 34, 70, 0.08), 0 12px 24px -14px rgba(30, 34, 70, 0.18) !important;
+      }
+      .ola-sh-card-gold,
+      .ola-sh-card-indigo {
+        border: 2px solid #1e2246 !important;
+        box-shadow: 0 5px 0 #1e2246 !important;
+      }
+      .ola-sh-lift:hover {
+        transform: none !important;
+      }
+      .ola-float-gentle,
+      .ola-float-reverse,
+      .ola-wave-bar {
+        animation: none !important;
+      }
+    }
   `}</style>
 );
 
@@ -343,26 +370,7 @@ const CommunityBentoIllustration = () => (
   </svg>
 );
 
-const TrophyBentoIllustration = () => (
-  <svg className="w-36 h-24 transition-transform duration-300 group-hover:scale-105" viewBox="0 0 160 110" fill="none">
-    {/* Shield / Trophy Emblem matching Landing Page shield style */}
-    <path d="M36 46 L38.5 52 L44.5 54.5 L38.5 57 L36 63 L33.5 57 L27.5 54.5 L33.5 52 Z" fill="#626a9f" />
-    <path d="M126 30 L128 35 L133 37 L128 39 L126 44 L124 39 L119 37 L124 35 Z" fill="#16a37f" />
-    <circle cx="122" cy="80" r="4" fill="#ffc749" />
 
-    {/* Cup Handles */}
-    <path d="M56 32 H44 C44 48 50 56 60 56" stroke="#1e2246" strokeWidth="2.4" strokeLinecap="round" fill="none" />
-    <path d="M104 32 H116 C116 48 110 56 100 56" stroke="#1e2246" strokeWidth="2.4" strokeLinecap="round" fill="none" />
-    {/* Cup Body */}
-    <path d="M54 24 H106 V48 C106 64 94 74 80 74 C66 74 54 64 54 48 V24 Z" fill="#ffc749" stroke="#1e2246" strokeWidth="2.4" />
-    {/* Center Star Circle */}
-    <circle cx="80" cy="46" r="12" fill="#1e2246" />
-    <path d="M80 39 L82 43.5 L87 44 L83.2 47.2 L84.4 52 L80 49.4 L75.6 52 L76.8 47.2 L73 44 L78 43.5 Z" fill="#ffc749" />
-    {/* Pedestal */}
-    <rect x="74" y="74" width="12" height="10" fill="#626a9f" stroke="#1e2246" strokeWidth="2.2" />
-    <rect x="60" y="84" width="40" height="9" rx="4.5" fill="#16a37f" stroke="#1e2246" strokeWidth="2.4" />
-  </svg>
-);
 
 // ==========================================
 // 0.3 SMALL SHARED UI ICONS
@@ -1676,7 +1684,6 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
   const [showInfoBoardModal, setShowInfoBoardModal] = useState(false);
   const [showCommunity, setShowCommunity] = useState(false);
   const [showSeminarRoom, setShowSeminarRoom] = useState(false);
-  const [showTrophyRoom, setShowTrophyRoom] = useState(false);
 
   const [isMetricsModalOpen, setIsMetricsModalOpen] = useState(false);
   const [practiceContext, setPracticeContext] = useState(null);
@@ -1818,10 +1825,6 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
     }
     if (type === 'Community_BOARD') {
       setShowCommunity(true);
-      return;
-    }
-    if (type === 'Trophies') {
-      setShowTrophyRoom(true);
       return;
     }
     if (type === 'Calendar') {
@@ -2021,7 +2024,7 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
       {/* ==========================================
           1. FLOATING LANDING-STYLE TOP NAVBAR
       ========================================== */}
-      <header className="sticky top-0 z-40 px-4 sm:px-6 lg:px-10 py-3.5 bg-white/55 backdrop-blur-2xl border-b border-white/80">
+      <header className="sticky top-0 z-40 px-3.5 sm:px-6 lg:px-10 py-3 lg:py-3.5 bg-[#fdfcf8]/95 lg:bg-white/55 lg:backdrop-blur-2xl border-b-2 border-[#1e2246]/10 lg:border-white/80">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
           {/* Left: Real OutLoud Logo */}
           <button
@@ -2071,13 +2074,6 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
               className="px-4 py-2 rounded-full text-[11px] font-bold uppercase tracking-wider text-[#3b4170] hover:text-[#1e2246] hover:bg-[#f2f4fc] transition-colors cursor-pointer"
             >
               Foro
-            </button>
-            <button
-              type="button"
-              onClick={() => handleStartActivity('Trophies')}
-              className="px-4 py-2 rounded-full text-[11px] font-bold uppercase tracking-wider text-[#3b4170] hover:text-[#1e2246] hover:bg-[#f2f4fc] transition-colors cursor-pointer"
-            >
-              Trofeos
             </button>
           </nav>
 
@@ -2151,11 +2147,11 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
             </p>
           </div>
 
-          <div className="flex items-center gap-2.5 shrink-0">
+          <div className="grid grid-cols-2 sm:flex items-center gap-2.5 w-full md:w-auto shrink-0">
             <button
               type="button"
               onClick={handleOpenMetrics}
-              className="ola-sh-btn-outline px-5 py-2.5 rounded-full text-[11px] font-bold uppercase tracking-widest cursor-pointer"
+              className="ola-sh-btn-outline px-4 sm:px-5 py-3 sm:py-2.5 rounded-full text-[10.5px] sm:text-[11px] font-bold uppercase tracking-wider sm:tracking-widest cursor-pointer text-center"
             >
               Practice Center
             </button>
@@ -2163,9 +2159,9 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
               type="button"
               onClick={() => handleStartActivity('Lesson')}
               disabled={isFetching}
-              className="ola-sh-btn-yellow px-5 py-2.5 rounded-full text-[11px] font-bold uppercase tracking-widest cursor-pointer disabled:opacity-50"
+              className="ola-sh-btn-yellow px-4 sm:px-5 py-3 sm:py-2.5 rounded-full text-[10.5px] sm:text-[11px] font-bold uppercase tracking-wider sm:tracking-widest cursor-pointer disabled:opacity-50 text-center"
             >
-              {isFetching ? 'Cargando...' : 'Continuar Unidad →'}
+              {isFetching ? 'Cargando...' : 'Continuar →'}
             </button>
           </div>
         </section>
@@ -2229,13 +2225,23 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
             3. THE 3-CARD HERO STUDY TRIO
             (Butter-Gold Lesson / Indigo Workbook / Pearl Progress)
         ========================================== */}
-        <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <section className="flex flex-col gap-2.5">
+          <div className="lg:hidden flex items-center justify-between px-1">
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#454d82]">
+              Tu Ruta de Estudio
+            </span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#626a9f] bg-white px-2.5 py-0.5 rounded-full border border-[#1e2246]/15">
+              Desliza →
+            </span>
+          </div>
+
+          <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 -mx-4 px-4 pb-3 ola-no-scrollbar lg:grid lg:grid-cols-3 lg:gap-6 lg:mx-0 lg:px-0 lg:pb-0 lg:overflow-visible">
           {/* CARD 1: BUTTER-GOLD HERO — LESSON */}
           <button
             type="button"
             onClick={() => handleStartActivity('Lesson')}
             disabled={isFetching}
-            className="ola-sh-card-gold ola-sh-lift group relative rounded-[2.25rem] p-5 sm:p-6 flex flex-col justify-between text-left overflow-hidden cursor-pointer focus:outline-none min-h-[380px]"
+            className="ola-sh-card-gold ola-sh-lift group relative rounded-[2rem] lg:rounded-[2.25rem] p-5 sm:p-6 flex flex-col justify-between text-left overflow-hidden cursor-pointer focus:outline-none w-[84vw] max-w-[345px] shrink-0 snap-center lg:w-auto lg:max-w-none min-h-[340px] lg:min-h-[380px]"
           >
             {/* Subtle Corner Watermark matching Landing Page */}
             <div className="pointer-events-none select-none absolute -bottom-10 -right-10 opacity-[0.09] group-hover:opacity-[0.14] transition-opacity">
@@ -2291,7 +2297,7 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
             type="button"
             onClick={() => isWorkbookUnlocked && handleStartActivity('Workbook')}
             disabled={!isWorkbookUnlocked || isFetching}
-            className={`ola-sh-card-indigo group relative rounded-[2.25rem] p-5 sm:p-6 flex flex-col justify-between text-left overflow-hidden focus:outline-none min-h-[380px] ${
+            className={`ola-sh-card-indigo group relative rounded-[2rem] lg:rounded-[2.25rem] p-5 sm:p-6 flex flex-col justify-between text-left overflow-hidden focus:outline-none w-[84vw] max-w-[345px] shrink-0 snap-center lg:w-auto lg:max-w-none min-h-[340px] lg:min-h-[380px] ${
               isWorkbookUnlocked ? 'ola-sh-lift cursor-pointer' : 'opacity-90 cursor-not-allowed'
             }`}
           >
@@ -2365,7 +2371,7 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
           <button
             type="button"
             onClick={handleOpenMetrics}
-            className="ola-sh-card-pearl ola-sh-lift group relative rounded-[2.25rem] p-5 sm:p-6 flex flex-col justify-between text-left overflow-hidden cursor-pointer focus:outline-none min-h-[380px]"
+            className="ola-sh-card-pearl ola-sh-lift group relative rounded-[2rem] lg:rounded-[2.25rem] p-5 sm:p-6 flex flex-col justify-between text-left overflow-hidden cursor-pointer focus:outline-none w-[84vw] max-w-[345px] shrink-0 snap-center lg:w-auto lg:max-w-none min-h-[340px] lg:min-h-[380px]"
           >
             {/* Recessed Top Progress Ring Stage */}
             <div className="relative z-10 w-full h-44 rounded-[1.5rem] bg-[#f4f6fc] border border-white shadow-inner flex items-center justify-center gap-5 px-4 mb-5">
@@ -2436,13 +2442,14 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
               </span>
             </div>
           </button>
+          </div>
         </section>
 
         {/* ==========================================
             4. QUICK-ACCESS BENTO ROW
             (Mirroring Cohortes / Ventajas / Tarifas from Landing Page)
         ========================================== */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* BENTO A: CALENDARIO & LIVE LABS */}
           <button
             type="button"
@@ -2509,35 +2516,7 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
             </div>
           </div>
 
-          {/* BENTO C: SALA DE TROFEOS */}
-          <button
-            type="button"
-            onClick={() => handleStartActivity('Trophies')}
-            className="ola-sh-card-ice ola-sh-lift group rounded-[2rem] p-5 flex flex-col justify-between text-left cursor-pointer focus:outline-none"
-          >
-            <div className="w-full h-32 rounded-[1.35rem] bg-white/80 border border-white flex items-center justify-center mb-4">
-              <TrophyBentoIllustration />
-            </div>
-            <div>
-              <span className="inline-block text-[9.5px] font-bold uppercase tracking-widest bg-[#d5f5ea] text-[#128063] px-2.5 py-1 rounded-full mb-2">
-                Tu Legado
-              </span>
-              <h3 className="text-base font-extrabold text-[#1e2246] uppercase tracking-tight mb-1">
-                Sala de Trofeos
-              </h3>
-              <p className="text-xs text-[#4c5384] font-medium leading-relaxed">
-                Desbloquea medallas 3D por tu constancia, pronunciación y participación en la academia.
-              </p>
-            </div>
-            <div className="flex items-center justify-between pt-4 mt-4 border-t border-[#626a9f]/15">
-              <span className="text-[10.5px] font-extrabold uppercase tracking-widest text-[#1e2246]">
-                Ver Mis Logros
-              </span>
-              <span className="w-8 h-8 rounded-full bg-white border border-[#1e2246]/30 text-[#1e2246] group-hover:bg-[#1e2246] group-hover:text-[#ffc749] flex items-center justify-center text-xs font-extrabold transition-colors">
-                →
-              </span>
-            </div>
-          </button>
+          
         </section>
 
         {/* ==========================================
@@ -2708,63 +2687,66 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
       </main>
 
       {/* ==========================================
-          7. MOBILE FLOATING PILL DOCK
+7. MOBILE FLOATING EDITORIAL CAPSULE DOCK
       ========================================== */}
-      <nav className="lg:hidden fixed bottom-3 left-3 right-3 h-16 bg-white/90 backdrop-blur-2xl border-2 border-white rounded-full flex items-center justify-around px-2 z-50 shadow-[0_14px_34px_-8px_rgba(30,34,70,0.3)]">
+      <nav
+        className="lg:hidden fixed bottom-3 left-2.5 right-2.5 bg-[#fdfcf8] border-2 border-[#1e2246] rounded-[1.75rem] flex items-center justify-between px-1.5 py-1.5 z-50 shadow-[0_5px_0_#1e2246,0_14px_28px_-8px_rgba(30,34,70,0.32)]"
+        style={{ marginBottom: 'env(safe-area-inset-bottom, 0px)' }}
+      >
         <button
           type="button"
           onClick={() => handleStartActivity('Calendar')}
-          className="flex flex-col items-center gap-0.5 text-[#454d82] hover:text-[#1e2246] px-2 cursor-pointer"
+          className="flex-1 flex flex-col items-center justify-center gap-1 py-1.5 rounded-2xl text-[#454d82] active:bg-[#fff3d1] active:text-[#1e2246] cursor-pointer"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.1" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
-          <span className="text-[9px] font-bold">Agenda</span>
+          <span className="text-[9px] font-extrabold leading-none">Agenda</span>
         </button>
 
         <button
           type="button"
           onClick={() => handleStartActivity('LiveClass')}
-          className="relative flex flex-col items-center gap-0.5 text-[#454d82] hover:text-[#1e2246] px-2 cursor-pointer"
+          className="relative flex-1 flex flex-col items-center justify-center gap-1 py-1.5 rounded-2xl text-[#454d82] active:bg-[#fff3d1] active:text-[#1e2246] cursor-pointer"
         >
-          {isLiveNow && <span className="absolute top-0 right-2 w-2 h-2 rounded-full bg-[#16a37f] animate-pulse" />}
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          {isLiveNow && <span className="absolute top-1 right-3 w-2 h-2 rounded-full bg-[#16a37f] animate-pulse" />}
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.1" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
           </svg>
-          <span className="text-[9px] font-bold">En Vivo</span>
+          <span className="text-[9px] font-extrabold leading-none">En Vivo</span>
         </button>
 
         <button
           type="button"
           onClick={() => handleStartActivity('Community_CHAT')}
-          className="flex flex-col items-center gap-0.5 text-[#454d82] hover:text-[#1e2246] px-2 cursor-pointer"
+          className="flex-1 flex flex-col items-center justify-center gap-1 py-1.5 rounded-2xl text-[#454d82] active:bg-[#fff3d1] active:text-[#1e2246] cursor-pointer"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.1" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
           </svg>
-          <span className="text-[9px] font-bold">Chat</span>
+          <span className="text-[9px] font-extrabold leading-none">Chat</span>
         </button>
 
         <button
           type="button"
           onClick={() => handleStartActivity('Community_BOARD')}
-          className="flex flex-col items-center gap-0.5 text-[#454d82] hover:text-[#1e2246] px-2 cursor-pointer"
+          className="flex-1 flex flex-col items-center justify-center gap-1 py-1.5 rounded-2xl text-[#454d82] active:bg-[#fff3d1] active:text-[#1e2246] cursor-pointer"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.1" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
           </svg>
-          <span className="text-[9px] font-bold">Foro</span>
+          <span className="text-[9px] font-extrabold leading-none">Foro</span>
         </button>
 
         <button
           type="button"
-          onClick={() => handleStartActivity('Trophies')}
-          className="flex flex-col items-center gap-0.5 text-[#454d82] hover:text-[#1e2246] px-2 cursor-pointer"
+          onClick={handleOpenMetrics}
+          className="flex-1 flex flex-col items-center justify-center gap-1 py-1.5 rounded-2xl bg-[#ffc749] text-[#1e2246] border-2 border-[#1e2246] shadow-[0_2px_0_#1e2246] -translate-y-0.5 cursor-pointer"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 007.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M7.73 9.728a6.726 6.726 0 002.748 1.35m8.272-6.842V4.5c0 2.108-.966 3.99-2.48 5.228m2.48-5.492a46.32 46.32 0 012.916.52 6.003 6.003 0 01-5.395 4.972" />
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
           </svg>
-          <span className="text-[9px] font-bold">Trofeos</span>
+          <span className="text-[9px] font-extrabold leading-none">Práctica</span>
         </button>
       </nav>
 
@@ -3020,13 +3002,6 @@ const StudentHub = ({ onReturnHome, preloadedStudent }) => {
         </div>
       )}
 
-      {showTrophyRoom && (
-        <TrophyRoom
-          targetUser={studentData}
-          currentUserRole="student"
-          onClose={() => setShowTrophyRoom(false)}
-        />
-      )}
 
       {showGatekeeper && (
         <EvaluationCrossroad
